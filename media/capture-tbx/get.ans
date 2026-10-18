@@ -1,0 +1,11 @@
+[1mprogressive lens                        [22m[2mglossary.tbx:15[22m
+  id               progressive-lens
+  language         en
+  alt-labels       PAL
+  definition       A lens whose power changes gradually.
+  concept-entry    subject-field: optics
+  designations     progressive lens: part-of-speech noun
+                   PAL: term-type acronym
+  tbx-markup       A lens whose power changes <sc id="b1"
+                   type="bold"/>gradually<ec startRef="b1"/>.
+  other languages  de (Gleitsichtglas)

@@ -6,7 +6,7 @@
 import { DOMParser } from "@xmldom/xmldom";
 import { mkdir, mkdtemp, realpath, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { basename, dirname, join } from "node:path";
+import { basename, dirname, join, relative } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { slugOf } from "../../src/term/core/id.js";
 import { loadTermSet } from "../../src/term/core/load-set.js";
@@ -84,7 +84,29 @@ function representative(): Term[] {
     }),
     term("brille", { label: "Brille", definition: "Gläser, die man trägt." }, "de"),
     term(slugOf("C++ & co"), { label: "C++ & co", definition: `Languages <with> "quotes" & 'apostrophes'.` }),
+    term("spectacle-lens", {
+      label: "spectacle lens",
+      definition: "A lens worn in a frame.",
+      "alt-labels": ["lens"],
+      "subject-field": "optics",
+      sources: ["ISO 13666"],
+      "cross-references": [{ target: "pal" }, { target: "brille", text: "Brille" }],
+      transactions: [{ type: "origination", date: "2024-03-01", responsibility: "Maya" }],
+      "tbx-elements": ['<admin type="elementWorkingStatus">starterElement</admin>'],
+      "concept-entry": { "subject-field": "optics", notes: ["Agreed with the vendor."] },
+      designations: [
+        { term: "spectacle lens", "part-of-speech": "noun", "term-type": "fullForm" },
+        { term: "lens", "tbx-elements": ['<termNote type="xBool_Forbidden">False</termNote>'] },
+      ],
+      "tbx-markup": ['A <hi type="bold">lens</hi> worn in a frame.'],
+    }),
   ];
+}
+
+/** The terms a list construct writes from `terms`: those in the first term's language, `en` when it names none. */
+function firstLanguage(terms: readonly Term[]): Term[] {
+  const language = terms[0]?.language ?? "en";
+  return terms.filter((t) => (t.language ?? "en") === language);
 }
 
 /**
@@ -197,14 +219,21 @@ describe("document writers", () => {
   });
 
   it.each(CASES)("$format $shape round-trips through the readers", async ({ format, shape, holds, id }) => {
-    const terms = representative();
-    const { render, read } = await renderAndRead(format, shape, terms);
+    const all = representative();
+    // The set is in two languages: pages go under a directory per language,
+    // and a list construct holds the first term's language only.
+    const terms = shape === "directory" ? all : firstLanguage(all);
+    const { render, read } = await renderAndRead(format, shape, all);
     expect(render.removals).toEqual([]);
     expect(render.dropped).toEqual(expectedDropped(terms, holds));
     if (shape === "directory") {
-      expect(render.files.map((f) => basename(f.path))).toEqual(terms.map((t) => `${t.id}${EXTENSION[format]}`));
+      expect(render.files.map((f) => relative(targetFor(format, shape).path, f.path).replaceAll("\\", "/"))).toEqual(
+        terms.map((t) => `${t.language ?? "en"}/${t.id}${EXTENSION[format]}`),
+      );
+      expect(render.otherLanguages).toBeUndefined();
     } else {
       expect(render.files.map((f) => f.path)).toEqual([targetFor(format, shape).path]);
+      expect(render.otherLanguages).toEqual({ written: "en", terms: [{ id: "brille", language: "de" }] });
     }
 
     expect(read).toHaveLength(terms.length);
@@ -259,7 +288,7 @@ describe("document writers", () => {
   });
 
   it("round-trips across formats: DocBook file, Markdown pages, DITA file", async () => {
-    const terms = representative();
+    const terms = firstLanguage(representative());
     const docbook = await renderAndRead("docbook", "file", terms, "a");
     const pages = await renderAndRead("markdown", "directory", docbook.read, "b");
     const dita = await renderAndRead("dita", "file", pages.read, "c");
@@ -379,7 +408,7 @@ describe("document writer output", () => {
     const doc = parseXml(content);
     expect(doc.documentElement?.tagName).toBe("glossgroup");
     expect(doc.documentElement?.getElementsByTagName("title").item(0)?.textContent).toBe("Glossary");
-    expect(doc.documentElement?.getElementsByTagName("glossentry").length).toBe(5);
+    expect(doc.documentElement?.getElementsByTagName("glossentry").length).toBe(firstLanguage(representative()).length);
     expect(content).toContain("<glossterm>C++ &amp; co</glossterm>");
     expect(content).toContain("<p>It prints to a terminal.</p>");
   });

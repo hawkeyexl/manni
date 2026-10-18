@@ -6,10 +6,11 @@
  * Documents are grouped by the repository that contains them, as
  * `gitignore.ts` groups candidates, and each root is asked once. A root's
  * history is read in one of two forms that produce the same `FileHistory`:
- * per-file `git log --follow` for a small run, because `--follow` is what
- * carries `created` across a rename and it forbids more than one pathspec;
- * one whole-repository `git log --raw -M` walk otherwise, with renames
- * followed backwards here. The judge on top of either form is the same.
+ * one `git log -- <path>` a lineage for a small run, and one
+ * whole-repository `git log --raw -M` walk otherwise. A rename is a path
+ * that disappears in the commit that adds the new one, as plain `-M` pairs
+ * them, so no two live pages share a lineage. Both forms follow it
+ * backwards here, and the judge on top of either is the same.
  *
  * A body change is a change outside the metadata block, so a frontmatter
  * sweep does not move `last-updated`. Blobs are compared by their bodies
@@ -408,7 +409,13 @@ function histories(
     : bulkHistories(run, rels, rev);
 }
 
-/** The per-file form: `--follow` carries the path across renames itself. */
+/**
+ * The per-file form: one `git log -- <path>` a lineage, attributed the way
+ * the bulk form is. A pathspec hides the other side of a rename, so the path
+ * reads as added or deleted where the whole commit pairs it. Each such
+ * commit is read whole, with the same `-M`, and a rename into the path
+ * continues the walk on the old path from the commit's first parent.
+ */
 async function perFileHistories(
   run: GitRun,
   rels: readonly string[],
@@ -416,18 +423,45 @@ async function perFileHistories(
 ): Promise<Map<string, FileHistory[]> | null> {
   const found = new Map<string, FileHistory[]>();
   for (const rel of rels) {
-    const out = await run([...LOG_ARGS, rev, "--follow", "--", pathspec(rel)]);
-    if (out.tooLarge) throw new HistoryTooLarge();
-    if (out.code !== 0) {
+    const records = await lineage(run, rel, rev);
+    if (records === null) {
       if (await isUnbornHead(run)) return found;
       return null;
     }
-    // `--follow` already walked the rename; `attribute` still applies so the
-    // rename commit's own raw line is read the same way the bulk form reads it.
-    const attributed = attribute(parseLog(text(out)), [rel]);
-    found.set(rel, attributed.get(rel) ?? []);
+    found.set(rel, attribute(records, [rel]).get(rel) ?? []);
   }
   return found;
+}
+
+/** The commits that touched `rel`'s lineage from `rev`, newest first; null when git failed. */
+async function lineage(run: GitRun, rel: string, rev: string): Promise<LogRecord[] | null> {
+  const records: LogRecord[] = [];
+  let at = rel;
+  let from = rev;
+  for (;;) {
+    const out = await run([...LOG_ARGS, from, "--", pathspec(at)]);
+    if (out.tooLarge) throw new HistoryTooLarge();
+    if (out.code !== 0) return null;
+    let renamedFrom: string | undefined;
+    for (const record of parseLog(text(out))) {
+      const status = record.raw.find((e) => e.newPath === at)?.status;
+      if (status === "A" || status === "D") {
+        const whole = await run([...LOG_ARGS, "-1", record.sha]);
+        if (whole.tooLarge) throw new HistoryTooLarge();
+        if (whole.code !== 0) return null;
+        record.raw = parseLog(text(whole))[0]?.raw ?? [];
+        const entry = record.raw.find((e) => e.newPath === at);
+        if (entry !== undefined && entry.oldPath !== at) renamedFrom = entry.oldPath;
+      }
+      records.push(record);
+      if (renamedFrom !== undefined) {
+        from = `${record.sha}^`;
+        break;
+      }
+    }
+    if (renamedFrom === undefined) return records;
+    at = renamedFrom;
+  }
 }
 
 /** The bulk form: one walk, every path attributed and followed here. */

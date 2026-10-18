@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<martif type="TBX" xml:lang="en">
+  <martifHeader>
+    <fileDesc>
+      <sourceDesc>
+        <p>Attributes the canonical form does not write, and groups it does not pair.</p>
+      </sourceDesc>
+    </fileDesc>
+  </martifHeader>
+  <text>
+    <body>
+      <termEntry id="lens">
+        <descrip type="definition" id="d1">A shaped piece of glass.</descrip>
+        <descripGrp>
+          <descrip type="context">Hold the lens by its edge.</descrip>
+          <admin type="source">Handbook</admin>
+        </descripGrp>
+        <descripGrp>
+          <descripGrp>
+            <descrip type="subjectField">optics</descrip>
+          </descripGrp>
+        </descripGrp>
+        <langSet xml:lang="en" id="ls-en">
+          <tig id="t1">
+            <term id="term-1">lens</term>
+            <termNote type="partOfSpeech" target="noun-1">noun</termNote>
+            <termNote type="termType">fullForm</termNote>
+            <termNote type="termType">variant</termNote>
+            <transacGrp>
+              <transac type="transactionType">origination</transac>
+              <date>2026-09-01</date>
+              <transacNote type="responsibility">Sara</transacNote>
+            </transacGrp>
+          </tig>
+        </langSet>
+        <langSet xml:lang="de">
+          <tig>
+            <term>Linse</term>
+            <termNote type="grammaticalGender">feminine</termNote>
+          </tig>
+        </langSet>
+      </termEntry>
+    </body>
+  </text>
+</martif>

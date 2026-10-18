@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<martif type="TBX-Basic" xml:lang="en">
+  <martifHeader>
+    <fileDesc>
+      <sourceDesc>
+        <p>Plain and marked-up values that read as the same text.</p>
+      </sourceDesc>
+    </fileDesc>
+  </martifHeader>
+  <text>
+    <body>
+      <termEntry id="water">
+        <descrip type="subjectField">chemistry</descrip>
+        <ref type="crossReference" target="ice">H2O</ref>
+        <langSet xml:lang="en">
+          <descrip type="definition">A clear liquid.</descrip>
+          <tig>
+            <term>H<hi type="subscript">2</hi>O</term>
+            <descrip type="context">H2O</descrip>
+          </tig>
+        </langSet>
+      </termEntry>
+      <termEntry id="carbon-dioxide">
+        <langSet xml:lang="en">
+          <descrip type="definition">A colourless gas.</descrip>
+          <tig>
+            <term>CO2</term>
+            <descrip type="context">CO<hi type="subscript">2</hi></descrip>
+          </tig>
+        </langSet>
+      </termEntry>
+    </body>
+  </text>
+</martif>

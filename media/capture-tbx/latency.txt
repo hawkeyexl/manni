@@ -1,0 +1,9 @@
+list 0 299ms
+get 0 292ms
+write-tbx3 0 293ms
+list-build 0 286ms
+write-inplace 0 328ms
+check 0 305ms
+timing1 list 291ms get 319ms write-tbx3 319ms write-inplace 291ms check 307ms
+timing2 list 286ms get 317ms write-tbx3 314ms write-inplace 291ms check 293ms
+timing3 list 281ms get 290ms write-tbx3 291ms write-inplace 288ms check 286ms

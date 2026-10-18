@@ -21,6 +21,7 @@ import {
   extractorForExtension,
   gitignoreOptions,
   resolveTargetSet,
+  supportedExtensions,
 } from "../../meta/internal.js";
 import { errorMessage } from "../../shared/errors.js";
 import { CONCEPT_FIELDS, fieldPointer, valueAt } from "../../shared/reference-fields.js";
@@ -33,6 +34,22 @@ export const MANIFEST_FORMAT = "manifest";
 
 /** The extensions a file named on the command line is read as a manifest by. */
 const MANIFEST_EXTENSIONS: ReadonlySet<string> = new Set([".yaml", ".yml", ".json"]);
+
+/** The `TermInput.format` a TBX file is offered as, and the `--as` value that reads stdin as one. */
+export const TBX_FORMAT = "tbx";
+
+/** The extension a TBX file is read by, named or walked. It is the term loader's, not an extractor's. */
+const TBX_EXTENSION = ".tbx";
+
+/** A TBX file carries no page metadata either; its reader parses the content itself. */
+export function tbxInput(content: string, file: string, path?: string): TermInput {
+  return { content, file, ...(path === undefined ? {} : { path }), format: TBX_FORMAT, metadata: {}, lineFor: () => undefined };
+}
+
+/** What a directory or glob walk keeps when `--ext` is not given: every extractor's extensions, and TBX. */
+function defaultExtensions(): string[] {
+  return [...supportedExtensions(), TBX_EXTENSION];
+}
 
 /** A manifest carries no page metadata; its reader parses the content itself. */
 function manifestInput(content: string, file: string, path: string): TermInput {
@@ -113,6 +130,14 @@ export function extractInput(
   };
 }
 
+async function readInput(path: string, file: string): Promise<string> {
+  try {
+    return await readFile(path, "utf8");
+  } catch (error) {
+    throw new TermError(`${file}: could not be read: ${errorMessage(error)}`);
+  }
+}
+
 export async function loadTermSet(opts: LoadTermSetOptions): Promise<TermSet> {
   const { run } = opts;
   const readers = opts.readers ?? TERM_READERS;
@@ -137,7 +162,7 @@ export async function loadTermSet(opts: LoadTermSetOptions): Promise<TermSet> {
       inputs,
       cwd: run.base,
       exclude,
-      ...(opts.exts === undefined ? {} : { exts: opts.exts }),
+      exts: opts.exts ?? defaultExtensions(),
       allowEmpty,
       ...gitignoreOptions({
         ...(opts.noGitignore === true ? { flag: false } : {}),
@@ -164,13 +189,11 @@ export async function loadTermSet(opts: LoadTermSetOptions): Promise<TermSet> {
       // A manifest is read when it is named, never when a walk passes it: a
       // directory of pages can hold YAML and JSON that are not terms at all.
       if (namedFiles.has(file) && MANIFEST_EXTENSIONS.has(extname(file).toLowerCase())) {
-        let content: string;
-        try {
-          content = await readFile(path, "utf8");
-        } catch (error) {
-          throw new TermError(`${file}: could not be read: ${errorMessage(error)}`);
-        }
-        read(manifestInput(content, file, path), readers, set);
+        read(manifestInput(await readInput(path, file), file, path), readers, set);
+        continue;
+      }
+      if (extname(file).toLowerCase() === TBX_EXTENSION) {
+        read(tbxInput(await readInput(path, file), file, path), readers, set);
         continue;
       }
       const extractor = extractorForExtension(extname(file));
@@ -179,20 +202,17 @@ export async function loadTermSet(opts: LoadTermSetOptions): Promise<TermSet> {
       if (extractor === undefined) {
         throw new TermError(`${file}: no reader for its extension. Pass --as <format> through stdin to read it.`);
       }
-      let content: string;
-      try {
-        content = await readFile(path, "utf8");
-      } catch (error) {
-        throw new TermError(`${file}: could not be read: ${errorMessage(error)}`);
-      }
-      const input = extractInput(content, file, path, extractor.name);
+      const input = extractInput(await readInput(path, file), file, path, extractor.name);
       set.references.push(...referencesOf(input));
       read(input, readers, set);
     }
   }
 
   if (usingStdin && opts.as !== undefined) {
-    const input = extractInput(opts.stdin ?? "", STDIN_LABEL, undefined, opts.as);
+    const input =
+      opts.as.toLowerCase() === TBX_FORMAT
+        ? tbxInput(opts.stdin ?? "", STDIN_LABEL)
+        : extractInput(opts.stdin ?? "", STDIN_LABEL, undefined, opts.as);
     set.references.push(...referencesOf(input));
     read(input, readers, set);
   }
@@ -205,7 +225,8 @@ export async function loadTermSet(opts: LoadTermSetOptions): Promise<TermSet> {
       const source = run.configSource ?? "manni.config.yaml";
       throw new TermError(`${source}: term.manifests "${written}" does not exist.`);
     }
-    read(manifestInput(content, path, path), readers, set);
+    const isTbx = extname(path).toLowerCase() === TBX_EXTENSION;
+    read(isTbx ? tbxInput(content, path, path) : manifestInput(content, path, path), readers, set);
   }
 
   if (set.terms.length === 0 && !allowEmpty) {

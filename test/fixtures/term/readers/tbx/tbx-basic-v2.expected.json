@@ -1,0 +1,149 @@
+{
+  "terms": [
+    {
+      "id": "progressive-lens",
+      "language": "en",
+      "line": 18,
+      "record": {
+        "label": "progressive lens",
+        "definition": "Corrective lenses whose power increases continuously.",
+        "alt-labels": [
+          "PAL"
+        ],
+        "hidden-labels": [
+          "no-line bifocal"
+        ],
+        "sources": [
+          "ISO 13666"
+        ],
+        "concept-entry": {
+          "subject-field": "optics"
+        },
+        "designations": [
+          {
+            "term": "progressive lens",
+            "part-of-speech": "noun",
+            "term-type": "fullForm",
+            "contexts": [
+              "Fit the progressive lens first."
+            ],
+            "transactions": [
+              {
+                "type": "origination",
+                "date": "2026-09-01",
+                "responsibility": "Sara"
+              }
+            ]
+          },
+          {
+            "term": "PAL",
+            "term-type": "acronym"
+          },
+          {
+            "term": "no-line bifocal",
+            "administrative-status": "superseded"
+          }
+        ]
+      }
+    },
+    {
+      "id": "progressive-lens",
+      "language": "de",
+      "line": 45,
+      "record": {
+        "label": "Gleitsichtglas",
+        "alt-labels": [
+          "Gleitsichtbrille"
+        ],
+        "concept-entry": {
+          "subject-field": "optics"
+        },
+        "designations": [
+          {
+            "term": "Gleitsichtglas",
+            "grammatical-gender": "neuter"
+          },
+          {
+            "term": "Gleitsichtbrille",
+            "grammatical-gender": "feminine"
+          }
+        ]
+      }
+    },
+    {
+      "id": "spectacle-lens",
+      "language": "en",
+      "line": 64,
+      "record": {
+        "label": "spectacle lens",
+        "hidden-labels": [
+          "eyeglass lens"
+        ],
+        "external-cross-references": [
+          {
+            "target": "https://example.com/lens"
+          }
+        ],
+        "concept-entry": {
+          "definition": "A lens worn in front of the eye to correct vision.",
+          "customer-subsets": [
+            "Acme"
+          ],
+          "project-subsets": [
+            "Lenses"
+          ],
+          "graphics": [
+            {
+              "target": "lens.png",
+              "text": "Diagram"
+            }
+          ],
+          "tbx-elements": [
+            "<note>Reviewed in 2026.</note>"
+          ]
+        },
+        "designations": [
+          {
+            "term": "spectacle lens"
+          },
+          {
+            "term": "eyeglass lens",
+            "cross-references": [
+              {
+                "target": "progressive-lens",
+                "text": "progressive lens"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "spectacle-lens",
+      "language": "de",
+      "line": 76,
+      "record": {
+        "label": "Brillenglas",
+        "concept-entry": {
+          "definition": "A lens worn in front of the eye to correct vision.",
+          "customer-subsets": [
+            "Acme"
+          ],
+          "project-subsets": [
+            "Lenses"
+          ],
+          "graphics": [
+            {
+              "target": "lens.png",
+              "text": "Diagram"
+            }
+          ],
+          "tbx-elements": [
+            "<note>Reviewed in 2026.</note>"
+          ]
+        }
+      }
+    }
+  ],
+  "notices": []
+}

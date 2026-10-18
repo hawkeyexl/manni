@@ -9,10 +9,24 @@ import { describe, expect, it } from "vitest";
 import { writerFor } from "../../src/term/core/writers/index.js";
 import { INTERCHANGE_WRITERS } from "../../src/term/core/writers/interchange.js";
 import { TermError } from "../../src/term/errors.js";
-import type { DroppedField, TermTarget, TermWriteFormat, TermWriter } from "../../src/term/types.js";
+import { TERM_FIELDS, type DroppedField, type TermTarget, type TermWriteFormat, type TermWriter } from "../../src/term/types.js";
 import { fixtureTerms, golden, term } from "./writer-fixture.js";
 
 const OUT = resolve("out");
+
+/** The ten 1.0.0 fields, the ones the CSV columns hold. */
+const CSV_FIELDS = [
+  "label",
+  "definition",
+  "abstract",
+  "alt-labels",
+  "hidden-labels",
+  "broader",
+  "narrower",
+  "related-terms",
+  "see",
+  "scope-note",
+];
 const NO_EXISTING = { existing: new Map<string, string>() };
 
 function writer(format: TermWriteFormat): TermWriter {
@@ -36,15 +50,15 @@ function renderOne(format: TermWriteFormat, name: string): { content: string; dr
 }
 
 describe("interchange writers", () => {
-  it("registers tbx, skos, csv, json and vale", () => {
-    expect(INTERCHANGE_WRITERS.map((w) => w.format)).toEqual(["tbx", "skos", "csv", "json", "vale"]);
-    for (const format of ["tbx", "skos", "csv", "json"] as const) {
+  it("registers tbx, tbx3, skos, csv, json and vale", () => {
+    expect(INTERCHANGE_WRITERS.map((w) => w.format)).toEqual(["tbx", "tbx3", "skos", "csv", "json", "vale"]);
+    for (const format of ["tbx", "tbx3", "skos", "csv", "json"] as const) {
       expect(writer(format).shapes).toEqual(["file"]);
     }
     expect(writer("vale").shapes).toEqual(["directory"]);
   });
 
-  it.each(["tbx", "skos", "csv", "json"] as const)("%s refuses a directory target", (format) => {
+  it.each(["tbx", "tbx3", "skos", "csv", "json"] as const)("%s refuses a directory target", (format) => {
     expect(() =>
       writer(format).render(fixtureTerms(), { path: OUT, shape: "directory" }, NO_EXISTING),
     ).toThrow(TermError);
@@ -52,6 +66,7 @@ describe("interchange writers", () => {
 
   it.each([
     ["tbx", "terms.golden.tbx"],
+    ["tbx3", "terms-v3.golden.tbx"],
     ["skos", "terms.golden.jsonld"],
     ["csv", "terms.golden.csv"],
     ["json", "terms.golden.json"],
@@ -70,7 +85,7 @@ describe("json writer", () => {
     const { content, dropped } = renderOne("json", "terms.json");
     expect(content).toBe(golden("terms.golden.json"));
     expect(dropped).toEqual([]);
-    expect(writer("json").holds("file")).toHaveLength(10);
+    expect(writer("json").holds("file")).toEqual(TERM_FIELDS);
   });
 
   it("parses back to the terms it was given", () => {
@@ -86,7 +101,24 @@ describe("csv writer", () => {
     const { content, dropped } = renderOne("csv", "terms.csv");
     expect(content).toBe(golden("terms.golden.csv"));
     expect(dropped).toEqual([]);
-    expect(writer("csv").holds("file")).toHaveLength(10);
+    expect(writer("csv").holds("file")).toEqual(CSV_FIELDS);
+  });
+
+  it("reports the 1.1.0 keys as dropped, and writes the same columns", () => {
+    const plain = term("x", { label: "x", definition: "A lens." });
+    const rich = term("x", {
+      ...plain.record,
+      "subject-field": "optics",
+      "concept-entry": { notes: ["n"] },
+      designations: [{ term: "x", "part-of-speech": "noun" }],
+    });
+    const render = writer("csv").render([rich], fileTarget("x.csv"), NO_EXISTING);
+    expect(render.files[0]?.content).toBe(writer("csv").render([plain], fileTarget("x.csv"), NO_EXISTING).files[0]?.content);
+    expect(render.dropped).toEqual([
+      { id: "x", field: "subject-field" },
+      { id: "x", field: "concept-entry" },
+      { id: "x", field: "designations" },
+    ]);
   });
 
   it("quotes a cell holding a newline", () => {
@@ -164,6 +196,79 @@ describe("tbx writer", () => {
     );
     expect(entries.item(5)?.getElementsByTagName("langSet").item(0)?.getAttribute("xml:lang")).toBe("de");
     expect(entries.item(0)?.getElementsByTagName("tig").length).toBe(4);
+  });
+
+  it("tbx3 renders the same entries as TBX v3", () => {
+    const { content, dropped } = renderOne("tbx3", "terms.tbx");
+    expect(content).toBe(golden("terms-v3.golden.tbx"));
+    expect(dropped).toEqual(renderOne("tbx", "terms.tbx").dropped);
+  });
+
+  it("tbx3 is well-formed XML in the TBX v3 namespace", () => {
+    const { content } = renderOne("tbx3", "terms.tbx");
+    const doc = new DOMParser().parseFromString(content, "text/xml");
+    const root = doc.documentElement;
+    expect(root?.tagName).toBe("tbx");
+    expect(root?.namespaceURI).toBe("urn:iso:std:iso:30042:ed-2");
+    expect(root?.getAttribute("type")).toBe("TBX-Basic");
+    expect(root?.getAttribute("style")).toBe("dca");
+    expect(doc.getElementsByTagName("conceptEntry").length).toBe(6);
+    expect(doc.getElementsByTagName("termSec").length).toBe(14);
+  });
+
+  it("tbx3 is TBX-Linguist when a designation carries a Linguist-only field", () => {
+    const linguist = term("save", { label: "Save", designations: [{ term: "Save", register: "neutralRegister" }] });
+    const content = writer("tbx3").render([linguist], fileTarget("x.tbx"), NO_EXISTING).files[0]?.content ?? "";
+    expect(content).toContain('<tbx type="TBX-Linguist" style="dca" xml:lang="en" xmlns="urn:iso:std:iso:30042:ed-2">');
+    expect(content).toContain('<termNote type="register">neutralRegister</termNote>');
+  });
+
+  it("tbx3 writes a designation's transfer-comments as termNotes, and is TBX-Linguist", () => {
+    const linguist = term("save", { label: "Save", designations: [{ term: "Save", "transfer-comments": ["One word."] }] });
+    const content = writer("tbx3").render([linguist], fileTarget("x.tbx"), NO_EXISTING).files[0]?.content ?? "";
+    expect(content).toContain('<tbx type="TBX-Linguist"');
+    expect(content).toContain('<termNote type="transferComment">One word.</termNote>');
+  });
+
+  it.each(["tbx", "tbx3"] as const)("%s joins terms on id, one language section each, and reports where they differ", (format) => {
+    const terms = [
+      term("pal", { label: "progressive lens", "concept-entry": { definition: "A lens.", "subject-field": "optics" } }, "en"),
+      term("pal", { label: "Gleitsichtglas", "concept-entry": { "subject-field": "Optik" } }, "de"),
+      term("lens", { label: "lens" }, "en"),
+    ];
+    const render = writer(format).render(terms, fileTarget("x.tbx"), NO_EXISTING);
+    const content = render.files[0]?.content ?? "";
+    const [entryTag, languageTag] = format === "tbx" ? ["termEntry", "langSet"] : ["conceptEntry", "langSec"];
+    const doc = new DOMParser().parseFromString(content, "text/xml");
+    expect(doc.getElementsByTagName(entryTag).length).toBe(2);
+    expect(doc.getElementsByTagName(entryTag).item(0)?.getElementsByTagName(languageTag).length).toBe(2);
+    // A concept-level definition stays at the entry, before its languages.
+    expect(content).toContain(
+      [
+        `      <${entryTag} id="pal">`,
+        '        <descrip type="definition">A lens.</descrip>',
+        '        <descrip type="subjectField">optics</descrip>',
+        `        <${languageTag} xml:lang="en">`,
+      ].join("\n"),
+    );
+    expect(render.conflicts).toEqual([{ id: "pal", field: "concept-entry.subject-field" }]);
+  });
+
+  it.each(["tbx", "tbx3"] as const)("%s writes a designation's own status over its label kind", (format) => {
+    const t = term("x", {
+      label: "x",
+      "hidden-labels": ["old x"],
+      designations: [{ term: "old x", "administrative-status": "superseded" }],
+    });
+    const content = writer(format).render([t], fileTarget("x.tbx"), NO_EXISTING).files[0]?.content ?? "";
+    expect(content).toContain('<termNote type="administrativeStatus">supersededTerm-admn-sts</termNote>');
+  });
+
+  it.each(["tbx", "tbx3"] as const)("%s reports what TBX-Basic has no category for as dropped", (format) => {
+    const t = term("x", { label: "x", see: "y", "subject-field": "optics" });
+    const render = writer(format).render([t], fileTarget("x.tbx"), NO_EXISTING);
+    expect(render.dropped).toEqual([{ id: "x", field: "see" }]);
+    expect(render.droppedHeaders).toEqual([]);
   });
 
   it("escapes attribute values", () => {

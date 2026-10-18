@@ -18,6 +18,7 @@ import { beats as sessionRulesBeats, totalFrames as sessionRulesTotalFrames, TYP
 import { beats as systemPromptBeats, totalFrames as systemPromptTotalFrames, TYPING_MS as systemPromptTypingMs } from "./system-prompt/beats";
 import { beats as graphImpactBeats, totalFrames as graphImpactTotalFrames, TYPING_MS as graphImpactTypingMs } from "./graph-impact/beats";
 import { beats as siteBeats, totalFrames as siteTotalFrames, TYPING_MS as siteTypingMs } from "./site/beats";
+import { beats as tbxBeats, totalFrames as tbxTotalFrames, TYPING_MS as tbxTypingMs } from "./tbx/beats";
 import { beats as graphFormatsBeats, totalFrames as graphFormatsTotalFrames, TYPING_MS as graphFormatsTypingMs } from "./graph-formats/beats";
 
 /** sidecar-url-1x1: 23 px / 75 columns, derived in media/sidecar-url-1x1.script.md. */
@@ -85,6 +86,12 @@ const DemoSessionRules: React.FC = () => <DemoView beats={sessionRulesBeats} fon
 
 /** system-prompt-1x1: 24 px / 72 columns, derived in media/system-prompt/system-prompt-1x1.script.md (media/system-prompt/capture/cols.mjs). */
 const DemoSystemPrompt: React.FC = () => <DemoView beats={systemPromptBeats} fontPx={24} linePx={34} cols={72} typingMs={systemPromptTypingMs} />;
+
+/**
+ * term-tbx-1x1: 22 px / 78 columns, derived in media/term-tbx-1x1.script.md
+ * (media/capture-tbx/cols.mjs). Ligatures off: the TBX tags' `</` and `/>` would draw as one glyph.
+ */
+const DemoTbx: React.FC = () => <DemoView beats={tbxBeats} fontPx={22} linePx={31} cols={78} typingMs={tbxTypingMs} ligatures={false} />;
 
 export const Root: React.FC = () => (
   <>
@@ -231,6 +238,14 @@ export const Root: React.FC = () => (
       height={1080}
       fps={FPS}
       durationInFrames={systemPromptTotalFrames}
+    />
+    <Composition
+      id="TermTbxDemo"
+      component={DemoTbx}
+      width={1080}
+      height={1080}
+      fps={FPS}
+      durationInFrames={tbxTotalFrames}
     />
   </>
 );

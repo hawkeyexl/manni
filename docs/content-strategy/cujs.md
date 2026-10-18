@@ -288,11 +288,11 @@ Per-file schema validation cannot see a dangling cross-reference, a duplicate sl
 
 ### D8 · Hand the termbase to localization
 
-**Outcome.** Devin gives the translation team the termbase in a format their system imports. A glossary kept in one construct moves to another without hand work.
+**Outcome.** Devin gives the translation team the termbase in a format their system imports, and reads what they send back. A glossary kept in one construct moves to another without hand work.
 
-**Steps.** He runs `manni term write -f tbx -o build/terms.tbx`, and the translation system imports TBX v2 Core. The kind of label becomes each term's status: the label preferred, an alt-label admitted, a hidden-label deprecated. Where a system or a spreadsheet maps columns by header, he writes `-f csv` instead, with the language in each per-language header. To move a glossary, he reads a DocBook `<glossary>` and writes `-f markdown -o docs/terms/`, one page per term, because the trailing `/` names a directory. The reverse, `-f docbook -o glossary.xml`, writes one file. Each render into a construct that cannot hold a field drops it, and the run says which fields, on how many terms.
+**Steps.** He runs `manni term write -f tbx -o build/terms.tbx` for TBX v2, or `-f tbx3` for v3. The kind of label becomes each term's status: the label preferred, an alt-label admitted, a hidden-label deprecated. Where a system or a spreadsheet maps columns by header, he writes `-f csv` instead, one row per concept with a column set per language. The termbase comes back as TBX, v2 or v3, with German terms, gender and vendor fields. He runs `manni term list l10n/glossary.tbx` and sees a term per language, each with the entry's id. He lists the file under `term.manifests`, or renders it as pages with `-f markdown -o docs/glossary/`, one directory per language. Every TBX data category lands in a named field, and anything else rides through in `tbx-elements`. An in-place write of an unchanged termbase is byte-identical, and writing the pages back with `-f tbx3` gives the same records. To move a glossary, he reads a DocBook `<glossary>` and writes `-f markdown -o docs/terms/`, one page per term, because the trailing `/` names a directory. The reverse, `-f docbook -o glossary.xml`, writes one file. Each render into a construct that cannot hold a field drops it, and the run says which fields, on how many terms.
 
-**What success looks like.** One command per handoff, in CI or locally. The report names every field a target could not hold, before anyone finds it missing.
+**What success looks like.** One command per handoff, in either direction, in CI or locally. The returned termbase reads without re-keying, and the report names every field a target could not hold, before anyone finds it missing.
 
 ### D9 · Gate document structure in CI
 
@@ -416,11 +416,11 @@ Sara needs to ship a stricter version of the schema without immediately breaking
 
 ### S6 · Define our terminology and make `concepts:` mean something
 
-**Outcome.** Every value of a page's `concepts:` names a term Sara's set defines. A term has one preferred label, a definition, and its place among other terms.
+**Outcome.** Every value of a page's `concepts:` names a term Sara's set defines. A term has one preferred label, a definition, and its place among other terms. A concept holds a term in each language its docs ship in.
 
-**Steps.** She writes one page per term, marked `type: term`, with the flat terminology fields at the root: `label`, `definition`, and where they apply `alt-labels`, `hidden-labels`, `broader`, `narrower`, `related-terms`, `see`, `abstract` and `scope-note`. A glossary already kept as a DITA `<glossgroup>`, a DocBook `<glossary>` or a definition list is read as it is. She runs `manni term list` to see the set, then `manni term check`. It resolves every `concepts:` value against the preferred labels and reports `undefined-term` at the line, naming the entry when the value is an alt-label. It also reports collisions, dangling references, cycles, and a `see` redirect that still carries a definition. `unused-term` is a notice for a term no page names yet, and she turns it off under `term.severity` while the set is ahead of the pages.
+**Steps.** She writes one page per term, marked `type: term`, with the flat terminology fields at the root: `label`, `definition`, and where they apply `alt-labels`, `hidden-labels`, `broader`, `narrower`, `related-terms`, `see`, `abstract` and `scope-note`. A glossary already kept as a DITA `<glossgroup>`, a DocBook `<glossary>`, a definition list or a TBX termbase is read as it is. For a second language she writes a sibling page with the same `id` and its own `language`, under `docs/de/glossary/`. A translator's detail has a field of its own in `manni:terminology:1.1.0`. A value about the concept goes in `concept-entry`, and one about a single designation, such as `part-of-speech` or `grammatical-gender`, in its `designations` item. She stacks the strict overlay to hold picklist values to the ones TBX names. She runs `manni term list` to see the set, then `manni term check`. It resolves every `concepts:` value against the preferred labels and reports `undefined-term` at the line, naming the entry when the value is an alt-label. It also reports collisions, dangling references, cycles, and a `see` redirect that still carries a definition. `unused-term` is a notice for a term no page names yet, and she turns it off under `term.severity` while the set is ahead of the pages.
 
-**What success looks like.** A `concepts:` value that is not a defined term fails the check at its line. The set has no two entries claiming one name.
+**What success looks like.** A `concepts:` value that is not a defined term fails the check at its line. The set has no two entries claiming one name in one language, and a German page beside its English sibling is not a finding.
 
 ---
 

@@ -99,8 +99,8 @@ meta:
       schemas:
         - ./docs/doc-frontmatter.schema.json
         - astro:starlight:0.41
-        - manni:terminology:1.0.0
-        - manni:terminology-strict:1.0.0
+        - manni:terminology:1.1.0
+        - manni:terminology-strict:1.1.0
     # Every other published page. Each one must declare a non-empty title and
     # description, which the house schema requires.
     - collection: site

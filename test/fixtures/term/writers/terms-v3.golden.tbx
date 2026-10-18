@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<tbx type="TBX-Basic" style="dca" xml:lang="en" xmlns="urn:iso:std:iso:30042:ed-2">
+  <tbxHeader>
+    <fileDesc>
+      <sourceDesc>
+        <p>manni term write</p>
+      </sourceDesc>
+    </fileDesc>
+  </tbxHeader>
+  <text>
+    <body>
+      <conceptEntry id="progressive-lens">
+        <langSec xml:lang="en">
+          <descrip type="definition">A spectacle lens whose power changes gradually, with no visible line.</descrip>
+          <termSec>
+            <term>progressive lens</term>
+            <termNote type="administrativeStatus">preferredTerm-admn-sts</termNote>
+          </termSec>
+          <termSec>
+            <term>PAL</term>
+            <termNote type="administrativeStatus">admittedTerm-admn-sts</termNote>
+          </termSec>
+          <termSec>
+            <term>graduated lens</term>
+            <termNote type="administrativeStatus">admittedTerm-admn-sts</termNote>
+          </termSec>
+          <termSec>
+            <term>no-line bifocal</term>
+            <termNote type="administrativeStatus">deprecatedTerm-admn-sts</termNote>
+          </termSec>
+        </langSec>
+      </conceptEntry>
+      <conceptEntry id="spectacle-lens">
+        <langSec xml:lang="en">
+          <descrip type="definition">A lens worn in front of the eye to correct vision.</descrip>
+          <termSec>
+            <term>spectacle lens</term>
+            <termNote type="administrativeStatus">preferredTerm-admn-sts</termNote>
+          </termSec>
+        </langSec>
+      </conceptEntry>
+      <conceptEntry id="kubernetes">
+        <langSec xml:lang="en">
+          <descrip type="definition">An orchestrator for "containers", services, and jobs.</descrip>
+          <termSec>
+            <term>Kubernetes</term>
+            <termNote type="administrativeStatus">preferredTerm-admn-sts</termNote>
+          </termSec>
+          <termSec>
+            <term>K8s</term>
+            <termNote type="administrativeStatus">admittedTerm-admn-sts</termNote>
+          </termSec>
+          <termSec>
+            <term>Kubernates</term>
+            <termNote type="administrativeStatus">deprecatedTerm-admn-sts</termNote>
+          </termSec>
+        </langSec>
+      </conceptEntry>
+      <conceptEntry id="api">
+        <langSec xml:lang="en">
+          <descrip type="definition">A contract &lt;between&gt; programs &amp; their callers.</descrip>
+          <termSec>
+            <term>API</term>
+            <termNote type="administrativeStatus">preferredTerm-admn-sts</termNote>
+          </termSec>
+          <termSec>
+            <term>application programming interface</term>
+            <termNote type="administrativeStatus">admittedTerm-admn-sts</termNote>
+          </termSec>
+        </langSec>
+      </conceptEntry>
+      <conceptEntry id="cpp">
+        <langSec xml:lang="en">
+          <descrip type="definition">A compiled programming language.</descrip>
+          <termSec>
+            <term>C++</term>
+            <termNote type="administrativeStatus">preferredTerm-admn-sts</termNote>
+          </termSec>
+          <termSec>
+            <term>CPP</term>
+            <termNote type="administrativeStatus">admittedTerm-admn-sts</termNote>
+          </termSec>
+        </langSec>
+      </conceptEntry>
+      <conceptEntry id="gleitsichtglas">
+        <langSec xml:lang="de">
+          <descrip type="definition">Ein Brillenglas, dessen Stärke stufenlos zunimmt.</descrip>
+          <termSec>
+            <term>Gleitsichtglas</term>
+            <termNote type="administrativeStatus">preferredTerm-admn-sts</termNote>
+          </termSec>
+          <termSec>
+            <term>Gleitsichtbrille</term>
+            <termNote type="administrativeStatus">admittedTerm-admn-sts</termNote>
+          </termSec>
+        </langSec>
+      </conceptEntry>
+    </body>
+  </text>
+</tbx>

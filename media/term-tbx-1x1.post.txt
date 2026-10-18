@@ -1,0 +1,9 @@
+Your translators keep a TBX termbase. Your docs keep a glossary. Somebody copies terms between them by hand, and something gets lost each time.
+
+manni term now reads TBX, v2 and v3, as it is. Each language becomes its own term, joined on the concept id. So "progressive lens" and "Gleitsichtglas" are two terms for one concept.
+
+Nothing is flattened away. Part of speech, term type, grammatical gender and inline markup all come through, and manni term get shows them.
+
+manni term write -f tbx3 writes TBX v3. Here the v3 file it wrote is byte-identical to the one it read. Written back in place, there is nothing to write, and check exits 0.
+
+#localization #terminology #technicalwriting #docsascode

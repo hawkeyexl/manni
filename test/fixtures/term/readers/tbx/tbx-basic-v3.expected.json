@@ -1,0 +1,70 @@
+{
+  "terms": [
+    {
+      "id": "progressive-lens",
+      "language": "en",
+      "line": 15,
+      "record": {
+        "label": "progressive lens",
+        "definition": "A lens whose power changes gradually.",
+        "alt-labels": [
+          "PAL"
+        ],
+        "concept-entry": {
+          "subject-field": "optics"
+        },
+        "designations": [
+          {
+            "term": "progressive lens",
+            "part-of-speech": "noun"
+          },
+          {
+            "term": "PAL",
+            "term-type": "acronym"
+          }
+        ],
+        "tbx-markup": [
+          "A lens whose power changes <sc id=\"b1\" type=\"bold\"/>gradually<ec startRef=\"b1\"/>."
+        ]
+      }
+    },
+    {
+      "id": "progressive-lens",
+      "language": "de",
+      "line": 28,
+      "record": {
+        "label": "Gleitsichtglas",
+        "concept-entry": {
+          "subject-field": "optics"
+        },
+        "designations": [
+          {
+            "term": "Gleitsichtglas",
+            "grammatical-gender": "neuter"
+          }
+        ]
+      }
+    },
+    {
+      "id": "bifocal",
+      "language": "en",
+      "line": 37,
+      "record": {
+        "label": "bifocal",
+        "hidden-labels": [
+          "dual-focus lens"
+        ],
+        "designations": [
+          {
+            "term": "bifocal",
+            "administrative-status": "none"
+          },
+          {
+            "term": "dual-focus lens"
+          }
+        ]
+      }
+    }
+  ],
+  "notices": []
+}

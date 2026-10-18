@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<tbx type="TBX-Basic" style="dct" xml:lang="en" xmlns="urn:iso:std:iso:30042:ed-2" xmlns:min="http://www.tbxinfo.net/ns/min" xmlns:basic="http://www.tbxinfo.net/ns/basic" xmlns:lng="http://www.tbxinfo.net/ns/linguist" xmlns:acme="https://acme.example/tbx">
+  <tbxHeader>
+    <fileDesc>
+      <sourceDesc>
+        <p>A hand-written DCT-style sample.</p>
+      </sourceDesc>
+    </fileDesc>
+  </tbxHeader>
+  <text>
+    <body>
+      <conceptEntry id="progressive-lens">
+        <min:subjectField>optics</min:subjectField>
+        <acme:reviewed>yes</acme:reviewed>
+        <langSec xml:lang="en">
+          <basic:definition>A lens whose power changes gradually.</basic:definition>
+          <basic:definition>A second definition at the same level.</basic:definition>
+          <termSec>
+            <term>progressive lens</term>
+            <min:administrativeStatus>preferredTerm-admn-sts</min:administrativeStatus>
+            <min:partOfSpeech>noun</min:partOfSpeech>
+            <basic:termType>fullForm</basic:termType>
+            <transacGrp>
+              <basic:transactionType>modification</basic:transactionType>
+              <date>2026-10-01</date>
+            </transacGrp>
+          </termSec>
+          <termSec>
+            <term>PAL</term>
+            <min:administrativeStatus>admittedTerm-admn-sts</min:administrativeStatus>
+            <lng:register>technicalRegister</lng:register>
+          </termSec>
+        </langSec>
+        <langSec xml:lang="de">
+          <termSec>
+            <term>Gleitsichtglas</term>
+            <min:administrativeStatus>preferredTerm-admn-sts</min:administrativeStatus>
+            <basic:grammaticalGender>neuter</basic:grammaticalGender>
+          </termSec>
+        </langSec>
+      </conceptEntry>
+    </body>
+  </text>
+</tbx>

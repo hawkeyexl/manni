@@ -28,7 +28,7 @@ const cache = new WeakMap<TermInput, ParsedXml | null>();
 /** The six break forms xmldom folds to LF before counting lines. */
 const LINE_BREAK = /\r\n|\r|\n|\u0085|\u2028|\u2029/g;
 
-function lineStarts(source: string): number[] {
+export function lineStarts(source: string): number[] {
   const starts = [0];
   for (const match of source.matchAll(LINE_BREAK)) starts.push(match.index + match[0].length);
   return starts;
@@ -124,7 +124,7 @@ function skipOpaque(body: string, from: number): number | undefined {
 }
 
 /** The offset past a tag's closing `>`, honouring quoted attribute values, and whether it self-closed. */
-function tagEnd(body: string, from: number): { end: number; selfClosing: boolean } | undefined {
+export function tagEnd(body: string, from: number): { end: number; selfClosing: boolean } | undefined {
   let quote: string | undefined;
   for (let i = from + 1; i < body.length; i++) {
     const ch = body[i];

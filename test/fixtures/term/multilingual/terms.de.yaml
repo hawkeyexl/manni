@@ -1,0 +1,5 @@
+# A manifest whose entries carry their own language.
+spectacle-lens:
+  language: de
+  label: Brillenglas
+  definition: Ein Glas, das vor dem Auge getragen wird.

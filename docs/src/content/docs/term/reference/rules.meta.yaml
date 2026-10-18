@@ -24,20 +24,44 @@ docs/src/content/docs/term/reference/rules.mdx:
       grader: ai
   provenance:
     - generated-by: Claude Opus 5
-      lines: 2-73
-      integrity: sha256-9b20ddb4f12bb6d807310cb7f78ef1840b69a511185efc5bba257b115bf74709
+      lines: 2-15
+      integrity: sha256-3d07a78074da3c1c288b410bab4054b9c9bc08b8155be8dcf62ac68aeaeaff6e
     - generated-by: Claude Opus 5.5
-      lines: 74
+      lines: 16-18
+      integrity: sha256-9a01463a930fe70d9e6fae573c85f242b0e72cd09d309abb09ea9af1f5ffe440
+    - generated-by: Claude Opus 5
+      lines: 19-23
+      integrity: sha256-7a3cc8fdac6757cfb151ac95ae9c085aee103697e99b935d27935499ef94dd39
+    - generated-by: Claude Opus 5.5
+      lines: 24
+      integrity: sha256-97c9f5d24a025d8419742737582c5106911918183eccf2687effe6b64b578bc3
+    - generated-by: Claude Opus 5
+      lines: 26-30
+      integrity: sha256-9fa996e7bf20e38232bed9771bbe41731ce113065dbf7afcb9fd10662585b5eb
+    - generated-by: Claude Opus 5.5
+      lines: 32-55
+      integrity: sha256-a023c15477d54237cfddbd70771cc6c5a911b9662e012721cad3d03dededdaa1
+    - generated-by: Claude Opus 5
+      lines: 57-98
+      integrity: sha256-f304827587704759e52dc9d26430258591680cdd0c79f799aa09f2e0883df343
+    - generated-by: Claude Opus 5.5
+      lines: 99
       integrity: sha256-9ecf435064f8764e3b2cd2b53a05a9e9d63e55567eb013b7f5f301dcf6a3a64d
     - generated-by: Claude Opus 5
-      lines: 75-77
+      lines: 100-102
       integrity: sha256-731a4b4c4fa019f975ce498df183acc8d9ec06b5b2e6777d7fd44e716e73e031
     - generated-by: Claude Opus 5.5
-      lines: 78
+      lines: 103
       integrity: sha256-feaa780067850c77ec3893f7cebb804283c94892535f12a5abef778e6ffc6452
     - generated-by: Claude Opus 5
-      lines: 80-147
-      integrity: sha256-135f64f05a16b7d0d467b6db770111f05f3332b0051bcbc946890c1258b4a56b
+      lines: 105-112
+      integrity: sha256-91ab1b9118a7a92c548524dc08a015c4dfe3efb0541a2f568142329b9a70f6cd
+    - generated-by: Claude Opus 5.5
+      lines: 113-114
+      integrity: sha256-0eb9d07d2435a0cb7d5d5729b4a5ceff55a380ae116cbbac6ed9a2affe66012a
+    - generated-by: Claude Opus 5
+      lines: 115-173
+      integrity: sha256-728cb9649feb1b4b5cc9d292480536cfa458029936121971a514986ca2c7a66f
   owner:
     - "@hawkeyexl"
   created: 2026-09-17

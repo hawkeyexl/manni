@@ -1,6 +1,6 @@
 ---
 title: Move and hand off a termbase
-description: "Read a glossary from any construct manni reads, render it as term pages, a single glossary file, TBX, SKOS, CSV or JSON, see which fields each target keeps, and hand the set to a translation system."
+description: "Read a glossary from any construct manni reads, render it as term pages, a single glossary file, TBX, SKOS, CSV or JSON, see which fields each target keeps, and hand the set to a translation system and read its TBX back."
 sidebar:
   order: 2
 type: how-to
@@ -11,10 +11,11 @@ keywords:
   - TBX
   - CSV
   - glossary
+  - multilingual
 language: en
 audiences:
   - ci-engineers
-intent: Move a glossary between constructs and formats, and hand the term set to a translation system as TBX or CSV.
+intent: Move a glossary between constructs and formats, hand the term set to a translation system as TBX or CSV, and read the returned TBX back without loss.
 lifecycle: published
 applies-to:
   - domain:term
@@ -29,10 +30,11 @@ sample-questions:
   - How do I turn a DocBook glossary into term pages?
   - Which fields does each manni term write format keep?
   - What does a round trip through manni term write lose?
+  - How do I read a TBX termbase from a translation system into term pages?
 graph:
   label: Move and hand off a termbase
   type: task
-last-updated: 2026-09-17
+last-updated: 2026-10-18
 tags:
   - conversion
   - translation
@@ -54,7 +56,7 @@ term set from pages, from body constructs in six formats, and from manifests.
 `manni term write` renders the same set into another shape, or into an
 interchange format a translation system imports. This page moves a DocBook
 glossary to one Markdown page per term and back. Then it hands the set off as
-TBX and CSV.
+TBX and CSV, and reads the translated termbase back.
 
 Every transcript below is real output from the built tool.
 
@@ -67,6 +69,7 @@ has nowhere to put a scope note, so no scope note is read from one.
 |---|---|---|
 | Page metadata, `type: term`, in any format | n/a | every field |
 | YAML or JSON manifest under [`term.manifests`](/manni/term/reference/configuration/#a-manifest) | n/a | every field |
+| TBX v2 or v3 entry, in a `.tbx` file | no | every field except `abstract`, `broader`, `narrower`, `related-terms`, `see` and `scope-note`, a term per language |
 | DITA `<glossentry>` topic | no | `label`, `definition`, `alt-labels`, `scope-note`, `id` |
 | DITA `<glossgroup>` | no | the same, per child `<glossentry>` |
 | DocBook `<glossary>` | no | `label`, `definition`, `alt-labels`, `see`, `related-terms`, `id` |
@@ -302,9 +305,10 @@ does, it prints that the target is up to date.
 | `html` | one term page per entry, fields in `<meta>` | a `<dl>` | a page holds every field. A `<dl>` holds `label`, `definition`, `alt-labels` and `id` |
 | `dita` | one `<glossentry>` topic per entry | a `<glossgroup>` | `label`, `definition`, `alt-labels`, `scope-note`, `id` |
 | `docbook` | refused | a `<glossary>` | `label`, `definition`, `alt-labels`, `see`, `related-terms`, `id` |
-| `tbx` | refused | TBX v2 Core | `label`, `definition`, `alt-labels`, `hidden-labels`, `id`, `language` |
-| `skos` | refused | a SKOS concept scheme in JSON-LD | every field except `abstract` and `see` |
-| `csv` | refused | one row per entry | every field |
+| `tbx` | refused | TBX v2 | every field except `abstract`, `broader`, `narrower`, `related-terms`, `see` and `scope-note` |
+| `tbx3` | refused | TBX v3 | the same as `tbx` |
+| `skos` | refused | a SKOS concept scheme in JSON-LD | the ten SKOS fields except `abstract` and `see` |
+| `csv` | refused | one row per id | the ten SKOS fields, a column set per language |
 | `json` | refused | `{ "terms": [...] }` | every field |
 | `vale` | the `Terms` style | n/a | see [the generated style](/manni/term/set-up/#the-generated-style) |
 
@@ -455,12 +459,17 @@ either. The source's `<article>` and its `Optics` title became a bare
 `<glossary>` titled `Glossary`. A render is a new file, so keep the source
 where that markup lives.
 
+TBX is the exception. Its reader keeps an element no field names in
+`tbx-elements`, and inline markup in `tbx-markup`, so a TBX render puts them
+back. [Read the termbase back](#read-the-termbase-back) shows what it keeps.
+
 ## Hand the set to a translation system
 
 <Steps>
 
-1. **Write TBX.** TBX v2 Core is the termbase exchange format translation
-   systems import. The kind of label becomes each designation's status:
+1. **Write TBX.** TBX is the termbase exchange format translation systems
+   import. `-f tbx` writes TBX v2, and `-f tbx3` writes TBX v3. The kind of
+   label becomes each designation's status:
 
    ```sh
    manni term write docs/terms/ -f tbx -o build/terms.tbx
@@ -476,8 +485,8 @@ where that markup lives.
    <martif type="TBX" xml:lang="en">
      ...
          <termEntry id="progressive-lens">
-           <descrip type="definition">Corrective lenses whose optical power increases continuously from the top of the lens to the bottom.</descrip>
            <langSet xml:lang="en">
+             <descrip type="definition">Corrective lenses whose optical power increases continuously from the top of the lens to the bottom.</descrip>
              <tig>
                <term>progressive lens</term>
                <termNote type="administrativeStatus">preferredTerm-admn-sts</termNote>
@@ -496,8 +505,12 @@ where that markup lives.
    </martif>
    ```
 
-   Each `<langSet>` takes the entry's `language`. An entry that declares none
-   is written as `en`.
+   Each language section takes its term's `language`, and the definition sits
+   inside it. A term that declares none is written as `en`. `-f tbx3` writes
+   the same entries as `<conceptEntry>`, `<langSec>` and `<termSec>`, under
+   `<tbx type="TBX-Basic" style="dca">`. A set that carries a TBX-Linguist
+   field, such as `register` or `transfer-comments`, is written as
+   `TBX-Linguist`.
 
 2. **Or write CSV.** A spreadsheet or a system that maps columns by header
    gets one row per entry. The per-language columns carry the language in
@@ -514,10 +527,269 @@ where that markup lives.
    varifocal,varifocal,,,,,,,,,progressive-lens
    ```
 
-   A set whose entries declare two languages gets six columns per language,
-   and each row fills the columns of its own.
+   CSV holds the ten SKOS fields. A TBX field, such as `designations` or
+   `concept-entry`, is reported dropped.
 
 </Steps>
+
+## Read the termbase back
+
+The translation team returns the termbase with a German term for each
+concept, grammatical gender, and a vendor field. This one is TBX v3:
+
+```xml title="l10n/glossary.tbx"
+<?xml version="1.0" encoding="UTF-8"?>
+<tbx type="TBX-Basic" style="dca" xml:lang="en" xmlns="urn:iso:std:iso:30042:ed-2">
+  <tbxHeader>
+    <fileDesc>
+      <sourceDesc>
+        <p>Optics termbase, exported by the translation team.</p>
+      </sourceDesc>
+    </fileDesc>
+  </tbxHeader>
+  <text>
+    <body>
+      <conceptEntry id="progressive-lens">
+        <descrip type="subjectField">optics</descrip>
+        <descrip type="Client">Acme</descrip>
+        <langSec xml:lang="en">
+          <descrip type="definition">Corrective lenses whose power increases continuously.</descrip>
+          <termSec>
+            <term>progressive lens</term>
+            <termNote type="administrativeStatus">preferredTerm-admn-sts</termNote>
+            <termNote type="partOfSpeech">noun</termNote>
+            <termNote type="termType">fullForm</termNote>
+          </termSec>
+          <termSec>
+            <term>PAL</term>
+            <termNote type="administrativeStatus">admittedTerm-admn-sts</termNote>
+            <termNote type="termType">acronym</termNote>
+          </termSec>
+          <termSec>
+            <term>no-line bifocal</term>
+            <termNote type="administrativeStatus">supersededTerm-admn-sts</termNote>
+          </termSec>
+        </langSec>
+        <langSec xml:lang="de">
+          <descrip type="definition">Brillenglas mit stufenlos zunehmender Wirkung.</descrip>
+          <termSec>
+            <term>Gleitsichtglas</term>
+            <termNote type="administrativeStatus">preferredTerm-admn-sts</termNote>
+            <termNote type="grammaticalGender">neuter</termNote>
+          </termSec>
+          <termSec>
+            <term>Gleitsichtbrille</term>
+            <termNote type="administrativeStatus">admittedTerm-admn-sts</termNote>
+            <termNote type="grammaticalGender">feminine</termNote>
+          </termSec>
+        </langSec>
+      </conceptEntry>
+      <conceptEntry id="bifocal">
+        <langSec xml:lang="en">
+          <descrip type="definition">Lenses with two distinct optical powers, divided by a visible line.</descrip>
+          <termSec>
+            <term>bifocal</term>
+            <termNote type="administrativeStatus">preferredTerm-admn-sts</termNote>
+          </termSec>
+        </langSec>
+        <langSec xml:lang="de">
+          <descrip type="definition">Brillenglas mit zwei getrennten Wirkungen.</descrip>
+          <termSec>
+            <term>Bifokalglas</term>
+            <termNote type="administrativeStatus">preferredTerm-admn-sts</termNote>
+          </termSec>
+        </langSec>
+      </conceptEntry>
+    </body>
+  </text>
+</tbx>
+```
+
+<Steps>
+
+1. **See what is read.** Each language of an entry is a term of its own, with
+   the entry's id. The list adds a language column when the set holds more
+   than one:
+
+   ```sh
+   manni term list l10n/glossary.tbx
+   ```
+
+   ```
+   progressive-lens   en   progressive lens   PAL
+   progressive-lens   de   Gleitsichtglas     Gleitsichtbrille
+   bifocal            en   bifocal
+   bifocal            de   Bifokalglas
+   4 terms
+   ```
+
+   A walk of a directory reads a `.tbx` file it finds, and `term.manifests`
+   can list one. `-` reads one from stdin with `--as tbx`.
+
+2. **Look at one term.** Every TBX data category has a named field. A value
+   about the concept sits in `concept-entry`, and a value about one
+   designation in its `designations` item:
+
+   ```sh
+   manni term get PAL l10n/glossary.tbx
+   ```
+
+   ```
+   progressive lens                        l10n/glossary.tbx:15
+     id               progressive-lens
+     language         en
+     alt-labels       PAL
+     hidden-labels    no-line bifocal
+     definition       Corrective lenses whose power increases continuously.
+     concept-entry    subject-field: optics
+     designations     progressive lens: part-of-speech noun, term-type fullForm
+                      PAL: term-type acronym
+                      no-line bifocal: administrative-status superseded
+     tbx-elements     1 in concept-entry
+     other languages  de (Gleitsichtglas)
+   ```
+
+   The vendor's `Client` field has no name in TBX-Basic, so it rides along
+   whole in `tbx-elements`. The superseded term is a hidden-label that keeps
+   its status. The [terminology reference](/manni/term/reference/terminology/#the-tbx-data-categories)
+   has every field.
+
+3. **Write it back.** In place, an unchanged termbase stays byte-identical. So
+   does an export at the file's own version:
+
+   ```console
+   $ manni term write l10n/glossary.tbx
+   Nothing to write
+   $ manni term write l10n/glossary.tbx -f tbx3 -o build/same.tbx
+   Wrote 4 terms to build/same.tbx
+   $ cmp l10n/glossary.tbx build/same.tbx && echo identical
+   identical
+   ```
+
+   `-f tbx` turns the v3 file into v2. The header carries over, and each
+   entry is written in v2's element names:
+
+   ```console
+   $ manni term write l10n/glossary.tbx -f tbx -o build/glossary-v2.tbx
+   Wrote 4 terms to build/glossary-v2.tbx
+   ```
+
+4. **Render the pages.** A set in more than one language puts each page under
+   a directory named for its language:
+
+   ```sh
+   manni term write l10n/glossary.tbx -f markdown -o docs/glossary/
+   ```
+
+   ```
+   Wrote 4 terms to docs/glossary/, one file each
+     dropped from a page: the header of l10n/glossary.tbx
+   ```
+
+   ```markdown title="docs/glossary/de/progressive-lens.md"
+   ---
+   title: Gleitsichtglas
+   type: term
+   id: progressive-lens
+   language: de
+   label: Gleitsichtglas
+   definition: Brillenglas mit stufenlos zunehmender Wirkung.
+   alt-labels:
+     - Gleitsichtbrille
+   concept-entry:
+     subject-field: optics
+     tbx-elements:
+       - <descrip type="Client">Acme</descrip>
+   designations:
+     - term: Gleitsichtglas
+       grammatical-gender: neuter
+     - term: Gleitsichtbrille
+       grammatical-gender: feminine
+   ---
+   ```
+
+   The pages hold every field. The file's header is not a term, so it stays
+   behind, and the run says so.
+
+5. **Hand the pages back as TBX.** The pages join on id into one entry per
+   concept:
+
+   ```sh
+   manni term write docs/glossary/ -f tbx3 -o build/glossary.tbx
+   ```
+
+   ```
+   Wrote 4 terms to build/glossary.tbx
+   ```
+
+   The entries come in the order the pages are read, and the walk reads
+   `de/` before `en/`. The header is manni's own. Where the languages
+   disagree on the concept, the entry keeps the first one read and the run
+   names the field. Here the German page says `subject-field: Optik`:
+
+   ```
+   Wrote 4 terms to build/glossary.tbx
+     kept the first language's value where languages differ: concept-entry.subject-field on 1 concept
+   ```
+
+</Steps>
+
+CSV joins the languages on id too, one row per concept, with each language's
+columns side by side:
+
+```console
+$ manni term write docs/glossary/ -f csv -o build/glossary.csv
+Wrote 4 terms to build/glossary.csv
+  dropped from csv: concept-entry on 2 terms, designations on 2
+$ cat build/glossary.csv
+ID,Term [de],Definition [de],Abstract [de],Alt labels [de],Hidden labels [de],Scope note [de],Term [en],Definition [en],Abstract [en],Alt labels [en],Hidden labels [en],Scope note [en],Broader,Narrower,Related terms,See
+bifocal,Bifokalglas,Brillenglas mit zwei getrennten Wirkungen.,,,,,bifocal,"Lenses with two distinct optical powers, divided by a visible line.",,,,,,,,
+progressive-lens,Gleitsichtglas,Brillenglas mit stufenlos zunehmender Wirkung.,,Gleitsichtbrille,,,progressive lens,Corrective lenses whose power increases continuously.,,PAL,no-line bifocal,,,,,
+```
+
+A one-file document holds one language. A definition list, a `<glossary>` or a
+`<dl>` writes the first term's language, and names the terms it left out:
+
+```
+Wrote 2 terms to build/glossary.md
+  dropped from a definition list: hidden-labels on 1 term, concept-entry on 1, designations on 1
+  dropped from a definition list: the header of l10n/glossary.tbx
+  skipped 2 terms in another language than en: progressive-lens (de), bifocal (de)
+```
+
+### What a TBX round trip keeps
+
+A TBX file's records survive any trip through manni. Read a termbase, write it
+as `tbx` or `tbx3`, and read the result. Every field, `designations`,
+`tbx-elements`, `tbx-markup` and `language` comes back equal.
+
+The bytes survive at the file's own version. An unchanged entry is copied as it
+was, and so is everything outside the entries. A file manni wrote exports
+byte-identical. A file another tool wrote exports equivalent XML, differing
+only in whitespace between elements, attribute order and quote style.
+
+An entry whose record changed is written in manni's layout. It keeps its
+attributes, and an `ntig` stays an `ntig`. It loses what sat outside the
+record:
+
+- the order of its children, which takes manni's order;
+- a comment, a processing instruction or a CDATA section between its
+  elements;
+- a language section with no `<term>`;
+- the layout of an `ntig`'s children.
+
+A DTD entity reference such as `&acme;` survives the rewrite. The element that
+holds it rides whole in `tbx-elements`, and a `<term>` keeps it in
+`tbx-markup`.
+
+Exporting to the other version writes every entry in manni's layout. It
+carries the header and `<back>`, and drops the XML prolog. DCT style becomes
+DCA, and an `ntig` becomes a `tig` or a `termSec`. Inline tags are not
+converted between v2's `<bpt>`/`<ept>` and v3's `<sc>`/`<ec>`. `abstract`,
+`broader`, `narrower`, `related-terms`, `see` and `scope-note` have no TBX-Basic
+category, so a TBX render drops them and says so.
+
+Only UTF-8 TBX is read.
 
 ## Write back in place
 
@@ -549,7 +821,7 @@ manni: glossary.html: a dfn cannot be written in place. Pass -f <format> -o <pat
   <LinkCard
     title="Terminology fields"
     href="/manni/term/reference/terminology/"
-    description="The ten fields, how an entry gets its id, and why the kind of label is the status."
+    description="The ten SKOS fields, the TBX data categories, one term per language, and how an entry gets its id."
   />
   <LinkCard
     title="CLI reference"

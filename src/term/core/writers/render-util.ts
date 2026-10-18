@@ -13,6 +13,21 @@ import {
 /** The language a term without one is written as. */
 export const DEFAULT_LANGUAGE = "en";
 
+/** A term's language as written, or the default. */
+export function languageOf(term: Term): string {
+  return term.language ?? DEFAULT_LANGUAGE;
+}
+
+/** A term's language as it is compared: ignoring case. */
+export function languageKey(term: Term): string {
+  return languageOf(term).toLowerCase();
+}
+
+/** Whether the set holds terms in more than one language. */
+export function isMultilingual(terms: readonly Term[]): boolean {
+  return new Set(terms.map(languageKey)).size > 1;
+}
+
 /** One entry per term per field the term carries and `held` does not include, in term then field order. */
 export function droppedFields(terms: readonly Term[], held: readonly TermField[]): DroppedField[] {
   const dropped: DroppedField[] = [];
