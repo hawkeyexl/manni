@@ -345,3 +345,38 @@ describe("TBX back matter on export", () => {
     expect(records(read(v2, "back-matter.tbx"))).toEqual(records(terms));
   });
 });
+
+describe("a DTD entity reference", () => {
+  const ENTITY_DEFINITION = '<descrip type="definition">A lens made by &acme;.</descrip>';
+
+  it("keeps an element whose value holds one whole in tbx-elements, and the term text as written", () => {
+    const { terms } = readFixture("dtd-entity");
+    const [lens, acme] = terms;
+    expect(lens?.record.definition).toBeUndefined();
+    expect(lens?.record["tbx-elements"]).toEqual([ENTITY_DEFINITION]);
+    expect(acme?.record.label).toBe("&acme; lens");
+    expect(acme?.record.definition).toBe("A lens & frame, model A.");
+  });
+
+  it("leaves the file byte-identical on a no-op write in place", () => {
+    const { content, terms } = readFixture("dtd-entity");
+    expect(applyInPlace("dtd-entity", terms)).toBe(content);
+  });
+
+  it("writes the references back unchanged when another field of their entry is edited", () => {
+    const { content, terms } = readFixture("dtd-entity");
+    const edited = terms.map((t) =>
+      t.id === "acme-lens"
+        ? { ...t, record: { ...t.record, definition: "A lens and frame." } }
+        : { ...t, record: { ...t.record, "concept-entry": { "subject-field": "ophthalmic optics" } } },
+    );
+    const written = applyInPlace("dtd-entity", edited);
+    expect(written).not.toBe(content);
+    expect(written).toContain(">ophthalmic optics<");
+    expect(written).toContain(">A lens and frame.<");
+    expect(written).toContain(ENTITY_DEFINITION);
+    expect(written).toContain("<term>&acme; lens</term>");
+    expect(written).not.toContain("&amp;acme;");
+    expect(records(read(written, "dtd-entity.tbx"))).toEqual(records(edited));
+  });
+});

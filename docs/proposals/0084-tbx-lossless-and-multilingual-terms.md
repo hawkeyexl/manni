@@ -231,6 +231,9 @@ cases.
 - A `source` or `note` beside a definition but outside its group, since the
   canonical form groups them.
 - A status written as a bare `preferred` rather than its picklist value.
+- A value holding a DTD entity reference such as `&acme;`. No DTD is loaded,
+  so the reference reads as literal text, and a named field would write it
+  escaped. A `<term>` keeps its text, and the reference rides in `tbx-markup`.
 
 DCT style reads too. A v3 `min:`, `basic:` or `lng:` element maps to the field
 its DCA spelling does. An element in an unknown namespace goes to
@@ -475,8 +478,6 @@ then by order. What it still loses is listed here.
 - An `ntig`'s children are normalized to the `termGrp` layout.
 - manni writes its own `id` and `xml:lang` first among the attributes.
 - An entry without `id` gains one.
-- A DTD entity reference in a named value reads as its literal text, so a
-  canonical write escapes `&acme;` to `&amp;acme;`.
 
 Across versions, more changes. A v2 to v3 export, or back, drops the prolog.
 DCT style becomes DCA, and an `ntig` becomes a plain `tig` or `termSec`. The

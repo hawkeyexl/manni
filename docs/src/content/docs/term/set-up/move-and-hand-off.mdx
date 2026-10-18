@@ -740,7 +740,7 @@ columns side by side:
 ```console
 $ manni term write docs/glossary/ -f csv -o build/glossary.csv
 Wrote 4 terms to build/glossary.csv
-  dropped from csv: concept-entry on 1 term, designations on 1
+  dropped from csv: concept-entry on 2 terms, designations on 2
 $ cat build/glossary.csv
 ID,Term [de],Definition [de],Abstract [de],Alt labels [de],Hidden labels [de],Scope note [de],Term [en],Definition [en],Abstract [en],Alt labels [en],Hidden labels [en],Scope note [en],Broader,Narrower,Related terms,See
 bifocal,Bifokalglas,Brillenglas mit zwei getrennten Wirkungen.,,,,,bifocal,"Lenses with two distinct optical powers, divided by a visible line.",,,,,,,,
@@ -776,9 +776,11 @@ record:
 - a comment, a processing instruction or a CDATA section between its
   elements;
 - a language section with no `<term>`;
-- the layout of an `ntig`'s children;
-- a DTD entity reference, which reads as its literal text and is written
-  escaped.
+- the layout of an `ntig`'s children.
+
+A DTD entity reference such as `&acme;` survives the rewrite. The element that
+holds it rides whole in `tbx-elements`, and a `<term>` keeps it in
+`tbx-markup`.
 
 Exporting to the other version writes every entry in manni's layout. It
 carries the header and `<back>`, and drops the XML prolog. DCT style becomes

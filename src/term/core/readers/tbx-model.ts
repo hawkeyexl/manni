@@ -219,7 +219,8 @@ export function markupText(markup: string): string | undefined {
     const errors: string[] = [];
     const doc = new DOMParser({
       onError: (level, message) => {
-        if (level === "error" || level === "fatalError") errors.push(message);
+        // A DTD-declared entity reads as its literal text, as the reader reads it.
+        if ((level === "error" || level === "fatalError") && !/entity not found/i.test(message)) errors.push(message);
       },
     }).parseFromString(`<x>${markup}</x>`, "text/xml");
     const root = doc.documentElement;

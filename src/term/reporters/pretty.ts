@@ -324,14 +324,11 @@ function valeLines(report: WriteReport): string[] {
 /** `  dropped from a definition list: scope-note on 3 terms, hidden-labels on 12`. */
 function droppedLine(report: WriteReport): string | undefined {
   if (report.dropped.length === 0) return undefined;
-  const ids = new Map<TermField, Set<string>>();
-  for (const { id, field } of report.dropped) {
-    const set = ids.get(field) ?? new Set<string>();
-    set.add(id);
-    ids.set(field, set);
-  }
-  const fields = [...ids.entries()]
-    .map(([field, set]) => ({ field, n: set.size }))
+  // One entry per term per field, so counting entries counts terms: an id in two languages is two terms.
+  const counts = new Map<TermField, number>();
+  for (const { field } of report.dropped) counts.set(field, (counts.get(field) ?? 0) + 1);
+  const fields = [...counts.entries()]
+    .map(([field, n]) => ({ field, n }))
     .sort((a, b) => a.n - b.n || TERM_FIELDS.indexOf(a.field) - TERM_FIELDS.indexOf(b.field));
   const parts = fields.map(({ field, n }, i) => `${field} on ${i === 0 ? plural(n, "term") : String(n)}`);
   return `  dropped from ${report.droppedFrom ?? report.format ?? "the render"}: ${parts.join(", ")}`;

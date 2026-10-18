@@ -950,4 +950,23 @@ describe("the terminology 1.1.0 keys in list, get and write", () => {
       ].join("\n"),
     );
   });
+
+  it("counts a dropped field per term, so two languages of one id count twice", async () => {
+    const cwd = await tree({
+      "terms.yaml": ["progressive-lens:", "  label: progressive lens", "  concept-entry:", "    notes: [n]", ""].join("\n"),
+      "terms.de.yaml": [
+        "progressive-lens:",
+        "  language: de",
+        "  label: Gleitsichtglas",
+        "  concept-entry:",
+        "    notes: [n]",
+        "",
+      ].join("\n"),
+      "manni.config.yaml": ["term:", "  manifests: [terms.yaml, terms.de.yaml]", ""].join("\n"),
+    });
+    const report = await runWrite({ cwd, inputs: [], format: "csv", out: "terms.csv", dryRun: true });
+    expect(renderWritePretty(report)).toBe(
+      ["terms.csv would be created", "  dropped from csv: concept-entry on 2 terms"].join("\n"),
+    );
+  });
 });

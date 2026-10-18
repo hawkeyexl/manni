@@ -28,6 +28,7 @@ const READABLE = [
   "iate-phrase-style",
   "structure-attributes",
   "inline-markup",
+  "dtd-entity",
   "no-term",
 ] as const;
 

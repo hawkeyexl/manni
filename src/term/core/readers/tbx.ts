@@ -199,21 +199,35 @@ interface Value {
   markup?: string;
 }
 
-/** An element's content as a value, or `undefined` when it is empty or its markup would not write back. */
-function valueOf(doc: Doc, el: Element, allowMarkup = true): Value | undefined {
+/**
+ * An `&` that starts neither a predefined entity nor a character reference:
+ * a DTD-declared entity, which xmldom leaves as literal text since no DTD is
+ * loaded. Escaping that text would write `&amp;name;`.
+ */
+const DTD_ENTITY = /&(?!(?:amp|lt|gt|quot|apos);|#)/;
+
+/**
+ * An element's content as a value, or `undefined` when it is empty or its
+ * markup would not write back. A value holding a DTD entity reference is
+ * `undefined`, so its element rides along whole in `tbx-elements`, unless
+ * `entities` is set: then the reference is kept as markup and written back as
+ * it was. The term text sets it, since a designation needs its term.
+ */
+function valueOf(doc: Doc, el: Element, allowMarkup = true, entities = false): Value | undefined {
   const text = lf(el.textContent ?? "").trim();
   if (text === "") return undefined;
-  let marked = false;
+  const inner = innerSpan(doc, el);
+  const source = inner === undefined ? undefined : lf(doc.input.content.slice(inner.start, inner.end)).trim();
+  const entity = source !== undefined && DTD_ENTITY.test(source);
+  if (entity && !entities) return undefined;
+  let marked = entity;
   for (let i = 0; i < el.childNodes.length; i++) {
     const type = el.childNodes.item(i)?.nodeType;
     if (type === 1 || type === 7 || type === 8) marked = true;
   }
   if (!marked) return { text };
-  if (!allowMarkup) return undefined;
-  const inner = innerSpan(doc, el);
-  if (inner === undefined) return undefined;
-  const markup = lf(doc.input.content.slice(inner.start, inner.end)).trim();
-  return markupText(markup) === text ? { text, markup } : undefined;
+  if (!allowMarkup || source === undefined) return undefined;
+  return markupText(source) === text ? { text, markup: source } : undefined;
 }
 
 /** A category element's value, when the element is in canonical form. */
@@ -484,7 +498,7 @@ function readDesignation(doc: Doc, el: Element): DesignationRead | undefined {
     children = [...childrenOf(group), ...children.filter((child) => child !== group)];
   }
   const termEl = children.find((child) => isStructural(doc, child, "term"));
-  const term = termEl === undefined ? undefined : valueOf(doc, termEl);
+  const term = termEl === undefined ? undefined : valueOf(doc, termEl, true, true);
   const text = termEl === undefined ? undefined : textOf(lf(termEl.textContent ?? ""));
   if (termEl === undefined || text === undefined) return undefined;
   const read: LevelRead = { aux: { term: text }, markup: term?.markup === undefined ? [] : [term.markup] };
