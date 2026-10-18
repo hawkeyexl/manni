@@ -57,7 +57,7 @@ describe("parseTermConfig", () => {
 
   it("refuses an unknown key, naming the supported ones", () => {
     expect(() => parse({ allowEmtpy: true })).toThrow(
-      `Unknown key "allowEmtpy" under term: in ${SOURCE}. Supported keys: manifests, abstractMaxLength, baseline, severity, allowEmpty, respectGitignore.`,
+      `Unknown key "allowEmtpy" under term: in ${SOURCE}. Supported keys: manifests, abstractMaxLength, baseline, severity, allowEmpty, respectGitignore, provider, model, fill.`,
     );
   });
 
@@ -72,6 +72,36 @@ describe("parseTermConfig", () => {
     ["severity", "off", "a mapping"],
   ])("refuses %s given as %j", (key, value, expected) => {
     expect(() => parse({ [key]: value })).toThrow(`term.${key} in ${SOURCE} must be ${expected}.`);
+  });
+
+  it("reads the fill keys", () => {
+    expect(
+      parse({
+        provider: "anthropic",
+        model: "claude-sonnet-5-5",
+        fill: { out: "docs/glossary/", confidenceThreshold: 0.8, maxTurns: null, cacheDir: ".c", crawl: { minPages: 3 } },
+      }),
+    ).toEqual({
+      provider: "anthropic",
+      model: "claude-sonnet-5-5",
+      fill: { out: "docs/glossary/", confidenceThreshold: 0.8, maxTurns: null, cacheDir: ".c", crawl: { minPages: 3 } },
+    });
+  });
+
+  it.each([
+    ["provider", 1, "provider", "a string"],
+    ["fill", "docs", "fill", "a mapping"],
+    ["fill", { confidenceThreshold: 1.5 }, "fill.confidenceThreshold", "a number from 0 to 1"],
+    ["fill", { maxTurns: 0 }, "fill.maxTurns", "a positive integer or null"],
+    ["fill", { crawl: { minPages: 0 } }, "fill.crawl.minPages", "a positive integer"],
+  ])("refuses %s given as %j", (key, value, named, expected) => {
+    expect(() => parse({ [key]: value })).toThrow(`term.${named} in ${SOURCE} must be ${expected}.`);
+  });
+
+  it("refuses an unknown key under term.fill", () => {
+    expect(() => parse({ fill: { outDir: "x" } })).toThrow(
+      `Unknown key "outDir" under term.fill: in ${SOURCE}. Supported keys: out, confidenceThreshold, maxTurns, cacheDir, crawl.`,
+    );
   });
 
   it("refuses a severity for a rule that does not exist", () => {

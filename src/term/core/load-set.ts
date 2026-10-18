@@ -74,6 +74,8 @@ export interface LoadTermSetOptions {
   onNotice?: (message: string) => void;
   /** The readers to offer files to. Tests hand in their own. */
   readers?: readonly TermReader[];
+  /** Every page the run extracted, term page or not, as it was read. */
+  onPage?: (input: TermInput) => void;
 }
 
 /** One value or a list of them, as `concepts:` is spelled. Anything else contributes nothing. */
@@ -125,13 +127,26 @@ function blocksOf(input: TermInput): TermBlock[] {
       ...lineAt(input, ["graph", field]),
     })),
   );
-  return [{ file: input.file, ...lineAt(input, ["graph"]), ...languageOf(input), label, edges }];
+  const altLabels = labelsOf(valueAt(input.metadata, ["graph", "alt-labels"]));
+  const definition = valueAt(input.metadata, ["graph", "definition"]);
+  return [
+    {
+      file: input.file,
+      ...lineAt(input, ["graph"]),
+      ...languageOf(input),
+      label,
+      edges,
+      ...(altLabels.length > 0 ? { altLabels } : {}),
+      ...(typeof definition === "string" && definition.trim() !== "" ? { definition } : {}),
+    },
+  ];
 }
 
 /** What every page contributes beside its terms: its references, and its graph block. */
-function pageFacts(input: TermInput, set: TermSet): void {
+function pageFacts(input: TermInput, set: TermSet, onPage?: (input: TermInput) => void): void {
   set.references.push(...referencesOf(input));
   set.blocks.push(...blocksOf(input));
+  onPage?.(input);
 }
 
 function read(input: TermInput, readers: readonly TermReader[], set: TermSet): void {
@@ -241,7 +256,7 @@ export async function loadTermSet(opts: LoadTermSetOptions): Promise<TermSet> {
         throw new TermError(`${file}: no reader for its extension. Pass --as <format> through stdin to read it.`);
       }
       const input = extractInput(await readInput(path, file), file, path, extractor.name);
-      pageFacts(input, set);
+      pageFacts(input, set, opts.onPage);
       read(input, readers, set);
     }
   }
@@ -251,7 +266,7 @@ export async function loadTermSet(opts: LoadTermSetOptions): Promise<TermSet> {
       opts.as.toLowerCase() === TBX_FORMAT
         ? tbxInput(opts.stdin ?? "", STDIN_LABEL)
         : extractInput(opts.stdin ?? "", STDIN_LABEL, undefined, opts.as);
-    pageFacts(input, set);
+    pageFacts(input, set, opts.onPage);
     read(input, readers, set);
   }
 
