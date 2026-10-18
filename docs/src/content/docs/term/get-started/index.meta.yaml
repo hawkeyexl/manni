@@ -50,19 +50,19 @@ docs/src/content/docs/term/get-started/index.mdx:
       lines: 145-207
       integrity: sha256-996356980a77e9a02d6979b6e3cd43e221a7857440eda8dd89992ee195a32768
     - generated-by: Claude Opus 5
-      lines: 274-289
+      lines: 275-290
       integrity: sha256-39527b7d1bec31fab24999a051265fdfb3bfc48b89232141b334240db2520a0b
     - generated-by: Claude Opus 5.5
-      lines: 290
+      lines: 291
       integrity: sha256-5771e00e3f7d04a0a99c7a264504d45f161936ef4b67f8d775d70e181e394d6d
     - generated-by: Claude Opus 5
-      lines: 291-294
+      lines: 292-295
       integrity: sha256-0bfd322815c321565abe0845495733053985f58693fbc034ad42c76c24af6aa9
     - generated-by: Claude Opus 5.5
-      lines: 295
+      lines: 296
       integrity: sha256-3f6957d957afa517f8d6d2699cb1d78d72e713d8a0fb0170c1145b18ddce33dc
     - generated-by: Claude Opus 5
-      lines: 296-297
+      lines: 297-298
       integrity: sha256-f42eec30b19a414928406bad9c4721ff57b38b5e881b49d57bd9a2b1599c48f3
   owner:
     - "@hawkeyexl"
