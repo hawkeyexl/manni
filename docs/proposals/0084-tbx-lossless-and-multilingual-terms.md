@@ -187,6 +187,12 @@ only. The Linguist element types were pinned from the LTAC module files.
 A `tbx-markup` item stands in for the plain value it matches. An item whose
 value was edited matches nothing, so it is never written.
 
+Two values of one term can read as the same text with different markup, such
+as a marked-up `H<hi type="subscript">2</hi>O` and a plain `H2O`. The reader
+then keeps one element whole in `tbx-elements`, never the `<term>`, so neither
+value gains the other's markup. A concept-level value is held to every
+language of its entry, since one concept level serves them all.
+
 ### 3. Status and the kind of label
 
 0052 made the kind of label the status, and that still holds where nothing

@@ -1,0 +1,50 @@
+{
+  "terms": [
+    {
+      "id": "water",
+      "language": "en",
+      "line": 15,
+      "record": {
+        "label": "H2O",
+        "definition": "A clear liquid.",
+        "concept-entry": {
+          "subject-field": "chemistry",
+          "tbx-elements": [
+            "<ref type=\"crossReference\" target=\"ice\">H2O</ref>"
+          ]
+        },
+        "designations": [
+          {
+            "term": "H2O",
+            "administrative-status": "none",
+            "tbx-elements": [
+              "<descrip type=\"context\">H2O</descrip>"
+            ]
+          }
+        ],
+        "tbx-markup": [
+          "H<hi type=\"subscript\">2</hi>O"
+        ]
+      }
+    },
+    {
+      "id": "carbon-dioxide",
+      "language": "en",
+      "line": 24,
+      "record": {
+        "label": "CO2",
+        "definition": "A colourless gas.",
+        "designations": [
+          {
+            "term": "CO2",
+            "administrative-status": "none",
+            "tbx-elements": [
+              "<descrip type=\"context\">CO<hi type=\"subscript\">2</hi></descrip>"
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "notices": []
+}

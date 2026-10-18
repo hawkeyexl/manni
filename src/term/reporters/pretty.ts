@@ -10,7 +10,7 @@ import type { FormatRow } from "../commands/formats.js";
 import { displayPath, plural } from "../commands/run.js";
 import type { ValeWiring, WriteReport } from "../commands/write.js";
 import type { Severity } from "../../shared/severity.js";
-import { DEFAULT_LANGUAGE } from "../core/writers/render-util.js";
+import { isMultilingual, languageOf } from "../core/writers/render-util.js";
 import {
   TERM_AUX_FIELDS,
   TERM_DESIGNATION_FIELDS,
@@ -67,16 +67,11 @@ function hanging(first: string, lines: readonly string[]): string[] {
 // ---------------------------------------------------------------------------
 // list
 
-/** A term's language as the reporters show it: a term with no language counts as `en`. */
-function languageOf(term: Term): string {
-  return term.language ?? DEFAULT_LANGUAGE;
-}
-
 export function renderListPretty(terms: readonly Term[]): string {
   const idWidth = Math.max(0, ...terms.map((t) => t.id.length)) + 3;
   const labelWidth = Math.max(0, ...terms.map((t) => t.record.label.length)) + 3;
   // The language column appears only when it tells the rows apart.
-  const multilingual = new Set(terms.map((t) => languageOf(t).toLowerCase())).size > 1;
+  const multilingual = isMultilingual(terms);
   const languageWidth = Math.max(0, ...terms.map((t) => languageOf(t).length)) + 3;
   const rows = terms.map((t) => {
     const language = multilingual ? languageOf(t).padEnd(languageWidth) : "";

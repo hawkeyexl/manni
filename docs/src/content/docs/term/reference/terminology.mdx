@@ -352,7 +352,10 @@ tbx-markup:
 ```
 
 An edited value no longer matches its item, so the stale markup is never
-written. Strict 1.1.0 requires each `tbx-elements` item to start with `<`.
+written. Two values of one term can read as the same text with different
+markup, such as a marked-up `H<hi type="subscript">2</hi>O` and a plain `H2O`.
+The reader then keeps one element whole in `tbx-elements`, never the `<term>`,
+so neither value gains the other's markup. Strict 1.1.0 requires each `tbx-elements` item to start with `<`.
 
 ## The `see` redirect
 

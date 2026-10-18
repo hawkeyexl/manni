@@ -189,13 +189,7 @@ export async function loadTermSet(opts: LoadTermSetOptions): Promise<TermSet> {
       // A manifest is read when it is named, never when a walk passes it: a
       // directory of pages can hold YAML and JSON that are not terms at all.
       if (namedFiles.has(file) && MANIFEST_EXTENSIONS.has(extname(file).toLowerCase())) {
-        let content: string;
-        try {
-          content = await readFile(path, "utf8");
-        } catch (error) {
-          throw new TermError(`${file}: could not be read: ${errorMessage(error)}`);
-        }
-        read(manifestInput(content, file, path), readers, set);
+        read(manifestInput(await readInput(path, file), file, path), readers, set);
         continue;
       }
       if (extname(file).toLowerCase() === TBX_EXTENSION) {
@@ -208,13 +202,7 @@ export async function loadTermSet(opts: LoadTermSetOptions): Promise<TermSet> {
       if (extractor === undefined) {
         throw new TermError(`${file}: no reader for its extension. Pass --as <format> through stdin to read it.`);
       }
-      let content: string;
-      try {
-        content = await readFile(path, "utf8");
-      } catch (error) {
-        throw new TermError(`${file}: could not be read: ${errorMessage(error)}`);
-      }
-      const input = extractInput(content, file, path, extractor.name);
+      const input = extractInput(await readInput(path, file), file, path, extractor.name);
       set.references.push(...referencesOf(input));
       read(input, readers, set);
     }

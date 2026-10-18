@@ -30,6 +30,7 @@ const READABLE = [
   "inline-markup",
   "dtd-entity",
   "no-term",
+  "markup-collision",
 ] as const;
 
 function reader(): TermReader {

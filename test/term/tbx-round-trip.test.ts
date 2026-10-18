@@ -380,3 +380,57 @@ describe("a DTD entity reference", () => {
     expect(records(read(written, "dtd-entity.tbx"))).toEqual(records(edited));
   });
 });
+
+describe("an entry rewritten in place", () => {
+  it("keeps a language section that holds no term", () => {
+    const { terms } = readFixture("no-term");
+    const edited = terms.map((t) => ({ ...t, record: { ...t.record, definition: "A ground glass." } }));
+    const written = applyInPlace("no-term", edited);
+    expect(written).toContain(">A ground glass.<");
+    expect(written).toContain('<langSet xml:lang="de">');
+    expect(written).toContain(">Ein geschliffenes Glas.<");
+  });
+
+  it("writes a concept-entry edited on a later language", () => {
+    const { terms } = readFixture("tbx-basic-v2");
+    const at = terms.findIndex((t) => t.id === "spectacle-lens" && t.language === "de");
+    const edited = terms.map((t, i) =>
+      i === at ? { ...t, record: { ...t.record, "concept-entry": { "subject-field": "edited field" } } } : t,
+    );
+    expect(applyInPlace("tbx-basic-v2", edited)).toContain(">edited field<");
+  });
+});
+
+describe("a plain value whose text a marked-up value of its term shares", () => {
+  const PLAIN_LINK = '<ref type="crossReference" target="ice">H2O</ref>';
+  const PLAIN_CONTEXT = '<descrip type="context">H2O</descrip>';
+  const MARKED_TERM = '<term>H<hi type="subscript">2</hi>O</term>';
+  const MARKED_CONTEXT = '<descrip type="context">CO<hi type="subscript">2</hi></descrip>';
+
+  it("keeps the other element whole in tbx-elements", () => {
+    const { terms } = readFixture("markup-collision");
+    const [water, co2] = terms;
+    expect(water?.record["concept-entry"]?.["cross-references"]).toBeUndefined();
+    expect(water?.record["concept-entry"]?.["tbx-elements"]).toEqual([PLAIN_LINK]);
+    expect(water?.record.designations?.[0]?.["tbx-elements"]).toEqual([PLAIN_CONTEXT]);
+    expect(co2?.record.designations?.[0]?.["tbx-elements"]).toEqual([MARKED_CONTEXT]);
+    expect(co2?.record["tbx-markup"]).toBeUndefined();
+  });
+
+  it("leaves the file byte-identical on a no-op write in place", () => {
+    const { content, terms } = readFixture("markup-collision");
+    expect(applyInPlace("markup-collision", terms)).toBe(content);
+  });
+
+  it("keeps plain values plain and marked-up values marked up when another field is edited", () => {
+    const { terms } = readFixture("markup-collision");
+    const edited = terms.map((t) => ({ ...t, record: { ...t.record, definition: `${t.record.definition ?? ""} Edited.` } }));
+    const written = applyInPlace("markup-collision", edited);
+    expect(written).toContain(">A clear liquid. Edited.<");
+    expect(written).toContain(">A colourless gas. Edited.<");
+    for (const kept of [PLAIN_LINK, PLAIN_CONTEXT, MARKED_TERM, MARKED_CONTEXT, "<term>CO2</term>"]) {
+      expect(written).toContain(kept);
+    }
+    expect(records(read(written, "markup-collision.tbx"))).toEqual(records(edited));
+  });
+});

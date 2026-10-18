@@ -10,6 +10,7 @@
  * second definition, rides along whole in `tbx-elements` at its level. The
  * header is not part of any term: an in-place write never touches it.
  */
+import { isDeepStrictEqual } from "node:util";
 import { DOMParser, type Element } from "@xmldom/xmldom";
 import { TermError } from "../../errors.js";
 import {
@@ -173,10 +174,6 @@ function categoryOf(doc: Doc, el: Element): TbxCategory | undefined {
   return undefined;
 }
 
-function isCategory(doc: Doc, el: Element, name: TbxCategoryName): boolean {
-  return categoryOf(doc, el) === TBX_CATEGORIES[name];
-}
-
 /** The attributes a category element carries in canonical form. */
 function categoryAttributes(doc: Doc, cat: TbxCategory): string[] {
   const linked = cat.element === "ref" || cat.element === "xref";
@@ -293,6 +290,8 @@ type Level = "concept" | "language" | "term";
 interface LevelRead {
   aux: TermDesignation;
   markup: string[];
+  /** Whether a value writes back as it was read. A child holding one that does not goes whole into `tbx-elements`. */
+  fits?: (value: Value) => boolean;
 }
 
 function push<K extends keyof TermAuxRecord>(aux: TermAuxRecord, field: K, item: NonNullable<TermAuxRecord[K]>[number]): void {
@@ -320,7 +319,7 @@ function definitionGroup(doc: Doc, el: Element): { definition: Value; sources: V
   return { definition, sources, notes };
 }
 
-function linkOf(doc: Doc, el: Element, name: TbxCategoryName): { link: TermLink; markup?: string } | undefined {
+function linkOf(doc: Doc, el: Element, name: TbxCategoryName): { link: TermLink; value?: Value } | undefined {
   const cat = TBX_CATEGORIES[name];
   if (categoryOf(doc, el) !== cat || !onlyAttributes(el, categoryAttributes(doc, cat))) return undefined;
   const target = el.getAttribute("target");
@@ -328,7 +327,7 @@ function linkOf(doc: Doc, el: Element, name: TbxCategoryName): { link: TermLink;
   if (lf(el.textContent ?? "").trim() === "") return { link: { target } };
   const value = valueOf(doc, el);
   if (value === undefined) return undefined;
-  return { link: { target, text: value.text }, ...(value.markup === undefined ? {} : { markup: value.markup }) };
+  return { link: { target, text: value.text }, value };
 }
 
 /** A transacGrp of a transaction type, then its responsibility, then its date. */
@@ -377,9 +376,12 @@ function statusOf(text: string): string | undefined {
  * write back as it is goes whole into `tbx-elements`, in source order.
  */
 function readLevel(doc: Doc, children: readonly Element[], level: Level, read: LevelRead): void {
-  const { aux } = read;
+  let { aux } = read;
   const items: string[] = [];
+  // The values the child being read maps, each of which `read.fits` must accept.
+  const seen: Value[] = [];
   const keep = (value: Value): string => {
+    seen.push(value);
     if (value.markup !== undefined) read.markup.push(value.markup);
     return value.text;
   };
@@ -390,6 +392,9 @@ function readLevel(doc: Doc, children: readonly Element[], level: Level, read: L
   );
 
   const mapped = (child: Element): boolean => {
+    // The child's category, found once: every test below compares against it.
+    const cat = categoryOf(doc, child);
+    const is = (name: TbxCategoryName): boolean => cat === TBX_CATEGORIES[name];
     if (child === definitionEl) {
       const group = definitionGroup(doc, child);
       const plain = categoryValue(doc, child, "definition");
@@ -400,7 +405,7 @@ function readLevel(doc: Doc, children: readonly Element[], level: Level, read: L
       for (const note of group?.notes ?? []) push(aux, "notes", keep(note));
       return true;
     }
-    if (definitionEl !== undefined && (isCategory(doc, child, "source") || isStructural(doc, child, "note"))) return false;
+    if (definitionEl !== undefined && (is("source") || isStructural(doc, child, "note"))) return false;
     if (isStructural(doc, child, "note")) {
       const note = plainValue(doc, child, "note");
       if (note === undefined) return false;
@@ -410,6 +415,7 @@ function readLevel(doc: Doc, children: readonly Element[], level: Level, read: L
     if (isStructural(doc, child, "transacGrp")) {
       const transaction = transactionOf(doc, child);
       if (transaction === undefined) return false;
+      for (const text of [transaction.type, transaction.responsibility, transaction.date]) if (text !== undefined) keep({ text });
       push(aux, "transactions", transaction);
       return true;
     }
@@ -421,7 +427,7 @@ function readLevel(doc: Doc, children: readonly Element[], level: Level, read: L
       return true;
     }
     for (const [field, name] of TBX_TEXT_FIELDS) {
-      if (!isCategory(doc, child, name)) continue;
+      if (!is(name)) continue;
       const value = categoryValue(doc, child, name);
       if (value === undefined) return false;
       if (field === "subject-field") {
@@ -433,33 +439,34 @@ function readLevel(doc: Doc, children: readonly Element[], level: Level, read: L
       return true;
     }
     for (const [field, name] of TBX_LINK_FIELDS) {
-      if (!isCategory(doc, child, name)) continue;
+      if (!is(name)) continue;
       const link = linkOf(doc, child, name);
       if (link === undefined) return false;
-      if (link.markup !== undefined) read.markup.push(link.markup);
+      if (link.value !== undefined) keep(link.value);
       push(aux, field, link.link);
       return true;
     }
     if (level !== "term") return false;
-    if (isCategory(doc, child, "reading")) {
+    if (is("reading")) {
       const reading = categoryValue(doc, child, "reading", false);
       if (reading === undefined || aux.reading !== undefined) return false;
-      aux.reading = reading.text;
+      aux.reading = keep(reading);
       return true;
     }
-    if (isCategory(doc, child, "transferComment")) {
+    if (is("transferComment")) {
       const comment = categoryValue(doc, child, "transferComment");
       if (comment === undefined || aux["transfer-comments"] !== undefined) return false;
       aux["transfer-comments"] = [keep(comment)];
       return true;
     }
     for (const [field, name] of TBX_TERM_NOTES) {
-      if (!isCategory(doc, child, name)) continue;
+      if (!is(name)) continue;
       const value = categoryValue(doc, child, name, field !== "administrative-status");
       if (value === undefined || aux[field] !== undefined) return false;
       if (field === "administrative-status") {
         const status = statusOf(value.text);
         if (status === undefined) return false;
+        keep(value);
         aux[field] = status;
       } else {
         aux[field] = keep(value);
@@ -469,7 +476,16 @@ function readLevel(doc: Doc, children: readonly Element[], level: Level, read: L
     return false;
   };
 
-  for (const child of children) if (!mapped(child)) items.push(itemOf(doc, child));
+  for (const child of children) {
+    const saved = read.fits === undefined ? undefined : { aux: structuredClone(aux), markup: read.markup.length };
+    seen.length = 0;
+    if (mapped(child) && (read.fits === undefined || seen.every(read.fits))) continue;
+    if (saved !== undefined) {
+      aux = read.aux = saved.aux;
+      read.markup.length = saved.markup;
+    }
+    items.push(itemOf(doc, child));
+  }
   // A term's termNotes precede its other children in TBX, and the canonical
   // form writes them there, so they lead its items whatever the source did.
   const ordered = level === "term" ? [...items.filter(isTermNoteItem), ...items.filter((i) => !isTermNoteItem(i))] : items;
@@ -481,6 +497,8 @@ function readLevel(doc: Doc, children: readonly Element[], level: Level, read: L
 
 interface DesignationRead {
   designation: TermDesignation;
+  /** The term text as read, with its markup when it has some. */
+  term: Value;
   markup: string[];
   /** The status as read: a record status, a value as written, or `none`. */
   status: string;
@@ -489,7 +507,7 @@ interface DesignationRead {
 }
 
 /** A tig, ntig or termSec, or `undefined` when it holds no term. */
-function readDesignation(doc: Doc, el: Element): DesignationRead | undefined {
+function readDesignation(doc: Doc, el: Element, fits?: (value: Value) => boolean): DesignationRead | undefined {
   let children = childrenOf(el);
   let group: Element | undefined;
   if (isStructural(doc, el, "ntig")) {
@@ -501,7 +519,7 @@ function readDesignation(doc: Doc, el: Element): DesignationRead | undefined {
   const term = termEl === undefined ? undefined : valueOf(doc, termEl, true, true);
   const text = termEl === undefined ? undefined : textOf(lf(termEl.textContent ?? ""));
   if (termEl === undefined || text === undefined) return undefined;
-  const read: LevelRead = { aux: { term: text }, markup: term?.markup === undefined ? [] : [term.markup] };
+  const read: LevelRead = { aux: { term: text }, markup: term?.markup === undefined ? [] : [term.markup], ...(fits === undefined ? {} : { fits }) };
   readLevel(
     doc,
     children.filter((child) => child !== termEl),
@@ -515,7 +533,14 @@ function readDesignation(doc: Doc, el: Element): DesignationRead | undefined {
     termAttributes: attributesOf(termEl),
     ...(group === undefined ? {} : { group: attributesOf(group) }),
   };
-  return { designation, markup: read.markup, status: status ?? TBX_NO_STATUS, line: lineOfElement(termEl), shape };
+  return {
+    designation,
+    term: term ?? { text },
+    markup: read.markup,
+    status: status ?? TBX_NO_STATUS,
+    line: lineOfElement(termEl),
+    shape,
+  };
 }
 
 /** The label fields and designations for one language's designations, by the status rules of proposal 0084. */
@@ -559,19 +584,82 @@ function labelsOf(read: readonly DesignationRead[]): {
   };
 }
 
-function readEntry(doc: Doc, entry: Element, result: TermReadResult): void {
-  const { input } = doc;
-  const v3 = doc.document.version === 3;
-  const languageTag = v3 ? "langSec" : "langSet";
-  const designationTags = v3 ? ["termSec"] : ["tig", "ntig"];
+type Fits = (value: Value) => boolean;
+
+/** An entry's levels as read: its concept level, then each language section with its designations. */
+interface EntryParts {
+  concept: LevelRead;
+  languages: { el: Element; designations: DesignationRead[]; language: LevelRead }[];
+}
+
+function readParts(doc: Doc, entry: Element, fits?: { concept: Fits; languages: readonly Fits[] }): EntryParts {
+  const languageTag = doc.document.version === 3 ? "langSec" : "langSet";
+  const designationTags = doc.document.version === 3 ? ["termSec"] : ["tig", "ntig"];
   const children = childrenOf(entry);
-  const concept: LevelRead = { aux: { term: "" }, markup: [] };
+  const concept: LevelRead = { aux: { term: "" }, markup: [], ...(fits === undefined ? {} : { fits: fits.concept }) };
   readLevel(
     doc,
     children.filter((child) => !isStructural(doc, child, languageTag)),
     "concept",
     concept,
   );
+  const languages = children
+    .filter((child) => isStructural(doc, child, languageTag))
+    .map((el, i) => {
+      const at = fits?.languages[i];
+      const designations: DesignationRead[] = [];
+      const others: Element[] = [];
+      for (const child of childrenOf(el)) {
+        const isDesignation = designationTags.some((tag) => isStructural(doc, child, tag));
+        const designation = isDesignation ? readDesignation(doc, child, at) : undefined;
+        if (designation !== undefined) designations.push(designation);
+        else others.push(child);
+      }
+      const language: LevelRead = { aux: { term: "" }, markup: [], ...(at === undefined ? {} : { fits: at }) };
+      if (designations.length > 0) readLevel(doc, others, "language", language);
+      return { el, designations, language };
+    });
+  return { concept, languages };
+}
+
+/** The `tbx-markup` of one language's term: its concept level's, its own, then its designations'. */
+function markupOf(concept: LevelRead, language: EntryParts["languages"][number]): string[] {
+  return [...new Set([...concept.markup, ...language.language.markup, ...language.designations.flatMap((d) => d.markup)])];
+}
+
+/**
+ * Which values write back as they were read. The writer gives a value the
+ * first `tbx-markup` item of its term whose text it is, so a value fits when
+ * that item is its own markup, or there is none and it has none. A term
+ * cannot move, so a value sharing a term's text fits only with the term's
+ * markup. `undefined` when the entry holds no markup, and every value fits.
+ * The concept level is written with whichever term leads the entry, so it
+ * is held to every language's markup and terms.
+ */
+function fitsOf(parts: EntryParts): { concept: Fits; languages: Fits[] } | undefined {
+  const pools = parts.languages.map((language) => markupOf(parts.concept, language));
+  if (pools.every((pool) => pool.length === 0)) return undefined;
+  const fits =
+    (pool: readonly string[], terms: readonly Value[]): Fits =>
+    (value) =>
+      pool.find((item) => markupText(item) === value.text) === value.markup &&
+      terms.every((term) => term.text !== value.text || term.markup === value.markup);
+  return {
+    concept: fits(
+      [...new Set(pools.flat())],
+      parts.languages.flatMap((language) => language.designations.map((d) => d.term)),
+    ),
+    languages: parts.languages.map((language, i) => fits(pools[i] ?? [], language.designations.map((d) => d.term))),
+  };
+}
+
+function readEntry(doc: Doc, entry: Element, result: TermReadResult): void {
+  const { input } = doc;
+  // Read once to learn the entry's markup, then again holding every value to it.
+  const first = readParts(doc, entry);
+  const fits = fitsOf(first);
+  const parts = fits === undefined ? first : readParts(doc, entry, fits);
+  const { concept } = parts;
   const { term: _none, ...conceptAux } = concept.aux;
   const span = spanOfElement(doc.xml, entry);
   const rootLanguage = doc.xml.root.getAttribute("xml:lang");
@@ -579,24 +667,16 @@ function readEntry(doc: Doc, entry: Element, result: TermReadResult): void {
   let entryId = textOf(entry.getAttribute("id"));
   const shape: TbxEntryShape = { attributes: attributesOf(entry, ["id"]), languages: [] };
 
-  for (const langEl of children.filter((child) => isStructural(doc, child, languageTag))) {
-    const designations: DesignationRead[] = [];
-    const others: Element[] = [];
-    for (const child of childrenOf(langEl)) {
-      const isDesignation = designationTags.some((tag) => isStructural(doc, child, tag));
-      const designation = isDesignation ? readDesignation(doc, child) : undefined;
-      if (designation !== undefined) designations.push(designation);
-      else others.push(child);
-    }
+  for (const part of parts.languages) {
+    const { el: langEl, designations } = part;
     if (designations.length === 0) {
       result.notices.push(skipped(input, lineOfElement(langEl), "TBX"));
+      (shape.unread ??= []).push(itemOf(doc, langEl));
       continue;
     }
-    const language: LevelRead = { aux: { term: "" }, markup: [] };
-    readLevel(doc, others, "language", language);
-    const { term: _term, ...languageAux } = language.aux;
+    const { term: _term, ...languageAux } = part.language.aux;
     const labels = labelsOf(designations);
-    const markup = [...new Set([...concept.markup, ...language.markup, ...designations.flatMap((d) => d.markup)])];
+    const markup = markupOf(concept, part);
     const raw: Partial<Record<TermField, unknown>> = {
       ...languageAux,
       label: labels.label,
@@ -729,10 +809,28 @@ function spliceEntries(input: TermInput, terms: readonly Term[], exporting: bool
     if (unchanged) continue;
     // At the file's own version, each element keeps the attributes and ntig it was read with.
     const shape = group.current[0] === undefined ? undefined : tbxSourceOf(group.current[0])?.shape;
-    const text = reindent(tbxEntryLines(written, doc.document, shape).join("\n"), indentAt(content, start), eol);
+    const lines = tbxEntryLines(withEditedConcept(written, group.current), doc.document, shape);
+    const text = reindent(lines.join("\n"), indentAt(content, start), eol);
     next = next.slice(0, start) + text + next.slice(group.end);
   }
   return next;
+}
+
+/**
+ * The entry writes one `concept-entry`, its first term's. Every term of the
+ * entry is read with the same one, so when a later term's differs from it as
+ * read, that term holds the edit, and the first term carries it instead.
+ */
+function withEditedConcept(written: readonly Term[], current: readonly Term[]): readonly Term[] {
+  const [head, ...rest] = written;
+  if (head === undefined) return written;
+  const read = current[0]?.record["concept-entry"];
+  if (!isDeepStrictEqual(head.record["concept-entry"], read)) return written;
+  const edited = rest.find((t) => !isDeepStrictEqual(t.record["concept-entry"], read));
+  if (edited === undefined) return written;
+  const { "concept-entry": _old, ...record } = head.record;
+  const concept = edited.record["concept-entry"];
+  return [{ ...head, record: concept === undefined ? record : { ...record, "concept-entry": concept } }, ...rest];
 }
 
 /** The entry's terms with each one the caller handed in, matched on language, in place of the one read. */

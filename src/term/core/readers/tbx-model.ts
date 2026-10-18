@@ -20,7 +20,10 @@ import type {
   TermLocation,
   TermRecord,
 } from "../../types.js";
+import { xmlAttribute as escapeAttribute, xmlText as escapeText } from "../writers/markup.js";
 import { DEFAULT_LANGUAGE } from "../writers/render-util.js";
+
+export { escapeAttribute, escapeText };
 
 export type TbxVersion = 2 | 3;
 export type TbxStyle = "dca" | "dct";
@@ -67,6 +70,8 @@ export interface TbxEntryShape {
   /** The entry's attributes but `id`. */
   attributes: string;
   languages: TbxLanguageShape[];
+  /** The language sections that hold no term, as items: no term carries them, so a rewrite writes them back after the rest. */
+  unread?: string[];
 }
 
 export interface TbxLanguageShape {
@@ -196,14 +201,6 @@ export const TBX_NO_STATUS = "none";
 // ---------------------------------------------------------------------------
 // Values
 
-export function escapeText(value: string): string {
-  return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
-}
-
-export function escapeAttribute(value: string): string {
-  return escapeText(value).replaceAll('"', "&quot;");
-}
-
 /** Line breaks as LF, the form every value and item is kept in. */
 export function lf(text: string): string {
   return text.replace(/\r\n?/g, "\n");
@@ -289,9 +286,17 @@ function nest(lines: readonly string[]): string[] {
   return lines.map((line) => `  ${line.replaceAll("\n", "\n  ")}`);
 }
 
+/** A termNote's opening tag: DCA's `<termNote`, or a DCT termNote category under any prefix (`<min:partOfSpeech`). */
+const TERM_NOTE_ITEM = new RegExp(
+  `^<(?:termNote(?:Grp)?|[\\w.-]+:(?:${Object.values(TBX_CATEGORIES)
+    .filter((cat) => cat.element === "termNote")
+    .map((cat) => cat.name)
+    .join("|")}))[\\s>/]`,
+);
+
 /** Whether a `tbx-elements` item is a termNote, which TBX places before a term's other children. */
 export function isTermNoteItem(item: string): boolean {
-  return /^<termNote(Grp)?[\s>/]/.test(item);
+  return TERM_NOTE_ITEM.test(item);
 }
 
 /** A level's aux fields, in canonical order, then its `tbx-elements`. */
@@ -457,6 +462,7 @@ export function tbxEntryLines(terms: readonly Term[], format: TbxFormat, shape?:
       ...terms.flatMap((term, i) =>
         languageLines(term, { format, markup: term.record["tbx-markup"] ?? [] }, languages[i]),
       ),
+      ...(shape?.unread ?? []),
     ]),
     `</${tag}>`,
   ];
