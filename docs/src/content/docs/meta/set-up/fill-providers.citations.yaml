@@ -24,14 +24,6 @@ docs/src/content/docs/meta/set-up/fill-providers.mdx:
         lines: 1086-1093
         integrity: sha256-52ac59ccd4a48b954f99ab7668d8763248b7f647f2c6340854cae855cf6e2ee5
         commit-sha: 2da00303ac0cc8ea3779f919dc683d3f41dcf3b7
-    - id: offline-scoped-to-schema-loading
-      claim:
-        integrity: sha256-6bbcaef00fb3b666bc77a453529e07a7a31866b774398acd2e4d36d63f71ef6a
-      source:
-        file: src/meta/commands/fill-types.ts
-        lines: 199-206
-        integrity: sha256-b1a675a69bdbcc3c462d91afb539ac64a490f04379f5e392b35d2f370d12cd57
-        commit-sha: 2da00303ac0cc8ea3779f919dc683d3f41dcf3b7
     - id: local-scoped-to-document-egress
       claim:
         integrity: sha256-7fbb08cf09b4ec0aedac7c4c08d54078684f428e6732153e03d4f3d49a248384
