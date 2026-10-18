@@ -30,7 +30,7 @@ sample-questions:
 graph:
   label: Run it in CI
   type: task
-last-updated: 2026-10-02
+last-updated: 2026-10-18
 tags:
   - ci
   - github-actions
@@ -71,9 +71,10 @@ runner needs Node.js 24 or newer, and the steps that run Vale need it on PATH.
 
 {/* cite default-severities */}
 {/* cite severity-config-override */}
-**Warnings and notices never fail the job.** `asymmetric-hierarchy` is a
-warning, and `abstract-too-long` and `unused-term` are notices. Every other
-`check` rule is an error. `term.severity` moves any of them; see the
+**Warnings and notices never fail the job.** `asymmetric-hierarchy` and
+`alt-label-reference` are warnings. `abstract-too-long`, `unused-term` and
+`hierarchy-outside-termbase` are notices. Every other `check` rule is an
+error. `term.severity` moves any of them; see the
 [rules reference](/manni/term/reference/rules/).
 
 {/* cite github-annotation-shape */}
@@ -82,7 +83,8 @@ finding, on the file and line, titled with the rule id:
 
 ```console
 $ manni term check -f github
-::error file=docs/guides/fitting.md,line=3,title=manni%3Aterm/undefined-term::concepts: "PAL" names no entry. "progressive lens" lists it as an alt-label.
+::warning file=docs/guides/fitting.md,line=3,title=manni%3Aterm/alt-label-reference::concepts: "PAL" is an alt-label of "progressive lens", so name the label.
+::error file=docs/guides/fitting.md,line=3,title=manni%3Aterm/undefined-term::concepts: "trifocal" names no entry.
 ```
 
 {/* cite lint-github-same-renderer */}
@@ -241,11 +243,14 @@ how to record one.
 
 ## Verify it works
 
-Open a pull request that adds an alt-label to a guide's `concepts:`. Then check
-that:
+Open a pull request that adds a misspelled label to a guide's `concepts:`.
+Then check that:
 
 - The `check` job is red, and the guide carries an annotation titled
-  `manni:term/undefined-term` that names the entry claiming the alt-label.
+  `manni:term/undefined-term`.
+- A pull request that adds an alt-label to `concepts:` stays green. Its
+  `manni:term/alt-label-reference` warning names the entry claiming the
+  alt-label.
 - A pull request that adds a term nothing references stays green, with a
   `manni:term/unused-term` notice.
 - A pull request that adds a hidden-label without running `write -f vale`

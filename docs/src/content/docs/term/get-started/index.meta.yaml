@@ -18,18 +18,48 @@ docs/src/content/docs/term/get-started/index.mdx:
       type: capability
       grader: ai
     - id: fix-undefined-term
-      assertion: A reader can run manni term check and fix an undefined-term finding by using the preferred label.
+      assertion: A reader can run manni term check, fix an undefined-term error, and replace an alt-label in concepts with the label.
       type: capability
       grader: ai
   provenance:
     - generated-by: Claude Opus 5
-      lines: 2-228
-      integrity: sha256-226ed5eec29e075af2edf57859db9198ec9001738efe9f3970782d4ce3805a0d
+      lines: 2-111
+      integrity: sha256-5ef978cbf4922abd142ef18f4cda62b51af98f4bc1435b997d450caade95d893
     - generated-by: Claude Opus 5.5
-      lines: 229
+      lines: 112
+      integrity: sha256-fa1e8330316fddc5e1544f6865c7516b4904f2248807246c871a5a69a306cd3e
+    - generated-by: Claude Opus 5
+      lines: 114-116
+      integrity: sha256-643566d9204811abcfb76a0e9c71fd55d653d85e70d36e69c41444f0373ef9f1
+    - generated-by: Claude Opus 5.5
+      lines: 117
+      integrity: sha256-c9b29e1662cf9f6032d52994c290341f1a8b2cba6cf7bc896ab2b6bf24fcb739
+    - generated-by: Claude Opus 5
+      lines: 118-131
+      integrity: sha256-29f462a90fa2a993c85683cace7c434196c131a7cfad6981fa53a041837bf824
+    - generated-by: Claude Opus 5.5
+      lines: 132-135
+      integrity: sha256-3b466b13ebda0abe1b73a8838cac64a4778fd108315dac2803e10a04319ce3e6
+    - generated-by: Claude Opus 5
+      lines: 136
+      integrity: sha256-a6788eef33b6d1dea3e77b9610dc41fa7ce3c8e344933b9932984d11269ff0e3
+    - generated-by: Claude Opus 5.5
+      lines: 138-143
+      integrity: sha256-a5ddb16f8ba42bd26024ab4f0a5c9bcc98cb6ecf1e9b9779f3d657df7d0ac851
+    - generated-by: Claude Opus 5
+      lines: 145-224
+      integrity: sha256-5f27c15d3dd153dc22d53304cd4504f5c796aae030f1b3689a93f25a5559306e
+    - generated-by: Claude Opus 5.5
+      lines: 225
+      integrity: sha256-0f1a9c1a8bf6732c567dc1466cff45418a6e6006709d59dc8e3cb268bb6cae8f
+    - generated-by: Claude Opus 5
+      lines: 226-229
+      integrity: sha256-0bfd322815c321565abe0845495733053985f58693fbc034ad42c76c24af6aa9
+    - generated-by: Claude Opus 5.5
+      lines: 230
       integrity: sha256-3f6957d957afa517f8d6d2699cb1d78d72e713d8a0fb0170c1145b18ddce33dc
     - generated-by: Claude Opus 5
-      lines: 230-231
+      lines: 231-232
       integrity: sha256-f42eec30b19a414928406bad9c4721ff57b38b5e881b49d57bd9a2b1599c48f3
   owner:
     - "@hawkeyexl"

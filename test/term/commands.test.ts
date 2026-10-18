@@ -239,29 +239,32 @@ describe("check", () => {
     expect(renderFindingsGithub(report)).toBe("");
   });
 
-  it("reports an alt-label reference as undefined-term, grouped by file:line, and fails", async () => {
-    const cwd = await lenses("PAL, progressive lens, corrective lens");
+  it("reports an undefined term at error and an alt-label at warning, grouped by file:line, and fails", async () => {
+    const cwd = await lenses("PAL, trifocal, progressive lens, corrective lens");
     const report = await runCheck({ cwd, inputs: [] });
     expect(report.summary.failed).toBe(1);
     expect(renderFindingsPretty(report, { color: false })).toBe(
       [
         "docs/guides/fitting.md:3",
-        '  error  manni:term/undefined-term       concepts: "PAL" names no entry.',
-        '                                         "progressive lens" lists it as an alt-label.',
+        '  warning manni:term/alt-label-reference  concepts: "PAL" is an alt-label of "progressive lens", so name the label.',
+        '  error  manni:term/undefined-term       concepts: "trifocal" names no entry.',
         "",
-        "1 error in 2 terms",
+        "1 error, 1 warning in 2 terms",
       ].join("\n"),
     );
     expect(renderFindingsGithub(report)).toBe(
-      '::error file=docs/guides/fitting.md,line=3,title=manni%3Aterm/undefined-term::concepts: "PAL" names no entry. "progressive lens" lists it as an alt-label.',
+      [
+        '::warning file=docs/guides/fitting.md,line=3,title=manni%3Aterm/alt-label-reference::concepts: "PAL" is an alt-label of "progressive lens", so name the label.',
+        '::error file=docs/guides/fitting.md,line=3,title=manni%3Aterm/undefined-term::concepts: "trifocal" names no entry.',
+      ].join("\n"),
     );
     const json = JSON.parse(renderFindingsJson(report)) as { findings: unknown[]; summary: Record<string, unknown> };
-    expect(json.findings).toHaveLength(1);
-    expect(json.summary).toMatchObject({ terms: 2, references: 3, errors: 1 });
+    expect(json.findings).toHaveLength(2);
+    expect(json.summary).toMatchObject({ terms: 2, references: 4, errors: 1, warnings: 1 });
   });
 
   it("applies term.severity, so an error turned to a warning does not fail", async () => {
-    const cwd = await lenses("PAL, progressive lens, corrective lens", {
+    const cwd = await lenses("trifocal, progressive lens, corrective lens", {
       "manni.config.yaml": `${CONFIG}term:\n  severity:\n    undefined-term: warning\n`,
     });
     const report = await runCheck({ cwd, inputs: [] });
@@ -281,7 +284,7 @@ describe("check", () => {
     expect(second.summary.failed).toBe(0);
     expect(second.findings).toEqual([]);
 
-    await writeFile(join(cwd, "docs/guides/other.md"), guide("graduated lens"), "utf8");
+    await writeFile(join(cwd, "docs/guides/other.md"), guide("trifocal"), "utf8");
     const third = await runCheck({ cwd, inputs: [], baseline: true });
     expect(third.summary.failed).toBe(1);
     expect(third.findings.map((f) => f.file)).toEqual(["docs/guides/other.md"]);
@@ -340,7 +343,7 @@ describe("sarif and junit", () => {
   const RULES_PAGE = "https://hawkeyexl.github.io/manni/term/reference/rules/";
 
   async function checkReport(): Promise<Awaited<ReturnType<typeof runCheck>>> {
-    return runCheck({ cwd: await lenses("PAL, progressive lens, corrective lens"), inputs: [] });
+    return runCheck({ cwd: await lenses("trifocal, progressive lens, corrective lens"), inputs: [] });
   }
 
   async function lintReport(): Promise<Awaited<ReturnType<typeof runLint>>> {
@@ -363,12 +366,12 @@ describe("sarif and junit", () => {
     expect(run?.tool.driver.rules).toEqual([
       {
         id: "manni:term/undefined-term",
-        shortDescription: { text: "A page's concepts: names a label no entry claims as its preferred label." },
+        shortDescription: { text: "A page's concepts: names no entry, by label, id or alt-label." },
         helpUri: `${RULES_PAGE}#undefined-term`,
       },
     ]);
     expect(run?.results.map((r) => [r.ruleId, r.message.text])).toEqual([
-      ["manni:term/undefined-term", 'concepts: "PAL" names no entry. "progressive lens" lists it as an alt-label.'],
+      ["manni:term/undefined-term", 'concepts: "trifocal" names no entry.'],
     ]);
   });
 
@@ -442,7 +445,7 @@ describe("sarif and junit", () => {
   it("gives a JUnit failure the rule id and the finding's own message", async () => {
     const check = renderFindingsJunit(await checkReport());
     expect(check).toContain(
-      '<failure type="manni:term/undefined-term" message="concepts: &quot;PAL&quot; names no entry. &quot;progressive lens&quot; lists it as an alt-label. (line 3)"/>',
+      '<failure type="manni:term/undefined-term" message="concepts: &quot;trifocal&quot; names no entry. (line 3)"/>',
     );
     expect(check).toContain('classname="manni.term"');
     const lint = renderFindingsJunit(await lintReport());

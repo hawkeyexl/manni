@@ -23,7 +23,7 @@ next-steps:
   - term-set-up-move-and-hand-off
 sample-questions:
   - How do I define a term for manni term?
-  - Why does manni term check report undefined-term for an alt-label?
+  - Why does manni term check warn about an alt-label in concepts?
   - What does the unused-term notice mean?
 graph:
   label: Get started
@@ -155,12 +155,12 @@ manni term ships in the same package as manni meta.
 {/* cite concepts-on-any-page */}
 {/* cite concepts-values-are-preferred-labels */}
 `concepts:` on any page says which terms the page is about. Its values are
-preferred labels:
+labels:
 
 ```markdown title="docs/guides/fitting.md"
 ---
 title: Fitting lenses
-concepts: [PAL, corrective lens, progressive lens]
+concepts: [PAL, trifocal, corrective lens, progressive lens]
 ---
 # Fitting lenses
 ```
@@ -175,17 +175,18 @@ concepts: [PAL, corrective lens, progressive lens]
 
    ```
    docs/guides/fitting.md:3
-     error  manni:term/undefined-term       concepts: "PAL" names no entry.
-                                            "progressive lens" lists it as an alt-label.
+     warning manni:term/alt-label-reference  concepts: "PAL" is an alt-label of "progressive lens", so name the label.
+     error  manni:term/undefined-term       concepts: "trifocal" names no entry.
 
-   1 error in 2 terms
+   1 error, 1 warning in 2 terms
    ```
 
-   The exit code is `1`. `PAL` is a name the set knows, but `concepts:` wants
-   the preferred label, so the message says which entry claims it.
+   The exit code is `1`, from the error. No entry claims `trifocal`. `PAL` is
+   a name the set knows, but `concepts:` wants the label, so the warning says
+   which entry claims it. A warning alone never fails the run.
 
-2. **Fix the reference.** The guide already names `progressive lens`, so the
-   alt-label is a duplicate. Remove it:
+2. **Fix the references.** The guide already names `progressive lens`, so the
+   alt-label is a duplicate. The set has no `trifocal` yet. Remove both:
 
    ```markdown title="docs/guides/fitting.md"
    ---
@@ -267,7 +268,7 @@ ahead of its pages can turn it off with `severity: {unused-term: off}` under
   <LinkCard
     title="Check rules"
     href="/manni/term/reference/rules/"
-    description="All ten rules, their default severities, and what fixes each one."
+    description="All twelve rules, their default severities, and what fixes each one."
   />
   <LinkCard
     title="Move and hand off a termbase"

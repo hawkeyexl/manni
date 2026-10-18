@@ -6,6 +6,7 @@
  *
  * Every loaded file contributes its references too, term file or not: a
  * guide's `concepts:` is what `undefined-term` and `unused-term` are about.
+ * Its `graph:` block joins the hierarchy `broader-cycle` reads (proposal 0085).
  *
  * A file that cannot be read or parsed is an error, not a skip. A term set that
  * quietly lost a file would pass `check` on what was left, and report the
@@ -24,9 +25,9 @@ import {
   supportedExtensions,
 } from "../../meta/internal.js";
 import { errorMessage } from "../../shared/errors.js";
-import { CONCEPT_FIELDS, fieldPointer, valueAt } from "../../shared/reference-fields.js";
+import { CONCEPT_FIELDS, type FieldPath, fieldPointer, valueAt } from "../../shared/reference-fields.js";
 import { TermError } from "../errors.js";
-import type { TermInput, TermReader, TermReference, TermRun, TermSet } from "../types.js";
+import type { TermBlock, TermInput, TermReader, TermReference, TermRun, TermSet } from "../types.js";
 import { TERM_READERS, readersForFormat } from "./readers/index.js";
 
 /** The `TermInput.format` a manifest is offered as. */
@@ -84,16 +85,53 @@ function labelsOf(value: unknown): string[] {
   return [];
 }
 
+/** The page's `language`, which its names resolve in first. */
+function languageOf(input: TermInput): { language?: string } {
+  const language = input.metadata["language"];
+  return typeof language === "string" && language !== "" ? { language } : {};
+}
+
+function lineAt(input: TermInput, path: FieldPath): { line?: number } {
+  const line = input.lineFor(fieldPointer(path));
+  return line === undefined ? {} : { line };
+}
+
 function referencesOf(input: TermInput): TermReference[] {
   const references: TermReference[] = [];
-  const add = (value: unknown, pointer: string): void => {
-    for (const label of labelsOf(value)) {
-      const line = input.lineFor(pointer);
-      references.push({ file: input.file, label, ...(line === undefined ? {} : { line }) });
+  for (const path of CONCEPT_FIELDS) {
+    for (const label of labelsOf(valueAt(input.metadata, path))) {
+      references.push({
+        file: input.file,
+        label,
+        ...lineAt(input, path),
+        ...(path.length > 1 ? { field: path.join(".") } : {}),
+        ...languageOf(input),
+      });
     }
-  };
-  for (const path of CONCEPT_FIELDS) add(valueAt(input.metadata, path), fieldPointer(path));
+  }
   return references;
+}
+
+const BLOCK_HIERARCHY_FIELDS = ["broader", "narrower", "related-concepts"] as const;
+
+/** The page's `graph:` block, when it has a label: the concept it is about, and that concept's place in the hierarchy. */
+function blocksOf(input: TermInput): TermBlock[] {
+  const label = valueAt(input.metadata, ["graph", "label"]);
+  if (typeof label !== "string" || label.trim() === "") return [];
+  const edges = BLOCK_HIERARCHY_FIELDS.flatMap((field) =>
+    labelsOf(valueAt(input.metadata, ["graph", field])).map((value) => ({
+      field,
+      value,
+      ...lineAt(input, ["graph", field]),
+    })),
+  );
+  return [{ file: input.file, ...lineAt(input, ["graph"]), ...languageOf(input), label, edges }];
+}
+
+/** What every page contributes beside its terms: its references, and its graph block. */
+function pageFacts(input: TermInput, set: TermSet): void {
+  set.references.push(...referencesOf(input));
+  set.blocks.push(...blocksOf(input));
 }
 
 function read(input: TermInput, readers: readonly TermReader[], set: TermSet): void {
@@ -155,7 +193,7 @@ export async function loadTermSet(opts: LoadTermSetOptions): Promise<TermSet> {
     );
   }
 
-  const set: TermSet = { terms: [], references: [], notices: [] };
+  const set: TermSet = { terms: [], references: [], blocks: [], notices: [] };
 
   if (inputs.length > 0) {
     const { files, gitignoreSkipped, named } = await resolveTargetSet({
@@ -203,7 +241,7 @@ export async function loadTermSet(opts: LoadTermSetOptions): Promise<TermSet> {
         throw new TermError(`${file}: no reader for its extension. Pass --as <format> through stdin to read it.`);
       }
       const input = extractInput(await readInput(path, file), file, path, extractor.name);
-      set.references.push(...referencesOf(input));
+      pageFacts(input, set);
       read(input, readers, set);
     }
   }
@@ -213,7 +251,7 @@ export async function loadTermSet(opts: LoadTermSetOptions): Promise<TermSet> {
       opts.as.toLowerCase() === TBX_FORMAT
         ? tbxInput(opts.stdin ?? "", STDIN_LABEL)
         : extractInput(opts.stdin ?? "", STDIN_LABEL, undefined, opts.as);
-    set.references.push(...referencesOf(input));
+    pageFacts(input, set);
     read(input, readers, set);
   }
 

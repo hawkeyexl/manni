@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { checkTermSet } from "../../src/term/core/check.js";
 import type {
   Term,
+  TermBlock,
   TermConstruct,
   TermField,
   TermFinding,
@@ -39,8 +40,20 @@ function ref(label: string, file = "docs/guides/page.md", line?: number): TermRe
   return line === undefined ? { file, label } : { file, line, label };
 }
 
-function set(terms: Term[], references: TermReference[] = []): TermSet {
-  return { terms, references, notices: [] };
+function set(terms: Term[], references: TermReference[] = [], blocks: TermBlock[] = []): TermSet {
+  return { terms, references, blocks, notices: [] };
+}
+
+/** A page's `graph:` block, each field on its own line below the block's. */
+function block(
+  label: string,
+  fields: Partial<Record<"broader" | "narrower" | "related-concepts", string[]>>,
+  file = "docs/guides/page.md",
+): TermBlock {
+  const edges = Object.entries(fields).flatMap(([field, values], i) =>
+    values.map((value) => ({ field: field as keyof typeof fields, value, line: 6 + i })),
+  );
+  return { file, line: 5, label, edges };
 }
 
 /** Every term referenced once, so `unused-term` stays quiet in tests about other rules. */
@@ -82,16 +95,26 @@ describe("checkTermSet", () => {
       ]);
     });
 
-    it("names the entry whose alt-label matched", () => {
+    it("leaves an alt-label to alt-label-reference", () => {
       const findings = checkTermSet(
         used(
           [term({ label: "progressive lens", definition: "d", "alt-labels": ["PAL"] })],
           [ref("pal", "docs/guides/fitting.md", 6)],
         ),
       );
-      expect(only(findings, "undefined-term").map((f) => f.message)).toEqual([
-        'concepts: "pal" names no entry. "progressive lens" lists it as an alt-label.',
-      ]);
+      expect(only(findings, "undefined-term")).toEqual([]);
+    });
+
+    it("resolves an id, ignoring case", () => {
+      const findings = checkTermSet(
+        set([term({ id: "pal", label: "progressive lens", definition: "d" })], [ref("PAL")]),
+      );
+      expect(findings).toEqual([]);
+    });
+
+    it("names graph.concepts when the reference came from it", () => {
+      const findings = checkTermSet(set([], [{ file: "a.md", label: "PAL", field: "graph.concepts" }]));
+      expect(findings.map((f) => f.message)).toEqual(['graph.concepts: "PAL" names no entry.']);
     });
 
     it("matches a label ignoring case", () => {
@@ -334,6 +357,174 @@ describe("checkTermSet", () => {
     });
   });
 
+  describe("broader-cycle through graph blocks", () => {
+    it("reads narrower as the other half of broader", () => {
+      const terms = [
+        term({ label: "lens", definition: "d", narrower: ["optic"] }),
+        term({ label: "optic", definition: "d", narrower: ["lens"] }),
+      ];
+      expect(only(checkTermSet(used(terms)), "broader-cycle").map((f) => [f.file, f.message])).toEqual([
+        ["docs/terms/lens.md", "broader: lens > optic > lens"],
+      ]);
+    });
+
+    it("reports a cycle a block edge closes on the block's field line", () => {
+      const terms = [
+        term({ label: "lens", definition: "d", broader: ["optic"] }),
+        term({ label: "optic", definition: "d" }),
+      ];
+      expect(only(checkTermSet(used(terms)), "broader-cycle")).toEqual([]);
+      const blocks = [block("Optic", { broader: ["LENS"] }, "docs/guides/optics.md")];
+      const findings = checkTermSet(set(terms, terms.map((t) => ref(t.record.label)), blocks));
+      expect(only(findings, "broader-cycle")).toEqual([
+        {
+          rule: "broader-cycle",
+          ruleId: "manni:term/broader-cycle",
+          severity: "error",
+          message: "broader: lens > optic > lens",
+          file: "docs/guides/optics.md",
+          line: 6,
+        },
+      ]);
+    });
+
+    it("keeps a cycle the terms close on the term, even when a block repeats an edge", () => {
+      const terms = [
+        term({ label: "lens", definition: "d", broader: ["optic"], line: 3 }),
+        term({ label: "optic", definition: "d", broader: ["lens"] }),
+      ];
+      const blocks = [block("optic", { broader: ["lens"] })];
+      const findings = checkTermSet(set(terms, terms.map((t) => ref(t.record.label)), blocks));
+      expect(only(findings, "broader-cycle").map((f) => [f.file, f.line])).toEqual([["docs/terms/lens.md", 3]]);
+    });
+
+    it("finds a cycle through freeform concepts, resolving an alt-label", () => {
+      const terms = [term({ label: "progressive lens", definition: "d", "alt-labels": ["PAL"] })];
+      const blocks = [
+        block("progressive lens", { broader: ["Eyewear"] }, "docs/b.md"),
+        block("optics", { narrower: ["eyewear"] }, "docs/a.md"),
+        block("optics", { broader: ["PAL"] }, "docs/c.md"),
+      ];
+      const findings = checkTermSet(set(terms, [ref("PAL")], blocks), {
+        severity: { "hierarchy-outside-termbase": "off", "alt-label-reference": "off" },
+      });
+      expect(findings.map((f) => [f.file, f.message])).toEqual([
+        ["docs/b.md", "broader: progressive lens > Eyewear > optics > progressive lens"],
+      ]);
+    });
+
+    it("ignores related-concepts", () => {
+      const terms = [term({ label: "lens", definition: "d", broader: ["optic"] }), term({ label: "optic", definition: "d" })];
+      const findings = checkTermSet(
+        set(terms, terms.map((t) => ref(t.record.label)), [block("optic", { "related-concepts": ["lens"] })]),
+        { severity: { "hierarchy-outside-termbase": "off" } },
+      );
+      expect(only(findings, "broader-cycle")).toEqual([]);
+    });
+  });
+
+  describe("alt-label-reference", () => {
+    const terms = [term({ label: "Pluggable auth layer", definition: "d", "alt-labels": ["PAL"] })];
+
+    it("warns on a concepts: value that is an alt-label, at the reference", () => {
+      const findings = checkTermSet(set(terms, [ref("PAL", "docs/guides/auth.md", 4)]));
+      expect(findings).toEqual([
+        {
+          rule: "alt-label-reference",
+          ruleId: "manni:term/alt-label-reference",
+          severity: "warning",
+          message: 'concepts: "PAL" is an alt-label of "Pluggable auth layer", so name the label.',
+          file: "docs/guides/auth.md",
+          line: 4,
+        },
+      ]);
+    });
+
+    it("names graph.concepts when the reference came from it", () => {
+      const findings = checkTermSet(set(terms, [{ file: "a.md", label: "pal", field: "graph.concepts" }]));
+      expect(findings.map((f) => f.message)).toEqual([
+        'graph.concepts: "pal" is an alt-label of "Pluggable auth layer", so name the label.',
+      ]);
+    });
+
+    it("prefers a label in any language over an alt-label", () => {
+      const both = [...terms, term({ id: "x", label: "PAL", language: "de", definition: "d" })];
+      expect(only(checkTermSet(set(both, [ref("PAL")])), "alt-label-reference")).toEqual([]);
+    });
+
+    it("names the term in the page's own language first", () => {
+      const multi = [
+        term({ id: "auth", label: "Pluggable auth layer", definition: "d", "alt-labels": ["PAL"], language: "en" }),
+        term({ id: "auth", label: "Steckbare Auth-Schicht", definition: "d", "alt-labels": ["PAL"], language: "de" }),
+      ];
+      const findings = checkTermSet(set(multi, [{ file: "a.md", label: "PAL", language: "de" }]));
+      expect(only(findings, "alt-label-reference").map((f) => f.message)).toEqual([
+        'concepts: "PAL" is an alt-label of "Steckbare Auth-Schicht", so name the label.',
+      ]);
+    });
+
+    it("can be turned off", () => {
+      expect(checkTermSet(set(terms, [ref("PAL")]), { severity: { "alt-label-reference": "off" } })).toEqual([]);
+    });
+  });
+
+  describe("hierarchy-outside-termbase", () => {
+    const terms = [
+      term({
+        label: "Retry",
+        definition: "d",
+        file: "docs/glossary/retry.md",
+        broader: ["resilience"],
+        "related-terms": ["timeout"],
+      }),
+      term({ label: "Networking", definition: "d" }),
+      term({ label: "Resilience", definition: "d", narrower: ["retry"] }),
+      term({ id: "timeout", label: "Time-out", definition: "d", "alt-labels": ["TTL"] }),
+    ];
+    const refs = terms.map((t) => ref(t.record.label));
+
+    it("notes an edge the term's own field does not list, on the page that declares it", () => {
+      const findings = checkTermSet(set(terms, refs, [block("retry", { broader: ["Networking"] }, "docs/guides/net.md")]));
+      expect(findings).toEqual([
+        {
+          rule: "hierarchy-outside-termbase",
+          ruleId: "manni:term/hierarchy-outside-termbase",
+          severity: "notice",
+          message:
+            'graph: broader "Networking" on "Retry" is not on its term page (docs/glossary/retry.md), so add it there.',
+          file: "docs/guides/net.md",
+          line: 6,
+        },
+      ]);
+    });
+
+    it("is quiet for an edge the term lists, however it is spelled", () => {
+      const blocks = [block("RETRY", { broader: ["Resilience"], "related-concepts": ["TTL", "timeout"] })];
+      expect(checkTermSet(set(terms, refs, blocks))).toEqual([]);
+    });
+
+    it("compares narrower with narrower, and related-concepts with related-terms", () => {
+      const blocks = [block("Retry", { narrower: ["Resilience"], "related-concepts": ["Networking", "backoff"] })];
+      expect(only(checkTermSet(set(terms, refs, blocks)), "hierarchy-outside-termbase").map((f) => f.message)).toEqual([
+        'graph: narrower "Resilience" on "Retry" is not on its term page (docs/glossary/retry.md), so add it there.',
+        'graph: related-concepts "Networking" on "Retry" is not on its term page (docs/glossary/retry.md), so add it there.',
+        'graph: related-concepts "backoff" on "Retry" is not on its term page (docs/glossary/retry.md), so add it there.',
+      ]);
+    });
+
+    it("says term entry for a term with no page of its own", () => {
+      const manifest = term({ label: "Retry", definition: "d", file: "terms.yaml", line: 4, construct: "manifest" });
+      const findings = checkTermSet(set([manifest], [ref("Retry")], [block("Retry", { broader: ["Networking"] })]));
+      expect(findings.map((f) => f.message)).toEqual([
+        'graph: broader "Networking" on "Retry" is not on its term entry (terms.yaml), so add it there.',
+      ]);
+    });
+
+    it("says nothing about a block whose label names no term", () => {
+      expect(checkTermSet(set(terms, refs, [block("Backoff", { broader: ["Networking"] })]))).toEqual([]);
+    });
+  });
+
   describe("see-not-empty", () => {
     it("fires on an entry with see and definition", () => {
       const terms = [
@@ -435,13 +626,15 @@ describe("checkTermSet", () => {
       ]);
     });
 
-    it("counts a reference ignoring case, and not one to an alt-label", () => {
+    it("counts a reference by label ignoring case, by id, or by alt-label", () => {
       const terms = [
         term({ label: "Trifocal", definition: "d" }),
         term({ label: "progressive lens", definition: "d", "alt-labels": ["PAL"] }),
+        term({ id: "cl", label: "corrective lens", definition: "d" }),
+        term({ label: "monocle", definition: "d" }),
       ];
-      const findings = only(checkTermSet(set(terms, [ref("trifocal"), ref("PAL")])), "unused-term");
-      expect(findings.map((f) => f.id)).toEqual(["progressive-lens"]);
+      const findings = only(checkTermSet(set(terms, [ref("trifocal"), ref("PAL"), ref("CL")])), "unused-term");
+      expect(findings.map((f) => f.id)).toEqual(["monocle"]);
     });
   });
 
