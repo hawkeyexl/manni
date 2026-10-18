@@ -1,0 +1,9 @@
+# A glossary the term domain reads as the termbase, and one schema that marks
+# two fields x-manni-term: one under the Audience branch, one anywhere.
+collections:
+  - name: glossary
+    paths:
+      - "glossary/*.md"
+meta:
+  defaults: false
+  schemas: [./audience.schema.json]

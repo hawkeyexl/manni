@@ -30,17 +30,17 @@ docs/src/content/docs/meta/schemas/index.mdx:
         integrity: sha256-546c0aaae16911ec5ea485d3e113abd28e488fd018c3337df2e9a3fba3a4ee89
       source:
         file: src/meta/core/schema-registry.ts
-        lines: 1254-1258
+        lines: 1261-1265
         integrity: sha256-58dcb64f18f7ddeb4a5175d21bb6cb92ee33e473384c5aaca08a9395140bea5e
-        commit-sha: e7a25a5266c909a6a0dd9e3ad6db4ec6fd248a7e
+        commit-sha: ff3c96da86b0902113ec05ac4a780450486eef85
     - id: the-three-reference-kinds
       claim:
         integrity: sha256-a4fd7bcc0a486a118551bbf7e3bbabc59aa43f8d0e60ef4a49045d1be70dec66
       source:
         file: src/meta/core/schema-registry.ts
-        lines: 430-443
+        lines: 437-450
         integrity: sha256-2f40a8e1715136cf70277d50252b4172f3fd9106e42a5fccd6914c78d0d6f32c
-        commit-sha: e7a25a5266c909a6a0dd9e3ad6db4ec6fd248a7e
+        commit-sha: ff3c96da86b0902113ec05ac4a780450486eef85
     - id: document-names-its-own-schema
       claim:
         integrity: sha256-2e9e70750388d767b7562acdee44aca8ea482909e69207e404a25dca04fc9d7b
@@ -159,18 +159,18 @@ docs/src/content/docs/meta/schemas/index.mdx:
         integrity: sha256-9b88ec6e8b41adf66ea80f73374cb257ce6db27832a3a8b3b33b60a60cf948ab
       source:
         file: src/meta/core/validator.ts
-        lines: 94
+        lines: 95
         integrity: sha256-13cad13b9da05a87f1d7e4ed101397327ec94367e2c9e0f6eba648bb4109934b
-        commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
+        commit-sha: ff3c96da86b0902113ec05ac4a780450486eef85
     - id: schema-key-stripped-before-validating
       claim:
         lines: 127
         integrity: sha256-ba7bfec345f3e42d7f5a289645ec9c70fb5d7cd10900c721e28767a71631eda0
       source:
         file: src/meta/core/validator.ts
-        lines: 791-793
+        lines: 884-886
         integrity: sha256-b8f39d6d21f30a400cabe25059d553fc2d70ec3f6633292881c053d55975c4ca
-        commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
+        commit-sha: ff3c96da86b0902113ec05ac4a780450486eef85
     - id: tgdp-25-template-slugs
       claim:
         lines: 210

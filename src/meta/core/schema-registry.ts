@@ -188,6 +188,13 @@ export function assertPublishableBuiltinId(id: string): void {
       `Built-in id "${id}" is not publishable: the "encrypted" first segment is reserved for encryption finding identities (encrypted:plain, encrypted:unreadable, proposal 0045).`,
     );
   }
+  // `term:undefined`, `term:outside-branch` and `term:alt-label` are the
+  // identities of the findings for a field marked `x-manni-term` (proposal 0085).
+  if (first === "term") {
+    throw new Error(
+      `Built-in id "${id}" is not publishable: the "term" first segment is reserved for term finding identities (term:undefined, term:outside-branch, term:alt-label, proposal 0085).`,
+    );
+  }
   // `derived:stale` is the identity of a managed field whose asserted value
   // differs from what git, CODEOWNERS or the review record says, reserved likewise.
   if (first === "derived") {

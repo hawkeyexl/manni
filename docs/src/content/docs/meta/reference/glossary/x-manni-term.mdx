@@ -1,0 +1,41 @@
+---
+title: "x-manni-term"
+description: "What x-manni-term means in manni meta, and where the tool uses it."
+type: term
+id: x-manni-term
+label: "x-manni-term"
+abstract: "A field whose values must name terms."
+definition: "An object beside a property in a page's schema, saying that each string value of the field must name a term in the termbase."
+keywords:
+  - "x-manni-term"
+  - "schema keyword"
+  - "termbase"
+language: en
+audiences:
+  - "docs-engineers"
+  - "ci-engineers"
+  - "schema-authors"
+  - "contributors"
+intent: "Say what x-manni-term means in manni meta."
+lifecycle: published
+applies-to:
+  - "domain:meta"
+sample-questions:
+  - "What does x-manni-term do?"
+  - "How do I limit a field to one branch of the termbase?"
+graph:
+  label: "x-manni-term"
+  type: concept
+action: understand
+risks: read-only
+related-terms:
+  - "x-manni-graph-output"
+last-updated: 2026-10-18
+---
+
+<p>{frontmatter.definition}</p>
+
+Its `under` names a term, and limits the values to the terms below it, at any
+depth. `manni meta validate` reports a value that names no term, one outside
+the branch, and one written as an alt-label. See
+[Term values](/manni/meta/schemas/term-values/).

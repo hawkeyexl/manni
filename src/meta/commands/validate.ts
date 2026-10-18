@@ -23,6 +23,16 @@ import {
   LOCATION_FINDING_KEYWORD,
   LOCATION_PAGE_SCHEMA,
 } from "../core/location.js";
+import {
+  TERM_ALT_LABEL_SCHEMA,
+  TERM_FINDING_KEYWORD,
+  TERM_KEYWORD,
+  TERM_OUTSIDE_BRANCH_SCHEMA,
+  TERM_UNDEFINED_SCHEMA,
+  termScheme,
+  type TermScheme,
+} from "../core/term-keyword.js";
+import { termLabelSource } from "../../shared/term-labels.js";
 import { pageMarks } from "../core/page-marks.js";
 import {
   keyHome,
@@ -493,6 +503,109 @@ export async function runValidate(
     return findings;
   };
 
+  // The termbase `x-manni-term` values are checked against (proposal 0085
+  // §6), read once per run and only when some value is marked. `undefined`
+  // when none was found, or it could not be read.
+  let termbase: Promise<TermScheme | undefined> | undefined;
+  let termbaseUnreadable = false;
+  /** The marked fields seen while no termbase was found, for the one warning. */
+  const uncheckedTermFields = new Set<string>();
+  const readTermbase = async (): Promise<TermScheme | undefined> => {
+    const source = termLabelSource();
+    if (source === undefined) return undefined;
+    try {
+      const terms = await source({
+        cwd,
+        ...(opts.configPath === undefined ? {} : { configPath: opts.configPath }),
+        ...(opts.noConfig === true ? { noConfig: true } : {}),
+      });
+      return terms.length === 0 ? undefined : termScheme(terms);
+    } catch (err) {
+      termbaseUnreadable = true;
+      opts.onNotice?.(
+        `The termbase could not be read, so ${TERM_KEYWORD} values were not checked: ${errorMessage(err)}`,
+      );
+      return undefined;
+    }
+  };
+
+  /**
+   * The `term:undefined`, `term:outside-branch` and `term:alt-label` findings
+   * for one document (proposal 0085 §6), judged over `data`, the decrypted
+   * view validation saw. A value at or under an encrypted pointer is not
+   * judged, so no finding names a plaintext the page does not show.
+   */
+  const termFindings = async (
+    data: Record<string, unknown>,
+    refs: string[],
+    encrypted: readonly string[],
+    lineFor: (pointer: string) => number | undefined,
+    colFor: ((pointer: string) => number | undefined) | undefined,
+    locate: (pointer: string) => { file: string; line?: number; col?: number } | undefined,
+  ): Promise<FieldError[]> => {
+    const hits = (await validator.termMarks(data, refs)).filter(
+      (hit) => !encrypted.some((p) => isAtOrUnder(hit.pointer, p)),
+    );
+    if (hits.length === 0) return [];
+    const scheme = await (termbase ??= readTermbase());
+    if (scheme === undefined) {
+      // ponytail: an all-digit segment is read as an array index, so a mark
+      // on `items` counts once per field, not once per item.
+      if (!termbaseUnreadable) {
+        for (const hit of hits) uncheckedTermFields.add(hit.pointer.replace(/\/\d+(?=\/|$)/g, ""));
+      }
+      return [];
+    }
+    const findings: FieldError[] = [];
+    for (const hit of hits) {
+      const ref = canonicalSchemaRef(hit.schema, refFrame);
+      const branch = hit.under === undefined ? undefined : scheme.below(hit.under);
+      if (hit.under !== undefined && branch === undefined) {
+        throw new DocmetaError(`${ref}: ${TERM_KEYWORD} under "${hit.under}" names no term.`);
+      }
+      const items: unknown[] = Array.isArray(hit.value) ? hit.value : [hit.value];
+      items.forEach((value, i) => {
+        if (typeof value !== "string") return;
+        const pointer = Array.isArray(hit.value) ? `${hit.pointer}/${String(i)}` : hit.pointer;
+        const match = scheme.find(value);
+        // An error carries no severity, as every other error finding does.
+        const finding = (schema: string, message: string, warning = false): FieldError => {
+          const at = locate(pointer);
+          const line = at === undefined ? lineFor(pointer) : at.line;
+          const col = at === undefined ? colFor?.(pointer) : at.col;
+          return {
+            schema,
+            keyword: TERM_FINDING_KEYWORD,
+            subject: value,
+            instancePath: pointer,
+            message,
+            ...(warning ? { severity: "warning" as const } : {}),
+            ...(at !== undefined ? { file: at.file } : {}),
+            ...(line != null ? { line } : {}),
+            ...(col != null ? { col } : {}),
+          };
+        };
+        if (match === undefined) {
+          findings.push(
+            finding(TERM_UNDEFINED_SCHEMA, `"${value}" names no term; ${ref} marks this field ${TERM_KEYWORD}.`),
+          );
+        } else if (branch !== undefined && !branch.has(match.key)) {
+          findings.push(
+            finding(
+              TERM_OUTSIDE_BRANCH_SCHEMA,
+              `"${value}" is a term, but not under "${hit.under ?? ""}", which ${ref} requires.`,
+            ),
+          );
+        } else if (match.alt) {
+          findings.push(
+            finding(TERM_ALT_LABEL_SCHEMA, `"${value}" is an alt-label of "${match.label}", so use the label.`, true),
+          );
+        }
+      });
+    }
+    return findings;
+  };
+
   /**
    * How many collections a page is in none of, when that leaves `key` no
    * possible home (several declared, the page in none); otherwise 0. With no
@@ -879,6 +992,14 @@ export async function runValidate(
         // Over the decrypted view, the object validation evaluated: a mark
         // counts where Ajv takes a branch, and a branch may read a value.
         ...(await locationFindings(label, own, view.data, schemaSet, members, merged, extracted.lineFor)),
+        ...(await termFindings(
+          view.data,
+          schemaSet,
+          view.marked,
+          extracted.lineFor,
+          extracted.colFor,
+          merged.locate,
+        )),
       ];
     } catch (err) {
       // A schema the *document* chose failing to load — unparseable, missing,
@@ -940,6 +1061,13 @@ export async function runValidate(
   // Once per run, however many files held them (proposal 0045): the exit code
   // is unaffected, and the count is of values, not of the findings dropped.
   if (unverified > 0) opts.onNotice?.(unverifiedWarning(unverified));
+  // Once per run too (proposal 0085 §6), and the exit code is unaffected.
+  if (uncheckedTermFields.size > 0) {
+    const n = uncheckedTermFields.size;
+    opts.onNotice?.(
+      `${TERM_KEYWORD} marks ${n === 1 ? "1 field" : `${String(n)} fields`}, and no termbase was found, so their values were not checked.`,
+    );
+  }
 
   // Two documents carrying one join value (0039): one entry matched both,
   // and the manifest cannot tell them apart. A finding on each, at the

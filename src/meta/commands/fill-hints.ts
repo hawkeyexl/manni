@@ -26,7 +26,10 @@ import {
   type FieldPath,
 } from "../../shared/reference-fields.js";
 import { resolveTargetSet } from "../core/load-files.js";
+import { TERM_KEYWORD, isTermMark, type TermScheme } from "../core/term-keyword.js";
 import { extractorForExtension } from "../extractors/index.js";
+import { DocmetaError } from "../types.js";
+import { resolvePointer, type ProjectionDefs } from "./fill-projection.js";
 import type { Candidate, FieldHint } from "./fill-types.js";
 
 /**
@@ -72,6 +75,66 @@ export function fieldHints(candidates: readonly Candidate[], offer: Offer): Fiel
 export interface TermIndex {
   labels: readonly string[];
   ids: readonly string[];
+  /** The same terms, with their hierarchy, for a field marked `x-manni-term`. */
+  scheme: TermScheme;
+}
+
+/** One place a candidate's subschema marks `x-manni-term`. */
+export interface TermMarkAt {
+  /** The field, from the page root: its first key is the candidate's. */
+  path: string[];
+  under?: string;
+}
+
+/**
+ * Where a candidate's subschema marks `x-manni-term`: on the field itself, on
+ * its `items`, or on a property nested in it, through `$ref`, `allOf`, `anyOf`
+ * and `oneOf`. Read from the schema rather than recorded by Ajv, as validate
+ * records it, because the value fill asks for is not there yet.
+ */
+export function termMarksIn(candidate: Candidate, defs: ProjectionDefs): TermMarkAt[] {
+  const out: TermMarkAt[] = [];
+  const stack = new Set<unknown>();
+  const walk = (node: unknown, path: string[]): void => {
+    if (typeof node !== "object" || node === null || Array.isArray(node) || stack.has(node)) return;
+    stack.add(node);
+    const schema = node as Record<string, unknown>;
+    const mark = schema[TERM_KEYWORD];
+    if (isTermMark(mark)) out.push({ path, ...(mark.under === undefined ? {} : { under: mark.under }) });
+    if (typeof schema.$ref === "string") walk(resolvePointer(schema.$ref, defs), path);
+    for (const keyword of ["allOf", "anyOf", "oneOf"]) {
+      const branches = schema[keyword];
+      if (Array.isArray(branches)) for (const branch of branches) walk(branch, path);
+    }
+    walk(schema.items, path);
+    const properties = schema.properties;
+    if (typeof properties === "object" && properties !== null) {
+      for (const [key, sub] of Object.entries(properties)) walk(sub, [...path, key]);
+    }
+    stack.delete(node);
+  };
+  walk(candidate.subschema, [candidate.key]);
+  return out;
+}
+
+/**
+ * The hint for each marked field: the labels of the terms below its `under`,
+ * or every label when it names none, as the firm offer a term field gets.
+ * `schemas` names the file's schema set in the error for an `under` that
+ * names no term.
+ */
+export function termMarkHints(marks: readonly TermMarkAt[], index: TermIndex, schemas: string): FieldHint[] {
+  return marks.flatMap(({ path, under }) => {
+    const branch = under === undefined ? undefined : index.scheme.below(under);
+    if (under !== undefined && branch === undefined) {
+      throw new DocmetaError(`${schemas}: ${TERM_KEYWORD} under "${under}" names no term.`);
+    }
+    const labels = branch === undefined ? index.labels : index.scheme.labels(branch);
+    const values = offered(labels);
+    if (values === undefined) return [];
+    const accepts = [...labels, ...(branch === undefined ? index.ids : branch)];
+    return [{ path, kind: "term" as const, values, accepts, ...(under === undefined ? {} : { under }) }];
+  });
 }
 
 /**
@@ -84,6 +147,10 @@ export interface TermIndex {
  * The offer itself lists labels only, so a model held to it never proposes an
  * id. Accepting ids here keeps an id a provider proposes anyway, as `term
  * check` would. A schema that requires ids would see every label refused.
+ *
+ * A field marked `x-manni-term` accepts what its hint `accepts`, and a value
+ * outside a branch is refused naming it: `must be a glossary term label under
+ * "Audience"`.
  */
 export function termValueCheck(
   hints: readonly FieldHint[],
@@ -97,11 +164,17 @@ export function termValueCheck(
     terms
       .filter((hint) => hint.path[0] === key)
       .flatMap((hint) => {
-        const accepted = CONCEPT_FIELDS.some((path) => samePath(path, hint.path)) ? labels : either;
+        const accepted =
+          hint.accepts !== undefined
+            ? new Set(hint.accepts.map(fold))
+            : CONCEPT_FIELDS.some((path) => samePath(path, hint.path))
+              ? labels
+              : either;
+        const refusal = hint.under === undefined ? NOT_A_TERM : `${NOT_A_TERM} under "${hint.under}"`;
         const pointer = fieldPointer(hint.path);
         const held = valueAt(value, hint.path.slice(1));
         if (typeof held === "string") {
-          return accepted.has(fold(held)) ? [] : [`${pointer}: ${NOT_A_TERM}`];
+          return accepted.has(fold(held)) ? [] : [`${pointer}: ${refusal}`];
         }
         // Anything else, null included, is not this check's to judge: the
         // full subschema refuses a wrong type, and fill reads a null value as
@@ -109,7 +182,7 @@ export function termValueCheck(
         if (!Array.isArray(held)) return [];
         const items: unknown[] = held;
         return items.flatMap((item, i) =>
-          typeof item === "string" && !accepted.has(fold(item)) ? [`${pointer}/${String(i)}: ${NOT_A_TERM}`] : [],
+          typeof item === "string" && !accepted.has(fold(item)) ? [`${pointer}/${String(i)}: ${refusal}`] : [],
         );
       });
 }

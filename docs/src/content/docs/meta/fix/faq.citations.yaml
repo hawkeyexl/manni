@@ -6,9 +6,9 @@ docs/src/content/docs/meta/fix/faq.mdx:
         integrity: sha256-f440f8b42570c5d3bd7279d08964942f75cede46980d7b3d9d98e6a1277eb57e
       source:
         file: src/meta/commands/validate.ts
-        lines: 324-327
+        lines: 334-337
         integrity: sha256-7f1973d8b0245da7e1deff8552f047c5e989da046b9bd61a922b7a1d15eef004
-        commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e
+        commit-sha: ff3c96da86b0902113ec05ac4a780450486eef85
     - id: bare-run-reads-collections
       claim:
         integrity: sha256-260592ebe1bbe0fcd2ac71cdaf1e80ed4d3ed937fd1b57c4c5ec35b2a36139e1
@@ -22,9 +22,9 @@ docs/src/content/docs/meta/fix/faq.mdx:
         integrity: sha256-ee93e2db9a2938c61ffd479a629cd57afd2f8b896c2e578e0089fb307ee398aa
       source:
         file: src/meta/commands/validate.ts
-        lines: 344
+        lines: 354
         integrity: sha256-6aa21a84b00caf708e8ab2fa9e36ee4e9398277ebe111bc1a754483c2e96f724
-        commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e
+        commit-sha: ff3c96da86b0902113ec05ac4a780450486eef85
     - id: exclude-merges-with-default-ignores
       claim:
         integrity: sha256-4ad98f541fbbf16ce90e957bd9e2a0c5a770d704b5d89943ffc60c99702920ed
@@ -54,9 +54,9 @@ docs/src/content/docs/meta/fix/faq.mdx:
         integrity: sha256-782ab4ac1013665270894cbe4ffa9c05abf1359dd60ca63574ce6a6afb9ffdc6
       source:
         file: src/meta/commands/validate.ts
-        lines: 867-868
+        lines: 980-981
         integrity: sha256-3ef67f71b6dd6d13aa8db8c7e567afcb9df863c1d137c5597d3a9fd7de40c6fa
-        commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e
+        commit-sha: ff3c96da86b0902113ec05ac4a780450486eef85
     - id: faq-exit-2-operational
       claim:
         lines: 116
@@ -140,9 +140,9 @@ docs/src/content/docs/meta/fix/faq.mdx:
         integrity: sha256-435ce80083a89db75c417d16d53588c95303b8d80cf96aa14c58bbb9c82e5533
       source:
         file: src/meta/commands/validate.ts
-        lines: 927-930
+        lines: 1048-1051
         integrity: sha256-e6543749701ab9d312659c052be04ac7257124d88d57b9fd371807a9de234581
-        commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e
+        commit-sha: ff3c96da86b0902113ec05ac4a780450486eef85
     - id: dash-is-the-stdin-token
       claim:
         integrity: sha256-f5e69cb7591833d7fc747a3ee8e4085cb05fd2156bf7c00dde83a4c8e6ab82a8
@@ -164,9 +164,9 @@ docs/src/content/docs/meta/fix/faq.mdx:
         integrity: sha256-c8465740603ef96129e4b7d4cdabc6a5e3da1d642132008bac8eff3dcbaaa4fd
       source:
         file: src/meta/core/validator.ts
-        lines: 797-799
+        lines: 890-892
         integrity: sha256-fd6c62879ca6dd0866db5f17bc5ea78109d35123b28badc7bd9eba85c3ebcc2c
-        commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
+        commit-sha: ff3c96da86b0902113ec05ac4a780450486eef85
     - id: first-source-wins-no-merging
       claim:
         integrity: sha256-870e7f7f319c04461f7b4a8ab8deffdefe0b960cbae84284c56cd499c36c0cef

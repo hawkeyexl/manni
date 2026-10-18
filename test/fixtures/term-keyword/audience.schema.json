@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "audiences": {
+      "type": "array",
+      "items": { "type": "string" },
+      "x-manni-term": { "under": "Audience" }
+    },
+    "people": {
+      "type": "array",
+      "items": { "type": "string" },
+      "x-manni-term": {}
+    }
+  }
+}
