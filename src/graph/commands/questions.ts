@@ -1,5 +1,5 @@
 /**
- * Sample questions as findability checks (proposal 0085 §7), the half of
+ * Sample questions as findability checks (proposal 0086 §7), the half of
  * `manni graph check` no shape can express.
  *
  * Each `graph:sampleQuestion` is asked through the retrieval `graph search`

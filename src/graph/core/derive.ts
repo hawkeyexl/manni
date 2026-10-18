@@ -508,7 +508,7 @@ export function deriveGraph(docs: DocModel[], options: DeriveOptions): Quad[] {
       // indexes and miss a `--lang` filter typed the other way.
       if (pageLanguage) add(docIri, `${NS.dcterms}language`, lit(pageLanguage));
 
-      // ai-context's questions this page should be found for (proposal 0085
+      // ai-context's questions this page should be found for (proposal 0086
       // §7), in the page's language so `check` asks each in its own index.
       for (const question of asStringArray(fmValue(fm, ["sample-questions"]))) {
         add(

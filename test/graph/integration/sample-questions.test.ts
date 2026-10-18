@@ -1,5 +1,5 @@
 /**
- * Sample questions as findability checks (proposal 0085 §7), end to end
+ * Sample questions as findability checks (proposal 0086 §7), end to end
  * through the built CLI. `graph build` derives each page's questions, and
  * `graph check` asks each one through the retrieval `graph search` uses. A
  * page its own question does not find is a finding. Nothing judges an answer.

@@ -1,4 +1,4 @@
-# The sample-questions fixture (proposal 0085 §7). Each page asks one question
+# The sample-questions fixture (proposal 0086 §7). Each page asks one question
 # of the corpus, and graph check reports the pages that question does not
 # find. `top: 1` keeps the corpus small: a page must be the first one found.
 collections:

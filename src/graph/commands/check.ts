@@ -2,7 +2,7 @@
  * `manni graph check` — graph-level validation: run the published SHACL shapes
  * (plus the TS-side SKOS integrity checks) over the built graph and report
  * findings with the doc paths responsible. Each page's sample questions are
- * asked too (proposal 0085 §7). Errors exit 1; warnings and notices are
+ * asked too (proposal 0086 §7). Errors exit 1; warnings and notices are
  * reported but pass.
  */
 import { dirname, resolve } from "node:path";
