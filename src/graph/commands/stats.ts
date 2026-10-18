@@ -9,7 +9,11 @@ import { DataFactory, type Store } from "n3";
 import { loadRunConfig } from "../core/config.js";
 import { compactIri, loadGraph } from "../core/load.js";
 import { NS, RDF_TYPE } from "../core/vocab.js";
-import { COVERAGE_FIELDS, SECTION_COVERAGE_FIELDS } from "../core/coverage.js";
+import {
+  COVERAGE_FIELDS,
+  SECTION_COVERAGE_FIELDS,
+  UNIFORM_COVERAGE_FIELD_NAMES,
+} from "../core/coverage.js";
 import { byCodeUnit } from "../core/sort.js";
 
 export interface StatsOptions {
@@ -68,6 +72,14 @@ export interface StatsReport {
    * ADR 01009's rule that reporting on does not imply gating on.
    */
   localization: LocalizationReport;
+  /**
+   * Concept IRIs no question reaches, sorted (proposal 0086). A concept has a
+   * question when a page whose primary topic or subjects name it carries a
+   * `graph:sampleQuestion`. Reported, never gated, like orphans.
+   */
+  conceptsWithoutQuestions: string[];
+  /** Each of those concepts' names for pretty output; left out of JSON. */
+  conceptLabels: Record<string, string>;
   /** Fields whose document coverage is below their configured threshold. */
   coverageFindings: Array<{ field: string; pct: number; threshold: number }>;
   exitCode: 0 | 1;
@@ -285,12 +297,27 @@ export function runStats(opts: StatsOptions = {}): StatsReport {
       }),
   };
 
+  // Concepts with no question: every concept, less those a questioned page
+  // names as its primary topic or a subject.
+  const asked = new Set<string>();
+  for (const q of store.getQuads(null, DataFactory.namedNode(`${NS.graph}sampleQuestion`), null, null)) {
+    if (!docSet.has(q.subject.value)) continue;
+    for (const p of [`${NS.foaf}primaryTopic`, `${NS.dcterms}subject`]) {
+      for (const t of store.getQuads(q.subject, DataFactory.namedNode(p), null, null)) {
+        asked.add(t.object.value);
+      }
+    }
+  }
+  const conceptsWithoutQuestions = subjectsOfType(store, `${NS.skos}Concept`)
+    .filter((c) => !asked.has(c))
+    .sort(byCodeUnit);
+
   // A uniform --coverage-threshold overrides the resolved config map. Bind it
   // to a local first so the null-narrowing survives the .map() closure.
   const uniform = opts.coverageThreshold;
   const thresholds =
     uniform != null
-      ? Object.fromEntries(coverage.map((c) => [c.field, uniform]))
+      ? Object.fromEntries(UNIFORM_COVERAGE_FIELD_NAMES.map((f) => [f, uniform]))
       : config.stats.coverageThreshold;
   // One read of the threshold, which is both the "is this field gated" test
   // and the value the finding reports — where `in` plus two lookups needed an
@@ -332,9 +359,22 @@ export function runStats(opts: StatsOptions = {}): StatsReport {
     coverage,
     sectionCoverage,
     localization,
+    conceptsWithoutQuestions,
+    conceptLabels: Object.fromEntries(
+      conceptsWithoutQuestions.map((c) => [c, conceptLabel(store, c)]),
+    ),
     coverageFindings,
     exitCode: failed ? 1 : 0,
   };
+}
+
+/** A concept's name for a reader: its first prefLabel, else its compact IRI. */
+function conceptLabel(store: Store, iri: string): string {
+  const labels = store
+    .getQuads(DataFactory.namedNode(iri), DataFactory.namedNode(`${NS.skos}prefLabel`), null, null)
+    .map((q) => q.object.value)
+    .sort(byCodeUnit);
+  return labels[0] ?? compactIri(iri);
 }
 
 export function renderStats(
@@ -342,7 +382,7 @@ export function renderStats(
   format: "pretty" | "json",
 ): string {
   if (format === "json") {
-    const { exitCode: _exitCode, ...rest } = report;
+    const { exitCode: _exitCode, conceptLabels: _labels, ...rest } = report;
     return JSON.stringify(rest, null, 2);
   }
   const lines = [
@@ -420,5 +460,11 @@ export function renderStats(
     }
     lines.push(`  no language: ${report.localization.unlabelled}`);
   }
+
+  // Reported, never gated, like orphans (proposal 0086).
+  const unasked = report.conceptsWithoutQuestions;
+  lines.push("", `Concepts with no question (${String(unasked.length)}):`);
+  for (const c of unasked) lines.push(`  ${report.conceptLabels[c] ?? compactIri(c)}`);
+  if (unasked.length === 0) lines.push("  (none)");
   return lines.join("\n");
 }

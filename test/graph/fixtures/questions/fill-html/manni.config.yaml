@@ -1,0 +1,17 @@
+# The fill-html fixture (proposal 0086). HTML carries its metadata inside the
+# body lines are counted from, so writing the first question adds a line
+# above every answer. fill pins against the page as written.
+collections:
+  - name: questions
+    paths:
+      - "docs/**/*.*"
+
+graph:
+  baseIri: https://example.com/graph/
+  out: graph.ttl
+  build:
+    derive: [frontmatter, sections]
+  fill:
+    fields: [sample-questions]
+    questions:
+      perPage: 1

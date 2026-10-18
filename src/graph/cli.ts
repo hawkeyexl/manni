@@ -382,7 +382,7 @@ documentInputs(
   program
     .command("fill")
     .description(
-      "Propose `graph:` frontmatter fields with an LLM, gated by confidence, and write them back",
+      "Propose `graph:` fields and sample questions with an LLM, gated by confidence, and write them back",
     ),
   "fill",
 )
@@ -421,6 +421,15 @@ documentInputs(
   )
   .option("--model <model>", "Model override; needs a named provider, from here or config")
   .option("--local", LOCAL_FLAG_HELP)
+  .option(
+    "--offline",
+    "no network egress: only a model already downloaded, never a remote provider",
+  )
+  .option(
+    "--chunk-chars <n>",
+    "characters of page per question request (default: config, then 12000)",
+    countOption("--chunk-chars"),
+  )
   // Typed inline, as every other action in this file is. The option parsers
   // above (`numericOption`, `choiceOption`, `fieldsOption`) have already thrown
   // on anything malformed by the time this runs, so a cast per field would be
@@ -441,6 +450,8 @@ documentInputs(
     provider?: string;
     model?: string;
     local?: boolean;
+    offline?: boolean;
+    chunkChars?: number;
     format: GraphFormat;
   }) => {
     try {
@@ -459,6 +470,8 @@ documentInputs(
         provider: opts.provider,
         model: opts.model,
         local: opts.local,
+        offline: opts.offline,
+        chunkChars: opts.chunkChars,
       });
       // Same channel discipline as build: warnings on stderr, so stdout stays
       // the report, and a warning never changes the exit code.
@@ -766,7 +779,7 @@ program
 program
   .command("export")
   .description(
-    "Reserialize the built graph into a consumer format (jsonld file, iirds package, or search index)",
+    "Reserialize the built graph into a consumer format (jsonld file, iirds package, search index, or question set)",
   )
   // The target is a positional, not `-f`: `-f` is the output format in every
   // other verb of the family (0051 §2), and one flag cannot mean two things.
@@ -796,8 +809,9 @@ program
           out: opts.out,
         });
         for (const warning of result.warnings) warn(warning);
+        const noun = result.format === "questions" ? "question" : "node";
         console.log(
-          `Wrote ${result.nodes} node${result.nodes === 1 ? "" : "s"} to ${result.outPath}`,
+          `Wrote ${result.nodes} ${noun}${result.nodes === 1 ? "" : "s"} to ${result.outPath}`,
         );
       } catch (e) {
         fail(e);

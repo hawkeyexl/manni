@@ -13,6 +13,7 @@ import {
   MAX_RANGE_LINES,
   MOVE_BUDGET_BYTES,
   MOVE_WINDOW_LINES,
+  bodyLineOf,
   findWindows,
   hashLines,
   hashRange,
@@ -222,5 +223,19 @@ describe("splitPageArgument", () => {
     expect(() => splitPageArgument("page.md:9-3")).toThrow(
       'Invalid range "page.md:9-3": end line 3 is before start line 9.',
     );
+  });
+});
+
+describe("bodyLineOf", () => {
+  it("is line 1 with no frontmatter, and the line after the closing fence", () => {
+    expect(bodyLineOf("x\ny\n", 0)).toBe(1);
+    const content = "---\na: 1\n---\nbody\n";
+    expect(bodyLineOf(content, content.indexOf("body"))).toBe(4);
+    // A page that ends at the closing fence with no newline: the body would
+    // start on the line after it.
+    expect(bodyLineOf("---\na: 1\n---", 12)).toBe(4);
+    // CRLF counts each line once.
+    const crlf = "---\r\na: 1\r\n---\r\nbody\r\n";
+    expect(bodyLineOf(crlf, crlf.indexOf("body"))).toBe(4);
   });
 });

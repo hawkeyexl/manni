@@ -209,6 +209,146 @@ rank. The check measures whether a reader finds the page, not whether the page
 answers. [Configuration](/manni/graph/reference/configuration/#check) sets the
 cutoff and the severity.
 
+The questions are read from each page's source, so a question kept out of the
+published graph is still asked. A page in the graph that is no longer on disk
+is skipped, and one warning names how many and says to rebuild.
+
+A question can pin the body lines that answer it, as
+[`manni:ai-context:1.1.0`](/manni/meta/reference/schemas/manni-ai-context/)
+describes. A pinned question must find the part of the page that holds those
+lines. That is a section whose own text covers them, from its heading to the
+next heading of any rank. Text before the first heading belongs to the page
+itself. A hit on another section of the same page does not count.
+
+```console
+$ manni graph check
+warning: https://example.com/graph/doc/docs/retry.md graph:sampleQuestion — "How many times does an upload retry by default?" does not find the section that answers it, § Retry limits, in the top 1 (it ranks 2; first is docs/retry.md § Retry a failed upload) [docs/retry.md]
+```
+
+A pin with an `integrity` is compared with the page as it reads now, under the
+hashing rule citations use. A pin with none is checked where it points.
+
+| Finding | Severity | What it means |
+|---|---|---|
+| The answer moved | `notice` | The pinned lines sit elsewhere now, and are asked there. Update the pin's `lines`. |
+| The answer moved to two places | `warning` | More than one place matches, and either counts as found. Pin one of them by hand. |
+| The answer changed | `check.questions.severity` | No lines match the pin, so the question counts as not found. Re-pin it and review it. |
+
+```console
+$ manni graph check
+notice: https://example.com/graph/doc/docs/upload.md graph:sampleQuestion — the answer to "How large may an upload be?" moved from lines 4-5 to 7-8, so manni graph fill --fields sample-questions re-pins it. [docs/upload.md]
+```
+
+After a rewrite that drops the answer, the same pin reads:
+
+```console
+warning: https://example.com/graph/doc/docs/upload.md graph:sampleQuestion — lines 4-5 no longer hold the answer to "How large may an upload be?" as pinned, so re-pair it with manni graph fill --fields sample-questions and review it. [docs/upload.md]
+```
+
+A question marked `reviewed: false` is a draft. Its findings report at
+`notice`, whatever `check.questions.severity` says, and end
+`(drafted, not reviewed)`. A pin marked `reviewed: false` reports the same way
+and ends `(answer not reviewed)`. While every pin on a confirmed question is a
+draft, the question must also find its page at full severity. `off` silences
+every finding at `check.questions.severity`, drafts included. A moved answer
+is still reported.
+
+### Golden-set files
+
+A question that needs two pages, or that the docs don't answer, lives in a
+golden-set file. `graph.questionFiles` names them, relative to the config file.
+Each item is a page item's object form, with two more keys. `answers[].file`
+names the page that holds each answer, and `language` is optional.
+
+```yaml
+# questions.yaml
+- question: After rotating the key, how do I check nothing broke?
+  answers:
+    - file: docs/rotate.md
+      lines: 4
+      integrity: sha256-57f8…
+    - file: docs/validate.md
+      lines: 4
+      integrity: sha256-7e32…
+- question: Does manni run on Windows on ARM?
+  answers: []
+```
+
+Each answer must be found, as a page's pin must. An empty `answers` list marks
+a known gap. A gap is counted and never asked, because search has no score
+floor to test "finds nothing" against. A finding on a file question points at
+the file and the line its item starts on, with no path.
+
+```console
+$ manni graph check
+warning: questions.yaml:3 — "After rotating the key, how do I check nothing broke?" does not find docs/rotate.md § Rotate in the top 1 (it ranks 4; first is docs/validate.md § Check the result) [questions.yaml]
+```
+
+Across pages and files, `check` also reports these.
+
+| Finding | Severity | What it means |
+|---|---|---|
+| An answer's page is gone | `check.questions.severity` | The file an answer names does not exist. The question counts as not found. |
+| A question asked twice | `check.questions.severity` | The same question is asked elsewhere, ignoring case, punctuation and spacing. Each copy after the first, in path order, is reported. |
+| A question copies its answer | `notice` | Over half its adjacent word pairs also appear in its answer's lines. It tests matching words more than finding. |
+| The found rate is low | `error` | Fewer reviewed questions are found than `check.questions.foundThreshold` asks for. `check.questions.severity` does not touch it. |
+
+```console
+warning: questions.yaml:1 — docs/old.md, which holds the answer to "How large may an upload be?", does not exist, so re-pin or remove the question. [questions.yaml]
+warning: https://example.com/graph/doc/docs/retry.md graph:sampleQuestion — "how do I retry a  failed upload" is also asked on docs/limits.md, so keep it where it is answered. [docs/retry.md]
+notice: https://example.com/graph/doc/docs/retry.md graph:sampleQuestion — "Do uploads retry three times by default?" repeats 5 of its 6 word pairs from its answer, so it tests matching words more than finding. (drafted, not reviewed) [docs/retry.md]
+error: questions — 0 of 1 reviewed questions are found in the top 1 (0%), under the 98% that graph.check.questions.foundThreshold asks for.
+```
+
+A golden-set file that cannot be read stops the run with exit 2.
+
+| Case | stderr |
+|---|---|
+| A listed file is missing | `manni: graph.questionFiles names questions.yaml, which does not exist.` |
+| A file fails its schema | `manni: questions.yaml: /0/answers/0 must have required property 'lines'.` |
+
+### The question set's health
+
+When any question exists, `check` prints a summary of the whole set between the
+findings and the counts.
+
+```console
+$ manni graph check
+questions  3: 2 reviewed, 1 drafted, on 1 page
+  found    2 of 2 reviewed in the top 2 (100%), 1 first (50%)
+  drafted  1 of 1 in the top 2, not counted until reviewed
+  answers  3 pinned, 1 not reviewed: 3 current, 0 moved, 0 changed; 0 not pinned
+
+0 errors, 0 warnings, 1 notice
+```
+
+| Row | What it counts |
+|---|---|
+| `questions` | Every question, reviewed and drafted, and where they are declared. |
+| `found` | Reviewed questions with a test, a page or at least one pin. A question is found when every answer is in the top results, and first when every answer ranks first. |
+| `drafted` | The same count for drafts. It prints only when a draft has a test, and the rate gate ignores it. |
+| `answers` | Every pin, how many are drafts, and how each compares with its page now. `not pinned` counts page questions with no pin. |
+| `gaps` | Golden-set questions with no answers. It prints only when there is one. |
+
+A changed answer, or one whose page is gone, counts as not found. The
+percentages round down. Under `-f github` the summary prints after the
+annotations, as plain text. The JSON report gains a `questions` key beside
+`findings`, with the same counts.
+
+```json
+"questions": {
+  "total": 2, "reviewed": 2, "drafted": 0, "pages": 1,
+  "files": ["questions.yaml"], "top": 1,
+  "found": { "reviewed": { "inTop": 1, "first": 1, "of": 1 },
+             "drafted":  { "inTop": 0, "first": 0, "of": 0 } },
+  "answers": { "pinned": 0, "unreviewed": 0, "current": 0, "moved": 0, "changed": 0, "unpinned": 1 },
+  "gaps": 1
+}
+```
+
+Stored per CI run, that object is the time series. manni keeps no history of
+its own.
+
 ### Options
 
 | Option | Argument | Default | Description |
@@ -252,8 +392,9 @@ may carry.
 
 ## `graph fill`
 
-Proposes `graph` metadata fields from each page's content and writes the ones
-that clear a confidence gate. This is the one verb that reaches a model.
+Proposes `graph` metadata fields and sample questions from each page's content,
+and writes the ones that clear a confidence gate. This is the one verb that
+reaches a model.
 
 ```sh
 manni graph fill [paths...] [options]
@@ -288,9 +429,88 @@ The graph check vets each proposal against the whole configured corpus. A
 corpus page it cannot read is left out, and one warning lists it. A named page
 that cannot be read is that page's error.
 
-Every written value is recorded in the page's `meta-provenance`, naming the
-model and the fields. See
+Every written `graph` value is recorded in the page's `meta-provenance`, naming
+the model and the fields. See
 [Fill the vocabulary](/manni/graph/fill/).
+
+### Sample questions
+
+`sample-questions` is one of the fill fields, and it is in the default set. A
+config that lists `fill.fields` without it leaves questions alone. Questions
+run in a pass of their own beside the `graph` fields, in this order:
+
+1. **Re-pin.** An answer whose lines moved gets its new `lines`. A pin with
+   `lines` and no `integrity` gets one. This needs no model and spends no turn.
+2. **Pair.** For a question with no `answers`, the model quotes the passage that
+   answers it. `fill` finds the quote in the body and pins the whole lines it
+   touches. The quote itself is never written.
+3. **Re-pair.** An answer whose lines changed gets a new pin the same way.
+4. **Draft.** A page with fewer than `fill.questions.perPage` questions gets new
+   ones until it has that many.
+
+A new pin is written `reviewed: false`, and a paired question keeps its own
+standing. A drafted question is written `reviewed: false`, with `generated-by`
+and `confidence` when `fill.writeProvenance` is on. Questions never touch
+`meta-provenance`, and `--force` never rewrites or removes one. A page with
+enough questions, each one paired and none moved or changed, is `complete`.
+
+The gates run in this order. A draft that fails one is `dropped`, and an
+existing question that fails one is `not-paired` and kept.
+
+| Gate | Reason shown |
+|---|---|
+| The quote is not in the page. | `answer not on page` |
+| A draft repeats a question asked on any page or golden-set file. | `duplicate of <file>` |
+| A draft repeats over half its word pairs from its answer. | `copies its answer (5 of 6 word pairs)` |
+| The model finds no passage for an existing question. | `no passage answers it` |
+| The confidence is under `--confidence`. | `low confidence, not written` |
+
+A question request sends the whole body. A body over `--chunk-chars` is split
+at line boundaries, one request per piece. Drafts from every piece are pooled,
+and the most confident are kept. A golden-set file named in `questionFiles`
+gets the re-pin step only. On HTML and DITA, the questions sit inside the body
+that lines are counted from, so every pin is taken from the page as written.
+
+Pretty output adds one line per question under its page:
+
+```text
+filled    docs/retry.md (sample-questions)
+            re-pinned  "How do I resume a paused upload?"  lines 9 to 12
+            paired     "How do I retry a failed upload?"  lines 4 (0.77)
+            drafted    "How often does the client try again?"  lines 8 (0.90)
+            dropped    "Open the upload list and choose retry?"  copies its answer (6 of 6 word pairs)
+filled    questions.yaml (sample-questions)
+            re-pinned  "After rotating the key, how do I check nothing broke?"  docs/rotate.md lines 4 to 6
+```
+
+Under `-f json`, each result gains a `questions` list. Each entry holds
+`action`, `question`, and any of `file`, `lines`, `from`, `confidence` and
+`reason`. The `action` is `drafted`, `paired`, `re-paired`, `re-pinned`,
+`dropped` or `not-paired`.
+
+### Offline
+
+`--offline`, or `fill.offline` in config, sends nothing off this machine. It
+means what it means for `meta fill` and `term fill`.
+
+- `auto` resolves only to `llama-cpp`, and only to a model already downloaded.
+  Nothing is downloaded.
+- A configured hosted provider is set aside, and one notice says so:
+  `manni: --offline: using llama-cpp instead of "anthropic" from graph.provider.`
+- A hosted provider named with `--provider` is a usage error, **exit 2**.
+- With a downloaded model, the run is the same as under `--local`.
+- With none, only the re-pin step runs. Each page that needed a model is
+  `skipped` with the reason `offline`, and the run exits 0 with one warning.
+
+```text
+$ manni graph fill --fields sample-questions --offline
+manni: no model is available offline, so only answer pins were updated, and nothing was drafted or proposed; download one first with --local, or drop --offline.
+filled    docs/retry.md (sample-questions)
+            re-pinned  "How do I resume a paused upload?"  lines 9 to 12
+skipped   docs/limits.md (offline)
+```
+
+The warning is on stderr and the report on stdout.
 
 ### Arguments
 
@@ -311,16 +531,18 @@ model and the fields. See
 | `--allow-empty` | n/a | off | Zero matched files is an empty report and exit 0. |
 | `-f, --format` | `<pretty\|json>` | `pretty` | Output format. |
 | `--dry-run` | n/a | off | Report proposals without writing files. |
-| `--force` | n/a | off | Overwrite `graph` fields a human set. Without it, a field already present on the page is left alone. |
+| `--force` | n/a | off | Overwrite `graph` fields a human set. Without it, a field already present on the page is left alone. It never rewrites or removes a sample question. |
 | `--no-cache` | n/a | off | Bypass the proposal cache, so every page is asked again. |
 | `--no-validate-graph` | n/a | off | Skip the SHACL guardrail that vets each proposal against the derived graph before it is written. |
 | `--sections` | n/a | config `fill.sections`, else off | Also propose per-section metadata, not only page-level. |
 | `--max-turns` | `<n>` | config `fill.maxTurns`, else unbounded | Stop after this many inference calls. A whole number, at least 1. |
 | `--confidence` | `<n>` | config `fill.confidenceThreshold`, else `0.7` | Minimum model confidence, 0 to 1, for a field to be written. Outside that range is a usage error. |
-| `--fields` | `<list>` | config `fill.fields`, else every field | Which fields to propose, comma-separated and given once. An unknown name is a usage error naming the allowed set. |
+| `--fields` | `<list>` | config `fill.fields`, else every field | Which fields to propose, comma-separated and given once. `sample-questions` is one of them. An unknown name is a usage error naming the allowed set. |
+| `--chunk-chars` | `<n>` | config `fill.chunkChars`, else `12000` | The most characters of a page one question request sends. A whole number, at least 1. |
 | `--provider` | `<name>` | config `graph.provider`, then `providers.provider`, then `auto` | `auto`, `anthropic`, `openai`, `claude-cli`, or `llama-cpp`. An unknown name is **exit 2**. |
 | `--model` | `<model>` | config `graph.model`, else the provider's default | The model within the provider. It needs a named provider, from here or from config, because a model name does not say which provider owns it. |
 | `--local` | n/a | off | Run inference on this machine with `llama-cpp`, over `graph.provider` and the family's `providers.provider`. |
+| `--offline` | n/a | config `fill.offline`, else off | Send nothing off this machine. Only a local model already downloaded runs. See [Offline](#offline). |
 
 ## `graph query`
 
@@ -387,6 +609,24 @@ Broken internal links (1):
   docs/troubleshooting.md -> missing.md
 ```
 
+The `sample-questions` coverage row counts the pages that ask a reader
+question. It is gated only when the per-field `coverageThreshold` map names it,
+never by a single number. The report ends with the concepts no question
+reaches. A concept has a question when a page whose primary topic or subjects
+name it asks one. The list is reported and never gated, like
+orphans.
+
+```console
+$ manni graph stats -c test/graph/fixtures/dd/docs.config.yaml
+…
+Concepts with no question (3):
+  Installation
+  onboarding
+  reference
+```
+
+The JSON report lists those concepts by IRI, under `conceptsWithoutQuestions`.
+
 ### Options
 
 | Option | Argument | Default | Description |
@@ -397,7 +637,7 @@ Broken internal links (1):
 | `-f, --format` | `<pretty\|json>` | `pretty` | Output format. |
 | `--check` | n/a | off | Exit 1 when a broken internal link exists, or when coverage is below its threshold. This is the CI gate. |
 | `--top` | `<n>` | every hub | How many most-connected documents to list. A whole number, at least 1. |
-| `--coverage-threshold` | `<pct>` | config `stats.coverageThreshold`, else none | Minimum coverage percentage, 0 to 100, applied to every measured field for this run. Outside that range is a usage error. See [Coverage](/manni/graph/govern/coverage/). |
+| `--coverage-threshold` | `<pct>` | config `stats.coverageThreshold`, else none | Minimum coverage percentage, 0 to 100, applied to every measured field but `sample-questions` for this run. Outside that range is a usage error. See [Coverage](/manni/graph/govern/coverage/). |
 
 ## `graph search`
 
@@ -523,6 +763,7 @@ Wrote 32 nodes to .tmp/dd/graph.jsonld
 | `jsonld` | JSON-LD, for a linked-data ingester. |
 | `iirds` | A conformant iiRDS package, for a content delivery portal. RDF/XML is written inside it. |
 | `search` | The browser search index and its manifest, read client-side by `@hawkeyexl/manni/graph/runtime`. |
+| `questions` | The question set as JSON Lines, for an eval tool. See [The question set](#the-question-set). |
 
 An unknown target is **exit 2**, with the allowed set named.
 
@@ -530,7 +771,7 @@ An unknown target is **exit 2**, with the allowed set named.
 
 | Argument | Description |
 |---|---|
-| `<target>` | What to write: `jsonld`, `iirds`, or `search`. Required. |
+| `<target>` | What to write: `jsonld`, `iirds`, `search`, or `questions`. Required. |
 
 ### Options
 
@@ -539,7 +780,77 @@ An unknown target is **exit 2**, with the allowed set named.
 | `-c, --config` | `<path>` | discovered | Path to `manni.config.yaml`. |
 | `--no-config` | n/a | off | Ignore any discovered config file. |
 | `-g, --graph` | `<path>` | config `out` | The built Turtle file to read. |
-| `-o, --out` | `<path>` | the graph path with the target's extension | Where to write. |
+| `-o, --out` | `<path>` | the graph path with the target's extension; `questions.jsonl` beside the graph for `questions` | Where to write. |
+
+### The question set
+
+`export questions` writes one JSON line per question. It reads each page's
+`sample-questions` and each file `graph.questionFiles` names. An answer's text
+is rendered from its pin when the export runs, so the source stays pinned
+rather than copied.
+
+```console
+$ manni graph export questions
+Wrote 431 questions to graph/questions.jsonl
+
+$ manni graph export questions -o eval/golden.jsonl -g build/graph.ttl -c ci/manni.config.yaml
+Wrote 431 questions to eval/golden.jsonl
+```
+
+```json
+{"id": "docs/uploads/retry.md#how-many-times-does-an-upload-retry-by-default",
+ "question": "How many times does an upload retry by default?",
+ "language": "en", "reviewed": true, "answerable": true,
+ "expected": [{"id": "https://docs.example.com/graph/doc/docs/uploads/retry.md#retry-limits",
+               "file": "docs/uploads/retry.md", "lines": "41-43", "reviewed": true,
+               "text": "Uploads retry three times, waiting 2, 4 and 8 seconds."}]}
+```
+
+The file is shown wrapped here. On disk, each question is one line.
+
+| Field | Meaning |
+|---|---|
+| `id` | The page or golden-set file, then `#` and the question's slug. |
+| `language` | The page's language. A file question takes its own `language`, else its first answer's page, else `und`. |
+| `reviewed` | `false` for a drafted question. Drafts are included for the consumer to filter. |
+| `answerable` | `false` for a gap, a file question with no answers. Its `expected` is empty. |
+| `expected[].id` | The node `export search` indexes the answer's first line under, so ID-based recall compares like with like. |
+| `expected[].file` | The page that holds the answer. |
+| `expected[].lines` | The body lines the answer is on now. An answer that moved is written at its new lines. |
+| `expected[].reviewed` | `false` when the pin or its question is a draft. |
+| `expected[].stale` | `true` when the answer changed since it was pinned, or its page is gone. |
+| `expected[].text` | The answer's lines, as the page reads at export time. |
+
+A question with no pin has one `expected` entry for its page, with no `lines`
+or `text`. A stale answer is written as its lines read now. One warning on
+stderr gives the count, and the exit code is still 0:
+
+```text
+manni: 5 answers changed since they were pinned, so they are exported as they read now, marked stale.
+```
+
+No question anywhere writes an empty file and reports `Wrote 0 questions`.
+
+The format is manni's own, because each eval tool names its fields
+differently. Each mapping below reads the reviewed questions from `rows`, the
+parsed lines.
+
+```python
+# Ragas
+samples = [{"user_input": r["question"], "reference_contexts": [a["text"] for a in r["expected"] if "text" in a]} for r in rows if r["reviewed"]]
+dataset = EvaluationDataset.from_list(samples)
+```
+
+```python
+# DeepEval
+goldens = [Golden(input=r["question"], context=[a["text"] for a in r["expected"] if "text" in a]) for r in rows if r["reviewed"]]
+dataset = EvaluationDataset(goldens=goldens)
+```
+
+```sh
+# promptfoo: point `tests: file://tests.jsonl` at the result
+jq -c 'select(.reviewed) | {vars: {question: .question}, metadata: {id: .id}}' graph/questions.jsonl > tests.jsonl
+```
 
 ## Exit codes
 

@@ -27,7 +27,7 @@ sample-questions:
 graph:
   label: Configuration reference
   type: reference
-last-updated: 2026-10-11
+last-updated: 2026-10-18
 tags:
   - configuration
   - yaml
@@ -1423,6 +1423,9 @@ a page asks for. It is on `manni meta fill` and on docevals `run`, `generate`,
   `--model` flag always applies.
 - **Detection never runs**, so no key in the environment can redirect the run.
 
+[Offline](#offline) draws the same boundary, and then runs only a model already
+downloaded. Its note names `--offline` in place of `--local`.
+
 What `--local` means for a data-egress review is on [Run fill under a
 data-egress policy](/manni/meta/set-up/fill-providers/#keeping-content-on-this-machine).
 Choosing a provider for judged evals is on [Choose a
@@ -1491,7 +1494,7 @@ files a run reads.
 | `baseline` | `string` | none | Path to a [validation baseline](/manni/meta/reference/cli/#baselines). Setting it turns on `--baseline` for every run; `--no-baseline` suppresses it for one. A bare `--write-baseline` records into this same file. |
 | `allowEmpty` | `boolean` | `false` | Treat an input set that resolves to zero files as success instead of an error (exit 2). Equivalent to `--allow-empty`. See [empty input sets](/manni/meta/reference/cli/#empty-input-sets). |
 | `respectGitignore` | `boolean` | `true` | Skip files `.gitignore` covers when expanding directories and globs. `--no-gitignore` overrides it for one run. See [`.gitignore`](/manni/meta/reference/cli/#gitignore). |
-| `offline` | `boolean` | `false` | Never fetch a remote schema. `--offline` turns it on for one run. See [Offline](#offline). |
+| `offline` | `boolean` | `false` | No network egress. Never fetch a remote schema, and `fill` runs only a local model already downloaded. `--offline` turns it on for one run. See [Offline](#offline). |
 | `schemaCache` | `SchemaCache` | none | Settings for the [cross-run schema cache](/manni/meta/reference/schema-resolution/#the-cross-run-cache). See [Schema cache](#schema-cache). |
 | `schemaTrust` | `SchemaTrust` | none | How far a document's own `$schema` is trusted. Absent means `any`, which is every reference kind, as manni meta has always behaved. See [Schema trust](#schema-trust). |
 | `fill` | `Fill` | none | Defaults for [`manni meta fill`](/manni/meta/reference/cli/#meta-fill). See [Fill](#fill). |
@@ -1742,6 +1745,22 @@ manifest](#remote-manifests) is refused outright, because a manifest is never
 cached. Built-in ids and local `.json` files are unaffected, because neither
 touches the network. An air-gapped build against the default schema set works
 with nothing else configured.
+
+{/* cite offline-fill-runs-only-a-downloaded-model */}
+`fill` sends nothing off this machine either. It runs `llama-cpp` as under
+[`--local`](#local-inference), and only with a model already downloaded. A
+hosted provider in config is set aside with a note. A hosted `--provider` exits
+2:
+
+```
+manni: --offline and --provider openai contradict each other: --offline sends nothing off this machine, so only llama-cpp with a model already downloaded can run. Drop one of them.
+```
+
+Nothing is downloaded or installed. With no model on disk, `fill` exits 2:
+
+```
+manni: no model is available offline, so fill cannot propose values; download one first with --local, or drop --offline.
+```
 
 ```yaml title="manni.config.yaml"
 meta:
@@ -2209,7 +2228,7 @@ meta:
 With no `fields`, a page manages the merge-safe fields its schemas claim.
 The [default set](/manni/meta/reference/schema-resolution/#the-default-set)
 carries `manni:stewardship:1.1.0`, which claims `owner`, `created` and
-`last-updated`, and `manni:ai-context:1.0.0`, which claims `provenance`. A
+`last-updated`, and `manni:ai-context:1.1.0`, which claims `provenance`. A
 page on the defaults manages all four. A page judged by a house schema alone,
 which claims none of them, manages nothing.
 
@@ -2825,7 +2844,7 @@ corresponding config value; others merge with it.
 | Config discovery | `--no-config` | n/a | `--no-config` skips discovery entirely, so no config value applies. It sets the same option as `-c/--config`, so if you pass both, whichever comes later on the command line wins. |
 | Empty input sets | `--allow-empty` | `allowEmpty` | The flag **overrides** the config key, and only in the permissive direction: passing it turns the check off. Omitting it falls back to config, then to off. |
 | Fill settings | `--confidence`, `--provider`, `--model`, `--max-turns`, `--chunk-chars`, `--concurrency` | `fill.*` | Each flag **overrides** its matching `fill` key. An unset flag falls back to config, then to the built-in default. An unset `--provider` or `--model` falls back to `fill.provider` or `fill.model`, then to [`providers:`](#providers), then to `auto`. |
-| Offline | `--offline` | `offline` | The flag **overrides** the config key, and only in the restrictive direction: passing it turns fetching off. Omitting it falls back to config, then to off. |
+| Offline | `--offline` | `offline` | The flag **overrides** the config key, and only in the restrictive direction: passing it turns egress off. Omitting it falls back to config, then to off. |
 
 <Aside type="caution" title="--schema is all-or-nothing">
 `--schema` is all-or-nothing: passing it once makes that schema set apply to

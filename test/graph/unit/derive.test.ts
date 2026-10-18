@@ -128,6 +128,37 @@ describe("deriveGraph — document basics", () => {
     ]);
   });
 
+  it("derives only the question text of an object item, never its pins (0086)", () => {
+    const g = graph({
+      "docs/a.md": [
+        "---",
+        "sample-questions:",
+        "  - How do I retry?",
+        "  - question: How many retries?",
+        "    answers:",
+        "      - lines: 3-4",
+        "        integrity: sha256-" + "0".repeat(64),
+        "    reviewed: false",
+        "---",
+        "",
+      ].join("\n"),
+    });
+    expect(
+      g
+        .filter((q) => q.p === `${NS.graph}sampleQuestion`)
+        .map((q) => q.o.value)
+        .sort(),
+    ).toEqual(["How do I retry?", "How many retries?"]);
+    expect(g.some((q) => q.o.value.startsWith("sha256-"))).toBe(false);
+
+    const single = graph({
+      "docs/a.md": "---\nsample-questions:\n  question: Alone?\n---\n",
+    });
+    expect(
+      single.filter((q) => q.p === `${NS.graph}sampleQuestion`).map((q) => q.o.value),
+    ).toEqual(["Alone?"]);
+  });
+
   it("derives no sample question without the frontmatter source", () => {
     const g = graph(
       { "docs/a.md": "---\nsample-questions: How do I retry?\n---\n" },
