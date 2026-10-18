@@ -1,5 +1,5 @@
 /**
- * A language-tagged literal (proposal 0085 §1) survives every place a literal
+ * A language-tagged literal (proposal 0086 §1) survives every place a literal
  * flows: the three serializers, the quad dedupe, reading Turtle back, and the
  * browser runtime's index.
  */
