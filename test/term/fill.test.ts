@@ -12,7 +12,7 @@ import { join, resolve } from "node:path";
 import { MockProvider, type MockResponse } from "@hawkeyexl/inference";
 import { parse as parseYaml } from "yaml";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { runFill, type FillOptions } from "../../src/term/commands/fill.js";
+import { lineOf, runFill, type FillOptions } from "../../src/term/commands/fill.js";
 import { LOCAL_MODEL, localModelEnv, type LocalModelEnv } from "../helpers/local-model.js";
 import { renderFillPretty } from "../../src/term/reporters/fill.js";
 
@@ -312,5 +312,29 @@ describe("term fill --crawl", () => {
     const crawled = report.entries.filter((e) => e.source === "crawl");
     expect(crawled.map((e) => [e.action, e.definition.status])).toEqual([["skip", "below-threshold"]]);
     expect(existsSync(join(work, "docs/glossary/idempotency-key.md"))).toBe(false);
+  });
+});
+
+describe("lineOf", () => {
+  it("finds a label only as a whole word, in any script", () => {
+    const content = ["CAPABILITIES first", "the API second", "Ärger und Ärger-Test"].join(String.fromCharCode(10));
+    expect(lineOf(content, "api")).toBe(2);
+    expect(lineOf(content, "capa")).toBeUndefined();
+    expect(lineOf(content, "ärger")).toBe(3);
+  });
+});
+
+describe("the pretty summary", () => {
+  it("counts skipped entries only when there are some", () => {
+    const report = {
+      entries: [],
+      summary: { created: 1, filled: 0, skipped: 2, withoutDefinition: 1, turns: 3 },
+      dryRun: false,
+      threshold: 0.7,
+    };
+    expect(renderFillPretty(report)).toBe("1 term created, 0 filled, 1 left without a definition, 2 skipped");
+    expect(renderFillPretty({ ...report, summary: { ...report.summary, skipped: 0 } })).toBe(
+      "1 term created, 0 filled, 1 left without a definition",
+    );
   });
 });
