@@ -18,6 +18,31 @@ describe("applyGraphFields", () => {
     expect(result.content.endsWith(BODY)).toBe(true);
     expect(result.content).toContain("# keep me"); // YAML comment survives
     expect(result.content).toContain("label: Config");
+    // The page writes `[x]`, so a new list comes back unpadded to match.
+    expect(result.content).toContain("concepts: [reference]");
+  });
+
+  it("leaves the keys it does not touch exactly as written", () => {
+    const description =
+      "A plain description well past eighty characters, which a default line width would fold over two lines.";
+    const content = `---\ntitle: T\ndescription: ${description}\nconcepts: [Upload, Quota] # mine\n---${BODY}`;
+    const result = applyGraphFields(content, "a.md", { label: "Config" });
+    const lines = result.content.split("\n");
+    expect(lines).toContain(`description: ${description}`);
+    expect(lines).toContain("concepts: [Upload, Quota] # mine");
+  });
+
+  it("writes new flow lists in the padding the page already uses", () => {
+    const content = `---\ntags: [x]\n---${BODY}`;
+    const result = applyGraphFields(content, "a.md", { concepts: ["reference"] });
+    expect(result.content).toContain("tags: [x]");
+    expect(result.content).toContain("concepts: [reference]");
+  });
+
+  it("keeps padding for new flow lists on a page that pads its own", () => {
+    const content = `---\ntags: [ x ]\n---${BODY}`;
+    const result = applyGraphFields(content, "a.md", { concepts: ["reference"] });
+    expect(result.content).toContain("tags: [ x ]");
     expect(result.content).toContain("concepts: [ reference ]");
   });
 
