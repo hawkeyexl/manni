@@ -1,0 +1,4 @@
+collections:
+  - name: site
+    paths: [docs/src/content/docs]
+    url: http://127.0.0.1:4321/manni/

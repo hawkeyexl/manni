@@ -1,0 +1,42 @@
+{
+    "ls": "astro.config.mjs             package-lock.json\ncontent-strategy             package.json\ndist                         proposals\ndoc-frontmatter.schema.json  public\nmaintainers                  src\nnode_modules                 tsconfig.json\n",
+    "gitGrep": "        run: npx astro preview --host 127.0.0.1 --port 4321 > ../preview.log 2>&1 &\n",
+    "preview": {
+        "chunks": [
+            {
+                "ms": 1151,
+                "output": "manni: Starlight in docs/. Running npm run build\n"
+            },
+            {
+                "ms": 1403,
+                "output": "\n> manni-docs@0.0.1 build\n> astro build\n"
+            },
+            {
+                "ms": 1420,
+                "output": "@@cut@@... 282 lines of astro build output cut (16.1 s) ...\n"
+            },
+            {
+                "ms": 17522,
+                "output": "\u001b[2m11:42:10\u001b[22m \u001b[34m[build]\u001b[39m 239 page(s) built in \u001b[1m11.98s\u001b[22m\n\u001b[2m11:42:10\u001b[22m \u001b[34m[build]\u001b[39m \u001b[1mComplete!\u001b[22m\nmanni: Starlight in docs/. Running npm run preview -- --host 127.0.0.1 --port 4321\n"
+            },
+            {
+                "ms": 17604,
+                "output": "\n> manni-docs@0.0.1 preview\n> astro preview --host 127.0.0.1 --port 4321\n\n[astro] `markdown.remarkPlugins`, `markdown.rehypePlugins`, and `markdown.remarkRehype` are deprecated. Pass them to `unified({...})` from `@astrojs/markdown-remark` directly instead.\n"
+            },
+            {
+                "ms": 17638,
+                "output": "\u001b[42m\u001b[1m astro \u001b[22m\u001b[49m \u001b[32mv7.2.9\u001b[39m \u001b[2mready in\u001b[22m 12 \u001b[2mms\u001b[22m\n\u001b[2m┃\u001b[22m Local    \u001b[36mhttp://127.0.0.1:4321/manni\u001b[39m\n"
+            }
+        ],
+        "cutLines": 282,
+        "cutSeconds": 16.1,
+        "totalLines": 296,
+        "readyMs": 17638
+    },
+    "hugo": "manni: Hugo in test/fixtures/site/hugo/. Running hugo\nmanni: hugo not found on PATH. Install Hugo's CLI, or set site.commands.build.\n",
+    "a11y": "Checked 238 of 238 pages (sitemap: \u001b[36mhttp://127.0.0.1:4321/manni/sitemap-index.xml\u001b[39m, 0 pages; followed links)\n\n\u001b[32m0 violations on 0 of 238 pages\u001b[39m\n\nreal    5m7.493s\nuser    0m0.045s\nsys     0m0.000s\n",
+    "exits": {
+        "hugo": "2",
+        "a11y": "0"
+    }
+}

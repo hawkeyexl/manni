@@ -124,6 +124,16 @@ const DOMAINS: readonly Domain[] = [
         .description("Set and rotate the family key that encrypted values are encrypted with."),
     ],
   },
+  // The docs site, a family resource with verbs like `key` (proposal 0082).
+  {
+    names: ["site"],
+    load: async () => [
+      (await import("./site/cli.js"))
+        .buildProgram()
+        .name("site")
+        .description("Start, build and preview the docs site"),
+    ],
+  },
   // The two family verbs (proposal 0078), and the only verbs the umbrella
   // carries: each runs other domains' command cores and owns no checks.
   {

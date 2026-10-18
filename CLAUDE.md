@@ -135,6 +135,14 @@ Key layers:
   (proposal 0045). It owns no cryptography. `rotate` orchestrates meta's and
   cite's re-encryption, and the one ciphertext format lives in
   `src/shared/encryption.ts`.
+- `src/site/`: the docs site's domain, `manni site start`, `build` and
+  `preview` (proposal 0082). It detects the site's framework and runs that
+  framework's own commands. `site.commands` overrides any of them.
+  - `src/site/core/`: the `site:` config loader, the framework table and
+    site search (`detect.ts`), the long-running child runner, and the
+    built-in static server `preview` uses for frameworks without one.
+  - `src/site/cli.ts`: thin commander wrapper exported as `buildProgram()`
+    and mounted by `src/cli.ts`. No entry point of its own.
 - `src/family/`: the two family verbs, `manni check` and `manni status`
   (proposal 0078). It owns in-play detection, Claude Code hook-envelope
   detection and the orchestration of the domains' command cores. It owns no
@@ -361,7 +369,7 @@ stdin/parse cases.
 Before any user-facing writing or docs task, consult `docs/content-strategy/`:
 
 1. Identify the **persona** the page serves: Maya (docs engineer), Devin (CI engineer), Sara (schema author), or Theo (contributor fixing a failure). See `personas.md`.
-2. Find the matching **CUJ** in `cujs.md` (M1–M24, D1–D16, S1–S14, T1–T8). Structure the content around reaching that outcome, not by document type or Diátaxis category.
+2. Find the matching **CUJ** in `cujs.md` (M1–M26, D1–D16, S1–S14, T1–T8). Structure the content around reaching that outcome, not by document type or Diátaxis category.
 3. Link into the **Reference shelf** (`reference/`) for exhaustive detail (flag tables, config keys, precedence chain). Journey pages explain the path; they don't duplicate reference.
 4. Check `information-architecture.md` for the page's place in the content set and its ★ launch status.
 5. Every page in `docs/src/content/docs/**` needs `title` and `description` frontmatter.

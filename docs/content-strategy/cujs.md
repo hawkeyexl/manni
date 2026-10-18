@@ -228,6 +228,16 @@ This is the backbone of the docevals section. It is the only journey that crosse
 
 ---
 
+### M26 · Run the docs site locally
+
+**Outcome.** Maya has the docs site running on her machine, in any repository, without first reading the framework's own docs.
+
+**Steps.** She runs `manni site start` from the repository root. It finds the site in the root, `docs/`, `website/` or `site/`, and detects the framework from its files. One line on stderr names the framework and the exact command it runs. The port is the one her collection `url:` names, so the address she opens is the one `manni a11y check` reads. Before a crawl she runs `manni site preview` instead, which builds and then serves the output. A framework manni does not detect gets its commands under `site.commands` in `manni.config.yaml`, and from then on the verbs work as before. Theo reaches the same page from T3, in a repository he does not own.
+
+**What success looks like.** One command per job in every docs repository, and a served site on the URL the other tools already read.
+
+---
+
 ## Devin, Platform / CI Engineer
 
 ### D1 · Add the gate to our CI platform
@@ -270,7 +280,7 @@ Per-file schema validation cannot see a dangling cross-reference, a duplicate sl
 
 **Outcome.** Every pull request hears about an accessibility regression, and the live site is watched on a schedule.
 
-**Steps.** For a pull request he builds the site, serves it, and waits for the port. Then he runs `manni a11y check` against it with `-f github`, so each violation is annotated on the diff. For the live site he schedules the same command against the public URL. He reads the exit code the way the family defines it, `0` clean, `1` violations, `2` something could not run. A crawl that takes too long is narrowed by the page limit and the scope in the `a11y:` config.
+**Steps.** For a pull request he serves the site with one command, `manni site preview`, which builds it first and binds the port the collection `url:` names. He waits for that port to answer. Then he runs `manni a11y check` against it with `-f github`, so each violation is annotated on the diff. For the live site he schedules the same command against the public URL. He reads the exit code the way the family defines it, `0` clean, `1` violations, `2` something could not run. A crawl that takes too long is narrowed by the page limit and the scope in the `a11y:` config.
 
 **What success looks like.** The same command locally and in CI, one annotation per violation, and no second tool to configure.
 
