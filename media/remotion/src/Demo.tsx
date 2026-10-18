@@ -60,6 +60,7 @@ function finalScreen(beat: Beat, prev: Line[]): Line[] {
   for (const c of beat.commands) {
     lines.push({ spans: [promptSpan, { text: c.typed }] });
     if (c.output !== "") for (const spans of parseAnsi(c.output)) lines.push({ spans });
+    for (const m of c.more ?? []) for (const spans of parseAnsi(m.output)) lines.push({ spans });
   }
   return lines;
 }
@@ -86,14 +87,25 @@ function screenAt(beat: Beat, frame: number, prev: Line[], typingMs: number): Li
       return lines;
     }
     if (c.output !== "") for (const spans of parseAnsi(c.output)) lines.push({ spans });
+    let at = c.outputAt;
+    for (const m of c.more ?? []) {
+      at += m.afterFrames;
+      if (frame < at) {
+        lines.push({ spans: [], cursor: true });
+        return lines;
+      }
+      for (const spans of parseAnsi(m.output)) lines.push({ spans });
+    }
   }
-  lines.push({ spans: [promptSpan], cursor: true });
+  const last = commands[commands.length - 1];
+  lines.push(last?.running ? { spans: [], cursor: true } : { spans: [promptSpan], cursor: true });
   return lines;
 }
 
 // ---- Wrapping ---------------------------------------------------------------
 
-const sameStyle = (a: Span, b: Span) => a.fg === b.fg && a.dim === b.dim && a.bold === b.bold && a.underline === b.underline;
+const sameStyle = (a: Span, b: Span) =>
+  a.fg === b.fg && a.dim === b.dim && a.bold === b.bold && a.underline === b.underline && a.bg === b.bg && a.chrome === b.chrome;
 
 /** Collapse a run of one-character spans back into styled runs. */
 function merge(chars: Span[]): Span[] {
@@ -169,6 +181,8 @@ const TerminalLine: React.FC<{ line: Line; fontPx: number; linePx: number }> = (
           color: s.fg ?? (s.dim ? tokens.dim : tokens.text),
           fontWeight: s.bold ? 700 : 400,
           textDecoration: s.underline ? "underline" : "none",
+          background: s.bg ?? "transparent",
+          fontStyle: s.chrome ? "italic" : "normal",
         }}
       >
         {s.text}

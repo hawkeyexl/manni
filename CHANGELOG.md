@@ -4,6 +4,20 @@
 4.13.1. Entries below that version are docmeta releases; the repository
 history is the same one.
 
+# [4.11.0](https://github.com/hawkeyexl/manni/compare/v4.10.0...v4.11.0) (2026-10-18)
+
+
+### Features
+
+* **test:** manni test run, which runs Doc Detective and reports in the family contract ([#160](https://github.com/hawkeyexl/manni/issues/160)) ([1f74e68](https://github.com/hawkeyexl/manni/commit/1f74e683fc25a937666751b9d8887f49afa0ce97))
+
+# [4.10.0](https://github.com/hawkeyexl/manni/compare/v4.9.0...v4.10.0) (2026-10-18)
+
+
+### Features
+
+* **site:** add manni site start, build and preview ([#161](https://github.com/hawkeyexl/manni/issues/161)) ([ee1c69e](https://github.com/hawkeyexl/manni/commit/ee1c69e814744fd77107656e6ccfd1bd21ff0443))
+
 # [4.9.0](https://github.com/hawkeyexl/manni/compare/v4.8.1...v4.9.0) (2026-10-18)
 
 
