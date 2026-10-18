@@ -206,6 +206,8 @@ export function lf(text: string): string {
   return text.replace(/\r\n?/g, "\n");
 }
 
+// ponytail: unbounded, one entry per distinct piece of markup. Fine for a
+// short-lived CLI process; bound it with an LRU if a long-lived host uses the library.
 const markupTexts = new Map<string, string | undefined>();
 
 /** The text a piece of inline XML reads as, trimmed, or `undefined` when it does not parse. */

@@ -275,9 +275,11 @@ export interface TermReader {
   /**
    * Rewrite this construct's entries in `input.content` from `terms`, which are
    * the terms this reader read from the same file, possibly edited. Returns the
-   * new content. Absent for a construct that is not written in place.
+   * new content. Absent for a construct that is not written in place. A
+   * construct that writes a value once for terms that each carry it pushes
+   * onto `conflicts` every field the terms disagree on, keeping the first's.
    */
-  apply?(this: void, input: TermInput, terms: readonly Term[]): string;
+  apply?(this: void, input: TermInput, terms: readonly Term[], conflicts?: MergeConflict[]): string;
 }
 
 // ---------------------------------------------------------------------------

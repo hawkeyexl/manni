@@ -18,7 +18,7 @@ import { tbxInput } from "../../src/term/core/load-set.js";
 import { readerForConstruct } from "../../src/term/core/readers/index.js";
 import { tbxSourceOf } from "../../src/term/core/readers/tbx-model.js";
 import { writerFor } from "../../src/term/core/writers/index.js";
-import type { Term, TermReader, TermRender } from "../../src/term/types.js";
+import type { MergeConflict, Term, TermReader, TermRecord, TermRender } from "../../src/term/types.js";
 import { WRITERS_FIXTURES, term as manifestTerm } from "./writer-fixture.js";
 
 const DIR = resolve(__dirname, "../fixtures/term/readers/tbx");
@@ -234,6 +234,15 @@ describe("TBX headers on export", () => {
     expect(back).toContain('  <martifHeader>\n    <fileDesc>\n      <sourceDesc>\n        <p>A hand-written TBX-Basic sample.</p>');
   });
 
+  it("keeps the blank lines inside a carried header, and trims the ones around it", () => {
+    const { content } = readFixture("tbx-basic-v2");
+    const p = "<p>A hand-written TBX-Basic sample.</p>";
+    const spaced = content.replace(p, `${p}\n   \n\n        <p>A second paragraph.</p>`);
+    const out = write(read(spaced, "tbx-basic-v2.tbx"), "tbx3");
+    expect(out).toContain(`  <tbxHeader>\n    <fileDesc>\n      <sourceDesc>\n        ${p}\n\n\n        <p>A second paragraph.</p>`);
+    expect(out).toContain("    </encodingDesc>\n  </tbxHeader>");
+  });
+
   it("writes manni's header and names every TBX source whose header it left behind", () => {
     const v2 = readFixture("tbx-basic-v2").terms;
     const v3 = readFixture("tbx-basic-v3").terms;
@@ -272,10 +281,10 @@ function rename(terms: readonly Term[], from: string, to: string): Term[] {
   });
 }
 
-function applyInPlace(name: string, terms: readonly Term[]): string {
+function applyInPlace(name: string, terms: readonly Term[], conflicts?: MergeConflict[]): string {
   const apply = reader().apply;
   if (apply === undefined) throw new Error("no apply");
-  return apply(tbxInput(readFileSync(fixturePath(name), "utf8"), `${name}.tbx`, fixturePath(name)), terms);
+  return apply(tbxInput(readFileSync(fixturePath(name), "utf8"), `${name}.tbx`, fixturePath(name)), terms, conflicts);
 }
 
 describe("a changed entry rewritten at its own version", () => {
@@ -398,6 +407,57 @@ describe("an entry rewritten in place", () => {
       i === at ? { ...t, record: { ...t.record, "concept-entry": { "subject-field": "edited field" } } } : t,
     );
     expect(applyInPlace("tbx-basic-v2", edited)).toContain(">edited field<");
+  });
+});
+
+describe("an entry given some of its languages in place", () => {
+  it("matches each given term to the one read on language, whatever its case", () => {
+    const { terms } = readFixture("tbx-basic-v2");
+    const de = terms.find((t) => t.id === "spectacle-lens" && t.language === "de");
+    if (de === undefined) throw new Error("no de term");
+    const written = applyInPlace("tbx-basic-v2", [{ ...de, language: "DE", record: { ...de.record, label: "Glas" } }]);
+    expect(written).toContain("<term>Glas</term>");
+    expect(read(written, "tbx-basic-v2.tbx").filter((t) => t.id === "spectacle-lens")).toHaveLength(2);
+  });
+});
+
+describe("a concept-entry edited on more than one language", () => {
+  /** The fixture with progressive-lens's en term given concept-entry `en` and its de term `de`. */
+  function edit(en: TermRecord["concept-entry"], de: TermRecord["concept-entry"]): Term[] {
+    return readFixture("tbx-basic-v2").terms.map((t) => {
+      if (t.id !== "progressive-lens") return t;
+      return { ...t, record: { ...t.record, "concept-entry": t.language === "en" ? en : de } };
+    });
+  }
+  const WAYS = [
+    {
+      way: "in place",
+      out: (terms: readonly Term[]) => {
+        const conflicts: MergeConflict[] = [];
+        return { content: applyInPlace("tbx-basic-v2", terms, conflicts), conflicts };
+      },
+    },
+    {
+      way: "on export",
+      out: (terms: readonly Term[]) => {
+        const rendered = render(terms, "tbx");
+        return { content: rendered.files[0]?.content ?? "", conflicts: rendered.conflicts ?? [] };
+      },
+    },
+  ];
+
+  it.each(WAYS)("keeps the first language's value where they differ, and reports it, $way", ({ out }) => {
+    const { content, conflicts } = out(edit({ "subject-field": "photonics" }, { "subject-field": "Photonik" }));
+    expect(content).toContain('<descrip type="subjectField">photonics</descrip>');
+    expect(content).not.toContain("Photonik");
+    expect(conflicts).toEqual([{ id: "progressive-lens", field: "concept-entry.subject-field" }]);
+  });
+
+  it.each(WAYS)("keeps each language's edit to a different field $way", ({ out }) => {
+    const { content, conflicts } = out(edit({ "subject-field": "photonics" }, { "subject-field": "optics", notes: ["Agreed."] }));
+    expect(content).toContain(">photonics<");
+    expect(content).toContain(">Agreed.<");
+    expect(conflicts).toEqual([]);
   });
 });
 

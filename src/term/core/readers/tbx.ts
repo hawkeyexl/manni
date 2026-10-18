@@ -14,8 +14,11 @@ import { isDeepStrictEqual } from "node:util";
 import { DOMParser, type Element } from "@xmldom/xmldom";
 import { TermError } from "../../errors.js";
 import {
+  TERM_AUX_FIELDS,
   TERM_FIELDS,
+  type MergeConflict,
   type Term,
+  type TermAuxField,
   type TermAuxRecord,
   type TermDesignation,
   type TermField,
@@ -27,6 +30,8 @@ import {
 } from "../../types.js";
 import { slugOf } from "../id.js";
 import { reindent } from "../writers/markup.js";
+import { mergeFirst } from "../writers/merge.js";
+import { languageKey } from "../writers/render-util.js";
 import { nothing, recordOf, skipped, termOf, textOf } from "./normalize.js";
 import { indentAt, lineEnding, sameFields } from "./splice.js";
 import {
@@ -735,8 +740,10 @@ function sameTerm(a: Term, b: Term): boolean {
  * indented where it sat and in the file's line endings. An entry none of
  * whose terms changed keeps its bytes, and so does the header.
  */
-function applyTbx(input: TermInput, terms: readonly Term[]): string {
-  return spliceEntries(input, terms, false);
+function applyTbx(input: TermInput, terms: readonly Term[], conflicts?: MergeConflict[]): string {
+  const spliced = spliceEntries(input, terms, false);
+  conflicts?.push(...spliced.conflicts);
+  return spliced.content;
 }
 
 /**
@@ -744,9 +751,14 @@ function applyTbx(input: TermInput, terms: readonly Term[]): string {
  * they are now (a same-source export): unchanged entries and everything
  * outside them keep their bytes, a changed entry is written canonically in
  * the document's version and style, and an entry none of whose terms is
- * given is left out.
+ * given is left out. Where an entry's terms disagree on an edit to its
+ * `concept-entry`, the first term's is kept and reported.
  */
-export function exportTbxSource(document: TbxDocument, file: string, terms: readonly Term[]): string {
+export function exportTbxSource(
+  document: TbxDocument,
+  file: string,
+  terms: readonly Term[],
+): { content: string; conflicts: MergeConflict[] } {
   const input: TermInput = { content: document.content, file, format: "tbx", metadata: {}, lineFor: () => undefined };
   return spliceEntries(input, terms, true);
 }
@@ -766,7 +778,11 @@ function removeSpan(content: string, start: number, end: number): string {
  * given no terms, or only some of its languages, keeps the rest as read; an
  * export writes exactly the terms given.
  */
-function spliceEntries(input: TermInput, terms: readonly Term[], exporting: boolean): string {
+function spliceEntries(
+  input: TermInput,
+  terms: readonly Term[],
+  exporting: boolean,
+): { content: string; conflicts: MergeConflict[] } {
   const doc = parseTbx(input);
   const { content } = input;
   const groups = new Map<number, { end: number; current: Term[]; next: Term[] }>();
@@ -795,6 +811,7 @@ function spliceEntries(input: TermInput, terms: readonly Term[], exporting: bool
 
   const eol = lineEnding(content);
   let next = content;
+  const conflicts: MergeConflict[] = [];
   for (const [start, group] of [...groups.entries()].sort((a, b) => b[0] - a[0])) {
     if (group.next.length === 0) {
       if (exporting) next = removeSpan(next, start, group.end);
@@ -809,35 +826,57 @@ function spliceEntries(input: TermInput, terms: readonly Term[], exporting: bool
     if (unchanged) continue;
     // At the file's own version, each element keeps the attributes and ntig it was read with.
     const shape = group.current[0] === undefined ? undefined : tbxSourceOf(group.current[0])?.shape;
-    const lines = tbxEntryLines(withEditedConcept(written, group.current), doc.document, shape);
+    const edited = withEditedConcept(written, group.current);
+    conflicts.push(...edited.conflicts);
+    const lines = tbxEntryLines(edited.terms, doc.document, shape);
     const text = reindent(lines.join("\n"), indentAt(content, start), eol);
     next = next.slice(0, start) + text + next.slice(group.end);
   }
-  return next;
+  return { content: next, conflicts };
 }
 
 /**
  * The entry writes one `concept-entry`, its first term's. Every term of the
- * entry is read with the same one, so when a later term's differs from it as
- * read, that term holds the edit, and the first term carries it instead.
+ * entry is read with the same one, so a field where a term differs from it as
+ * read holds that term's edit, and the first term carries it. Where terms
+ * edit one field to different values, the first edit wins and the field is
+ * reported, as `mergeFirst` does for a render.
  */
-function withEditedConcept(written: readonly Term[], current: readonly Term[]): readonly Term[] {
+function withEditedConcept(
+  written: readonly Term[],
+  current: readonly Term[],
+): { terms: readonly Term[]; conflicts: MergeConflict[] } {
   const [head, ...rest] = written;
-  if (head === undefined) return written;
-  const read = current[0]?.record["concept-entry"];
-  if (!isDeepStrictEqual(head.record["concept-entry"], read)) return written;
-  const edited = rest.find((t) => !isDeepStrictEqual(t.record["concept-entry"], read));
-  if (edited === undefined) return written;
+  if (head === undefined) return { terms: written, conflicts: [] };
+  const read = current[0]?.record["concept-entry"] ?? {};
+  const concepts = written.map((t) => t.record["concept-entry"] ?? {});
+  const edits = (concept: TermAuxRecord): TermAuxField[] =>
+    TERM_AUX_FIELDS.filter((field) => !isDeepStrictEqual(concept[field], read[field]));
+  // An edit is wrapped, so one that removes a field is still a value to merge.
+  const { conflicts } = mergeFirst(
+    head.id,
+    concepts.map((c) => Object.fromEntries(edits(c).map((field) => [field, { value: c[field] }]))),
+    "concept-entry.",
+  );
+  const concept: TermAuxRecord = {};
+  for (const field of TERM_AUX_FIELDS) {
+    copyField(concept, concepts.find((c) => edits(c).includes(field)) ?? read, field);
+  }
   const { "concept-entry": _old, ...record } = head.record;
-  const concept = edited.record["concept-entry"];
-  return [{ ...head, record: concept === undefined ? record : { ...record, "concept-entry": concept } }, ...rest];
+  const joined = Object.keys(concept).length === 0 ? record : { ...record, "concept-entry": concept };
+  return { terms: [{ ...head, record: joined }, ...rest], conflicts };
+}
+
+function copyField<K extends TermAuxField>(to: Pick<TermAuxRecord, K>, from: TermAuxRecord, field: K): void {
+  const value = from[field];
+  if (value !== undefined) to[field] = value;
 }
 
 /** The entry's terms with each one the caller handed in, matched on language, in place of the one read. */
 function merge(current: readonly Term[], given: readonly Term[]): Term[] {
   const left = [...given];
   return current.map((term) => {
-    const at = left.findIndex((t) => t.language === term.language);
+    const at = left.findIndex((t) => languageKey(t) === languageKey(term));
     return at === -1 ? term : (left.splice(at, 1)[0] ?? term);
   });
 }

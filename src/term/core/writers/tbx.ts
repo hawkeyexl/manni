@@ -68,18 +68,22 @@ export function tbxHeaderFiles(terms: readonly Term[]): string[] {
     const source = tbxSourceOf(term);
     if (source !== undefined && !files.has(source.document)) files.set(source.document, term.location.file);
   }
-  return [...new Set(files.values())];
+  return [...files.values()];
 }
 
-/** An element's children from the source, at `indent` and LF, or `undefined` when it has none. */
+/**
+ * An element's children from the source, at `indent` and LF, or `undefined`
+ * when it has none. Blank lines around them are trimmed, and one between them
+ * is kept, empty.
+ */
 function carried(document: TbxDocument, span: { start: number; end: number } | undefined, indent: string): string[] | undefined {
   if (span === undefined) return undefined;
   const raw = lf(document.content.slice(span.start, span.end));
-  const lines = raw.split("\n");
-  const indents = lines.filter((line) => line.trim() !== "").map((line) => /^[ \t]*/.exec(line)?.[0].length ?? 0);
-  if (indents.length === 0) return undefined;
-  const strip = Math.min(...indents);
-  return lines.filter((line) => line.trim() !== "").map((line) => `${indent}${line.slice(strip).trimEnd()}`);
+  if (raw.trim() === "") return undefined;
+  const lines = raw.replace(/^(?:[ \t]*\n)+/, "").replace(/(?:\n[ \t]*)+$/, "").split("\n");
+  const blank = (line: string): boolean => line.trim() === "";
+  const strip = Math.min(...lines.filter((line) => !blank(line)).map((line) => /^[ \t]*/.exec(line)?.[0].length ?? 0));
+  return lines.map((line) => (blank(line) ? "" : `${indent}${line.slice(strip).trimEnd()}`));
 }
 
 /** The source's `<back>` at the other version: the one element v3 renamed is renamed, and the rest is carried as it is. */
@@ -133,11 +137,13 @@ function tbxWriterFor(format: "tbx" | "tbx3", version: TbxVersion): TermWriter {
       const dropped = droppedFields(terms, HOLDS);
       const source = soleSource(terms);
       if (source?.document.version === version) {
+        const exported = exportTbxSource(source.document, source.file, terms);
         return {
-          files: [{ path: target.path, content: exportTbxSource(source.document, source.file, terms) }],
+          files: [{ path: target.path, content: exported.content }],
           removals: [],
           dropped,
           skipped: [],
+          ...(exported.conflicts.length === 0 ? {} : { conflicts: exported.conflicts }),
           droppedHeaders: [],
         };
       }

@@ -274,6 +274,14 @@ describe("a multilingual set", () => {
       ).toBe("  dropped from a page: the header of glossary.tbx");
     });
 
+    it("prints the line after an in-place write too", () => {
+      const written = { ...report([{ id: "a", field: "concept-entry.subject-field" }]), mode: "in-place" as const, dryRun: false };
+      expect(renderWritePretty({ ...written, changes: [{ path: "glossary.tbx", action: "change" as const }] }).split("\n")).toEqual([
+        "Wrote 1 file",
+        "  kept the first language's value where languages differ: concept-entry.subject-field on 1 concept",
+      ]);
+    });
+
     it("says nothing when no field differs", () => {
       expect(renderWritePretty(report([]))).toBe("x.csv is up to date");
     });

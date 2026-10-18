@@ -398,7 +398,8 @@ export function renderWritePretty(report: WriteReport): string {
     return [...changes, ...renderNotes(report)].join("\n");
   }
   if (report.mode === "in-place") {
-    return report.changes.length === 0 ? "Nothing to write" : `Wrote ${plural(report.changes.length, "file")}`;
+    const wrote = report.changes.length === 0 ? "Nothing to write" : `Wrote ${plural(report.changes.length, "file")}`;
+    return [wrote, ...renderNotes(report)].join("\n");
   }
   const each = report.shape === "directory" && report.format !== "vale" ? ", one file each" : "";
   const written = report.terms - report.skipped.length - (report.otherLanguages?.terms.length ?? 0);

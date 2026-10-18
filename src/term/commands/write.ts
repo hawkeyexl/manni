@@ -307,13 +307,17 @@ function carryRecords(current: readonly Term[], edited: readonly Term[]): Term[]
   });
 }
 
-/** One file's content with each construct's entries written back through its reader, in order. */
+/**
+ * One file's content with each construct's entries written back through its
+ * reader, in order. A field the terms of one entry disagree on goes onto `conflicts`.
+ */
 export function applyInPlace(
   original: string,
   path: string,
   file: string,
   constructs: ReadonlyMap<TermConstruct, readonly Term[]>,
   readers: readonly TermReader[],
+  conflicts?: MergeConflict[],
 ): string {
   let content = original;
   let first = true;
@@ -324,7 +328,7 @@ export function applyInPlace(
     // The loaded terms carry offsets into the file as it was read. Once an
     // earlier construct has rewritten it, this one's entries are read again for
     // offsets that are the content's own, and the caller's records carried over.
-    content = reader.apply(input, first ? terms : carryRecords(reader.read(input).terms, terms));
+    content = reader.apply(input, first ? terms : carryRecords(reader.read(input).terms, terms), conflicts);
     first = false;
   }
   return content;
@@ -359,6 +363,7 @@ async function writeInPlace(
 
   const files: RenderedFile[] = [];
   const existing = new Map<string, string>();
+  const conflicts: MergeConflict[] = [];
   for (const [path, { file, constructs }] of byPath) {
     let original: string;
     try {
@@ -367,7 +372,7 @@ async function writeInPlace(
       throw new TermError(`${file}: could not be read: ${errorMessage(error)}`);
     }
     existing.set(path, original);
-    files.push({ path, content: applyInPlace(original, path, file, constructs, readers) });
+    files.push({ path, content: applyInPlace(original, path, file, constructs, readers, conflicts) });
   }
 
   const changes = await applyChanges(files, [], existing, cwd, !check && !dryRun);
@@ -378,6 +383,7 @@ async function writeInPlace(
     files: files.map((f) => ({ path: displayPath(f.path, cwd), content: f.content })),
     dropped: [],
     skipped: [],
+    ...(conflicts.length === 0 ? {} : { conflicts }),
     check,
     dryRun,
   };
