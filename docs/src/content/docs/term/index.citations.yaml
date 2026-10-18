@@ -5,9 +5,9 @@ docs/src/content/docs/term/index.mdx:
         integrity: sha256-8eaf928fa69b8abbeb9e1db43d6afa52a06d2515bac29efe1504083aab7d1a8d
       source:
         file: src/term/core/check.ts
-        lines: 97-114
+        lines: 128-145
         integrity: sha256-0ab15562b6136948cd6d1f227877813f5f5cf02e8fe64109bb93ac9829149e52
-        commit-sha: b4d9b1bfb7abb03eaf162930185b6d1d465e4a08
+        commit-sha: c003f4879ac05f1e9a5928e2afc069e1fa4ff5fe
     - id: concepts-read-from-metadata
       claim:
         integrity: sha256-8eaf928fa69b8abbeb9e1db43d6afa52a06d2515bac29efe1504083aab7d1a8d
@@ -99,7 +99,7 @@ docs/src/content/docs/term/index.mdx:
     - id: check-ten-rules
       claim:
         lines: 34
-        integrity: sha256-e7e7018fdfa038a09a0e598e46eb91b4e166b58339c3670846c0a239862f42dc
+        integrity: sha256-88b4e2e69f6dce643876847d970697b9479b25d9630042c7908d51f2f5e11604
       source:
         file: src/term/types.ts
         lines: 440-451
@@ -147,9 +147,9 @@ docs/src/content/docs/term/index.mdx:
         integrity: sha256-cb33af084d5ecff16a771daa9bd8125f0ddaa98648027b3b9389e1960b1f8356
       source:
         file: src/term/core/check.ts
-        lines: 103-107
+        lines: 134-138
         integrity: sha256-bf5fbf1b4dc71d211ff438776cce809e03e84d763b8d500b8a9002a4cb364678
-        commit-sha: b4d9b1bfb7abb03eaf162930185b6d1d465e4a08
+        commit-sha: c003f4879ac05f1e9a5928e2afc069e1fa4ff5fe
     - id: proof-findings-layout
       claim:
         lines: 57-62
@@ -189,12 +189,12 @@ docs/src/content/docs/term/index.mdx:
         integrity: sha256-9447cfa9f5cdc753063aa5f4f6772fcb1e3f1e6a9d9804b6dd92cef986496768
       source:
         file: src/term/core/check.ts
-        lines: 104-107
+        lines: 135-138
         integrity: sha256-bd6b20731cbf484e6ba02a98cc7b8b2d0dca18b01ec1c94bf5f65e3922297c2b
-        commit-sha: b4d9b1bfb7abb03eaf162930185b6d1d465e4a08
+        commit-sha: c003f4879ac05f1e9a5928e2afc069e1fa4ff5fe
     - id: shelf-ten-fields
       claim:
-        integrity: sha256-bd5929ca044add98d834f9d3f274eda202d0f296f7e7c2962a9eeaea84a7532a
+        integrity: sha256-a8cf8a6c2d8d24c580c4be7f97d5187be5ed29f6c74f04780273c799d86814fe
       source:
         file: src/term/types.ts
         lines: 25-50
@@ -202,7 +202,7 @@ docs/src/content/docs/term/index.mdx:
         commit-sha: b1b8fa69ffe8762bc362b9811c691e056dd81dae
     - id: shelf-ten-rules
       claim:
-        integrity: sha256-bd5929ca044add98d834f9d3f274eda202d0f296f7e7c2962a9eeaea84a7532a
+        integrity: sha256-a8cf8a6c2d8d24c580c4be7f97d5187be5ed29f6c74f04780273c799d86814fe
       source:
         file: src/term/types.ts
         lines: 440-451
@@ -214,27 +214,27 @@ docs/src/content/docs/term/index.mdx:
         integrity: sha256-f6dd9f9fd8b29b35aa07499023ddef3b099f9690d0b9e71fe366bd49d37478cb
       source:
         file: src/term/core/check.ts
-        lines: 97-102
+        lines: 128-133
         integrity: sha256-32f6e337fdcd4136da0a8082325ab687aa9569e2b1acb698f7714608c436cf15
-        commit-sha: b4d9b1bfb7abb03eaf162930185b6d1d465e4a08
+        commit-sha: c003f4879ac05f1e9a5928e2afc069e1fa4ff5fe
     - id: checks-references-resolve
       claim:
         lines: 119-124
         integrity: sha256-f6dd9f9fd8b29b35aa07499023ddef3b099f9690d0b9e71fe366bd49d37478cb
       source:
         file: src/term/core/check.ts
-        lines: 181-188
+        lines: 261-268
         integrity: sha256-0e29438868dac3bde56075ece471c81a2e3d580e46cdfda81d32b173c3b5c8d1
-        commit-sha: b4d9b1bfb7abb03eaf162930185b6d1d465e4a08
+        commit-sha: c003f4879ac05f1e9a5928e2afc069e1fa4ff5fe
     - id: checks-no-broader-cycle
       claim:
         lines: 121-124
         integrity: sha256-ba2b9db7f5fb8834b8ead0aa1ee20385788aa96736cac69e3f3931839c5928e7
       source:
         file: src/term/core/check.ts
-        lines: 261-267
+        lines: 359-365
         integrity: sha256-a6f137a76ec5cf594380ae6cfc1759c39b332cdf39eb1ddac873a15888fa0d03
-        commit-sha: b1b8fa69ffe8762bc362b9811c691e056dd81dae
+        commit-sha: c003f4879ac05f1e9a5928e2afc069e1fa4ff5fe
     - id: checks-definition-prose-with-vale
       claim:
         lines: 123-124
