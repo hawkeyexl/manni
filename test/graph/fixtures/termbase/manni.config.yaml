@@ -1,4 +1,4 @@
-# One concept scheme from the termbase to the graph (proposal 0085 §1). The
+# One concept scheme from the termbase to the graph (proposal 0086 §1). The
 # glossary's term pages are members of the collection, so `manni term` reads
 # them as the termbase, and `manni graph build` derives concepts from them.
 collections:
