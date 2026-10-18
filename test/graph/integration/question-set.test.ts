@@ -1,5 +1,5 @@
 /**
- * Golden-set files and set health (proposal 0086 § 7b), end to end through
+ * Golden-set files and set health (proposal 0087 § 7b), end to end through
  * the built CLI. `graph.questionFiles` names files of questions that span
  * pages or that the docs don't answer. `graph check` asks them beside each
  * page's own, reports duplicates and copied wording, prints the set's health

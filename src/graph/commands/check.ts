@@ -3,7 +3,7 @@
  * (plus the TS-side SKOS integrity checks) over the built graph and report
  * findings with the doc paths responsible. Each page's sample questions are
  * asked too (proposal 0085 §7), with each golden-set file's, and the question
- * set's health is summed up after the findings (proposal 0086). Errors exit 1; warnings and notices are
+ * set's health is summed up after the findings (proposal 0087). Errors exit 1; warnings and notices are
  * reported but pass.
  */
 import { dirname, resolve } from "node:path";
@@ -49,7 +49,7 @@ export interface CheckReport {
   notices: number;
   /** Shapes files used, as given (for reporting). */
   shapes: string[];
-  /** The question set's health (proposal 0086); absent when no question exists. */
+  /** The question set's health (proposal 0087); absent when no question exists. */
   questions?: QuestionSummary;
   exitCode: 0 | 1;
 }

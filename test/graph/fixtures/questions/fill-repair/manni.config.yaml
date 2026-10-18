@@ -1,4 +1,4 @@
-# The fill-repair fixture (proposal 0086). The pinned answer changed, so fill
+# The fill-repair fixture (proposal 0087). The pinned answer changed, so fill
 # asks for the passage again and writes the new pin unreviewed.
 collections:
   - name: questions

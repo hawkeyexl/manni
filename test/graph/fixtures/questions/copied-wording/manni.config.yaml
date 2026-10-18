@@ -1,4 +1,4 @@
-# The copied-wording fixture (proposal 0086). A question that repeats its
+# The copied-wording fixture (proposal 0087). A question that repeats its
 # answer's words tests matching more than finding. One page and its one
 # section are the whole index, so `top: 2` finds every question.
 collections:

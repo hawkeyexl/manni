@@ -1,4 +1,4 @@
-# The fill-file fixture (proposal 0086). The golden-set file's first answer
+# The fill-file fixture (proposal 0087). The golden-set file's first answer
 # moved, and its second has no integrity, so fill re-pins the one and mints
 # the other, with no model. rotate.md is complete at perPage 1.
 collections:

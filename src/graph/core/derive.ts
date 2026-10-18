@@ -511,7 +511,7 @@ export function deriveGraph(docs: DocModel[], options: DeriveOptions): Quad[] {
 
       // ai-context's questions this page should be found for (proposal 0085
       // §7), in the page's language. Only the text: an item's answer pins and
-      // review state are test data `check` reads from the source (0086).
+      // review state are test data `check` reads from the source (0087).
       for (const { question } of readSampleQuestions(fmValue(fm, ["sample-questions"]))) {
         add(
           docIri,

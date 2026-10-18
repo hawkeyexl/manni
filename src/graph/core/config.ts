@@ -56,7 +56,7 @@ export type FillField =
   | "about-product-aspect"
   | "not-applicable-to"
   | "not-about-product-aspect"
-  // A page's own questions, beside the graph block (proposal 0086)
+  // A page's own questions, beside the graph block (proposal 0087)
   | "sample-questions";
 
 /** The fields `fill` writes into the `graph:` block: every fill field but questions. */
@@ -135,7 +135,7 @@ export interface GraphConfig {
   routes: RouteMapping[];
   /**
    * Golden-set files, as the config names them, relative to `configDir`
-   * (proposal 0086). `check` asks their questions beside each page's.
+   * (proposal 0087). `check` asks their questions beside each page's.
    */
   questionFiles: string[];
   build: { derive: DeriveSource[] };
@@ -149,7 +149,7 @@ export interface GraphConfig {
      * question is a finding at `severity`; `off` reports none of them.
      * `foundThreshold` fails the run when the share of reviewed questions
      * found falls below it, a percentage; `null` sets no rate gate
-     * (proposal 0086).
+     * (proposal 0087).
      */
     questions: { top: number; severity: Severity | "off"; foundThreshold: number | null };
   };
@@ -188,7 +188,7 @@ export interface GraphConfig {
     validateGraph: boolean;
     /** Also propose per-section metadata (ADR 01032). Opt-in: more output. */
     sections: boolean;
-    /** The largest body piece one question request sends (proposal 0086). */
+    /** The largest body piece one question request sends (proposal 0087). */
     chunkChars: number;
     /** Send nothing off this machine: a downloaded local model, or none. */
     offline: boolean;

@@ -1,5 +1,5 @@
 /**
- * One real `graph fill --fields sample-questions` run (proposal 0086),
+ * One real `graph fill --fields sample-questions` run (proposal 0087),
  * `npm run test:graph:real`. The mock stands in for the model everywhere
  * else, so this is where the question prompt and schema meet a model that
  * answers for itself.

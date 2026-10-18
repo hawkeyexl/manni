@@ -1,6 +1,6 @@
 /**
  * A page's `sample-questions`, read into one shape (manni:ai-context:1.1.0,
- * proposal 0086). An item is a string, or an object whose `answers` pin the
+ * proposal 0087). An item is a string, or an object whose `answers` pin the
  * body lines that answer it. `build` derives only the question text; `check`
  * reads the pins and the review state, which never reach the graph.
  *
@@ -74,7 +74,7 @@ export interface FileAnswerPin extends AnswerPin {
   file: string;
 }
 
-/** One question in a golden-set file (proposal 0086). */
+/** One question in a golden-set file (proposal 0087). */
 export interface FileQuestion {
   question: string;
   /** Empty for a known gap, a question the docs don't answer. */

@@ -1,5 +1,5 @@
 /**
- * `graph fill`'s question pass (proposal 0086): re-pin, pair, re-pair and
+ * `graph fill`'s question pass (proposal 0087): re-pin, pair, re-pair and
  * draft. Each case runs over its own fixture under
  * `test/graph/fixtures/questions/fill-*`, copied to a temp directory because
  * fill writes. The model is the inference library's `MockProvider`.
