@@ -1,0 +1,6 @@
+{
+  "@context": "https://example.com/skos-context.jsonld",
+  "@id": "https://example.com/optics/lens",
+  "@type": "Concept",
+  "prefLabel": "lens"
+}

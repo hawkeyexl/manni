@@ -443,6 +443,81 @@ describe("manni term (TBX)", () => {
   });
 });
 
+describe("manni term (SKOS)", () => {
+  const SKOS = resolve(root, "test", "fixtures", "term", "skos");
+
+  function copySkos(name: string, to: string): void {
+    writeFileSync(to, readFileSync(join(SKOS, name), "utf8"));
+  }
+
+  it("lists a named .ttl file, one term per language", () => {
+    const cwd = join(work, "clean");
+    copySkos("vocab.ttl", join(cwd, "vocab.ttl"));
+    const r = term(["list", "vocab.ttl"], { cwd });
+    expect(r.stderr).toBe("");
+    expect(r.stdout).toContain("Gleitsichtglas");
+    expect(r.stdout).toContain("6 terms");
+    expect(r.status).toBe(0);
+  });
+
+  it("never walks a .ttl or .jsonld in a directory", () => {
+    const cwd = join(work, "clean");
+    const before = term(["list", "docs", "-f", "json"], { cwd }).stdout;
+    copySkos("vocab.ttl", join(cwd, "docs", "graph.ttl"));
+    copySkos("vocab.jsonld", join(cwd, "docs", "graph.jsonld"));
+    const r = term(["list", "docs", "-f", "json"], { cwd });
+    expect(r.stdout).toBe(before);
+    expect(r.status).toBe(0);
+  });
+
+  it.each(["vocab.ttl", "vocab.jsonld"])("reads %s from stdin with --as skos", (name) => {
+    const r = term(["list", "-", "--as", "skos", "-f", "json"], { input: readFileSync(join(SKOS, name), "utf8") });
+    expect(r.stderr).toBe("");
+    const terms = (JSON.parse(r.stdout) as { terms: { id: string; language?: string }[] }).terms;
+    expect(terms.map((t) => `${t.language ?? ""}/${t.id}`)).toContain("de/progressive-lens");
+    expect(r.status).toBe(0);
+  });
+
+  it("says what it did not read, and still exits 0", () => {
+    const cwd = join(work, "clean");
+    copySkos("unread.ttl", join(cwd, "unread.ttl"));
+    const r = term(["list", "unread.ttl"], { cwd });
+    expect(r.stderr.split("\n")).toContain("manni: unread.ttl: skos:changeNote is not a term field, so 3 values were not read.");
+    expect(r.status).toBe(0);
+  });
+
+  it("renders a scheme as Turtle that reads back the same", () => {
+    const cwd = join(work, "clean");
+    copySkos("vocab.jsonld", join(cwd, "vocab.jsonld"));
+    const r = term(["write", "vocab.jsonld", "-f", "skos-ttl", "-o", "build/terms.ttl"], { cwd });
+    expect(r.stderr).toBe("");
+    expect(r.stdout).toBe("Wrote 6 terms to build/terms.ttl\n");
+    expect(r.status).toBe(0);
+    const original = term(["list", "vocab.jsonld", "-f", "json"], { cwd }).stdout;
+    expect(term(["list", "build/terms.ttl", "-f", "json"], { cwd }).stdout).toBe(original);
+  });
+
+  it("refuses to rewrite a SKOS file in place", () => {
+    const cwd = join(work, "clean");
+    copySkos("vocab.ttl", join(cwd, "vocab.ttl"));
+    const r = term(["write", "vocab.ttl"], { cwd });
+    expect(r.stderr).toBe(
+      "manni: vocab.ttl is SKOS and is not rewritten in place; render it with -f skos or -f skos-ttl.\n",
+    );
+    expect(r.status).toBe(2);
+  });
+
+  it("refuses a remote @context rather than fetching it", () => {
+    const cwd = join(work, "clean");
+    copySkos("remote-context.jsonld", join(cwd, "vocab.jsonld"));
+    const r = term(["list", "vocab.jsonld"], { cwd });
+    expect(r.stderr).toBe(
+      "manni: vocab.jsonld: names the remote @context https://example.com/skos-context.jsonld, which is not fetched. Inline the context to read it.\n",
+    );
+    expect(r.status).toBe(2);
+  });
+});
+
 describe("manni term (usage errors)", () => {
   it("no terms anywhere", () => {
     const cwd = join(work, "clean");

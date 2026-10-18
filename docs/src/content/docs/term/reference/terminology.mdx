@@ -86,8 +86,9 @@ a 1.0.0 page, and it stays valid.
 A DITA `<glossentry>` or `<glossgroup>`, a DocBook `<glossary>`, an AsciiDoc
 `[glossary]` list and a `.. glossary::` directive are read without
 `type: term-set`, because each construct declares itself. So is a `.tbx`
-file, whose root element names it TBX. `type`, `id` and `language` belong to
-the `manni:core` vocabulary, and a term page uses them as any page does.
+file, whose root element names it TBX, and a `.ttl` or `.jsonld` file you
+name, which holds SKOS. `type`, `id` and `language` belong to the `manni:core`
+vocabulary, and a term page uses them as any page does.
 
 ```markdown title="docs/terms/progressive-lens.md"
 ---
