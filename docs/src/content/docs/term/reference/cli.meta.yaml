@@ -96,9 +96,6 @@ docs/src/content/docs/term/reference/cli.mdx:
     - generated-by: Claude Opus 5
       lines: 235-246
       integrity: sha256-720026dc09153f23cbd89dc2f84465405b149329e7d9c031a8bd745ed8086508
-    - generated-by: Claude Opus 5.5
-      lines: 249
-      integrity: sha256-daedf4abdf27236c15a85c54267404037de4ecdcb2ea04ece07a347cf902ff34
     - generated-by: Claude Opus 5
       lines: 253-285
       integrity: sha256-dacf03c3147cf86bc0971faae6659378a005d9f004a85d1fed1749d8dfaf24b5
