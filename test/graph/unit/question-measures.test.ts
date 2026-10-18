@@ -4,6 +4,7 @@
  * already says. 7c gates drafts with the same copied-wording measure.
  */
 import { describe, expect, it } from "vitest";
+import { renderQuestionSummary } from "../../../src/graph/commands/questions.js";
 import { copiedPairs, questionKey } from "../../../src/graph/core/questions.js";
 
 describe("questionKey", () => {
@@ -35,5 +36,22 @@ describe("copiedPairs", () => {
 
   it("measures nothing under two words", () => {
     expect(copiedPairs("Retries?", "Retries happen.")).toBeUndefined();
+  });
+});
+
+describe("renderQuestionSummary", () => {
+  it("reads none of none as 0%, never full marks", () => {
+    const lines = renderQuestionSummary({
+      total: 1,
+      reviewed: 0,
+      drafted: 1,
+      pages: 1,
+      files: [],
+      top: 5,
+      found: { reviewed: { of: 0, inTop: 0, first: 0 }, drafted: { of: 1, inTop: 1, first: 1 } },
+      answers: { pinned: 0, unreviewed: 0, current: 0, moved: 0, changed: 0, unpinned: 1 },
+      gaps: 0,
+    });
+    expect(lines[1]).toBe("  found    0 of 0 reviewed in the top 5 (0%), 0 first (0%)");
   });
 });

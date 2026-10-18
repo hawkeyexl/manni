@@ -428,9 +428,13 @@ export interface QuestionSummary {
   gaps: number;
 }
 
-/** A percentage, rounded down so a rate under a threshold never prints as it. */
+/**
+ * A percentage, rounded down so a rate under a threshold never prints as it.
+ * None of none is 0%: the summary reads as health, and nothing found is not
+ * full marks. The rate gate guards an empty set on its own.
+ */
 function percent(part: number, of: number): number {
-  return of === 0 ? 100 : Math.floor((part / of) * 100);
+  return of === 0 ? 0 : Math.floor((part / of) * 100);
 }
 
 function plural(n: number, word: string): string {
@@ -488,8 +492,8 @@ export async function askSampleQuestions(
   sources: string,
   indexDir: string,
   view: { source: MetaViewSource; cwd: string },
-  questionFiles: readonly string[] = [],
-  configDir: string = sources,
+  questionFiles: readonly string[],
+  configDir: string,
 ): Promise<{ findings: CheckFinding[]; summary?: QuestionSummary }> {
   const knob = settings.severity;
   const top = settings.top;
