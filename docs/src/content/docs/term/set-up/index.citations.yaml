@@ -60,7 +60,7 @@ docs/src/content/docs/term/set-up/index.mdx:
         file: src/term/reporters/pretty.ts
         lines: 310-323
         integrity: sha256-600cdceb1c2e1ae518362c1181c4fadd2811e018269092cb0dd0e242694b0c1f
-        commit-sha: b1b8fa69ffe8762bc362b9811c691e056dd81dae
+        commit-sha: e7a25a5266c909a6a0dd9e3ad6db4ec6fd248a7e
     - id: vale-wiring-notice
       claim:
         lines: 72-74
@@ -69,7 +69,7 @@ docs/src/content/docs/term/set-up/index.mdx:
         file: src/term/reporters/pretty.ts
         lines: 419-426
         integrity: sha256-6608f5e0a955d157221f14d5b5772c699bc2c5d3a289cefd195e3a932925bbd8
-        commit-sha: b1b8fa69ffe8762bc362b9811c691e056dd81dae
+        commit-sha: e7a25a5266c909a6a0dd9e3ad6db4ec6fd248a7e
     - id: wiring-notice-names-line-and-file
       claim:
         lines: 77-78
@@ -283,7 +283,7 @@ docs/src/content/docs/term/set-up/index.mdx:
         file: src/term/cli.ts
         lines: 132
         integrity: sha256-642aa7bc0402e0101838821cd5ed5ee06a261d3134bb836e1a23650376a401d2
-        commit-sha: 01522e928029b17df104f3d02ee29fce500e166f
+        commit-sha: d5196768f93c1f29d588075437a8333316f51b76
     - id: abstract-scope-note-file-names
       claim:
         integrity: sha256-4c9c3a0949a83a2f9217f777f2316ba01270ff873bb562d269e37d03654b1042
@@ -300,7 +300,7 @@ docs/src/content/docs/term/set-up/index.mdx:
         file: src/term/reporters/pretty.ts
         lines: 258-277
         integrity: sha256-8b9e3861c60801a6eb0b10fa67f27de14e14c1edc66103e99234c86921295f69
-        commit-sha: b1b8fa69ffe8762bc362b9811c691e056dd81dae
+        commit-sha: e7a25a5266c909a6a0dd9e3ad6db4ec6fd248a7e
     - id: lint-prose-rule-id
       claim:
         lines: 217-224
@@ -309,7 +309,7 @@ docs/src/content/docs/term/set-up/index.mdx:
         file: src/term/core/severity.ts
         lines: 33-35
         integrity: sha256-3ccb0f4e5db1182b106610be75d2be447542a3028c8927e95507ea200d81228b
-        commit-sha: b1b8fa69ffe8762bc362b9811c691e056dd81dae
+        commit-sha: e7a25a5266c909a6a0dd9e3ad6db4ec6fd248a7e
     - id: check-renders-without-writing
       claim:
         integrity: sha256-d93355ae93a6155231ece544dc3f0a82d659064a92d5265ca10ea32f695c40c3
@@ -325,7 +325,7 @@ docs/src/content/docs/term/set-up/index.mdx:
         file: src/term/cli.ts
         lines: 287
         integrity: sha256-6c93d7529351c9410b26d3c459bb936649605aaf66cfb3cd6e5705925fef1d56
-        commit-sha: 01522e928029b17df104f3d02ee29fce500e166f
+        commit-sha: d5196768f93c1f29d588075437a8333316f51b76
     - id: check-would-change-line
       claim:
         lines: 276
@@ -334,7 +334,7 @@ docs/src/content/docs/term/set-up/index.mdx:
         file: src/term/reporters/pretty.ts
         lines: 284-293
         integrity: sha256-4a46913a482241c5208c12db8e4c7d97048bce18ac2a671cd09593de1853404c
-        commit-sha: b1b8fa69ffe8762bc362b9811c691e056dd81dae
+        commit-sha: e7a25a5266c909a6a0dd9e3ad6db4ec6fd248a7e
     - id: check-up-to-date-line
       claim:
         lines: 285
@@ -343,7 +343,7 @@ docs/src/content/docs/term/set-up/index.mdx:
         file: src/term/reporters/pretty.ts
         lines: 394-401
         integrity: sha256-1be99bd689cd1209a5246886af4c3ccb3c6966caceb44657483c9bf4321e0af0
-        commit-sha: b1b8fa69ffe8762bc362b9811c691e056dd81dae
+        commit-sha: e7a25a5266c909a6a0dd9e3ad6db4ec6fd248a7e
     - id: dry-run-prints-same-lines
       claim:
         integrity: sha256-780c230b95f1cd816b1ac02ed681acd2bb05a8f43afc74da88fc471c32d12a90
@@ -351,7 +351,7 @@ docs/src/content/docs/term/set-up/index.mdx:
         file: src/term/reporters/pretty.ts
         lines: 402-405
         integrity: sha256-93e4ae30fabffdc25a5d28231ea6643dabf213a1f9e0d4754638c0f3acde8d9b
-        commit-sha: b1b8fa69ffe8762bc362b9811c691e056dd81dae
+        commit-sha: e7a25a5266c909a6a0dd9e3ad6db4ec6fd248a7e
     - id: dry-run-exits-zero
       claim:
         integrity: sha256-780c230b95f1cd816b1ac02ed681acd2bb05a8f43afc74da88fc471c32d12a90
@@ -359,7 +359,7 @@ docs/src/content/docs/term/set-up/index.mdx:
         file: src/term/cli.ts
         lines: 287
         integrity: sha256-6c93d7529351c9410b26d3c459bb936649605aaf66cfb3cd6e5705925fef1d56
-        commit-sha: 01522e928029b17df104f3d02ee29fce500e166f
+        commit-sha: d5196768f93c1f29d588075437a8333316f51b76
     - id: dry-run-names-removed-file
       claim:
         integrity: sha256-780c230b95f1cd816b1ac02ed681acd2bb05a8f43afc74da88fc471c32d12a90
@@ -367,7 +367,7 @@ docs/src/content/docs/term/set-up/index.mdx:
         file: src/term/reporters/pretty.ts
         lines: 290-291
         integrity: sha256-4d2c1bdfefc72d8cd78c629a6ef53b3a27c81a40e6e7ff6c4da7cd8cf6e11961
-        commit-sha: b1b8fa69ffe8762bc362b9811c691e056dd81dae
+        commit-sha: e7a25a5266c909a6a0dd9e3ad6db4ec6fd248a7e
     - id: vale-started-as-process
       claim:
         lines: 18-19
