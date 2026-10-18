@@ -80,8 +80,14 @@ docs/src/content/docs/term/set-up/move-and-hand-off.mdx:
       lines: 486
       integrity: sha256-415fec93356160c83bc088f2697442cdb3b7229388fbd31a792230249ea19302
     - generated-by: Claude Opus 5.5
-      lines: 488-695
-      integrity: sha256-cfdf19af1315a864b9e950a88ac8a3e9bd7b3a9f42941acdd6440f429eeadfac
+      lines: 488-686
+      integrity: sha256-23437e8afabac6c6aaf2bc0e76de79544131131d982fd048db1f100de36dd1f9
+    - generated-by: Claude Opus 5
+      lines: 688
+      integrity: sha256-415fec93356160c83bc088f2697442cdb3b7229388fbd31a792230249ea19302
+    - generated-by: Claude Opus 5.5
+      lines: 690-695
+      integrity: sha256-89cb70ef3f0495f4f549f061229196aee4624b028094ef42e7f946ad2acf6d75
     - generated-by: Claude Opus 5.5
       lines: 697-731
       integrity: sha256-85c39da2d60a737a7c642e35e3800c3851a898fc6f2ac8b38ff951ed6324e18b
