@@ -1,5 +1,5 @@
 /**
- * One concept scheme, from the termbase to the graph (proposal 0085 §1),
+ * One concept scheme, from the termbase to the graph (proposal 0086 §1),
  * through the built CLI: the `manni` umbrella registers the term source, so
  * `graph build` reads the glossary `manni term check` reads.
  */

@@ -1,5 +1,5 @@
 /**
- * One concept scheme (proposal 0085 §1): the termbase, the `graph` block and
+ * One concept scheme (proposal 0086 §1): the termbase, the `graph` block and
  * every concept reference feed one `skos:ConceptScheme`, with one node per
  * concept however a page spells it.
  */

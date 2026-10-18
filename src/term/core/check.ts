@@ -13,7 +13,7 @@
  * languages, two labels collide only when they differ in spelling but not in
  * case: `API` in en and de is one word, `Kubernetes`/`kubernetes` is a clash.
  *
- * The hierarchy is the concept scheme's (proposal 0085): every term's
+ * The hierarchy is the concept scheme's (proposal 0086): every term's
  * `broader` and `narrower`, plus every page's `graph:` block. A name on a page
  * resolves as the graph resolves it, by label, then id, then alt-label.
  */

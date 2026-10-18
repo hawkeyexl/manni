@@ -2,7 +2,7 @@
 # by `manni graph build`. Consumed by `manni graph check` (and the `manni graph fill`
 # guardrail).
 #
-# 1.1.0 admits one concept scheme fed by the termbase (proposal 0085 §1). It is
+# 1.1.0 admits one concept scheme fed by the termbase (proposal 0086 §1). It is
 # MINOR, because a graph that used to fail may now pass, and none that passed
 # fails:
 #

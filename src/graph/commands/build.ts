@@ -68,7 +68,7 @@ export interface BuildResult {
   quads: number;
   /**
    * The concepts the graph holds, and how many of them the termbase defines
-   * (proposal 0085 §1). `fromTermbase` is 0 when the `terms` derive source
+   * (proposal 0086 §1). `fromTermbase` is 0 when the `terms` derive source
    * is off or no termbase is set up.
    */
   concepts: { total: number; fromTermbase: number };
@@ -196,7 +196,7 @@ export async function buildGraph(opts: BuildOptions = {}): Promise<BuiltGraph> {
   }
 
   // The termbase `manni term check` reads, from the same config, under the
-  // `terms` derive source (proposal 0085 §1). Nothing registers a source
+  // `terms` derive source (proposal 0086 §1). Nothing registers a source
   // under a library call, and then the graph builds as it always did. A
   // termbase that cannot be read is `term check`'s failure to report, so the
   // graph warns once and builds the rest, as it does without git.
