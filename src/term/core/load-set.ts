@@ -6,7 +6,7 @@
  *
  * Every loaded file contributes its references too, term file or not: a
  * guide's `concepts:` is what `undefined-term` and `unused-term` are about.
- * Its `graph:` block joins the hierarchy `broader-cycle` reads (proposal 0085).
+ * Its `graph:` block joins the hierarchy `broader-cycle` reads (proposal 0086).
  *
  * A `.ttl` or `.jsonld` file is SKOS when it is named or listed under
  * `term.manifests`, and never when a walk passes it: the graph's own output is
