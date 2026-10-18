@@ -2,7 +2,7 @@
 # by `manni graph build`. Consumed by `manni graph check` (and the `manni graph fill`
 # guardrail).
 #
-# 1.1.0 admits one concept scheme fed by the termbase (proposal 0085 §1). It is
+# 1.1.0 admits one concept scheme fed by the termbase (proposal 0086 §1). It is
 # MINOR, because a graph that used to fail may now pass, and none that passed
 # fails:
 #
@@ -23,7 +23,7 @@
 #     untagged value", so graph's check core reports that one.
 #   - The shapes namespace moves with the version: dsh: is now
 #     https://hawkeyexl.github.io/manni/graph/shapes/1.1.0#.
-#   - Document learns graph:sampleQuestion (proposal 0085 §7), a page's
+#   - Document learns graph:sampleQuestion (proposal 0086 §7), a page's
 #     `sample-questions`, each a string or a language-tagged string.
 #
 # 1.0.0 was the first file the three-segment convention in CLAUDE.md bound. It

@@ -239,7 +239,7 @@ describe("manni:terminology:1.1.0 and its strict overlay", () => {
 });
 
 /**
- * `manni:terminology:1.2.0` (proposal 0085 § 2) is 1.1.0 plus `notation` and
+ * `manni:terminology:1.2.0` (proposal 0086 § 2) is 1.1.0 plus `notation` and
  * the five match keys, with the `iriList` they share, and with `definition`
  * no longer required. Its strict overlay is 1.1.0's plus the requirement the
  * open vocabulary dropped.

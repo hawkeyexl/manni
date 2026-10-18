@@ -1,4 +1,4 @@
-# 0085: One concept scheme, from the termbase to the graph
+# 0086: One concept scheme, from the termbase to the graph
 
 - **Status:** Proposed; superseded in part by [0087](0087-a-golden-set-of-reader-questions.md)
 - **Serves:** Three journeys.

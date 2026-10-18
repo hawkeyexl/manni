@@ -92,7 +92,7 @@ describe("loadTermSet", () => {
     ]);
   });
 
-  it("gathers each labelled graph block, and names graph.concepts and the page's language (proposal 0085)", async () => {
+  it("gathers each labelled graph block, and names graph.concepts and the page's language (proposal 0086)", async () => {
     const root = await tree({
       "terms/retry.md": "---\ntype: term\nlabel: Retry\n---\n",
       "guides/net.md":
@@ -119,7 +119,7 @@ describe("loadTermSet", () => {
     ]);
   });
 
-  it("gathers every page's free keywords, but a term page's, on the keywords: line (proposal 0085)", async () => {
+  it("gathers every page's free keywords, but a term page's, on the keywords: line (proposal 0086)", async () => {
     const root = await tree({
       "terms/retry.md": "---\ntype: term\nlabel: Retry\nkeywords: [backoff]\n---\n",
       "guides/net.md": "---\ntitle: Net\nlanguage: de\nkeywords:\n  - retries\n  - ''\n  - timeouts\n---\n",

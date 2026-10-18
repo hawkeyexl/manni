@@ -503,7 +503,7 @@ export async function runValidate(
     return findings;
   };
 
-  // The termbase `x-manni-term` values are checked against (proposal 0085
+  // The termbase `x-manni-term` values are checked against (proposal 0086
   // §6), read once per run and only when some value is marked. `undefined`
   // when none was found, or it could not be read.
   let termbase: Promise<TermScheme | undefined> | undefined;
@@ -531,7 +531,7 @@ export async function runValidate(
 
   /**
    * The `term:undefined`, `term:outside-branch` and `term:alt-label` findings
-   * for one document (proposal 0085 §6), judged over `data`, the decrypted
+   * for one document (proposal 0086 §6), judged over `data`, the decrypted
    * view validation saw. A value at or under an encrypted pointer is not
    * judged, so no finding names a plaintext the page does not show.
    */
@@ -1061,7 +1061,7 @@ export async function runValidate(
   // Once per run, however many files held them (proposal 0045): the exit code
   // is unaffected, and the count is of values, not of the findings dropped.
   if (unverified > 0) opts.onNotice?.(unverifiedWarning(unverified));
-  // Once per run too (proposal 0085 §6), and the exit code is unaffected.
+  // Once per run too (proposal 0086 §6), and the exit code is unaffected.
   if (uncheckedTermFields.size > 0) {
     const n = uncheckedTermFields.size;
     opts.onNotice?.(
