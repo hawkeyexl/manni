@@ -2707,3 +2707,30 @@ docs/src/content/docs/meta/reference/cli.mdx:
         lines: 327-330
         integrity: sha256-17c6cffed9b9b19e2018e26f45ac6953b6c9f03669a8e20fb3c5344a1ba477df
         commit-sha: a589e08250dee7efaee7ed0f58df01986fad8d1d
+    - id: fill-offline-runs-only-a-downloaded-model
+      claim:
+        lines: 779
+        integrity: sha256-54fca57fa4d1717974a6863e3b18ba65086a6e3be0d4f29a0bb8fc5ca5ba1319
+      source:
+        file: src/shared/providers.ts
+        lines: 568-582
+        integrity: sha256-bb6abd06c150ff92f63c461604a2698ec710da21dd40dc6bcaf62e3b9e782795
+        commit-sha: 82b41f560f77676acec81501ed44862563251685
+    - id: fill-offline-without-a-model-is-exit-2
+      claim:
+        lines: 779
+        integrity: sha256-54fca57fa4d1717974a6863e3b18ba65086a6e3be0d4f29a0bb8fc5ca5ba1319
+      source:
+        file: src/meta/commands/fill.ts
+        lines: 445-448
+        integrity: sha256-9311eef3bce68b4e3b18c56c964fdd6adbc706d1320638aba81d3548aec43f22
+        commit-sha: 82b41f560f77676acec81501ed44862563251685
+    - id: fill-offline-refuses-a-hosted-provider
+      claim:
+        lines: 779
+        integrity: sha256-54fca57fa4d1717974a6863e3b18ba65086a6e3be0d4f29a0bb8fc5ca5ba1319
+      source:
+        file: src/shared/providers.ts
+        lines: 379-382
+        integrity: sha256-f3f4ea977bc49add9fee86d9206384a50f48b0db6a330638d0fe6a53ab584a3e
+        commit-sha: 82b41f560f77676acec81501ed44862563251685

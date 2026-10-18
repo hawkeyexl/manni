@@ -32,6 +32,8 @@ import {
   assertLocalFlag,
   assertModelHasProvider,
   localNotice,
+  noOfflineModel,
+  offlineIdentity,
   providerSpecFor,
   resolveIdentity,
   selectProvider,
@@ -195,16 +197,22 @@ interface Model {
 
 const toTermError = (message: string): Error => new TermError(message);
 
-/** The provider in force, or `undefined` when none resolves. A name that cannot be right is refused. */
+/**
+ * The provider in force, or `undefined` when none resolves. A name that cannot be right is refused.
+ * Under `--offline` an injected provider stands in for the local model only once one is on disk.
+ */
 async function resolveModel(opts: FillOptions, run: Awaited<ReturnType<typeof resolveTermRun>>): Promise<Model | undefined> {
-  if (opts.providerInstance !== undefined) {
-    const provider = opts.providerInstance;
-    return { provider, identity: { provider: provider.provider(), model: provider.modelName() } };
-  }
+  const injected = (provider: InferenceProvider): Model => ({
+    provider,
+    identity: { provider: provider.provider(), model: provider.modelName() },
+  });
+  const offline = opts.offline === true;
+  if (opts.providerInstance !== undefined && !offline) return injected(opts.providerInstance);
   const flags: ProviderFlags = {
     ...(opts.provider === undefined ? {} : { provider: opts.provider }),
     ...(opts.model === undefined ? {} : { model: opts.model }),
     ...(opts.local === true ? { local: true } : {}),
+    ...(offline ? { offline: true } : {}),
   };
   assertLocalFlag(flags, toTermError);
   const family = run.configFile?.providers ?? {};
@@ -223,13 +231,13 @@ async function resolveModel(opts: FillOptions, run: Awaited<ReturnType<typeof re
   const { provider: name, model: chosen } = selection;
   assertKnownProvider(name, toTermError);
   assertModelHasProvider(name, chosen, "term.provider", toTermError);
-  const notice = localNotice(selection);
+  const notice = localNotice(selection, flags);
   if (notice !== undefined) opts.onNotice?.(notice);
   try {
-    const identity = await resolveIdentity(
-      providerSpecFor(family, { provider: name, model: chosen ?? null }),
-      toTermError,
-    );
+    const spec = providerSpecFor(family, { provider: name, model: chosen ?? null });
+    const identity = offline ? await offlineIdentity(spec, toTermError) : await resolveIdentity(spec, toTermError);
+    if (identity === undefined) return undefined;
+    if (opts.providerInstance !== undefined) return injected(opts.providerInstance);
     return { provider: makeInferenceProvider(providerSpecFor(family, identity)), identity };
   } catch {
     return undefined;
@@ -247,9 +255,6 @@ interface Page {
 }
 
 export async function runFill(opts: FillOptions): Promise<FillReport> {
-  if (opts.crawl === true && opts.offline === true) {
-    throw new TermError("--crawl asks a model to find terms, so it cannot run with --offline.");
-  }
   const cwd = resolve(opts.cwd ?? process.cwd());
   const run = await resolveTermRun({
     cwd,
@@ -301,13 +306,21 @@ export async function runFill(opts: FillOptions): Promise<FillReport> {
   const wantsModel =
     crawl || plan.create.some((c) => c.definition === undefined) || plan.missing.some((m) => m.carried === undefined);
   let model: Model | undefined;
-  if (wantsModel && opts.offline !== true) {
+  if (wantsModel) {
     model = await resolveModel(opts, run);
     if (model === undefined) {
       if (crawl) {
-        throw new TermError("--crawl needs a model, and no provider is configured; pass --provider or set providers:.");
+        throw new TermError(
+          opts.offline === true
+            ? "--crawl needs a model, and none is available offline; drop --offline, or download a local model first."
+            : "--crawl needs a model, and no provider is configured; pass --provider or set providers:.",
+        );
       }
-      warn("no model provider is configured, so new terms have no definition; pass --provider or --offline.");
+      warn(
+        opts.offline === true
+          ? noOfflineModel("new terms have no definition")
+          : "no model provider is configured, so new terms have no definition; pass --provider or --local.",
+      );
     }
   }
   const modelName = model === undefined ? undefined : `${model.identity.provider}/${model.identity.model}`;

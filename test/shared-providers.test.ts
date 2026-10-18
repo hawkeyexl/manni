@@ -6,13 +6,16 @@
  * the detection are one implementation. The config key is the only thing a
  * caller supplies, so each tool's message names the key its user wrote.
  */
+import { readdirSync, rmSync } from "node:fs";
 import { join, resolve } from "node:path";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   DEFAULT_JEV_BASE_URL,
   DEFAULT_MODELS,
   DEFAULT_OPENAI_BASE_URL,
+  blobNameFor,
 } from "@hawkeyexl/inference";
+import { LOCAL_MODEL, localModelEnv, type LocalModelEnv } from "./helpers/local-model.js";
 import {
   DECISION_ONLY_PROVIDERS,
   DEFAULT_PROVIDER,
@@ -21,6 +24,8 @@ import {
   assertLocalFlag,
   assertModelHasProvider,
   localNotice,
+  noOfflineModel,
+  offlineIdentity,
   parseProviders,
   providerSpecFor,
   resolveIdentity,
@@ -484,6 +489,103 @@ describe("localNotice", () => {
 
   it("is nothing when nothing was replaced", () => {
     expect(localNotice({ provider: "llama-cpp", model: undefined })).toBeUndefined();
+  });
+
+  it("names --offline when only it drew the boundary", () => {
+    const selection = {
+      provider: "llama-cpp",
+      model: undefined,
+      replaced: { provider: "anthropic", source: "fill.provider" },
+    };
+    expect(localNotice(selection, { offline: true })).toBe(
+      '--offline: using llama-cpp instead of "anthropic" from fill.provider.',
+    );
+    expect(localNotice(selection, { offline: true, local: true })).toMatch(/^--local: /);
+  });
+});
+
+describe("--offline", () => {
+  const toError = (message: string): Error => new ToolFailure(message);
+
+  it("draws the --local boundary: a configured hosted provider is set aside", () => {
+    expect(
+      selectProvider({ offline: true }, [{ provider: "anthropic", model: "m", origin: "fill.provider" }]),
+    ).toEqual({
+      provider: "llama-cpp",
+      model: undefined,
+      replaced: { provider: "anthropic", source: "fill.provider" },
+    });
+  });
+
+  it("refuses a hosted --provider beside it, with one message", () => {
+    for (const provider of ["anthropic", "openai", "claude-cli"]) {
+      expect(() => {
+        assertLocalFlag({ offline: true, provider }, toError);
+      }).toThrow(
+        new ToolFailure(
+          `--offline and --provider ${provider} contradict each other: --offline sends nothing off ` +
+            "this machine, so only llama-cpp with a model already downloaded can run. Drop one of them.",
+        ),
+      );
+    }
+    for (const provider of ["llama-cpp", "auto", "mock"]) {
+      expect(() => {
+        assertLocalFlag({ offline: true, provider }, toError);
+      }).not.toThrow();
+    }
+  });
+
+  it("says what a verb does without a model, and what to type", () => {
+    expect(noOfflineModel("new terms have no definition")).toBe(
+      "no model is available offline, so new terms have no definition; download one first with --local, or drop --offline.",
+    );
+  });
+});
+
+describe("offlineIdentity", () => {
+  const toError = (message: string): Error => new ToolFailure(message);
+  const spec = { provider: "llama-cpp" as const, model: LOCAL_MODEL, llamaCpp: { thoughtTokens: 0 } };
+  let machine: LocalModelEnv | undefined;
+
+  function on(downloaded: boolean): void {
+    machine = localModelEnv(downloaded);
+    for (const [name, value] of Object.entries(machine.env)) vi.stubEnv(name, value);
+  }
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    machine?.cleanup();
+    machine = undefined;
+  });
+
+  it("runs a model already on disk", async () => {
+    on(true);
+    await expect(offlineIdentity(spec, toError)).resolves.toEqual({ provider: "llama-cpp", model: LOCAL_MODEL });
+  });
+
+  it("is nothing when the weights are not on disk, and downloads none", async () => {
+    on(true);
+    rmSync(join(machine?.env.INFERENCE_MODELS_DIR ?? "", blobNameFor(LOCAL_MODEL)));
+    await expect(offlineIdentity(spec, toError)).resolves.toBeUndefined();
+    expect(readdirSync(machine?.env.INFERENCE_MODELS_DIR ?? "")).toEqual([]);
+  });
+
+  it("is nothing when the runtime would have to be installed", async () => {
+    on(false);
+    await expect(offlineIdentity({ ...spec, model: "auto" }, toError)).resolves.toBeUndefined();
+    expect(readdirSync(machine?.env.INFERENCE_RUNTIME_DIR ?? "")).toEqual([]);
+  });
+
+  it("reads the models directory providers.llama-cpp.modelsDir names", async () => {
+    on(true);
+    const elsewhere = { ...spec, llamaCpp: { thoughtTokens: 0, modelsDirectory: machine?.env.INFERENCE_RUNTIME_DIR ?? "" } };
+    await expect(offlineIdentity(elsewhere, toError)).resolves.toBeUndefined();
+  });
+
+  it("lets the mock through, which sends nothing anywhere", async () => {
+    await expect(offlineIdentity({ provider: "mock", model: null }, toError)).resolves.toMatchObject({
+      provider: "mock",
+    });
   });
 });
 

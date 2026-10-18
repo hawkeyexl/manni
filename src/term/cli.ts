@@ -326,7 +326,7 @@ export function buildProgram(): Command {
   )
     .option("-o, --out <dir>", "directory for new term pages")
     .option("--crawl", "also ask the model for terms that page bodies and keywords use")
-    .option("--offline", "never call a model; new pages are stubs")
+    .option("--offline", "no network egress: only a model already downloaded, never a remote provider")
     .option("--provider <name>", "provider: auto (default), anthropic, openai, claude-cli, llama-cpp")
     .option("--model <model>", "model override; needs a named provider, from here or config")
     .option("--local", LOCAL_FLAG_HELP)
@@ -341,7 +341,7 @@ export function buildProgram(): Command {
       [
         "",
         "Examples:",
-        "  manni term fill --offline --dry-run         # what is missing, no model",
+        "  manni term fill --offline --dry-run         # what is missing, nothing sent",
         "  manni term fill                             # pages and drafted definitions",
         "  manni term fill --crawl -o docs/glossary/   # terms no metadata named",
         "  manni term fill --dry-run -f json           # for a script",

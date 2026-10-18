@@ -289,3 +289,11 @@ docs/src/content/docs/meta/set-up/fill-providers.mdx:
         lines: 201-212
         integrity: sha256-b18a8c0ce0cd26c349e66f9c737816b1fbce5c4841d02f05144451e29b871bab
         commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
+    - id: offline-means-no-egress
+      claim:
+        integrity: sha256-7fbb08cf09b4ec0aedac7c4c08d54078684f428e6732153e03d4f3d49a248384
+      source:
+        file: src/shared/providers.ts
+        lines: 568-582
+        integrity: sha256-bb6abd06c150ff92f63c461604a2698ec710da21dd40dc6bcaf62e3b9e782795
+        commit-sha: 82b41f560f77676acec81501ed44862563251685

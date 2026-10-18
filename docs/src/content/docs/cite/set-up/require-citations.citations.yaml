@@ -113,9 +113,9 @@ docs/src/content/docs/cite/set-up/require-citations.mdx:
         integrity: sha256-fd238d22d3a97070e5d72bf6b44b7f425110fabda3bd9b49e1866354c98ebe53
       source:
         file: src/meta/core/config.ts
-        lines: 1245-1251
+        lines: 1247-1253
         integrity: sha256-a617e4baa07e2514b23c646b164d13ab8bc95d76e2f57f092d2e55ea33d1a713
-        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
+        commit-sha: 82b41f560f77676acec81501ed44862563251685
     - id: config-schema-paths-config-relative
       claim:
         integrity: sha256-fd238d22d3a97070e5d72bf6b44b7f425110fabda3bd9b49e1866354c98ebe53
