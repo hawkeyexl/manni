@@ -154,7 +154,7 @@ This is the backbone of the docevals section. It is the only journey that crosse
 
 **Steps.** She runs `manni graph build` over a collection she already declared for `meta validate`, and gets one Turtle file plus a count of documents and triples. `manni graph stats` tells her how much of the vocabulary the corpus actually fills, per field, and `--check` turns a coverage floor into an exit code. `manni graph query --predicate dcterms:subject` lists what the corpus says about a predicate, and `manni graph search` finds pages by words or, once she has run `manni graph embed`, by meaning. Nothing is inferred from prose: a triple exists because frontmatter, a link, a heading or a code block put it there.
 
-**What success looks like.** A question that used to mean reading forty pages is a one-line command. The answer is the same on her machine and in CI.
+**What success looks like.** A question that used to mean reading forty pages is a one-line command. The answer is the same on her machine and in CI. S15 is how the concepts in it become one node each.
 
 ---
 
@@ -322,7 +322,7 @@ This is the highest-stakes journey in the section. It is the only one where a pl
 
 **Steps.** He adds one step that runs `manni graph build` and `manni graph check` over the same collection the metadata gate already uses. `check` validates the built graph against SHACL shapes, which is where the emergent failures live. They exist only after N documents merge into shared nodes, so no per-file check can see them. Findings come back on the family scale, `notice | warning | error`, and `-f github` annotates the diff. `manni graph stats --check --coverage-threshold` gates the vocabulary coverage. The exit codes are the family's: 0, 1 for findings, 2 for an operational error.
 
-**What success looks like.** A structural regression is caught by the same pipeline that already checks metadata, reported in the same words, with no second tool to install.
+**What success looks like.** A structural regression is caught by the same pipeline that already checks metadata, reported in the same words, with no second tool to install. S15 adds the check that each page is found for its own sample questions.
 
 ---
 
@@ -410,7 +410,7 @@ Sara needs to ship a stricter version of the schema without immediately breaking
 
 **Steps.** She writes one page per term, marked `type: term`, with the flat terminology fields at the root: `label`, `definition`, and where they apply `alt-labels`, `hidden-labels`, `broader`, `narrower`, `related-terms`, `see`, `abstract` and `scope-note`. A glossary already kept as a DITA `<glossgroup>`, a DocBook `<glossary>`, a definition list or a TBX termbase is read as it is. For a second language she writes a sibling page with the same `id` and its own `language`, under `docs/de/glossary/`. A translator's detail has a field of its own in `manni:terminology:1.1.0`. A value about the concept goes in `concept-entry`, and one about a single designation, such as `part-of-speech` or `grammatical-gender`, in its `designations` item. She stacks the strict overlay to hold picklist values to the ones TBX names. She runs `manni term list` to see the set, then `manni term check`. It resolves every `concepts:` value against the preferred labels and reports `undefined-term` at the line, naming the entry when the value is an alt-label. It also reports collisions, dangling references, cycles, and a `see` redirect that still carries a definition. `unused-term` is a notice for a term no page names yet, and she turns it off under `term.severity` while the set is ahead of the pages.
 
-**What success looks like.** A `concepts:` value that is not a defined term fails the check at its line. The set has no two entries claiming one name in one language, and a German page beside its English sibling is not a finding.
+**What success looks like.** A `concepts:` value that is not a defined term fails the check at its line. The set has no two entries claiming one name in one language, and a German page beside its English sibling is not a finding. S15 carries the set on into metadata, SKOS and the graph.
 
 ---
 
@@ -488,6 +488,16 @@ Sara needs to ship a stricter version of the schema without immediately breaking
 **Steps.** She starts from the organizing idea, which is that the evals block is a published contract rather than an internal format. It has a resolvable id, `manni:artifact-evals:1.0.0-proposal.3`, and a version an artifact can name. So "we changed the schema" becomes a versioned migration instead of a breaking event. She reads what this version changed and why. `severity: info` became `notice`, so severity means the same thing here as everywhere else in the family. `eval-provenance` became `meta-provenance`, the family's own record of which fields a machine wrote. The reserved prefix `^eval-(?!skip$)` now makes the old key itself an error rather than a silently ignored one. She uses `type: capability | regression` to separate a probe from a guard. A probe deliberately tests the edge of what an agent can do and is expected to fail sometimes. A guard protects behavior that already works. Both appear in reports, and neither changes enforcement. That restraint is the point: treating a failing probe as a regression makes the pass rate meaningless. Newly written evals default to `regression`, the conservative choice. Then she applies the transferable technique, the staged ratchet. Introduce the convention at a severity that reports without failing, drive coverage across the corpus, and promote to `error` only once the corpus is ready. She relies on one safety property throughout. A malformed evals block is surfaced as an error with a source line number, never silently ignored. That is what makes a rollout across many repositories survivable.
 
 **What success looks like.** A convention that reached every repository without a day of red, and a migration anyone can read the version numbers of afterwards.
+
+---
+
+### S15 · Grow the words our pages use into a governed vocabulary and a checked graph
+
+**Outcome.** The concepts Sara's pages already name become one concept scheme. Each concept is a defined term with its place in a hierarchy. The fields that name readers hold to the termbase, and the graph finds every page for its own questions.
+
+**Steps.** She starts from what the pages say, not from a blank glossary. The graph already reads `concepts:`, `keywords:` and `graph:` blocks, and `manni term check` names each concept no term defines. She runs `manni term fill --offline --dry-run` to see what is missing, then `manni term fill` with a provider, so a model drafts each definition. `--crawl` proposes the terms no metadata named. She reads every draft, rewrites the wrong ones, and deletes each `meta-provenance` entry she has reviewed. `manni term check` then holds the set to the rules a thesaurus needs. Related links hold both ways, broader terms list their narrower ones, and each term has a place. She writes a branch of terms, such as `Audience`, and marks the `audiences` field `x-manni-term` with `under`, so `manni meta validate` rejects a reader type the termbase lacks. She maps terms to outside vocabularies with `exact-matches` and its siblings. She hands the scheme out as SKOS with `manni term write -f skos-ttl`, or as TBX for translation. Each page declares `sample-questions`, and `manni graph check` reports a page its own question does not find. `keyword-candidate` and `hierarchy-outside-termbase` name the next concepts and edges, and the next `term fill` picks them up.
+
+**What success looks like.** One node per concept however a page spells it, and a termbase with no unreviewed drafts. A graph check that finds every page for its own question. Related journeys are S6 (the term pages), M18 (the graph) and D12 (the graph gate).
 
 ---
 

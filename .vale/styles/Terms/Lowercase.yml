@@ -8,6 +8,8 @@ vocab: false
 swap:
   \bclosed shape\b: "[Cc]losed shape"
   \bclosed shapes\b: "[Cc]losed shapes"
+  \bconcept mapping\b: "[Cc]oncept mapping"
+  \bconcept scheme\b: "[Cc]oncept scheme"
   \bconcept\b: "[Cc]oncept"
   \bconfidence\b: "[Cc]onfidence"
   \bcoverage\b: "[Cc]overage"
@@ -43,6 +45,7 @@ swap:
   \boverride\b: "[Oo]verride"
   \boverrides\b: "[Oo]verrides"
   \bquad\b: "[Qq]uad"
+  \bsample question\b: "[Ss]ample question"
   \B\$schema key\b: \$schema key
   \B\$schema\b: \$schema
   \bschema reference\b: "[Ss]chema reference"
