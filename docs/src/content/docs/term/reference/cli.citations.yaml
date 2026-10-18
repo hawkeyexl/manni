@@ -178,9 +178,9 @@ docs/src/content/docs/term/reference/cli.mdx:
         integrity: sha256-4298800b481d91c9d4fe535889957335977bf07becf8dd9f52560bb245f27131
       source:
         file: src/term/core/check.ts
-        lines: 130-148
-        integrity: sha256-ed4633590b540325b2b576e2bb4c35b6764fb703425be135063f4ddfab0c3e69
-        commit-sha: 5e2f1871117a8b5592bb5c811842eb7c2aee8a9b
+        lines: 130-152
+        integrity: sha256-86381decb3e807212bfab43e503e206073fd29b435ed844991e3eff337dbeb26
+        commit-sha: cf32cb0944109e3009965678faff5455537fba2f
     - id: check-reference-fields-label-or-id
       claim:
         integrity: sha256-4298800b481d91c9d4fe535889957335977bf07becf8dd9f52560bb245f27131
@@ -815,18 +815,18 @@ docs/src/content/docs/term/reference/cli.mdx:
         integrity: sha256-e025b70972b93eb45b6da941825e74a6cb9deaea16fc57ce1935cd61ae62a98c
       source:
         file: src/term/commands/fill.ts
-        lines: 236-241
+        lines: 241-246
         integrity: sha256-0cd14bc6cf713003949c1e6007fa6e3403e9647bd7d89c5dc9c639136e66484a
-        commit-sha: 82b41f560f77676acec81501ed44862563251685
+        commit-sha: 560e2fbe4243f081e70b3f47d6e742ddbbda7e72
     - id: err-fill-crawl-offline-no-model
       claim:
         lines: 961
         integrity: sha256-2deda3dee314534cf07ace85dc37735a9421b1bed92ed10f1d96e7ee9febd091
       source:
         file: src/term/commands/fill.ts
-        lines: 312-317
+        lines: 317-322
         integrity: sha256-290799a90da9c9db8742c36b2f3bad8e87f42a0b7a31c27fd35d76ac000c86b1
-        commit-sha: 82b41f560f77676acec81501ed44862563251685
+        commit-sha: 560e2fbe4243f081e70b3f47d6e742ddbbda7e72
     - id: err-fill-offline-hosted-provider
       claim:
         lines: 962
@@ -842,6 +842,6 @@ docs/src/content/docs/term/reference/cli.mdx:
         integrity: sha256-707710d588680c1954b002ce4ec1c2a71572d3e585a888219f29823d19c37a30
       source:
         file: src/term/commands/fill.ts
-        lines: 319-323
+        lines: 324-328
         integrity: sha256-408781c5370338b3723e3f2448164ea61150b2ef509b52cfac3e175dd9d18ed8
-        commit-sha: 82b41f560f77676acec81501ed44862563251685
+        commit-sha: 560e2fbe4243f081e70b3f47d6e742ddbbda7e72
