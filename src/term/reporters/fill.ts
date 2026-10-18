@@ -34,11 +34,13 @@ export function renderFillPretty(report: FillReport): string {
   const lines = report.entries.map((e) =>
     `${words[e.action].padEnd(actionWidth)} ${e.file.padEnd(fileWidth)}${e.label.padEnd(labelWidth)}${detail(e, report.threshold)}`,
   );
-  const { created, filled, withoutDefinition } = report.summary;
+  const { created, filled, skipped, withoutDefinition } = report.summary;
+  // A skip is counted only when there is one, so a clean run reads as it did.
+  const skips = skipped > 0 ? `, ${String(skipped)} skipped` : "";
   lines.push(
     report.dryRun
-      ? `${plural(created, "term")} would be created, ${String(filled)} would be filled, ${String(withoutDefinition)} left without a definition`
-      : `${plural(created, "term")} created, ${String(filled)} filled, ${String(withoutDefinition)} left without a definition`,
+      ? `${plural(created, "term")} would be created, ${String(filled)} would be filled, ${String(withoutDefinition)} left without a definition${skips}`
+      : `${plural(created, "term")} created, ${String(filled)} filled, ${String(withoutDefinition)} left without a definition${skips}`,
   );
   return lines.join("\n");
 }
