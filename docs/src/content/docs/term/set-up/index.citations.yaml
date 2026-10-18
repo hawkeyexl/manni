@@ -67,9 +67,9 @@ docs/src/content/docs/term/set-up/index.mdx:
         integrity: sha256-b95220aecca978b8affba69435094a6e8fa41109441c5b2f284d18d9584dff6f
       source:
         file: src/term/reporters/pretty.ts
-        lines: 412-419
+        lines: 413-420
         integrity: sha256-6608f5e0a955d157221f14d5b5772c699bc2c5d3a289cefd195e3a932925bbd8
-        commit-sha: 4e0865e39a251f5714e809190f47a646645601d2
+        commit-sha: f1af3b5e6af32f083ed404908b077bd760fe5ad4
     - id: wiring-notice-names-line-and-file
       claim:
         lines: 77-78

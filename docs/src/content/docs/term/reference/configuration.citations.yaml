@@ -224,9 +224,9 @@ docs/src/content/docs/term/reference/configuration.mdx:
         integrity: sha256-0b820cb77c6be7f4c1617428722ef099e01af0987becc0adc666c1d61dff6f61
       source:
         file: src/term/types.ts
-        lines: 410-421
+        lines: 412-423
         integrity: sha256-038e4638a1c8b50b4472c31b9868253f1d00ad2a5bf2ab92f797c0ee543956f3
-        commit-sha: f5ff36e35a0bf47675bcceefbf1f193ae4585724
+        commit-sha: f1af3b5e6af32f083ed404908b077bd760fe5ad4
     - id: severity-off-drops-rule
       claim:
         integrity: sha256-0b820cb77c6be7f4c1617428722ef099e01af0987becc0adc666c1d61dff6f61

@@ -331,9 +331,9 @@ docs/src/content/docs/term/fix/index.mdx:
         integrity: sha256-e2461d8f298460a5569803dc1c7c00c6daaf50b4fb6a7e9a715550bc38e75556
       source:
         file: src/term/reporters/pretty.ts
-        lines: 403-406
+        lines: 404-407
         integrity: sha256-e4d3d0e27accdbb6f1c878f444282b5c1f077d922f1c04abdd1a48b6bbf30de4
-        commit-sha: 4e0865e39a251f5714e809190f47a646645601d2
+        commit-sha: f1af3b5e6af32f083ed404908b077bd760fe5ad4
     - id: write-vale-file-lines
       claim:
         lines: 330-332

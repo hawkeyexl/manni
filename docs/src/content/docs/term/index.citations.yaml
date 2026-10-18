@@ -102,9 +102,9 @@ docs/src/content/docs/term/index.mdx:
         integrity: sha256-0f9bb40e42624bf1edd37715238d6a5a277ff82c8ad1b942b09a317821787fa9
       source:
         file: src/term/types.ts
-        lines: 410-421
+        lines: 412-423
         integrity: sha256-038e4638a1c8b50b4472c31b9868253f1d00ad2a5bf2ab92f797c0ee543956f3
-        commit-sha: f5ff36e35a0bf47675bcceefbf1f193ae4585724
+        commit-sha: f1af3b5e6af32f083ed404908b077bd760fe5ad4
     - id: lint-prose-fields
       claim:
         lines: 35
@@ -120,9 +120,9 @@ docs/src/content/docs/term/index.mdx:
         integrity: sha256-48592a0da9c31d0558b690f0f0dd9fdbebf39365dd693e44326b03c0fda9d541
       source:
         file: src/term/types.ts
-        lines: 287-301
+        lines: 289-303
         integrity: sha256-ae93e486f510697ff33e0c0fba7fc111eda6f24a3f15cd0dd734a8735bf46c6c
-        commit-sha: f5ff36e35a0bf47675bcceefbf1f193ae4585724
+        commit-sha: f1af3b5e6af32f083ed404908b077bd760fe5ad4
     - id: write-default-in-place
       claim:
         lines: 36
@@ -205,9 +205,9 @@ docs/src/content/docs/term/index.mdx:
         integrity: sha256-e9b00ac697e7476560fb7bb2c149e4a91c518f5f0f4fda507786b3c4a847608f
       source:
         file: src/term/types.ts
-        lines: 410-421
+        lines: 412-423
         integrity: sha256-038e4638a1c8b50b4472c31b9868253f1d00ad2a5bf2ab92f797c0ee543956f3
-        commit-sha: f5ff36e35a0bf47675bcceefbf1f193ae4585724
+        commit-sha: f1af3b5e6af32f083ed404908b077bd760fe5ad4
     - id: checks-concepts-by-preferred-label
       claim:
         lines: 119
