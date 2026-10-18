@@ -125,7 +125,7 @@ docs/src/content/docs/meta/reference/output-and-exit-codes.mdx:
         file: src/meta/core/load-files.ts
         lines: 398-434
         integrity: sha256-2c850bc72c67ae7942ad990cbb181ec2a9e766749960fa3777d9b494697292ab
-        commit-sha: 5a48da35ebb584a209b1dfb0812f155a20a5133b
+        commit-sha: 1f74e683fc25a937666751b9d8887f49afa0ce97
     - id: output-empty-input-messages
       claim:
         lines: 601-604
@@ -134,7 +134,7 @@ docs/src/content/docs/meta/reference/output-and-exit-codes.mdx:
         file: src/meta/core/load-files.ts
         lines: 375-378
         integrity: sha256-a78c409acb132831471c314c84f82af32fe4f51a8abe374e2fc0cc84b584641a
-        commit-sha: 5a48da35ebb584a209b1dfb0812f155a20a5133b
+        commit-sha: 1f74e683fc25a937666751b9d8887f49afa0ce97
     - id: output-zero-files-is-exit-2
       claim:
         integrity: sha256-4b3e18ac67f597f3165b47187d1e9e5a8008019fa49a0abedbe34e5b84e53ce5
@@ -142,7 +142,7 @@ docs/src/content/docs/meta/reference/output-and-exit-codes.mdx:
         file: src/meta/core/load-files.ts
         lines: 403-434
         integrity: sha256-c7134bb61b7c846ac9ea078cb391ee795fb7f408ed7c07091baab8d8bccab2db
-        commit-sha: 5a48da35ebb584a209b1dfb0812f155a20a5133b
+        commit-sha: 1f74e683fc25a937666751b9d8887f49afa0ce97
     - id: output-fingerprint-includes-the-schema-ref
       claim:
         integrity: sha256-a62694f5b0f545613fd629388361a6b6324f95d848a7918f07857b9390d3f236

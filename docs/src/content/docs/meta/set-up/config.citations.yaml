@@ -155,9 +155,9 @@ docs/src/content/docs/meta/set-up/config.mdx:
         integrity: sha256-6db4d5d084e63d6301555a29399627c768a89ea90219446ce59f29e70f534908
       source:
         file: CHANGELOG.md
-        lines: 1052-1055
+        lines: 1059-1062
         integrity: sha256-45e8f8c4528f6e8164bb9f060cb05f911f235aec5b19ef2d7c4001423d3c47e5
-        commit-sha: ee1c69e814744fd77107656e6ccfd1bd21ff0443
+        commit-sha: 1f74e683fc25a937666751b9d8887f49afa0ce97
     - id: collection-flag-refuses-positional-paths
       claim:
         integrity: sha256-733c0b2524ed1903bd3560cdcfd64a88195eabb411d4f725708cc91cfbf30146
@@ -310,7 +310,7 @@ docs/src/content/docs/meta/set-up/config.mdx:
         file: src/meta/core/load-files.ts
         lines: 17
         integrity: sha256-ff2d1966e27b4ba5da2346d39a2cfd154b335f989818dfdaaa561b9e4132d6e8
-        commit-sha: 5a48da35ebb584a209b1dfb0812f155a20a5133b
+        commit-sha: 1f74e683fc25a937666751b9d8887f49afa0ce97
     - id: exclude-removes-members-from-paths
       claim:
         lines: 73

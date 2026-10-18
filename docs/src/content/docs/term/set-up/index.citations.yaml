@@ -33,7 +33,7 @@ docs/src/content/docs/term/set-up/index.mdx:
         file: src/shared/tools.ts
         lines: 83-111
         integrity: sha256-3a5d656d94a52acd6bbaac2fd6c5a099743fc8f023e63bf5525243f8339d8788
-        commit-sha: 53b5c8412b0b5c3fd8e884a05b237e8f1cc0c0c5
+        commit-sha: 1f74e683fc25a937666751b9d8887f49afa0ce97
     - id: no-tools-vale-config-vale-finds-own
       claim:
         lines: 56-57
@@ -42,7 +42,7 @@ docs/src/content/docs/term/set-up/index.mdx:
         file: src/shared/tools.ts
         lines: 146-155
         integrity: sha256-825c348e3e8fa3b182253fae34b3d332fe6fe52aec666e2dd5d14cc9ffba29b1
-        commit-sha: 58a96dd31adb6ab1d2f640b34cf13b71b00f0385
+        commit-sha: 1f74e683fc25a937666751b9d8887f49afa0ce97
     - id: no-o-asks-vale-styles-path
       claim:
         lines: 59-60
