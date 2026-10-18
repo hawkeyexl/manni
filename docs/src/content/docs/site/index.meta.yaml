@@ -1,0 +1,24 @@
+docs/src/content/docs/site/index.mdx:
+  personas: ["maya", "devin", "theo"]
+  journeys: ["m26", "m7", "d7", "t3"]
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: "src/site/"
+  eval-suite: site
+  evals:
+    - id: run-the-site
+      assertion: "A reader can start, build and preview a docs site with manni site, and say what each verb runs."
+      type: capability
+      grader: ai
+    - id: port-from-collection
+      assertion: "A reader can say where manni site takes its port from, and why manni a11y check then needs no URL."
+      type: capability
+      grader: ai
+  owner:
+    - "@hawkeyexl"
+  created: 2026-10-05
+  provenance:
+    - generated-by: Claude Opus 5.5
+      lines: 2-147
+      integrity: sha256-ae95fa57c259446bbac68c62c5e422a2b6bda636afa8956d49d911c662117786

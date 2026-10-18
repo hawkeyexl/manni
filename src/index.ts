@@ -19,3 +19,6 @@ export * as key from "./key/index.js";
 // it binds to the same registry the CLI reads:
 // `import { tracevals } from "@hawkeyexl/manni"`.
 export * as tracevals from "./tracevals/index.js";
+// The test domain: the command core that runs Doc Detective, with an
+// injectable spawn, and its reporters. `import { test } from "@hawkeyexl/manni"`.
+export * as test from "./test/index.js";
