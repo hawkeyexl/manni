@@ -918,6 +918,6 @@ docs/src/content/docs/term/set-up/move-and-hand-off.mdx:
         integrity: sha256-25a039aef3427e91c3ff787603c1b20a2704fab8aaaf9fbe777c55b365197fac
       source:
         file: src/term/core/writers/skos.ts
-        lines: 84-89
+        lines: 90-95
         integrity: sha256-ec901a2203d53a96261418ec063839222c36f0a54ee00482ac7a637b05d550e1
-        commit-sha: 7dd260a5d6531aec7e227a1fb629d385ddf85b26
+        commit-sha: 30b322ddca2461dbd8f84630f68bf2fba07db563
