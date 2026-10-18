@@ -101,6 +101,15 @@ const DOMAINS: readonly Domain[] = [
     ],
   },
   {
+    names: ["test"],
+    load: async () => [
+      (await import("./test/cli.js"))
+        .buildProgram()
+        .name("test")
+        .description("Run the docs' procedure tests with Doc Detective and report in the family contract"),
+    ],
+  },
+  {
     names: ["graph"],
     load: async () => [
       (await import("./graph/cli.js"))
@@ -130,6 +139,16 @@ const DOMAINS: readonly Domain[] = [
         .buildProgram()
         .name("key")
         .description("Set and rotate the family key that encrypted values are encrypted with."),
+    ],
+  },
+  // The docs site, a family resource with verbs like `key` (proposal 0082).
+  {
+    names: ["site"],
+    load: async () => [
+      (await import("./site/cli.js"))
+        .buildProgram()
+        .name("site")
+        .description("Start, build and preview the docs site"),
     ],
   },
   // The two family verbs (proposal 0078), and the only verbs the umbrella

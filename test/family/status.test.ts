@@ -40,9 +40,20 @@ describe.skipIf(!gitAvailable())("runStatus", () => {
       { name: "docevals", status: "in-play", reason: "docevals: section" },
       { name: "term", status: "in-play", reason: "1 term" },
       { name: "graph", status: "in-play", reason: "graph: section" },
-      { name: "a11y", status: "not-checked", reason: "run manni a11y check against a running site" },
+      { name: "a11y", status: "not-checked", reason: "run manni site preview, then manni a11y check" },
+      { name: "test", status: "not-checked", reason: "run manni test run with Doc Detective installed" },
       { name: "tracevals", status: "not-checked", reason: "run manni tracevals run over sessions" },
     ]);
+  });
+
+  it("never runs test: Doc Detective executes the pages' steps, so it says what to run instead", async () => {
+    dir = fixtureRepo("only-graph");
+    const report = await runStatus({ cwd: dir });
+    expect(report.domains.find((d) => d.name === "test")).toEqual({
+      name: "test",
+      status: "not-checked",
+      reason: "run manni test run with Doc Detective installed",
+    });
   });
 
   it("names what is not set up, and why", async () => {

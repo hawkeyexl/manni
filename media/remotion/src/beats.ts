@@ -21,6 +21,14 @@ export interface Command {
   output: string; // raw bytes, ANSI included
   latencyFrames: number;
   holdFrames: number; // time on screen after the output lands
+  /**
+   * Output that lands later than the first chunk, each `afterFrames` after the
+   * chunk before it: a command that announces a step, then works, then prints
+   * again. `holdFrames` counts from the last chunk.
+   */
+  more?: { afterFrames: number; output: string }[];
+  /** The command is still running when the beat ends (a server): no prompt follows. */
+  running?: boolean;
 }
 
 export interface Beat {
@@ -106,7 +114,8 @@ export function timeline(beat: Beat, typingMs = TYPING_MS): { commands: CommandT
     const typeStart = t;
     const enterAt = typeStart + typingFrames(c.typed, typingMs) + ENTER_PAUSE_FRAMES;
     const outputAt = enterAt + c.latencyFrames;
-    const end = outputAt + c.holdFrames;
+    const later = (c.more ?? []).reduce((a, m) => a + m.afterFrames, 0);
+    const end = outputAt + later + c.holdFrames;
     t = end;
     return { ...c, typeStart, enterAt, outputAt, end };
   });
