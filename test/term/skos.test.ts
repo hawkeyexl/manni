@@ -1,5 +1,5 @@
 /**
- * SKOS in and out (proposal 0085 § 5). A `.ttl` or `.jsonld` file named on the
+ * SKOS in and out (proposal 0086 § 5). A `.ttl` or `.jsonld` file named on the
  * command line, or listed in `term.manifests`, reads as SKOS, and `-f skos`
  * and `-f skos-ttl` write it back. Every field SKOS holds survives a round
  * trip through either serialization.
