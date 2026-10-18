@@ -22,9 +22,6 @@ docs/src/content/docs/family/reference/cli.mdx:
     - generated-by: Claude Opus 5.5
       lines: 2-90
       integrity: sha256-788a960231ab010c50b4464902f77d4ca4189365262b0beaa001adda111adedd
-    - generated-by: Claude Sonnet 5.5
-      lines: 91
-      integrity: sha256-27b4a1d91c9f40646226d47c5e44e00a08e717ee2b61183159bddc09ffe08226
     - generated-by: Claude Opus 5.5
       lines: 92-103
       integrity: sha256-228bff1302309b71cb5952c35142b32f9c2423b87bf3d12d61dfc101e75e5a18
@@ -44,8 +41,8 @@ docs/src/content/docs/family/reference/cli.mdx:
       lines: 130-189
       integrity: sha256-2370f5ca8c83cf6d0b8455eeaf31388c1f4df6f366539eca1723908339b5ee9c
     - generated-by: Claude Opus 5.5
-      lines: 191-219
-      integrity: sha256-2d781e887d072ef3f0f0298af41d2b60cfd941cfcb310c51d4bc58a2db399404
+      lines: 190-217
+      integrity: sha256-5a67399e586d7db60c633236c2a44604d4cdd6d8335d02ac947954d9db406cb8
     - generated-by: Claude Sonnet 5.5
       lines: 220
       integrity: sha256-4ffa9cdc3401e1d0722a1c11032ff3a4e78ba4ac7a33d88fe39ccc00aa0d534e
@@ -98,8 +95,8 @@ docs/src/content/docs/family/reference/cli.mdx:
       lines: 326-330
       integrity: sha256-bbf4c605fce49507091b387b2e299c1984b58d12724b6e037d27857dc2fc479a
     - generated-by: Claude Opus 5.5
-      lines: 333-464
-      integrity: sha256-5acad918e5bfc209493cff2196a885540aebb527af9751266b4eee73e192c4a8
+      lines: 331-461
+      integrity: sha256-8f9227494960943c22fbebafa05e4b12491db0f4ba59807b0ca3f970cfa402c4
   owner:
     - "@hawkeyexl"
   created: 2026-10-05

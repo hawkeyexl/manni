@@ -42,11 +42,14 @@ docs/src/content/docs/family/claude-code.mdx:
       lines: 71
       integrity: sha256-782e98cb76374105c1c94120edc06036ef7504e410639fd4441a70bc5c37c507
     - generated-by: Claude Sonnet 5.5
-      lines: 73-85
-      integrity: sha256-7c98a1e9ddba7cc965e4598eeabfdd91c0372a36ef0e73b44ef58833ead33dfd
+      lines: 73-84
+      integrity: sha256-7191912600f591ce9839294d5cc1ec7ad19be900e84a69472465464c36afe35b
     - generated-by: Claude Opus 5.5
-      lines: 86
-      integrity: sha256-e0819914485c638c8ed98278037dc1ca4e35c343a027f922179aae33bed24146
+      lines: 85
+      integrity: sha256-6f835e8af2d644ae9642463f802c0e368d05d7ae16256f49657d96ed03a22ef4
+    - generated-by: Claude Sonnet 5.5
+      lines: 86-88
+      integrity: sha256-a3ce48f8e958a5c2f6cc2e90a8709ddf8becf91c4203835f3ee937a2070b8c78
     - generated-by: Claude Sonnet 5.5
       lines: 87-89
       integrity: sha256-a3ce48f8e958a5c2f6cc2e90a8709ddf8becf91c4203835f3ee937a2070b8c78

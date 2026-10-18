@@ -4,6 +4,13 @@
 4.13.1. Entries below that version are docmeta releases; the repository
 history is the same one.
 
+# [4.10.0](https://github.com/hawkeyexl/manni/compare/v4.9.0...v4.10.0) (2026-10-18)
+
+
+### Features
+
+* **site:** add manni site start, build and preview ([#161](https://github.com/hawkeyexl/manni/issues/161)) ([ee1c69e](https://github.com/hawkeyexl/manni/commit/ee1c69e814744fd77107656e6ccfd1bd21ff0443))
+
 # [4.9.0](https://github.com/hawkeyexl/manni/compare/v4.8.1...v4.9.0) (2026-10-18)
 
 
