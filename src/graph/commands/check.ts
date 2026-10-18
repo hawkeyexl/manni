@@ -80,6 +80,13 @@ export async function runCheck(opts: CheckOptions = {}): Promise<CheckReport> {
       config.check.questions,
       documentBase(config, {}, cwd),
       dirname(graphPath),
+      {
+        source: {
+          ...(opts.config === undefined ? {} : { configPath: opts.config }),
+          ...(opts.noConfig === undefined ? {} : { noConfig: opts.noConfig }),
+        },
+        cwd,
+      },
     )),
   ].sort(compareFindings);
   const count = (severity: Severity): number =>

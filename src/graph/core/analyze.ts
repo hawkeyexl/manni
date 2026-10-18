@@ -674,6 +674,8 @@ export interface TreeSections {
   sections: Section[];
   /** The content each section owns, parallel to `sections`. */
   owned: ContentNode[][];
+  /** The lint node each section was minted from, parallel to `sections`. */
+  nodes: SectionNode[];
   /** Content no minted section owns: the lead's, and a skipped heading's. */
   unowned: ContentNode[];
   firstH1: string | undefined;
@@ -697,6 +699,7 @@ export function mintTreeSections(roots: SectionNode[]): TreeSections {
   const out: TreeSections = {
     sections: [],
     owned: [],
+    nodes: [],
     unowned: [],
     firstH1: undefined,
   };
@@ -745,6 +748,7 @@ export function mintTreeSections(roots: SectionNode[]): TreeSections {
         parentSlug,
       });
       out.owned.push(node.children);
+      out.nodes.push(node);
       walk(node.sections, slug);
     }
   };

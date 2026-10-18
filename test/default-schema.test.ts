@@ -699,6 +699,42 @@ describe("the six house vocabularies", () => {
     expect(bad.ok).toBe(false);
   });
 
+  it("lets a question pin the lines that answer it, from ai-context 1.1.0 (proposal 0086)", async () => {
+    const AI_CONTEXT_110 = "manni:ai-context:1.1.0";
+    const valid = [
+      "sample-questions: How do I retry a failed upload?",
+      "sample-questions:\n  - How do I retry a failed upload?\n  - question: How many times does an upload retry?\n    answers:\n      - lines: 41-43\n        integrity: sha256-" +
+        "0".repeat(64),
+      "sample-questions:\n  - question: How do I resume an upload?\n    answers:\n      - lines: 7\n        reviewed: false",
+      "sample-questions:\n  - question: What happens over the size limit?\n    answers:\n      - lines: 58-60\n    generated-by: anthropic/claude-sonnet-5-5\n    confidence: 0.82\n    reviewed: false\n    reviewed-by: Maya",
+      "sample-questions:\n  question: One object alone is one item",
+    ];
+    for (const fields of valid) {
+      const r = await checkStdin(`title: T\ndescription: D\n${fields}`, [AI_CONTEXT_110]);
+      expect(r.errors, fields).toEqual([]);
+    }
+    const invalid = [
+      "sample-questions:\n  - answers:\n      - lines: 3",
+      "sample-questions:\n  - question: Q?\n    answers: []",
+      "sample-questions:\n  - question: Q?\n    answers:\n      - integrity: sha256-" + "0".repeat(64),
+      "sample-questions:\n  - question: Q?\n    answers:\n      - lines: 0",
+      "sample-questions:\n  - question: Q?\n    answers:\n      - lines: 3\n        integrity: md5-abc",
+      "sample-questions:\n  - question: Q?\n    confidence: 2",
+      "sample-questions:\n  - question: Q?\n    answer: misspelled",
+      'sample-questions:\n  - question: ""',
+    ];
+    for (const fields of invalid) {
+      const r = await checkStdin(`title: T\ndescription: D\n${fields}`, [AI_CONTEXT_110]);
+      expect(r.ok, fields).toBe(false);
+    }
+    // A page pinned to 1.0.0 still takes strings only.
+    const old = await checkStdin(
+      "title: T\ndescription: D\nsample-questions:\n  - question: Q?",
+      [ref("ai-context")],
+    );
+    expect(old.ok).toBe(false);
+  });
+
   it("leaves the companion namespaces alone, and they validate under their own schemas", async () => {
     // `evals`, `graph` and `metadata.evals` are unclaimed by the house schemas;
     // stacked with the companion schemas themselves, the fixture's blocks are
@@ -789,10 +825,11 @@ describe("the default set (proposal 0070)", () => {
     CORE_ID,
     ref("audience"),
     ref("structure"),
-    // Stewardship is the one family whose default moved past 1.0.0 (0074).
+    // Stewardship's default moved past 1.0.0 for its output marks (0074), and
+    // ai-context's for pinned answers (0086).
     "manni:stewardship:1.1.0",
     ref("lifecycle"),
-    ref("ai-context"),
+    "manni:ai-context:1.1.0",
     ref("evals"),
     ref("graph"),
     ref("citations"),
