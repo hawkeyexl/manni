@@ -1,0 +1,189 @@
+---
+title: manni test
+description: "Run the Doc Detective tests embedded in your docs, and gate on them with exit codes 0, 1 and 2 and an annotation on each failing step."
+tableOfContents: false
+hero:
+  tagline: Run the procedure tests in your docs, and gate on them like every other check.
+  actions:
+    - text: CLI reference
+      link: /manni/test/reference/cli/
+      icon: right-arrow
+      variant: primary
+    - text: Run it in CI
+      link: /manni/test/#run-it-in-ci
+      icon: setting
+      variant: minimal
+id: "test"
+type: "overview"
+keywords: ["test run", "Doc Detective", "docs as tests", "procedure tests", "inline tests"]
+language: en
+audiences: ["ci-engineers", "docs-engineers"]
+intent: "Understand what manni test run tests, which inputs it reads, and how to gate CI on its exit code."
+lifecycle: published
+applies-to: ["domain:test"]
+next-steps: ["test-reference-cli"]
+related-pages: ["meta-reference-configuration"]
+risks: ["open-world"]
+sample-questions: ["How do I run the Doc Detective tests in my docs with manni?", "Which files does manni test run test when I give it no paths?", "What does each exit code of manni test run mean?"]
+graph: { label: "manni test", type: concept }
+last-updated: 2026-10-05
+tags:
+  - testing
+  - doc-detective
+  - docs-as-tests
+  - ci
+  - cli
+action: understand
+---
+
+import { Aside, CardGrid, LinkCard } from '@astrojs/starlight/components';
+
+<Aside type="note" title="Beta">
+`manni test` is in beta. Its commands, config keys and output can change in
+any release, without notice.
+</Aside>
+
+A procedure in the docs is a claim that following it works. Doc Detective
+checks that claim. It reads tests embedded in a page as comments, runs each
+step, and records whether it passed. `manni test run` starts Doc Detective,
+reads the results it writes, and reports them the way every other manni gate
+does.
+
+The job is *test*, and Doc Detective is the tool that answers it. The verb
+names the job, so the command a person types stays the same whichever tool
+runs the tests.
+
+## What it adds to Doc Detective
+
+- **An exit code that is a verdict.** Doc Detective exits `0` when a test
+  fails. `manni test run` exits `1` when anything failed, and `2` when the run
+  itself went wrong.
+- **The page and line that broke.** Each failing step is listed under its page
+  with its line, or written as a GitHub annotation with `-f github`.
+- **A run that tested nothing fails.** Doc Detective skips an input path that
+  does not exist, and passes a run that found no tests. manni refuses both
+  with exit `2`, unless you pass `--allow-empty`.
+
+Doc Detective is installed on its own, beside manni:
+
+```sh
+npm install -g doc-detective
+```
+
+## A 30-second proof
+
+Two pages in `test/test/fixtures/` hold one test each, written as comments.
+Each test has one `runShell` step that expects exit `0`. In `pass.md`, the
+step runs `echo hello`. In `fail.md`, it runs `exit 1`, on line 4.
+
+Run the failing page. The step's line is in the report, and the run exits `1`:
+
+{/* test {"testId":"test-overview-proof","description":"The overview's proof: fail.md exits 1 with its line, pass.md exits 0, and a missing path exits 2."} */}
+{/* step {"description":"A failing step exits 1 and names its line.","runShell":{"command":"npx @hawkeyexl/manni test run test/test/fixtures/fail.md --no-progress","exitCodes":[1],"stdio":"FAIL"}} */}
+
+```console
+$ manni test run test/test/fixtures/fail.md
+test/test/fixtures/fail.md
+  4  FAIL     Returned exit code 1. Expected one of [0]
+
+1 test: 0 passed, 1 failed, 0 warnings, 0 skipped
+```
+
+Run the passing page. A clean run prints the summary alone, and exits `0`:
+
+{/* step {"description":"A passing page exits 0.","runShell":{"command":"npx @hawkeyexl/manni test run test/test/fixtures/pass.md --no-progress","exitCodes":[0],"stdio":"1 passed"}} */}
+
+```console
+$ manni test run test/test/fixtures/pass.md
+1 test: 1 passed, 0 failed, 0 warnings, 0 skipped
+```
+
+Name a page that is not there. Doc Detective alone would skip it and pass.
+manni stops with exit `2`:
+
+{/* step {"description":"A path that does not exist exits 2.","runShell":{"command":"npx @hawkeyexl/manni test run test/test/fixtures/missing.md --no-progress","exitCodes":[2],"stdio":"File not found"}} */}
+{/* test end */}
+
+```console
+$ manni test run test/test/fixtures/missing.md
+manni: File not found: "test/test/fixtures/missing.md".
+```
+
+## Which files it tests
+
+A run tests the first of these that is present:
+
+1. **The paths you name.** Files and directories go to Doc Detective as you
+   typed them, and Doc Detective walks a directory itself. manni expands a
+   glob.
+2. **`--collection <name>`.** The files of a collection declared in
+   `manni.config.yaml`, minus its `exclude:`. Repeat the flag for more than
+   one. It cannot be combined with paths.
+3. **Doc Detective's own `input`.** From its config file, which it finds as
+   `.doc-detective.json`, `.yaml` or `.yml` in the working directory.
+
+A bare `manni test run` reads no collection, unlike `manni meta validate` and
+`manni lint check`. A repository that tests its docs already has a Doc
+Detective config, and that config already says what to test. Reading
+collections too would give one question two answers.
+
+Every other setting stays in Doc Detective's config, even when manni names
+the inputs. That covers `fileTypes`, `beforeAny` and `loadVariables`.
+
+<Aside type="tip" title="Running from a subdirectory">
+Doc Detective looks for its config only in the working directory, while manni
+walks up to find `manni.config.yaml`. Set `tools.doc-detective.config` there
+to name the file, and every run below it finds it. The
+[configuration reference](/manni/meta/reference/configuration/#tools) has the
+key.
+</Aside>
+
+```yaml title="manni.config.yaml"
+tools:
+  doc-detective:
+    config: .doc-detective.json
+```
+
+## Run it in CI
+
+Install Doc Detective, then run manni with the GitHub format:
+
+```yaml title=".github/workflows/docs-as-tests.yml"
+- run: npm install -g doc-detective
+- name: Run the docs' tests
+  run: manni test run -f github --progress
+```
+
+`-f github` writes one annotation per failing step, on its page and line.
+`--progress` streams Doc Detective's own log to stderr as it runs. That is the
+default on a terminal, and a CI job is not one. stdout stays clean either way.
+
+The exit code says whose problem it is:
+
+| Exit | Means |
+| --- | --- |
+| `0` | No test failed. Warnings and skipped tests pass. |
+| `1` | A test failed. The page needs fixing. |
+| `2` | The run went wrong. Doc Detective is missing, a path is wrong, or no tests were found. |
+
+<Aside type="caution" title="The tests run shell commands">
+A `runShell` step runs whatever the page says. Run the job for pull requests
+from your own repository, never from forks, and give it no secrets it does
+not need.
+</Aside>
+
+For a dashboard, `-f json` prints Doc Detective's own results object,
+unchanged. A script written against Doc Detective's report reads it as it is.
+
+<CardGrid>
+  <LinkCard
+    title="CLI reference"
+    href="/manni/test/reference/cli/"
+    description="Every argument and flag of test run, the three output formats, the exit codes, and every message."
+  />
+  <LinkCard
+    title="tools: configuration"
+    href="/manni/meta/reference/configuration/#tools"
+    description="The tools.doc-detective.config key, beside the settings of every other outside tool manni runs."
+  />
+</CardGrid>

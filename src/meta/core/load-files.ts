@@ -14,7 +14,7 @@ import { supportedExtensions } from "../extractors/index.js";
 import { DocmetaError } from "../types.js";
 import { GITIGNORE_UNAVAILABLE, gitIgnored } from "./gitignore.js";
 
-const DEFAULT_IGNORE = ["**/node_modules/**", "**/.git/**"];
+export const DEFAULT_IGNORE = ["**/node_modules/**", "**/.git/**"];
 
 export const STDIN_TOKEN = "-";
 
@@ -342,12 +342,7 @@ async function walkTargetSet(opts: ResolveOptions): Promise<ResolvedTargets> {
   }
 
   if (missing.length > 0 && !opts.allowEmpty) {
-    const names = missing.map((m) => `"${m}"`).join(", ");
-    throw new DocmetaError(
-      missing.length === 1
-        ? `File not found: ${names}.`
-        : `Files not found: ${names}.`,
-    );
+    throw new DocmetaError(notFoundMessage(missing));
   }
 
   // Gitignore runs last, over the extension-filtered walk only. A file the
@@ -371,6 +366,15 @@ async function walkTargetSet(opts: ResolveOptions): Promise<ResolvedTargets> {
     gitignoreSkipped,
     named: [...named].sort(),
   };
+}
+
+/**
+ * The refusal for named paths that do not exist, worded once for every tool
+ * that checks its inputs before handing them on.
+ */
+export function notFoundMessage(missing: readonly string[]): string {
+  const names = missing.map((m) => `"${m}"`).join(", ");
+  return missing.length === 1 ? `File not found: ${names}.` : `Files not found: ${names}.`;
 }
 
 export interface NonEmptyParams {
