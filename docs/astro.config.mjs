@@ -516,7 +516,7 @@ export default defineConfig({
         // `family` is not a domain. It documents the two verbs the umbrella
         // carries, `manni check` and `manni status`, and the Claude Code
         // plugin that runs them (proposal 0078). It also holds the one walk
-        // across domains, from tags to a checked graph (proposal 0085). Three
+        // across domains, from tags to a checked graph (proposal 0086). Three
         // journey pages and a reference page, so no overview and no sub-groups.
         {
           label: "family",
