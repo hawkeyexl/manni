@@ -83,7 +83,7 @@ export interface DeriveOptions {
   /** Emit qualified attribution/association nodes (`provenance.qualified`). */
   qualified?: boolean;
   /**
-   * The termbase, as the family term source reads it (proposal 0085 §1).
+   * The termbase, as the family term source reads it (proposal 0086 §1).
    * Read only under the `terms` derive source.
    */
   termbase?: readonly TermLabel[];
@@ -285,7 +285,7 @@ export function deriveGraph(docs: DocModel[], options: DeriveOptions): Quad[] {
   const terms = termIndex(sources.has("terms") ? (options.termbase ?? []) : []);
 
   /**
-   * The concept a label names (proposal 0085 §1). A label the termbase
+   * The concept a label names (proposal 0086 §1). A label the termbase
    * defines names that term's concept, which the termbase pass below emits,
    * so the reference adds no label of its own. Any other label is a freeform
    * concept, minted from its slug with the label as its prefLabel.
@@ -509,7 +509,7 @@ export function deriveGraph(docs: DocModel[], options: DeriveOptions): Quad[] {
       // indexes and miss a `--lang` filter typed the other way.
       if (pageLanguage) add(docIri, `${NS.dcterms}language`, lit(pageLanguage));
 
-      // ai-context's questions this page should be found for (proposal 0085
+      // ai-context's questions this page should be found for (proposal 0086
       // §7), in the page's language. Only the text: an item's answer pins and
       // review state are test data `check` reads from the source (0087).
       for (const { question } of readSampleQuestions(fmValue(fm, ["sample-questions"]))) {
@@ -563,7 +563,7 @@ export function deriveGraph(docs: DocModel[], options: DeriveOptions): Quad[] {
         }
       }
 
-      // A term page is about its term (proposal 0085 §1), unless its `graph`
+      // A term page is about its term (proposal 0086 §1), unless its `graph`
       // block names a topic of its own. Its id names the term, and its label
       // does when the id is absent or names no term.
       if (!blockLabel && asString(fm["type"]) === "term") {
@@ -829,7 +829,7 @@ export function deriveGraph(docs: DocModel[], options: DeriveOptions): Quad[] {
     }
   }
 
-  // The termbase's concepts (proposal 0085 §1): one per id, each language of a
+  // The termbase's concepts (proposal 0086 §1): one per id, each language of a
   // term joining it, and every label tagged with the term's language.
   const tagged = (value: string, language: string | undefined): Term =>
     language === undefined ? lit(value) : { kind: "literal", value, language };

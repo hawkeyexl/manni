@@ -66,7 +66,7 @@ export const LOCATION_PAGE_RULE = "location:page/location";
 
 /**
  * A value of a field its schema marks `x-manni-term` that names no term
- * (proposal 0085). Builtin-shaped like `location:external`.
+ * (proposal 0086). Builtin-shaped like `location:external`.
  */
 export const TERM_UNDEFINED_RULE = "term:undefined/term";
 

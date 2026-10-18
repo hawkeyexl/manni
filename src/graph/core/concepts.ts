@@ -1,5 +1,5 @@
 /**
- * The termbase as the graph reads it (proposal 0085 §1): one concept per term
+ * The termbase as the graph reads it (proposal 0086 §1): one concept per term
  * id, and one resolver every concept label in derivation goes through.
  *
  * A label resolves to a term by its label, then its id, then an alt-label,

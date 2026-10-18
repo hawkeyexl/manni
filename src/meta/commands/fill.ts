@@ -599,7 +599,7 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
     const keys = new Set(candidates.map((c) => c.key));
     const wants = (fields: readonly FieldPath[]): boolean =>
       fields.some(([key]) => key !== undefined && keys.has(key));
-    // A field its schema marks `x-manni-term` (proposal 0085 §6) is offered
+    // A field its schema marks `x-manni-term` (proposal 0086 §6) is offered
     // its branch's labels, the way a concept field is offered every label.
     const defs = collectDefs(schemas);
     const marks = candidates.flatMap((c) => termMarksIn(c, defs));
