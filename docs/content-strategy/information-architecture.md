@@ -8,7 +8,7 @@ The site is organized by user intent, not by document type. Each top-level secti
 
 ## Domains
 
-manni is one bin with one domain per tool (proposals 0033 and 0034), and the site follows the bin. Nine domains ship today, so the site has nine top-level sections: `meta/`, `cite/`, `key/`, `a11y/`, `term/`, `lint/`, `docevals/`, `graph/` and `tracevals/`. The same intent-based tree applies inside each. That tree is an overview that routes by job-to-be-done, and journey pages per persona. It ends in a flat reference shelf the journeys deep-link into. The navigation tree and content set below are the `meta/` section, the one with enough pages to need them. Every directory in the mapping table lives under `meta/`.
+manni is one bin with one domain per tool (proposals 0033 and 0034), and the site follows the bin. Eleven domains ship today, and each has a top-level section of the site: `meta/`, `cite/`, `key/`, `site/`, `a11y/`, `term/`, `lint/`, `docevals/`, `graph/`, `tracevals/` and `test/`. The same intent-based tree applies inside each. That tree is an overview that routes by job-to-be-done, and journey pages per persona. It ends in a flat reference shelf the journeys deep-link into. The navigation tree and content set below are the `meta/` section, the one with enough pages to need them. Every directory in the mapping table lives under `meta/`.
 
 The `lint/` section is the sixth. It carries four journey pages and a reference shelf. It serves Maya (M10), Devin (D9), Theo (T5) and Sara (S7). Maya holds every page to the shape its doctype promises. Devin runs the CI gate, Theo reads one structure failure, and Sara describes a doctype as a template. Proposal 0050 folded the domain in, and 0061 made the template format a grammar. That is what earned Sara a set-up track. Writing a template is a job with steps now, rather than a key list to read once. The `lint/` content set is below, after `a11y/`.
 
@@ -22,8 +22,11 @@ The `graph/` section is the eighth. It serves Maya (M18–M20, M26), Devin (D12�
 
 The `tracevals/` section is the ninth. It arrived as `docevals/` did, with five audiences of its own. They were artifact authors, an eval-standard owner, platform and CI, run triagers, and a toolsmith named Rin. Rin wants the library rather than the binary. Four of the five were already these people by name. Rin was the only genuinely new shape. He is Devin reading the JSON report and calling the namespace export. So he folded into D15 and the API reference rather than becoming a sixth persona. Upstream's nine journeys became M17, M21–M23, D14–D15, S13–S14 and T8. They took the next free ids, because docevals, lint and graph already held the lower ones. Its content set is last, after `graph/`. No per-tool strategy directory came over: `cujs.md`, `personas.md` and this file carry the whole family.
 
+The `site/` section is the tenth. Like `key/`, it is a family resource rather than a tool (proposal 0082). The resource is the site itself, which every other domain checks. It serves Maya (M26, running the site locally, and M7) and Devin (D7, the one-command serve step in CI). It serves Theo too (T3, seeing the page in a repository he does not own). It has an overview and a reference page, and no journey pages yet. One command per job leaves no path long enough to need one. Its content set is below, after `key/`.
 
-The `family/` section is a tenth, and it is not a domain. It documents the two top-level verbs, `manni check` and `manni status`, and the Claude Code plugin that runs them (proposal 0078). It serves Devin (D16), who gates every check a repo has set up with one command. It also serves Maya (M24), whose agent keeps the docs green while it writes them. And it serves Sara (S15), who grows the concepts her pages name into a termbase and a checked graph across four domains. Its content set is last, after `tracevals/`.
+The `family/` section is an eleventh, and it is not a domain. It documents the two top-level verbs, `manni check` and `manni status`, and the Claude Code plugin that runs them (proposal 0078). It serves Devin (D16), who gates every check a repo has set up with one command. It also serves Maya (M24), whose agent keeps the docs green while it writes them. Its content set is last, after `tracevals/`. And it serves Sara (S15), who grows the concepts her pages name into a termbase and a checked graph across four domains. Its content set is last, after `tracevals/`.
+
+The `test/` section is the twelfth, and the eleventh domain. It serves Devin (D17), who gates the docs' procedure tests with the family's contract. It also serves Maya, who runs the same tests on her machine and reads the failing page and line. Proposal 0085 added the domain. It runs Doc Detective, so it is not a fold-in and brought no strategy of its own. Its content set is after `tracevals/`.
 
 ---
 
@@ -172,6 +175,15 @@ The third domain's content set, under `docs/src/content/docs/key/`. `key` is not
 | Set up (`key/set-up/index.mdx`) | S4, D6 | ★ | Put the key where every tool finds it. `encryptionKey:` against `MANNI_ENCRYPTION_KEY`, and why a shared repository wants the environment. Then the git-ignore warning, who on the team needs the key, and what breaks without it. Source of truth: `src/shared/encryption-key.ts`, `src/key/commands/set.ts`, `src/key/core/config.ts`. |
 | Run it in CI (`key/ci/index.mdx`) | D6 | ★ | The rotation runbook, written as numbered steps with the exact commands and what each prints. Generate, rotate over the whole family, update the CI secret, and re-record the citation baseline. Then verify under the new key, and resume an interrupted rotation. Source of truth: `src/key/commands/rotate.ts`, `src/shared/encryption.ts`, `src/cite/core/reencrypt.ts`, `src/meta/core/reencrypt.ts`. |
 | CLI reference (`key/reference/cli.mdx`) | S4, D5, D6 | ★ | `set`/`rotate`; every argument and flag, and the exit codes. How rotation finds values: by ciphertext, every value or none, resumable, the narrowed-run and environment rules, and the citation baseline. Then every refusal, and the ladder from minimal to maximal. Guarded by `npm run docs:check-cli`. Source of truth: `src/key/cli.ts`. |
+
+### `site/` (running the docs site)
+
+The tenth domain's content set, under `docs/src/content/docs/site/`. `site` is not a document tool. It runs the site every other domain checks, through the framework's own commands (proposal 0082). The nav gains a `site` group after `meta`, with an Overview link and a Reference group autogenerated from `site/reference/`. The a11y pages that used to type a serve line now run `manni site preview` and link here.
+
+| Page | CUJ | ★ | Notes |
+|---|---|---|---|
+| Overview (`site/index.mdx`) | M26, M7, D7, T3 | ★ | What each verb does, how the site and its framework are found, and why the port comes from the collection `url:`. A 30-second proof in this repository: `manni site preview`, then `manni a11y check` with no flags. Source of truth: `src/site/core/detect.ts`, `src/site/commands/`. |
+| CLI reference (`site/reference/cli.mdx`) | M26, D7 | ★ | `start`/`build`/`preview`; every argument and flag. The framework table with markers, commands and default ports. The `site:` config keys, the built-in server, and every message with its exit code. Guarded by `npm run docs:check-cli`. Source of truth: `src/site/cli.ts`, `src/site/core/config.ts`, `src/site/core/detect.ts`. |
 
 ### `a11y/` (accessibility)
 
@@ -408,6 +420,15 @@ The tenth section, under `docs/src/content/docs/family/`. It holds what belongs 
 | From tags to a knowledge graph (`family/concept-lifecycle.mdx`) | S15 | ★ | One small docset, walked from freeform `concepts:` to a checked graph in seven steps. The graph accepts the concepts, `term fill` bootstraps the termbase and `--crawl` extends it, and `term check` governs it with the review trail in `meta-provenance`. Then `x-manni-term` holds a field to a branch, the mappings and SKOS carry it out, and `graph check` finds each page for its `sample-questions`. `graph fill` pins those questions to their answers, and `foundThreshold` gates the reviewed set. `keyword-candidate` and `hierarchy-outside-termbase` close the loop. Every transcript is captured from the built binary over a copy of `test/fixtures/term/fill/basic/`. Links to each domain's reference rather than restating it. Source of truth: `src/term/commands/fill.ts`, `src/term/core/check.ts`, `src/graph/core/derive.ts`, `src/meta/core/validator.ts`. |
 | CLI reference (`family/reference/cli.mdx`) | D16, M24 | ★ | `check` and `status`: every argument and flag, the exit codes, and the hook-protocol table. The in-play rule per domain, and the ladder from minimal to maximal. Guarded by `npm run docs:check-cli`. Source of truth: `src/family/`. |
 
+### `test/` (procedure tests, run by Doc Detective)
+
+The eleventh domain's content set, under `docs/src/content/docs/test/`. One verb, so an overview and a reference shelf of one. The nav gains a `test` group after `tracevals`, with an Overview link and a Reference group autogenerated from its directory. The `tools.doc-detective.config` family key is documented on meta's configuration reference, beside `tools.vale.config`. Both pages carry Doc Detective steps over `test/test/fixtures/`, which run `manni test run` on a passing and a failing page.
+
+| Page | CUJ | ★ | Notes |
+|---|---|---|---|
+| Overview (`test/index.mdx`) | D17 | ★ | A hero page, mirroring `key/index.mdx`. The job-versus-tool split, and Doc Detective as the one tool. The input precedence: paths, then `--collection`, then Doc Detective's own `input`, and why a bare run reads no collection. Then a 30-second proof, `fail.md` at exit `1` with its line and `pass.md` at exit `0`. Then the CI step with `-f github --progress`, and the same-repository gate. |
+| CLI reference (`test/reference/cli.mdx`) | D17 | ★ | `run`; every argument and flag, the three output formats, the json format as Doc Detective's report verbatim, and the exit codes. Every usage error with its stderr, the parity breaks, and the ladder from minimal to maximal. Guarded by `npm run docs:check-cli`. Source of truth: `src/test/cli.ts`. |
+
 ### Supporting / project
 
 | Page | CUJ | ★ | Notes |
@@ -485,6 +506,8 @@ Reference pages must never contradict the source code. Before writing any Refere
 | `tracevals` judge pages (trust the judge, calibrate, schema versioning) | `src/tracevals/judge/trace-judge.ts`, `src/tracevals/judge/verdict-schema.json`, `src/tracevals/judge/prompt.ts` (the prompt version in the cache key), `src/shared/providers.ts`, `src/tracevals/calibrate/` |
 | `tracevals` journey pages (overview, get started, declare, fill, coverage, check each turn, CI, triage, extend) | `src/tracevals/commands/` for behaviour, `src/tracevals/fill/` for the proposal gate, `src/tracevals/history.ts` for the regression definition, `test/tracevals/` for the exact emitted strings; sample output captured from the built binary over `test/tracevals/fixtures/` |
 | `a11y` journey pages (get started, CI, fix) | `src/a11y/commands/check.ts` for behaviour, `src/a11y/core/{crawl,seeds,sitemap,url}.ts` for the crawl, `src/a11y/core/analyzer.ts` for the browser seam. `src/a11y/reporters/{pretty,github,json}.ts` for the exact emitted strings, captured from a real run, because no Doc Detective step can crawl here |
+| `test` CLI reference (`test/reference/cli.mdx`) | `src/test/cli.ts`, guarded by `scripts/check-cli-reference.mjs`, and `src/shared/tools.ts` for `tools.doc-detective` |
+| `test` overview (`test/index.mdx`) | `src/test/commands/run.ts` for behaviour and input precedence, `src/test/core/doc-detective.ts` for the invocation and the command-line ceiling, `src/test/reporters/` for the exact emitted strings, captured from a real run over `test/test/fixtures/` |
 
 ---
 

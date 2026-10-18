@@ -228,7 +228,15 @@ This is the backbone of the docevals section. It is the only journey that crosse
 
 ---
 
-### M26 · Draft the questions readers ask, review them, and keep them true as pages change
+### M26 · Run the docs site locally
+
+**Outcome.** Maya has the docs site running on her machine, in any repository, without first reading the framework's own docs.
+
+**Steps.** She runs `manni site start` from the repository root. It finds the site in the root, `docs/`, `website/` or `site/`, and detects the framework from its files. One line on stderr names the framework and the exact command it runs. The port is the one her collection `url:` names, so the address she opens is the one `manni a11y check` reads. Before a crawl she runs `manni site preview` instead, which builds and then serves the output. A framework manni does not detect gets its commands under `site.commands` in `manni.config.yaml`, and from then on the verbs work as before. Theo reaches the same page from T3, in a repository he does not own.
+
+**What success looks like.** One command per job in every docs repository, and a served site on the URL the other tools already read.
+
+### M27 · Draft the questions readers ask, review them, and keep them true as pages change
 
 **Outcome.** Maya has a set of reader questions, each pinned to the lines that answer it, that a person has read. CI fails when too few of them find their answers. A page edit that moves an answer is caught and re-pinned, not discovered by a reader.
 
@@ -280,7 +288,7 @@ Per-file schema validation cannot see a dangling cross-reference, a duplicate sl
 
 **Outcome.** Every pull request hears about an accessibility regression, and the live site is watched on a schedule.
 
-**Steps.** For a pull request he builds the site, serves it, and waits for the port. Then he runs `manni a11y check` against it with `-f github`, so each violation is annotated on the diff. For the live site he schedules the same command against the public URL. He reads the exit code the way the family defines it, `0` clean, `1` violations, `2` something could not run. A crawl that takes too long is narrowed by the page limit and the scope in the `a11y:` config.
+**Steps.** For a pull request he serves the site with one command, `manni site preview`, which builds it first and binds the port the collection `url:` names. He waits for that port to answer. Then he runs `manni a11y check` against it with `-f github`, so each violation is annotated on the diff. For the live site he schedules the same command against the public URL. He reads the exit code the way the family defines it, `0` clean, `1` violations, `2` something could not run. A crawl that takes too long is narrowed by the page limit and the scope in the `a11y:` config.
 
 **What success looks like.** The same command locally and in CI, one annotation per violation, and no second tool to configure.
 
@@ -373,6 +381,14 @@ This is the highest-stakes journey in the section. It is the only one where a pl
 **Steps.** His trigger is a workflow with six hand-written steps, one per domain. A seventh domain was set up last month, and the workflow never learned about it. He runs `manni status` and reads what is in play and what is not, with the reason for each. He replaces the steps with `manni check`. The exit code follows the family contract. `0` is clean. `1` is an error-level finding in a check that ran. `2` is manni itself failing to run, so he can tell a bad page from a broken setup. He reads the skipped lines in the report, which are the honest answer to "what did you not check?". He picks the output for his platform. `-f github` gives annotations. `-f json` gives a script each check's report, which is that domain's own JSON unchanged. `check` never runs `a11y` or `tracevals`, since they need a browser or recorded sessions. He keeps those as their own steps. A bare `check` covers every collection, while paths narrow it to the per-file checks on those files.
 
 **What success looks like.** A pipeline with one manni step, and a repo where setting up a domain is what puts it in the gate.
+
+### D17 · Gate the docs' procedure tests with the same contract
+
+**Outcome.** The Doc Detective tests embedded in the docs run in CI as one more `manni` step. A failing step annotates the page and line that broke, and the exit code says whose problem it is.
+
+**Steps.** Devin installs Doc Detective with `npm install -g doc-detective`, beside the manni install he already has. He adds `manni test run -f github --progress` with no paths, because the repository's `.doc-detective.json` already names the input. `--progress` streams Doc Detective's log into the job output, which is not a terminal. When the job runs from a subdirectory, he points `tools.doc-detective.config` at the config file, because Doc Detective searches only the working directory. He learns that a bare run does not read `collections:`, unlike meta and lint. `--collection site` is how he hands manni's document set to Doc Detective instead. He learns the contract. Exit `0` means no step failed, and warnings and skips pass. `1` means a step failed, and it is the author's. `2` is his, such as Doc Detective missing from PATH, a typo'd path, or a run that found no tests. That last one would pass silently under Doc Detective alone. `--allow-empty` is for the repository that expects it. For a dashboard he runs `-f json`, which is Doc Detective's own report, unchanged. He gates the job to same-repository pull requests, because the tests run shell commands written in the pages.
+
+**What success looks like.** The docs gate reads like every other gate in the pipeline. A broken procedure is an annotation on its page, not a line buried in a log.
 
 ---
 
