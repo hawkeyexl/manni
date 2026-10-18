@@ -26,7 +26,7 @@ sample-questions:
 graph:
   label: Check rules
   type: reference
-last-updated: 2026-09-24
+last-updated: 2026-10-18
 tags:
   - validation
   - rules
@@ -57,21 +57,46 @@ set. It reads no prose; `manni term lint` does that. Each rule id is
 | Rule | Default | Fires when |
 |---|---|---|
 | `undefined-term` | error | A page's `concepts:` names a label no entry claims as its preferred label. |
-| `duplicate-id` | error | Two entries share an `id`, ignoring case. |
-| `label-collision` | error | Two entries claim the same preferred label, ignoring case. |
-| `alt-label-collision` | error | An entry's alt-label is another entry's preferred label, ignoring case. |
+| `duplicate-id` | error | Two entries in one language share an `id`, ignoring case. |
+| `label-collision` | error | Two entries claim the same preferred label, ignoring case. Across languages, only when the spellings differ. |
+| `alt-label-collision` | error | An entry's alt-label is another entry's preferred label, ignoring case. Across languages, only when the spellings differ. |
 | `dangling-reference` | error | A value of `broader`, `narrower`, `related-terms` or `see` names no entry, by label or by id. |
 | `broader-cycle` | error | A chain of `broader` returns to where it started. |
 | `see-not-empty` | error | An entry with `see` also carries a `definition`. |
 | `asymmetric-hierarchy` | warning | A names B as `broader`, and B omits A from `narrower`, or the reverse. |
 | `abstract-too-long` | notice | An `abstract` is longer than [`abstractMaxLength`](/manni/term/reference/configuration/#keys), `60` by default. |
-| `unused-term` | notice | No page's `concepts:` names the entry's preferred label. |
+| `unused-term` | notice | No page's `concepts:` names the preferred label of the entry, or of an entry in another language with its `id`. |
 
 {/* cite labels-ignore-case */}
 {/* cite vale-keys-lowercased */}
 Every label comparison ignores case. The Vale style `write -f vale` renders is
 keyed on the lowercased term, so two labels that differ only in case would
 collide there without a word.
+
+## Languages
+
+A set can hold one term per language for a concept, joined on `id`. A term
+that names no `language` counts as `en`, and languages compare ignoring case.
+The rules and their messages stay the same, and four of them read the language:
+
+| Rule | In a set of several languages |
+|---|---|
+| `duplicate-id` | Compares ids within one language. A German and an English term with one id are one concept, not a duplicate. |
+| `label-collision`, `alt-label-collision` | Within a language, as in a set of one. Across languages, the names collide only when they match ignoring case and differ in spelling. `API` in both languages is one word. `Kubernetes` against `kubernetes` collides, because the Vale style could not tell them apart. |
+| `dangling-reference`, `broader-cycle`, `asymmetric-hierarchy` | A value resolves to a label in the entry's own language, then to an id in it. Failing both, any language's label or id will do. |
+| `unused-term` | A page that names any language's label of a concept uses every term of that concept. |
+
+`undefined-term` resolves `concepts:` against the preferred labels of every
+language. The others do not compare names at all. This set holds three
+concepts in English and German, with `unused-term` turned off:
+
+```console
+$ manni term check docs/terms
+docs/terms/en/kubernetes.md:5
+  error  manni:term/label-collision      "Kubernetes" is claimed by docs/terms/de/kubernetes.md:1 as "kubernetes"
+
+1 error in 6 terms
+```
 
 ## Every rule in one run
 
@@ -129,7 +154,8 @@ sits on the page's `concepts:` line. `graph.concepts` is resolved the same way.
 {/* cite duplicate-id-page-and-manifest */}
 {/* cite duplicate-id-ignores-case */}
 {/* cite id-references-ignore-case */}
-Reported on every entry that shares the id, each naming the others. Ids
+Reported on every entry that shares the id in its language, each naming the
+others. Ids
 compare ignoring case, as a reference to an id resolves. So `Bifocal` and
 `bifocal` collide. An id comes from the record, else from the construct's own identifier, else from the
 slug of the label. So two entries can collide without either spelling out an

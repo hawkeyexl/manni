@@ -28,7 +28,7 @@ sample-questions:
 graph:
   label: CLI reference
   type: reference
-last-updated: 2026-09-24
+last-updated: 2026-10-18
 tags:
   - cli
   - reference
@@ -111,10 +111,14 @@ jobs.
   bifocal   bifocal
   1 term
   ```
+- **A `.tbx` file is a TBX termbase.** It's read when you name it, when a
+  directory or glob walk finds it, and when `term.manifests` lists it. The
+  root element says the version: `<martif>` is TBX v2, and `<tbx>` is TBX v3.
+  Each entry is a term per language it holds, all with the entry's id.
 - **`-` reads stdin**, alongside any named paths. It needs `--as <format>`,
   which names one of the metadata tool's
-  [extractors](/manni/meta/reference/formats/): `markdown`, `mdx`, `asciidoc`,
-  `rst`, `html` or `xml`.
+  [extractors](/manni/meta/reference/formats/), or `tbx`. The extractors are
+  `markdown`, `mdx`, `asciidoc`, `rst`, `html` and `xml`.
 - **Every file contributes references.** A page's `concepts:` and its
   `graph.concepts` are read whether or not the page holds a term.
 - **No terms is an error.** A run that reads files but finds no entry exits
@@ -125,6 +129,18 @@ list of terms. The [terminology reference](/manni/term/reference/terminology/)
 has the record, and [Move and hand off a
 termbase](/manni/term/set-up/move-and-hand-off/#what-each-construct-holds) has
 every construct that is read.
+
+Reading a set prints two notices of its own on stderr. Neither moves the exit
+code:
+
+```
+manni: glossary.tbx:18: skipped a TBX entry with no term.
+manni: pal.md:7: ignored designations item "progresive lens" on "progressive lens": it names no label, alt-label or hidden-label.
+```
+
+The first is a TBX language section that holds no `<term>`. The second is a
+[`designations`](/manni/term/reference/terminology/#fields-of-a-designation)
+item that names none of the entry's labels.
 
 ## `term list`
 
@@ -145,7 +161,7 @@ manni term list [paths...] [options]
 | Option | Argument | Default | Description |
 |---|---|---|---|
 | `--as` | `<format>` | n/a | Input format for stdin. Required with `-`. |
-| `--ext` | `<list>` | supported extensions | Comma-separated extensions kept when expanding directories and globs. Given once. |
+| `--ext` | `<list>` | supported extensions and `tbx` | Comma-separated extensions kept when expanding directories and globs. Given once. |
 | `--exclude` | `<glob>` | n/a | Glob to exclude from directory and glob walks. Repeatable, one glob per occurrence. |
 | `--collection` | `<name>` | every collection | Read one configured collection rather than every declared one. Repeatable, one name per occurrence. Cannot be combined with positional paths (exit 2). |
 | `--allow-empty` | n/a | off | Treat a missing path, no matched files or no terms as success rather than an error (exit 2). Wins over config `allowEmpty:`. |
@@ -166,20 +182,32 @@ progressive-lens   progressive lens   PAL, graduated lens
 3 terms
 ```
 
-{/* cite list-csv-shape */}
-`csv` prints a header and one row per entry. A list field joins its values
-with `|`:
+A set in more than one language adds the language after the id. A concept has
+a row per language:
 
 ```
-id,label,alt-labels,abstract
-corrective-lens,corrective lens,,
-progressive-lens,progressive lens,PAL|graduated lens,Lenses that correct presbyopia without a visible line.
+progressive-lens   en   progressive lens   PAL
+progressive-lens   de   Gleitsichtglas     Gleitsichtbrille
+bifocal            en   bifocal
+bifocal            de   Bifokalglas
+4 terms
+```
+
+{/* cite list-csv-shape */}
+`csv` prints a header and one row per entry. A list field joins its values
+with `|`. The last column is the entry's language, empty when it names none:
+
+```
+id,label,alt-labels,abstract,language
+corrective-lens,corrective lens,,,
+progressive-lens,progressive lens,PAL|graduated lens,Lenses that correct presbyopia without a visible line.,
 ```
 
 {/* cite list-json-shape */}
 `json` prints `{ "terms": [...] }`. Each entry carries `id`, `language` when
-the file declares one, and every field the record holds, spelled as the
-[vocabulary](/manni/term/reference/terminology/) spells it.
+the entry has one, and every field the record holds, spelled as the
+[vocabulary](/manni/term/reference/terminology/) spells it. That includes
+`concept-entry`, `designations`, `tbx-elements` and `tbx-markup`.
 
 ### Exit codes
 
@@ -231,6 +259,28 @@ progressive lens                        docs/terms/progressive-lens.md:1
                  from the top of the lens to the bottom, correcting presbyopia
                  without the visible boundary a bifocal carries.
 ```
+
+A row shows each field the record holds. `concept-entry` lists its fields,
+and `designations` has a line per item. `tbx-elements` counts the items at
+each level, and `other languages` names the entry's terms in other languages:
+
+```
+progressive lens                        glossary.tbx:15
+  id               progressive-lens
+  language         en
+  alt-labels       PAL
+  hidden-labels    no-line bifocal
+  definition       Corrective lenses whose power increases continuously.
+  concept-entry    subject-field: optics
+  designations     progressive lens: part-of-speech noun, term-type fullForm
+                   PAL: term-type acronym
+                   no-line bifocal: administrative-status superseded
+  tbx-elements     1 in concept-entry
+  other languages  de (Gleitsichtglas)
+```
+
+A count at the root reads `1 at the root`, and one on a designation reads
+`1 on PAL`. The key column widens only when a longer key is shown.
 
 ### Exit codes
 
@@ -486,6 +536,12 @@ entries. [Move and hand off a
 termbase](/manni/term/set-up/move-and-hand-off/#what-each-render-holds) has
 every shape and what each keeps.
 
+`-f tbx` writes TBX v2, and `-f tbx3` writes TBX v3. When every entry came from
+one TBX file and `-f` names its version, the file's header and unchanged
+entries are copied byte for byte. [Read the termbase
+back](/manni/term/set-up/move-and-hand-off/#read-the-termbase-back) has what
+each export keeps.
+
 {/* cite write-vale-asks-ls-config */}
 `-f vale` writes a Vale style named `Terms`. Without `-o` it asks Vale where
 its styles directory is. [Keep the terms and the docs in
@@ -556,6 +612,28 @@ A Markdown or MDX definition list, an AsciiDoc `[glossary]` list, a
 `.. glossary::` and an HTML `<dl>` skip an entry with no definition, such as a
 `see` redirect.
 
+A set in more than one language adds up to three lines. A one-file document
+writes the first term's language, names the terms it left out, and counts
+only the terms it wrote. A render that leaves a TBX file's header behind names
+the file. A TBX render that joins two languages' differing `concept-entry`
+keeps the first and says where:
+
+```
+Wrote 2 terms to build/glossary.md
+  dropped from a definition list: hidden-labels on 1 term, concept-entry on 1, designations on 1
+  dropped from a definition list: the header of glossary.tbx
+  skipped 2 terms in another language than en: progressive-lens (de), bifocal (de)
+```
+
+```
+Wrote 4 terms to build/terms.tbx
+  kept the first language's value where languages differ: concept-entry.subject-field on 1 concept
+```
+
+A render into one file per entry puts each page under a directory named for
+its language, `docs/terms/de/progressive-lens.md`, when the set holds more
+than one.
+
 {/* cite vale-style-file-counts */}
 {/* cite vale-wiring-notice */}
 `-f vale` lists each style file and what it holds. `Casing.yml`,
@@ -618,6 +696,8 @@ manni term write                                   # each entry back to its sour
 manni term write docs/glossary.xml -f markdown -o docs/terms/
 manni term write docs/terms/ -f markdown -o glossary.md
 manni term write -f tbx -o build/terms.tbx
+manni term write glossary.tbx -f tbx3 -o build/glossary.tbx   # TBX v2 to v3
+manni term write glossary.tbx -f markdown -o docs/terms/      # a page per term and language
 manni term write -f vale                           # into Vale's styles directory
 manni term write -f vale --check                   # keep the style in step
 ```
@@ -657,6 +737,7 @@ xml        DITA glossentry    read  write
 xml        DITA glossgroup    read  write
 xml        DocBook glossary   read  write
 manifest   manifest           read  write
+tbx        TBX entry          read  write
 tbx        TBX v2                   write
 tbx3       TBX v3                   write
 skos       JSON-LD                  write
@@ -694,9 +775,16 @@ written.
 | `term write -f tmx -o x` | `manni: unknown format "tmx". Expected markdown \| mdx \| asciidoc \| rst \| html \| dita \| docbook \| tbx \| tbx3 \| skos \| csv \| json \| vale.` |
 | `term write -f tbx` | `manni: -f tbx needs -o <path>.` |
 | `term write -f tbx -o build/tbx/` | `manni: -f tbx writes one file, not a directory. Pass -o <file>.` |
+| `term write -f tbx3` | `manni: -f tbx3 needs -o <path>.` |
+| `term write -f tbx3 -o out/` | `manni: -f tbx3 writes one file, not a directory. Pass -o <file>.` |
+| `term list notes.tbx`, whose root element is `<glossary>` | `manni: notes.tbx: is not TBX: its root element is <glossary>, not <martif> or <tbx>.` |
+| `term list broken.tbx`, which is not well-formed | `manni: broken.tbx: could not be read as tbx: Invalid XML: Opening and ending tag mismatch: "term" != "tig"` |
+| `term write -f markdown -o docs/terms/`, one id twice in one language | `manni: two terms have the id "api" in de, and a directory holds one file per id in each language.` |
+| `term write -f markdown -o docs/terms/`, one id twice in a set of one language | `manni: two terms have the id "api", and a directory holds one file per id.` |
+| `term write -f markdown -o docs/terms/`, a language with a path character | `manni: the language "../de" cannot name a directory. Give the term a language without path characters.` |
 | `term write -o out.md` | `manni: -o needs -f <format>.` |
 | `term write -f json -o x.json --check --dry-run` | `manni: --check and --dry-run cannot be combined.` |
-| `term write - --as markdown` | `manni: <stdin> has nowhere to write back to. Pass -f <format> -o <path>.` |
+| `term write - --as markdown` or `--as tbx` | `manni: <stdin> has nowhere to write back to. Pass -f <format> -o <path>.` |
 | `term write` over a file holding `<dfn>` terms | `manni: glossary.html: a dfn cannot be written in place. Pass -f <format> -o <path>.` |
 | `term write -f vale`, no Vale on PATH | `manni: vale is not on PATH. Install Vale, or pass -o <styles directory>.` |
 | `term write -f vale`, Vale finds no config | `manni: Vale found no config file. Set tools.vale.config in manni.config.yaml, or pass -o <styles directory>.` |
