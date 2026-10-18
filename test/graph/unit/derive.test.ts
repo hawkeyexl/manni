@@ -128,7 +128,7 @@ describe("deriveGraph — document basics", () => {
     ]);
   });
 
-  it("derives only the question text of an object item, never its pins (0086)", () => {
+  it("derives only the question text of an object item, never its pins (0087)", () => {
     const g = graph({
       "docs/a.md": [
         "---",

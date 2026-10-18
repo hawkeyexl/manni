@@ -79,7 +79,7 @@ describe("sample questions", () => {
     expect(r.stdout).not.toContain("docs/retry.md graph:sampleQuestion");
     expect(r.stdout).not.toContain("proxy.md graph:sampleQuestion");
     // hidden.md's question stays out of the graph and is still asked, because
-    // check reads questions from the page sources (proposal 0086).
+    // check reads questions from the page sources (proposal 0087).
     expect(lines).toContain(HIDDEN);
     expect(r.stdout).toContain("0 errors, 3 warnings, 0 notices");
   });

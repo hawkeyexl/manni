@@ -234,7 +234,7 @@ export type RegisteredSchemas = ReadonlyMap<string, RegisteredSchema>;
 /**
  * Built-in versions whose strict overlay keeps an earlier version, because
  * nothing the overlay narrows changed. ai-context 1.1.0 only widens
- * `sample-questions`, which the 1.0.0 overlay never constrains (proposal 0086).
+ * `sample-questions`, which the 1.0.0 overlay never constrains (proposal 0087).
  */
 const STRICT_OVERLAY_OF: ReadonlyMap<string, string> = new Map([
   ["manni:ai-context:1.1.0", "manni:ai-context-strict:1.0.0"],

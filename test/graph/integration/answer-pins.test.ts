@@ -1,5 +1,5 @@
 /**
- * A sample question can pin the lines that answer it (proposal 0086 § 7a),
+ * A sample question can pin the lines that answer it (proposal 0087 § 7a),
  * end to end through the built CLI. `graph check` reads each page's questions
  * from its source, finds the section that holds a pinned answer, and reports
  * an answer that moved or changed. Each fixture under

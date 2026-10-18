@@ -1,5 +1,5 @@
 /**
- * Sample questions as findability checks (proposals 0085 §7 and 0086), the
+ * Sample questions as findability checks (proposals 0085 §7 and 0087), the
  * half of `manni graph check` no shape can express.
  *
  * Questions are read from each page's source, not from the graph: an item's
