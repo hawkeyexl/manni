@@ -21,7 +21,7 @@ import type {
   TermRecord,
 } from "../../types.js";
 import { xmlAttribute as escapeAttribute, xmlText as escapeText } from "../writers/markup.js";
-import { DEFAULT_LANGUAGE } from "../writers/render-util.js";
+import { DEFAULT_LANGUAGE, languageKey } from "../writers/render-util.js";
 
 export { escapeAttribute, escapeText };
 
@@ -456,7 +456,11 @@ export function tbxEntryLines(terms: readonly Term[], format: TbxFormat, shape?:
   const tag = format.version === 3 ? "conceptEntry" : "termEntry";
   const concept = head.record["concept-entry"] ?? {};
   const { "tbx-elements": conceptItems, ...conceptAux } = concept;
-  const languages = pair(terms, shape?.languages ?? [], (t, s) => t.language === s.language);
+  const languages = pair(
+    terms,
+    shape?.languages ?? [],
+    (t, s) => languageKey(t) === (s.language ?? DEFAULT_LANGUAGE).toLowerCase(),
+  );
   return [
     `<${tag} id="${escapeAttribute(head.id)}"${shape?.attributes ?? ""}>`,
     ...nest([

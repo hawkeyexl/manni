@@ -16,7 +16,7 @@ import { join, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { tbxInput } from "../../src/term/core/load-set.js";
 import { readerForConstruct } from "../../src/term/core/readers/index.js";
-import { tbxSourceOf } from "../../src/term/core/readers/tbx-model.js";
+import { tbxEntryLines, tbxSourceOf } from "../../src/term/core/readers/tbx-model.js";
 import { writerFor } from "../../src/term/core/writers/index.js";
 import type { MergeConflict, Term, TermReader, TermRecord, TermRender } from "../../src/term/types.js";
 import { WRITERS_FIXTURES, term as manifestTerm } from "./writer-fixture.js";
@@ -307,6 +307,23 @@ describe("a changed entry rewritten at its own version", () => {
     expect(written).toContain('<tig id="t1">');
     expect(written).toContain('<term id="term-1">lenses</term>');
     expect(records(read(written, "structure-attributes.tbx"))).toEqual(records(edited));
+  });
+
+  it("pairs a language with its structure whatever the tag's case", () => {
+    const shape = {
+      attributes: "",
+      languages: [
+        { language: "en", attributes: ' id="ls-en"', designations: [] },
+        { language: "de", attributes: ' id="ls-de"', designations: [] },
+      ],
+    };
+    const lines = tbxEntryLines(
+      [manifestTerm("lens", { label: "Linse" }, "DE"), manifestTerm("lens", { label: "lens" }, "EN")],
+      { version: 2, style: "dca" },
+      shape,
+    ).join("\n");
+    expect(lines).toMatch(/xml:lang="DE" id="ls-de"/);
+    expect(lines).toMatch(/xml:lang="EN" id="ls-en"/);
   });
 
   it("writes a new designation canonically beside the kept ones", () => {
