@@ -763,6 +763,7 @@ Wrote 32 nodes to .tmp/dd/graph.jsonld
 | `jsonld` | JSON-LD, for a linked-data ingester. |
 | `iirds` | A conformant iiRDS package, for a content delivery portal. RDF/XML is written inside it. |
 | `search` | The browser search index and its manifest, read client-side by `@hawkeyexl/manni/graph/runtime`. |
+| `questions` | The question set as JSON Lines, for an eval tool. See [The question set](#the-question-set). |
 
 An unknown target is **exit 2**, with the allowed set named.
 
@@ -770,7 +771,7 @@ An unknown target is **exit 2**, with the allowed set named.
 
 | Argument | Description |
 |---|---|
-| `<target>` | What to write: `jsonld`, `iirds`, or `search`. Required. |
+| `<target>` | What to write: `jsonld`, `iirds`, `search`, or `questions`. Required. |
 
 ### Options
 
@@ -779,7 +780,77 @@ An unknown target is **exit 2**, with the allowed set named.
 | `-c, --config` | `<path>` | discovered | Path to `manni.config.yaml`. |
 | `--no-config` | n/a | off | Ignore any discovered config file. |
 | `-g, --graph` | `<path>` | config `out` | The built Turtle file to read. |
-| `-o, --out` | `<path>` | the graph path with the target's extension | Where to write. |
+| `-o, --out` | `<path>` | the graph path with the target's extension; `questions.jsonl` beside the graph for `questions` | Where to write. |
+
+### The question set
+
+`export questions` writes one JSON line per question. It reads each page's
+`sample-questions` and each file `graph.questionFiles` names. An answer's text
+is rendered from its pin when the export runs, so the source stays pinned
+rather than copied.
+
+```console
+$ manni graph export questions
+Wrote 431 questions to graph/questions.jsonl
+
+$ manni graph export questions -o eval/golden.jsonl -g build/graph.ttl -c ci/manni.config.yaml
+Wrote 431 questions to eval/golden.jsonl
+```
+
+```json
+{"id": "docs/uploads/retry.md#how-many-times-does-an-upload-retry-by-default",
+ "question": "How many times does an upload retry by default?",
+ "language": "en", "reviewed": true, "answerable": true,
+ "expected": [{"id": "https://docs.example.com/graph/doc/docs/uploads/retry.md#retry-limits",
+               "file": "docs/uploads/retry.md", "lines": "41-43", "reviewed": true,
+               "text": "Uploads retry three times, waiting 2, 4 and 8 seconds."}]}
+```
+
+The file is shown wrapped here. On disk, each question is one line.
+
+| Field | Meaning |
+|---|---|
+| `id` | The page or golden-set file, then `#` and the question's slug. |
+| `language` | The page's language. A file question takes its own `language`, else its first answer's page, else `und`. |
+| `reviewed` | `false` for a drafted question. Drafts are included for the consumer to filter. |
+| `answerable` | `false` for a gap, a file question with no answers. Its `expected` is empty. |
+| `expected[].id` | The node `export search` indexes the answer's first line under, so ID-based recall compares like with like. |
+| `expected[].file` | The page that holds the answer. |
+| `expected[].lines` | The body lines the answer is on now. An answer that moved is written at its new lines. |
+| `expected[].reviewed` | `false` when the pin or its question is a draft. |
+| `expected[].stale` | `true` when the answer changed since it was pinned, or its page is gone. |
+| `expected[].text` | The answer's lines, as the page reads at export time. |
+
+A question with no pin has one `expected` entry for its page, with no `lines`
+or `text`. A stale answer is written as its lines read now. One warning on
+stderr gives the count, and the exit code is still 0:
+
+```text
+manni: 5 answers changed since they were pinned, so they are exported as they read now, marked stale.
+```
+
+No question anywhere writes an empty file and reports `Wrote 0 questions`.
+
+The format is manni's own, because each eval tool names its fields
+differently. Each mapping below reads the reviewed questions from `rows`, the
+parsed lines.
+
+```python
+# Ragas
+samples = [{"user_input": r["question"], "reference_contexts": [a["text"] for a in r["expected"] if "text" in a]} for r in rows if r["reviewed"]]
+dataset = EvaluationDataset.from_list(samples)
+```
+
+```python
+# DeepEval
+goldens = [Golden(input=r["question"], context=[a["text"] for a in r["expected"] if "text" in a]) for r in rows if r["reviewed"]]
+dataset = EvaluationDataset(goldens=goldens)
+```
+
+```sh
+# promptfoo: point `tests: file://tests.jsonl` at the result
+jq -c 'select(.reviewed) | {vars: {question: .question}, metadata: {id: .id}}' graph/questions.jsonl > tests.jsonl
+```
 
 ## Exit codes
 
