@@ -32,52 +32,52 @@ docs/src/content/docs/term/index.mdx:
       lines: 2-24
       integrity: sha256-ff2ccc47d5dfb92de24ed66bb7fee02ea99483690db017e6958071ae3d2e41e1
     - generated-by: Claude Opus 5.5
-      lines: 25-26
-      integrity: sha256-a12f6785ed1653ad8777c2c60812a235be6515db53bfcf70e1b277033373b8d2
+      lines: 25-27
+      integrity: sha256-8a3b888e3cf33c14fd50ab8422c99d6c95e08190606e68cc6cb254741f0c9121
     - generated-by: Claude Opus 5
-      lines: 28-33
+      lines: 29-34
       integrity: sha256-a3e3c157452a10ab286531ee308cf09ddf5bf71b0c4c69b2bc05d161b9d3e1c4
     - generated-by: Claude Opus 5.5
-      lines: 34
+      lines: 35
       integrity: sha256-e7e7018fdfa038a09a0e598e46eb91b4e166b58339c3670846c0a239862f42dc
     - generated-by: Claude Opus 5
-      lines: 35-42
+      lines: 36-43
       integrity: sha256-28c693d1873bb10f3dd92abd2199b86ff23dbcc5314dbd628eafaeac6f1f0cee
     - generated-by: Claude Opus 5
-      lines: 45-47
+      lines: 46-48
       integrity: sha256-643566d9204811abcfb76a0e9c71fd55d653d85e70d36e69c41444f0373ef9f1
     - generated-by: Claude Opus 5
-      lines: 49-57
+      lines: 50-58
       integrity: sha256-df57831c775abb0c7d96c9ed0af7909382637fc77fb385133fc740ee98ff656e
     - generated-by: Claude Opus 5
-      lines: 62
+      lines: 63
       integrity: sha256-f1b901847390b0ed7e374e7c1e464ec17b46a427c487a5ad6cbd2906405083d5
     - generated-by: Claude Opus 5
-      lines: 70-89
+      lines: 71-90
       integrity: sha256-b726b96bb08cf91df098074a12d45d34df6e7c2bc465d46067d9d1febfd49aa6
     - generated-by: Claude Opus 5.5
-      lines: 90
+      lines: 91
       integrity: sha256-4287a771c89af8bfbf46a79b7221323a1781bb098e58d5efa7f16bbfe1386e1c
     - generated-by: Claude Opus 5
-      lines: 91-109
+      lines: 92-110
       integrity: sha256-41aa020639d18453ac329d04264dfff6a84ec1b460f12a9ef9370d481a273400
     - generated-by: Claude Opus 5.5
-      lines: 110
+      lines: 111
       integrity: sha256-6c9c31e74c3dbb09cdc6943876d29376883ae5771c90390091e3dce188e9cd1f
     - generated-by: Claude Opus 5.5
-      lines: 112
+      lines: 113
       integrity: sha256-71e6da9e8cf6500850ac4622b527fb6491c401c6ce49e60e0b8be2dd5d7286b7
     - generated-by: Claude Opus 5
-      lines: 114-117
+      lines: 115-118
       integrity: sha256-f092143f016f90be48010fff2bce0a059ac00843fbe6d7d348d48e88f7dcfda7
     - generated-by: Claude Opus 5
-      lines: 123-131
+      lines: 124-132
       integrity: sha256-9aed663a2c280a88c413a96522ea225c827948176bbdfae6468458b60bf83bb3
     - generated-by: Claude Opus 5.5
-      lines: 133-136
+      lines: 134-137
       integrity: sha256-1da20ae9140c48c0dd9aebb4ba7b3edced9ef4c9ed3ca8c39f728bbead2354eb
     - generated-by: Claude Opus 5
-      lines: 137
+      lines: 138
       integrity: sha256-150ebed8747968d256ef60d06d4be894e155f37aa257147333e406d9f0049fbb
   owner:
     - "@hawkeyexl"

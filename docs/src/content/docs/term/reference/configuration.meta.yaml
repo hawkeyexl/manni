@@ -26,9 +26,6 @@ docs/src/content/docs/term/reference/configuration.mdx:
     - generated-by: Claude Opus 5
       lines: 2-64
       integrity: sha256-2b14d9912a6e66451db3489213bd8003987ae9d8dbc2e6e4ef53527eafcc0cad
-    - generated-by: Claude Opus 5.5
-      lines: 65
-      integrity: sha256-c26398c24851cd2fdf9dad6fea0fdf4d2df12181319835506a931ba0e9d5e335
     - generated-by: Claude Opus 5
       lines: 66-95
       integrity: sha256-ec5f8c790cee187547878476a724f817f9e47ed0844e20300d42769f633ed59a
@@ -36,13 +33,13 @@ docs/src/content/docs/term/reference/configuration.mdx:
       lines: 97-123
       integrity: sha256-7842007903a6a8250752067cfe75db02fe55804ceb12b8ce2b4a3ef9d2e44b84
     - generated-by: Claude Opus 5
-      lines: 125-128
+      lines: 142-145
       integrity: sha256-80ff3519e14295b70db2b59559ad19d91c21e9de8c877654d8c520e7d17cd345
     - generated-by: Claude Opus 5.5
-      lines: 129
+      lines: 146
       integrity: sha256-e6c23efd9a2cda9b9762804959c29c087d534f38f92ea6e00ecaab70e0ec9a60
     - generated-by: Claude Opus 5
-      lines: 130-195
+      lines: 147-212
       integrity: sha256-8c0ae973006dfa8390c30aef3974595ff0ce70795b2b5709f0a59ef0d69b2b17
   owner:
     - "@hawkeyexl"
