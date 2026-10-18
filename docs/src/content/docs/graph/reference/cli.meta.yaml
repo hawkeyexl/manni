@@ -138,9 +138,12 @@ docs/src/content/docs/graph/reference/cli.mdx:
     - generated-by: Claude Opus 5.5
       lines: 177
       integrity: sha256-bfb9bab6b02a3f05904ad3ef1dff2eff56b8b01564f7cd07f9d78d6ffa137db7
+    - generated-by: Claude Opus 5.5
+      lines: 179-183
+      integrity: sha256-b7842b2dcc8c94bdc84a12b2a21ab68b64addc6fb4be2ab38ed6c5389e18f51f
     - generated-by: Claude Opus 5
-      lines: 180-185
-      integrity: sha256-b19e2e40c87bacf3d32157f1be07d0f5e1573c70a5c4235906f7d7b79db5967b
+      lines: 184-188
+      integrity: sha256-97621ae51c3375d9c0052e66b4b51ca59dbd70a36e0fc10a11a44588acbc518a
     - generated-by: Claude Opus 5
       lines: 246-256
       integrity: sha256-f874c775ddaacfc9961016b304fe79c875a3685c8d2d83da20b5edb6bad03b6e
