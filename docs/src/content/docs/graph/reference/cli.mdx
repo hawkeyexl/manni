@@ -253,6 +253,102 @@ draft, the question must also find its page at full severity. `off` silences
 every finding at `check.questions.severity`, drafts included. A moved answer
 is still reported.
 
+### Golden-set files
+
+A question that needs two pages, or that the docs don't answer, lives in a
+golden-set file. `graph.questionFiles` names them, relative to the config file.
+Each item is a page item's object form, with two more keys. `answers[].file`
+names the page that holds each answer, and `language` is optional.
+
+```yaml
+# questions.yaml
+- question: After rotating the key, how do I check nothing broke?
+  answers:
+    - file: docs/rotate.md
+      lines: 4
+      integrity: sha256-57f8…
+    - file: docs/validate.md
+      lines: 4
+      integrity: sha256-7e32…
+- question: Does manni run on Windows on ARM?
+  answers: []
+```
+
+Each answer must be found, as a page's pin must. An empty `answers` list marks
+a known gap. A gap is counted and never asked, because search has no score
+floor to test "finds nothing" against. A finding on a file question points at
+the file and the line its item starts on, with no path.
+
+```console
+$ manni graph check
+warning: questions.yaml:3 — "After rotating the key, how do I check nothing broke?" does not find docs/rotate.md § Rotate in the top 1 (it ranks 4; first is docs/validate.md § Check the result) [questions.yaml]
+```
+
+Across pages and files, `check` also reports these.
+
+| Finding | Severity | What it means |
+|---|---|---|
+| An answer's page is gone | `check.questions.severity` | The file an answer names does not exist. The question counts as not found. |
+| A question asked twice | `check.questions.severity` | The same question is asked elsewhere, ignoring case, punctuation and spacing. Each copy after the first, in path order, is reported. |
+| A question copies its answer | `notice` | Over half its adjacent word pairs also appear in its answer's lines. It tests matching words more than finding. |
+| The found rate is low | `error` | Fewer reviewed questions are found than `check.questions.foundThreshold` asks for. `check.questions.severity` does not touch it. |
+
+```console
+warning: questions.yaml:1 — docs/old.md, which holds the answer to "How large may an upload be?", does not exist, so re-pin or remove the question. [questions.yaml]
+warning: https://example.com/graph/doc/docs/retry.md graph:sampleQuestion — "how do I retry a  failed upload" is also asked on docs/limits.md, so keep it where it is answered. [docs/retry.md]
+notice: https://example.com/graph/doc/docs/retry.md graph:sampleQuestion — "Do uploads retry three times by default?" repeats 5 of its 6 word pairs from its answer, so it tests matching words more than finding. (drafted, not reviewed) [docs/retry.md]
+error: questions — 0 of 1 reviewed questions are found in the top 1 (0%), under the 98% that graph.check.questions.foundThreshold asks for.
+```
+
+A golden-set file that cannot be read stops the run with exit 2.
+
+| Case | stderr |
+|---|---|
+| A listed file is missing | `manni: graph.questionFiles names questions.yaml, which does not exist.` |
+| A file fails its schema | `manni: questions.yaml: /0/answers/0 must have required property 'lines'.` |
+
+### The question set's health
+
+When any question exists, `check` prints a summary of the whole set between the
+findings and the counts.
+
+```console
+$ manni graph check
+questions  3: 2 reviewed, 1 drafted, on 1 page
+  found    2 of 2 reviewed in the top 2 (100%), 1 first (50%)
+  drafted  1 of 1 in the top 2, not counted until reviewed
+  answers  3 pinned, 1 not reviewed: 3 current, 0 moved, 0 changed; 0 not pinned
+
+0 errors, 0 warnings, 1 notice
+```
+
+| Row | What it counts |
+|---|---|
+| `questions` | Every question, reviewed and drafted, and where they are declared. |
+| `found` | Reviewed questions with a test, a page or at least one pin. A question is found when every answer is in the top results, and first when every answer ranks first. |
+| `drafted` | The same count for drafts. It prints only when a draft has a test, and the rate gate ignores it. |
+| `answers` | Every pin, how many are drafts, and how each compares with its page now. `not pinned` counts page questions with no pin. |
+| `gaps` | Golden-set questions with no answers. It prints only when there is one. |
+
+A changed answer, or one whose page is gone, counts as not found. The
+percentages round down. Under `-f github` the summary prints after the
+annotations, as plain text. The JSON report gains a `questions` key beside
+`findings`, with the same counts.
+
+```json
+"questions": {
+  "total": 2, "reviewed": 2, "drafted": 0, "pages": 1,
+  "files": ["questions.yaml"], "top": 1,
+  "found": { "reviewed": { "inTop": 1, "first": 1, "of": 1 },
+             "drafted":  { "inTop": 0, "first": 0, "of": 0 } },
+  "answers": { "pinned": 0, "unreviewed": 0, "current": 0, "moved": 0, "changed": 0, "unpinned": 1 },
+  "gaps": 1
+}
+```
+
+Stored per CI run, that object is the time series. manni keeps no history of
+its own.
+
 ### Options
 
 | Option | Argument | Default | Description |
@@ -431,6 +527,24 @@ Broken internal links (1):
   docs/troubleshooting.md -> missing.md
 ```
 
+The `sample-questions` coverage row counts the pages that ask a reader
+question. It is gated only when the per-field `coverageThreshold` map names it,
+never by a single number. The report ends with the concepts no question
+reaches. A concept has a question when a page whose primary topic or subjects
+name it asks one. The list is reported and never gated, like
+orphans.
+
+```console
+$ manni graph stats -c test/graph/fixtures/dd/docs.config.yaml
+…
+Concepts with no question (3):
+  Installation
+  onboarding
+  reference
+```
+
+The JSON report lists those concepts by IRI, under `conceptsWithoutQuestions`.
+
 ### Options
 
 | Option | Argument | Default | Description |
@@ -441,7 +555,7 @@ Broken internal links (1):
 | `-f, --format` | `<pretty\|json>` | `pretty` | Output format. |
 | `--check` | n/a | off | Exit 1 when a broken internal link exists, or when coverage is below its threshold. This is the CI gate. |
 | `--top` | `<n>` | every hub | How many most-connected documents to list. A whole number, at least 1. |
-| `--coverage-threshold` | `<pct>` | config `stats.coverageThreshold`, else none | Minimum coverage percentage, 0 to 100, applied to every measured field for this run. Outside that range is a usage error. See [Coverage](/manni/graph/govern/coverage/). |
+| `--coverage-threshold` | `<pct>` | config `stats.coverageThreshold`, else none | Minimum coverage percentage, 0 to 100, applied to every measured field but `sample-questions` for this run. Outside that range is a usage error. See [Coverage](/manni/graph/govern/coverage/). |
 
 ## `graph search`
 

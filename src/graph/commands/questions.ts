@@ -15,6 +15,12 @@
  * compared with the page as it is now, under cite's hashing rule: an answer
  * that moved is checked at its new lines, and one that changed is not asked.
  *
+ * A golden-set file (`graph.questionFiles`) holds questions that span pages
+ * or that the docs don't answer. Each of its answers names its page, and is
+ * asked as a page's pin is. Across both homes, a question asked twice and a
+ * question that repeats its answer's words are reported, and the whole set's
+ * health is summed up for `check` to print and gate on.
+ *
  * It measures finding, not answering. Nothing here reaches a model beyond the
  * embedder `search` would use, and the same inputs give the same findings.
  */
@@ -52,7 +58,15 @@ import {
   UNDETERMINED,
   type LocalizationEntry,
 } from "../core/localizations.js";
-import { readSampleQuestions, type AnswerPin, type SampleQuestion } from "../core/questions.js";
+import {
+  COPIED_SHARE,
+  copiedPairs,
+  questionKey,
+  readQuestionFile,
+  readSampleQuestions,
+  type AnswerPin,
+  type SampleQuestion,
+} from "../core/questions.js";
 import {
   buildSearchIndex,
   emitSearchIndex,
@@ -60,6 +74,7 @@ import {
   type SearchIndexDoc,
 } from "../core/search-index.js";
 import type { CheckFinding } from "../core/shacl.js";
+import { byCodeUnit } from "../core/sort.js";
 import { VectorIndexError } from "../core/vector-index.js";
 import { NS, PREFIXES } from "../core/vocab.js";
 import type { Embedder } from "../embed/types.js";
@@ -257,14 +272,23 @@ function matchList(ranges: readonly PageLines[]): string {
   return `lines ${spelled.join(", ")} and ${last} ${both} match`;
 }
 
-/** Reads each page's questions, and the source a page's pins are counted in. */
+/**
+ * The pages of the graph that are on disk. `pages` holds each one that
+ * declares a question; `pageAt` builds the record of any other, by its
+ * absolute path, for a golden-set answer that points at it.
+ */
 async function readPages(
   graph: GraphIndex,
   sources: string,
   view: { source: MetaViewSource; cwd: string },
-): Promise<{ pages: Page[]; contents: Map<string, string> }> {
+): Promise<{
+  pages: Page[];
+  contents: Map<string, string>;
+  pageAt: (abs: string) => Page | undefined;
+}> {
   const contents = new Map<string, string>();
   const onDisk: { doc: string; path: string }[] = [];
+  const byAbs = new Map<string, { doc: string; path: string }>();
   let missing = 0;
   for (const doc of graph.instancesOf(DOCUMENT)) {
     const path = graph.literal(doc, PATH);
@@ -276,6 +300,7 @@ async function readPages(
     }
     contents.set(path, readFileSync(abs, "utf8"));
     onDisk.push({ doc, path });
+    byAbs.set(abs, { doc, path });
   }
   if (missing > 0) {
     warn(
@@ -293,6 +318,32 @@ async function readPages(
     else sectionsOf.set(doc, [section]);
   }
 
+  const records = new Map<string, Page>();
+  const record = (doc: string, path: string, questions: SampleQuestion[]): Page => {
+    const known = records.get(doc);
+    if (known) return known;
+    const content = contents.get(path) ?? "";
+    const format = formatOf(path);
+    // HTML and XML carry their metadata inside the body, so body line 1 is
+    // file line 1, as cite counts it.
+    const bodyLine =
+      format === "html" || format === "xml"
+        ? 1
+        : bodyLineOf(content, locateFrontmatter(content)?.closeEnd ?? 0);
+    const tag = graph.literal(doc, LANGUAGE);
+    const page: Page = {
+      doc,
+      path,
+      language: tag === undefined ? UNDETERMINED : canonicalLanguageTag(tag),
+      bodyLine,
+      body: splitLines(content).slice(bodyLine - 1),
+      sections: sectionSpans(graph, doc, path, content, sectionsOf.get(doc) ?? []),
+      questions,
+    };
+    records.set(doc, page);
+    return page;
+  };
+
   // The metadata `build` derives from: the page's own, merged with every key
   // a manifest of its collections owns.
   const meta = await openMetaView(view.source, view.cwd, onDisk.map((p) => p.path), sources);
@@ -303,31 +354,124 @@ async function readPages(
     const own = metadataOf(content, path, format);
     const { data } = await mergePage(meta, path, own.data, own.present, format);
     const questions = readSampleQuestions(data["sample-questions"]);
-    if (questions.length === 0) continue;
-    // HTML and XML carry their metadata inside the body, so body line 1 is
-    // file line 1, as cite counts it.
-    const bodyLine =
-      format === "html" || format === "xml"
-        ? 1
-        : bodyLineOf(content, locateFrontmatter(content)?.closeEnd ?? 0);
-    const tag = graph.literal(doc, LANGUAGE);
-    pages.push({
-      doc,
-      path,
-      language: tag === undefined ? UNDETERMINED : canonicalLanguageTag(tag),
-      bodyLine,
-      body: splitLines(content).slice(bodyLine - 1),
-      sections: sectionSpans(graph, doc, path, content, sectionsOf.get(doc) ?? []),
-      questions,
-    });
+    if (questions.length > 0) pages.push(record(doc, path, questions));
   }
-  return { pages, contents };
+  pages.sort((a, b) => byCodeUnit(a.path, b.path));
+  return {
+    pages,
+    contents,
+    pageAt: (abs) => {
+      const hit = byAbs.get(abs);
+      return hit && record(hit.doc, hit.path, []);
+    },
+  };
+}
+
+/** The nodes of `page` whose own text holds any of `lines`, in file lines. */
+function holdersOf(page: Page, lines: PageLines): string[] {
+  const out = page.sections
+    .filter(({ span }) => span.start <= lines.end && lines.start <= span.end)
+    .map(({ iri }) => iri);
+  for (let line = lines.start; line <= lines.end; line++) {
+    if (!page.sections.some(({ span }) => span.start <= line && line <= span.end)) {
+      return [page.doc, ...out];
+    }
+  }
+  return out;
+}
+
+/** How many of a kind of question are found, and how many first. */
+export interface FoundCount {
+  inTop: number;
+  first: number;
+  /** The questions with a test: a page, or at least one pin. */
+  of: number;
 }
 
 /**
- * The findings for every page's sample questions. `sources` is where each
- * page's `graph:path` resolves from, `indexDir` is where a vector sidecar's
- * manifest sits, and `view` is the config meta's merge reads.
+ * The health of the whole question set (proposal 0086 § 7b): what `check`
+ * prints after its findings, and the `questions` key of its JSON report.
+ */
+export interface QuestionSummary {
+  /** Every question, on pages and in golden-set files. */
+  total: number;
+  reviewed: number;
+  drafted: number;
+  /** Pages that declare at least one question. */
+  pages: number;
+  /** The golden-set files, as `graph.questionFiles` names them. */
+  files: string[];
+  top: number;
+  found: { reviewed: FoundCount; drafted: FoundCount };
+  answers: {
+    pinned: number;
+    /** Pins on a drafted question, or marked `reviewed: false` themselves. */
+    unreviewed: number;
+    current: number;
+    /** Moved to one place or, ambiguously, to several. */
+    moved: number;
+    /** Changed, or on a page that does not exist. */
+    changed: number;
+    /** Page questions with no pin, which must find the page itself. */
+    unpinned: number;
+  };
+  /** Golden-set questions with no answers: questions the docs don't answer. */
+  gaps: number;
+}
+
+/** A percentage, rounded down so a rate under a threshold never prints as it. */
+function percent(part: number, of: number): number {
+  return of === 0 ? 100 : Math.floor((part / of) * 100);
+}
+
+function plural(n: number, word: string): string {
+  return `${String(n)} ${word}${n === 1 ? "" : "s"}`;
+}
+
+/** `a`, `a and b`, or `a, b and c`. */
+function listOf(items: readonly string[]): string {
+  const head = items.slice(0, -1);
+  const last = items[items.length - 1] ?? "";
+  return head.length === 0 ? last : `${head.join(", ")} and ${last}`;
+}
+
+/** The health summary as `check` prints it, one line per row. */
+export function renderQuestionSummary(s: QuestionSummary): string[] {
+  const homes = [
+    ...(s.pages > 0 ? [`on ${plural(s.pages, "page")}`] : []),
+    ...(s.files.length > 0 ? [`in ${listOf(s.files)}`] : []),
+  ];
+  const { reviewed, drafted } = s.found;
+  const a = s.answers;
+  return [
+    `questions  ${String(s.total)}: ${String(s.reviewed)} reviewed, ${String(s.drafted)} drafted${homes.length > 0 ? `, ${homes.join(" and ")}` : ""}`,
+    `  found    ${String(reviewed.inTop)} of ${String(reviewed.of)} reviewed in the top ${String(s.top)} (${String(percent(reviewed.inTop, reviewed.of))}%), ${String(reviewed.first)} first (${String(percent(reviewed.first, reviewed.of))}%)`,
+    ...(drafted.of > 0
+      ? [`  drafted  ${String(drafted.inTop)} of ${String(drafted.of)} in the top ${String(s.top)}, not counted until reviewed`]
+      : []),
+    `  answers  ${String(a.pinned)} pinned, ${String(a.unreviewed)} not reviewed: ${String(a.current)} current, ${String(a.moved)} moved, ${String(a.changed)} changed; ${String(a.unpinned)} not pinned`,
+    ...(s.gaps > 0 ? [`  gaps     ${plural(s.gaps, "question")} the docs don't answer`] : []),
+  ];
+}
+
+/** Where a question's findings go. */
+interface Target {
+  focusNode: string;
+  path?: string;
+  docs: string[];
+}
+
+/** A finding on one question: `knob` takes `questions.severity`, and a draft reports at notice. */
+type Report = (kind: "knob" | Severity, message: string, draft?: "question" | "pin") => void;
+
+/**
+ * The findings for every page's sample questions and every golden-set file's
+ * questions, with the health summary of the whole set. `sources` is where
+ * each page's `graph:path` resolves from, `indexDir` is where a vector
+ * sidecar's manifest sits, and `view` is the config meta's merge reads.
+ * `questionFiles` are the golden-set files, and they and their answers'
+ * `file`s resolve from `configDir`. The summary is absent when no question
+ * exists.
  */
 export async function askSampleQuestions(
   store: Store,
@@ -335,20 +479,31 @@ export async function askSampleQuestions(
   sources: string,
   indexDir: string,
   view: { source: MetaViewSource; cwd: string },
-): Promise<CheckFinding[]> {
+  questionFiles: readonly string[] = [],
+  configDir: string = sources,
+): Promise<{ findings: CheckFinding[]; summary?: QuestionSummary }> {
   const knob = settings.severity;
   const top = settings.top;
+  // A golden-set file that cannot be read is an operational error, said
+  // before any page is read.
+  const sets = questionFiles.map((label) => ({
+    label,
+    questions: readQuestionFile(resolve(configDir, label), label),
+  }));
   const graph = GraphIndex.fromQuads(storeToQuads(store), Object.fromEntries(PREFIXES));
-  const { pages, contents } = await readPages(graph, sources, view);
-  if (pages.length === 0) return [];
+  const { pages, contents, pageAt } = await readPages(graph, sources, view);
+  const total =
+    pages.reduce((n, p) => n + p.questions.length, 0) +
+    sets.reduce((n, f) => n + f.questions.length, 0);
+  if (total === 0) return { findings: [] };
 
-  // Built on first use: a run at severity off asks nothing.
+  // Built on first use: a set of nothing but gaps asks nothing.
   let byLanguage: Map<string, SearchIndexDoc> | undefined;
   let manifest: LocalizationEntry[] = [];
   const retrievers = new Map<string, Retriever>();
   const ranked = new Map<string, string[]>();
-  const rank = async (page: Page, question: string): Promise<string[]> => {
-    const key = JSON.stringify([page.language, question]);
+  const rank = async (language: string, question: string): Promise<string[]> => {
+    const key = JSON.stringify([language, question]);
     const cached = ranked.get(key);
     if (cached) return cached;
     if (byLanguage === undefined) {
@@ -359,14 +514,14 @@ export async function askSampleQuestions(
       );
       manifest = readManifest(indexDir);
     }
-    let retriever = retrievers.get(page.language);
+    let retriever = retrievers.get(language);
     if (!retriever) {
       retriever = await openRetriever(
-        byLanguage.get(page.language) ?? { version: 1, entries: [] },
-        manifest.find((l) => canonicalLanguageTag(l.language) === page.language),
+        byLanguage.get(language) ?? { version: 1, entries: [] },
+        manifest.find((l) => canonicalLanguageTag(l.language) === language),
         indexDir,
       );
-      retrievers.set(page.language, retriever);
+      retrievers.set(language, retriever);
     }
     const nodes = await rankNodes(question, retriever);
     ranked.set(key, nodes);
@@ -385,114 +540,235 @@ export async function askSampleQuestions(
     ].join("; ");
 
   const findings: CheckFinding[] = [];
-  for (const page of pages) {
-    /**
-     * A finding on this page. `knob` findings take `questions.severity` and
-     * vanish at `off`. A draft reports at notice, said so at the end.
-     */
-    const report = (
-      kind: "knob" | Severity,
-      message: string,
-      draft?: "question" | "pin",
-    ): void => {
+  const reporter =
+    (target: Target): Report =>
+    (kind, message, draft) => {
       const level = kind === "knob" ? knob : kind;
       if (level === "off") return;
-      const severity: Severity = draft ? "notice" : level;
       const suffix =
         draft === "question" ? " (drafted, not reviewed)" : draft === "pin" ? " (answer not reviewed)" : "";
       findings.push({
-        severity,
+        severity: draft ? "notice" : level,
         message: `${message}${suffix}`,
-        focusNode: page.doc,
-        path: SAMPLE_QUESTION,
-        docs: [page.path],
+        focusNode: target.focusNode,
+        ...(target.path === undefined ? {} : { path: target.path }),
+        docs: target.docs,
       });
     };
 
-    /** The nodes whose own text holds any of `lines`, in file lines. */
-    const holders = (lines: PageLines): string[] => {
-      const out = page.sections
-        .filter(({ span }) => span.start <= lines.end && lines.start <= span.end)
-        .map(({ iri }) => iri);
-      for (let line = lines.start; line <= lines.end; line++) {
-        if (!page.sections.some(({ span }) => span.start <= line && line <= span.end)) {
-          return [page.doc, ...out];
-        }
-      }
-      return out;
-    };
+  const empty = (): FoundCount => ({ inTop: 0, first: 0, of: 0 });
+  const summary: QuestionSummary = {
+    total,
+    reviewed: 0,
+    drafted: 0,
+    pages: pages.length,
+    files: [...questionFiles],
+    top,
+    found: { reviewed: empty(), drafted: empty() },
+    answers: { pinned: 0, unreviewed: 0, current: 0, moved: 0, changed: 0, unpinned: 0 },
+    gaps: 0,
+  };
+  /** Counts one question's outcome: `tests` holds each counted test's position, 0 when missed. */
+  const tally = (reviewed: boolean, tests: readonly number[]): void => {
+    if (tests.length === 0) return;
+    const count = reviewed ? summary.found.reviewed : summary.found.drafted;
+    count.of += 1;
+    if (tests.every((p) => p >= 1 && p <= top)) count.inTop += 1;
+    if (tests.every((p) => p === 1)) count.first += 1;
+  };
 
-    for (const q of page.questions) {
+  /**
+   * One pin on `page`: its freshness first, then whether the top `top` holds
+   * a node whose own text holds its lines. `file` is the page as a golden-set
+   * item names it, absent for a page's own question. Returns the best
+   * position, 0 when the answer changed or is not found, and the answer's
+   * text as it reads now.
+   */
+  const askPin = async (
+    page: Page,
+    pin: AnswerPin,
+    question: string,
+    language: string,
+    report: Report,
+    draft: "question" | "pin" | undefined,
+    file?: string,
+  ): Promise<{ position: number; text?: string }> => {
+    const fresh = freshness(page.body, pin);
+    if (fresh.state === "changed") {
+      summary.answers.changed += 1;
+      const of = file === undefined ? "" : ` of ${file}`;
+      report(
+        "knob",
+        `lines ${spellLines(pin.lines)}${of} no longer hold the answer to "${question}" as pinned, so re-pin it and review it.`,
+        draft,
+      );
+      return { position: 0 };
+    }
+    const [range] = fresh.ranges;
+    const inFile = file === undefined ? "" : ` in ${file}`;
+    if (fresh.state === "current") summary.answers.current += 1;
+    else summary.answers.moved += 1;
+    if (fresh.state === "moved" && range) {
+      report(
+        "notice",
+        `the answer to "${question}"${inFile} moved from lines ${spellLines(pin.lines)} to ${spellLines(range)}, so update its lines.`,
+        draft,
+      );
+    } else if (fresh.state === "ambiguous") {
+      report(
+        "warning",
+        `the answer to "${question}"${inFile} moved, and ${matchList(fresh.ranges)}, so pin one of them by hand.`,
+        draft,
+      );
+    }
+    const text = range ? page.body.slice(range.start - 1, range.end).join("\n") : undefined;
+    const nodes = await rank(language, question);
+    const answering = fresh.ranges.flatMap((r) => holdersOf(page, toFileLines(r, page.bodyLine)));
+    const positions = answering.map((iri) => nodes.indexOf(iri) + 1);
+    // The best-ranked node that holds the answer, else the one holding its
+    // first line.
+    const best = positions.reduce(
+      (b, p, i) => (p >= 1 && (b.p === 0 || p < b.p) ? { p, i } : b),
+      { p: 0, i: 0 },
+    );
+    if (best.p >= 1 && best.p <= top) return { position: best.p, ...(text === undefined ? {} : { text }) };
+    const holder = answering[best.i];
+    if (holder !== undefined) {
+      const title = holder.includes("#") ? graph.literal(holder, TITLE) : undefined;
+      const target =
+        file !== undefined
+          ? `does not find ${describe(holder)}`
+          : title === undefined
+            ? "does not find this page, whose own text answers it,"
+            : `does not find the section that answers it, § ${title},`;
+      report("knob", `"${question}" ${target} in the top ${String(top)} (${where(best.p, nodes[0])})`, draft);
+    }
+    return { position: best.p, ...(text === undefined ? {} : { text }) };
+  };
+
+  /** A question that repeats over half its answer's word pairs tests matching more than finding. */
+  const copies = (question: string, said: string[], report: Report, draft: "question" | undefined): void => {
+    const m = said.length === 0 ? undefined : copiedPairs(question, ...said);
+    if (m && m.copied / m.of > COPIED_SHARE) {
+      report(
+        "notice",
+        `"${question}" repeats ${String(m.copied)} of its ${String(m.of)} word pairs from its answer, so it tests matching words more than finding.`,
+        draft,
+      );
+    }
+  };
+
+  /** Every copy of every question, for duplicates: where it is asked, and its finding's home. */
+  const asked: { key: string; where: string; order: number; text: string; report: Report; draft?: "question" }[] = [];
+
+  for (const page of pages) {
+    const report = reporter({ focusNode: page.doc, path: SAMPLE_QUESTION, docs: [page.path] });
+    for (const [n, q] of page.questions.entries()) {
       const drafted = q.reviewed ? undefined : ("question" as const);
+      if (q.reviewed) summary.reviewed += 1;
+      else summary.drafted += 1;
+      asked.push({ key: questionKey(q.question), where: page.path, order: n, text: q.question, report, ...(drafted ? { draft: drafted } : {}) });
+      if (q.answers.length === 0) summary.answers.unpinned += 1;
+      const tests: number[] = [];
       // 0085's test: an unpinned question, or a confirmed one whose every
       // pin is still a draft, must find the page itself.
-      const pageTest =
-        q.answers.length === 0 || (q.reviewed && q.answers.every((a) => !a.reviewed));
-      if (pageTest && knob !== "off") {
-        const nodes = await rank(page, q.question);
+      if (q.answers.length === 0 || (q.reviewed && q.answers.every((a) => !a.reviewed))) {
+        const nodes = await rank(page.language, q.question);
         const pagesFound = [...new Set(nodes.map(pageOf))];
         const position = pagesFound.indexOf(page.doc) + 1;
+        tests.push(position);
         if (position < 1 || position > top) {
-          const first = pagesFound[0];
           report(
             "knob",
-            `"${q.question}" does not find this page in the top ${String(top)} (${where(position, first)})`,
+            `"${q.question}" does not find this page in the top ${String(top)} (${where(position, pagesFound[0])})`,
             drafted,
           );
         }
       }
-
+      const said: string[] = [];
       for (const pin of q.answers) {
         const draft = drafted ?? (pin.reviewed ? undefined : "pin");
-        const fresh = freshness(page.body, pin);
-        if (fresh.state === "changed") {
-          report(
-            "knob",
-            `lines ${spellLines(pin.lines)} no longer hold the answer to "${q.question}" as pinned, so re-pin it and review it.`,
-            draft,
-          );
-          continue;
-        }
-        const [moved] = fresh.ranges;
-        if (fresh.state === "moved" && moved) {
-          report(
-            "notice",
-            `the answer to "${q.question}" moved from lines ${spellLines(pin.lines)} to ${spellLines(moved)}, so update its lines.`,
-            draft,
-          );
-        } else if (fresh.state === "ambiguous") {
-          report(
-            "warning",
-            `the answer to "${q.question}" moved, and ${matchList(fresh.ranges)}, so pin one of them by hand.`,
-            draft,
-          );
-        }
-        if (knob === "off") continue;
-
-        const nodes = await rank(page, q.question);
-        const answering = fresh.ranges.flatMap((r) => holders(toFileLines(r, page.bodyLine)));
-        const positions = answering.map((iri) => nodes.indexOf(iri) + 1);
-        if (positions.some((p) => p >= 1 && p <= top)) continue;
-        // Name the best-ranked node that holds the answer, else the one
-        // holding its first line.
-        const best = positions.reduce(
-          (b, p, i) => (p >= 1 && (b.p === 0 || p < b.p) ? { p, i } : b),
-          { p: 0, i: 0 },
-        );
-        const holder = answering[best.i];
-        if (holder === undefined) continue;
-        const title = holder.includes("#") ? graph.literal(holder, TITLE) : undefined;
-        const target =
-          title === undefined
-            ? "does not find this page, whose own text answers it,"
-            : `does not find the section that answers it, § ${title},`;
-        report(
-          "knob",
-          `"${q.question}" ${target} in the top ${String(top)} (${where(best.p, nodes[0])})`,
-          draft,
-        );
+        summary.answers.pinned += 1;
+        if (draft) summary.answers.unreviewed += 1;
+        const { position, text } = await askPin(page, pin, q.question, page.language, report, draft);
+        if (text !== undefined) said.push(text);
+        // A drafted pin on a confirmed question is reported, not counted.
+        if (draft !== "pin") tests.push(position);
       }
+      copies(q.question, said, report, drafted);
+      tally(q.reviewed, tests);
     }
   }
-  return findings;
+
+  for (const set of sets) {
+    for (const [n, q] of set.questions.entries()) {
+      const report = reporter({ focusNode: `${set.label}:${String(q.line)}`, docs: [set.label] });
+      const drafted = q.reviewed ? undefined : ("question" as const);
+      if (q.reviewed) summary.reviewed += 1;
+      else summary.drafted += 1;
+      asked.push({ key: questionKey(q.question), where: set.label, order: n, text: q.question, report, ...(drafted ? { draft: drafted } : {}) });
+      // A known gap: search has no score floor, so "finds nothing" is no test.
+      if (q.answers.length === 0) {
+        summary.gaps += 1;
+        continue;
+      }
+      const [firstAnswer] = q.answers;
+      const firstPage = firstAnswer && pageAt(resolve(configDir, firstAnswer.file));
+      const language =
+        q.language !== undefined ? canonicalLanguageTag(q.language) : (firstPage?.language ?? UNDETERMINED);
+      const tests: number[] = [];
+      const said: string[] = [];
+      for (const pin of q.answers) {
+        const draft = drafted ?? (pin.reviewed ? undefined : "pin");
+        summary.answers.pinned += 1;
+        if (draft) summary.answers.unreviewed += 1;
+        const abs = resolve(configDir, pin.file);
+        const page = pageAt(abs);
+        if (page === undefined) {
+          if (existsSync(abs)) {
+            // On disk, but in no collection the graph was built from.
+            const nodes = await rank(language, q.question);
+            report("knob", `"${q.question}" does not find ${pin.file} in the top ${String(top)} (${where(0, nodes[0])})`, draft);
+          } else {
+            summary.answers.changed += 1;
+            report(
+              "knob",
+              `${pin.file}, which holds the answer to "${q.question}", does not exist, so re-pin or remove the question.`,
+              draft,
+            );
+          }
+          if (draft !== "pin") tests.push(0);
+          continue;
+        }
+        const { position, text } = await askPin(page, pin, q.question, language, report, draft, pin.file);
+        if (text !== undefined) said.push(text);
+        if (draft !== "pin") tests.push(position);
+      }
+      copies(q.question, said, report, drafted);
+      tally(q.reviewed, tests);
+    }
+  }
+
+  // Duplicates: each copy after the first, in path order, names the first.
+  asked.sort((a, b) => byCodeUnit(a.where, b.where) || a.order - b.order);
+  const firstAt = new Map<string, string>();
+  for (const copy of asked) {
+    if (copy.key === "") continue;
+    const first = firstAt.get(copy.key);
+    if (first === undefined) firstAt.set(copy.key, copy.where);
+    else copy.report("knob", `"${copy.text}" is also asked on ${first}, so keep it where it is answered.`, copy.draft);
+  }
+
+  // The rate gate. questions.severity does not touch it.
+  const threshold = settings.foundThreshold;
+  const { inTop, of } = summary.found.reviewed;
+  if (threshold !== null && of > 0 && (inTop / of) * 100 < threshold) {
+    findings.push({
+      severity: "error",
+      message: `${String(inTop)} of ${String(of)} reviewed questions are found in the top ${String(top)} (${String(percent(inTop, of))}%), under the ${String(threshold)}% that graph.check.questions.foundThreshold asks for.`,
+      focusNode: "questions",
+      docs: [],
+    });
+  }
+  return { findings, summary };
 }

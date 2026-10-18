@@ -30,6 +30,7 @@ Coverage (documents):
   applies-to               0/3  0.0%
   about-product-lifecycle  0/3  0.0%
   about-product-aspect     0/3  0.0%
+  sample-questions         0/3  0.0%
 ```
 
 The list is fixed and deliberate rather than a census of what the corpus
@@ -53,6 +54,7 @@ exactly that.
 | `applies-to` | `iirds:relates-to-product-variant` | `graph.applies-to`: which product variants this page is about. |
 | `about-product-lifecycle` | `iirds:relates-to-product-lifecycle-phase` | `graph.about-product-lifecycle`. |
 | `about-product-aspect` | `iirds:has-subject` | `graph.about-product-aspect`. |
+| `sample-questions` | `graph:sampleQuestion` | The page's `sample-questions`: the questions a reader would ask it. |
 
 Frontmatter in this table includes every field an external-metadata manifest
 holds for the page. A `description` kept in a `{page}.meta.yaml` fills the row
@@ -62,6 +64,17 @@ as one on the page does.
 it became a scope dimension. An unlabelled document in a translated corpus
 cannot be filtered, indexed per locale, or counted against the right audience.
 The row is the only warning you get.
+
+`stats` ends with the concepts no question reaches. A concept has a question
+when a page whose primary topic or subjects name it asks one. The list is
+reported and never gated, like orphans.
+
+```console
+Concepts with no question (3):
+  Installation
+  onboarding
+  reference
+```
 
 ## Two predicates are not measured
 
@@ -114,7 +127,9 @@ graph:
     coverageThreshold: 80
 ```
 
-A single number applies to every measured row. A map sets them one at a time,
+A single number applies to every measured row but `sample-questions`. That row
+is gated only when a map names it, so a gate that passed before the row existed
+still passes. A map sets them one at a time,
 which is what a real corpus needs, because `title` should be at 100 long before
 `about-product-aspect` is above nothing:
 
@@ -168,7 +183,7 @@ the map.
 
 {/* step {"description":"Coverage is reported per field over the built graph.","runShell":{"command":"manni graph build -c test/graph/fixtures/dd/docs.config.yaml","exitCodes":[0]}} */}
 
-{/* step {"description":"The document table names every measured row.","runShell":{"command":"manni graph stats -c test/graph/fixtures/dd/docs.config.yaml","exitCodes":[0],"stdio":"/title[\\s\\S]*description[\\s\\S]*creator[\\s\\S]*created[\\s\\S]*modified[\\s\\S]*subject[\\s\\S]*label[\\s\\S]*language[\\s\\S]*type[\\s\\S]*applies-to[\\s\\S]*about-product-lifecycle[\\s\\S]*about-product-aspect/"}} */}
+{/* step {"description":"The document table names every measured row.","runShell":{"command":"manni graph stats -c test/graph/fixtures/dd/docs.config.yaml","exitCodes":[0],"stdio":"/title[\\s\\S]*description[\\s\\S]*creator[\\s\\S]*created[\\s\\S]*modified[\\s\\S]*subject[\\s\\S]*label[\\s\\S]*language[\\s\\S]*type[\\s\\S]*applies-to[\\s\\S]*about-product-lifecycle[\\s\\S]*about-product-aspect[\\s\\S]*sample-questions/"}} */}
 
 {/* step {"description":"The section table is reported and says it is not gated.","runShell":{"command":"manni graph stats -c test/graph/fixtures/dd/docs.config.yaml","exitCodes":[0],"stdio":"Coverage (sections, not gated):"}} */}
 

@@ -25,7 +25,7 @@ import { errorMessage } from "../../shared/errors.js";
 import type { Severity } from "../../shared/severity.js";
 import { GraphError } from "../types.js";
 import { resolveBaseIri } from "./iri.js";
-import { COVERAGE_FIELD_NAMES } from "./coverage.js";
+import { UNIFORM_COVERAGE_FIELD_NAMES } from "./coverage.js";
 // Pure data module (no transformers import), so config stays Node-light.
 import { DEFAULT_MODEL as DEFAULT_EMBED_MODEL } from "../embed/types.js";
 
@@ -125,6 +125,11 @@ export interface GraphConfig {
   /** Output path of the built Turtle file, relative to configDir. */
   out: string;
   routes: RouteMapping[];
+  /**
+   * Golden-set files, as the config names them, relative to `configDir`
+   * (proposal 0086). `check` asks their questions beside each page's.
+   */
+  questionFiles: string[];
   build: { derive: DeriveSource[] };
   /** Graph-level SHACL validation (`manni graph check`). */
   check: {
@@ -133,9 +138,12 @@ export interface GraphConfig {
     /**
      * Each page's `sample-questions`, asked through the retrieval `search`
      * uses (proposal 0085 §7). A page outside the `top` results for its own
-     * question is a finding at `severity`; `off` asks nothing.
+     * question is a finding at `severity`; `off` reports none of them.
+     * `foundThreshold` fails the run when the share of reviewed questions
+     * found falls below it, a percentage; `null` sets no rate gate
+     * (proposal 0086).
      */
-    questions: { top: number; severity: Severity | "off" };
+    questions: { top: number; severity: Severity | "off"; foundThreshold: number | null };
   };
   provenance: {
     /**
@@ -317,10 +325,11 @@ interface RawGraphConfig {
   baseIri?: string;
   out?: string;
   routes?: RawRouteMapping[];
+  questionFiles?: string[];
   build?: { derive?: DeriveSource[] };
   check?: {
     shapes?: string[];
-    questions?: { top?: number; severity?: Severity | "off" };
+    questions?: { top?: number; severity?: Severity | "off"; foundThreshold?: number | null };
   };
   provenance?: { qualified?: boolean };
   stats?: { coverageThreshold?: number | Record<string, number> };
@@ -379,15 +388,16 @@ function configErrorLine(e: {
 /**
  * Normalize `stats.coverageThreshold` to a per-field map. Ajv has already
  * validated the input as a number, an object of known fields, or absent; a
- * uniform number expands across every measured field so the resolved shape is
- * always a map (default `{}`).
+ * uniform number expands across every field it gates, which is every measured
+ * field but `sample-questions`, so the resolved shape is always a map
+ * (default `{}`).
  */
 function resolveCoverageThreshold(
   raw: number | Record<string, number> | undefined,
 ): Record<string, number> {
   if (raw == null) return {};
   if (typeof raw === "number")
-    return Object.fromEntries(COVERAGE_FIELD_NAMES.map((f) => [f, raw]));
+    return Object.fromEntries(UNIFORM_COVERAGE_FIELD_NAMES.map((f) => [f, raw]));
   return { ...raw };
 }
 
@@ -514,6 +524,7 @@ export function parseConfigSection(
       indexFiles: m.indexFiles ?? [...DEFAULT_INDEX_FILES],
       ...(m.language === undefined ? {} : { language: m.language }),
     })),
+    questionFiles: r.questionFiles ?? [],
     build: {
       derive: r.build?.derive ?? [...ALL_DERIVE_SOURCES],
     },
@@ -523,6 +534,7 @@ export function parseConfigSection(
       questions: {
         top: r.check?.questions?.top ?? 5,
         severity: r.check?.questions?.severity ?? "warning",
+        foundThreshold: r.check?.questions?.foundThreshold ?? null,
       },
     },
     provenance: {

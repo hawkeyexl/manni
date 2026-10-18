@@ -238,7 +238,7 @@ describe("parseConfig", () => {
 
   it("defaults check.questions to the top 5, at warning", () => {
     const c = parseConfig("", "/tmp/manni.config.yaml");
-    expect(c.check.questions).toEqual({ top: 5, severity: "warning" });
+    expect(c.check.questions).toEqual({ top: 5, severity: "warning", foundThreshold: null });
   });
 
   it("parses check.questions overrides", () => {
@@ -246,7 +246,7 @@ describe("parseConfig", () => {
       "check:\n  questions:\n    top: 1\n    severity: off\n",
       "/tmp/manni.config.yaml",
     );
-    expect(c.check.questions).toEqual({ top: 1, severity: "off" });
+    expect(c.check.questions).toEqual({ top: 1, severity: "off", foundThreshold: null });
   });
 
   it("rejects a check.questions top below 1, a bad severity and an unknown key", () => {
@@ -265,6 +265,46 @@ describe("parseConfig", () => {
         body,
       ).toThrow(GraphError);
     }
+  });
+
+  it("defaults questionFiles to none and foundThreshold to no gate", () => {
+    const c = parseConfig("", "/tmp/manni.config.yaml");
+    expect(c.questionFiles).toEqual([]);
+    expect(c.check.questions.foundThreshold).toBeNull();
+  });
+
+  it("parses questionFiles and foundThreshold", () => {
+    const c = parseConfig(
+      "questionFiles: [docs/questions.yaml]\ncheck:\n  questions:\n    foundThreshold: 95\n",
+      "/tmp/manni.config.yaml",
+    );
+    expect(c.questionFiles).toEqual(["docs/questions.yaml"]);
+    expect(c.check.questions.foundThreshold).toBe(95);
+    const off = parseConfig(
+      "check:\n  questions:\n    foundThreshold: null\n",
+      "/tmp/manni.config.yaml",
+    );
+    expect(off.check.questions.foundThreshold).toBeNull();
+  });
+
+  it("rejects a bad questionFiles and a foundThreshold outside 0-100", () => {
+    for (const body of [
+      "questionFiles: docs/questions.yaml\n",
+      "questionFiles: ['']\n",
+      "check:\n  questions:\n    foundThreshold: 101\n",
+      "check:\n  questions:\n    foundThreshold: -1\n",
+      "check:\n  questions:\n    foundThreshold: high\n",
+    ]) {
+      expect(() => parseConfig(body, "/tmp/manni.config.yaml"), body).toThrow(GraphError);
+    }
+  });
+
+  it("accepts sample-questions in the per-field coverage map", () => {
+    const c = parseConfig(
+      "stats:\n  coverageThreshold:\n    sample-questions: 60\n",
+      "/tmp/manni.config.yaml",
+    );
+    expect(c.stats.coverageThreshold).toEqual({ "sample-questions": 60 });
   });
 
   it("rejects unknown check keys", () => {

@@ -23,6 +23,14 @@
       "type": "string",
       "minLength": 1
     },
+    "questionFiles": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "description": "Golden-set files, relative to the config file. They hold questions that span pages or that the docs don't answer, and `check` asks them beside each page's sample-questions. Default none."
+    },
     "routes": {
       "type": "array",
       "items": {
@@ -100,6 +108,13 @@
             },
             "severity": {
               "enum": ["notice", "warning", "error", "off"]
+            },
+            "foundThreshold": {
+              "anyOf": [
+                { "type": "number", "minimum": 0, "maximum": 100 },
+                { "type": "null" }
+              ],
+              "description": "`check` exits 1 when the percentage of reviewed questions found in the top `top` falls below this, 0-100. The same scale as stats.coverageThreshold. Null (the default) sets no rate gate. questions.severity does not touch it."
             }
           }
         }
@@ -185,6 +200,11 @@
                   "maximum": 100
                 },
                 "about-product-aspect": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 100
+                },
+                "sample-questions": {
                   "type": "number",
                   "minimum": 0,
                   "maximum": 100

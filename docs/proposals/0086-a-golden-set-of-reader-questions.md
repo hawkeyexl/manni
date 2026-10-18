@@ -293,6 +293,8 @@ A golden-set file is a list of the page item's object form, plus two keys.
   question with no pin, or under two words, is never measured.
 - **Where findings point.** A file question's focus node is `<file>:<line>` of
   its item, with no path. The rate finding's focus node is `questions`.
+- **At `off`.** The questions are still asked, so the summary and the rate gate
+  still count them. Only the findings on the knob go quiet.
 
 | case | stderr | exit |
 |---|---|---|
@@ -315,8 +317,18 @@ questions  431: 288 reviewed, 143 drafted, on 142 pages and in docs/questions.ya
 0 errors, 1 warning, 0 notices
 ```
 
-The summary prints only when some question exists. Under `-f github` it
-prints after the annotations, as plain text. The JSON report gains one
+The summary prints only when some question exists. A gap counts as reviewed
+or drafted like any question, and never under `found`. The `drafted` row
+prints only when a draft has a test, and the `gaps` row only when a gap
+exists. Percentages round down, so a rate under a threshold never prints as
+the threshold. Under `-f github` it prints after the annotations, as plain
+text.
+
+A file question's moved and changed messages name the answer's page, because
+its answers can sit on several. They read `the answer to "…" in
+docs/key/rotate.md moved from lines 12-15 to 14-17` and `lines 12-15 of
+docs/key/rotate.md no longer hold the answer`. An answer whose page is on disk
+but in no collection the graph was built from is reported as not found. The JSON report gains one
 `questions` key beside `findings`, with the same counts. Stored per CI run,
 that object is the time series. manni keeps no history of its own.
 
