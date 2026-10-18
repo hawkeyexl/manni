@@ -6,7 +6,7 @@
  *
  * Every loaded file contributes its references too, term file or not: a
  * guide's `concepts:` is what `undefined-term` and `unused-term` are about.
- * Its `graph:` block joins the hierarchy `broader-cycle` reads (proposal 0085).
+ * Its `graph:` block joins the hierarchy `broader-cycle` reads (proposal 0086).
  *
  * A file that cannot be read or parsed is an error, not a skip. A term set that
  * quietly lost a file would pass `check` on what was left, and report the

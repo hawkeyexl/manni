@@ -92,7 +92,7 @@ describe("loadTermSet", () => {
     ]);
   });
 
-  it("gathers each labelled graph block, and names graph.concepts and the page's language (proposal 0085)", async () => {
+  it("gathers each labelled graph block, and names graph.concepts and the page's language (proposal 0086)", async () => {
     const root = await tree({
       "terms/retry.md": "---\ntype: term\nlabel: Retry\n---\n",
       "guides/net.md":

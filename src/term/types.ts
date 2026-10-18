@@ -20,7 +20,7 @@ import type { ToolsConfig } from "../shared/tools.js";
 /**
  * The root fields of `manni:terminology:1.2.0`: the ten 1.0.0 fields in the
  * order the reference lists them, then `notation` and the five match keys
- * (proposal 0085), then the TBX data categories (proposal 0084), then the
+ * (proposal 0086), then the TBX data categories (proposal 0084), then the
  * three blocks.
  */
 export const TERM_FIELDS = [
