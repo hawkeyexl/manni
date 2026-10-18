@@ -1,0 +1,297 @@
+1151	manni: Starlight in docs/. Running npm run build
+1367	
+1385	> manni-docs@0.0.1 build
+1403	> astro build
+1420	
+2827	[astro] `markdown.remarkPlugins`, `markdown.rehypePlugins`, and `markdown.remarkRehype` are deprecated. Pass them to `unified({...})` from `@astrojs/markdown-remark` directly instead.
+3090	[2m11:41:58[22m [34m[vite][39m Re-optimizing dependencies because vite config has changed
+3499	[2m11:41:59[22m [34m[content][39m Syncing content
+3580	[2m11:41:59[22m [34m[content][39m Synced content
+3598	[2m11:41:59[22m [34m[types][39m Generated [2m510ms[22m
+3616	[2m11:41:59[22m [34m[build][39m output: [34m"static"[39m
+3634	[2m11:41:59[22m [34m[build][39m mode: [34m"static"[39m
+3652	[2m11:41:59[22m [34m[build][39m directory: [34mC:\Users\hawkeyexl\Documents\Workspaces\manni\.claude\worktrees\frontmatter-sidecar-files-10cc57\docs\dist\[39m
+3670	[2m11:41:59[22m [34m[build][39m Collecting build info...
+3688	[2m11:41:59[22m [34m[build][39m [32m✓ Completed in 703ms.[39m
+3709	[2m11:41:59[22m [34m[build][39m Building static entrypoints...
+11364	[2m11:42:07[22m [34m[vite][39m [32m✓ built in 7.66s[39m
+11472	[2m11:42:07[22m [34m[vite][39m [32m✓ built in 93ms[39m
+11607	[2m11:42:07[22m [34m[build][39m Rearranging server assets...
+11629	
+11649	[42m[30m generating static routes [39m[49m
+11680	[2m11:42:07[22m   [34m├─[39m [2m/404.html[22mEntry docs → 404 was not found.
+11703	 [2m(+29ms)[22m 
+11722	[2m11:42:07[22m   [34m├─[39m [2m/meta/proposals/ai-context/index.html[22m [2m(+2ms)[22m 
+11742	[2m11:42:07[22m   [34m├─[39m [2m/meta/proposals/artifact-evals/index.html[22m [2m(+1ms)[22m 
+11763	[2m11:42:07[22m   [34m├─[39m [2m/meta/proposals/audience/index.html[22m [2m(+1ms)[22m 
+11784	[2m11:42:07[22m   [34m├─[39m [2m/meta/proposals/citations/index.html[22m [2m(+3ms)[22m 
+11804	[2m11:42:07[22m   [34m├─[39m [2m/meta/proposals/core/index.html[22m [2m(+1ms)[22m 
+11827	[2m11:42:07[22m   [34m├─[39m [2m/meta/proposals/evals/index.html[22m [2m(+1ms)[22m 
+11847	[2m11:42:07[22m   [34m├─[39m [2m/meta/proposals/frontmatter-vocabularies/index.html[22m [2m(+1ms)[22m 
+11867	[2m11:42:07[22m   [34m├─[39m [2m/meta/proposals/graph/index.html[22m [2m(+1ms)[22m 
+11888	[2m11:42:07[22m   [34m├─[39m [2m/meta/proposals/kg/index.html[22m [2m(+1ms)[22m 
+11908	[2m11:42:07[22m   [34m├─[39m [2m/meta/proposals/lifecycle/index.html[22m [2m(+1ms)[22m 
+11928	[2m11:42:07[22m   [34m├─[39m [2m/meta/proposals/stewardship/index.html[22m [2m(+1ms)[22m 
+11948	[2m11:42:07[22m   [34m├─[39m [2m/meta/proposals/structure/index.html[22m [2m(+1ms)[22m 
+11968	[2m11:42:07[22m   [34m├─[39m [2m/meta/proposals/terminology/index.html[22m [2m(+1ms)[22m 
+12022	[2m11:42:07[22m   [34m├─[39m [2m/meta/reference/built-in-schemas/index.html[22m [2m(+1ms)[22m 
+12041	[2m11:42:07[22m   [34m├─[39m [2m/meta/reference/claude-subagent-schema/index.html[22m [2m(+1ms)[22m 
+12061	[2m11:42:07[22m   [34m├─[39m [2m/meta/reference/dita-schema/index.html[22m [2m(+1ms)[22m 
+12081	[2m11:42:07[22m   [34m├─[39m [2m/meta/reference/okf-schema/index.html[22m [2m(+1ms)[22m 
+12101	[2m11:42:07[22m   [34m├─[39m [2m/meta/set-up/sidecar-metadata/index.html[22m [2m(+1ms)[22m 
+12121	[2m11:42:07[22m   [34m├─[39m [2m/a11y/index.html[22m [2m(+14ms)[22m 
+12144	[2m11:42:07[22m   [34m├─[39m [2m/a11y/ci/index.html[22m [2m(+10ms)[22m 
+12164	[2m11:42:07[22m   [34m├─[39m [2m/a11y/fix/index.html[22m [2m(+8ms)[22m 
+12185	[2m11:42:07[22m   [34m├─[39m [2m/a11y/get-started/index.html[22m [2m(+7ms)[22m 
+12209	[2m11:42:07[22m   [34m├─[39m [2m/a11y/reference/cli/index.html[22m [2m(+9ms)[22m 
+12229	[2m11:42:07[22m   [34m├─[39m [2m/cite/index.html[22m [2m(+7ms)[22m 
+12248	[2m11:42:07[22m   [34m├─[39m [2m/cite/ci/index.html[22m [2m(+31ms)[22m 
+12269	[2m11:42:07[22m   [34m├─[39m [2m/cite/fix/index.html[22m [2m(+10ms)[22m 
+12289	[2m11:42:07[22m   [34m├─[39m [2m/cite/get-started/index.html[22m [2m(+21ms)[22m 
+12311	[2m11:42:07[22m   [34m├─[39m [2m/cite/reference/citations/index.html[22m [2m(+9ms)[22m 
+12331	[2m11:42:07[22m   [34m├─[39m [2m/cite/reference/cli/index.html[22m [2m(+8ms)[22m 
+12354	[2m11:42:07[22m   [34m├─[39m [2m/cite/reference/configuration/index.html[22m [2m(+7ms)[22m 
+12375	[2m11:42:07[22m   [34m├─[39m [2m/cite/set-up/index.html[22m [2m(+11ms)[22m 
+12395	[2m11:42:07[22m   [34m├─[39m [2m/cite/set-up/citations-in-a-sidecar/index.html[22m [2m(+10ms)[22m 
+12414	[2m11:42:07[22m   [34m├─[39m [2m/cite/set-up/public-docs-private-code/index.html[22m [2m(+9ms)[22m 
+12435	[2m11:42:07[22m   [34m├─[39m [2m/cite/set-up/require-citations/index.html[22m [2m(+7ms)[22m 
+12454	[2m11:42:07[22m   [34m├─[39m [2m/docevals/index.html[22m [2m(+6ms)[22m 
+12474	[2m11:42:07[22m   [34m├─[39m [2m/docevals/adopt/index.html[22m [2m(+6ms)[22m 
+12495	[2m11:42:07[22m   [34m├─[39m [2m/docevals/adopt/move-evals-to-a-manifest/index.html[22m [2m(+11ms)[22m 
+12526	[2m11:42:07[22m   [34m├─[39m [2m/docevals/adopt/promote-to-deterministic/index.html[22m [2m(+7ms)[22m 
+12554	[2m11:42:07[22m   [34m├─[39m [2m/docevals/adopt/retrofit-a-legacy-corpus/index.html[22m [2m(+6ms)[22m 
+12575	[2m11:42:07[22m   [34m├─[39m [2m/docevals/adopt/review-generated-scripts/index.html[22m [2m(+6ms)[22m 
+12594	[2m11:42:07[22m   [34m├─[39m [2m/docevals/ci/index.html[22m [2m(+5ms)[22m 
+12614	[2m11:42:07[22m   [34m├─[39m [2m/docevals/ci/consume-results/index.html[22m [2m(+6ms)[22m 
+12634	[2m11:42:07[22m   [34m├─[39m [2m/docevals/ci/cost-and-caching/index.html[22m [2m(+5ms)[22m 
+12654	[2m11:42:07[22m   [34m├─[39m [2m/docevals/ci/exit-codes-and-annotations/index.html[22m [2m(+5ms)[22m 
+12674	[2m11:42:07[22m   [34m├─[39m [2m/docevals/ci/local-models/index.html[22m [2m(+6ms)[22m 
+12695	[2m11:42:07[22m   [34m├─[39m [2m/docevals/ci/recipes/index.html[22m [2m(+6ms)[22m 
+12715	[2m11:42:07[22m   [34m├─[39m [2m/docevals/ci/untrusted-pull-requests/index.html[22m [2m(+5ms)[22m 
+12734	[2m11:42:07[22m   [34m├─[39m [2m/docevals/evals/index.html[22m [2m(+6ms)[22m 
+12754	[2m11:42:07[22m   [34m├─[39m [2m/docevals/evals/deterministic-checks/index.html[22m [2m(+10ms)[22m 
+12776	[2m11:42:07[22m   [34m├─[39m [2m/docevals/evals/named-evals-and-suites/index.html[22m [2m(+6ms)[22m 
+12795	[2m11:42:07[22m   [34m├─[39m [2m/docevals/evals/regression-vs-capability/index.html[22m [2m(+5ms)[22m 
+12816	[2m11:42:07[22m   [34m├─[39m [2m/docevals/evals/severity-and-findings/index.html[22m [2m(+5ms)[22m 
+12837	[2m11:42:07[22m   [34m├─[39m [2m/docevals/evals/write-good-assertions/index.html[22m [2m(+5ms)[22m 
+12857	[2m11:42:07[22m   [34m├─[39m [2m/docevals/fix/index.html[22m [2m(+5ms)[22m 
+12877	[2m11:42:07[22m   [34m├─[39m [2m/docevals/fix/faq/index.html[22m [2m(+5ms)[22m 
+12896	[2m11:42:07[22m   [34m├─[39m [2m/docevals/get-started/index.html[22m [2m(+5ms)[22m 
+12916	[2m11:42:07[22m   [34m├─[39m [2m/docevals/get-started/how-docevals-works/index.html[22m [2m(+6ms)[22m 
+12936	[2m11:42:07[22m   [34m├─[39m [2m/docevals/judge/index.html[22m [2m(+5ms)[22m 
+12956	[2m11:42:07[22m   [34m├─[39m [2m/docevals/judge/calibrate/index.html[22m [2m(+5ms)[22m 
+12975	[2m11:42:07[22m   [34m├─[39m [2m/docevals/judge/choose-a-provider/index.html[22m [2m(+6ms)[22m 
+12996	[2m11:42:07[22m   [34m├─[39m [2m/docevals/judge/human-review/index.html[22m [2m(+11ms)[22m 
+13016	[2m11:42:07[22m   [34m├─[39m [2m/docevals/reference/index.html[22m [2m(+6ms)[22m 
+13036	[2m11:42:07[22m   [34m├─[39m [2m/docevals/reference/cli/index.html[22m [2m(+7ms)[22m 
+13055	[2m11:42:07[22m   [34m├─[39m [2m/docevals/reference/configuration/index.html[22m [2m(+6ms)[22m 
+13075	[2m11:42:07[22m   [34m├─[39m [2m/docevals/reference/files-and-state/index.html[22m [2m(+6ms)[22m 
+13094	[2m11:42:07[22m   [34m├─[39m [2m/docevals/reference/frontmatter/index.html[22m [2m(+6ms)[22m 
+13114	[2m11:42:07[22m   [34m├─[39m [2m/docevals/reference/glossary/index.html[22m [2m(+5ms)[22m 
+13135	[2m11:42:07[22m   [34m├─[39m [2m/docevals/reference/graders/index.html[22m [2m(+5ms)[22m 
+13154	[2m11:42:07[22m   [34m├─[39m [2m/docevals/reference/output-and-exit-codes/index.html[22m [2m(+6ms)[22m 
+13173	[2m11:42:07[22m   [34m├─[39m [2m/graph/index.html[22m [2m(+6ms)[22m 
+13191	[2m11:42:07[22m   [34m├─[39m [2m/graph/ci/index.html[22m [2m(+6ms)[22m 
+13211	[2m11:42:07[22m   [34m├─[39m [2m/graph/explore/index.html[22m [2m(+5ms)[22m 
+13229	[2m11:42:07[22m   [34m├─[39m [2m/graph/explore/impact/index.html[22m [2m(+11ms)[22m 
+13248	[2m11:42:07[22m   [34m├─[39m [2m/graph/fill/index.html[22m [2m(+7ms)[22m 
+13269	[2m11:42:07[22m   [34m├─[39m [2m/graph/fix/index.html[22m [2m(+6ms)[22m 
+13290	[2m11:42:07[22m   [34m├─[39m [2m/graph/get-started/index.html[22m [2m(+6ms)[22m 
+13308	[2m11:42:07[22m   [34m├─[39m [2m/graph/get-started/how-graph-works/index.html[22m [2m(+6ms)[22m 
+13327	[2m11:42:07[22m   [34m├─[39m [2m/graph/govern/index.html[22m [2m(+5ms)[22m 
+13351	[2m11:42:07[22m   [34m├─[39m [2m/graph/govern/coverage/index.html[22m [2m(+5ms)[22m 
+13373	[2m11:42:07[22m   [34m├─[39m [2m/graph/publish/index.html[22m [2m(+7ms)[22m 
+13395	[2m11:42:07[22m   [34m├─[39m [2m/graph/reference/index.html[22m [2m(+5ms)[22m 
+13420	[2m11:42:07[22m   [34m├─[39m [2m/graph/reference/cli/index.html[22m [2m(+7ms)[22m 
+13441	[2m11:42:07[22m   [34m├─[39m [2m/graph/reference/configuration/index.html[22m [2m(+5ms)[22m 
+13475	[2m11:42:07[22m   [34m├─[39m [2m/graph/reference/library-api/index.html[22m [2m(+6ms)[22m 
+13530	[2m11:42:07[22m   [34m├─[39m [2m/index.html[22m [2m(+10ms)[22m 
+13610	[2m11:42:07[22m   [34m├─[39m [2m/key/index.html[22m [2m(+7ms)[22m 
+13663	[2m11:42:07[22m   [34m├─[39m [2m/key/ci/index.html[22m [2m(+9ms)[22m 
+13705	[2m11:42:07[22m   [34m├─[39m [2m/key/reference/cli/index.html[22m [2m(+7ms)[22m 
+13753	[2m11:42:07[22m   [34m├─[39m [2m/key/set-up/index.html[22m [2m(+7ms)[22m 
+13793	[2m11:42:07[22m   [34m├─[39m [2m/lint/index.html[22m [2m(+6ms)[22m 
+13852	[2m11:42:07[22m   [34m├─[39m [2m/lint/ci/index.html[22m [2m(+7ms)[22m 
+13892	[2m11:42:07[22m   [34m├─[39m [2m/lint/fix/index.html[22m [2m(+7ms)[22m 
+13969	[2m11:42:07[22m   [34m├─[39m [2m/lint/get-started/index.html[22m [2m(+8ms)[22m 
+14052	[2m11:42:07[22m   [34m├─[39m [2m/lint/reference/cli/index.html[22m [2m(+8ms)[22m 
+14117	[2m11:42:07[22m   [34m├─[39m [2m/lint/reference/configuration/index.html[22m [2m(+10ms)[22m 
+14185	[2m11:42:07[22m   [34m├─[39m [2m/lint/reference/templates/index.html[22m [2m(+7ms)[22m 
+14253	[2m11:42:07[22m   [34m├─[39m [2m/lint/set-up/choose-a-structure-tool/index.html[22m [2m(+6ms)[22m 
+14321	[2m11:42:07[22m   [34m├─[39m [2m/lint/set-up/write-a-template/index.html[22m [2m(+9ms)[22m 
+14358	[2m11:42:07[22m   [34m├─[39m [2m/meta/index.html[22m [2m(+6ms)[22m 
+14383	[2m11:42:08[22m   [34m├─[39m [2m/meta/ci/index.html[22m [2m(+9ms)[22m 
+14403	[2m11:42:08[22m   [34m├─[39m [2m/meta/ci/consume-results/index.html[22m [2m(+14ms)[22m 
+14426	[2m11:42:08[22m   [34m├─[39m [2m/meta/ci/exit-codes-and-annotations/index.html[22m [2m(+6ms)[22m 
+14451	[2m11:42:08[22m   [34m├─[39m [2m/meta/ci/govern-shared-schema/index.html[22m [2m(+12ms)[22m 
+14469	[2m11:42:08[22m   [34m├─[39m [2m/meta/ci/query-gates/index.html[22m [2m(+8ms)[22m 
+14489	[2m11:42:08[22m   [34m├─[39m [2m/meta/ci/recipes/index.html[22m [2m(+9ms)[22m 
+14508	[2m11:42:08[22m   [34m├─[39m [2m/meta/fix/index.html[22m [2m(+7ms)[22m 
+14532	[2m11:42:08[22m   [34m├─[39m [2m/meta/fix/faq/index.html[22m [2m(+6ms)[22m 
+14552	[2m11:42:08[22m   [34m├─[39m [2m/meta/get-started/index.html[22m [2m(+8ms)[22m 
+14571	[2m11:42:08[22m   [34m├─[39m [2m/meta/reference/index.html[22m [2m(+5ms)[22m 
+14589	[2m11:42:08[22m   [34m├─[39m [2m/meta/reference/action/index.html[22m [2m(+5ms)[22m 
+14611	[2m11:42:08[22m   [34m├─[39m [2m/meta/reference/agent-skills-schemas/index.html[22m [2m(+7ms)[22m 
+14632	[2m11:42:08[22m   [34m├─[39m [2m/meta/reference/api/index.html[22m [2m(+8ms)[22m 
+14653	[2m11:42:08[22m   [34m├─[39m [2m/meta/reference/cli/index.html[22m [2m(+10ms)[22m 
+14673	[2m11:42:08[22m   [34m├─[39m [2m/meta/reference/configuration/index.html[22m [2m(+15ms)[22m 
+14692	[2m11:42:08[22m   [34m├─[39m [2m/meta/reference/docusaurus-schemas/index.html[22m [2m(+7ms)[22m 
+14710	[2m11:42:08[22m   [34m├─[39m [2m/meta/reference/element-metadata/index.html[22m [2m(+7ms)[22m 
+14731	[2m11:42:08[22m   [34m├─[39m [2m/meta/reference/formats/index.html[22m [2m(+6ms)[22m 
+14752	[2m11:42:08[22m   [34m├─[39m [2m/meta/reference/glossary/index.html[22m [2m(+5ms)[22m 
+14777	[2m11:42:08[22m   [34m├─[39m [2m/meta/reference/glossary/base-iri/index.html[22m [2m(+5ms)[22m 
+14806	[2m11:42:08[22m   [34m├─[39m [2m/meta/reference/glossary/closed-shape/index.html[22m [2m(+6ms)[22m 
+14830	[2m11:42:08[22m   [34m├─[39m [2m/meta/reference/glossary/concept/index.html[22m [2m(+5ms)[22m 
+14856	[2m11:42:08[22m   [34m├─[39m [2m/meta/reference/glossary/confidence/index.html[22m [2m(+5ms)[22m 
+14878	[2m11:42:08[22m   [34m├─[39m [2m/meta/reference/glossary/coverage/index.html[22m [2m(+5ms)[22m 
+14899	[2m11:42:08[22m   [34m├─[39m [2m/meta/reference/glossary/curated-pointer/index.html[22m [2m(+7ms)[22m 
+14918	[2m11:42:08[22m   [34m├─[39m [2m/meta/reference/glossary/curie/index.html[22m [2m(+13ms)[22m 
+14937	[2m11:42:08[22m   [34m├─[39m [2m/meta/reference/glossary/derivation/index.html[22m [2m(+14ms)[22m 
+14963	[2m11:42:08[22m   [34m├─[39m [2m/meta/reference/glossary/dialect/index.html[22m [2m(+9ms)[22m 
+14989	[2m11:42:08[22m   [34m├─[39m [2m/meta/reference/glossary/emergent-failure/index.html[22m [2m(+8ms)[22m 
+15007	[2m11:42:08[22m   [34m├─[39m [2m/meta/reference/glossary/extraction/index.html[22m [2m(+9ms)[22m 
+15026	[2m11:42:08[22m   [34m├─[39m [2m/meta/reference/glossary/extractor/index.html[22m [2m(+8ms)[22m 
+15045	[2m11:42:08[22m   [34m├─[39m [2m/meta/reference/glossary/focus-node/index.html[22m [2m(+6ms)[22m 
+15064	[2m11:42:08[22m   [34m├─[39m [2m/meta/reference/glossary/frontmatter/index.html[22m [2m(+6ms)[22m 
+15084	[2m11:42:08[22m   [34m├─[39m [2m/meta/reference/glossary/graph-block/index.html[22m [2m(+6ms)[22m 
+15109	[2m11:42:08[22m   [34m├─[39m [2m/meta/reference/glossary/guardrail/index.html[22m [2m(+5ms)[22m 
+15127	[2m11:42:08[22m   [34m├─[39m [2m/meta/reference/glossary/harvest-rule/index.html[22m [2m(+5ms)[22m 
+15145	[2m11:42:08[22m   [34m├─[39m [2m/meta/reference/glossary/hub/index.html[22m [2m(+5ms)[22m 
+15166	[2m11:42:08[22m   [34m├─[39m [2m/meta/reference/glossary/intelligent-information-delivery/index.html[22m [2m(+5ms)[22m 
+15185	[2m11:42:08[22m   [34m├─[39m [2m/meta/reference/glossary/iri/index.html[22m [2m(+5ms)[22m 
+15205	[2m11:42:08[22m   [34m├─[39m [2m/meta/reference/glossary/json-ld/index.html[22m [2m(+10ms)[22m 
+15224	[2m11:42:08[22m   [34m├─[39m [2m/meta/reference/glossary/json-pointer/index.html[22m [2m(+6ms)[22m 
+15241	[2m11:42:08[22m   [34m├─[39m [2m/meta/reference/glossary/localization-manifest/index.html[22m [2m(+5ms)[22m 
+15261	[2m11:42:08[22m   [34m├─[39m [2m/meta/reference/glossary/meta-provenance/index.html[22m [2m(+5ms)[22m 
+15281	[2m11:42:08[22m   [34m├─[39m [2m/meta/reference/glossary/meta-schema-uri/index.html[22m [2m(+5ms)[22m 
+15301	[2m11:42:08[22m   [34m├─[39m [2m/meta/reference/glossary/metadata/index.html[22m [2m(+5ms)[22m 
+15320	[2m11:42:08[22m   [34m├─[39m [2m/meta/reference/glossary/namespace/index.html[22m [2m(+5ms)[22m 
+15339	[2m11:42:08[22m   [34m├─[39m [2m/meta/reference/glossary/near-miss/index.html[22m [2m(+5ms)[22m 
+15359	[2m11:42:08[22m   [34m├─[39m [2m/meta/reference/glossary/okf/index.html[22m [2m(+6ms)[22m 
+15380	[2m11:42:08[22m   [34m├─[39m [2m/meta/reference/glossary/orphan/index.html[22m [2m(+7ms)[22m 
+15403	[2m11:42:08[22m   [34m├─[39m [2m/meta/reference/glossary/override/index.html[22m [2m(+5ms)[22m 
+15426	[2m11:42:08[22m   [34m├─[39m [2m/meta/reference/glossary/quad/index.html[22m [2m(+5ms)[22m 
+15447	[2m11:42:08[22m   [34m├─[39m [2m/meta/reference/glossary/schema/index.html[22m [2m(+5ms)[22m 
+15466	[2m11:42:08[22m   [34m├─[39m [2m/meta/reference/glossary/schema-key/index.html[22m [2m(+10ms)[22m 
+15485	[2m11:42:08[22m   [34m├─[39m [2m/meta/reference/glossary/schema-reference/index.html[22m [2m(+5ms)[22m 
+15502	[2m11:42:08[22m   [34m├─[39m [2m/meta/reference/glossary/schema-set/index.html[22m [2m(+5ms)[22m 
+15522	[2m11:42:08[22m   [34m├─[39m [2m/meta/reference/glossary/search-index/index.html[22m [2m(+6ms)[22m 
+15539	[2m11:42:08[22m   [34m├─[39m [2m/meta/reference/glossary/section/index.html[22m [2m(+5ms)[22m 
+15556	[2m11:42:08[22m   [34m├─[39m [2m/meta/reference/glossary/severity/index.html[22m [2m(+5ms)[22m 
+15575	[2m11:42:08[22m   [34m├─[39m [2m/meta/reference/glossary/shacl/index.html[22m [2m(+5ms)[22m 
+15595	[2m11:42:08[22m   [34m├─[39m [2m/meta/reference/glossary/triple/index.html[22m [2m(+5ms)[22m 
+15614	[2m11:42:08[22m   [34m├─[39m [2m/meta/reference/glossary/turn/index.html[22m [2m(+5ms)[22m 
+15633	[2m11:42:08[22m   [34m├─[39m [2m/meta/reference/glossary/validation/index.html[22m [2m(+5ms)[22m 
+15652	[2m11:42:08[22m   [34m├─[39m [2m/meta/reference/glossary/vector-sidecar/index.html[22m [2m(+5ms)[22m 
+15669	[2m11:42:08[22m   [34m├─[39m [2m/meta/reference/glossary/x-manni-graph-output/index.html[22m [2m(+5ms)[22m 
+15686	[2m11:42:08[22m   [34m├─[39m [2m/meta/reference/metadata-vocabularies/index.html[22m [2m(+5ms)[22m 
+15704	[2m11:42:08[22m   [34m├─[39m [2m/meta/reference/output-and-exit-codes/index.html[22m [2m(+28ms)[22m 
+15722	[2m11:42:08[22m   [34m├─[39m [2m/meta/reference/platform-schemas/index.html[22m [2m(+10ms)[22m 
+15740	[2m11:42:08[22m   [34m├─[39m [2m/meta/reference/query/index.html[22m [2m(+7ms)[22m 
+15758	[2m11:42:08[22m   [34m├─[39m [2m/meta/reference/schema-resolution/index.html[22m [2m(+6ms)[22m 
+15777	[2m11:42:08[22m   [34m├─[39m [2m/meta/reference/schemas/index.html[22m [2m(+9ms)[22m 
+15795	[2m11:42:08[22m   [34m├─[39m [2m/meta/reference/schemas/agentskills-skill/index.html[22m [2m(+6ms)[22m 
+15813	[2m11:42:08[22m   [34m├─[39m [2m/meta/reference/schemas/anthropic-claude-skill/index.html[22m [2m(+5ms)[22m 
+15832	[2m11:42:08[22m   [34m├─[39m [2m/meta/reference/schemas/anthropic-claude-subagent/index.html[22m [2m(+6ms)[22m 
+15850	[2m11:42:08[22m   [34m├─[39m [2m/meta/reference/schemas/antora-page/index.html[22m [2m(+5ms)[22m 
+15868	[2m11:42:08[22m   [34m├─[39m [2m/meta/reference/schemas/astro-starlight/index.html[22m [2m(+10ms)[22m 
+15885	[2m11:42:08[22m   [34m├─[39m [2m/meta/reference/schemas/dcmi-elements/index.html[22m [2m(+6ms)[22m 
+15903	[2m11:42:08[22m   [34m├─[39m [2m/meta/reference/schemas/diataxis/index.html[22m [2m(+5ms)[22m 
+15920	[2m11:42:08[22m   [34m├─[39m [2m/meta/reference/schemas/docusaurus-blog/index.html[22m [2m(+5ms)[22m 
+15937	[2m11:42:08[22m   [34m├─[39m [2m/meta/reference/schemas/docusaurus-docs/index.html[22m [2m(+5ms)[22m 
+15956	[2m11:42:08[22m   [34m├─[39m [2m/meta/reference/schemas/docusaurus-pages/index.html[22m [2m(+6ms)[22m 
+15975	[2m11:42:08[22m   [34m├─[39m [2m/meta/reference/schemas/google-okf/index.html[22m [2m(+6ms)[22m 
+15994	[2m11:42:08[22m   [34m├─[39m [2m/meta/reference/schemas/hugo-page/index.html[22m [2m(+6ms)[22m 
+16013	[2m11:42:08[22m   [34m├─[39m [2m/meta/reference/schemas/jekyll-page/index.html[22m [2m(+5ms)[22m 
+16032	[2m11:42:08[22m   [34m├─[39m [2m/meta/reference/schemas/manni-ai-context/index.html[22m [2m(+5ms)[22m 
+16051	[2m11:42:08[22m   [34m├─[39m [2m/meta/reference/schemas/manni-artifact-evals/index.html[22m [2m(+6ms)[22m 
+16070	[2m11:42:08[22m   [34m├─[39m [2m/meta/reference/schemas/manni-audience/index.html[22m [2m(+5ms)[22m 
+16089	[2m11:42:08[22m   [34m├─[39m [2m/meta/reference/schemas/manni-citations/index.html[22m [2m(+5ms)[22m 
+16109	[2m11:42:08[22m   [34m├─[39m [2m/meta/reference/schemas/manni-core/index.html[22m [2m(+10ms)[22m 
+16127	[2m11:42:08[22m   [34m├─[39m [2m/meta/reference/schemas/manni-evals/index.html[22m [2m(+6ms)[22m 
+16149	[2m11:42:08[22m   [34m├─[39m [2m/meta/reference/schemas/manni-graph/index.html[22m [2m(+5ms)[22m 
+16168	[2m11:42:08[22m   [34m├─[39m [2m/meta/reference/schemas/manni-lifecycle/index.html[22m [2m(+6ms)[22m 
+16186	[2m11:42:08[22m   [34m├─[39m [2m/meta/reference/schemas/manni-stewardship/index.html[22m [2m(+5ms)[22m 
+16205	[2m11:42:08[22m   [34m├─[39m [2m/meta/reference/schemas/manni-structure/index.html[22m [2m(+5ms)[22m 
+16225	[2m11:42:08[22m   [34m├─[39m [2m/meta/reference/schemas/manni-terminology/index.html[22m [2m(+5ms)[22m 
+16243	[2m11:42:08[22m   [34m├─[39m [2m/meta/reference/schemas/manni-vocabularies/index.html[22m [2m(+6ms)[22m 
+16262	[2m11:42:08[22m   [34m├─[39m [2m/meta/reference/schemas/microsoft-learn/index.html[22m [2m(+6ms)[22m 
+16281	[2m11:42:08[22m   [34m├─[39m [2m/meta/reference/schemas/mkdocs-material/index.html[22m [2m(+6ms)[22m 
+16299	[2m11:42:08[22m   [34m├─[39m [2m/meta/reference/schemas/myst-frontmatter/index.html[22m [2m(+6ms)[22m 
+16318	[2m11:42:08[22m   [34m├─[39m [2m/meta/reference/schemas/oasis-dita-metadata/index.html[22m [2m(+6ms)[22m 
+16336	[2m11:42:08[22m   [34m├─[39m [2m/meta/reference/schemas/ogp-article/index.html[22m [2m(+11ms)[22m 
+16358	[2m11:42:08[22m   [34m├─[39m [2m/meta/reference/schemas/passo-uno-seven-action/index.html[22m [2m(+6ms)[22m 
+16376	[2m11:42:08[22m   [34m├─[39m [2m/meta/reference/schemas/sphinx-docinfo/index.html[22m [2m(+6ms)[22m 
+16394	[2m11:42:08[22m   [34m├─[39m [2m/meta/reference/schemas/tgdp-templates/index.html[22m [2m(+5ms)[22m 
+16412	[2m11:42:08[22m   [34m├─[39m [2m/meta/reference/schemas/tgdp-templates-1-0/index.html[22m [2m(+5ms)[22m 
+16430	[2m11:42:08[22m   [34m├─[39m [2m/meta/reference/schemas/vitepress-page/index.html[22m [2m(+5ms)[22m 
+16448	[2m11:42:08[22m   [34m├─[39m [2m/meta/reference/schemas/x-cards/index.html[22m [2m(+5ms)[22m 
+16467	[2m11:42:08[22m   [34m├─[39m [2m/meta/reference/taxonomy-schemas/index.html[22m [2m(+5ms)[22m 
+16488	[2m11:42:08[22m   [34m├─[39m [2m/meta/schemas/index.html[22m [2m(+9ms)[22m 
+16506	[2m11:42:08[22m   [34m├─[39m [2m/meta/schemas/encrypted-fields/index.html[22m [2m(+5ms)[22m 
+16524	[2m11:42:08[22m   [34m├─[39m [2m/meta/schemas/field-location/index.html[22m [2m(+6ms)[22m 
+16541	[2m11:42:08[22m   [34m├─[39m [2m/meta/schemas/resolution/index.html[22m [2m(+12ms)[22m 
+16559	[2m11:42:08[22m   [34m├─[39m [2m/meta/schemas/versioning/index.html[22m [2m(+10ms)[22m 
+16578	[2m11:42:08[22m   [34m├─[39m [2m/meta/set-up/index.html[22m [2m(+7ms)[22m 
+16595	[2m11:42:08[22m   [34m├─[39m [2m/meta/set-up/config/index.html[22m [2m(+6ms)[22m 
+16613	[2m11:42:08[22m   [34m├─[39m [2m/meta/set-up/derived-metadata/index.html[22m [2m(+7ms)[22m 
+16631	[2m11:42:08[22m   [34m├─[39m [2m/meta/set-up/different-schemas-per-folder/index.html[22m [2m(+6ms)[22m 
+16648	[2m11:42:08[22m   [34m├─[39m [2m/meta/set-up/external-metadata/index.html[22m [2m(+10ms)[22m 
+16665	[2m11:42:08[22m   [34m├─[39m [2m/meta/set-up/fill-providers/index.html[22m [2m(+6ms)[22m 
+16682	[2m11:42:08[22m   [34m├─[39m [2m/meta/set-up/machine-authorship/index.html[22m [2m(+11ms)[22m 
+16699	[2m11:42:08[22m   [34m├─[39m [2m/meta/set-up/new-required-field/index.html[22m [2m(+6ms)[22m 
+16717	[2m11:42:08[22m   [34m├─[39m [2m/meta/set-up/retrofit/index.html[22m [2m(+6ms)[22m 
+16735	[2m11:42:08[22m   [34m├─[39m [2m/site/index.html[22m [2m(+6ms)[22m 
+16754	[2m11:42:08[22m   [34m├─[39m [2m/site/reference/cli/index.html[22m [2m(+6ms)[22m 
+16773	[2m11:42:08[22m   [34m├─[39m [2m/term/index.html[22m [2m(+5ms)[22m 
+16791	[2m11:42:08[22m   [34m├─[39m [2m/term/ci/index.html[22m [2m(+7ms)[22m 
+16808	[2m11:42:08[22m   [34m├─[39m [2m/term/fix/index.html[22m [2m(+6ms)[22m 
+16826	[2m11:42:08[22m   [34m├─[39m [2m/term/get-started/index.html[22m [2m(+7ms)[22m 
+16843	[2m11:42:08[22m   [34m├─[39m [2m/term/reference/cli/index.html[22m [2m(+7ms)[22m 
+16859	[2m11:42:08[22m   [34m├─[39m [2m/term/reference/configuration/index.html[22m [2m(+5ms)[22m 
+16877	[2m11:42:08[22m   [34m├─[39m [2m/term/reference/rules/index.html[22m [2m(+10ms)[22m 
+16894	[2m11:42:08[22m   [34m├─[39m [2m/term/reference/terminology/index.html[22m [2m(+6ms)[22m 
+16913	[2m11:42:08[22m   [34m├─[39m [2m/term/set-up/index.html[22m [2m(+7ms)[22m 
+16929	[2m11:42:08[22m   [34m├─[39m [2m/term/set-up/move-and-hand-off/index.html[22m [2m(+9ms)[22m 
+16945	[2m11:42:08[22m   [34m├─[39m [2m/tracevals/index.html[22m [2m(+6ms)[22m 
+16962	[2m11:42:08[22m   [34m├─[39m [2m/tracevals/ci/index.html[22m [2m(+7ms)[22m 
+16979	[2m11:42:08[22m   [34m├─[39m [2m/tracevals/ci/consume-results/index.html[22m [2m(+6ms)[22m 
+16997	[2m11:42:08[22m   [34m├─[39m [2m/tracevals/ci/exit-codes-and-reports/index.html[22m [2m(+5ms)[22m 
+17015	[2m11:42:08[22m   [34m├─[39m [2m/tracevals/declare/index.html[22m [2m(+5ms)[22m 
+17032	[2m11:42:08[22m   [34m├─[39m [2m/tracevals/declare/coverage/index.html[22m [2m(+6ms)[22m 
+17049	[2m11:42:08[22m   [34m├─[39m [2m/tracevals/declare/fill/index.html[22m [2m(+10ms)[22m 
+17067	[2m11:42:08[22m   [34m├─[39m [2m/tracevals/extend/index.html[22m [2m(+7ms)[22m 
+17084	[2m11:42:08[22m   [34m├─[39m [2m/tracevals/extend/custom-graders/index.html[22m [2m(+6ms)[22m 
+17102	[2m11:42:08[22m   [34m├─[39m [2m/tracevals/get-started/index.html[22m [2m(+12ms)[22m 
+17119	[2m11:42:08[22m   [34m├─[39m [2m/tracevals/judge/index.html[22m [2m(+7ms)[22m 
+17139	[2m11:42:08[22m   [34m├─[39m [2m/tracevals/judge/calibrate/index.html[22m [2m(+7ms)[22m 
+17156	[2m11:42:08[22m   [34m├─[39m [2m/tracevals/judge/schema-versioning/index.html[22m [2m(+7ms)[22m 
+17173	[2m11:42:09[22m   [34m├─[39m [2m/tracevals/reference/index.html[22m [2m(+5ms)[22m 
+17189	[2m11:42:09[22m   [34m├─[39m [2m/tracevals/reference/api/index.html[22m [2m(+6ms)[22m 
+17206	[2m11:42:09[22m   [34m├─[39m [2m/tracevals/reference/cli/index.html[22m [2m(+6ms)[22m 
+17223	[2m11:42:09[22m   [34m├─[39m [2m/tracevals/reference/configuration/index.html[22m [2m(+10ms)[22m 
+17240	[2m11:42:09[22m   [34m├─[39m [2m/tracevals/reference/evals-schema/index.html[22m [2m(+6ms)[22m 
+17257	[2m11:42:09[22m   [34m├─[39m [2m/tracevals/reference/glossary/index.html[22m [2m(+8ms)[22m 
+17274	[2m11:42:09[22m   [34m├─[39m [2m/tracevals/reference/graders/index.html[22m [2m(+7ms)[22m 
+17293	[2m11:42:09[22m   [34m├─[39m [2m/tracevals/reference/report-and-exit-codes/index.html[22m [2m(+6ms)[22m 
+17312	[2m11:42:09[22m   [34m├─[39m [2m/tracevals/reference/traces/index.html[22m [2m(+6ms)[22m 
+17331	[2m11:42:09[22m   [34m├─[39m [2m/tracevals/triage/index.html[22m [2m(+6ms)[22m 
+17348	[2m11:42:09[22m   [34m├─[39m [2m/tracevals/triage/faq/index.html[22m [2m(+5ms)[22m 
+17365	[2m11:42:09[22m [32m✓ Completed in 1.78s.
+17382	[39m
+17400	[2m11:42:09[22m [34m[build][39m [32m✓ Completed in 9.75s.[39m
+17418	[2m11:42:09[22m [34m[starlight:pagefind][39m Building search index with Pagefind...
+17438	[2m11:42:10[22m [34m[starlight:pagefind][39m Found 257 HTML files.
+17455	[2m11:42:10[22m [34m[starlight:pagefind][39m Finished building search index in 1.41s.
+17471	[2m11:42:10[22m [34m[@astrojs/sitemap][39m `sitemap-index.xml` created at `dist`
+17488	[2m11:42:10[22m [34m[build][39m 239 page(s) built in [1m11.98s[22m
+17504	[2m11:42:10[22m [34m[build][39m [1mComplete![22m
+17522	manni: Starlight in docs/. Running npm run preview -- --host 127.0.0.1 --port 4321
+17538	
+17554	> manni-docs@0.0.1 preview
+17571	> astro preview --host 127.0.0.1 --port 4321
+17587	
+17604	[astro] `markdown.remarkPlugins`, `markdown.rehypePlugins`, and `markdown.remarkRehype` are deprecated. Pass them to `unified({...})` from `@astrojs/markdown-remark` directly instead.
+17622	[42m[1m astro [22m[49m [32mv7.2.9[39m [2mready in[22m 12 [2mms[22m
+17638	[2m┃[22m Local    [36mhttp://127.0.0.1:4321/manni[39m
+330539	manni: npm run preview -- --host 127.0.0.1 --port 4321 exited with code 1.

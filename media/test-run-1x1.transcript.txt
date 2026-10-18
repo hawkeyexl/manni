@@ -1,0 +1,57 @@
+manni test run, demo video transcript (silent video; text describes what is on screen)
+
+Frame: 1080x1080, 30 fps, 40.9 s. Every terminal line is real output of cat, sed and
+`node dist/cli.js test run ...` (typed as manni), run under bash's time in
+media/scratch-test/, which media/capture-test/capture.sh stages from a copy of
+test/test/fixtures/fail.md. Each run took about 8 s. The replay shortens only that
+wait, and bash's own real line is on screen for every run.
+
+[0:00-0:06] Title: A page that tests itself (1 / 4)
+$ cat fail.md
+# Fail
+
+<!-- test {"testId":"exit-one"} -->
+<!-- step {"runShell":{"command":"exit 1","exitCodes":[0]}} -->
+<!-- test end -->
+Highlighted rows: lines containing "\"exit 1\""
+Caption: fail.md carries an inline Doc Detective test. Its step runs exit 1 and expects 0.
+
+[0:06-0:18] Title: Run the page (2 / 4)
+$ time manni test run fail.md --no-progress
+fail.md   (bold)
+  4  FAIL     Returned exit code 1. Expected one of [0]   (FAIL in red)
+
+1 test: 0 passed, 1 failed, 0 warnings, 0 skipped
+
+real	0m7.765s
+user	0m0.000s
+sys	0m0.015s
+$ echo $?
+1
+Highlighted rows: lines containing "FAIL", "1 failed"
+Caption: manni test run names the file, line 4 and Doc Detective's reason. Exit 1.
+
+[0:18-0:27] Title: Annotations for CI (3 / 4)
+$ time manni test run fail.md -f github --no-progress
+::error file=fail.md,line=4,title=Doc Detective::Returned exit code 1. Expected one of [0]
+1 test: 0 passed, 1 failed, 0 warnings, 0 skipped
+
+real	0m8.013s
+user	0m0.000s
+sys	0m0.000s
+Highlighted rows: lines containing "::error"
+Caption: With -f github, the same failure is an annotation on fail.md, line 4.
+
+[0:27-0:41] Title: Fix the page, rerun (4 / 4)
+$ sed -i 's/exit 1/exit 0/' fail.md
+$ time manni test run fail.md --no-progress
+1 test: 1 passed, 0 failed, 0 warnings, 0 skipped
+
+real	0m7.802s
+user	0m0.031s
+sys	0m0.000s
+$ echo $?
+0
+Highlighted rows: lines containing "s/exit 1/exit 0/", "1 passed"
+Caption: Correct line 4 and rerun. One test passed, exit 0.
+

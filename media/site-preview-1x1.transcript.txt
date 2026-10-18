@@ -1,0 +1,67 @@
+manni site preview, demo video transcript (silent video; text describes what is on screen)
+
+Frame: 1080x1080, 30 fps, 34.9 s. Every terminal line is real output, captured by
+media/capture-site/capture.sh at the root of the manni checkout. `manni` is the built CLI
+(node dist/cli.js). The shell had its AI-agent variables removed, so Astro printed what a person sees.
+
+Two waits are compressed, and the real time stays on screen. The astro build took 16.1 s and is
+shown for 1.2 s; its 282 log lines are replaced by one marker line that says so, and astro's own
+"239 page(s) built in 11.98s" line is kept. The accessibility crawl took 5m7.493s over 238 pages and
+is shown for 2 s; bash's own `time` output is on screen, unedited. Everything else is real time.
+
+[0:00-0:08] Title: Which command serves it? (1 / 4)
+$ ls docs
+astro.config.mjs             package-lock.json
+content-strategy             package.json
+dist                         proposals
+doc-frontmatter.schema.json  public
+maintainers                  src
+node_modules                 tsconfig.json
+$ git grep -h "npx astro" main -- .github
+        run: npx astro preview --host 127.0.0.1 --port 4321 > ../preview.log 2>&1 &
+Highlighted rows: lines containing "npx astro preview"
+Caption: An Astro site. On main, CI typed the serve command by hand: astro preview, a host, a port.
+
+[0:08-0:17] Title: manni site preview (2 / 4)
+$ manni site preview
+manni: Starlight in docs/. Running npm run build
+
+> manni-docs@0.0.1 build
+> astro build
+[edit: 282 lines of astro build output cut (16.1 s); drawn in the accent colour, in italics]
+11:42:10 [build] 239 page(s) built in 11.98s
+11:42:10 [build] Complete!
+manni: Starlight in docs/. Running npm run preview -- --host 127.0.0.1 --port 4321
+
+> manni-docs@0.0.1 preview
+> astro preview --host 127.0.0.1 --port 4321
+
+[astro] `markdown.remarkPlugins`, `markdown.rehypePlugins`, and `markdown.remarkRehype` are deprecated. Pass them to `unified({...})` from `@astrojs/markdown-remark` directly instead.
+ astro  v7.2.9 ready in 12 ms
+┃ Local    http://127.0.0.1:4321/manni
+(the server keeps running; no prompt returns)
+Highlighted rows: lines containing "manni: Starlight", "Local"
+Caption: It detects Starlight, builds, then serves on the host and port in the site's url: config.
+
+[0:17-0:24] Title: Not only Astro (3 / 4)
+$ manni site build test/fixtures/site/hugo
+manni: Hugo in test/fixtures/site/hugo/. Running hugo
+manni: hugo not found on PATH. Install Hugo's CLI, or set site.commands.build.
+Highlighted rows: lines containing "manni: Hugo"
+Caption: In a second terminal: Hugo is one of 13 frameworks it detects. Not installed here, and it says so.
+
+[0:24-0:35] Title: a11y finds the server (4 / 4)
+(the screen carries on from the beat before; nothing is cleared)
+$ time manni a11y check -q --no-progress
+Checked 238 of 238 pages (sitemap: http://127.0.0.1:4321/manni/sitemap-index.xml, 0 pages; followed links)
+
+0 violations on 0 of 238 pages   (the whole line in green)
+
+real    5m7.493s
+user    0m0.045s
+sys     0m0.000s
+$ echo $?
+0
+Highlighted rows: lines containing "0 violations on 0 of 238", "5m7.493s"
+Caption: No URL typed. a11y check reads the same url: and crawls the running site. 238 pages, exit 0.
+
