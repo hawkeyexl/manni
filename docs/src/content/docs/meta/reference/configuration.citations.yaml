@@ -1181,9 +1181,9 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         integrity: sha256-1fbcf72828507456469759fdcfe9305264a9574afd567a9f93f2e064593285e8
       source:
         file: src/term/commands/run.ts
-        lines: 109-117
+        lines: 112-120
         integrity: sha256-4202cb306a2b7f42e0467af1a01a248c18f9d05a7806bec913279c119211b3ff
-        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
+        commit-sha: c771aa95c37e38307cf8d4c739bec5c2fabf4c5f
     - id: tools-key-counts-for-discovery
       claim:
         lines: 1406-1408
@@ -2629,9 +2629,9 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         integrity: sha256-2c095cce89ad2c30892258571da3e1453a1a51f4a4428b96996c85011adc8c2c
       source:
         file: src/term/commands/run.ts
-        lines: 112-115
+        lines: 115-118
         integrity: sha256-af8c6249e50ed1ac884880c0798d5ce708e84d02fff66b780cacae69e61c652d
-        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
+        commit-sha: c771aa95c37e38307cf8d4c739bec5c2fabf4c5f
     - id: check-query-is-read-only
       claim:
         lines: 2030

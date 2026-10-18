@@ -461,9 +461,9 @@ docs/src/content/docs/term/reference/terminology.mdx:
         integrity: sha256-4442c1dcb0e6f546e656407164620a89605ccf07593b814ec157e48567e76a20
       source:
         file: src/term/types.ts
-        lines: 430-443
+        lines: 434-447
         integrity: sha256-4b74ffb3882bdfca3fcbcf085a1f604bfb9db05c7aa92e83fcb49f8c14b50711
-        commit-sha: d5196768f93c1f29d588075437a8333316f51b76
+        commit-sha: c771aa95c37e38307cf8d4c739bec5c2fabf4c5f
     - id: id-construct-html-dfn
       claim:
         lines: 332

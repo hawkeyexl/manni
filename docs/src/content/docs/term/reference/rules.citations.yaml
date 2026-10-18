@@ -29,9 +29,9 @@ docs/src/content/docs/term/reference/rules.mdx:
         integrity: sha256-a73525e325fbccdf136fc02627f4f9801504ae740e8b137592c79057df64e52c
       source:
         file: src/term/core/config.ts
-        lines: 53-54
+        lines: 66-67
         integrity: sha256-efc0a3b18ea8fde45493a2be65a6fd522fdc8aeafb509c72dea70c5117c2484f
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: c771aa95c37e38307cf8d4c739bec5c2fabf4c5f
     - id: default-severities
       claim:
         lines: 15-26
@@ -119,9 +119,9 @@ docs/src/content/docs/term/reference/rules.mdx:
         integrity: sha256-f00c071dbe73c034dbd7da0cfddd1da385b9a538acaa2cc8a2f30990ef6a84c1
       source:
         file: src/term/core/config.ts
-        lines: 37
+        lines: 38
         integrity: sha256-a7d104234e27cee79a62f2fed3929110c7c5c5bc4fa6ed034a6915267ce9d8d4
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: c771aa95c37e38307cf8d4c739bec5c2fabf4c5f
     - id: labels-ignore-case
       claim:
         integrity: sha256-a9d558c70c3198eb386529bb0784b45fcc37ec669498a09a4bff09dc09b18b54
@@ -256,9 +256,9 @@ docs/src/content/docs/term/reference/rules.mdx:
         integrity: sha256-7e048c5641adfd6f4e82af7836d1c8996594f424ee990bb255e6eba1c3d690a7
       source:
         file: src/term/cli.ts
-        lines: 132
+        lines: 160
         integrity: sha256-642aa7bc0402e0101838821cd5ed5ee06a261d3134bb836e1a23650376a401d2
-        commit-sha: d5196768f93c1f29d588075437a8333316f51b76
+        commit-sha: c771aa95c37e38307cf8d4c739bec5c2fabf4c5f
     - id: duplicate-id-fires
       claim:
         lines: 16
@@ -337,9 +337,9 @@ docs/src/content/docs/term/reference/rules.mdx:
         integrity: sha256-e0f8f15f6ef892a072f4c4e1a8bd496782569d6aa6ac8aff66be995b5abe3048
       source:
         file: src/term/core/load-set.ts
-        lines: 99-113
+        lines: 101-115
         integrity: sha256-22d3f07e3ba16e32162c57c05faa7e4a92c4ec72b884ed1c6e175dccadd3d4bc
-        commit-sha: d5196768f93c1f29d588075437a8333316f51b76
+        commit-sha: c771aa95c37e38307cf8d4c739bec5c2fabf4c5f
     - id: graph-concepts-resolved
       claim:
         integrity: sha256-e0f8f15f6ef892a072f4c4e1a8bd496782569d6aa6ac8aff66be995b5abe3048
