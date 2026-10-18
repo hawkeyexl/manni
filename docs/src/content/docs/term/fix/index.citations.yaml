@@ -383,18 +383,18 @@ docs/src/content/docs/term/fix/index.mdx:
         integrity: sha256-59eb9972c2be284f54ecf35df56707a61af38ceb8fb5b2fdb0922151c8179707
       source:
         file: src/term/core/load-set.ts
-        lines: 299-303
+        lines: 401-405
         integrity: sha256-eee4feda1ff997c95ddd5d2e77b3e44e3adf12622e307ae9a9c70a294c5c8957
-        commit-sha: c003f4879ac05f1e9a5928e2afc069e1fa4ff5fe
+        commit-sha: 8199f37f20263d426d950630b55163d02f67d35f
     - id: no-terms-message
       claim:
         lines: 397
         integrity: sha256-e7ba5933eb3e19b1f2384cc7ffdf97760ee065c2e8b0626c36602571b8caaa6e
       source:
         file: src/term/core/load-set.ts
-        lines: 299-303
+        lines: 401-405
         integrity: sha256-eee4feda1ff997c95ddd5d2e77b3e44e3adf12622e307ae9a9c70a294c5c8957
-        commit-sha: c003f4879ac05f1e9a5928e2afc069e1fa4ff5fe
+        commit-sha: 8199f37f20263d426d950630b55163d02f67d35f
     - id: partial-set-undefined
       claim:
         lines: 400

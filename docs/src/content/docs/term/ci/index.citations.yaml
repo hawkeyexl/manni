@@ -23,9 +23,9 @@ docs/src/content/docs/term/ci/index.mdx:
         integrity: sha256-8c1178f2ebfa2d3b86c9fcb940041b4781eacc3057b955076cd2562560387f13
       source:
         file: src/term/core/load-set.ts
-        lines: 299-303
+        lines: 401-405
         integrity: sha256-eee4feda1ff997c95ddd5d2e77b3e44e3adf12622e307ae9a9c70a294c5c8957
-        commit-sha: c003f4879ac05f1e9a5928e2afc069e1fa4ff5fe
+        commit-sha: 8199f37f20263d426d950630b55163d02f67d35f
     - id: exit-two-no-vale
       claim:
         lines: 22

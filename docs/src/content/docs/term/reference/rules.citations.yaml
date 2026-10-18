@@ -194,9 +194,9 @@ docs/src/content/docs/term/reference/rules.mdx:
         integrity: sha256-e0f8f15f6ef892a072f4c4e1a8bd496782569d6aa6ac8aff66be995b5abe3048
       source:
         file: src/term/core/load-set.ts
-        lines: 89-99
+        lines: 181-191
         integrity: sha256-dc9b37666b208fe341b923a59afab6342b3d37a6062a57cc564ba2fad0df4b57
-        commit-sha: 0cfcfc33d664a3c57f78bf4436fc69abf534eb02
+        commit-sha: 8199f37f20263d426d950630b55163d02f67d35f
     - id: graph-concepts-resolved
       claim:
         integrity: sha256-e0f8f15f6ef892a072f4c4e1a8bd496782569d6aa6ac8aff66be995b5abe3048
