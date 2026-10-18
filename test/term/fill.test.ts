@@ -11,20 +11,33 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { MockProvider, type MockResponse } from "@hawkeyexl/inference";
 import { parse as parseYaml } from "yaml";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { runFill, type FillOptions } from "../../src/term/commands/fill.js";
+import { LOCAL_MODEL, localModelEnv, type LocalModelEnv } from "../helpers/local-model.js";
 import { renderFillPretty } from "../../src/term/reporters/fill.js";
 
 const FIXTURE = resolve(__dirname, "..", "fixtures", "term", "fill", "basic");
 
 let work: string;
+let machine: LocalModelEnv;
+
+/** The machine's local model: none by default, so `--offline` finds nothing to run. */
+function onMachine(downloaded: boolean): void {
+  machine.cleanup();
+  machine = localModelEnv(downloaded);
+  for (const [name, value] of Object.entries(machine.env)) vi.stubEnv(name, value);
+}
 
 beforeEach(() => {
   work = mkdtempSync(join(tmpdir(), "manni-term-fill-"));
   cpSync(FIXTURE, work, { recursive: true });
+  machine = localModelEnv(false);
+  for (const [name, value] of Object.entries(machine.env)) vi.stubEnv(name, value);
 });
 
 afterEach(() => {
+  vi.unstubAllEnvs();
+  machine.cleanup();
   rmSync(work, { recursive: true, force: true });
 });
 
@@ -101,10 +114,52 @@ describe("term fill, offline", () => {
     await expect(fill({ offline: true })).rejects.toThrow("new term pages need a directory; pass -o or set term.fill.out.");
   });
 
-  it("refuses --crawl with --offline", async () => {
+  it("stubs even with a model on hand, when none is on this machine", async () => {
+    const report = await fill({ offline: true }, [definition("Never asked.", 0.99)]);
+    expect(report.summary.turns).toBe(0);
+    expect(report.entries[0]?.definition.status).toBe("missing");
+  });
+
+  it("refuses --crawl when no model is on this machine", async () => {
     await expect(fill({ offline: true, crawl: true })).rejects.toThrow(
-      "--crawl asks a model to find terms, so it cannot run with --offline.",
+      "--crawl needs a model, and none is available offline; drop --offline, or download a local model first.",
     );
+  });
+
+  it("refuses a hosted --provider", async () => {
+    await expect(fill({ offline: true, provider: "anthropic" })).rejects.toThrow(
+      /^--offline and --provider anthropic contradict each other/,
+    );
+  });
+});
+
+describe("term fill, offline with a model already downloaded", () => {
+  beforeEach(() => {
+    onMachine(true);
+  });
+
+  it("drafts with it, and sets a configured hosted provider aside", async () => {
+    writeFileSync(join(work, "manni.config.yaml"), `${readFileSync(join(work, "manni.config.yaml"), "utf8")}term:\n  provider: anthropic\n`);
+    const notices: string[] = [];
+    const report = await fill(
+      { offline: true, model: LOCAL_MODEL, onNotice: (m) => notices.push(m) },
+      [definition("A.", 0.9), definition("B.", 0.9), definition("C.", 0.9)],
+    );
+    expect(notices).toEqual(['--offline: using llama-cpp instead of "anthropic" from term.provider.']);
+    expect(report.summary.turns).toBe(3);
+    expect(report.entries[0]?.definition.status).toBe("drafted");
+  });
+
+  it("runs --crawl", async () => {
+    const report = await fill({ offline: true, crawl: true, model: LOCAL_MODEL }, [
+      definition("A.", 0.9),
+      definition("B.", 0.9),
+      definition("C.", 0.9),
+      { json: { terms: [] } },
+      { json: { terms: [] } },
+    ]);
+    // Past the three definitions: the crawl asked about pages too.
+    expect(report.summary.turns).toBeGreaterThan(3);
   });
 });
 

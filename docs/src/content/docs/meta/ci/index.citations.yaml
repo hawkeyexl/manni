@@ -29,9 +29,9 @@ docs/src/content/docs/meta/ci/index.mdx:
         integrity: sha256-2dc6043a0612dda896bb5b2ce6c0fc0e61b42413aceadb872a995906684fa629
       source:
         file: src/meta/core/config.ts
-        lines: 1897-1905
+        lines: 1899-1907
         integrity: sha256-a25173e88e325e9018ce01428895706356f063070cd986fe69698790dc264ad8
-        commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
+        commit-sha: 82b41f560f77676acec81501ed44862563251685
     - id: github-format-one-command-per-error
       claim:
         lines: 56-58

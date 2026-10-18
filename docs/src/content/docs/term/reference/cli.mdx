@@ -754,8 +754,10 @@ meta-provenance:
 When a provider resolves, a model drafts each missing definition. A draft
 under the confidence threshold leaves a new page as a stub and an existing
 entry unchanged. A draft that clears it is written and recorded in the page's
-`meta-provenance`, under the model's name. With no provider, or with
-`--offline`, a new page is a stub with no definition. Only a term page can be
+`meta-provenance`, under the model's name. With no provider, a new page is a
+stub with no definition. `--offline` sends nothing off this machine. It runs
+`llama-cpp` as `--local` does, and only with a model already downloaded, so
+with none on disk new pages are stubs too. Only a term page can be
 filled in place. An entry in a manifest, a TBX file or a glossary construct is
 reported as skipped.
 
@@ -802,8 +804,8 @@ clean working tree so the change is easy to review.
 | `-c, --config` | `<path>` | discovered | Path to a config file. |
 | `--no-color` | n/a | off | Disable colored output. |
 | `-o, --out` | `<dir>` | `term.fill.out`, else detected | The directory new term pages go in. |
-| `--crawl` | n/a | off | Also ask the model for the terms page bodies and `keywords:` use. Needs a model. |
-| `--offline` | n/a | off | Never call a model. New pages are stubs, and existing entries are left alone. |
+| `--crawl` | n/a | off | Also ask the model for the terms page bodies and `keywords:` use. Needs a model, and under `--offline` one already downloaded. |
+| `--offline` | n/a | off | No network egress. Inference runs on this machine with `llama-cpp`, and only with a model already downloaded. A configured hosted provider is set aside with a note, and a hosted `--provider` is a usage error. Nothing is downloaded. With no model on disk, new pages are stubs and existing entries are left alone. |
 | `--provider` | `<name>` | `term.provider`, else `providers:`, else `auto` | `auto`, `anthropic`, `openai`, `claude-cli` or `llama-cpp`. |
 | `--model` | `<model>` | `term.model`, else `providers:` | The model. Needs a named provider, from the flag or config. |
 | `--local` | n/a | off | Run inference on this machine with `llama-cpp`, over any configured provider. |
@@ -868,7 +870,13 @@ When no provider resolves, a warning goes to stderr and the run goes on with
 stubs:
 
 ```
-manni: no model provider is configured, so new terms have no definition; pass --provider or --offline.
+manni: no model provider is configured, so new terms have no definition; pass --provider or --local.
+```
+
+Under `--offline` with no model on disk, the warning says so:
+
+```
+manni: no model is available offline, so new terms have no definition; download one first with --local, or drop --offline.
 ```
 
 ### Exit codes
@@ -881,8 +889,8 @@ manni: no model provider is configured, so new terms have no definition; pass --
 ### Examples
 
 ```sh
-manni term fill --offline --dry-run           # what is missing, no model
-manni term fill --offline                     # stub pages, definitions from graph: blocks
+manni term fill --offline --dry-run           # what is missing, nothing sent
+manni term fill --offline                     # local drafts, or stubs with no model on disk
 manni term fill                               # pages, and drafted definitions
 manni term fill --crawl -o docs/glossary/     # terms no metadata named
 manni term fill --dry-run -f json             # for a script
@@ -980,7 +988,8 @@ written.
 | `term write -f vale`, an acronym named like a rule file | `manni: the acronym "CASING" would replace Terms/Casing.yml. Rename the alt-label.` |
 | `term write -f vale`, two acronyms that share a file name | `manni: the acronyms "R&D" and "R+D" would both write Terms/R-D.yml. Rename one.` |
 | `term lint`, no Vale on PATH | `manni: vale is not on PATH. Install Vale to lint definitions.` |
-| `term fill --crawl --offline` | `manni: --crawl asks a model to find terms, so it cannot run with --offline.` |
+| `term fill --crawl --offline`, no model on disk | `manni: --crawl needs a model, and none is available offline; drop --offline, or download a local model first.` |
+| `term fill --offline --provider openai` | `manni: --offline and --provider openai contradict each other: --offline sends nothing off this machine, so only llama-cpp with a model already downloaded can run. Drop one of them.` |
 | `term fill --crawl`, no provider resolves | `manni: --crawl needs a model, and no provider is configured; pass --provider or set providers:.` |
 | `term fill`, no directory for new pages | `manni: new term pages need a directory; pass -o or set term.fill.out.` |
 | `term fill --confidence 2` | `manni: --confidence must be a number between 0 and 1, got 2.` |
