@@ -126,11 +126,16 @@ describe("skos reader", () => {
     expect(terms.every((t) => t.location.construct === "skos" && t.location.file === name)).toBe(true);
   });
 
-  it("tells JSON-LD from Turtle by the first byte on stdin", async () => {
+  it("tells JSON-LD from Turtle on stdin by whether it parses as JSON", async () => {
     for (const name of ["vocab.ttl", "vocab.jsonld"]) {
       const { terms } = await readSkos(await readFile(join(FIXTURE, name), "utf8"), "<stdin>");
       expect(records(terms)).toEqual(VOCAB);
     }
+  });
+
+  it("reads Turtle on stdin that opens with a blank node as Turtle", async () => {
+    const ttl = `[ <http://www.w3.org/2004/02/skos/core#prefLabel> "Orphan" ] .\n`;
+    await expect(readSkos(ttl, "<stdin>")).resolves.toBeDefined();
   });
 
   it("reports what it did not read, once per predicate per file", async () => {

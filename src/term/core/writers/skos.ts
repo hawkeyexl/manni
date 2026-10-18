@@ -69,8 +69,14 @@ function resolve(terms: readonly Term[], self: string, value: string): Term | un
   );
 }
 
+/** Two values are one when they name the same IRI, or hold the same text in the same language. */
+function sameValue(a: Value, b: Value): boolean {
+  if ("iri" in a) return "iri" in b && a.iri === b.iri;
+  return !("iri" in b) && a.text === b.text && a.language === b.language;
+}
+
 function pushUnique(values: Value[], value: Value): void {
-  if (!values.some((v) => JSON.stringify(v) === JSON.stringify(value))) values.push(value);
+  if (!values.some((v) => sameValue(v, value))) values.push(value);
 }
 
 interface Graph {
@@ -168,8 +174,10 @@ function jsonLd(nodes: readonly Node[]): string {
   return `${JSON.stringify({ "@context": PREFIXES, "@graph": graph }, null, 2)}\n`;
 }
 
+/** A prefixed name as a full IRI. A prefix outside the table is a bug here, never output. */
 function expand(name: string): string {
   const [prefix = "", local = ""] = name.split(":");
+  if (!Object.hasOwn(PREFIXES, prefix)) throw new Error(`skos writer: unknown prefix "${prefix}" in ${name}`);
   return `${PREFIXES[prefix as keyof typeof PREFIXES]}${local}`;
 }
 
