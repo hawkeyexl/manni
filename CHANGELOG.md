@@ -4,6 +4,13 @@
 4.13.1. Entries below that version are docmeta releases; the repository
 history is the same one.
 
+# [4.9.0](https://github.com/hawkeyexl/manni/compare/v4.8.1...v4.9.0) (2026-10-18)
+
+
+### Features
+
+* **term:** read and write TBX losslessly, with multilingual terms (0084) ([#180](https://github.com/hawkeyexl/manni/issues/180)) ([df75e58](https://github.com/hawkeyexl/manni/commit/df75e58da9c2ffb383db63ef9e4f7aeb6c30d0ad))
+
 ## [4.8.1](https://github.com/hawkeyexl/manni/compare/v4.8.0...v4.8.1) (2026-10-11)
 
 
