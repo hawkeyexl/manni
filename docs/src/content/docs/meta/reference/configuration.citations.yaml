@@ -1177,13 +1177,13 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: 0cfcfc33d664a3c57f78bf4436fc69abf534eb02
     - id: term-starts-vale-with-the-configured-file
       claim:
-        lines: 1406-1408
-        integrity: sha256-1fbcf72828507456469759fdcfe9305264a9574afd567a9f93f2e064593285e8
+        lines: 1413-1418
+        integrity: sha256-c8415255f1fb2b6b693735ff957595327a6204b2602ce6d92aa6ef1412e514ff
       source:
         file: src/term/commands/run.ts
         lines: 112-120
         integrity: sha256-4202cb306a2b7f42e0467af1a01a248c18f9d05a7806bec913279c119211b3ff
-        commit-sha: c771aa95c37e38307cf8d4c739bec5c2fabf4c5f
+        commit-sha: 0cd8f1084d4dfd71bc8082ca8041a664a22730ca
     - id: tools-key-counts-for-discovery
       claim:
         lines: 1420-1422
