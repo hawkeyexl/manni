@@ -22,3 +22,7 @@ docs/src/content/docs/meta/schemas/term-values.mdx:
   owner:
     - "@hawkeyexl"
   created: 2026-10-18
+  provenance:
+    - generated-by: Claude Opus 5.5
+      lines: 2-143
+      integrity: sha256-d8f067366f24ab40eb26399af95004e0f3baa0231d6cd5fa91b66f056ba6a1ed

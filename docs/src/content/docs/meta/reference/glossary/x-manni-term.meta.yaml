@@ -15,3 +15,7 @@ docs/src/content/docs/meta/reference/glossary/x-manni-term.mdx:
   owner:
     - "@hawkeyexl"
   created: 2026-10-18
+  provenance:
+    - generated-by: Claude Opus 5.5
+      lines: 2-7
+      integrity: sha256-98598988a22ec524505d6242571507fe3f94f0cfe09a0d561e7695c26e91e512
