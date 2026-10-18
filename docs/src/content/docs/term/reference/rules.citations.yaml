@@ -322,9 +322,9 @@ docs/src/content/docs/term/reference/rules.mdx:
         integrity: sha256-3e990c946b95a60b1174f9819a3071cb600c5f54046d1e7d2eb41831f7f5a3a3
       source:
         file: src/term/cli.ts
-        lines: 138
+        lines: 132
         integrity: sha256-642aa7bc0402e0101838821cd5ed5ee06a261d3134bb836e1a23650376a401d2
-        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
+        commit-sha: 01522e928029b17df104f3d02ee29fce500e166f
     - id: duplicate-id-fires
       claim:
         lines: 16

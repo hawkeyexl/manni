@@ -129,9 +129,9 @@ docs/src/content/docs/term/index.mdx:
         integrity: sha256-48592a0da9c31d0558b690f0f0dd9fdbebf39365dd693e44326b03c0fda9d541
       source:
         file: src/term/cli.ts
-        lines: 267
+        lines: 261
         integrity: sha256-f38e000dba4b5ede0c2e49d689f6214268f98d11d4025231aab30265ae5373bf
-        commit-sha: df75e58da9c2ffb383db63ef9e4f7aeb6c30d0ad
+        commit-sha: 01522e928029b17df104f3d02ee29fce500e166f
     - id: formats-lists-constructs
       claim:
         lines: 37
@@ -164,9 +164,9 @@ docs/src/content/docs/term/index.mdx:
         integrity: sha256-6ab07958952c7663c92b11a4026562d1dccc140dd5ce6cabb85f4f9e6b64c2f3
       source:
         file: src/term/cli.ts
-        lines: 138
+        lines: 132
         integrity: sha256-642aa7bc0402e0101838821cd5ed5ee06a261d3134bb836e1a23650376a401d2
-        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
+        commit-sha: 01522e928029b17df104f3d02ee29fce500e166f
     - id: proof-exit-one-error-fails
       claim:
         integrity: sha256-6ab07958952c7663c92b11a4026562d1dccc140dd5ce6cabb85f4f9e6b64c2f3

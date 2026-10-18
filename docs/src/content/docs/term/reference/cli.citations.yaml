@@ -13,9 +13,9 @@ docs/src/content/docs/term/reference/cli.mdx:
         integrity: sha256-734c0305f55457abaad3625784c00dd96865f9be6d92bc622535a7ed1eedbf17
       source:
         file: src/term/cli.ts
-        lines: 146
+        lines: 140
         integrity: sha256-f6c79bda32f8010de1827777c8ac4c7ab460ca1cab8482031f39f69d871a4b34
-        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
+        commit-sha: 01522e928029b17df104f3d02ee29fce500e166f
     - id: term-no-subcommand-exits-2
       claim:
         integrity: sha256-734c0305f55457abaad3625784c00dd96865f9be6d92bc622535a7ed1eedbf17
@@ -102,9 +102,9 @@ docs/src/content/docs/term/reference/cli.mdx:
         integrity: sha256-e743bec7012d06fcff508f6028dbd02183ca9bc276d2545be18861cda73ff66a
       source:
         file: src/term/cli.ts
-        lines: 80-83
+        lines: 74-77
         integrity: sha256-afd2fdc168835a0482f0e8abac65e38e0317f963a541087cb8be7c4ca2901774
-        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
+        commit-sha: 01522e928029b17df104f3d02ee29fce500e166f
     - id: unknown-format-exit-2
       claim:
         lines: 119
@@ -286,9 +286,9 @@ docs/src/content/docs/term/reference/cli.mdx:
         integrity: sha256-6e9e1c35dccd864b34fb8e318db25b568c532b28411008440e70c678f3c05d62
       source:
         file: src/term/cli.ts
-        lines: 138
+        lines: 132
         integrity: sha256-642aa7bc0402e0101838821cd5ed5ee06a261d3134bb836e1a23650376a401d2
-        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
+        commit-sha: 01522e928029b17df104f3d02ee29fce500e166f
     - id: check-exit-failed-count
       claim:
         lines: 391
@@ -427,9 +427,9 @@ docs/src/content/docs/term/reference/cli.mdx:
         integrity: sha256-418aa0f339dc7009ccff1006e9c9c24fc990ba3744eff316003906fb32cd8d19
       source:
         file: src/term/cli.ts
-        lines: 293
+        lines: 287
         integrity: sha256-6c93d7529351c9410b26d3c459bb936649605aaf66cfb3cd6e5705925fef1d56
-        commit-sha: df75e58da9c2ffb383db63ef9e4f7aeb6c30d0ad
+        commit-sha: 01522e928029b17df104f3d02ee29fce500e166f
     - id: write-dry-run-notes
       claim:
         lines: 524
@@ -504,9 +504,9 @@ docs/src/content/docs/term/reference/cli.mdx:
         integrity: sha256-1712fa9b58b7ff400ec3183a0787580e8f04a187b67bc084c7bd1fe195772bda
       source:
         file: src/term/cli.ts
-        lines: 293
+        lines: 287
         integrity: sha256-6c93d7529351c9410b26d3c459bb936649605aaf66cfb3cd6e5705925fef1d56
-        commit-sha: df75e58da9c2ffb383db63ef9e4f7aeb6c30d0ad
+        commit-sha: 01522e928029b17df104f3d02ee29fce500e166f
     - id: formats-from-registries
       claim:
         integrity: sha256-676a7db805809e32a9fb9de3be40238cf7bce146ed888b77c37df81355696d5b

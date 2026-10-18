@@ -137,9 +137,9 @@ docs/src/content/docs/term/get-started/index.mdx:
         integrity: sha256-fe2749c9008e87b7ab881692039986a506cde53927319c651be062dc4c6092d2
       source:
         file: src/term/cli.ts
-        lines: 138
+        lines: 132
         integrity: sha256-642aa7bc0402e0101838821cd5ed5ee06a261d3134bb836e1a23650376a401d2
-        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
+        commit-sha: 01522e928029b17df104f3d02ee29fce500e166f
     - id: check-names-claiming-entry
       claim:
         lines: 138-139
@@ -164,9 +164,9 @@ docs/src/content/docs/term/get-started/index.mdx:
         integrity: sha256-48ddbb35849a970ffc1a325a5c782c32ef7049e8b53af267399790b8cee36acf
       source:
         file: src/term/cli.ts
-        lines: 138
+        lines: 132
         integrity: sha256-642aa7bc0402e0101838821cd5ed5ee06a261d3134bb836e1a23650376a401d2
-        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
+        commit-sha: 01522e928029b17df104f3d02ee29fce500e166f
     - id: bifocal-unused-term-notice
       claim:
         lines: 178-183
@@ -264,6 +264,6 @@ docs/src/content/docs/term/get-started/index.mdx:
         integrity: sha256-4d4b100f9efa1514978b7bed61225a6ef4843aa13b6019d73dbb9bbd5d90f78d
       source:
         file: src/cli.ts
-        lines: 86-94
+        lines: 94-102
         integrity: sha256-4e7412594a55c18b0c135a52a429229cb8081a5249235a35b33b968f991c7678
-        commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e
+        commit-sha: 01522e928029b17df104f3d02ee29fce500e166f
