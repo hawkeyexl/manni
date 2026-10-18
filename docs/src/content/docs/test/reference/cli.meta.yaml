@@ -1,0 +1,26 @@
+docs/src/content/docs/test/reference/cli.mdx:
+  personas: ["devin", "maya"]
+  journeys: ["d17"]
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: "src/test/cli.ts"
+    - path: "src/test/commands/run.ts"
+    - path: "src/shared/tools.ts"
+  eval-suite: test
+  evals:
+    - id: compose-command
+      assertion: "A reader can compose a manni test run command from the documented arguments and flags."
+      type: capability
+      grader: ai
+    - id: read-message
+      assertion: "A reader can match a manni test run message to its cause and its exit code."
+      type: capability
+      grader: ai
+  provenance:
+    - generated-by: Claude Opus 5.5
+      lines: 2-303
+      integrity: sha256-024fb197f21dfc31abdc495eafcc42abddd7a802144a5798aa430d72b79e3832
+  owner:
+    - "@hawkeyexl"
+  created: 2026-10-05

@@ -98,9 +98,11 @@ These came out of a review of the shipped product against the intent recorded in
 | [0079](0079-tracevals-checks-each-turn-against-the-rules-it-read.md) | tracevals checks each turn against the rules it read. At Stop and SubagentStop, `manni check` judges the last turn against every agent-instruction file that governed it. A confident violation blocks once. A fast model judges in the loop, a stronger one extracts rules outside it, and a model host keeps local models loaded | Maya · M25 | Implemented (#163). Superseded in part by [0080](0080-tracevals-holds-a-session-to-what-it-was-asked-and-the-procedures-it-ran.md); superseded in part by [0083](0083-runtime-evals-the-rename.md) |
 | [0080](0080-tracevals-holds-a-session-to-what-it-was-asked-and-the-procedures-it-ran.md) | tracevals holds a session to what it was asked and the procedures it ran. Every rule is judged against the session so far, and blocks only on what the last turn did or claimed. Typed prompts, an approved plan and touched specs become rule sources, and a skill's procedure is read as rules | Maya · M25 | Implemented (#163) |
 | [0081](0081-tracevals-reads-the-system-prompt-the-session-ran-under.md) | tracevals reads the system prompt the session ran under. The snapshot Claude Code records becomes a rule source. Its default rules are reported and never block. A replaced system prompt or a user output style blocks like any rule | Maya · M25 | Implemented (#171) |
+| [0082](0082-a-site-domain-runs-the-docs-site.md) | A site domain runs the docs site. `manni site start`, `build` and `preview` detect the framework from the site's files and run its command. The port comes from the local collection `url:`, and `site.commands` overrides any verb | Maya · M26, M7 / Devin · D7 / Theo · T3 | Proposed |
 | [0083](0083-runtime-evals-the-rename.md) | Runtime evals, the rename. The section 0079 named `tracevals.conformance` is `tracevals.runtime`. The old key fails with exit 2 and names the new one, and in-play detection still sees it | Maya · M25 | Implemented (#176) |
 | [0084](0084-tbx-lossless-and-multilingual-terms.md) | TBX in both directions, lossless and multilingual. A v2 or v3 termbase reads into the set and writes back without loss, one term per language joined on `id`. `manni:terminology:1.1.0` names every TBX-Basic and TBX-Linguist category | Devin · D8 / Sara · S6 | Accepted |
 | [0085](0085-one-concept-scheme-from-termbase-to-graph.md) | One concept scheme, from the termbase to the graph. Term pages and freeform concepts feed one SKOS scheme. `manni term fill` turns the concepts pages name into term pages. `term check` gains the integrity rules a thesaurus needs. Terms map outward and travel as SKOS, `x-manni-term` holds a field to the termbase, and `graph check` finds each page by its sample questions | Sara · S6 / Maya · M18 / Devin · D12 | Proposed |
+| [0085](0085-test-domain-runs-doc-detective.md) | The `test` domain runs Doc Detective. `manni test run` reports in the family's exit codes and formats. Doc Detective's config supplies the input, and the docs-as-tests workflow runs the command | Devin · D16 / Maya | Proposed |
 
 0014 was not in the original review. It surfaced while stress-testing 0004, and is the most severe item in the set. **docmeta currently exits `0` when it validates nothing at all**, including when an explicitly named file does not exist.
 
@@ -215,6 +217,10 @@ At a glance, so a planning pass does not have to reconstruct it from 29 headers.
 
 0035 ──┬─> 0064          (a11y's exit-code contract, whose floor this confirms as the gate)
 0044 ──┘                 (cite's per-rule severity, the second reading of the scale)
+
+0045 ──┬─> 0082          (a domain is a tool or a family resource with verbs; site is the second)
+0041 ──┤                 (the collection url: a11y seeds from, read here for the port and host)
+0034 ──┘                 (three spelled verbs, no default subcommand, argv after --)
 ```
 
 The four `Proposed` SQL items (0026–0029) are independent of each other, with one exception. 0026 and 0029 both grow `query`'s `-f` value list. Each specifies the combined six-value surface, and whichever is implemented second merges into the one const. Recommended implementation order is 0026 → 0029 → 0027 → 0028, which is impact-first. The two config-touching ones (0026, 0027) land apart, so the second rebases trivially.
