@@ -186,8 +186,11 @@ manni graph check [options]
 ```console
 $ manni graph check -c test/graph/fixtures/dd/violations.config.yaml
 error: https://example.com/dd/concept/alpha skos:broader — skos:broader cycle through https://example.com/dd/concept/alpha, https://example.com/dd/concept/beta (https://example.com/dd/concept/alpha → https://example.com/dd/concept/beta) — a concept cannot be its own ancestor [violations/alpha.md, violations/beta.md, violations/gamma.md]
+error: https://example.com/dd/concept/alpha skos:related — Value node must not also be one of the values of <http://www.w3.org/2004/02/skos/core#broader> [violations/alpha.md, violations/beta.md, violations/gamma.md]
+error: https://example.com/dd/concept/gamma skos:related — skos:related conflicts with skos:broaderTransitive between https://example.com/dd/concept/gamma and https://example.com/dd/concept/alpha — a concept cannot be both related to and an ancestor/descendant of another [violations/alpha.md, violations/gamma.md]
+error: https://example.com/dd/doc/violations/alpha.md graph:notApplicableToVariant — Value node must not also be one of the values of <http://iirds.tekom.de/iirds#relates-to-product-variant> [violations/alpha.md]
 
-2 errors, 0 warnings, 0 notices
+4 errors, 0 warnings, 0 notices
 ```
 
 The bundled shapes are **closed**, so a predicate the shapes have not learned
@@ -558,7 +561,7 @@ An unknown target is **exit 2**, with the allowed set named.
 
 {/* step {"description":"A SHACL error exits 1.","runShell":{"command":"manni graph build -c test/graph/fixtures/dd/violations.config.yaml","exitCodes":[0]}} */}
 
-{/* step {"description":"check names the focus node and the documents it came from.","runShell":{"command":"manni graph check -c test/graph/fixtures/dd/violations.config.yaml","exitCodes":[1],"stdio":"2 errors, 0 warnings, 0 notices"}} */}
+{/* step {"description":"check names the focus node and the documents it came from.","runShell":{"command":"manni graph check -c test/graph/fixtures/dd/violations.config.yaml","exitCodes":[1],"stdio":"4 errors, 0 warnings, 0 notices"}} */}
 
 {/* step {"description":"-f github annotates the documents behind the finding.","runShell":{"command":"manni graph check -c test/graph/fixtures/dd/violations.config.yaml -f github","exitCodes":[1],"stdio":"::error file=violations/alpha.md::"}} */}
 
