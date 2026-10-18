@@ -217,6 +217,8 @@ export const TERM_CONSTRUCTS = [
   "rst-glossary",
   /** One `termEntry` (TBX v2) or `conceptEntry` (TBX v3): a term per language it holds. */
   "tbx-entry",
+  /** One `skos:Concept` in Turtle or JSON-LD: a term per language its `skos:prefLabel` holds. */
+  "skos",
 ] as const;
 export type TermConstruct = (typeof TERM_CONSTRUCTS)[number];
 
@@ -265,7 +267,7 @@ export interface TermInput {
   file: string;
   /** As `TermLocation.path`. */
   path?: string;
-  /** The extractor that read the file (`markdown`, `mdx`, `asciidoc`, `rst`, `html`, `xml`), or `manifest` or `tbx`. */
+  /** The extractor that read the file (`markdown`, `mdx`, `asciidoc`, `rst`, `html`, `xml`), or `manifest`, `tbx` or `skos`. */
   format: string;
   /** The file's extracted metadata. `{}` for a manifest, which has none. */
   metadata: Record<string, unknown>;
@@ -325,6 +327,7 @@ export const TERM_WRITE_FORMATS = [
   "tbx",
   "tbx3",
   "skos",
+  "skos-ttl",
   "csv",
   "json",
   "vale",

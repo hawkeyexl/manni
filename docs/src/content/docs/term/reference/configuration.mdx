@@ -114,7 +114,7 @@ it.
 
 | Key | Type | Default | Mirrors | Description |
 |---|---|---|---|---|
-| `manifests` | list of paths | `[]` | none | YAML or JSON manifests, or TBX files, holding entries outside any document. Paths are relative to the config file. Read on every run that loads the config. |
+| `manifests` | list of paths | `[]` | none | YAML or JSON manifests, TBX files, or SKOS files in Turtle or JSON-LD, holding entries outside any document. Paths are relative to the config file. Read on every run that loads the config. |
 | `abstractMaxLength` | non-negative integer | `60` | none | The length, in UTF-16 code units, past which `abstract-too-long` fires. |
 | `baseline` | path | none | `--baseline` | A [baseline](/manni/term/reference/cli/#baselines) file, relative to the config file. Setting it compares every `check` run against the file, without the flag. With `--baseline` and no key, the file is `.manni-term-baseline.json`. |
 | `severity` | mapping | the [defaults](/manni/term/reference/rules/) | none | Per-rule level: `error`, `warning`, `notice` or `off`. Only the rules named change. |
@@ -209,6 +209,23 @@ term:
 
 [Move and hand off a termbase](/manni/term/set-up/move-and-hand-off/#read-the-termbase-back)
 covers reading TBX, and what a write back keeps.
+
+## A SKOS file
+
+A `term.manifests` path ending in `.ttl` or `.jsonld` is read as a SKOS
+concept scheme, in Turtle or JSON-LD. Each `skos:Concept` is a term per
+language its `skos:prefLabel` holds. A scheme kept in a thesaurus editor can
+sit outside the docs and still be checked with them:
+
+```yaml title="manni.config.yaml"
+term:
+  manifests:
+    - terms.yaml
+    - taxonomy/optics.ttl
+```
+
+[Move and hand off a termbase](/manni/term/set-up/move-and-hand-off/#bring-a-skos-scheme-in)
+covers what is read, and how to write the scheme back out.
 
 ## Severity
 
