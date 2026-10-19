@@ -30,6 +30,7 @@ import {
 } from "../core/localizations.js";
 import { byCodeUnit } from "../core/sort.js";
 import { PREFIXES } from "../core/vocab.js";
+import { exportSampleQuestions } from "./questions.js";
 import { GraphIndex } from "../runtime/graph.js";
 import { writeZip, type ZipEntry } from "../core/zip.js";
 
@@ -38,7 +39,7 @@ import { writeZip, type ZipEntry } from "../core/zip.js";
  * The CLI names its positional against this list, and `runExport` holds a
  * library caller to it too.
  */
-export const EXPORT_TARGETS = ["jsonld", "iirds", "search"] as const;
+export const EXPORT_TARGETS = ["jsonld", "iirds", "search", "questions"] as const;
 
 export type ExportFormat = (typeof EXPORT_TARGETS)[number];
 
@@ -57,7 +58,7 @@ export interface ExportOptions {
 export interface ExportResult {
   outPath: string;
   format: ExportFormat;
-  /** Distinct subject nodes in the emitted (or projected) graph. */
+  /** Distinct subject nodes in the emitted (or projected) graph; questions for `questions`. */
   nodes: number;
   /** Non-fatal projection warnings (iiRDS only; empty otherwise). */
   warnings: string[];
@@ -216,21 +217,40 @@ function runSearchIndex(
 }
 
 /**
- * Async by contract — every command core is, and the CLI awaits this one — but
- * synchronous in fact: all three writers are `writeFileSync`. Spelled as a
- * `Promise` the body never awaits, through the constructor rather than
- * `Promise.resolve().then`, so the executor still runs eagerly and a usage
- * error still *rejects* the returned promise instead of throwing before the
- * caller holds one. That is what `async` did, said without claiming an `await`
- * that is not there.
+ * The golden set of questions (proposal 0087 § 7d): one JSON line per
+ * question, read from the pages' sources and the golden-set files.
  */
-export function runExport(opts: ExportOptions): Promise<ExportResult> {
-  return new Promise((ok) => {
-    ok(exportOnce(opts));
-  });
+async function runQuestions(
+  cwd: string,
+  sources: string,
+  graphPath: string,
+  config: { questionFiles: string[]; configDir: string },
+  source: { configPath?: string; noConfig?: boolean },
+  out?: string,
+): Promise<ExportResult> {
+  const { lines, stale } = await exportSampleQuestions(
+    loadGraph(graphPath),
+    sources,
+    { source, cwd },
+    config.questionFiles,
+    config.configDir,
+  );
+  const outPath = out ? resolve(cwd, out) : join(dirname(graphPath), "questions.jsonl");
+  mkdirSync(dirname(outPath), { recursive: true });
+  writeFileSync(outPath, lines.map((l) => `${l}\n`).join(""), "utf8");
+  const warnings =
+    stale === 0
+      ? []
+      : [
+          stale === 1
+            ? "1 answer changed since it was pinned, so it is exported as it reads now, marked stale."
+            : `${String(stale)} answers changed since they were pinned, so they are exported as they read now, marked stale.`,
+        ];
+  return { outPath, format: "questions", nodes: lines.length, warnings };
 }
 
-function exportOnce(opts: ExportOptions): ExportResult {
+/** Every command core is async, and the CLI awaits this one. A usage error rejects. */
+export async function runExport(opts: ExportOptions): Promise<ExportResult> {
   const cwd = opts.cwd ?? process.cwd();
   if (!(EXPORT_TARGETS as readonly string[]).includes(opts.format)) {
     throw new GraphError(
@@ -253,6 +273,19 @@ function exportOnce(opts: ExportOptions): ExportResult {
   if (opts.format === "jsonld") return runJsonLd(cwd, graphPath, opts.out);
   if (opts.format === "search") {
     return runSearchIndex(cwd, sources, graphPath, opts.out);
+  }
+  if (opts.format === "questions") {
+    return runQuestions(
+      cwd,
+      sources,
+      graphPath,
+      config,
+      {
+        ...(opts.config === undefined ? {} : { configPath: opts.config }),
+        ...(opts.noConfig === undefined ? {} : { noConfig: opts.noConfig }),
+      },
+      opts.out,
+    );
   }
   return runIirds(
     cwd,

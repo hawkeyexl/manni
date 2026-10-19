@@ -13,6 +13,7 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { writeFormats } from "../../src/term/commands/write.js";
+import { TERM_RULES } from "../../src/term/types.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(here, "..", "..");
@@ -174,6 +175,8 @@ describe("manni term (the ladder)", () => {
     const r = term(["check"], { cwd: resolve(root, "test", "fixtures", "term", "concept-scheme") });
     expect(r.stdout).toBe(
       [
+        "docs/glossary/pluggable-auth-layer.md:1",
+        "  notice manni:term/orphan-term                 no broader, narrower or related term, so place it in the hierarchy.",
         "docs/guides/retrying.md:6",
         "  error  manni:term/broader-cycle               broader: Resilience > Retry > Resilience",
         '  notice manni:term/hierarchy-outside-termbase  graph: broader "Retry" on "Resilience" is not on its term page (docs/glossary/resilience.md), so add it there.',
@@ -182,11 +185,25 @@ describe("manni term (the ladder)", () => {
         "docs/guides/retrying.md:8",
         '  warning manni:term/alt-label-reference         graph.concepts: "PAL" is an alt-label of "Pluggable auth layer", so name the label.',
         "",
-        "1 error, 1 warning, 2 notices in 3 terms",
+        "1 error, 1 warning, 3 notices in 3 terms",
         "",
       ].join("\n"),
     );
     expect(r.status).toBe(1);
+  });
+
+  it("breaks every check rule on the rules fixture, and SARIF describes each one", () => {
+    const cwd = resolve(root, "test", "fixtures", "term", "rules");
+    const r = term(["check", "-f", "json"], { cwd });
+    expect(r.status).toBe(1);
+    const json = JSON.parse(r.stdout) as { findings: { rule: string }[] };
+    expect(new Set(json.findings.map((f) => f.rule))).toEqual(new Set(TERM_RULES));
+    const sarif = JSON.parse(term(["check", "-f", "sarif"], { cwd }).stdout) as {
+      runs: { tool: { driver: { rules: { id: string; helpUri?: string }[] } } }[];
+    };
+    expect(sarif.runs[0]?.tool.driver.rules.map((rule) => rule.helpUri).sort()).toEqual(
+      TERM_RULES.map((rule) => `https://hawkeyexl.github.io/manni/term/reference/rules/#${rule}`).sort(),
+    );
   });
 
   it("6. annotates the diff in CI, and says nothing when clean", () => {
@@ -439,6 +456,81 @@ describe("manni term (TBX)", () => {
     copyTbx("malformed.tbx", join(cwd, "broken.tbx"));
     const r = term(["list", "broken.tbx"], { cwd });
     expect(r.stderr).toMatch(/^manni: broken\.tbx: could not be read as tbx: /);
+    expect(r.status).toBe(2);
+  });
+});
+
+describe("manni term (SKOS)", () => {
+  const SKOS = resolve(root, "test", "fixtures", "term", "skos");
+
+  function copySkos(name: string, to: string): void {
+    writeFileSync(to, readFileSync(join(SKOS, name), "utf8"));
+  }
+
+  it("lists a named .ttl file, one term per language", () => {
+    const cwd = join(work, "clean");
+    copySkos("vocab.ttl", join(cwd, "vocab.ttl"));
+    const r = term(["list", "vocab.ttl"], { cwd });
+    expect(r.stderr).toBe("");
+    expect(r.stdout).toContain("Gleitsichtglas");
+    expect(r.stdout).toContain("6 terms");
+    expect(r.status).toBe(0);
+  });
+
+  it("never walks a .ttl or .jsonld in a directory", () => {
+    const cwd = join(work, "clean");
+    const before = term(["list", "docs", "-f", "json"], { cwd }).stdout;
+    copySkos("vocab.ttl", join(cwd, "docs", "graph.ttl"));
+    copySkos("vocab.jsonld", join(cwd, "docs", "graph.jsonld"));
+    const r = term(["list", "docs", "-f", "json"], { cwd });
+    expect(r.stdout).toBe(before);
+    expect(r.status).toBe(0);
+  });
+
+  it.each(["vocab.ttl", "vocab.jsonld"])("reads %s from stdin with --as skos", (name) => {
+    const r = term(["list", "-", "--as", "skos", "-f", "json"], { input: readFileSync(join(SKOS, name), "utf8") });
+    expect(r.stderr).toBe("");
+    const terms = (JSON.parse(r.stdout) as { terms: { id: string; language?: string }[] }).terms;
+    expect(terms.map((t) => `${t.language ?? ""}/${t.id}`)).toContain("de/progressive-lens");
+    expect(r.status).toBe(0);
+  });
+
+  it("says what it did not read, and still exits 0", () => {
+    const cwd = join(work, "clean");
+    copySkos("unread.ttl", join(cwd, "unread.ttl"));
+    const r = term(["list", "unread.ttl"], { cwd });
+    expect(r.stderr.split("\n")).toContain("manni: unread.ttl: skos:changeNote is not a term field, so 3 values were not read.");
+    expect(r.status).toBe(0);
+  });
+
+  it("renders a scheme as Turtle that reads back the same", () => {
+    const cwd = join(work, "clean");
+    copySkos("vocab.jsonld", join(cwd, "vocab.jsonld"));
+    const r = term(["write", "vocab.jsonld", "-f", "skos-ttl", "-o", "build/terms.ttl"], { cwd });
+    expect(r.stderr).toBe("");
+    expect(r.stdout).toBe("Wrote 6 terms to build/terms.ttl\n");
+    expect(r.status).toBe(0);
+    const original = term(["list", "vocab.jsonld", "-f", "json"], { cwd }).stdout;
+    expect(term(["list", "build/terms.ttl", "-f", "json"], { cwd }).stdout).toBe(original);
+  });
+
+  it("refuses to rewrite a SKOS file in place", () => {
+    const cwd = join(work, "clean");
+    copySkos("vocab.ttl", join(cwd, "vocab.ttl"));
+    const r = term(["write", "vocab.ttl"], { cwd });
+    expect(r.stderr).toBe(
+      "manni: vocab.ttl is SKOS and is not rewritten in place; render it with -f skos or -f skos-ttl.\n",
+    );
+    expect(r.status).toBe(2);
+  });
+
+  it("refuses a remote @context rather than fetching it", () => {
+    const cwd = join(work, "clean");
+    copySkos("remote-context.jsonld", join(cwd, "vocab.jsonld"));
+    const r = term(["list", "vocab.jsonld"], { cwd });
+    expect(r.stderr).toBe(
+      "manni: vocab.jsonld: names the remote @context https://example.com/skos-context.jsonld, which is not fetched. Inline the context to read it.\n",
+    );
     expect(r.status).toBe(2);
   });
 });

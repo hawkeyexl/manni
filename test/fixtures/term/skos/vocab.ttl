@@ -1,0 +1,40 @@
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix ex: <https://example.com/optics/> .
+
+ex: a skos:ConceptScheme ;
+  skos:hasTopConcept ex:spectacle-lens .
+
+ex:spectacle-lens a skos:Concept ;
+  skos:inScheme ex: ;
+  skos:topConceptOf ex: ;
+  skos:prefLabel "spectacle lens"@en, "Brillenglas"@de ;
+  skos:definition "A lens worn in front of the eye to correct vision."@en,
+    "Ein Glas vor dem Auge, das die Sicht korrigiert."@de ;
+  skos:narrower ex:progressive-lens, ex:bifocal ;
+  skos:notation "OPT-1" .
+
+ex:progressive-lens a skos:Concept ;
+  skos:inScheme ex: ;
+  skos:prefLabel "progressive lens"@en, "Gleitsichtglas"@de ;
+  skos:altLabel "PAL"@en, "graduated lens"@en, "Gleitsichtbrille"@de ;
+  skos:hiddenLabel "no-line bifocal"@en ;
+  skos:definition "A spectacle lens whose power changes gradually, with no visible line."@en,
+    "Ein Brillenglas, dessen Stärke stufenlos zunimmt."@de ;
+  skos:scopeNote "Eyewear only, not camera optics."@en, "Nur Brillen, keine Kameraoptik."@de ;
+  skos:broader ex:spectacle-lens ;
+  skos:related ex:bifocal ;
+  skos:notation "OPT-2" ;
+  skos:exactMatch <http://www.wikidata.org/entity/Q1052424> ;
+  skos:closeMatch <https://vocab.example.org/varifocal> ;
+  skos:broadMatch <https://vocab.example.org/lens> ;
+  skos:narrowMatch <https://vocab.example.org/office-progressive> ;
+  skos:relatedMatch <https://vocab.example.org/presbyopia> ;
+  skos:note "Also called varifocal."@en, "Auch Gleitsichtbrille genannt."@de ;
+  skos:example "She switched to progressive lenses at 45."@en .
+
+ex:bifocal a skos:Concept ;
+  skos:inScheme ex: ;
+  skos:prefLabel "bifocal"@en, "Bifokalglas"@de ;
+  skos:definition "A lens with two distinct powers."@en ;
+  skos:broader ex:spectacle-lens ;
+  skos:related ex:progressive-lens .

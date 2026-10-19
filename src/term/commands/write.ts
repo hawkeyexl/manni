@@ -349,6 +349,11 @@ async function writeInPlace(
     if (path === undefined) {
       throw new TermError(`${term.location.file} has nowhere to write back to. Pass -f <format> -o <path>.`);
     }
+    if (construct === "skos") {
+      throw new TermError(
+        `${displayPath(term.location.file, cwd)} is SKOS and is not rewritten in place; render it with -f skos or -f skos-ttl.`,
+      );
+    }
     const reader = readerForConstruct(construct, readers);
     if (reader?.apply === undefined) {
       const name = reader?.label ?? construct;

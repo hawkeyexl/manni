@@ -1,0 +1,16 @@
+# The gap fixture (proposal 0087). A golden-set question with no answers is a
+# known gap: it is counted, and never asked. `top: 1` keeps the corpus small.
+collections:
+  - name: questions
+    paths:
+      - "docs/**/*.*"
+
+graph:
+  baseIri: https://example.com/graph/
+  out: graph.ttl
+  questionFiles: [questions.yaml]
+  build:
+    derive: [frontmatter, sections]
+  check:
+    questions:
+      top: 1

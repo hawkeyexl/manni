@@ -1,0 +1,16 @@
+# The answer-gone fixture (proposal 0087). A golden-set answer names a page
+# that does not exist. `top: 1` keeps the corpus small.
+collections:
+  - name: questions
+    paths:
+      - "docs/**/*.*"
+
+graph:
+  baseIri: https://example.com/graph/
+  out: graph.ttl
+  questionFiles: [questions.yaml]
+  build:
+    derive: [frontmatter, sections]
+  check:
+    questions:
+      top: 1

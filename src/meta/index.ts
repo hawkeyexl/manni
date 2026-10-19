@@ -40,6 +40,9 @@ export type { FieldLocation, LocationPreference } from "./core/location.js";
 // Whether a top-level key belongs in a published graph (proposal 0051 §5), as
 // `Validator.graphOutputPreferences` reports it.
 export { GRAPH_OUTPUT_KEYWORD } from "./core/graph-output.js";
+// A field whose values must name terms in the termbase (proposal 0086 §6), as
+// `manni meta validate` checks it.
+export { TERM_KEYWORD } from "./core/term-keyword.js";
 // Meta's half of `manni key rotate` (proposal 0045): re-encrypt one page's
 // metadata values, found by their ciphertext, under a new key.
 export { reencryptMetadata } from "./core/reencrypt.js";

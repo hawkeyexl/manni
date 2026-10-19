@@ -23,8 +23,8 @@ docs/src/content/docs/meta/set-up/different-schemas-per-folder.mdx:
       source:
         file: src/meta/core/resolve-schema.ts
         lines: 41-53
-        integrity: sha256-2a6874f9758633b89a8919f39d4e6b3bc3995d60fa7303340620f21e9f3c5e83
-        commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
+        integrity: sha256-c9c09b5a77280ca5fade1c6b631d19c91b55fcf0ad23a8f55a4ecb1ae975d49e
+        commit-sha: 942b3afa182cd1d62ab41682675de48ec825c9b8
     - id: config-schemas-are-fourth-in-chain
       claim:
         lines: 153
@@ -74,9 +74,9 @@ docs/src/content/docs/meta/set-up/different-schemas-per-folder.mdx:
         integrity: sha256-b17e582ce426af76cbd8dce5a8f45dbaea373cbf82a3f4f777e3c0b7746d4bcd
       source:
         file: src/meta/core/validator.ts
-        lines: 796-803
+        lines: 891-898
         integrity: sha256-b48ac4d82755fecd8e18db834350064c599086be6c3d1f91c61a07f023cdb60e
-        commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
+        commit-sha: dea9284bd642f9f654d4f9cb59b5e16d19fc1259
     - id: grouped-files-entry-is-one-override
       claim:
         integrity: sha256-f845c4c3c38113224165a7865c9e25577ec641b989c0b7580bf2731eb252633c
@@ -126,9 +126,9 @@ docs/src/content/docs/meta/set-up/different-schemas-per-folder.mdx:
         integrity: sha256-bc936dc954459bbedd45b77656574fb1b1dcbefa1c61273a764f02100214f1a6
       source:
         file: src/meta/commands/validate.ts
-        lines: 328-333
+        lines: 338-343
         integrity: sha256-b9909f90ce53a01707f10cda095ef0087f97d534b1f34fd343a25db300a03bf9
-        commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e
+        commit-sha: ff3c96da86b0902113ec05ac4a780450486eef85
     - id: files-list-matches-any-glob
       claim:
         integrity: sha256-5016b54663c9c20a6570cafba73c2ddf8523598a8384b88d8b51bd55ac882754

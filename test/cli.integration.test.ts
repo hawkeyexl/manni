@@ -211,6 +211,7 @@ describe("docmeta CLI (built bin)", () => {
       "manni:terminology-strict:1.1.0",
       "manni:terminology:1.2.0",
       "manni:terminology-strict:1.2.0",
+      "manni:ai-context:1.1.0",
     ]);
   });
 
@@ -3311,7 +3312,7 @@ describe("an overrides entry may group several globs", () => {
         "manni:structure:1.0.0",
         "manni:stewardship:1.1.0",
         "manni:lifecycle:1.0.0",
-        "manni:ai-context:1.0.0",
+        "manni:ai-context:1.1.0",
         "manni:evals:1.0.0",
         "manni:graph:1.0.0",
         "manni:citations:1.0.0",

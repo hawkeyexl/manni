@@ -116,10 +116,18 @@ jobs.
   directory or glob walk finds it, and when `term.manifests` lists it. The
   root element says the version: `<martif>` is TBX v2, and `<tbx>` is TBX v3.
   Each entry is a term per language it holds, all with the entry's id.
+- **A named `.ttl` or `.jsonld` file is a SKOS concept scheme.** It's read
+  when you name it and when `term.manifests` lists it. A directory or glob
+  walk never picks one up, because `manni graph build` writes Turtle too. Each
+  `skos:Concept` is a term per language its `skos:prefLabel` holds, all with
+  the id its IRI ends in. A JSON-LD file that names a remote `@context` is
+  refused, because reading a termbase never fetches anything.
 - **`-` reads stdin**, alongside any named paths. It needs `--as <format>`,
   which names one of the metadata tool's
-  [extractors](/manni/meta/reference/formats/), or `tbx`. The extractors are
-  `markdown`, `mdx`, `asciidoc`, `rst`, `html` and `xml`.
+  [extractors](/manni/meta/reference/formats/), or `tbx`, or `skos`. The
+  extractors are `markdown`, `mdx`, `asciidoc`, `rst`, `html` and `xml`.
+  `--as skos` reads JSON-LD when the first character that isn't whitespace is
+  `{` or `[`, and Turtle otherwise.
 - **Every file contributes references.** A page's `concepts:` and its
   `graph.concepts` are read whether or not the page holds a term. So is its
   `graph:` block's `label`, `broader`, `narrower` and `related-concepts`.
@@ -132,17 +140,19 @@ has the record, and [Move and hand off a
 termbase](/manni/term/set-up/move-and-hand-off/#what-each-construct-holds) has
 every construct that is read.
 
-Reading a set prints two notices of its own on stderr. Neither moves the exit
+Reading a set prints three notices of its own on stderr. None moves the exit
 code:
 
 ```
 manni: glossary.tbx:18: skipped a TBX entry with no term.
 manni: pal.md:7: ignored designations item "progresive lens" on "progressive lens": it names no label, alt-label or hidden-label.
+manni: vocab.ttl: skos:changeNote is not a term field, so 3 values were not read.
 ```
 
 The first is a TBX language section that holds no `<term>`. The second is a
 [`designations`](/manni/term/reference/terminology/#fields-of-a-designation)
-item that names none of the entry's labels.
+item that names none of the entry's labels. The third is a SKOS property no
+term field holds, said once per property per file.
 
 ## `term list`
 
@@ -299,7 +309,7 @@ Check the set and every reference into it. `check` reads records, never prose.
 It resolves each `concepts:` value against labels, ids and alt-labels, and
 resolves `broader`, `narrower`, `related-terms` and `see` against labels and
 ids. It reads each page's `graph:` block into the hierarchy, and reports what
-does not line up. The fourteen rules, their default severities and their
+does not line up. The twenty-two rules, their default severities and their
 messages are on the [rules reference](/manni/term/reference/rules/).
 
 ```sh
@@ -546,6 +556,11 @@ entries are copied byte for byte. [Read the termbase
 back](/manni/term/set-up/move-and-hand-off/#read-the-termbase-back) has what
 each export keeps.
 
+`-f skos` writes a SKOS concept scheme in JSON-LD, and `-f skos-ttl` writes the
+same scheme in Turtle. Each id is one concept, carrying every language's
+labels. A SKOS file is not rewritten in place, so `write` with no `-f` refuses
+one.
+
 {/* cite write-vale-asks-ls-config */}
 `-f vale` writes a Vale style named `Terms`. Without `-o` it asks Vale where
 its styles directory is. [Keep the terms and the docs in
@@ -574,7 +589,7 @@ clean working tree so the change is easy to review.
 | `--no-gitignore` | n/a | on | Read files `.gitignore` covers as well. |
 | `-c, --config` | `<path>` | discovered | Path to a config file. |
 | `--no-color` | n/a | off | Disable colored output. |
-| `-f, --format` | `<format>` | each entry's own, in place | What to render: `markdown`, `mdx`, `asciidoc`, `rst`, `html`, `dita`, `docbook`, `tbx`, `tbx3`, `skos`, `csv`, `json` or `vale`. |
+| `-f, --format` | `<format>` | each entry's own, in place | What to render: `markdown`, `mdx`, `asciidoc`, `rst`, `html`, `dita`, `docbook`, `tbx`, `tbx3`, `skos`, `skos-ttl`, `csv`, `json` or `vale`. |
 | `-o, --out` | `<path>` | see below | The file or directory to render into. A trailing `/` means a directory. |
 | `--check` | n/a | off | Write nothing. Exit `1` when the target differs from the render. |
 | `--dry-run` | n/a | off | Write nothing. Print what would change, then the dropped and skipped lines a write prints, and exit `0`. |
@@ -585,7 +600,7 @@ clean working tree so the change is easy to review.
 |---|---|
 | none | each entry's own source, in place |
 | `markdown`, `mdx`, `asciidoc`, `rst`, `html`, `dita`, `docbook` | required |
-| `tbx`, `tbx3`, `skos`, `csv`, `json` | required, and a file |
+| `tbx`, `tbx3`, `skos`, `skos-ttl`, `csv`, `json` | required, and a file |
 | `vale` | the styles directory `vale ls-config` reports |
 
 ### Output
@@ -702,6 +717,8 @@ manni term write docs/terms/ -f markdown -o glossary.md
 manni term write -f tbx -o build/terms.tbx
 manni term write glossary.tbx -f tbx3 -o build/glossary.tbx   # TBX v2 to v3
 manni term write glossary.tbx -f markdown -o docs/terms/      # a page per term and language
+manni term write vocab.ttl -f markdown -o docs/terms/         # a SKOS scheme as pages
+manni term write -f skos-ttl -o build/terms.ttl               # the set as Turtle
 manni term write -f vale                           # into Vale's styles directory
 manni term write -f vale --check                   # keep the style in step
 ```
@@ -936,9 +953,11 @@ xml        DITA glossgroup    read  write
 xml        DocBook glossary   read  write
 manifest   manifest           read  write
 tbx        TBX entry          read  write
+skos       SKOS concept       read  write
 tbx        TBX v2                   write
 tbx3       TBX v3                   write
 skos       JSON-LD                  write
+skos-ttl   Turtle                   write
 csv                                 write
 json                                write
 vale       style                    write
@@ -970,7 +989,7 @@ written.
 | `term check`, config `baseline:` names a missing file | ``manni: Baseline "term-baseline.json" not found. Record one with `manni term check --baseline`.`` |
 | `term get missing` | `manni: no term "missing". 2 terms.` |
 | `term get progressive-lenz` | `manni: no term "progressive-lenz". 2 terms; did you mean "progressive-lens"?` |
-| `term write -f tmx -o x` | `manni: unknown format "tmx". Expected markdown \| mdx \| asciidoc \| rst \| html \| dita \| docbook \| tbx \| tbx3 \| skos \| csv \| json \| vale.` |
+| `term write -f tmx -o x` | `manni: unknown format "tmx". Expected markdown \| mdx \| asciidoc \| rst \| html \| dita \| docbook \| tbx \| tbx3 \| skos \| skos-ttl \| csv \| json \| vale.` |
 | `term write -f tbx` | `manni: -f tbx needs -o <path>.` |
 | `term write -f tbx -o build/tbx/` | `manni: -f tbx writes one file, not a directory. Pass -o <file>.` |
 | `term write -f tbx3` | `manni: -f tbx3 needs -o <path>.` |
@@ -984,6 +1003,9 @@ written.
 | `term write -f json -o x.json --check --dry-run` | `manni: --check and --dry-run cannot be combined.` |
 | `term write - --as markdown` or `--as tbx` | `manni: <stdin> has nowhere to write back to. Pass -f <format> -o <path>.` |
 | `term write` over a file holding `<dfn>` terms | `manni: glossary.html: a dfn cannot be written in place. Pass -f <format> -o <path>.` |
+| `term write vocab.ttl` | `manni: vocab.ttl is SKOS and is not rewritten in place; render it with -f skos or -f skos-ttl.` |
+| `term list vocab.jsonld`, which names a remote `@context` | `manni: vocab.jsonld: names the remote @context https://example.com/skos-context.jsonld, which is not fetched. Inline the context to read it.` |
+| `term list broken.ttl`, a string left open | `manni: broken.ttl: could not be read as SKOS: Unexpected ""lens" on line 2.` |
 | `term write -f vale`, no Vale on PATH | `manni: vale is not on PATH. Install Vale, or pass -o <styles directory>.` |
 | `term write -f vale`, Vale finds no config | `manni: Vale found no config file. Set tools.vale.config in manni.config.yaml, or pass -o <styles directory>.` |
 | `term write -f vale`, a file without the marker in `Terms/` | `manni: styles/Terms/Casing.yml was not written by manni. Move it, or pass -o <styles directory>.` |

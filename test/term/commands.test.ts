@@ -413,7 +413,11 @@ describe("sarif and junit", () => {
   ].join("\n");
 
   async function danglingCwd(): Promise<string> {
-    return lenses("progressive lens, corrective lens, bifocal", { "docs/terms/bifocal.md": BIFOCAL });
+    // bifocal sits outside the lenses' hierarchy; this is about the dangling value alone.
+    return lenses("progressive lens, corrective lens, bifocal", {
+      "docs/terms/bifocal.md": BIFOCAL,
+      "manni.config.yaml": `${CONFIG}term:\n  severity:\n    orphan-term: "off"\n`,
+    });
   }
 
   it("names a check finding's field, and keeps its SARIF and JUnit text", async () => {

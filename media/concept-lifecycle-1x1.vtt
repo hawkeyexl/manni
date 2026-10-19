@@ -1,0 +1,24 @@
+WEBVTT
+
+NOTE Silent video. Cues are the on-screen step captions; the terminal text is in the transcript.
+
+1
+00:00:00.000 --> 00:00:08.467
+Concepts nobody defined: Pages name concepts freely. Retry and Quota have no term page, so term check fails: exit 1.
+
+2
+00:00:08.467 --> 00:00:15.533
+term fill --offline: --offline sends nothing off the machine. With no local model, term fill writes a stub per concept.
+
+3
+00:00:15.533 --> 00:00:21.100
+What is left to write: No undefined terms left. check now names the two definitions a person, or a model, still writes.
+
+4
+00:00:21.100 --> 00:00:33.233
+Questions pinned to answers: 3 concepts, all from the termbase. A local model pins each page's question to its answer's lines.
+
+5
+00:00:33.233 --> 00:00:43.367
+The answer changed: Edit the pinned line, and graph check flags the question: its answer is no longer there.
+

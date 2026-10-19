@@ -29,6 +29,12 @@ export interface FieldHint {
   path: readonly string[];
   kind: "term" | "page";
   values: readonly string[];
+  /**
+   * For a field its schema marks `x-manni-term`: the labels and ids its
+   * check accepts, and the branch they are under, when the mark names one.
+   */
+  accepts?: readonly string[];
+  under?: string;
 }
 
 /** One model proposal, before gating. */

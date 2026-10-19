@@ -27,6 +27,7 @@ export async function runCheck(opts: CheckOptions): Promise<TermReport> {
   const findings = checkTermSet(set, {
     ...(config?.severity === undefined ? {} : { severity: config.severity }),
     ...(config?.abstractMaxLength === undefined ? {} : { abstractMaxLength: config.abstractMaxLength }),
+    ...(config?.fill?.crawl?.minPages === undefined ? {} : { minPages: config.fill.crawl.minPages }),
   });
   const { results, origin } = toResults(set, findings);
 

@@ -307,9 +307,9 @@ docs/src/content/docs/term/set-up/index.mdx:
         integrity: sha256-aea97f8941973097bbd26f86704e6eab9ff887212435ceff8d382a8e2b7304dd
       source:
         file: src/term/core/severity.ts
-        lines: 33-35
+        lines: 41-43
         integrity: sha256-3ccb0f4e5db1182b106610be75d2be447542a3028c8927e95507ea200d81228b
-        commit-sha: e7a25a5266c909a6a0dd9e3ad6db4ec6fd248a7e
+        commit-sha: 5e2f1871117a8b5592bb5c811842eb7c2aee8a9b
     - id: check-renders-without-writing
       claim:
         integrity: sha256-d93355ae93a6155231ece544dc3f0a82d659064a92d5265ca10ea32f695c40c3

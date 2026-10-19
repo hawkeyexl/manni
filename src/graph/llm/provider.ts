@@ -27,6 +27,7 @@ import {
   assertLocalFlag,
   assertModelHasProvider,
   localNotice,
+  offlineIdentity,
   providerSpecFor as sharedProviderSpecFor,
   resolveIdentity,
   selectProvider as selectFromLevels,
@@ -83,8 +84,11 @@ export function selectProvider(
  * about to be used, never where it is only checked, so a run that sends
  * nothing to a model says nothing.
  */
-export function announceSelection(selection: ProviderSelection): void {
-  const message = localNotice(selection);
+export function announceSelection(
+  selection: ProviderSelection,
+  flags: ProviderFlags = {},
+): void {
+  const message = localNotice(selection, flags);
   if (message !== undefined) noticeOnce(message);
 }
 
@@ -115,6 +119,19 @@ export function providerSpecFor(
 }
 
 /**
+ * The spec the run selects, checked and announced once. Both identity
+ * resolvers start here, so a step added to the selection reaches both.
+ */
+function selectedSpec(config: GraphConfig, flags: ProviderFlags): ProviderSpec {
+  const selection = selectProvider(config, flags);
+  const { provider, model } = selection;
+  assertKnownProvider(provider, toGraphError);
+  assertModelHasProvider(provider, model, CONFIG_KEY, toGraphError);
+  announceSelection(selection, flags);
+  return providerSpecFor(config, { provider, model: model ?? null });
+}
+
+/**
  * The concrete provider and model, WITHOUT constructing the provider: cache
  * keys need it, and a fully cached or fully complete run must not require an
  * API key.
@@ -129,15 +146,19 @@ export async function resolveProviderIdentity(
   config: GraphConfig,
   flags: ProviderFlags = {},
 ): Promise<{ provider: ConcreteProvider; model: string }> {
-  const selection = selectProvider(config, flags);
-  const { provider, model } = selection;
-  assertKnownProvider(provider, toGraphError);
-  assertModelHasProvider(provider, model, CONFIG_KEY, toGraphError);
-  announceSelection(selection);
-  return resolveIdentity(
-    providerSpecFor(config, { provider, model: model ?? null }),
-    toGraphError,
-  );
+  return resolveIdentity(selectedSpec(config, flags), toGraphError);
+}
+
+/**
+ * The identity `--offline` may run, or `undefined` when no local model is on
+ * this machine. Nothing is downloaded: the shared `offlineIdentity` decides,
+ * as it does for `meta fill` and `term fill`.
+ */
+export async function resolveOfflineIdentity(
+  config: GraphConfig,
+  flags: ProviderFlags,
+): Promise<{ provider: ConcreteProvider; model: string } | undefined> {
+  return offlineIdentity(selectedSpec(config, flags), toGraphError);
 }
 
 /** Construct a provider for an identity already resolved. */

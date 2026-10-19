@@ -12,7 +12,7 @@ concepts:
   - concept
   - closed shape
   - near miss
-last-updated: 2026-10-18
+last-updated: 2026-10-19
 ---
 
 Your pull request is red on `manni graph check` and you did not write the rule.
@@ -104,6 +104,26 @@ The shapes are closed, so an unexpected predicate fails rather than passing
 unnoticed. This one is almost never a content problem: it means a derive source
 started producing something the shapes have not learned. Hand it to whoever
 owns the shapes; it is a code change, in the same commit as the shapes update.
+
+### A sample question misses its page
+
+```console
+warning: https://example.com/graph/doc/docs/limits.md graph:sampleQuestion — "How do I retry a failed upload?" does not find this page in the top 1 (it ranks 2; first is docs/retry.md) [docs/limits.md]
+```
+
+The page lists the question under `sample-questions`, and a search for it
+ranks another page first. Read the page named after `first is` before you
+change anything.
+
+- If that page answers the question, the question belongs to it. Move the
+  question there.
+- If this page answers it, put the question's words where search weighs them
+  most. That is the title, then the description, then the headings. A page
+  that answers in other words than its reader asks in is hard to find.
+
+`it is not found` means the search did not return the page at all. To see the
+whole ranking, run `manni graph export search`, then ask `manni graph search`
+the same question.
 
 ### Broken internal link or section reference
 
