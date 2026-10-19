@@ -881,7 +881,9 @@ export async function exportSampleQuestions(
         const abs = resolve(configDir, pin.file);
         const page = pageAt(abs);
         if (page) return pinned(page, pin.file, pin, reviewed);
-        // A page outside the graph has no node to name; a page that is gone is stale.
+        // A page outside the graph has no node to name, and its freshness is
+        // not checked, since that needs the page's graph record. A page that
+        // is gone is stale.
         const gone = !existsSync(abs);
         if (gone) stale += 1;
         return { file: pin.file, lines: spellLines(pin.lines), reviewed, ...(gone ? { stale: true as const } : {}) };

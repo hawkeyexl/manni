@@ -275,7 +275,7 @@ export async function runExport(opts: ExportOptions): Promise<ExportResult> {
     return runSearchIndex(cwd, sources, graphPath, opts.out);
   }
   if (opts.format === "questions") {
-    return await runQuestions(
+    return runQuestions(
       cwd,
       sources,
       graphPath,
