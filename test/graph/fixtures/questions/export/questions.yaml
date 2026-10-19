@@ -1,5 +1,5 @@
-# A cross-page question with a drafted pin, and two gaps: one in the
-# corpus default language, one in its own.
+# A cross-page question with a drafted pin, two gaps (one in the corpus
+# default language, one in its own), and an answer on a page that is gone.
 - question: How large may a retried upload be?
   answers:
     - file: docs/retry.md
@@ -14,3 +14,9 @@
 - question: Läuft der Dienst unter Windows on ARM?
   language: de
   answers: []
+# Its answer's page was deleted, so it exports stale, with no text to read.
+- question: Where do archived uploads go?
+  answers:
+    - file: docs/archive.md
+      lines: 3
+      integrity: sha256-0000000000000000000000000000000000000000000000000000000000000000

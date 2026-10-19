@@ -28,7 +28,7 @@ sample-questions:
 graph:
   label: CLI reference
   type: reference
-last-updated: 2026-10-18
+last-updated: 2026-10-19
 tags:
   - cli
   - reference
@@ -884,9 +884,11 @@ reads `turn budget`, and a run picks it up again once the budget allows.
 | `summary.turns` | The inference calls the run made. |
 
 When no provider resolves, a warning goes to stderr and the run goes on with
-stubs:
+stubs. A provider named in config or on the command line that cannot run says
+why first:
 
 ```
+manni: the configured provider "anthropic" could not run: Anthropic provider needs ANTHROPIC_API_KEY set (or choose another provider)
 manni: no model provider is configured, so new terms have no definition; pass --provider or --local.
 ```
 
