@@ -340,6 +340,17 @@ describe("fill: x-manni-term offers", () => {
     expect(termMarksIn(role, defs)).toEqual([{ path: ["role"], under: "Role" }]);
   });
 
+  it("reads one mark once when two branches reach it", () => {
+    const defs = { $defs: { terms: { "x-manni-term": { under: "Role" } } }, definitions: {} };
+    const role = {
+      key: "role",
+      subschema: { anyOf: [{ $ref: "#/$defs/terms" }, { $ref: "#/$defs/terms" }] },
+      required: false,
+      present: false,
+    };
+    expect(termMarksIn(role, defs)).toEqual([{ path: ["role"], under: "Role" }]);
+  });
+
   it("offers nothing with no termbase, and takes any string", async () => {
     registerTermLabelSource(() => Promise.resolve([]));
     const provider = script({ audiences: { value: ["devops"], confidence: 0.9 } });

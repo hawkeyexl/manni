@@ -98,13 +98,22 @@ export interface TermMarkAt {
  */
 export function termMarksIn(candidate: Candidate, defs: ProjectionDefs): TermMarkAt[] {
   const out: TermMarkAt[] = [];
+  // Two branches that reach one mark, say through one shared `$defs` entry,
+  // still give one hint.
+  const marked = new Set<string>();
   const stack = new Set<unknown>();
   const walk = (node: unknown, path: string[]): void => {
     if (typeof node !== "object" || node === null || Array.isArray(node) || stack.has(node)) return;
     stack.add(node);
     const schema = node as Record<string, unknown>;
     const mark = schema[TERM_KEYWORD];
-    if (isTermMark(mark)) out.push({ path, ...(mark.under === undefined ? {} : { under: mark.under }) });
+    if (isTermMark(mark)) {
+      const key = JSON.stringify([path, mark.under ?? null]);
+      if (!marked.has(key)) {
+        marked.add(key);
+        out.push({ path, ...(mark.under === undefined ? {} : { under: mark.under }) });
+      }
+    }
     if (typeof schema.$ref === "string") walk(resolvePointer(schema.$ref, defs), path);
     for (const keyword of ["allOf", "anyOf", "oneOf"]) {
       const branches = schema[keyword];

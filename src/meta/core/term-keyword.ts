@@ -124,6 +124,7 @@ export function termScheme(terms: readonly TermLabel[]): TermScheme {
         }
         // A cycle back to the root never makes the root its own value.
         seen.delete(root);
+        // Cached read-only: nothing writes to `seen` once it is stored.
         found = seen;
         branches.set(root, found);
       }
