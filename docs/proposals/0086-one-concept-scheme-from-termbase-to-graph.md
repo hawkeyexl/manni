@@ -1,6 +1,6 @@
 # 0086: One concept scheme, from the termbase to the graph
 
-- **Status:** Proposed; superseded in part by [0087](0087-a-golden-set-of-reader-questions.md)
+- **Status:** Implemented (#184–#190, #195); superseded in part by [0087](0087-a-golden-set-of-reader-questions.md)
 - **Serves:** Three journeys.
   - Sara · S6, "Define our terminology and make `concepts:` mean something".
     Her term pages now shape the graph, and her pages' freeform concepts turn

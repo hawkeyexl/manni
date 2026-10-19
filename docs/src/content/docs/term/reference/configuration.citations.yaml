@@ -234,7 +234,7 @@ docs/src/content/docs/term/reference/configuration.mdx:
         file: src/term/core/check.ts
         lines: 603-604
         integrity: sha256-2f265af85f9d91efeb2ae0c4d46f04963f7dbc82990a636954e00086b5be55ab
-        commit-sha: 12dcd6931e168b48c3111d879bf631f3be673105
+        commit-sha: 49346c72bb52a62cdc36b8af3962411f862613c7
     - id: severity-family-levels-plus-off
       claim:
         integrity: sha256-19bf69bbaca754e83b9842320fc2402a33cccee5e1c8993bc24b9d73c3d3861e
@@ -395,7 +395,7 @@ docs/src/content/docs/term/reference/configuration.mdx:
         file: src/term/core/check.ts
         lines: 339-341
         integrity: sha256-1e7a0d9319bd8cce486fe3e632637e6981a768da9a86ad16ce2d0ebe22be1b0a
-        commit-sha: 636381071c1f4b7ad917a3dfd8c1a89812c8d8c7
+        commit-sha: 4a6402354961e71777456c12376a14b9cc96840b
     - id: allow-empty-flag-wins
       claim:
         lines: 69
@@ -439,7 +439,7 @@ docs/src/content/docs/term/reference/configuration.mdx:
         file: src/term/core/check.ts
         lines: 210-225
         integrity: sha256-5b9975bcff91556572a69cb35f04e8ef36b75002721d21d328774cb67e5b27e2
-        commit-sha: 636381071c1f4b7ad917a3dfd8c1a89812c8d8c7
+        commit-sha: 4a6402354961e71777456c12376a14b9cc96840b
     - id: missing-vale-config-stops-lint
       claim:
         integrity: sha256-2e3ff5e0b533e4a07d1536c19f120adb52c52c6b279e168b872870206dcac29d

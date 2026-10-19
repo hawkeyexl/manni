@@ -1,0 +1,9 @@
+check-before 1 377ms
+fill 0 1879ms
+check-after 1 380ms
+build 0 708ms
+graph-fill 0 7369ms
+graph-check 0 604ms
+timing1 check-before 377ms fill 1864ms check-after 402ms build 722ms graph-fill 7354ms graph-check 625ms
+timing2 check-before 377ms fill 1902ms check-after 375ms build 712ms graph-fill 7333ms graph-check 637ms
+timing3 check-before 377ms fill 1874ms check-after 377ms build 718ms graph-fill 7381ms graph-check 631ms

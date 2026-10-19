@@ -1,6 +1,6 @@
 # 0087: A golden set of reader questions, pinned to their answers
 
-- **Status:** Proposed
+- **Status:** Implemented (#191–#195)
 - **Serves:** Three groups of readers.
   - Maya · M18 and M20. She wants a golden set of the questions readers ask,
     so a search or a docs bot can be held to it.

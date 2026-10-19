@@ -1,0 +1,42 @@
+---
+title: "Concept scheme"
+description: "What concept scheme means in manni graph, and where the tool uses it."
+type: term
+id: concept-scheme
+label: "concept scheme"
+abstract: "The one SKOS scheme every concept belongs to."
+definition: "The single SKOS concept scheme that the termbase and every page's freeform concepts feed, with one node per concept."
+keywords:
+  - "concept scheme"
+  - "SKOS"
+  - "termbase"
+language: en
+audiences:
+  - "docs-engineers"
+  - "ci-engineers"
+  - "schema-authors"
+  - "contributors"
+intent: "Say what concept scheme means in manni graph."
+lifecycle: published
+applies-to:
+  - "domain:graph"
+sample-questions:
+  - "What is the concept scheme in manni graph?"
+  - "Why do an alt-label and its term land on one node?"
+graph:
+  label: "concept scheme"
+  type: concept
+action: understand
+risks: read-only
+related-terms:
+  - "concept"
+  - "concept-mapping"
+last-updated: 2026-10-18
+---
+
+<p>{frontmatter.definition}</p>
+
+A label on a page resolves to a term by its label, its id, then an
+alt-label. So each spelling of a term meets on one node. A label no term
+defines stays a freeform concept. See
+[One concept scheme](/manni/graph/get-started/how-graph-works/#one-concept-scheme).
