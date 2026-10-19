@@ -189,7 +189,7 @@ docs/src/content/docs/key/reference/cli.mdx:
         file: src/meta/core/config.ts
         lines: 520-523
         integrity: sha256-2c48e1fac5e85ebd797cef1db8d849c82cf87f357977541d86122864d2eb19e5
-        commit-sha: 5f05739873cc71822eb1e6650ac3ccc937c05d55
+        commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
     - id: rotate-finds-by-ciphertext
       claim:
         integrity: sha256-98ed81bcf95153b8cf0fe66d98a210953e78858b8afd406faabca420ee06c1ac

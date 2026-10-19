@@ -328,7 +328,7 @@ docs/src/content/docs/cite/reference/cli.mdx:
         file: src/shared/pin.ts
         lines: 259-273
         integrity: sha256-b17218395a52c32bd9b42003bc0c540915e7837e9274fe9bff813699a1b60a5f
-        commit-sha: 5f05739873cc71822eb1e6650ac3ccc937c05d55
+        commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
     - id: add-id-refusals
       claim:
         lines: 439
@@ -614,7 +614,7 @@ docs/src/content/docs/cite/reference/cli.mdx:
         file: src/cite/core/page.ts
         lines: 234-238
         integrity: sha256-b04799a1055a24a811289a4dde7ed426dc54a5c301a215eae397d6d0fe87bde3
-        commit-sha: 5f05739873cc71822eb1e6650ac3ccc937c05d55
+        commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
     - id: check-exit-1-error-rules
       claim:
         lines: 338
