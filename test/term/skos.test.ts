@@ -163,6 +163,15 @@ describe("skos reader", () => {
     ]);
   });
 
+  it("does not read an IRI where a term field holds text", async () => {
+    const { terms, notices } = await readSkos(
+      '@prefix skos: <http://www.w3.org/2004/02/skos/core#> .\n<https://x.test/a> a skos:Concept ; skos:prefLabel "a"@en ; skos:definition <https://x.test/d> .\n',
+      "x.ttl",
+    );
+    expect(records(terms)).toEqual([{ id: "a", language: "en", record: { label: "a" } }]);
+    expect(notices).toEqual(['x.ttl: skos:definition on "a" is not text, so 1 value was not read.']);
+  });
+
   it("reads an untagged prefLabel as a term with no language", async () => {
     const { terms } = await readSkos(
       '@prefix skos: <http://www.w3.org/2004/02/skos/core#> .\n<https://x.test/a%20b> a skos:Concept ; skos:prefLabel "a b" .\n',
