@@ -58,7 +58,7 @@ bash's `time` or `node dist/cli.js`. The typed command reads `manni`.
   the rule ("With no local model, term fill writes a stub per concept"), not a
   claim about this machine. Beat 4's `graph fill --offline` uses the docset's
   configured local model, `granite-4.1-3b-q2`, already downloaded here.
-- **Beat 4's wait is shortened, and disclosed.** `graph fill` took 7.33-8.30 s
+- **Beat 4's wait is shortened, and disclosed.** `graph fill` took 7.33-7.38 s
   on CPU. The replay shortens only the wait between Enter and output, to
   2.1 s. The frame shows the shell's own `time` line, `real 0m7.350s`, unedited.
   `TIMEFORMAT` is set to print only the wall clock, because `user` and `sys`
@@ -168,10 +168,10 @@ questions  2: 2 reviewed, 0 drafted, on 2 pages
 - Typing 35 ms per character (spec: 35-70 ms). The cursor is a solid block.
 - Output appears after each command's measured latency. The figures come from
   the capture run plus three timing runs (`media/capture-concepts/latency.txt`).
-  `term check` takes 375-416 ms, `term fill --offline` 1864-1902 ms,
+  `term check` takes 375-402 ms, `term fill --offline` 1864-1902 ms,
   `graph build` 708-722 ms and `graph check` 604-637 ms. `grep` and `sed` get 2
   frames. `graph fill`
-  (7.33-8.30 s) is the one shortened wait, above.
+  (7.33-7.38 s) is the one shortened wait, above.
 - Each beat holds 3.4-4.8 s after its main output, so its 88-99 character
   caption can be read. The caption stays on screen for the whole beat.
 - No narration, so no loudness pass. The AAC 48 kHz track is silence

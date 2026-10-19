@@ -304,6 +304,7 @@ Overview — "What are you trying to do?" router + a 60-second proof
 ├─ Get started          (Maya)   → M18
 ├─ Explore the graph    (Maya)   → M18, M19
 ├─ Fill the vocabulary  (Maya)   → M20
+├─ Keep a golden set    (Maya)   → M27
 ├─ Run it in CI         (Devin)  → D12
 ├─ Publish the graph    (Devin)  → D13
 ├─ Govern the graph     (Sara)   → S12

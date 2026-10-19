@@ -9,7 +9,7 @@ export const TYPING_MS = 35;
 
 // Measured wall-clock latency on this machine, run in C:\concepts
 // (media/capture-concepts/latency.txt: the capture run plus three timing runs):
-// term check 375-416 ms (both runs), term fill --offline 1864-1902 ms,
+// term check 375-402 ms (both runs), term fill --offline 1864-1902 ms,
 // graph build 708-722 ms, graph fill 7333-7381 ms, graph check 604-637 ms.
 // Output never appears sooner than measured, with one disclosed exception.
 //

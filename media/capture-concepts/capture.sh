@@ -33,6 +33,7 @@ S="$MEDIA/scratch-concepts"
 J=/c/concepts
 JW='C:\concepts'
 NOMODELS="$(mktemp -d)"
+trap 'rmdir "$NOMODELS"' EXIT
 
 rm -rf "$S" && mkdir -p "$S"
 cp -r "$C/docset/." "$S/"

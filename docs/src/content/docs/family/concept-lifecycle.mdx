@@ -43,7 +43,9 @@ Talisman's [*Ontology Pipeline*](https://technicspub.com/ontology-pipeline/)
 gives the work, from vocabulary to schema, taxonomy, thesaurus and graph.
 
 Every transcript below is real output from the built tool. The docset starts
-as a copy of `test/fixtures/term/fill/basic/` and grows with each step.
+from a copy of `test/fixtures/term/fill/basic/`. Each page adds a
+`sample-questions` entry, the payments page adds `audiences:`, and the config
+adds a `graph:` section. It grows with each step.
 
 ## The docset
 
@@ -281,8 +283,10 @@ broader: [Backoff]
 ```
 
 The crawl's `Idempotency key` draft copied a sentence from the payments page.
-It also proposed `Unique identifier` as an alt-label. Rewrite the one and drop
-the other. Give each related link and each broader link its other half. In
+It also proposed `Unique identifier` as an alt-label. Rewrite the one, and
+replace the other with `Idempotency token`. Relate `Idempotency key` to
+`Retry`, and place `Timeout` under `Errors`. Give each related link and each
+broader link its other half. In
 `concepts:`, name labels rather than alt-labels, and list each term the page
 is about. The check comes back with one notice:
 
