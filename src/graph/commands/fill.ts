@@ -732,10 +732,12 @@ export async function runFill(opts: FillOptions = {}): Promise<FillReport> {
     absPath: string | undefined,
     content: string,
   ): Promise<FillDocResult & { filledContent?: string }> {
-    const { after, ...result } = await fillOne(path, absPath, content);
+    const { after, merged, ...result } = await fillOne(path, absPath, content);
     if (!withQuestions) return result;
     const pageFormat = formatOf(path, format);
-    const data = metadataOf(mergedTexts.get(path) ?? after ?? content, path, pageFormat).data;
+    // The page as meta reads it once the graph pass is applied, so a concept
+    // that pass just filled reaches the question prompt.
+    const data = metadataOf(merged ?? mergedTexts.get(path) ?? content, path, pageFormat).data;
     const pass = await fillPageQuestions({
       path,
       format: pageFormat,
@@ -782,7 +784,7 @@ export async function runFill(opts: FillOptions = {}): Promise<FillReport> {
     path: string,
     absPath: string | undefined,
     content: string,
-  ): Promise<FillDocResult & { filledContent?: string; after?: string }> {
+  ): Promise<FillDocResult & { filledContent?: string; after?: string; merged?: string }> {
     // `--as` is how every input parses, the stdin page included.
     const pageFormat = formatOf(path, format);
     // Refused before a turn is spent. graph's YAML editor is the Markdown
@@ -1196,6 +1198,7 @@ export async function runFill(opts: FillOptions = {}): Promise<FillReport> {
     guard?.commit(path, applied.content);
     return {
       after: pageContent,
+      merged: applied.content,
       path,
       status: opts.dryRun ? "proposed" : "filled",
       fields: reportedFields,

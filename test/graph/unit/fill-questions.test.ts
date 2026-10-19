@@ -132,6 +132,14 @@ describe("graph fill drafts questions", () => {
     expect(request?.user).toContain("Draft 3 new questions");
   });
 
+  it("names the concepts the graph pass just filled in the question prompt", async () => {
+    const dir = work("fill-draft");
+    editConfig(dir, "fields: [sample-questions]", "fields: [concepts, sample-questions]");
+    const provider = new MockProvider([{ json: { concepts: ["Upload limits"], confidence: { concepts: 0.95 } } }, answer([])]);
+    await runFill({ cwd: dir, paths: ["docs/retry.md"], providerInstance: provider, noCache: true, dryRun: true });
+    expect(provider.requests[1]?.user).toContain("- Upload limits");
+  });
+
   it("writes no generated-by or confidence when writeProvenance is off, and still marks the draft", async () => {
     const dir = work("fill-draft");
     editConfig(dir, "  fill:\n", "  fill:\n    writeProvenance: false\n");
