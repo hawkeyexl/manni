@@ -125,7 +125,8 @@ interface Session {
  * returned, or a meta refresh reported without waiting for it) stays in that
  * page's tab instead of aborting the next load. A page is closed once the
  * next one exists, never before: Chrome can drop a context left with no page,
- * and `newPage` then fails with "Failed to open a new tab".
+ * and `newPage` then fails with "Failed to open a new tab". The next load does
+ * not wait for that close, which Chrome can lose.
  * - `page.goto(url, { waitUntil: "load", timeout })`; `finalUrl` is `page.url()` after it
  * - one in-page evaluation reads every `a[href]`'s absolute `href` and the
  *   first meta refresh; a refresh to another page (by `dedupeKey`) is a
@@ -158,10 +159,14 @@ export function createPlaywrightAnalyzer(): PageAnalyzer {
       const page = await context.newPage();
       const previous = current;
       current = page;
-      // Its outcome is settled; a failure to close it is not this URL's. Not
-      // reentrant: an overlapping call would close a page still being read,
-      // so the caller (the crawl, one page at a time) sequences its calls.
-      await previous?.close().catch(() => undefined);
+      // Its outcome is settled, so its close is not this URL's to wait for,
+      // nor is a failure to close it. Chrome answers a close that lands on
+      // the tab's own commit (a late redirect) and then never closes the tab,
+      // so an awaited close would wait for the browser to exit. That tab stays
+      // open until the browser closes. Not reentrant: an overlapping call
+      // would close a page still being read, so the caller (the crawl, one
+      // page at a time) sequences its calls.
+      void previous?.close().catch(() => undefined);
       // Every navigation the main frame starts, first hop only, so the one
       // that follows the load can be named even when it never commits (an
       // unresolvable host leaves the browser on its own error page).
