@@ -318,8 +318,8 @@ docs/src/content/docs/term/reference/terminology.mdx:
       source:
         file: src/term/core/check.ts
         lines: 78-135
-        integrity: sha256-69ef9a537b01b0244c9d38fd12b3db14c1458925dd3c24ef5eb1c3a9ba5cee00
-        commit-sha: 5e2f1871117a8b5592bb5c811842eb7c2aee8a9b
+        integrity: sha256-d4e03be455a49ec8c6fe3142359ff700f829e55a149a5a1252dde0bdf2947f30
+        commit-sha: e9716dd53177a7875cffb2d1ef435237cbab4dab
     - id: see-is-reference-field
       claim:
         integrity: sha256-41b76e60b60d0b3b47ba9e1388d6c8c979c9f7933f5aa37bcf0dbdbb07563f00
