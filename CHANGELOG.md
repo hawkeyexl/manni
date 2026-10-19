@@ -4,6 +4,13 @@
 4.13.1. Entries below that version are docmeta releases; the repository
 history is the same one.
 
+## [4.12.1](https://github.com/hawkeyexl/manni/compare/v4.12.0...v4.12.1) (2026-10-19)
+
+
+### Bug Fixes
+
+* **graph:** keep a page's own YAML style when graph fill writes it ([#196](https://github.com/hawkeyexl/manni/issues/196)) ([60dd903](https://github.com/hawkeyexl/manni/commit/60dd9036eb11107fcd9d52d371e216ff349df24f))
+
 # [4.12.0](https://github.com/hawkeyexl/manni/compare/v4.11.0...v4.12.0) (2026-10-19)
 
 
