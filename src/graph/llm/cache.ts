@@ -6,7 +6,7 @@
  */
 import { JsonCache, buildCacheKey, sha256 } from "@hawkeyexl/inference";
 import type { GraphFillField as FillField } from "../core/config.js";
-import { PROMPT_VERSION } from "./prompt.js";
+import { PROMPT_VERSION, QUESTION_PROMPT_VERSION } from "./prompt.js";
 
 export { sha256 };
 
@@ -46,7 +46,7 @@ export function questionCacheKey(
   return buildCacheKey([
     provider,
     model,
-    `v${PROMPT_VERSION}`,
+    `q${QUESTION_PROMPT_VERSION}`,
     sha256(chunk),
     "questions",
     sha256(JSON.stringify(request)),

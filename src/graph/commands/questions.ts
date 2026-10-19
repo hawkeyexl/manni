@@ -749,7 +749,10 @@ export async function askSampleQuestions(
         const page = pageAt(abs);
         if (page === undefined) {
           if (existsSync(abs)) {
-            // On disk, but in no collection the graph was built from.
+            // On disk, but in no collection the graph was built from. Its
+            // freshness cannot be read without the page's graph record, so the
+            // pin counts in no freshness bucket, and pinned can exceed
+            // current + moved + changed by these. Its finding says why.
             const nodes = await rank(language, q.question);
             report("knob", `"${q.question}" does not find ${pin.file} in the top ${String(top)} (${where(0, nodes[0])})`, draft);
           } else {

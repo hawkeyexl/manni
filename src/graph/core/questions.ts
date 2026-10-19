@@ -94,12 +94,12 @@ let validateFile: ReturnType<Ajv2020["compile"]> | undefined;
  * failure are each a `GraphError`, an operational error: a golden set that
  * cannot be read gates nothing.
  */
-export function readQuestionFile(abs: string, label: string): FileQuestion[] {
-  if (!existsSync(abs)) {
+export function readQuestionFile(abs: string, label: string, text?: string): FileQuestion[] {
+  if (text === undefined && !existsSync(abs)) {
     throw new GraphError(`graph.questionFiles names ${label}, which does not exist.`);
   }
   const counter = new LineCounter();
-  const doc = parseDocument(readFileSync(abs, "utf8"), { lineCounter: counter });
+  const doc = parseDocument(text ?? readFileSync(abs, "utf8"), { lineCounter: counter });
   const [error] = doc.errors;
   if (error) throw new GraphError(`${label}: ${error.message}`);
   const value: unknown = doc.toJS() ?? [];

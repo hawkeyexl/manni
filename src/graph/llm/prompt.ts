@@ -16,11 +16,15 @@ import type { DocModel } from "../types.js";
  * did: the attribution it writes is now the page-level `meta-provenance`, by
  * JSON Pointer. A cache entry written before that replays a proposal shaped
  * for the old vocabulary, so every key misses once and is rewritten.
- *
- * 5 adds the question request (proposal 0087): a second prompt and schema,
- * which draft sample questions and quote the passages that answer them.
  */
-export const PROMPT_VERSION = 5;
+export const PROMPT_VERSION = 4;
+
+/**
+ * The question request's own version (proposal 0087), apart from
+ * PROMPT_VERSION so a change to one prompt never evicts the other's cache.
+ * Bump it whenever the question prompt or its schema changes.
+ */
+export const QUESTION_PROMPT_VERSION = 1;
 
 const TOPIC_TYPES = [
   "task",
