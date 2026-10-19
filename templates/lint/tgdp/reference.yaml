@@ -33,9 +33,10 @@ templates:
           `## {Table name or other structured entry}` - a placeholder
           heading standing for a repeated section, so a slot with an
           unbounded `max`. Claims every consecutive section up to
-          `commands`. Optional because it and `reference-description` are
-          both unconstrained placeholders: the matcher cannot tell "the
-          description" from "the first entry", so requiring both would
+          `commands` or `related`. Optional because it and
+          `reference-description` are both unconstrained placeholders: the
+          matcher cannot tell "the description" from "the first entry", so
+          requiring both would
           mandate two H2s where the doctype only asks that entries exist.
           The node model can name a table directly (proposal 0065), so this
           asks for one. Every parser reports tables now, so the rule runs and
@@ -61,7 +62,21 @@ templates:
         heading:
           pattern: '^(?:\(Optional\)\s+)?Commands$'
 
-      # Reference pages routinely end with sections the doctype does not
-      # enumerate - "See also", "Related information", "Notes". The upstream
-      # template does not forbid them, so they are not findings.
+      - id: related
+        description: >-
+          Trailing related-reading sections. Reference pages routinely end
+          with them, the doctype does not enumerate them, and upstream does
+          not forbid them. Named so the entry slot above stops before them
+          rather than asking them for a table. No `max`, so a page can end
+          with both "Notes" and "See also". With a bound of one, the entry
+          slot would take the first of the two.
+        min: 0
+        heading:
+          - See also
+          - Related information
+          - Related resources
+          - Notes
+
+      # Anything after those is the author's own, and upstream does not forbid
+      # it, so it is not a finding.
       - min: 0
