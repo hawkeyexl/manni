@@ -543,9 +543,12 @@ export function checkTermSet(set: TermSet, opts: CheckTermSetOptions = {}): Term
     }
   });
 
-  // orphan-term: only once the scheme has a hierarchy at all, so a flat
-  // glossary never hears of it. A concept is placed in every language.
-  if (up.some((parents) => parents.size > 0)) {
+  // orphan-term: only once a term sits in the hierarchy at all, so a flat
+  // glossary never hears of it, nor one whose only edges join names no term
+  // defines (those sit past the terms in `names`). A concept is placed in
+  // every language.
+  const isTerm = (index: number): boolean => index < terms.length;
+  if (up.some((parents, child) => isTerm(child) || [...parents].some(isTerm))) {
     const placed = new Set<string>();
     const place = (index: number | undefined): void => {
       if (index === undefined) return;
