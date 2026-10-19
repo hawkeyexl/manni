@@ -5,7 +5,7 @@
  * the model returns a per-field `confidence` (0..1) and `reasoning`; the fill
  * command gates on confidence (ADR 01015).
  */
-import type { FillField } from "../core/config.js";
+import type { GraphFillField as FillField } from "../core/config.js";
 import type { DocModel } from "../types.js";
 
 /**
@@ -18,6 +18,13 @@ import type { DocModel } from "../types.js";
  * for the old vocabulary, so every key misses once and is rewritten.
  */
 export const PROMPT_VERSION = 4;
+
+/**
+ * The question request's own version (proposal 0087), apart from
+ * PROMPT_VERSION so a change to one prompt never evicts the other's cache.
+ * Bump it whenever the question prompt or its schema changes.
+ */
+export const QUESTION_PROMPT_VERSION = 1;
 
 const TOPIC_TYPES = [
   "task",
@@ -308,4 +315,104 @@ export function buildUserPrompt(
     "Body excerpt:",
     body.slice(0, EXCERPT_CHARS),
   ].join("\n");
+}
+
+/**
+ * The question request (proposal 0087): pair existing questions with the
+ * passage that answers each, and draft new ones with theirs. Quotes come back
+ * verbatim, and the tool pins the lines they touch; a quote is never written.
+ */
+export const QUESTION_SYSTEM_PROMPT = [
+  "You write and answer the questions a reader asks of a documentation page.",
+  "Every answer is a passage quoted VERBATIM from the page text you are given:",
+  "copy it exactly, as one contiguous run of the text, and quote no more than",
+  "the passage that answers. Never paraphrase a quote.",
+  "",
+  "For each numbered question, quote the passage that answers it, or an empty",
+  "string when no passage in this text does. Draft only as many new questions",
+  "as asked. Ask them as a reader would, in a reader's own words rather than",
+  "the page's, and only questions this text answers. For every pair and draft,",
+  "give a `confidence` (0..1) that the quote answers the question. Score",
+  "honestly and conservatively.",
+].join("\n");
+
+/** What one question request asks of one piece of a page's body. */
+export interface QuestionRequest {
+  path: string;
+  title: string;
+  /** The page's concepts, each with its preferred label and alt-labels. */
+  concepts: { label: string; altLabels: string[] }[];
+  /** Existing questions to pair, numbered from 1 in the prompt. */
+  pair: string[];
+  /** How many new questions to draft. */
+  draft: number;
+}
+
+export function buildQuestionPrompt(request: QuestionRequest, chunk: string): string {
+  const concepts = request.concepts.map((c) =>
+    c.altLabels.length > 0 ? `- ${c.label} (also: ${c.altLabels.join(", ")})` : `- ${c.label}`,
+  );
+  return [
+    `Path: ${request.path}`,
+    `Title: ${request.title}`,
+    ...(concepts.length > 0 ? ["", "Concepts this page is about:", ...concepts] : []),
+    "",
+    request.pair.length > 0
+      ? `Questions to pair, by number:\n${request.pair.map((q, i) => `${String(i + 1)}. ${q}`).join("\n")}`
+      : "Questions to pair: none.",
+    "",
+    request.draft > 0
+      ? `Draft ${String(request.draft)} new question${request.draft === 1 ? "" : "s"}, each with the quote that answers it.`
+      : "Draft no new questions.",
+    "",
+    "Page text:",
+    chunk,
+  ].join("\n");
+}
+
+/**
+ * The question proposal: `pairs` by question number, and `drafts`. The
+ * request form requires every key, so a strict structured-output provider can
+ * constrain it. The lenient form, which validates, accepts a `confidence` of
+ * any shape and a missing list (ADR 01034). The reader keeps only a number in
+ * range, and reads a missing list as empty.
+ */
+export function questionSchema(lenient = false): Record<string, unknown> {
+  const confidence = lenient ? {} : { type: "number", minimum: 0, maximum: 1 };
+  const item = (
+    properties: Record<string, unknown>,
+    optional: readonly string[] = [],
+  ): Record<string, unknown> => ({
+    type: "object",
+    additionalProperties: false,
+    required: Object.keys(properties).filter((k) => !lenient || !optional.includes(k)),
+    properties,
+  });
+  return item(
+    {
+      pairs: {
+        type: "array",
+        items: item(
+          {
+            index: { type: "integer", minimum: 1, description: "The question's number." },
+            quote: { type: "string", description: "The verbatim passage that answers it, or an empty string." },
+            confidence,
+          },
+          ["confidence"],
+        ),
+      },
+      drafts: {
+        type: "array",
+        items: item(
+          {
+            question: { type: "string", minLength: 1, description: "A question a reader would ask." },
+            quote: { type: "string", minLength: 1, description: "The verbatim passage that answers it." },
+            confidence,
+          },
+          ["confidence"],
+        ),
+      },
+    },
+    ["pairs", "drafts"],
+  );
 }

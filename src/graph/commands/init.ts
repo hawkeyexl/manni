@@ -85,7 +85,7 @@ provenance:
 # provider: anthropic          # auto | anthropic | openai | claude-cli | llama-cpp
 # model: claude-sonnet-4-5     # the provider's default when omitted
 
-# LLM settings for \`manni graph fill\` (SKOS frontmatter proposals).
+# LLM settings for \`manni graph fill\` (SKOS frontmatter proposals and sample questions).
 fill:
   temperature: 0
   # Stop after this many inference calls. One page is one turn, and a cached
@@ -104,6 +104,13 @@ fill:
   # Also propose per-section metadata. Off by default: it costs more output per
   # call, and section metadata is explicit-only, so review it as carefully.
   sections: false
+  # Sample questions: draft until a page has perPage, each pinned to the lines
+  # that answer it. A question request sends at most chunkChars of a page.
+  questions:
+    perPage: 3
+  chunkChars: 12000
+  # Send nothing off this machine: only a local model already downloaded.
+  offline: false
 
 # Local embeddings for semantic search (\`manni graph embed\`). Needs the optional
 # peer: npm install @huggingface/transformers

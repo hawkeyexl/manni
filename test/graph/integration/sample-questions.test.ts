@@ -76,12 +76,20 @@ describe("sample questions", () => {
     expect(lines).toContain(RANKED);
     expect(lines).toContain(LOST);
     // Found for its own question, in its own language.
-    expect(r.stdout).not.toContain("docs/retry.md graph:sampleQuestion");
+    expect(lines.filter((l) => l.includes("docs/retry.md graph:sampleQuestion") && l.includes("does not find"))).toEqual([]);
     expect(r.stdout).not.toContain("proxy.md graph:sampleQuestion");
     // hidden.md's question stays out of the graph and is still asked, because
     // check reads questions from the page sources (proposal 0087).
     expect(lines).toContain(HIDDEN);
-    expect(r.stdout).toContain("0 errors, 3 warnings, 0 notices");
+    // Two pages ask each question, so the second copy of each is reported
+    // (proposal 0087 § 7b).
+    expect(lines).toContain(
+      'warning: https://example.com/graph/doc/docs/ledger.md graph:sampleQuestion — "Retry uploads?" is also asked on docs/hidden.md, so keep it where it is answered. [docs/ledger.md]',
+    );
+    expect(lines).toContain(
+      'warning: https://example.com/graph/doc/docs/retry.md graph:sampleQuestion — "How do I retry a failed upload?" is also asked on docs/limits.md, so keep it where it is answered. [docs/retry.md]',
+    );
+    expect(r.stdout).toContain("0 errors, 5 warnings, 0 notices");
   });
 
   it("keeps the finding shape in JSON, with no SHACL severity", () => {
@@ -90,7 +98,9 @@ describe("sample questions", () => {
       findings: Array<Record<string, unknown>>;
     };
     const ours = report.findings.filter(
-      (f) => f.path === "https://hawkeyexl.github.io/manni/graph/ns#sampleQuestion",
+      (f) =>
+        f.path === "https://hawkeyexl.github.io/manni/graph/ns#sampleQuestion" &&
+        String(f.message).includes("does not find"),
     );
     expect(ours).toEqual([
       {
@@ -142,7 +152,7 @@ describe("sample questions", () => {
     );
   });
 
-  it("asks nothing at severity off", () => {
+  it("reports no question at severity off", () => {
     const off = built((y) => y.replace("      top: 1", "      top: 1\n      severity: off"));
     const r = run(["check"], off);
     expect(r.status).toBe(0);

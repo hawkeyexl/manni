@@ -230,7 +230,7 @@ docs/src/content/docs/meta/reference/api.mdx:
         file: src/meta/index.ts
         lines: 35-52
         integrity: sha256-315ed288e875b4288150404cfda8b3d9aad17a550011c3ecf5631cafb2b96207
-        commit-sha: 60d4bca08c69cafeee46e192b50e956cb4212a99
+        commit-sha: 4f328876e968607185d8b48a691ed2b876e0afb0
     - id: api-operational-failures-are-exit-2
       claim:
         lines: 68

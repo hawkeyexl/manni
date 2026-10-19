@@ -1,6 +1,6 @@
 # 0087: A golden set of reader questions, pinned to their answers
 
-- **Status:** Proposed
+- **Status:** Implemented (#191–#195)
 - **Serves:** Three groups of readers.
   - Maya · M18 and M20. She wants a golden set of the questions readers ask,
     so a search or a docs bot can be held to it.
@@ -27,7 +27,8 @@
   `src/shared/pin.ts`, `src/graph/core/` (`questions.ts` new, `derive.ts`,
   `analyze.ts`, `config-schema.json`, `config.ts`, `coverage.ts`),
   `src/graph/runtime/resolve.ts`, `src/graph/commands/` (`questions.ts`,
-  `check.ts`, `stats.ts`, `fill.ts`, `export.ts`), `src/graph/llm/prompt.ts`,
+  `check.ts`, `stats.ts`, `fill.ts`, `fill-questions.ts` new, `export.ts`),
+  `src/graph/llm/` (`prompt.ts`, `cache.ts`, `provider.ts`),
   `src/graph/cli.ts`, `docs/src/content/docs/`, `test/`
 - **Verdict:** A sample question can pin the lines that answer it, with cite's
   pin, so it fails when the answer changes. A golden-set file holds questions
@@ -293,6 +294,8 @@ A golden-set file is a list of the page item's object form, plus two keys.
   question with no pin, or under two words, is never measured.
 - **Where findings point.** A file question's focus node is `<file>:<line>` of
   its item, with no path. The rate finding's focus node is `questions`.
+- **At `off`.** The questions are still asked, so the summary and the rate gate
+  still count them. Only the findings on the knob go quiet.
 
 | case | stderr | exit |
 |---|---|---|
@@ -315,8 +318,18 @@ questions  431: 288 reviewed, 143 drafted, on 142 pages and in docs/questions.ya
 0 errors, 1 warning, 0 notices
 ```
 
-The summary prints only when some question exists. Under `-f github` it
-prints after the annotations, as plain text. The JSON report gains one
+The summary prints only when some question exists. A gap counts as reviewed
+or drafted like any question, and never under `found`. The `drafted` row
+prints only when a draft has a test, and the `gaps` row only when a gap
+exists. Percentages round down, so a rate under a threshold never prints as
+the threshold. Under `-f github` it prints after the annotations, as plain
+text.
+
+A file question's moved and changed messages name the answer's page, because
+its answers can sit on several. They read `the answer to "…" in
+docs/key/rotate.md moved from lines 12-15 to 14-17` and `lines 12-15 of
+docs/key/rotate.md no longer hold the answer`. An answer whose page is on disk
+but in no collection the graph was built from is reported as not found. The JSON report gains one
 `questions` key beside `findings`, with the same counts. Stored per CI run,
 that object is the time series. manni keeps no history of its own.
 
@@ -365,6 +378,7 @@ graph:
     confidenceThreshold: 0.7
     writeProvenance: true
     chunkChars: 12000      # new; integer >= 1
+    offline: false         # new; boolean
     questions:
       perPage: 3           # new; integer >= 1
 ```
@@ -373,6 +387,17 @@ graph:
 and bounds. Pretty output adds one line per question under its page. JSON
 gains a `questions` list per result, each with an `action` of `drafted`,
 `paired`, `re-paired`, `re-pinned`, `dropped` or `not-paired`.
+
+`--offline` overrides `graph.fill.offline`. It means no egress, as it does for
+`meta fill` and `term fill`, and it reuses their rule and their messages.
+`auto` resolves only to a local model already downloaded, and a hosted
+`--provider` beside it is a usage error. With no local model, only the re-pins
+run. Each page that needed a model is `skipped` as `offline`, and the run
+exits 0 with one warning.
+
+A changed answer in a golden-set file is not re-paired, because `fill` only
+moves that file's lines. Its `check` message therefore keeps `…so re-pin it
+and review it.`, while a page's changed answer names `graph fill`.
 
 ### 5. `graph export questions`
 
@@ -391,8 +416,9 @@ export time, so the source stays pinned, not copied.
 
 The default path is `questions.jsonl` beside the graph, and `-o` overrides it.
 `expected[].id` uses the ids `graph export search` writes, for ID-based
-recall. A gap has `"answerable": false`. Drafts are included with
-`reviewed: false`. A changed answer is exported with `"stale": true`, and one
+recall. It names the node that indexes the answer's first line. A gap has
+`"answerable": false`. Drafts are included with `reviewed: false`. A changed
+answer, or one whose page is gone, is exported with `"stale": true`, and one
 warning names the count. The CLI reference maps the format into Ragas,
 DeepEval and promptfoo datasets.
 

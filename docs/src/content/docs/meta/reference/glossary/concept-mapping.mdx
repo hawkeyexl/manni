@@ -1,0 +1,42 @@
+---
+title: "Concept mapping"
+description: "What concept mapping means in manni term, and where the tool uses it."
+type: term
+id: concept-mapping
+label: "concept mapping"
+abstract: "A link from a term to a concept in another vocabulary."
+definition: "A link from a term to a concept in another vocabulary, as an exact, close, broad, narrow or related match."
+keywords:
+  - "concept mapping"
+  - "exact-matches"
+  - "SKOS mapping"
+language: en
+audiences:
+  - "docs-engineers"
+  - "ci-engineers"
+  - "schema-authors"
+  - "contributors"
+intent: "Say what concept mapping means in manni term."
+lifecycle: published
+applies-to:
+  - "domain:term"
+sample-questions:
+  - "How do I map a term to another vocabulary?"
+  - "What does conflicting-matches report?"
+graph:
+  label: "concept mapping"
+  type: concept
+action: understand
+risks: read-only
+related-terms:
+  - "concept-scheme"
+last-updated: 2026-10-18
+---
+
+<p>{frontmatter.definition}</p>
+
+A term lists its mappings in `exact-matches`, `close-matches`,
+`broad-matches`, `narrow-matches` and `related-matches`. Each becomes the
+SKOS mapping property of that kind. `manni term check` reports an IRI listed
+under two kinds, and `manni graph check` reports a mapping that points into
+the scheme itself. See [Check rules](/manni/term/reference/rules/#conflicting-matches).

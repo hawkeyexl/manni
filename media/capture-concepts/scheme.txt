@@ -1,0 +1,2 @@
+<https://acme.dev/scheme> a skos:ConceptScheme ;
+  skos:hasTopConcept <https://acme.dev/concept/quota>, <https://acme.dev/concept/retry>, <https://acme.dev/concept/upload> .

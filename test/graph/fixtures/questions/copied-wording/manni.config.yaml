@@ -1,0 +1,16 @@
+# The copied-wording fixture (proposal 0087). A question that repeats its
+# answer's words tests matching more than finding. One page and its one
+# section are the whole index, so `top: 2` finds every question.
+collections:
+  - name: questions
+    paths:
+      - "docs/**/*.*"
+
+graph:
+  baseIri: https://example.com/graph/
+  out: graph.ttl
+  build:
+    derive: [frontmatter, sections]
+  check:
+    questions:
+      top: 2
