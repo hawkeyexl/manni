@@ -27,6 +27,7 @@
 import { createHash } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
+import GithubSlugger from "github-slugger";
 import type { Store } from "n3";
 import { locateFrontmatter } from "../../meta/index.js";
 import {
@@ -298,6 +299,7 @@ async function readPages(
   graph: GraphIndex,
   sources: string,
   view: { source: MetaViewSource; cwd: string },
+  verb: "checked" | "exported",
 ): Promise<{
   pages: Page[];
   contents: Map<string, string>;
@@ -322,8 +324,8 @@ async function readPages(
   if (missing > 0) {
     warn(
       missing === 1
-        ? "1 page in the graph is not on disk, so its questions were not checked; run manni graph build."
-        : `${String(missing)} pages in the graph are not on disk, so their questions were not checked; run manni graph build.`,
+        ? `1 page in the graph is not on disk, so its questions were not ${verb}; run manni graph build.`
+        : `${String(missing)} pages in the graph are not on disk, so their questions were not ${verb}; run manni graph build.`,
     );
   }
 
@@ -511,7 +513,7 @@ export async function askSampleQuestions(
     questions: readQuestionFile(resolve(configDir, label), label),
   }));
   const graph = GraphIndex.fromQuads(storeToQuads(store), Object.fromEntries(PREFIXES));
-  const { pages, contents, pageAt } = await readPages(graph, sources, view);
+  const { pages, contents, pageAt } = await readPages(graph, sources, view, "checked");
   const total =
     pages.reduce((n, p) => n + p.questions.length, 0) +
     sets.reduce((n, f) => n + f.questions.length, 0);
@@ -802,4 +804,103 @@ export async function askSampleQuestions(
     });
   }
   return { findings, summary };
+}
+
+/** One answer of an exported question: the node that holds it, and its text as it reads now. */
+interface ExportedAnswer {
+  id?: string;
+  file: string;
+  lines?: string;
+  reviewed: boolean;
+  stale?: true;
+  text?: string;
+}
+
+/**
+ * The golden set as `graph export questions` writes it (proposal 0087 § 7d):
+ * one JSON line per question, each page's in path order, then each golden-set
+ * file's. An answer's `id` is the node `export search` indexes its first line
+ * under, so an index built from that export returns comparable ids. Its text
+ * is rendered from the pin, as the page reads now. A changed answer, or one
+ * whose page is gone, is marked stale and counted.
+ */
+export async function exportSampleQuestions(
+  store: Store,
+  sources: string,
+  view: { source: MetaViewSource; cwd: string },
+  questionFiles: readonly string[] = [],
+  configDir: string = sources,
+): Promise<{ lines: string[]; stale: number }> {
+  const sets = questionFiles.map((label) => ({
+    label,
+    questions: readQuestionFile(resolve(configDir, label), label),
+  }));
+  const graph = GraphIndex.fromQuads(storeToQuads(store), Object.fromEntries(PREFIXES));
+  const { pages, pageAt } = await readPages(graph, sources, view, "exported");
+  let stale = 0;
+
+  const pinned = (page: Page, file: string, pin: AnswerPin, reviewed: boolean): ExportedAnswer => {
+    const fresh = freshness(page.body, pin);
+    const range = fresh.state === "changed" ? pin.lines : (fresh.ranges[0] ?? pin.lines);
+    if (fresh.state === "changed") stale += 1;
+    const first = toFileLines({ start: range.start, end: range.start }, page.bodyLine);
+    const text = page.body.slice(range.start - 1, range.end).join("\n");
+    return {
+      id: holdersOf(page, first)[0] ?? page.doc,
+      file,
+      lines: spellLines(range),
+      reviewed,
+      ...(fresh.state === "changed" ? { stale: true as const } : {}),
+      ...(text === "" ? {} : { text }),
+    };
+  };
+
+  const lines: string[] = [];
+  const write = (
+    id: string,
+    question: string,
+    language: string,
+    reviewed: boolean,
+    expected: ExportedAnswer[],
+  ): void => {
+    lines.push(
+      JSON.stringify({ id, question, language, reviewed, answerable: expected.length > 0, expected }),
+    );
+  };
+
+  for (const page of pages) {
+    // A question asked twice on one page still gets an id of its own.
+    const slugger = new GithubSlugger();
+    for (const q of page.questions) {
+      const expected =
+        q.answers.length === 0
+          ? [{ id: page.doc, file: page.path, reviewed: q.reviewed }]
+          : q.answers.map((pin) => pinned(page, page.path, pin, q.reviewed && pin.reviewed));
+      write(`${page.path}#${slugger.slug(q.question)}`, q.question, page.language, q.reviewed, expected);
+    }
+  }
+
+  for (const set of sets) {
+    const slugger = new GithubSlugger();
+    for (const q of set.questions) {
+      const expected = q.answers.map((pin): ExportedAnswer => {
+        const reviewed = q.reviewed && pin.reviewed;
+        const abs = resolve(configDir, pin.file);
+        const page = pageAt(abs);
+        if (page) return pinned(page, pin.file, pin, reviewed);
+        // A page outside the graph has no node to name, and its freshness is
+        // not checked, since that needs the page's graph record. A page that
+        // is gone is stale.
+        const gone = !existsSync(abs);
+        if (gone) stale += 1;
+        return { file: pin.file, lines: spellLines(pin.lines), reviewed, ...(gone ? { stale: true as const } : {}) };
+      });
+      const [firstAnswer] = q.answers;
+      const firstPage = firstAnswer && pageAt(resolve(configDir, firstAnswer.file));
+      const language =
+        q.language !== undefined ? canonicalLanguageTag(q.language) : (firstPage?.language ?? UNDETERMINED);
+      write(`${set.label}#${slugger.slug(q.question)}`, q.question, language, q.reviewed, expected);
+    }
+  }
+  return { lines, stale };
 }

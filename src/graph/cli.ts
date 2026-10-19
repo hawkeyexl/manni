@@ -779,7 +779,7 @@ program
 program
   .command("export")
   .description(
-    "Reserialize the built graph into a consumer format (jsonld file, iirds package, or search index)",
+    "Reserialize the built graph into a consumer format (jsonld file, iirds package, search index, or question set)",
   )
   // The target is a positional, not `-f`: `-f` is the output format in every
   // other verb of the family (0051 §2), and one flag cannot mean two things.
@@ -809,8 +809,9 @@ program
           out: opts.out,
         });
         for (const warning of result.warnings) warn(warning);
+        const noun = result.format === "questions" ? "question" : "node";
         console.log(
-          `Wrote ${result.nodes} node${result.nodes === 1 ? "" : "s"} to ${result.outPath}`,
+          `Wrote ${result.nodes} ${noun}${result.nodes === 1 ? "" : "s"} to ${result.outPath}`,
         );
       } catch (e) {
         fail(e);
