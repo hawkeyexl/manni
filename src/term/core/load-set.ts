@@ -130,12 +130,6 @@ async function jsonLdToNQuads(
   return new Writer({ format: "N-Quads" }).quadsToString(quads);
 }
 
-/**
- * A SKOS file as the reader takes it: Turtle as written, JSON-LD expanded to
- * N-Quads first. `.jsonld` is JSON-LD and `.ttl` is Turtle; stdin, which has
- * no extension, is JSON-LD when it parses as JSON. A first byte alone cannot
- * tell them apart, because Turtle may open a blank node with `[`.
- */
 /** The parsed JSON, or `undefined` when the text is not JSON. Parsed once, and reused. */
 function parseJson(content: string): unknown {
   try {
@@ -145,6 +139,12 @@ function parseJson(content: string): unknown {
   }
 }
 
+/**
+ * A SKOS file as the reader takes it: Turtle as written, JSON-LD expanded to
+ * N-Quads first. `.jsonld` is JSON-LD and `.ttl` is Turtle; stdin, which has
+ * no extension, is JSON-LD when it parses as JSON. A first byte alone cannot
+ * tell them apart, because Turtle may open a blank node with `[`.
+ */
 export async function skosInput(content: string, file: string, path?: string): Promise<TermInput> {
   const ext = extname(file).toLowerCase();
   const parsed = ext === ".ttl" ? undefined : parseJson(content);
