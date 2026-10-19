@@ -35,7 +35,7 @@ const RULE_DESCRIPTIONS: Readonly<Record<TermRule, string>> = {
   "unused-term": "No page's concepts: names the entry.",
   "hierarchy-outside-termbase":
     "A page's graph: block gives a term a broader, narrower or related concept its own entry does not list.",
-  "label-overlap": "A hidden-label or alt-label repeats one of the entry's own names, or a hidden-label is another entry's name.",
+  "label-overlap": "A hidden-label or alt-label repeats one of the entry's own names, or a hidden-label is another entry's label or alt-label.",
   "asymmetric-related": "A names B in related-terms, and B omits A.",
   "related-in-hierarchy": "A related term is also broader or narrower than the entry, at any depth.",
   "ambiguous-alt-label": "Two entries share an alt-label, ignoring case.",
