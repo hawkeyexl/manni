@@ -87,8 +87,10 @@ describe("manni term fill", () => {
     writeFileSync(join(work, "manni.config.yaml"), `${readFileSync(join(work, "manni.config.yaml"), "utf8")}term:\n  provider: anthropic\n`);
     const r = fill(["--dry-run"], { ANTHROPIC_API_KEY: "" });
     expect(r.status).toBe(0);
+    // The configured provider says why it could not run, then the run degrades.
     expect(r.stderr).toBe(
-      "manni: no model provider is configured, so new terms have no definition; pass --provider or --local.\n",
+      'manni: the configured provider "anthropic" could not run: Anthropic provider needs ANTHROPIC_API_KEY set (or choose another provider)\n' +
+        "manni: no model provider is configured, so new terms have no definition; pass --provider or --local.\n",
     );
     expect(r.stdout).toContain("3 terms would be created");
   });
@@ -105,6 +107,7 @@ describe("manni term fill", () => {
     ],
     [["docs/api", "--offline"], "manni: new term pages need a directory; pass -o or set term.fill.out.\n"],
     [["--confidence", "2"], "manni: --confidence must be a number between 0 and 1, got 2.\n"],
+    [["--max-turns", "1.5"], "manni: --max-turns must be a whole number between 1 and 9007199254740991, got 1.5.\n"],
     [["-f", "csv"], 'manni: unknown format "csv". Expected pretty | json.\n'],
   ])("exits 2 for %j", (args, stderr) => {
     const r = fill(args);
@@ -116,6 +119,9 @@ describe("manni term fill", () => {
     writeFileSync(join(work, "manni.config.yaml"), `${readFileSync(join(work, "manni.config.yaml"), "utf8")}term:\n  provider: anthropic\n`);
     const r = fill(["--crawl"], { ANTHROPIC_API_KEY: "" });
     expect(r.status).toBe(2);
-    expect(r.stderr).toBe("manni: --crawl needs a model, and no provider is configured; pass --provider or set providers:.\n");
+    expect(r.stderr).toBe(
+      'manni: the configured provider "anthropic" could not run: Anthropic provider needs ANTHROPIC_API_KEY set (or choose another provider)\n' +
+        "manni: --crawl needs a model, and no provider is configured; pass --provider or set providers:.\n",
+    );
   });
 });
