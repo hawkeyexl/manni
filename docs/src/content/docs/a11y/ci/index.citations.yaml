@@ -133,9 +133,9 @@ docs/src/content/docs/a11y/ci/index.mdx:
         integrity: sha256-09c2857ba3a6663f3d868f3717308aa53c9f86dbdd4d1e6687237f19cb5781ec
       source:
         file: src/a11y/core/analyzer.ts
-        lines: 386-396
+        lines: 391-401
         integrity: sha256-4bc7e15af6d93390f938ce8170dbc0095412d5b35d3aae1d1c4ca7bb5b4fdefe
-        commit-sha: a47a74489105e77a82f35af1613faddc7a0670d9
+        commit-sha: ec343480b7a714b61e5b630df34da58f6c536691
     - id: json-is-whole-run
       claim:
         integrity: sha256-a3fdb4b8bace9a2ab62e0f13041795afaf8383587fbb70baee1f489495b01dd3
@@ -221,9 +221,9 @@ docs/src/content/docs/a11y/ci/index.mdx:
         integrity: sha256-3121a1f433f8614d58ff3ca89b5f5f22dabd8b141e83e361eff79efdcd86e8d3
       source:
         file: src/a11y/core/analyzer.ts
-        lines: 148
+        lines: 149
         integrity: sha256-3d4a0cf426cc2bdf60f9b293894ef4c223eb3814a6fe12f5f4e6d68347e121e0
-        commit-sha: a47a74489105e77a82f35af1613faddc7a0670d9
+        commit-sha: ec343480b7a714b61e5b630df34da58f6c536691
     - id: crawled-page-failure-recorded
       claim:
         integrity: sha256-6bc2375c8868323eada5ac504e95d29ceef7194ae20fc6a5fcc63b2f8901bca9
@@ -319,9 +319,9 @@ docs/src/content/docs/a11y/ci/index.mdx:
         integrity: sha256-d339e46148c53053a263b7b24a861f0eab26ae608ad3a13a2ec4a7da31bd34d5
       source:
         file: src/a11y/core/analyzer.ts
-        lines: 278
+        lines: 283
         integrity: sha256-bf0c28d68ddd7936d6844bbe088203ec881b829716e4c11e31a0d01aa7c203f7
-        commit-sha: a47a74489105e77a82f35af1613faddc7a0670d9
+        commit-sha: ec343480b7a714b61e5b630df34da58f6c536691
     - id: tags-comma-list
       claim:
         integrity: sha256-d339e46148c53053a263b7b24a861f0eab26ae608ad3a13a2ec4a7da31bd34d5
@@ -335,9 +335,9 @@ docs/src/content/docs/a11y/ci/index.mdx:
         integrity: sha256-9339e654916776f7950048fbb4390402c531cd9b436996e30737f1cb7e8e3d66
       source:
         file: src/a11y/core/analyzer.ts
-        lines: 213
+        lines: 218
         integrity: sha256-0edd38d9de01740c5866059c1cebd48e9ad171d35e2ad12ec63b321505d2d094
-        commit-sha: a47a74489105e77a82f35af1613faddc7a0670d9
+        commit-sha: ec343480b7a714b61e5b630df34da58f6c536691
     - id: timeout-default-30000
       claim:
         integrity: sha256-9339e654916776f7950048fbb4390402c531cd9b436996e30737f1cb7e8e3d66
@@ -377,9 +377,9 @@ docs/src/content/docs/a11y/ci/index.mdx:
         integrity: sha256-29e748175b07edaefab52f7c6d32c81da375c08b96a07e6436c0708d9c3369f2
       source:
         file: src/a11y/core/analyzer.ts
-        lines: 386-396
+        lines: 391-401
         integrity: sha256-4bc7e15af6d93390f938ce8170dbc0095412d5b35d3aae1d1c4ca7bb5b4fdefe
-        commit-sha: a47a74489105e77a82f35af1613faddc7a0670d9
+        commit-sha: ec343480b7a714b61e5b630df34da58f6c536691
     - id: severity-floor-before-score
       claim:
         lines: 283-285

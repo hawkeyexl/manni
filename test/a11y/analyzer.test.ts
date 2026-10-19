@@ -88,4 +88,39 @@ describe.skipIf(browser === null)("one page's navigation and the next page (real
       await server.close();
     }
   }, 60_000);
+
+  it("a page whose close is lost does not hold up the next page", async () => {
+    // Chrome answers a close that lands on the tab's own commit and never
+    // closes the tab, so an awaited close waits for the browser to exit.
+    // These two pages send the browser back and forth as soon as each loads,
+    // so a close sent to one lands on a commit about one time in five.
+    const hop = (to: string) =>
+      page(`<script>addEventListener("load", () => setTimeout(() => location.replace("${to}"), 0));</script>`);
+    const server: SchemaServer = await startSchemaServer({
+      "/ping.html": hop("/pong.html"),
+      "/pong.html": hop("/ping.html"),
+    });
+    const analyzer = createPlaywrightAnalyzer();
+    const opts = { timeout: 15_000, tags: [] };
+    try {
+      for (let i = 0; i < 20; i++) {
+        let timer: NodeJS.Timeout | undefined;
+        const stalled = new Promise<never>((_, reject) => {
+          timer = setTimeout(() => {
+            reject(new Error(`analyze ${String(i + 1)} did not return: it waited on the previous page's close`));
+          }, 10_000);
+        });
+        try {
+          const next = await Promise.race([analyzer.analyze(`${server.url}/ping.html`, opts), stalled]);
+          expect("redirect" in next).toBe(true);
+        } finally {
+          clearTimeout(timer);
+        }
+      }
+    } finally {
+      await analyzer.close();
+      await server.close();
+    }
+    // Above twenty 10s guards, so a stall reports its own message first.
+  }, 240_000);
 });
