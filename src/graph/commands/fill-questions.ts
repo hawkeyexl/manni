@@ -157,7 +157,10 @@ function readProposal(value: Record<string, unknown>): Proposal {
  * The whole body lines a quote touches, found as a substring of the body with
  * runs of whitespace folded, so a quote that rewraps a line still matches.
  */
-export function locateQuote(body: readonly string[], quote: string): PageLines | undefined {
+export function locateQuote(
+  body: readonly string[],
+  quote: string,
+): (PageLines & { ambiguous?: true }) | undefined {
   const wanted = quote.replace(/\s+/gu, " ").trim();
   if (wanted === "") return undefined;
   const text = body.join("\n");
@@ -184,7 +187,15 @@ export function locateQuote(body: readonly string[], quote: string): PageLines |
   const start = at[found];
   const end = at[found + wanted.length - 1];
   if (start === undefined || end === undefined) return undefined;
-  return { start: lineAt(start), end: lineAt(end) };
+  // The first match is the one pinned; a quote the page holds twice says so,
+  // so the caller can warn that the pin may name the wrong copy.
+  const twice = folded.indexOf(wanted, found + 1) >= 0;
+  return { start: lineAt(start), end: lineAt(end), ...(twice ? { ambiguous: true as const } : {}) };
+}
+
+/** The warning for a quote the page holds more than once. */
+function twiceWarning(path: string, question: string, lines: PageLines): string {
+  return `${path}: the answer to "${question}" appears more than once, so ${spellLines(lines)} is pinned; check it is the right one.`;
 }
 
 /** The pin `fill` writes for body lines it found. */
@@ -337,9 +348,14 @@ export async function fillPageQuestions(input: PageQuestionsInput): Promise<Page
     writeGraphFields(content, path, format, {}, { page: { [QUESTIONS_KEY]: items } }).content;
   let next = write();
   let before = body;
-  for (let round = 0; round < 3; round++) {
+  for (let round = 0; ; round++) {
     const after = bodyOf(next, format).body;
     if (!relocate(pins, before, after)) break;
+    if (round === 2) {
+      // Three writes and the pins still moved: write what there is, and say so.
+      warnings.push(`${path}: the answer pins did not settle after three writes, so check their lines.`);
+      break;
+    }
     before = after;
     next = write();
   }
@@ -386,7 +402,8 @@ export async function fillPageQuestions(input: PageQuestionsInput): Promise<Page
       for (const c of candidates) {
         const lines = locateQuote(body, c.quote);
         if (lines !== undefined) {
-          found = { lines, confidence: c.confidence };
+          if (lines.ambiguous) warnings.push(twiceWarning(path, question, lines));
+          found = { lines: { start: lines.start, end: lines.end }, confidence: c.confidence };
           break;
         }
       }
@@ -424,11 +441,13 @@ export async function fillPageQuestions(input: PageQuestionsInput): Promise<Page
       if (accepted >= draft) break;
       const question = d.question;
       const confidence = round2(d.confidence);
-      const lines = locateQuote(body, d.quote);
-      if (lines === undefined) {
+      const located = locateQuote(body, d.quote);
+      if (located === undefined) {
         tracked.push({ action: "dropped", question, reason: "answer not on page" });
         continue;
       }
+      if (located.ambiguous) warnings.push(twiceWarning(path, question, located));
+      const lines: PageLines = { start: located.start, end: located.end };
       const key = questionKey(question);
       const asked = key === "" ? undefined : known.get(key);
       if (asked !== undefined) {
@@ -489,8 +508,10 @@ export function repinQuestionFile(
   configDir: string,
   dryRun: boolean,
 ): { changed: boolean; outcomes: QuestionOutcome[]; warnings: string[] } {
-  readQuestionFile(abs, label);
-  const doc = parseDocument(readFileSync(abs, "utf8"));
+  // One read: the file is validated and edited from the same bytes.
+  const text = existsSync(abs) ? readFileSync(abs, "utf8") : undefined;
+  readQuestionFile(abs, label, text);
+  const doc = parseDocument(text ?? "");
   const outcomes: QuestionOutcome[] = [];
   const warnings: string[] = [];
   const bodies = new Map<string, string[] | undefined>();
