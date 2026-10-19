@@ -393,6 +393,15 @@ describe("checkTermSet", () => {
       ]);
     });
 
+    it("reports a cycle on the block when its edge leaves the cycle's first node", () => {
+      const terms = [term({ label: "lens", definition: "d" }), term({ label: "optic", definition: "d", broader: ["lens"] })];
+      const blocks = [block("Lens", { broader: ["optic"] }, "docs/guides/lenses.md")];
+      const findings = checkTermSet(set(terms, terms.map((t) => ref(t.record.label)), blocks));
+      expect(only(findings, "broader-cycle").map((f) => [f.file, f.line, f.message])).toEqual([
+        ["docs/guides/lenses.md", 6, "broader: lens > optic > lens"],
+      ]);
+    });
+
     it("keeps a cycle the terms close on the term, even when a block repeats an edge", () => {
       const terms = [
         term({ label: "lens", definition: "d", broader: ["optic"], line: 3 }),
