@@ -19,7 +19,7 @@
  */
 import { TERM_RELATION_FIELDS } from "../../shared/reference-fields.js";
 import { DEFAULT_ABSTRACT_MAX_LENGTH } from "./config.js";
-import { DEFAULT_LANGUAGE, languageKey as language } from "./writers/render-util.js";
+import { languageKey as language } from "./writers/render-util.js";
 import { resolveSeverity, ruleId } from "./severity.js";
 import { TERM_MATCH_FIELDS, type Term, type TermField, type TermFinding, type TermRule, type TermSet, type TermSeverity } from "../types.js";
 
@@ -103,33 +103,68 @@ export function checkTermSet(set: TermSet, opts: CheckTermSetOptions = {}): Term
     byLabel.get(fold(value)) ??
     byId.get(fold(value));
 
-  // A name on a page, as the graph resolves it: a label or an id, then an
-  // alt-label, each in the page's language before any other.
-  const pageLanguage = (lang: string | undefined): string => (lang ?? DEFAULT_LANGUAGE).toLowerCase();
-  const resolveLabelOrId = (value: string, lang: string | undefined): number | undefined =>
-    inLanguage.get(`${pageLanguage(lang)} label ${fold(value)}`) ??
-    inLanguage.get(`${pageLanguage(lang)} id ${fold(value)}`) ??
-    byLabel.get(fold(value)) ??
-    byId.get(fold(value));
-  const resolveAlt = (value: string, lang: string | undefined): number | undefined =>
-    inLanguage.get(`${pageLanguage(lang)} alt ${fold(value)}`) ?? byAlt.get(fold(value));
-  // The same order as the graph's resolver (`termIndex` in
-  // src/graph/core/concepts.ts): label or id before alt-label, the page's
-  // language first. The two must change together, or term check and the graph
-  // judge different hierarchies.
+  // A name on a page, in the graph's order (`termIndex` in
+  // src/graph/core/concepts.ts): the page's language, then its primary
+  // language, then any, and within each a label, an id, then an alt-label. The
+  // two must change together, or term check and the graph judge different
+  // hierarchies. So here, unlike the other rules, a page or term with no
+  // language takes part only in the last pass, as in the graph.
+  const tagOf = (tag: string | undefined): string | undefined =>
+    tag === undefined || tag === "" ? undefined : fold(tag);
+  // `split` always yields one element; the `?? ""` only satisfies the index type.
+  const primaryOf = (tag: string): string => tag.split("-")[0] ?? "";
+  const ids = new Map<string, number[]>();
+  const alts = new Map<string, number[]>();
+  const list = (map: Map<string, number[]>, key: string, index: number): void => {
+    const held = map.get(key);
+    if (held === undefined) map.set(key, [index]);
+    else held.push(index);
+  };
+  terms.forEach((t, index) => {
+    list(ids, fold(t.id), index);
+    for (const alt of t.record["alt-labels"] ?? []) list(alts, fold(alt), index);
+  });
+  const tiers: [Map<string, number[]>, boolean][] = [
+    [labelled, false],
+    [ids, false],
+    [alts, true],
+  ];
+  const resolvePageName = (value: string, lang: string | undefined): { index: number; alt: boolean } | undefined => {
+    const wanted = tagOf(lang);
+    const passes: ((t: Term) => boolean)[] =
+      wanted === undefined
+        ? [() => true]
+        : [
+            (t) => tagOf(t.language) === wanted,
+            (t) => {
+              const own = tagOf(t.language);
+              return own !== undefined && primaryOf(own) === primaryOf(wanted);
+            },
+            () => true,
+          ];
+    for (const pass of passes) {
+      for (const [map, alt] of tiers) {
+        const index = map.get(fold(value))?.find((i) => {
+          const t = terms[i];
+          return t !== undefined && pass(t);
+        });
+        if (index !== undefined) return { index, alt };
+      }
+    }
+    return undefined;
+  };
   const resolveName = (value: string, lang: string | undefined): number | undefined =>
-    resolveLabelOrId(value, lang) ?? resolveAlt(value, lang);
+    resolvePageName(value, lang)?.index;
 
   // undefined-term and alt-label-reference, and the ids some page names, for unused-term.
   const usedIds = new Set<string>();
   for (const reference of set.references) {
     const field = reference.field ?? "concepts";
     const at = { file: reference.file, ...(reference.line === undefined ? {} : { line: reference.line }) };
-    const named = resolveLabelOrId(reference.label, reference.language);
-    const synonym = named === undefined ? resolveAlt(reference.label, reference.language) : undefined;
-    const target = terms[named ?? synonym ?? -1];
+    const hit = resolvePageName(reference.label, reference.language);
+    const target = terms[hit?.index ?? -1];
     if (target !== undefined) usedIds.add(fold(target.id));
-    if (named !== undefined) continue;
+    if (hit !== undefined && !hit.alt) continue;
     drafts.push(
       target === undefined
         ? { rule: "undefined-term", message: `${field}: "${reference.label}" names no entry.`, ...at }
