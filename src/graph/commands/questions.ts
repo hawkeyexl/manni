@@ -405,6 +405,11 @@ export interface QuestionSummary {
   top: number;
   found: { reviewed: FoundCount; drafted: FoundCount };
   answers: {
+    /**
+     * Every pin. It can exceed current + moved + changed by the golden-set
+     * answers whose page is on disk but in no collection: their freshness
+     * cannot be read, and their own findings say why.
+     */
     pinned: number;
     /** Pins on a drafted question, or marked `reviewed: false` themselves. */
     unreviewed: number;
