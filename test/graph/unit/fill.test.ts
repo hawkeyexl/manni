@@ -5,14 +5,27 @@ import { describe, expect, it, vi } from "vitest";
 import { defined } from "../helpers/defined.js";
 import { parse } from "yaml";
 import { renderFill, runFill } from "../../../src/graph/commands/fill.js";
+import { ALL_FILL_FIELDS } from "../../../src/graph/core/config.js";
 import { resetWarnings } from "../../../src/shared/warn.js";
 import { MockProvider } from "@hawkeyexl/inference";
 
+/**
+ * Every `graph:` block field: this file tests the field pipeline, so a config
+ * that names no fields gets these, and questions stay out of it. The question
+ * pass has its own suite, `fill-questions.test.ts`.
+ */
+const GRAPH_FIELDS = `fields: [${ALL_FILL_FIELDS.filter((f) => f !== "sample-questions").join(", ")}]`;
+
 function setup(files: Record<string, string>, config = ""): string {
   const dir = mkdtempSync(join(tmpdir(), "manni-graph-fill-"));
+  const withFields = config.includes("fields:")
+    ? config
+    : config.includes("fill:\n")
+      ? config.replace("fill:\n", `fill:\n  ${GRAPH_FIELDS}\n`)
+      : `${config}fill:\n  ${GRAPH_FIELDS}\n`;
   writeFileSync(
     join(dir, "manni.config.yaml"),
-    `collections:\n  - name: c\n    paths: ["*.md"]\ngraph:\n${config.replace(/^(?=.)/gm, "  ")}`,
+    `collections:\n  - name: c\n    paths: ["*.md"]\ngraph:\n${withFields.replace(/^(?=.)/gm, "  ")}`,
   );
   for (const [name, content] of Object.entries(files)) {
     writeFileSync(join(dir, name), content);
