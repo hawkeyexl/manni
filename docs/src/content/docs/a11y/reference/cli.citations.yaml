@@ -150,7 +150,7 @@ docs/src/content/docs/a11y/reference/cli.mdx:
         file: src/a11y/core/analyzer.ts
         lines: 283
         integrity: sha256-bf0c28d68ddd7936d6844bbe088203ec881b829716e4c11e31a0d01aa7c203f7
-        commit-sha: ec343480b7a714b61e5b630df34da58f6c536691
+        commit-sha: c87d5ca0745927b7e094c8b3d4cbef6f1ac62e4c
     - id: severity-unknown-exit-2
       claim:
         lines: 74
@@ -204,7 +204,7 @@ docs/src/content/docs/a11y/reference/cli.mdx:
         file: src/a11y/core/analyzer.ts
         lines: 218
         integrity: sha256-0edd38d9de01740c5866059c1cebd48e9ad171d35e2ad12ec63b321505d2d094
-        commit-sha: ec343480b7a714b61e5b630df34da58f6c536691
+        commit-sha: c87d5ca0745927b7e094c8b3d4cbef6f1ac62e4c
     - id: quiet-pretty-only
       claim:
         lines: 76
@@ -488,7 +488,7 @@ docs/src/content/docs/a11y/reference/cli.mdx:
         file: src/a11y/core/analyzer.ts
         lines: 329
         integrity: sha256-4fd5eaa6c76b6f86c34a2ec29c5d51c7f784d56e2cb0370d2951dd0fa6f8c490
-        commit-sha: ec343480b7a714b61e5b630df34da58f6c536691
+        commit-sha: c87d5ca0745927b7e094c8b3d4cbef6f1ac62e4c
     - id: links-page-filter
       claim:
         lines: 148-153
@@ -593,7 +593,7 @@ docs/src/content/docs/a11y/reference/cli.mdx:
         file: src/a11y/core/analyzer.ts
         lines: 302-303
         integrity: sha256-d37153b288254bd4665b77138496d613feb30e0c93a5c59c95dc07c999a87230
-        commit-sha: ec343480b7a714b61e5b630df34da58f6c536691
+        commit-sha: c87d5ca0745927b7e094c8b3d4cbef6f1ac62e4c
     - id: incomplete-not-failures
       claim:
         integrity: sha256-38b363c103d9c104781a457e4c0f20dcc45108518cbed98fc26895fce3569989
@@ -697,7 +697,7 @@ docs/src/content/docs/a11y/reference/cli.mdx:
         file: src/a11y/core/analyzer.ts
         lines: 408-427
         integrity: sha256-91a28b83a02adb7c7c1910c3cdc7bbc98e09106d867f212be1d489be4fc5325b
-        commit-sha: ec343480b7a714b61e5b630df34da58f6c536691
+        commit-sha: c87d5ca0745927b7e094c8b3d4cbef6f1ac62e4c
     - id: json-severity-mapped
       claim:
         lines: 397
@@ -706,7 +706,7 @@ docs/src/content/docs/a11y/reference/cli.mdx:
         file: src/a11y/core/analyzer.ts
         lines: 391-401
         integrity: sha256-4bc7e15af6d93390f938ce8170dbc0095412d5b35d3aae1d1c4ca7bb5b4fdefe
-        commit-sha: ec343480b7a714b61e5b630df34da58f6c536691
+        commit-sha: c87d5ca0745927b7e094c8b3d4cbef6f1ac62e4c
     - id: json-impact-default-minor
       claim:
         lines: 398
@@ -715,7 +715,7 @@ docs/src/content/docs/a11y/reference/cli.mdx:
         file: src/a11y/core/analyzer.ts
         lines: 404-406
         integrity: sha256-4ad5592b202d0584ad0acfc62e5a93b00edca8cb368b3b3794ebca23d33e8aa2
-        commit-sha: ec343480b7a714b61e5b630df34da58f6c536691
+        commit-sha: c87d5ca0745927b7e094c8b3d4cbef6f1ac62e4c
     - id: json-passes
       claim:
         lines: 399
@@ -724,7 +724,7 @@ docs/src/content/docs/a11y/reference/cli.mdx:
         file: src/a11y/core/analyzer.ts
         lines: 302
         integrity: sha256-55daea798147accaba25c4006e27039c32d5856987ad6282276070430b3676b7
-        commit-sha: ec343480b7a714b61e5b630df34da58f6c536691
+        commit-sha: c87d5ca0745927b7e094c8b3d4cbef6f1ac62e4c
     - id: json-incomplete
       claim:
         lines: 400
@@ -733,7 +733,7 @@ docs/src/content/docs/a11y/reference/cli.mdx:
         file: src/a11y/core/analyzer.ts
         lines: 303
         integrity: sha256-5eee226c2174e6c09fc3f5248ed2c6af9ab97415b92e66d9a4e1212fdde80588
-        commit-sha: ec343480b7a714b61e5b630df34da58f6c536691
+        commit-sha: c87d5ca0745927b7e094c8b3d4cbef6f1ac62e4c
     - id: json-score-null
       claim:
         lines: 401
@@ -884,7 +884,7 @@ docs/src/content/docs/a11y/reference/cli.mdx:
         file: src/a11y/core/analyzer.ts
         lines: 391-401
         integrity: sha256-4bc7e15af6d93390f938ce8170dbc0095412d5b35d3aae1d1c4ca7bb5b4fdefe
-        commit-sha: ec343480b7a714b61e5b630df34da58f6c536691
+        commit-sha: c87d5ca0745927b7e094c8b3d4cbef6f1ac62e4c
     - id: progress-events-narrated
       claim:
         integrity: sha256-cdef95d7312c9bd3a51ed52b6b14e432cec53a6e9a6e4d2ba6560a019bc059a1

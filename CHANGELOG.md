@@ -4,6 +4,13 @@
 4.13.1. Entries below that version are docmeta releases; the repository
 history is the same one.
 
+## [4.12.3](https://github.com/hawkeyexl/manni/compare/v4.12.2...v4.12.3) (2026-10-19)
+
+
+### Bug Fixes
+
+* **a11y:** stop waiting on a page close that Chrome can lose ([#201](https://github.com/hawkeyexl/manni/issues/201)) ([c87d5ca](https://github.com/hawkeyexl/manni/commit/c87d5ca0745927b7e094c8b3d4cbef6f1ac62e4c))
+
 ## [4.12.2](https://github.com/hawkeyexl/manni/compare/v4.12.1...v4.12.2) (2026-10-19)
 
 
