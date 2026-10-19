@@ -35,7 +35,7 @@ docs/src/content/docs/meta/set-up/index.mdx:
         file: src/meta/commands/validate.ts
         lines: 315-319
         integrity: sha256-73d56d153f0de0ed6e64cb6ade7318f324b35250a12838d444586b957050d6c4
-        commit-sha: ff3c96da86b0902113ec05ac4a780450486eef85
+        commit-sha: 5f05739873cc71822eb1e6650ac3ccc937c05d55
     - id: config-discovered-as-manni-config-yaml
       claim:
         lines: 63
@@ -62,7 +62,7 @@ docs/src/content/docs/meta/set-up/index.mdx:
         file: src/meta/core/config.ts
         lines: 1899-1907
         integrity: sha256-a25173e88e325e9018ce01428895706356f063070cd986fe69698790dc264ad8
-        commit-sha: 82b41f560f77676acec81501ed44862563251685
+        commit-sha: 5f05739873cc71822eb1e6650ac3ccc937c05d55
     - id: every-file-satisfies-every-schema
       claim:
         lines: 53
@@ -71,7 +71,7 @@ docs/src/content/docs/meta/set-up/index.mdx:
         file: src/meta/core/validator.ts
         lines: 892-899
         integrity: sha256-b17d26949496c0384858caf85f0898abe5e09bf3c6d24f6d21243839c4925756
-        commit-sha: dea9284bd642f9f654d4f9cb59b5e16d19fc1259
+        commit-sha: 5f05739873cc71822eb1e6650ac3ccc937c05d55
     - id: explicit-file-bypasses-ext-filter
       claim:
         lines: 32

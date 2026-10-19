@@ -4,6 +4,13 @@
 4.13.1. Entries below that version are docmeta releases; the repository
 history is the same one.
 
+# [4.12.0](https://github.com/hawkeyexl/manni/compare/v4.11.0...v4.12.0) (2026-10-19)
+
+
+### Features
+
+* one concept scheme, term fill, SKOS and golden-set questions (0086, 0087) ([#183](https://github.com/hawkeyexl/manni/issues/183)) ([5f05739](https://github.com/hawkeyexl/manni/commit/5f05739873cc71822eb1e6650ac3ccc937c05d55))
+
 # [4.11.0](https://github.com/hawkeyexl/manni/compare/v4.10.0...v4.11.0) (2026-10-18)
 
 

@@ -23,7 +23,7 @@ docs/src/content/docs/meta/reference/agent-skills-schemas.mdx:
         file: src/meta/core/validator.ts
         lines: 892-899
         integrity: sha256-b17d26949496c0384858caf85f0898abe5e09bf3c6d24f6d21243839c4925756
-        commit-sha: dea9284bd642f9f654d4f9cb59b5e16d19fc1259
+        commit-sha: 5f05739873cc71822eb1e6650ac3ccc937c05d55
     - id: skills-spec-schema-rejects-claude-only-keys
       claim:
         lines: 31-35

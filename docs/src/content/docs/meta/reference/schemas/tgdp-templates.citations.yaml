@@ -7,7 +7,7 @@ docs/src/content/docs/meta/reference/schemas/tgdp-templates.mdx:
         file: src/meta/core/resolve-schema.ts
         lines: 41-53
         integrity: sha256-c9c09b5a77280ca5fade1c6b631d19c91b55fcf0ad23a8f55a4ecb1ae975d49e
-        commit-sha: 942b3afa182cd1d62ab41682675de48ec825c9b8
+        commit-sha: 5f05739873cc71822eb1e6650ac3ccc937c05d55
     - id: tgdp-strict-closes-type
       claim:
         integrity: sha256-99757ed0cadf1ce2781eb7d1a6ffefc6064b32f0def3b95e0b42035ad578733b
