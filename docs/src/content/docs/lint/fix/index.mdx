@@ -20,7 +20,7 @@ fired, what it wants, and how to prove the fix before you push again.
 A finding looks like this on a pull request:
 
 ```
-::error file=docs/rotate-key.md,line=5,col=1,title=manni%3Alint/structure/missing-section::Rotate an API key: Missing section "See also"
+::error file=docs/rotate-key.md,line=5,col=1,title=manni%3Alint/structure/missing-section::Rotate an API key: Missing section "See also"%0Atgdp:how-to:1.6 see-also: Link to related topics the reader may want next but does not need to finish this task.%0AGuide: https://gitlab.com/tgdp/templates/-/blob/v1.6.0/how-to/guide_how-to.md
 ```
 
 and like this in a log or on your own machine:
@@ -28,9 +28,11 @@ and like this in a log or on your own machine:
 ```
 ✗ docs/rotate-key.md
     5:1  manni:lint/structure/missing-section  Rotate an API key: Missing section "See also"
+         tgdp:how-to:1.6 see-also: Link to related topics the reader may want next but does not need to finish this task.
+         Guide: https://gitlab.com/tgdp/templates/-/blob/v1.6.0/how-to/guide_how-to.md
 ```
 
-Four parts:
+Six parts:
 
 | Part | What it tells you |
 | --- | --- |
@@ -38,6 +40,11 @@ Four parts:
 | `manni:lint/structure/…` | The rule id. `manni:lint`, then the job, then the rule. Find it in the [table below](#every-rule). |
 | `Rotate an API key:` | The section, named by its heading. A whole-file finding has no prefix here. |
 | `Missing section "See also"` | What to change, in one sentence. |
+| `tgdp:how-to:1.6 see-also:` | The template that judged the page, and the rule in it the finding is about. The sentence after it says what that section is for. Write that, not only a heading that passes. |
+| `Guide:` | The author's guide for the doctype, where the template has one. |
+
+An unexpected section has no rule of its own, so its second line names the
+template alone.
 
 Almost every structural finding is an `error`. There is no severity dial to turn
 one down. A finding must be resolved, or the template that produced it must
@@ -68,7 +75,8 @@ repository's config declares, which is what CI does.
 
 | Rule | What it means | What to do |
 | --- | --- | --- |
-| `manni:lint/structure/missing-section` | A section the template requires is absent, or is present but out of the order the template fixes. `Missing section "See also"` | Add the section, with the heading the message quotes, in the position the template declares. `manni lint templates` and the [templates reference](/manni/lint/reference/templates/) say what the shape is. |
+| `manni:lint/structure/missing-section` | A section the template requires is absent. `Missing section "See also"` | Add the section, with the heading the message quotes, in the position the template declares. `manni lint templates show <template>` prints the whole shape in order. |
+| `manni:lint/structure/section-order` | A section the template accepts sits in the wrong place. `Section "How it works" must come after "Use cases"` | Move the section past the one the message names. Nothing is missing, so do not add a second copy. |
 | `manni:lint/structure/missing-group` | A repeated unit is absent whole. `Missing group "cause-or-solution": expected "Cause" followed by "Solution"` | The doctype repeats a pair or a run of sections together. Add the whole unit, in the order the message lists. One finding covers the unit, so there is one thing to add. |
 | `manni:lint/structure/unexpected-section` | The page carries a section no rule took. `Unexpected section "Benchmarks". Add a trailing rule with min: 0 to allow sections the template does not describe.` | Either fold the content into a section the template does describe, or let the template allow extras. The message names the escape, which is a trailing rule with `min: 0` and no heading. |
 | `manni:lint/structure/heading` | A heading does not satisfy the rule. `Expected title "Overview", but found "Overvue"`, or `Expected one of "Next steps", "See also", but found "Onward"`, or `Expected title matching /^[Ss]ymptoms?\b/, but found "Problem"` | Fix the heading to what the message asks for. Exact text means exact text, typos and plurals included. A pattern means the wording varies but the form does not, as in `Symptom 1` and `Symptom 2`. |
@@ -201,10 +209,11 @@ repository-level conversation, not a page fix.
 
 <Steps>
 
-1. **Ask what the template actually asks for.** `manni lint templates` lists
-   every template that could route a page, and where it came from. The
-   [templates reference](/manni/lint/reference/templates/) has the format, so
-   you can read the template file itself.
+1. **Ask what the template actually asks for.** Run
+   `manni lint templates show` with the template id from the finding, such as
+   `tgdp:how-to:1.6`. It prints every section in order, how often each may
+   occur, what each must contain, and what each is for. `manni lint templates`
+   lists every template that could route a page, and where it came from.
 
 2. **Ask which config governed the run.** In `pretty` output the tool says so:
    `Using manni.config.yaml (.)`. Discovery walks upward, so the answer is

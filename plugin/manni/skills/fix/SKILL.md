@@ -43,8 +43,10 @@ After you change a term page, run `manni term write` to regenerate any rendered 
 
 ## lint check
 
-Run `manni lint structure <path> --explain` to see which template routed the page and why.
-Then edit the page to meet that template. Change the page `type` only if the routing is wrong.
+Each structure finding names its template and rule, says what that section is for, and links the guide. Read those lines before editing.
+Run `manni lint templates show <template>` to see the whole shape in order.
+Write what the section asks for. Never add a heading, table or list only to satisfy a count.
+Run `manni lint structure <path> --explain` only when the template looks wrong for the page. Change the page `type` only if the routing is wrong.
 
 ## docevals run
 

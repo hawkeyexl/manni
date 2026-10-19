@@ -185,7 +185,7 @@ listing is ordered built-ins first, then the files, in the order they load.
 | `--templates` | `<path>` | | Also list the templates in this file. Repeatable, one path per occurrence. Given at least once, it replaces config `templates:` for this listing. |
 | `-c, --config` | `<path>` | discovered | Path to a [config file](/manni/lint/reference/configuration/). |
 | `--no-config` | n/a | off | Ignore any discovered config file, and list only the built-ins plus whatever `--templates` names. |
-| `-f, --format` | `<pretty\|json>` | `pretty` | Output format. `json` prints one object, `{ "templates": [ { "id", "title", "types", "source" } ] }`, where `source` is `"builtin"` or the file the entry came from. An unknown value is an error (exit 2). |
+| `-f, --format` | `<pretty\|json>` | `pretty` | Output format. `json` prints one object, `{ "templates": [ { "id", "title", "types", "source", "guide" } ] }`, where `source` is `"builtin"` or the file the entry came from, and `guide` is the `guide` the template sets, or `null`. A guide inherited through `extends` shows in `lint templates show` instead. An unknown value is an error (exit 2). |
 
 ## `lint templates infer`
 
@@ -252,6 +252,95 @@ only where every block in the section declares one.
 | `--force` | n/a | off | Overwrite the `--out` path. |
 | `-c, --config` | `<path>` | discovered | Path to a [config file](/manni/lint/reference/configuration/). It settles which directory relative paths are read against. |
 | `--no-config` | n/a | off | Ignore any discovered config file. |
+
+## `lint templates show`
+
+Print what a template asks for. That is every section in order, how often it
+may occur, what it must contain, and what it is for. A finding names its template,
+so this is the next command after a failure.
+
+```sh
+manni lint templates show <ref> [options]
+```
+
+```sh
+manni lint templates show tgdp:reference:1.6
+```
+
+```
+tgdp:reference:1.6  —  Reference (The Good Docs Project)
+  types: reference
+  Describe the parts of the product in a structured form the reader can scan quickly. Keep step-by-step instructions out of it.
+  Guide: https://gitlab.com/tgdp/templates/-/blob/v1.6.0/reference/guide_reference.md
+
+  ## (any heading)  reference-description · required
+     Briefly summarize what this reference covers and what the reader can find in it.
+  ## (any heading)  structured-entry · optional, repeats
+     Contains at least 1 table.
+     Present the reference information in a table the reader can scan. Use one section for each table or group of entries.
+  ## /^(?:\(Optional\)\s+)?Commands$/  commands · optional
+     List the commands, each with a short description and an example, and say which settings are required or optional.
+  ## See also | Related information | Related resources | Notes  related · optional, repeats
+     Link to related pages, or add notes that the entries above do not cover.
+  ## (any heading)  optional, repeats
+     Add any other sections here, after the ones above.
+```
+
+Each rule prints on one line, with its heading form, then its `id` and how
+often it may occur. The lines under it give its content minimums and its
+description. Subsections indent under their parent, one more `#` deep.
+
+| Heading form | Printed as |
+|---|---|
+| Exact text | the text |
+| One of a list | `A \| B` |
+| `{ pattern }` | `/pattern/` |
+| `false` | `(no heading)` |
+| None | `(any heading)` |
+
+| Occurrence | Printed as |
+|---|---|
+| exactly once | `required` |
+| `min: 0`, `max: 1` | `optional` |
+| at least once, no `max` | `required, repeats` |
+| `min: 0`, no `max` | `optional, repeats` |
+| at least N, no `max` | `at least N` |
+| N to M | `N to M` |
+| `max: 0` | `forbidden` |
+
+`-f json` prints the resolved template, after `extends` and `$ref`, in the
+template format's own keys, plus `id` and `source`. A key the template does
+not set is absent.
+
+`-f markdown` prints a page skeleton to start a new page from. The frontmatter
+carries the template's first doctype. Each section rule becomes a heading at
+its depth, using the exact text, the first of a list, or `{rule-id}` for a
+pattern or a wildcard. One HTML comment under each heading says how often it
+may occur, what it must contain and what it is for. A trailing rule with no
+`id` and no heading is left out, and so is a rule with `max: 0`.
+
+```sh
+manni lint templates show tgdp:how-to:1.6 -f markdown > docs/rotate-key.md
+```
+
+### Arguments
+
+| Argument | Description |
+|---|---|
+| `<ref>` | The template to show. It takes every form `--template` takes: a built-in id, a file path, a path with a `#name` fragment, or a URL. Required. |
+
+### Options
+
+| Option | Argument | Default | Description |
+|---|---|---|---|
+| `-f, --format` | `<pretty\|json\|markdown>` | `pretty` | Output format. An unknown value is an error (exit 2). |
+
+A ref that does not resolve is an error (exit 2), with the same message
+`--template` gives:
+
+```
+manni: Unknown built-in template "tgdp:howto:1.6". Available: tgdp:how-to:1.6, tgdp:tutorial:1.6, ...
+```
 
 ## `lint tools`
 
@@ -380,12 +469,18 @@ indented under it, and a summary:
 ```
 ✗ docs/rotate-key.md
     5:1  manni:lint/structure/missing-section  Rotate an API key: Missing section "See also"
+         tgdp:how-to:1.6 see-also: Link to related topics the reader may want next but does not need to finish this task.
+         Guide: https://gitlab.com/tgdp/templates/-/blob/v1.6.0/how-to/guide_how-to.md
 
 1 file checked, 0 passed, 1 failed, 0 skipped
 ```
 
 Each finding line is `line:column`, the rule id, and the message, which names
-the section heading the finding is about. A clean file is one `✓` line. A file
+the section heading the finding is about. Under it, the first context line
+names the template, then the template rule the finding is about and what that
+section is for. The second gives the template's `guide`, when it has one. An
+`unexpected-section` finding has no rule, so its first context line names the
+template alone. A clean file is one `✓` line. A file
 that could not be routed prints `-` and its reason, and counts as skipped
 rather than failed:
 
@@ -393,6 +488,8 @@ rather than failed:
 - docs/notes.md  skipped: no type in frontmatter and no template resolved
 ✗ docs/rotate-key.md
     5:1  manni:lint/structure/missing-section  Rotate an API key: Missing section "See also"
+         tgdp:how-to:1.6 see-also: Link to related topics the reader may want next but does not need to finish this task.
+         Guide: https://gitlab.com/tgdp/templates/-/blob/v1.6.0/how-to/guide_how-to.md
 
 1 file checked, 0 passed, 1 failed, 1 skipped
 ```
@@ -430,7 +527,13 @@ worth one line.
           "start": { "line": 5, "column": 1, "offset": 22 },
           "end": { "line": 22, "column": 1, "offset": 307 }
         },
-        "severity": "error"
+        "severity": "error",
+        "template": {
+          "id": "tgdp:how-to:1.6",
+          "rule": "see-also",
+          "description": "Link to related topics the reader may want next but does not need to finish this task.",
+          "guide": "https://gitlab.com/tgdp/templates/-/blob/v1.6.0/how-to/guide_how-to.md"
+        }
       }
     ],
     "skipped": null
@@ -449,6 +552,11 @@ worth one line.
 | `errors[].message` | string | What to change, in one sentence. |
 | `errors[].position` | object | `start` and `end`, each with `line`, `column` and `offset`. |
 | `errors[].severity` | string | `error` or `warning`, on the family scale. It is what tells a warning-only file apart from a failure whose finding went missing. |
+| `errors[].template` | object \| `null` | The template that judged the page. `null` for `parse`, `unknown-type` and `template` findings, and for any tool other than `manni`. |
+| `errors[].template.id` | string | The template ref `manni lint templates` lists and `lint templates show` takes, such as `tgdp:how-to:1.6` or `./templates.yaml#runbook`. |
+| `errors[].template.rule` | string \| `null` | The `id` of the template rule the finding is about. That is the missing rule, the rule the section matched, or the rule that accepts a misplaced section. `null` for `unexpected-section`, for the page's own content, and for a rule with no `id`. |
+| `errors[].template.description` | string \| `null` | That rule's `description`, or the template's own for the page's content. `null` for `unexpected-section` and for a rule without one. |
+| `errors[].template.guide` | string \| `null` | The template's `guide`. |
 | `skipped` | string \| `null` | Why the file was not linted. One of `no-template`, `unsupported-format` or `unreadable`. It is `null` when the file was linted, so a skip and an older version of this reporter are never the same reading. |
 
 The envelope is a top-level array and `type` keeps its value, whatever else is
@@ -458,11 +566,13 @@ added beside it.
 line, and nothing at all when the run is clean:
 
 ```
-::error file=docs/rotate-key.md,line=5,col=1,title=manni%3Alint/structure/missing-section::Rotate an API key: Missing section "See also"
+::error file=docs/rotate-key.md,line=5,col=1,title=manni%3Alint/structure/missing-section::Rotate an API key: Missing section "See also"%0Atgdp:how-to:1.6 see-also: Link to related topics the reader may want next but does not need to finish this task.%0AGuide: https://gitlab.com/tgdp/templates/-/blob/v1.6.0/how-to/guide_how-to.md
 ```
 
 The colon in the rule id is percent-encoded, because a workflow command's
-properties are comma-and-colon delimited.
+properties are comma-and-colon delimited. The message carries the same context
+lines as `pretty`, each after an encoded newline, so the annotation says what
+the section is for.
 
 **`sarif`** prints a SARIF 2.1.0 log for GitHub code scanning and any other
 SARIF consumer. The driver is named `manni-lint`. Each rule the run produced is
@@ -471,6 +581,10 @@ declared once under `tool.driver.rules`, with `defaultConfiguration.level` of
 `physicalLocation` whose `region` carries the full `startLine` /
 `startColumn` / `endLine` / `endColumn` span. Paths are relative to a
 `SRCROOT` base, so the upload resolves against the repository root.
+A result's `message.text` carries the same context lines as `pretty`, and
+`properties.template` carries the object `json` gives as `errors[].template`.
+A rule descriptor is one per finding type, and one type spans many template
+rules. So the description lives on the result rather than the descriptor.
 
 A skipped file is not a result. It is a `toolExecutionNotification` at level
 `note`, declared under `tool.driver.notifications` as `no-template`,
