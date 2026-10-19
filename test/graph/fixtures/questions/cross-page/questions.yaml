@@ -1,0 +1,10 @@
+# One question, answered across two pages. With `top: 1`, at most one of the
+# two answers can be the first node found, so the other is a finding.
+- question: After rotating the key, how do I check nothing broke?
+  answers:
+    - file: docs/rotate.md
+      lines: 4
+      integrity: sha256-57f8a81e9c932c04e874c6cf2cd6d4f8a25805452e67b2b9a93f5d1ddb3b14d6
+    - file: docs/validate.md
+      lines: 4
+      integrity: sha256-7e32f1312307f54af47c7b30f5621f45f5709ea2ec0dbc118d99aab64302fcae

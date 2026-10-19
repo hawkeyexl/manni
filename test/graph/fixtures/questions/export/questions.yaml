@@ -1,0 +1,22 @@
+# A cross-page question with a drafted pin, two gaps (one in the corpus
+# default language, one in its own), and an answer on a page that is gone.
+- question: How large may a retried upload be?
+  answers:
+    - file: docs/retry.md
+      lines: 9
+      integrity: sha256-43f97ea38783c4c88d2a558e429656b86aa00e3f5fcf5e5b284293cc41430496
+    - file: docs/limits.md
+      lines: 4
+      integrity: sha256-59f831505e5ea93f1283299ba67143699f4d2e839865586fabab17d8644b865e
+      reviewed: false
+- question: Does the service run on Windows on ARM?
+  answers: []
+- question: Läuft der Dienst unter Windows on ARM?
+  language: de
+  answers: []
+# Its answer's page was deleted, so it exports stale, with no text to read.
+- question: Where do archived uploads go?
+  answers:
+    - file: docs/archive.md
+      lines: 3
+      integrity: sha256-0000000000000000000000000000000000000000000000000000000000000000

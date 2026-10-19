@@ -31,6 +31,7 @@ import {
   TERM_RELATION_FIELDS,
 } from "../src/shared/reference-fields.js";
 import { registerTermLabelSource } from "../src/shared/term-labels.js";
+import { termScheme } from "../src/meta/core/term-keyword.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const fixtureDir = join(here, "fixtures", "fill", "hints");
@@ -205,7 +206,11 @@ describe("termValueCheck", () => {
     ["concepts", "graph", "broader", "see"].map((key) => ({ key, subschema: {}, required: false, present: false })),
     { terms: ["extractor", "schema set"] },
   );
-  const check = termValueCheck(hints, { labels: ["extractor", "schema set"], ids: ["metadata-extractor", "schema-set"] });
+  const check = termValueCheck(hints, {
+    labels: ["extractor", "schema set"],
+    ids: ["metadata-extractor", "schema-set"],
+    scheme: termScheme([]),
+  });
 
   it("accepts a label, ignoring case, and names each value that is not one", () => {
     expect(check("concepts", ["Schema Set", "extractor"])).toEqual([]);

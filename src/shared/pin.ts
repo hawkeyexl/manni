@@ -225,6 +225,21 @@ export function spellLines(lines: PageLines): string {
   return String(lineSpec(lines));
 }
 
+/**
+ * File line of body line 1: the line holding `bodyOffset`, the first character
+ * after the frontmatter, or 1 with none. cite counts a claim's lines from it,
+ * and graph counts a sample question's answer lines the same way.
+ */
+export function bodyLineOf(content: string, bodyOffset: number): number {
+  if (bodyOffset <= 0) return 1;
+  const stop = Math.min(bodyOffset, content.length);
+  let line = 1;
+  for (let at = content.indexOf("\n"); at !== -1 && at < stop; at = content.indexOf("\n", at + 1)) line++;
+  // A page that ends at the closing fence with no newline leaves the body
+  // starting on the line after the one the offset sits at the end of.
+  return content.charCodeAt(bodyOffset - 1) === 10 ? line : line + 1;
+}
+
 /** Body lines as file lines: body line 1 is the file line `bodyLine`, the first after the frontmatter. */
 export function toFileLines(lines: PageLines, bodyLine: number): PageLines {
   return { start: bodyLine + lines.start - 1, end: bodyLine + lines.end - 1 };

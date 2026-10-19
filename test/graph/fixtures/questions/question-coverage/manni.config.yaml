@@ -1,0 +1,13 @@
+# The question-coverage fixture (proposal 0087). One of two pages asks a
+# question, so graph stats reports half the pages covered, and the concept only
+# the other page names has no question.
+collections:
+  - name: questions
+    paths:
+      - "docs/**/*.*"
+
+graph:
+  baseIri: https://example.com/graph/
+  out: graph.ttl
+  build:
+    derive: [frontmatter, sections, tags]
