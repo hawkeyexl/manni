@@ -24,6 +24,7 @@ import {
   mintTermConceptIri,
   normalizeDocPath,
 } from "./iri.js";
+import { readSampleQuestions } from "./questions.js";
 import { byCodeUnit } from "./sort.js";
 import { NS, RDF_TYPE, ROLE } from "./vocab.js";
 import {
@@ -510,6 +511,19 @@ export function deriveGraph(docs: DocModel[], options: DeriveOptions): Quad[] {
       // `en-us` beside `en-US` would otherwise split one locale into two
       // indexes and miss a `--lang` filter typed the other way.
       if (pageLanguage) add(docIri, `${NS.dcterms}language`, lit(pageLanguage));
+
+      // ai-context's questions this page should be found for (proposal 0086
+      // §7), in the page's language. Only the text: an item's answer pins and
+      // review state are test data `check` reads from the source (0087).
+      for (const { question } of readSampleQuestions(fmValue(fm, ["sample-questions"]))) {
+        add(
+          docIri,
+          `${NS.graph}sampleQuestion`,
+          pageLanguage
+            ? { kind: "literal", value: question, language: pageLanguage }
+            : lit(question),
+        );
+      }
 
       // Page-level only: the `graph` block is closed and carries no
       // translation key, so this fact lives at the altitude `lang` already

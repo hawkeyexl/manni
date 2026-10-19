@@ -1,0 +1,9 @@
+# One question across two pages. The rotate.md answer moved from line 4 to 6,
+# and the validate.md answer carries no integrity yet.
+- question: After rotating the key, how do I check nothing broke?
+  answers:
+    - file: docs/rotate.md
+      lines: 4
+      integrity: sha256-08a1f61c881d4f346707b7ad3136b44202b71feccd33e45582bc757536c2ed8c
+    - file: docs/validate.md
+      lines: 4

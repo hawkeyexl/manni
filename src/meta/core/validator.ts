@@ -51,6 +51,7 @@ import {
   type LocationPreference,
 } from "./location.js";
 import { GRAPH_OUTPUT_KEYWORD } from "./graph-output.js";
+import { TERM_KEYWORD, TERM_MARK_META_SCHEMA, isTermMark } from "./term-keyword.js";
 import { errorMessage } from "../../shared/errors.js";
 
 type Dialect = "2020" | "2019" | "draft7" | "draft4";
@@ -98,6 +99,7 @@ function buildAjv(
   registerEncryptKeyword(ajv);
   registerLocationKeyword(ajv);
   registerGraphOutputKeyword(ajv);
+  registerTermKeyword(ajv);
   registerBuiltins(ajv, dialect);
   return ajv;
 }
@@ -247,6 +249,57 @@ function registerGraphOutputKeyword(ajv: InstanceType<AjvCtor>): void {
 /** Ajv's compile error for a non-boolean mark names the keyword. */
 function isGraphOutputShapeError(err: unknown): boolean {
   return err instanceof Error && err.message.includes(`"${GRAPH_OUTPUT_KEYWORD}"`);
+}
+
+/** One place `x-manni-term` was evaluated: the instance pointer, its value and the mark's `under`. */
+export interface TermMarkHit {
+  pointer: string;
+  value: unknown;
+  under?: string;
+  /** The ref, as given to `termMarks`, whose mark this is. */
+  schema: string;
+}
+
+/**
+ * Where `x-manni-term` records each place it is evaluated, while `termMarks`
+ * is running. `undefined` the rest of the time, with the same safety as
+ * `markRecorder`.
+ */
+let termRecorder: Omit<TermMarkHit, "schema">[] | undefined;
+
+/**
+ * `x-manni-term` (proposal 0086 §6), on every Ajv meta builds. Like
+ * `x-manni-encrypt`, it never fails a value, and records its full instance
+ * pointer at any depth. Whether the value names a term is the command
+ * layer's question, asked of the termbase. The meta-schema refuses a bad
+ * argument at compile time, and `compileUncached` words the refusal.
+ */
+function registerTermKeyword(ajv: InstanceType<AjvCtor>): void {
+  ajv.addKeyword({
+    keyword: TERM_KEYWORD,
+    metaSchema: TERM_MARK_META_SCHEMA,
+    errors: false,
+    validate: (
+      schema: unknown,
+      data: unknown,
+      _parent?: unknown,
+      cxt?: { instancePath: string },
+    ): boolean => {
+      if (termRecorder !== undefined && isTermMark(schema)) {
+        termRecorder.push({
+          pointer: cxt?.instancePath ?? "",
+          value: data,
+          ...(schema.under === undefined ? {} : { under: schema.under }),
+        });
+      }
+      return true;
+    },
+  });
+}
+
+/** Ajv's compile error for a bad argument names the keyword. */
+function isTermShapeError(err: unknown): boolean {
+  return err instanceof Error && err.message.includes(`"${TERM_KEYWORD}"`);
 }
 
 /** Does this schema mark its own top-level `$schema` property external? */
@@ -618,6 +671,11 @@ export class Validator {
           `${ref}: "${GRAPH_OUTPUT_KEYWORD}" must be true or false.`,
         );
       }
+      if (isTermShapeError(err)) {
+        throw new DocmetaError(
+          `${ref}: "${TERM_KEYWORD}" must be an object with an optional "under" string.`,
+        );
+      }
       throw new DocmetaError(
         `Schema "${ref}" failed to compile: ${errorMessage(err)}`,
       );
@@ -764,6 +822,43 @@ export class Validator {
       }
     }
     return preferences;
+  }
+
+  /**
+   * Every place a schema in `refs` marks `x-manni-term` on `data`, at any
+   * depth, in the order the validator evaluated them, each with the value it
+   * was evaluated at.
+   *
+   * A first pass with the recording keyword, as `markedPointers` runs, so a
+   * mark counts exactly where validation would evaluate it. Only present
+   * values are marked. One ref evaluating the same mark at one pointer twice,
+   * through `allOf` say, is one hit. `$schema` is stripped first, as
+   * validation does.
+   */
+  async termMarks(data: Record<string, unknown>, refs: string[]): Promise<TermMarkHit[]> {
+    const { [FILE_SCHEMA_KEY]: _omit, ...subject } = data;
+    void _omit;
+    const hits: TermMarkHit[] = [];
+    // One hit per (pointer, under) across the whole set: two schemas marking
+    // the same field the same way are one mark, and the first ref governs.
+    const once = new Set<string>();
+    for (const ref of refs) {
+      const fn = await this.compile(ref);
+      const seen: Omit<TermMarkHit, "schema">[] = [];
+      termRecorder = seen;
+      try {
+        fn(subject);
+      } finally {
+        termRecorder = undefined;
+      }
+      for (const hit of seen) {
+        const key = JSON.stringify([hit.pointer, hit.under ?? null]);
+        if (once.has(key)) continue;
+        once.add(key);
+        hits.push({ ...hit, schema: ref });
+      }
+    }
+    return hits;
   }
 
   /**

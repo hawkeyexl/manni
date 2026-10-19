@@ -189,6 +189,27 @@ hold its values; a collection `--collection` named beside it is asked about as
 usual. [Keep maintainer metadata out of delivered
 pages](/manni/meta/schemas/field-location/) is the journey.
 
+When a schema marks a property
+[`x-manni-term`](/manni/meta/schemas/term-values/), each string value must name
+a term in the termbase `manni term check` reads. Each finding sits at the
+value's own pointer and line.
+
+| Rule id | Severity | Message |
+|---|---|---|
+| `term:undefined/term` | error | `"devops" names no term; audience.schema.json marks this field x-manni-term.` |
+| `term:outside-branch/term` | error | `"Writer" is a term, but not under "Audience", which audience.schema.json requires.` |
+| `term:alt-label/term` | warning | `"SRE" is an alt-label of "Site reliability engineer", so use the label.` |
+
+An `under` that names no term is exit 2. With no termbase, `validate` checks
+nothing and says so once on stderr. The exit code does not move.
+
+```
+manni: x-manni-term marks 2 fields, and no termbase was found, so their values were not checked.
+```
+
+[Hold a field's values to the termbase](/manni/meta/schemas/term-values/) is
+the journey.
+
 {/* cite validate-stale-stamp-is-a-finding */}
 {/* cite validate-unanswerable-source-is-exit-2 */}
 With [`derive:`](/manni/meta/reference/configuration/#derive) in config,
@@ -863,13 +884,15 @@ model the values that fit, beside the field's shape.
 | Kind | Fields | What the model is offered |
 |---|---|---|
 | Glossary terms | `concepts`, `graph.concepts`, `broader`, `narrower`, `related-terms`, `see` | The term labels [`manni term check`](/manni/term/reference/cli/#term-check) reads, as the only strings allowed. |
+| Marked terms | Any field its schema marks [`x-manni-term`](/manni/meta/schemas/term-values/) | The labels of the terms below its `under`, or every label when it names none, as the only strings allowed. |
 | Page ids | `related-pages`, `next-steps`, `prerequisites`, `replaced-by`, `supersedes` | The `id` of every other page in the page's collections, beside a free string. |
 
 A term value is checked against the termbase, ignoring case. A `concepts`
 value must be a term's label, and a term relation may also name a term's id.
 A value that names no term fails its check. Its retry names the problem, as
 `/concepts/1: must be a glossary term label`, so a value `fill` writes passes
-`term check`.
+`term check`. A marked field with an `under` names the branch, as
+`/audiences/0: must be a glossary term label under "Audience"`.
 
 A page value is never refused for not being an id. A URL, or a line naming a
 capability, stays valid, as the schema allows. A page in no collection is

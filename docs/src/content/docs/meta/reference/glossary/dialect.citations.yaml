@@ -5,14 +5,14 @@ docs/src/content/docs/meta/reference/glossary/dialect.mdx:
         integrity: sha256-8567a38181b531825d20399f923605cdbb5c043dda262d3953ce80ad4cdf1900
       source:
         file: src/meta/core/validator.ts
-        lines: 64-78
+        lines: 65-79
         integrity: sha256-27d7ea2baae75ac8a017379e30f20e6cea6b54d7e0a8caf82a071b7c39ce17aa
-        commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
+        commit-sha: ff3c96da86b0902113ec05ac4a780450486eef85
     - id: dialects-coexist-in-one-run
       claim:
         integrity: sha256-8567a38181b531825d20399f923605cdbb5c043dda262d3953ce80ad4cdf1900
       source:
         file: src/meta/core/validator.ts
-        lines: 514-521
+        lines: 567-574
         integrity: sha256-8840fb1cfdaac1a347c7aa343d4b2263d18d993c62b39c7e730df0b431727c3a
-        commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
+        commit-sha: ff3c96da86b0902113ec05ac4a780450486eef85

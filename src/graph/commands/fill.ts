@@ -15,7 +15,7 @@ import {
   metadataOf,
   type DocFormat,
 } from "../core/analyze.js";
-import { loadRunConfig, type FillField } from "../core/config.js";
+import { loadRunConfig, type FillField, type GraphFillField } from "../core/config.js";
 import type { DocModel } from "../types.js";
 import {
   assertInputFormat,
@@ -54,20 +54,37 @@ import {
   validatorFor,
   type InferenceProvider,
 } from "@hawkeyexl/inference";
-import { FillCache, cacheKey } from "../llm/cache.js";
+import { FillCache, cacheKey, questionCacheKey } from "../llm/cache.js";
 import {
+  QUESTION_SYSTEM_PROMPT,
   SYSTEM_PROMPT,
   SECTION_FILL_FIELDS,
+  buildQuestionPrompt,
   buildUserPrompt,
   proposalSchema,
+  questionSchema,
 } from "../llm/prompt.js";
 import {
   announceSelection,
   assertProviderSelection,
   constructProvider,
+  resolveOfflineIdentity,
   resolveProviderIdentity,
   selectProvider,
 } from "../llm/provider.js";
+import { noOfflineModel } from "../../shared/providers.js";
+import { termLabelSource } from "../../shared/term-labels.js";
+import { canonicalLanguage, termIndex, type TermIndex } from "../core/concepts.js";
+import { questionKey } from "../core/questions.js";
+import {
+  QUESTIONS_KEY,
+  fillPageQuestions,
+  questionsIn,
+  questionsInFile,
+  repinQuestionFile,
+  type QuestionAsker,
+  type QuestionOutcome,
+} from "./fill-questions.js";
 
 export interface FillOptions extends DocumentInputOptions {
   cwd?: string;
@@ -90,6 +107,13 @@ export interface FillOptions extends DocumentInputOptions {
   model?: string;
   /** Run inference on this machine with llama-cpp, over every configured choice. */
   local?: boolean;
+  /**
+   * Send nothing off this machine: only a local model already downloaded, or
+   * none. Overrides `fill.offline`.
+   */
+  offline?: boolean;
+  /** The largest body piece one question request sends; overrides `fill.chunkChars`. */
+  chunkChars?: number;
   /** Disable the graph guardrail (`--no-validate-graph`). */
   noValidateGraph?: boolean;
   /** Propose per-section metadata as well as document-level (ADR 01032). */
@@ -114,17 +138,24 @@ export type FillStatus =
   | "skipped"
   | "error";
 
-/** Why a page was skipped. The only reason today is the turn budget. */
+/** Why a page was skipped: the turn budget ran out. */
 export const TURN_BUDGET_REASON = "turn budget";
+
+/** Why a page was skipped: `--offline` found no local model to ask. */
+export const OFFLINE_REASON = "offline";
 
 export interface FillDocResult {
   path: string;
   status: FillStatus;
   /**
    * Why a `skipped` page was skipped, said rather than left to be inferred —
-   * the half of graph ADR 01027 that survives the dollar cap's removal.
+   * the half of graph ADR 01027 that survives the dollar cap's removal. A
+   * `filled` page carries one too when its re-pins were written and the work
+   * that needed a model was not.
    */
   reason?: string;
+  /** What the question pass did, one entry per question it touched (proposal 0087). */
+  questions?: QuestionOutcome[];
   /** Fields written (or that would be written under --dry-run). */
   fields: string[];
   /** Human-set fields the proposal was not allowed to touch. */
@@ -241,10 +272,16 @@ export async function runFill(opts: FillOptions = {}): Promise<FillReport> {
   // a usage error must not be reported as whatever the file walk found first;
   // construction is lazy besides, so a typo would otherwise exit 0 on any run
   // where no page happened to need inference.
+  //
+  // `--offline` (or `graph.fill.offline`) draws `--local`'s boundary, and the
+  // model must then already be on this machine. The rule is the family's, the
+  // one `meta fill` and `term fill` run.
+  const offline = opts.offline ?? config.fill.offline;
   const flags = {
     ...(opts.provider === undefined ? {} : { provider: opts.provider }),
     ...(opts.model === undefined ? {} : { model: opts.model }),
     ...(opts.local === undefined ? {} : { local: opts.local }),
+    ...(offline ? { offline: true } : {}),
   };
   const selection = selectProvider(config, flags);
   assertProviderSelection(selection);
@@ -284,15 +321,34 @@ export async function runFill(opts: FillOptions = {}): Promise<FillReport> {
   // The two branches are kept apart rather than merged behind a cast: an
   // injected provider's `provider()` is a free-form string, and only the
   // resolved path yields a name `constructProvider` can be trusted with.
-  let identity: { provider: string; model: string };
+  //
+  // `identity` is undefined under `--offline` with no local model on disk.
+  // Then only the work that needs no model runs, and every page that needed
+  // one is skipped as `offline`.
+  let identity: { provider: string; model: string } | undefined;
   let construct: () => InferenceProvider;
-  if (opts.providerInstance) {
+  if (offline) {
+    // Nothing is downloaded. An injected provider stands in for the local
+    // model only once one is on disk, as under `term fill --offline`.
+    const local = await resolveOfflineIdentity(config, flags);
+    const injected = opts.providerInstance;
+    identity =
+      local === undefined || injected === undefined
+        ? local
+        : { provider: injected.provider(), model: injected.modelName() };
+    // Called only for a page with an identity to ask, so never without one.
+    construct = () => {
+      if (injected !== undefined) return injected;
+      if (local === undefined) throw new GraphError(noOfflineModel("nothing was proposed"));
+      return constructProvider(config, local);
+    };
+  } else if (opts.providerInstance) {
     const injected = opts.providerInstance;
     identity = { provider: injected.provider(), model: injected.modelName() };
     construct = () => injected;
     // Still announce what `--local` replaced: the selection is what a real
     // run would have used, and the seam is a test's business, not the user's.
-    announceSelection(selection);
+    announceSelection(selection, flags);
   } else {
     const resolved = await resolveProviderIdentity(config, flags);
     identity = resolved;
@@ -304,7 +360,12 @@ export async function runFill(opts: FillOptions = {}): Promise<FillReport> {
   let provider: InferenceProvider | undefined;
   const getProvider = (): InferenceProvider => (provider ??= construct());
 
-  const fields = opts.fields ?? config.fill.fields;
+  const configured = opts.fields ?? config.fill.fields;
+  // Questions run beside the field pipeline, not through it (proposal 0087).
+  const withQuestions = configured.includes("sample-questions");
+  const fields = configured.filter(
+    (f): f is GraphFillField => f !== "sample-questions",
+  );
   // Compiled against the full configured field set, not any one doc's missing
   // subset: proposals are validated leniently and narrowed afterwards, so a
   // provider that volunteers a field this doc didn't ask for is fine.
@@ -457,6 +518,111 @@ export async function runFill(opts: FillOptions = {}): Promise<FillReport> {
     }
   }
 
+  // The question pass (proposal 0087): its settings, its own prompt and cache
+  // key, and every question already asked, for the duplicate gate.
+  const questionSettings = {
+    perPage: config.fill.questions.perPage,
+    confidenceThreshold,
+    chunkChars: opts.chunkChars ?? config.fill.chunkChars,
+    writeProvenance: config.fill.writeProvenance,
+  };
+  const known = new Map<string, string>();
+  if (withQuestions) {
+    const asked: [string, string][] = [
+      ...[...mergedTexts].sort(([a], [b]) => byCodeUnit(a, b)),
+      ...(stdinContent === undefined ? [] : [[STDIN_PATH, stdinContent] as [string, string]]),
+    ];
+    for (const [path, text] of asked) {
+      for (const q of questionsIn(text, path, formatOf(path, formatFor(path)))) {
+        const key = questionKey(q);
+        if (key !== "" && !known.has(key)) known.set(key, path);
+      }
+    }
+    for (const label of config.questionFiles) {
+      for (const q of questionsInFile(resolve(config.configDir, label), label)) {
+        const key = questionKey(q);
+        if (key !== "" && !known.has(key)) known.set(key, label);
+      }
+    }
+  }
+  const questionValidator = validatorFor(questionSchema(true));
+  const questionRequestSchema = questionSchema();
+  const asker: QuestionAsker | undefined =
+    identity === undefined
+      ? undefined
+      : questionAsker(identity);
+  function questionAsker(id: { provider: string; model: string }): QuestionAsker {
+    return {
+      generatedBy: `${id.provider}/${id.model}`,
+      ask: async (request, chunk) => {
+        const key = questionCacheKey(id.provider, id.model, chunk, request);
+        const hit = cache.get(key);
+        if (hit !== undefined && questionValidator(hit)) return hit;
+        // A cached answer spends no turn, as a cached proposal spends none.
+        if (maxTurns !== null && turnsUsed >= maxTurns) return undefined;
+        turnsUsed++;
+        const run = await completeValidatedJSON<Record<string, unknown>>({
+          provider: getProvider(),
+          system: QUESTION_SYSTEM_PROMPT,
+          user: buildQuestionPrompt(request, chunk),
+          schema: questionRequestSchema,
+          validate: questionValidator,
+          temperature: config.fill.temperature,
+        });
+        if (run.result === undefined) {
+          throw new Error(run.error ?? "provider returned no questions");
+        }
+        cache.set(key, run.result);
+        return run.result;
+      },
+    };
+  }
+  // The termbase, read once and only when a prompt names concepts (0086).
+  let terms: Promise<TermIndex | undefined> | undefined;
+  const termsOnce = (): Promise<TermIndex | undefined> =>
+    (terms ??= (async () => {
+      const source = termLabelSource();
+      if (!config.build.derive.includes("terms") || source === undefined) return undefined;
+      try {
+        return termIndex(
+          await source({
+            cwd,
+            ...(opts.config === undefined ? {} : { configPath: opts.config }),
+            ...(opts.noConfig === true ? { noConfig: true } : {}),
+          }),
+        );
+      } catch {
+        // `term check` reports a termbase it cannot read. The prompt goes
+        // without its alt-labels.
+        return undefined;
+      }
+    })());
+  /** A page's concepts by preferred label and alt-labels, for the question prompt. */
+  async function conceptsOf(
+    data: Record<string, unknown>,
+  ): Promise<{ label: string; altLabels: string[] }[]> {
+    const strings = (v: unknown): string[] =>
+      typeof v === "string" ? [v] : Array.isArray(v) ? v.filter((s): s is string => typeof s === "string") : [];
+    const block = data[GRAPH_KEY];
+    const graph =
+      block !== null && typeof block === "object" && !Array.isArray(block)
+        ? (block as Record<string, unknown>)
+        : {};
+    const out = new Map<string, string[]>();
+    for (const label of strings(graph["label"])) out.set(label, strings(graph["alt-labels"]));
+    const named = strings(graph["concepts"] ?? data["concepts"]);
+    const index = named.length > 0 ? await termsOnce() : undefined;
+    const language = typeof data["language"] === "string" ? canonicalLanguage(data["language"]) : undefined;
+    for (const label of named) {
+      const id = index?.resolve(label, language);
+      const group = id === undefined ? undefined : index?.groups.get(id);
+      const term = group?.find((t) => canonicalLanguage(t.language) === language) ?? group?.[0];
+      if (term === undefined) out.set(label, out.get(label) ?? []);
+      else out.set(term.label, [...(term.altLabels ?? [])]);
+    }
+    return [...out].map(([label, altLabels]) => ({ label, altLabels }));
+  }
+
   for (const path of files) {
     // Read failures are operational (deleted file, permissions) — abort the
     // whole run with exit 2 rather than burning LLM budget on the rest.
@@ -470,7 +636,7 @@ export async function runFill(opts: FillOptions = {}): Promise<FillReport> {
       );
     }
     try {
-      results.push(await fillOne(path, absPath, content));
+      results.push(await fillPage(path, absPath, content));
     } catch (e) {
       results.push({
         path,
@@ -488,7 +654,7 @@ export async function runFill(opts: FillOptions = {}): Promise<FillReport> {
   let stdinDocument: string | undefined;
   if (stdinContent !== undefined) {
     try {
-      const result = await fillOne(STDIN_PATH, undefined, stdinContent);
+      const result = await fillPage(STDIN_PATH, undefined, stdinContent);
       results.push(result);
       stdinDocument = result.filledContent ?? stdinContent;
       Reflect.deleteProperty(result, "filledContent");
@@ -502,6 +668,39 @@ export async function runFill(opts: FillOptions = {}): Promise<FillReport> {
         error: errorMessage(e),
       });
     }
+  }
+
+  // Golden-set files get the model-free half only: moved answers re-pinned,
+  // and a missing `integrity` minted. Drafting cross-page questions is left
+  // to a person (proposal 0087).
+  if (withQuestions) {
+    for (const label of config.questionFiles) {
+      const repinned = repinQuestionFile(
+        resolve(config.configDir, label),
+        label,
+        config.configDir,
+        opts.dryRun ?? false,
+      );
+      warnings.push(...repinned.warnings);
+      results.push({
+        path: label,
+        status: repinned.changed ? (opts.dryRun ? "proposed" : "filled") : "complete",
+        fields: repinned.changed ? [QUESTIONS_KEY] : [],
+        preserved: [],
+        cached: false,
+        ...(repinned.outcomes.length > 0 ? { questions: repinned.outcomes } : {}),
+      });
+    }
+  }
+
+  if (offline && identity === undefined && results.some((r) => r.reason === OFFLINE_REASON)) {
+    warnings.push(
+      noOfflineModel(
+        withQuestions
+          ? "only answer pins were updated, and nothing was drafted or proposed"
+          : "nothing was proposed",
+      ),
+    );
   }
 
   if (sectionsUnrecorded.length > 0) {
@@ -524,6 +723,59 @@ export async function runFill(opts: FillOptions = {}): Promise<FillReport> {
   };
 
   /**
+   * One page through both passes: the `graph:` fields, then its questions on
+   * the text the first pass left. The question pass writes the page itself,
+   * or hands a stdin page back in `filledContent`.
+   */
+  async function fillPage(
+    path: string,
+    absPath: string | undefined,
+    content: string,
+  ): Promise<FillDocResult & { filledContent?: string }> {
+    const { after, merged, ...result } = await fillOne(path, absPath, content);
+    if (!withQuestions) return result;
+    const pageFormat = formatOf(path, format);
+    // The page as meta reads it once the graph pass is applied, so a concept
+    // that pass just filled reaches the question prompt.
+    const data = metadataOf(merged ?? mergedTexts.get(path) ?? content, path, pageFormat).data;
+    const pass = await fillPageQuestions({
+      path,
+      format: pageFormat,
+      content: after ?? content,
+      title: typeof data["title"] === "string" ? data["title"] : path,
+      concepts: () => conceptsOf(data),
+      settings: questionSettings,
+      asker,
+      known,
+    });
+    warnings.push(...pass.warnings);
+    const outcomes = pass.outcomes.length > 0 ? { questions: pass.outcomes } : {};
+    if (pass.state === "changed") {
+      if (!opts.dryRun) {
+        if (absPath === undefined) result.filledContent = pass.content;
+        else writeFileSync(absPath, pass.content, "utf8");
+      }
+      return {
+        ...result,
+        status: opts.dryRun ? "proposed" : "filled",
+        fields: [...result.fields, QUESTIONS_KEY],
+        ...(pass.skipped === undefined ? {} : { reason: pass.skipped }),
+        ...outcomes,
+      };
+    }
+    // Nothing written here, so the field pass's status stands, unless it had
+    // nothing to do and this pass was skipped or proposed nothing.
+    const idle = result.status === "complete" || result.status === "nothing-proposed";
+    if (idle && pass.state === "skipped") {
+      return { ...result, status: "skipped", ...(pass.skipped === undefined ? {} : { reason: pass.skipped }), ...outcomes };
+    }
+    if (result.status === "complete" && pass.state === "unchanged") {
+      return { ...result, status: "nothing-proposed", ...outcomes };
+    }
+    return { ...result, ...outcomes };
+  }
+
+  /**
    * Fill one page. `absPath` is where an accepted result is written; a page
    * read from stdin has none, and its result carries the filled text back in
    * `filledContent` instead.
@@ -532,7 +784,7 @@ export async function runFill(opts: FillOptions = {}): Promise<FillReport> {
     path: string,
     absPath: string | undefined,
     content: string,
-  ): Promise<FillDocResult & { filledContent?: string }> {
+  ): Promise<FillDocResult & { filledContent?: string; after?: string; merged?: string }> {
     // `--as` is how every input parses, the stdin page included.
     const pageFormat = formatOf(path, format);
     // Refused before a turn is spent. graph's YAML editor is the Markdown
@@ -581,10 +833,23 @@ export async function runFill(opts: FillOptions = {}): Promise<FillReport> {
     // With --sections, a document whose own fields are complete may still have
     // unfilled sections, so completeness at document level is not completeness
     // (ADR 01032).
-    if (missing.length === 0 && !withSections) {
+    // No `graph:` field asked for, as under `--fields sample-questions`, is
+    // nothing for this pipeline to do.
+    if (fields.length === 0 || (missing.length === 0 && !withSections)) {
       return {
         path,
         status: "complete",
+        fields: [],
+        preserved: [],
+        cached: false,
+      };
+    }
+    // Offline with no local model: no proposal can be made or looked up.
+    if (identity === undefined) {
+      return {
+        path,
+        status: "skipped",
+        reason: OFFLINE_REASON,
         fields: [],
         preserved: [],
         cached: false,
@@ -665,7 +930,7 @@ export async function runFill(opts: FillOptions = {}): Promise<FillReport> {
     // uniqueItems on what we write).
     const narrowed = Object.fromEntries(
       Object.entries(proposal)
-        .filter(([k]) => missing.includes(k as FillField))
+        .filter(([k]) => missing.includes(k as GraphFillField))
         .map(([k, v]) => [k, Array.isArray(v) ? [...new Set(v)] : v]),
     );
 
@@ -690,8 +955,8 @@ export async function runFill(opts: FillOptions = {}): Promise<FillReport> {
         const entryConfidence = numberMap(entry["confidence"]);
         const entryReasoning = stringMap(entry["reasoning"]);
         for (const [field, value] of Object.entries(entry)) {
-          if (!SECTION_FILL_FIELDS.includes(field as FillField)) continue;
-          if (!fields.includes(field as FillField)) continue;
+          if (!SECTION_FILL_FIELDS.includes(field as GraphFillField)) continue;
+          if (!fields.includes(field as GraphFillField)) continue;
           const name = `sections.${slug}.${field}`;
           narrowed[name] = Array.isArray(value) ? [...new Set(value)] : value;
           // Fold the per-section scores into the flat maps the gate reads, so
@@ -932,6 +1197,8 @@ export async function runFill(opts: FillOptions = {}): Promise<FillReport> {
     // run predicts exactly what a real run would accept and reject.
     guard?.commit(path, applied.content);
     return {
+      after: pageContent,
+      merged: applied.content,
       path,
       status: opts.dryRun ? "proposed" : "filled",
       fields: reportedFields,
@@ -1097,6 +1364,25 @@ async function openMetaViewPerPage(
   }
 }
 
+/**
+ * `drafted    "Q"  lines 41-43 (0.82)`, `re-pinned  "Q"  lines 58-60 to
+ * 61-63`, or `dropped    "Q"  answer not on page`.
+ */
+function questionLine(q: QuestionOutcome): string {
+  const score = q.confidence === undefined ? "" : ` (${q.confidence.toFixed(2)})`;
+  let detail: string;
+  if (q.reason !== undefined) {
+    detail = `${q.reason}${q.reason.startsWith("low confidence") ? score : ""}`;
+  } else {
+    const where = `${q.file === undefined ? "" : `${q.file} `}lines ${q.from ?? q.lines ?? ""}`;
+    detail =
+      q.action === "re-pinned"
+        ? `${where}${q.from === undefined || q.lines === undefined ? "" : ` to ${q.lines}`}`
+        : `${where}${score}`;
+  }
+  return `${q.action.padEnd(11)}"${q.question}"  ${detail}`;
+}
+
 export function renderFill(
   report: FillReport,
   format: "pretty" | "json",
@@ -1149,6 +1435,8 @@ export function renderFill(
         lines.push(`error     ${r.path}: ${r.error ?? ""}`);
         break;
     }
+    // One line per question the pass touched, under its page.
+    for (const q of r.questions ?? []) lines.push(`            ${questionLine(q)}`);
   }
   // A run cut short covered less than it was asked to, and the per-page lines
   // say which pages. Say once that the budget is why, so the number to raise

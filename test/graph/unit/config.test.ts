@@ -55,8 +55,13 @@ describe("parseConfig", () => {
       "about-product-aspect",
       "not-applicable-to",
       "not-about-product-aspect",
+      // Proposal 0087: questions join the default, beside the graph block.
+      "sample-questions",
     ]);
     expect(c.fill.confidenceThreshold).toBe(0.7);
+    expect(c.fill.chunkChars).toBe(12000);
+    expect(c.fill.offline).toBe(false);
+    expect(c.fill.questions).toEqual({ perPage: 3 });
     // Local embeddings default to granite, configurable (ADR 01020).
     expect(c.embed.model).toContain("granite-embedding-small-english-r2");
     expect(c.embed.dtype).toBe("q8");
@@ -236,6 +241,77 @@ describe("parseConfig", () => {
     expect(c.fill.validateGraph).toBe(false);
   });
 
+  it("defaults check.questions to the top 5, at warning", () => {
+    const c = parseConfig("", "/tmp/manni.config.yaml");
+    expect(c.check.questions).toEqual({ top: 5, severity: "warning", foundThreshold: null });
+  });
+
+  it("parses check.questions overrides", () => {
+    const c = parseConfig(
+      "check:\n  questions:\n    top: 1\n    severity: off\n",
+      "/tmp/manni.config.yaml",
+    );
+    expect(c.check.questions).toEqual({ top: 1, severity: "off", foundThreshold: null });
+  });
+
+  it("rejects a check.questions top below 1, a bad severity and an unknown key", () => {
+    for (const body of [
+      "top: 0",
+      "top: 2.5",
+      "severity: fatal",
+      "bogus: true",
+    ]) {
+      expect(
+        () =>
+          parseConfig(
+            `check:\n  questions:\n    ${body}\n`,
+            "/tmp/manni.config.yaml",
+          ),
+        body,
+      ).toThrow(GraphError);
+    }
+  });
+
+  it("defaults questionFiles to none and foundThreshold to no gate", () => {
+    const c = parseConfig("", "/tmp/manni.config.yaml");
+    expect(c.questionFiles).toEqual([]);
+    expect(c.check.questions.foundThreshold).toBeNull();
+  });
+
+  it("parses questionFiles and foundThreshold", () => {
+    const c = parseConfig(
+      "questionFiles: [docs/questions.yaml]\ncheck:\n  questions:\n    foundThreshold: 95\n",
+      "/tmp/manni.config.yaml",
+    );
+    expect(c.questionFiles).toEqual(["docs/questions.yaml"]);
+    expect(c.check.questions.foundThreshold).toBe(95);
+    const off = parseConfig(
+      "check:\n  questions:\n    foundThreshold: null\n",
+      "/tmp/manni.config.yaml",
+    );
+    expect(off.check.questions.foundThreshold).toBeNull();
+  });
+
+  it("rejects a bad questionFiles and a foundThreshold outside 0-100", () => {
+    for (const body of [
+      "questionFiles: docs/questions.yaml\n",
+      "questionFiles: ['']\n",
+      "check:\n  questions:\n    foundThreshold: 101\n",
+      "check:\n  questions:\n    foundThreshold: -1\n",
+      "check:\n  questions:\n    foundThreshold: high\n",
+    ]) {
+      expect(() => parseConfig(body, "/tmp/manni.config.yaml"), body).toThrow(GraphError);
+    }
+  });
+
+  it("accepts sample-questions in the per-field coverage map", () => {
+    const c = parseConfig(
+      "stats:\n  coverageThreshold:\n    sample-questions: 60\n",
+      "/tmp/manni.config.yaml",
+    );
+    expect(c.stats.coverageThreshold).toEqual({ "sample-questions": 60 });
+  });
+
   it("rejects unknown check keys", () => {
     expect(() =>
       parseConfig(
@@ -307,6 +383,29 @@ describe("parseConfig", () => {
     expect(() =>
       parseConfig("fill:\n  maxTurns: 0\n", "/tmp/manni.config.yaml"),
     ).toThrow(GraphError);
+  });
+
+  it("parses fill.chunkChars, fill.offline and fill.questions.perPage", () => {
+    const c = parseConfig(
+      "fill:\n  chunkChars: 6000\n  offline: true\n  questions:\n    perPage: 5\n  fields: [sample-questions]\n",
+      "/tmp/manni.config.yaml",
+    );
+    expect(c.fill.chunkChars).toBe(6000);
+    expect(c.fill.offline).toBe(true);
+    expect(c.fill.questions).toEqual({ perPage: 5 });
+    expect(c.fill.fields).toEqual(["sample-questions"]);
+  });
+
+  it("rejects a bad fill.chunkChars, fill.offline or fill.questions", () => {
+    for (const body of [
+      "fill:\n  chunkChars: 0\n",
+      "fill:\n  chunkChars: 1.5\n",
+      "fill:\n  offline: yes please\n",
+      "fill:\n  questions:\n    perPage: 0\n",
+      "fill:\n  questions:\n    perpage: 3\n",
+    ]) {
+      expect(() => parseConfig(body, "/tmp/manni.config.yaml"), body).toThrow(GraphError);
+    }
   });
 
   it("defaults fill.sections to off", () => {

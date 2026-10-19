@@ -13,7 +13,7 @@ concepts:
   - severity
   - curated pointer
   - x-manni-graph-output
-last-updated: 2026-10-18
+last-updated: 2026-10-19
 ---
 
 Your standard about structure probably lives in review comments. A concept
@@ -175,6 +175,29 @@ Those paths are the schema's own `properties`, its `allOf` entries, and a local
 `$ref` reached from them. Marks that differ across `anyOf`, `oneOf` or
 `if`/`then` branches are not an error. When the validator evaluates both, that
 schema has no preference for the key, and an earlier schema's mark applies.
+
+## Sample questions find their pages
+
+A page's `sample-questions` are the questions a reader asks to reach it.
+`graph build` carries each into the graph as `graph:sampleQuestion`, in the
+page's language. `graph check` asks each one through the retrieval
+`graph search` uses, against an index it builds from the graph. A page outside
+the top results for its own question is a finding.
+
+```yaml
+graph:
+  check:
+    questions:
+      top: 5
+      severity: warning
+```
+
+`top` is how high the page must rank. `severity` is the finding's level, and
+`off` asks nothing. Start at `warning`, as with a new shape, and promote to
+`error` once the corpus is clean. The check measures whether a reader finds the
+page. Nothing in it judges whether the page answers, so the result is the same
+on every run. [Fix the graph](/manni/graph/fix/#a-sample-question-misses-its-page)
+covers a miss.
 
 ## Three pointers a machine may never claim
 

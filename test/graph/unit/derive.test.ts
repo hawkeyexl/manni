@@ -105,6 +105,68 @@ describe("deriveGraph — document basics", () => {
     expect(has(g, DOC, `${NS.dcterms}language`, lit("en"))).toBe(true);
   });
 
+  it("derives sample-questions as graph:sampleQuestion, one literal per question", () => {
+    const one = graph({
+      "docs/a.md": "---\nsample-questions: How do I retry?\n---\n",
+    });
+    expect(
+      one.filter((q) => q.p === `${NS.graph}sampleQuestion`).map((q) => q.o),
+    ).toEqual([{ kind: "literal", value: "How do I retry?" }]);
+
+    const tagged = graph({
+      "docs/a.md":
+        "---\nlang: de-de\nsample-questions:\n  - Wie?\n  - Warum?\n---\n",
+    });
+    expect(
+      tagged
+        .filter((q) => q.p === `${NS.graph}sampleQuestion`)
+        .map((q) => q.o)
+        .sort((a, b) => (a.value < b.value ? -1 : 1)),
+    ).toEqual([
+      { kind: "literal", value: "Warum?", language: "de-DE" },
+      { kind: "literal", value: "Wie?", language: "de-DE" },
+    ]);
+  });
+
+  it("derives only the question text of an object item, never its pins (0087)", () => {
+    const g = graph({
+      "docs/a.md": [
+        "---",
+        "sample-questions:",
+        "  - How do I retry?",
+        "  - question: How many retries?",
+        "    answers:",
+        "      - lines: 3-4",
+        "        integrity: sha256-" + "0".repeat(64),
+        "    reviewed: false",
+        "---",
+        "",
+      ].join("\n"),
+    });
+    expect(
+      g
+        .filter((q) => q.p === `${NS.graph}sampleQuestion`)
+        .map((q) => q.o.value)
+        .sort(),
+    ).toEqual(["How do I retry?", "How many retries?"]);
+    expect(g.some((q) => q.o.value.startsWith("sha256-"))).toBe(false);
+
+    const single = graph({
+      "docs/a.md": "---\nsample-questions:\n  question: Alone?\n---\n",
+    });
+    expect(
+      single.filter((q) => q.p === `${NS.graph}sampleQuestion`).map((q) => q.o.value),
+    ).toEqual(["Alone?"]);
+  });
+
+  it("derives no sample question without the frontmatter source", () => {
+    const g = graph(
+      { "docs/a.md": "---\nsample-questions: How do I retry?\n---\n" },
+      ["sections"],
+    );
+    expect(g.some((q) => q.p === `${NS.graph}sampleQuestion`)).toBe(false);
+  });
+
   it("reads stewardship's created and last-updated as the document's dates", () => {
     const g = graph({
       "docs/a.md": "---\ncreated: 2026-05-01\nlast-updated: 2026-07-01\n---\n",

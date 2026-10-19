@@ -7,7 +7,7 @@ docs/src/content/docs/term/index.mdx:
         file: src/term/core/check.ts
         lines: 154-173
         integrity: sha256-ccd1706a6d62003e3fb017481bfa2aab9828fc0ff3b51bdd854ac6ecdfa05610
-        commit-sha: cb9293693c798fa3746b9ebe7e4891e28fcf4bff
+        commit-sha: 4a6402354961e71777456c12376a14b9cc96840b
     - id: concepts-read-from-metadata
       claim:
         integrity: sha256-8eaf928fa69b8abbeb9e1db43d6afa52a06d2515bac29efe1504083aab7d1a8d
@@ -174,7 +174,7 @@ docs/src/content/docs/term/index.mdx:
         file: src/term/core/check.ts
         lines: 419-494
         integrity: sha256-2863285e9c53948cf71c020f155f2e1fc2f85cfb8c907e8b5b09461ce25d0cfd
-        commit-sha: cb9293693c798fa3746b9ebe7e4891e28fcf4bff
+        commit-sha: 4a6402354961e71777456c12376a14b9cc96840b
     - id: checks-definition-prose-with-vale
       claim:
         lines: 124-125
@@ -201,7 +201,7 @@ docs/src/content/docs/term/index.mdx:
         file: src/term/core/check.ts
         lines: 300-307
         integrity: sha256-0e29438868dac3bde56075ece471c81a2e3d580e46cdfda81d32b173c3b5c8d1
-        commit-sha: cb9293693c798fa3746b9ebe7e4891e28fcf4bff
+        commit-sha: 4a6402354961e71777456c12376a14b9cc96840b
     - id: checks-concepts-by-preferred-label
       claim:
         lines: 119
@@ -210,7 +210,7 @@ docs/src/content/docs/term/index.mdx:
         file: src/term/core/check.ts
         lines: 190-201
         integrity: sha256-3fb5e670f9df6f62f1522ab11712d431c99c68360e38502d76898a6e2e8c759a
-        commit-sha: cb9293693c798fa3746b9ebe7e4891e28fcf4bff
+        commit-sha: 4a6402354961e71777456c12376a14b9cc96840b
     - id: proof-exit-one
       claim:
         integrity: sha256-9447cfa9f5cdc753063aa5f4f6772fcb1e3f1e6a9d9804b6dd92cef986496768
@@ -234,7 +234,7 @@ docs/src/content/docs/term/index.mdx:
         file: src/term/core/check.ts
         lines: 159-172
         integrity: sha256-c126341a014e8b33fa90f33b9d157fbc8618efbe50434553924393e12c2f2d88
-        commit-sha: cb9293693c798fa3746b9ebe7e4891e28fcf4bff
+        commit-sha: 4a6402354961e71777456c12376a14b9cc96840b
     - id: proof-undefined-term-message
       claim:
         lines: 58-62
@@ -243,7 +243,7 @@ docs/src/content/docs/term/index.mdx:
         file: src/term/core/check.ts
         lines: 199-207
         integrity: sha256-24200c8215e7460603f94d3087fb99bc2c7f08f3990be19d28da105ccba924c2
-        commit-sha: cb9293693c798fa3746b9ebe7e4891e28fcf4bff
+        commit-sha: 4a6402354961e71777456c12376a14b9cc96840b
     - id: proof-findings-layout
       claim:
         lines: 58-62
