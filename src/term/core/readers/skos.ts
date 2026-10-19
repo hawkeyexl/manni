@@ -155,9 +155,17 @@ function readConcept(
       unread.add(`${spelled} is not a term field`);
       continue;
     }
-    const literal = property.kind === "text" || property.kind === "texts" || property.kind === "code";
-    if (literal !== (object.termType === "Literal")) {
-      unread.add(`${spelled} on "${name}" is not ${literal ? "text" : "an IRI"}`);
+    if (property.kind === "concepts" || property.kind === "iris") {
+      if (object.termType === "Literal") {
+        unread.add(`${spelled} on "${name}" is not an IRI`);
+        continue;
+      }
+      const value = property.kind === "concepts" ? (localName(object.value) ?? object.value) : object.value;
+      append(shared, property.field, value);
+      continue;
+    }
+    if (object.termType !== "Literal") {
+      unread.add(`${spelled} on "${name}" is not text`);
       continue;
     }
     if (property.kind === "code") {
@@ -165,12 +173,7 @@ function readConcept(
       else unread.add(`"${name}" holds one ${spelled}`);
       continue;
     }
-    if (property.kind === "concepts" || property.kind === "iris") {
-      const value = property.kind === "concepts" ? (localName(object.value) ?? object.value) : object.value;
-      append(shared, property.field, value);
-      continue;
-    }
-    const language = object.termType === "Literal" ? object.language : "";
+    const language = object.language;
     const raw = languages.get(language);
     if (raw === undefined) {
       unread.add(language === "" ? `"${name}" has no untagged skos:prefLabel` : `"${name}" has no skos:prefLabel in ${language}`);
