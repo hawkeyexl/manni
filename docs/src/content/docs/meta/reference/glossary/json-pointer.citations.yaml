@@ -7,4 +7,4 @@ docs/src/content/docs/meta/reference/glossary/json-pointer.mdx:
         file: src/meta/reporters/rule-id.ts
         lines: 124-127
         integrity: sha256-632e8e76aec0a197144d24cc6f68bbabe312b82190d6cef055a3d89a1543340f
-        commit-sha: 5f05739873cc71822eb1e6650ac3ccc937c05d55
+        commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917

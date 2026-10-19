@@ -26,7 +26,7 @@ docs/src/content/docs/meta/ci/consume-results.mdx:
         file: src/meta/core/config.ts
         lines: 1862-1866
         integrity: sha256-f6e52c1599511310259e1d366365c79a3563e4ca9a5ad654fb0566d26fb21369
-        commit-sha: 5f05739873cc71822eb1e6650ac3ccc937c05d55
+        commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
     - id: empty-inputs-fall-back-to-collections
       claim:
         lines: 262-264
@@ -35,7 +35,7 @@ docs/src/content/docs/meta/ci/consume-results.mdx:
         file: src/meta/core/config.ts
         lines: 1899-1907
         integrity: sha256-a25173e88e325e9018ce01428895706356f063070cd986fe69698790dc264ad8
-        commit-sha: 5f05739873cc71822eb1e6650ac3ccc937c05d55
+        commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
     - id: get-quiet-drops-all-unset-files
       claim:
         lines: 223-224
@@ -134,7 +134,7 @@ docs/src/content/docs/meta/ci/consume-results.mdx:
         file: src/meta/core/validator.ts
         lines: 960-968
         integrity: sha256-b520a312dafe5a0bbdb25b6de5df4ceffe64f816a6e9201ec180e2a901f3fb1e
-        commit-sha: 5f05739873cc71822eb1e6650ac3ccc937c05d55
+        commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
     - id: validate-json-is-one-object
       claim:
         integrity: sha256-be3c85c762bffb7f91e0f85e254aae6faf360087e21c454e1dbf305a2150d292
