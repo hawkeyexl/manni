@@ -119,6 +119,19 @@ export function providerSpecFor(
 }
 
 /**
+ * The spec the run selects, checked and announced once. Both identity
+ * resolvers start here, so a step added to the selection reaches both.
+ */
+function selectedSpec(config: GraphConfig, flags: ProviderFlags): ProviderSpec {
+  const selection = selectProvider(config, flags);
+  const { provider, model } = selection;
+  assertKnownProvider(provider, toGraphError);
+  assertModelHasProvider(provider, model, CONFIG_KEY, toGraphError);
+  announceSelection(selection, flags);
+  return providerSpecFor(config, { provider, model: model ?? null });
+}
+
+/**
  * The concrete provider and model, WITHOUT constructing the provider: cache
  * keys need it, and a fully cached or fully complete run must not require an
  * API key.
@@ -133,15 +146,7 @@ export async function resolveProviderIdentity(
   config: GraphConfig,
   flags: ProviderFlags = {},
 ): Promise<{ provider: ConcreteProvider; model: string }> {
-  const selection = selectProvider(config, flags);
-  const { provider, model } = selection;
-  assertKnownProvider(provider, toGraphError);
-  assertModelHasProvider(provider, model, CONFIG_KEY, toGraphError);
-  announceSelection(selection, flags);
-  return resolveIdentity(
-    providerSpecFor(config, { provider, model: model ?? null }),
-    toGraphError,
-  );
+  return resolveIdentity(selectedSpec(config, flags), toGraphError);
 }
 
 /**
@@ -153,15 +158,7 @@ export async function resolveOfflineIdentity(
   config: GraphConfig,
   flags: ProviderFlags,
 ): Promise<{ provider: ConcreteProvider; model: string } | undefined> {
-  const selection = selectProvider(config, flags);
-  const { provider, model } = selection;
-  assertKnownProvider(provider, toGraphError);
-  assertModelHasProvider(provider, model, CONFIG_KEY, toGraphError);
-  announceSelection(selection, flags);
-  return offlineIdentity(
-    providerSpecFor(config, { provider, model: model ?? null }),
-    toGraphError,
-  );
+  return offlineIdentity(selectedSpec(config, flags), toGraphError);
 }
 
 /** Construct a provider for an identity already resolved. */
