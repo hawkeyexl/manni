@@ -355,7 +355,7 @@ export async function fillPageQuestions(input: PageQuestionsInput): Promise<Page
       // The third write still moved the pins: write the latest ones once more,
       // unchecked, and say so.
       next = write();
-      warnings.push(`${path}: the answer pins did not settle after three writes, so check their lines.`);
+      warnings.push(`${path}: the answer pins did not settle, so check their lines.`);
       break;
     }
     before = after;

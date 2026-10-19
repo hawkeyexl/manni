@@ -45,5 +45,5 @@ it("stops after three writes when the pins keep moving, and says so", async () =
     },
   ]);
   const report = await runFill({ cwd: dir, paths: ["docs/retry.md"], providerInstance: provider, noCache: true });
-  expect(report.warnings).toContain("docs/retry.md: the answer pins did not settle after three writes, so check their lines.");
+  expect(report.warnings).toContain("docs/retry.md: the answer pins did not settle, so check their lines.");
 });
