@@ -482,6 +482,30 @@ describe("checkTermSet", () => {
     });
   });
 
+  describe("a page's names resolve as the graph resolves them", () => {
+    it("tries the page's primary language before any other", () => {
+      const terms = [
+        term({ id: "auth-fr", label: "authentication", definition: "d", language: "fr-FR" }),
+        term({ id: "auth-en", label: "authentication", definition: "d", language: "en-US" }),
+        term({ label: "Login", definition: "d", language: "en-US", broader: ["authentication"] }),
+      ];
+      const blocks = [{ ...block("Login", { broader: ["authentication"] }), language: "en-GB" }];
+      const findings = checkTermSet(set(terms, terms.map((t) => ref(t.record.label)), blocks));
+      expect(only(findings, "hierarchy-outside-termbase")).toEqual([]);
+    });
+
+    it("takes an alt-label in the page's language over a label in another", () => {
+      const terms = [
+        term({ label: "Lock", definition: "d", language: "en" }),
+        term({ label: "Schloss", definition: "d", language: "de", "alt-labels": ["Lock"] }),
+      ];
+      const findings = checkTermSet(set(terms, [{ ...ref("Lock", "docs/de/page.md", 3), language: "de" }]));
+      expect(only(findings, "alt-label-reference").map((f) => f.message)).toEqual([
+        'concepts: "Lock" is an alt-label of "Schloss", so name the label.',
+      ]);
+    });
+  });
+
   describe("hierarchy-outside-termbase", () => {
     const terms = [
       term({
