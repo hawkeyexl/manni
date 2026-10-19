@@ -2,6 +2,15 @@
 
 <!-- And why. If it fixes an issue, link it. -->
 
+## Acceptance checklist
+
+<!--
+  The plan's acceptance checklist, as a task list. Each item is a checkable fact
+  about the built result, and the CI review checks the diff against every one.
+  In a stack, list only the items this PR delivers. Delete this section when the
+  change had no plan.
+-->
+
 ## Checklist
 
 - [ ] Commits follow [Conventional Commits](https://www.conventionalcommits.org/).
