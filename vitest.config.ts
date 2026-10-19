@@ -7,7 +7,7 @@ export default defineConfig({
     // this suite must never do (graph ADR 01025). Extend, not replace: a bare
     // list drops vitest's defaults (node_modules, dist, .git), so anything
     // vendored under test/ would start being collected.
-    exclude: [...configDefaults.exclude, "test/graph/real/**"],
+    exclude: [...configDefaults.exclude, "test/graph/real/**", "test/term/real/**"],
     environment: "node",
     // vitest's default is 5000ms, and this suite does not fit inside it on a
     // Windows runner. Much of `cli.integration.test.ts` spawns the built bin

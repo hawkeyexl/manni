@@ -2,7 +2,7 @@
  * Graph-level validation: run the published SHACL shapes over a built graph,
  * plus the SKOS integrity checks core SHACL cannot express (broader cycles,
  * related⨯broaderTransitive disjointness, two untagged prefLabels on one
- * concept). Every finding carries the
+ * concept, a mapping into the scheme itself). Every finding carries the
  * doc paths responsible, so writers get file names instead of bare IRIs.
  */
 import { readFileSync } from "node:fs";
@@ -27,8 +27,11 @@ export interface CheckFinding {
    * a11y keeps axe's `impact` (proposal 0035, stress test 10).
    */
   severity: Severity;
-  /** SHACL's own word for the same finding, kept for lookup. */
-  shaclSeverity: ShaclSeverity;
+  /**
+   * SHACL's own word for the same finding, kept for lookup. Absent on a
+   * finding no shape reported, such as a sample question that missed.
+   */
+  shaclSeverity?: ShaclSeverity;
   /** Human-readable description (IRIs compacted to prefixed names). */
   message: string;
   /** IRI of the node the finding is about. */
@@ -58,11 +61,26 @@ function finding(
   return { severity: FAMILY_SEVERITY[shaclSeverity], shaclSeverity, ...rest };
 }
 
-const SEVERITY_RANK: Record<ShaclSeverity, number> = {
-  violation: 0,
+/** Most severe first: error, warning, notice. */
+const SEVERITY_RANK: Record<Severity, number> = {
+  error: 0,
   warning: 1,
-  info: 2,
+  notice: 2,
 };
+
+/**
+ * The one order every check finding is reported in: severity, then focus
+ * node, path and message. Exported so findings from outside the shapes sort
+ * among them the same way.
+ */
+export function compareFindings(a: CheckFinding, b: CheckFinding): number {
+  return (
+    SEVERITY_RANK[a.severity] - SEVERITY_RANK[b.severity] ||
+    byCodeUnit(a.focusNode, b.focusNode) ||
+    byCodeUnit(a.path ?? "", b.path ?? "") ||
+    byCodeUnit(a.message, b.message)
+  );
+}
 
 /** Parse one or more shapes .ttl files into a single store. */
 export function loadShapes(paths: string[]): Store {
@@ -364,6 +382,40 @@ function untaggedPrefLabelFindings(store: Store): CheckFinding[] {
     );
 }
 
+/** The SKOS mapping properties: each links a concept to one in another scheme. */
+const MAPPINGS = ["exactMatch", "closeMatch", "broadMatch", "narrowMatch", "relatedMatch"] as const;
+
+/**
+ * A mapping whose object is a concept in this graph's scheme. SKOS keeps the
+ * mapping properties for links between schemes, so inside one the relation is
+ * broader, narrower or related.
+ */
+function inSchemeMappingFindings(store: Store): CheckFinding[] {
+  const inScheme = DataFactory.namedNode(`${NS.skos}inScheme`);
+  const findings: CheckFinding[] = [];
+  for (const mapping of MAPPINGS) {
+    const path = `${NS.skos}${mapping}`;
+    for (const q of store.getQuads(null, DataFactory.namedNode(path), null, null)) {
+      if (q.object.termType !== "NamedNode") continue;
+      // Into *this* scheme: the target shares a scheme with the concept that
+      // maps to it. A concept of an outside scheme carried in the graph keeps
+      // its own `skos:inScheme`, and mapping to it is the point of a match.
+      const schemes = new Set(store.getObjects(q.subject, inScheme, null).map((o) => o.value));
+      const shared = store.getObjects(q.object, inScheme, null).some((o) => schemes.has(o.value));
+      if (!shared) continue;
+      findings.push(
+        finding("violation", {
+          message: `skos:${mapping} points into this scheme (${compactIri(q.object.value)}), so use broader, narrower or related instead.`,
+          focusNode: q.subject.value,
+          path,
+          docs: blameDocs(store, q.subject.value),
+        }),
+      );
+    }
+  }
+  return findings;
+}
+
 /**
  * The three `graph` fields a machine may never be attributed for. The old
  * `kg.provenance` schema enumerated the twelve *fillable* fields, which kept
@@ -490,15 +542,10 @@ export async function validateGraph(
     ...cycleFindings(store),
     ...relatedConflicts(store),
     ...curatedFieldFindings(store),
+    ...inSchemeMappingFindings(store),
     ...untaggedPrefLabelFindings(store).filter((f) => !said.has(f.focusNode)),
   );
 
-  findings.sort(
-    (a, b) =>
-      SEVERITY_RANK[a.shaclSeverity] - SEVERITY_RANK[b.shaclSeverity] ||
-      byCodeUnit(a.focusNode, b.focusNode) ||
-      byCodeUnit(a.path ?? "", b.path ?? "") ||
-      byCodeUnit(a.message, b.message),
-  );
+  findings.sort(compareFindings);
   return findings;
 }

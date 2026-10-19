@@ -24,6 +24,7 @@ import {
   mintTermConceptIri,
   normalizeDocPath,
 } from "./iri.js";
+import { readSampleQuestions } from "./questions.js";
 import { byCodeUnit } from "./sort.js";
 import { NS, RDF_TYPE, ROLE } from "./vocab.js";
 import {
@@ -511,6 +512,19 @@ export function deriveGraph(docs: DocModel[], options: DeriveOptions): Quad[] {
       // indexes and miss a `--lang` filter typed the other way.
       if (pageLanguage) add(docIri, `${NS.dcterms}language`, lit(pageLanguage));
 
+      // ai-context's questions this page should be found for (proposal 0086
+      // §7), in the page's language. Only the text: an item's answer pins and
+      // review state are test data `check` reads from the source (0087).
+      for (const { question } of readSampleQuestions(fmValue(fm, ["sample-questions"]))) {
+        add(
+          docIri,
+          `${NS.graph}sampleQuestion`,
+          pageLanguage
+            ? { kind: "literal", value: question, language: pageLanguage }
+            : lit(question),
+        );
+      }
+
       // Page-level only: the `graph` block is closed and carries no
       // translation key, so this fact lives at the altitude `lang` already
       // does (ADR 01023, ADR 01037). Both directions are materialized, so
@@ -843,6 +857,17 @@ export function deriveGraph(docs: DocModel[], options: DeriveOptions): Quad[] {
         for (const value of entry[relation] ?? []) {
           hierarchy(c, relation, concept(value, language));
         }
+      }
+      // A code and the mappings out of the scheme belong to no language.
+      if (entry.notation !== undefined) add(c, `${NS.skos}notation`, lit(entry.notation));
+      for (const [values, predicate] of [
+        [entry.exactMatches, "exactMatch"],
+        [entry.closeMatches, "closeMatch"],
+        [entry.broadMatches, "broadMatch"],
+        [entry.narrowMatches, "narrowMatch"],
+        [entry.relatedMatches, "relatedMatch"],
+      ] as const) {
+        for (const value of values ?? []) add(c, `${NS.skos}${predicate}`, iri(value));
       }
     }
   }

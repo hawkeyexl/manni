@@ -10,6 +10,7 @@ import {
   TERM_DESIGNATION_FIELDS,
   TERM_FIELDS,
   TERM_LIST_FIELDS,
+  TERM_MATCH_FIELDS,
   type Term,
   type TermAuxField,
   type TermAuxRecord,
@@ -18,6 +19,7 @@ import {
   type TermInput,
   type TermLink,
   type TermListField,
+  type TermMatchField,
   type TermLocation,
   type TermReadResult,
   type TermRecord,
@@ -56,6 +58,11 @@ export function collapse(text: string): string {
 
 function isListField(field: TermField): field is TermListField {
   return (TERM_LIST_FIELDS as readonly TermField[]).includes(field);
+}
+
+/** A field normalized as a list of text: the label lists, the match lists and `tbx-markup`. */
+function isListOfText(field: TermField): field is TermListField | TermMatchField | "tbx-markup" {
+  return isListField(field) || field === "tbx-markup" || (TERM_MATCH_FIELDS as readonly TermField[]).includes(field);
 }
 
 function isAuxField(field: TermField): field is TermAuxField {
@@ -277,7 +284,7 @@ export function recordOf(raw: Partial<Record<TermField, unknown>>, issues?: Reco
   for (const field of TERM_FIELDS) {
     const value = raw[field];
     if (field === "label") continue;
-    if (isListField(field) || field === "tbx-markup") {
+    if (isListOfText(field)) {
       const list = listOf(value);
       if (list !== undefined) record[field] = list;
     } else if (isAuxField(field)) {

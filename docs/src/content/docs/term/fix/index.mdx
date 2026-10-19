@@ -30,7 +30,7 @@ sample-questions:
 graph:
   label: Fix a failing check
   type: troubleshooting
-last-updated: 2026-10-18
+last-updated: 2026-10-19
 tags:
   - troubleshooting
   - validation
@@ -105,18 +105,28 @@ line naming a file.
 | [`label-collision`](#two-entries-claim-one-name) | Two entries share a preferred label, ignoring case. | Rename one, or merge them. |
 | [`duplicate-id`](#two-entries-claim-one-name) | Two entries share an `id`, ignoring case. | Rename one, or merge them. |
 | [`alt-label-collision`](#two-entries-claim-one-name) | An alt-label is another entry's preferred label. | Remove the alt-label, or merge the entries. |
+| [`label-overlap`](/manni/term/reference/rules/#label-overlap) | An alt-label repeats the entry's label, or a hidden-label is a name in use. | Remove the value, or move it to the field that matches its status. |
 | [`broader-cycle`](#a-hierarchy-loops) | A chain of `broader` returns to where it started, across the terms and every page's `graph:` block. | Remove the value that closes it. |
 | [`see-not-empty`](#a-redirect-carries-a-definition) | An entry with `see` also has a `definition`. | Remove the definition. |
+| [`missing-definition`](/manni/term/reference/rules/#missing-definition) | An entry has neither a `definition` nor a `see`. | Write the definition. |
+| [`conflicting-matches`](/manni/term/reference/rules/#conflicting-matches) | One IRI sits under two match fields of an entry. | Keep it under the one kind that holds. |
 | [`prose/<Style.Rule>`](#a-definition-breaks-the-house-voice) | Vale flagged a definition, abstract or scope note. | Rewrite the sentence. |
 | [`--check` failed](#the-vale-style-is-out-of-date) | The committed `Terms` style no longer matches the set. | Run `manni term write -f vale`, and commit it. |
 
 {/* cite default-severities */}
 {/* cite severity-config-override */}
-Five `check` rules never fail a run by default.
-[`asymmetric-hierarchy`](/manni/term/reference/rules/#asymmetric-hierarchy) and
-[`alt-label-reference`](#a-concepts-value-is-an-alt-label) are warnings.
-`abstract-too-long`, `unused-term` and
-[`hierarchy-outside-termbase`](/manni/term/reference/rules/#hierarchy-outside-termbase)
+Twelve `check` rules never fail a run by default.
+[`asymmetric-hierarchy`](/manni/term/reference/rules/#asymmetric-hierarchy),
+[`asymmetric-related`](/manni/term/reference/rules/#asymmetric-related),
+[`related-in-hierarchy`](/manni/term/reference/rules/#related-in-hierarchy),
+[`alt-label-reference`](#a-concepts-value-is-an-alt-label),
+[`ambiguous-alt-label`](/manni/term/reference/rules/#ambiguous-alt-label) and
+[`deprecated-label`](/manni/term/reference/rules/#deprecated-label) are warnings.
+`abstract-too-long`, `unused-term`,
+[`hierarchy-outside-termbase`](/manni/term/reference/rules/#hierarchy-outside-termbase),
+[`related-siblings`](/manni/term/reference/rules/#related-siblings),
+[`orphan-term`](/manni/term/reference/rules/#orphan-term) and
+[`keyword-candidate`](/manni/term/reference/rules/#keyword-candidate)
 are notices. The
 [rules reference](/manni/term/reference/rules/) has each one's level and
 meaning, and a repository can move any level under `term.severity`.
@@ -457,7 +467,7 @@ the check.
   <LinkCard
     title="Check rules"
     href="/manni/term/reference/rules/"
-    description="All twelve rules, with each one's default level, message and fix, and one run that breaks every rule."
+    description="All twenty-two rules, with each one's default level, message and fix, and one run that breaks every one of them."
   />
   <LinkCard
     title="Run it in CI"

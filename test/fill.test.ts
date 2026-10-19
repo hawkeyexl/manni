@@ -5,9 +5,9 @@
  * `MockProvider`, so no API key and no network are involved. Cases that write
  * run inside a fresh mkdtemp copy — the shared fixtures stay read-only.
  */
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { mkdtemp, rm, readFile, writeFile, mkdir, cp } from "node:fs/promises";
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -32,6 +32,7 @@ import { DEFAULT_SCHEMAS } from "../src/meta/core/resolve-schema.js";
 import { DocmetaError } from "../src/meta/types.js";
 import { htmlExtractor } from "../src/meta/extractors/html.js";
 import { startSchemaServer } from "./helpers/schema-server.js";
+import { LOCAL_MODEL, localModelEnv, type LocalModelEnv } from "./helpers/local-model.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const fixture = (name: string): string =>
@@ -1921,10 +1922,8 @@ describe("provider selection from the family's providers:", () => {
   });
 
   describe("under --local", () => {
-    // A concrete llama-cpp model: the default is a selector, and resolving a
-    // selector probes this machine's GPU memory.
-    const LOCAL_MODEL = "granite-4.1-3b-q2";
-
+    // LOCAL_MODEL is a concrete llama-cpp model: the default is a selector,
+    // and resolving a selector probes this machine's GPU memory.
     it("runs llama-cpp over a hosted meta.fill.provider, saying so once", async () => {
       const notices: string[] = [];
       await expect(
@@ -1970,6 +1969,91 @@ describe("provider selection from the family's providers:", () => {
         runFill({ ...base, cwd: dir, inputs: ["missing.md"], allowEmpty: true, local: true, provider: "claude-cli" }),
       ).rejects.toThrow(
         "--local and --provider claude-cli contradict each other: --local runs inference on this machine with llama-cpp. Drop one of them.",
+      );
+    });
+  });
+
+  describe("under --offline", () => {
+    let machine: LocalModelEnv | undefined;
+
+    function onMachine(downloaded: boolean): void {
+      machine = localModelEnv(downloaded);
+      for (const [name, value] of Object.entries(machine.env)) vi.stubEnv(name, value);
+    }
+
+    afterEach(() => {
+      vi.unstubAllEnvs();
+      machine?.cleanup();
+      machine = undefined;
+    });
+
+    it("sets a hosted provider aside and runs a local model already downloaded", async () => {
+      onMachine(true);
+      const notices: string[] = [];
+      await expect(
+        identity("meta:\n  fill:\n    provider: anthropic\n", {
+          offline: true,
+          model: LOCAL_MODEL,
+          onNotice: (m) => notices.push(m),
+        }),
+      ).resolves.toEqual({ provider: "llama-cpp", model: LOCAL_MODEL });
+      expect(notices).toEqual([
+        '--offline: using llama-cpp instead of "anthropic" from fill.provider.',
+      ]);
+    });
+
+    it("takes offline: from config the same way", async () => {
+      onMachine(true);
+      await expect(
+        identity("meta:\n  offline: true\nproviders:\n  provider: openai\n", { model: LOCAL_MODEL }),
+      ).resolves.toEqual({ provider: "llama-cpp", model: LOCAL_MODEL });
+    });
+
+    it("exits 2 when no model is on this machine, downloading none", async () => {
+      onMachine(false);
+      await expect(identity("{}\n", { offline: true, model: LOCAL_MODEL })).rejects.toThrow(
+        new DocmetaError(
+          "no model is available offline, so fill cannot propose values; download one first with --local, or drop --offline.",
+        ),
+      );
+      expect(readdirSync(machine?.env.INFERENCE_MODELS_DIR ?? "")).toEqual([]);
+    });
+
+    it("still loads a URL schema only from the cache, with a model on hand", async () => {
+      onMachine(true);
+      const file = await stage("no-block.md");
+      const url = "http://127.0.0.1:9/never-fetched.schema.json";
+      const outcome = await runFill({
+        ...base,
+        cwd: dir,
+        inputs: [file],
+        cliSchemas: [url],
+        offline: true,
+        model: LOCAL_MODEL,
+        inferenceProvider: propose({ title: { value: "T", confidence: 0.9 } }),
+      }).then(
+        (run) => run.results.map((r) => r.error ?? "").join("\n"),
+        (err: unknown) => (err instanceof Error ? err.message : String(err)),
+      );
+      expect(outcome).toContain(url);
+      expect(outcome).toMatch(/offline/i);
+    });
+
+    it("gates an injected provider too", async () => {
+      onMachine(false);
+      await writeFile(join(dir, "manni.config.yaml"), "{}\n", "utf8");
+      await expect(
+        runFill({ ...base, cwd: dir, inputs: ["missing.md"], allowEmpty: true, offline: true, inferenceProvider: propose({}) }),
+      ).rejects.toThrow(/^no model is available offline/);
+    });
+
+    it("refuses --provider naming a hosted provider", async () => {
+      await writeFile(join(dir, "manni.config.yaml"), "{}\n", "utf8");
+      await expect(
+        runFill({ ...base, cwd: dir, inputs: ["missing.md"], allowEmpty: true, offline: true, provider: "anthropic" }),
+      ).rejects.toThrow(
+        "--offline and --provider anthropic contradict each other: --offline sends nothing off this machine, " +
+          "so only llama-cpp with a model already downloaded can run. Drop one of them.",
       );
     });
   });

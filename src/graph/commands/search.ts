@@ -300,7 +300,7 @@ export async function runSearch(opts: SearchOptions): Promise<SearchReport> {
     // `--vectors ./v.bin` on a machine without the peer from "degrade to
     // lexical, exit 0" into exit 2.
     const requireEmbedder = opts.mode === "vector" || opts.mode === "hybrid";
-    embedder = await resolveEmbedder(opts, vectors, requireEmbedder);
+    embedder = await resolveEmbedder(opts.embedder, vectors, requireEmbedder);
   }
 
   const entry = await findEntry(opts.query, {
@@ -370,16 +370,18 @@ export async function runSearch(opts: SearchOptions): Promise<SearchReport> {
  * config: `embed.*` is a build-time knob, and q8 weights are a different
  * function from fp32 ones, so following config here would silently compare
  * query vectors against corpus vectors produced by different weights.
+ *
+ * `graph check` asks sample questions through it too, so both rank alike.
  */
-async function resolveEmbedder(
-  opts: SearchOptions,
+export async function resolveEmbedder(
+  override: Embedder | undefined,
   vectors: VectorIndex,
   required: boolean,
 ): Promise<Embedder | undefined> {
   const { model, dtype } = vectors;
   try {
     const embedder =
-      opts.embedder ??
+      override ??
       (model === "mock"
         ? createMockEmbedder({ dtype })
         : await createLocalEmbedder({ model, dtype, role: "query" }));

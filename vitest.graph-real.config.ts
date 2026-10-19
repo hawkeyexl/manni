@@ -23,6 +23,8 @@ import { defineConfig } from "vitest/config";
  * - `fill-openai.test.ts` — a server at `OLLAMA_BASE_URL` (default
  *   `http://localhost:11434/v1`) serving `OLLAMA_MODEL` (default
  *   `llama3.2:1b`), with `OLLAMA_API_KEY` set if it wants one.
+ * - `fill-questions.test.ts` — the local model (`--local`), downloaded on a
+ *   cold cache, or the provider `GRAPH_REAL_PROVIDER` names.
  *
  * `INFERENCE_NO_AUTO_INSTALL` is deliberately *not* set here. The default suite
  * sets it so a stray local-provider construction cannot reach the network; this

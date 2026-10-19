@@ -34,6 +34,11 @@ function termLabel(term: Term): TermLabel {
     ["broader", "broader"],
     ["narrower", "narrower"],
     ["related-terms", "related"],
+    ["exact-matches", "exactMatches"],
+    ["close-matches", "closeMatches"],
+    ["broad-matches", "broadMatches"],
+    ["narrow-matches", "narrowMatches"],
+    ["related-matches", "relatedMatches"],
   ] as const;
   for (const [field, key] of lists) {
     const values = r[field];
@@ -42,6 +47,7 @@ function termLabel(term: Term): TermLabel {
   if (r.see !== undefined) out.see = r.see;
   if (r.definition !== undefined) out.definition = r.definition;
   if (r["scope-note"] !== undefined) out.scopeNote = r["scope-note"];
+  if (r.notation !== undefined) out.notation = r.notation;
   if (term.location.path !== undefined) out.file = term.location.path;
   out.line = term.location.line;
   return out;

@@ -50,15 +50,15 @@ function renderOne(format: TermWriteFormat, name: string): { content: string; dr
 }
 
 describe("interchange writers", () => {
-  it("registers tbx, tbx3, skos, csv, json and vale", () => {
-    expect(INTERCHANGE_WRITERS.map((w) => w.format)).toEqual(["tbx", "tbx3", "skos", "csv", "json", "vale"]);
-    for (const format of ["tbx", "tbx3", "skos", "csv", "json"] as const) {
+  it("registers tbx, tbx3, skos, skos-ttl, csv, json and vale", () => {
+    expect(INTERCHANGE_WRITERS.map((w) => w.format)).toEqual(["tbx", "tbx3", "skos", "skos-ttl", "csv", "json", "vale"]);
+    for (const format of ["tbx", "tbx3", "skos", "skos-ttl", "csv", "json"] as const) {
       expect(writer(format).shapes).toEqual(["file"]);
     }
     expect(writer("vale").shapes).toEqual(["directory"]);
   });
 
-  it.each(["tbx", "tbx3", "skos", "csv", "json"] as const)("%s refuses a directory target", (format) => {
+  it.each(["tbx", "tbx3", "skos", "skos-ttl", "csv", "json"] as const)("%s refuses a directory target", (format) => {
     expect(() =>
       writer(format).render(fixtureTerms(), { path: OUT, shape: "directory" }, NO_EXISTING),
     ).toThrow(TermError);
@@ -68,6 +68,7 @@ describe("interchange writers", () => {
     ["tbx", "terms.golden.tbx"],
     ["tbx3", "terms-v3.golden.tbx"],
     ["skos", "terms.golden.jsonld"],
+    ["skos-ttl", "terms.golden.ttl"],
     ["csv", "terms.golden.csv"],
     ["json", "terms.golden.json"],
   ] as const)("%s renders the same bytes twice", (format, name) => {
@@ -131,10 +132,13 @@ describe("csv writer", () => {
   });
 });
 
-describe("skos writer", () => {
-  it("renders concepts with resolved relations and language tags", () => {
-    const { content, dropped } = renderOne("skos", "terms.jsonld");
-    expect(content).toBe(golden("terms.golden.jsonld"));
+describe("skos writers", () => {
+  it.each([
+    ["skos", "terms.golden.jsonld"],
+    ["skos-ttl", "terms.golden.ttl"],
+  ] as const)("-f %s renders concepts with resolved relations and language tags", (format, name) => {
+    const { content, dropped } = renderOne(format, name);
+    expect(content).toBe(golden(name));
     expect(dropped).toEqual([
       { id: "progressive-lens", field: "abstract" },
       { id: "kubernetes", field: "see" },
@@ -269,6 +273,29 @@ describe("tbx writer", () => {
     const render = writer(format).render([t], fileTarget("x.tbx"), NO_EXISTING);
     expect(render.dropped).toEqual([{ id: "x", field: "see" }]);
     expect(render.droppedHeaders).toEqual([]);
+  });
+
+  it.each(["tbx", "tbx3"] as const)("%s reports notation and the match keys as dropped", (format) => {
+    const t = term("x", {
+      label: "x",
+      definition: "d",
+      notation: "X-1",
+      "exact-matches": ["https://e.org/x"],
+      "related-matches": ["https://e.org/y"],
+    });
+    const render = writer(format).render([t], fileTarget("x.tbx"), NO_EXISTING);
+    expect(render.dropped).toEqual([
+      { id: "x", field: "notation" },
+      { id: "x", field: "exact-matches" },
+      { id: "x", field: "related-matches" },
+    ]);
+  });
+
+  it("json carries notation and the match keys", () => {
+    const t = term("x", { label: "x", notation: "X-1", "close-matches": ["https://e.org/x"] });
+    const render = writer("json").render([t], fileTarget("x.json"), NO_EXISTING);
+    expect(render.dropped).toEqual([]);
+    expect(render.files[0]?.content).toContain('"close-matches"');
   });
 
   it("escapes attribute values", () => {

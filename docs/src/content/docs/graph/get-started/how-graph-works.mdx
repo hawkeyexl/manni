@@ -18,7 +18,7 @@ concepts:
   - section
   - harvest rule
   - near miss
-last-updated: 2026-10-18
+last-updated: 2026-10-19
 ---
 
 You have built a graph and asked it a question. This page is the model behind
@@ -126,8 +126,10 @@ termbase feeds it too. That is the set of term entries
 Each term becomes a concept at `{baseIri}concept/{id}`. A term written in
 several languages is one concept, joined on its `id`. Its `prefLabel`,
 `altLabel`, `hiddenLabel`, `definition` and `scopeNote` carry the term's
-language tag. A `see` entry is no concept of its own. Its label becomes an
-`altLabel` of the term it points to.
+language tag. A term's `notation` becomes `skos:notation`, untagged. Each of
+its match fields becomes the SKOS mapping property of that kind, such as
+`skos:closeMatch`, pointing at the IRI it names. A `see` entry is no concept of
+its own. Its label becomes an `altLabel` of the term it points to.
 
 A concept label on a page resolves through the termbase first. That covers
 `concepts`, `tags`, `keywords`, a section's `concepts`, and the `graph:` block's
@@ -144,6 +146,9 @@ The hierarchy is the union of every source. Each `broader` edge comes with its
 `narrower`, and each `related` edge runs both ways. A concept with no broader
 concept is a top concept of the scheme, linked in both directions. A term page
 whose `graph:` block names no `label` has its term as its primary topic.
+
+[From tags to a knowledge graph](/manni/family/concept-lifecycle/) builds one
+scheme step by step, from freeform tags to term pages and a checked graph.
 
 ## The `graph:` block
 

@@ -27,6 +27,14 @@ export interface TermLabel {
   see?: string;
   definition?: string;
   scopeNote?: string;
+  /** A code that identifies the concept in another system. */
+  notation?: string;
+  /** IRIs of concepts in other vocabularies, one list per kind of mapping. */
+  exactMatches?: readonly string[];
+  closeMatches?: readonly string[];
+  broadMatches?: readonly string[];
+  narrowMatches?: readonly string[];
+  relatedMatches?: readonly string[];
   /** Where the term was read: the file, absolute, and its line. */
   file?: string;
   line?: number;

@@ -90,9 +90,12 @@ import {
   fieldHints,
   offered,
   pageIdReader,
+  termMarkHints,
+  termMarksIn,
   termValueCheck,
   type TermIndex,
 } from "./fill-hints.js";
+import { termScheme } from "../core/term-keyword.js";
 import { PAGE_FIELDS, TERM_FIELDS, type FieldPath } from "../../shared/reference-fields.js";
 import { termLabelSource } from "../../shared/term-labels.js";
 import { writeFileAtomic } from "../core/write-file.js";
@@ -147,6 +150,8 @@ import {
   assertLocalFlag,
   assertModelHasProvider as assertModelHasProviderFor,
   localNotice,
+  noOfflineModel,
+  offlineIdentity,
   providerSpecFor,
   resolveIdentity as resolveIdentityFor,
   selectProvider,
@@ -357,7 +362,11 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
   // `--local` is llama-cpp over every level, so detection never runs under it
   // and never announces a hosted provider it found. A `--provider` it
   // contradicts is refused by name; a configured one is set aside, and said.
-  const flags = { provider: opts.provider, model: opts.model, local: opts.local };
+  //
+  // `--offline` (or config `offline:`) draws the same boundary, and the model
+  // must then already be on this machine: see `offlineIdentity` below.
+  const offline = opts.offline ?? config?.offline ?? false;
+  const flags = { provider: opts.provider, model: opts.model, local: opts.local, offline };
   assertLocalFlag(flags, toDocmetaError);
   const family = configFile?.providers ?? {};
   const selection = selectProvider(flags, [
@@ -371,7 +380,7 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
   // on any run where no file happened to need inference.
   assertKnownProvider(providerName);
   assertModelHasProvider(providerName, model);
-  const replaced = localNotice(selection);
+  const replaced = localNotice(selection, flags);
   if (replaced !== undefined) opts.onNotice?.(replaced);
   // Connection settings are the family's, for whichever provider is in force,
   // and under `auto` they are what detection reads.
@@ -434,12 +443,19 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
   let identity: { provider: string; model: string };
   let construct: () => InferenceProvider;
 
+  // Offline, nothing is downloaded: a local model not yet on disk is no model.
+  // An injected provider stands in for the local one only once that passes.
+  const offlineResolved = offline ? await offlineIdentity(spec, toDocmetaError) : undefined;
+  if (offline && offlineResolved === undefined) {
+    throw new DocmetaError(noOfflineModel("fill cannot propose values"));
+  }
+
   if (opts.inferenceProvider) {
     const injected = opts.inferenceProvider;
     identity = { provider: injected.provider(), model: injected.modelName() };
     construct = () => injected;
   } else {
-    const resolved = await resolveIdentity(spec);
+    const resolved = offlineResolved ?? (await resolveIdentity(spec));
     identity = resolved;
     // Build from the RESOLVED identity, never the spec we started with: under
     // `auto` that spec still says "auto", and the synchronous `makeProvider`
@@ -538,7 +554,12 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
   // walked once, and only when some file has a field that needs them.
   let termbase: Promise<TermIndex | undefined> | undefined;
   const readTermbase = async (): Promise<TermIndex | undefined> => {
-    if (opts.termLabels !== undefined) return { labels: [...opts.termLabels], ids: [] };
+    if (opts.termLabels !== undefined) {
+      // A test seam: each label is its own id and carries no alt-labels, so
+      // a value offered here never resolves as an alt-label.
+      const labels = [...opts.termLabels];
+      return { labels, ids: [], scheme: termScheme(labels.map((label) => ({ label, id: label }))) };
+    }
     const source = termLabelSource();
     if (source === undefined) return undefined;
     try {
@@ -547,7 +568,9 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
         ...(opts.configPath === undefined ? {} : { configPath: opts.configPath }),
         ...(opts.noConfig === true ? { noConfig: true } : {}),
       });
-      return { labels: terms.map((t) => t.label), ids: terms.map((t) => t.id) };
+      // No terms is no termbase, so an `x-manni-term` `under` is not refused for it.
+      if (terms.length === 0) return undefined;
+      return { labels: terms.map((t) => t.label), ids: terms.map((t) => t.id), scheme: termScheme(terms) };
     } catch (err) {
       // A termbase that cannot be read offers nothing, so the field is asked
       // for as it is where there is no termbase at all. Said once, because
@@ -564,22 +587,36 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
     configDir: configDir ?? cwd,
     ...(respectGitignore === undefined ? {} : { respectGitignore }),
   });
-  /** One file's offered values, and the termbase its term values are checked against. */
+  /**
+   * One file's offered values, and the termbase its term values are checked
+   * against. `schemas` are the file's schemas, whose definitions a marked
+   * field's `$ref` is read through, and `schemaSet` names them.
+   */
   const hintsFor = async (
     label: string,
     candidates: readonly Candidate[],
+    schemas: Record<string, unknown>[],
+    schemaSet: readonly string[],
   ): Promise<{ hints: FieldHint[]; termIndex: TermIndex | undefined }> => {
     const keys = new Set(candidates.map((c) => c.key));
     const wants = (fields: readonly FieldPath[]): boolean =>
       fields.some(([key]) => key !== undefined && keys.has(key));
-    const termIndex = wants(TERM_FIELDS) ? await (termbase ??= readTermbase()) : undefined;
+    // A field its schema marks `x-manni-term` (proposal 0086 §6) is offered
+    // its branch's labels, the way a concept field is offered every label.
+    const defs = collectDefs(schemas);
+    const marks = candidates.flatMap((c) => termMarksIn(c, defs));
+    const termIndex =
+      wants(TERM_FIELDS) || marks.length > 0 ? await (termbase ??= readTermbase()) : undefined;
     const pages = wants(PAGE_FIELDS)
       ? await pageIds(resolve(base, label), mergeMembersFor(label))
       : [];
-    const hints = fieldHints(candidates, {
-      terms: termIndex === undefined ? undefined : offered(termIndex.labels),
-      pages: offered(pages),
-    });
+    const hints = [
+      ...fieldHints(candidates, {
+        terms: termIndex === undefined ? undefined : offered(termIndex.labels),
+        pages: offered(pages),
+      }),
+      ...(termIndex === undefined ? [] : termMarkHints(marks, termIndex, schemaSet.join(", "))),
+    ];
     return { hints, termIndex };
   };
   // A schema notice names its file. Preparing runs again after an accepted
@@ -974,7 +1011,9 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
     if (firstSealed !== undefined && !dryRun) await writeKey(firstSealed);
 
     const { hints, termIndex } =
-      candidates.length > 0 ? await hintsFor(label, candidates) : { hints: [], termIndex: undefined };
+      candidates.length > 0
+        ? await hintsFor(label, candidates, schemas, schemaSet)
+        : { hints: [], termIndex: undefined };
 
     // ---- Propose (cache first) -------------------------------------------
     const cacheKey = buildCacheKey([

@@ -1,26 +1,27 @@
 ---
 title: manni ai-context vocabulary
-description: "The manni:ai-context:1.0.0 schema says how machines made a page, and how they may use it."
+description: "The manni:ai-context:1.1.0 schema says how machines made a page, and how they may use it."
 sidebar:
-  label: "manni:ai-context:1.0.0"
+  label: "manni:ai-context:1.1.0"
 type: reference
 id: meta-reference-schemas-manni-ai-context
-keywords: ["ai-context", "manni:ai-context:1.0.0", "provenance", "risks", "strict overlay"]
+keywords: ["ai-context", "manni:ai-context:1.1.0", "provenance", "risks", "strict overlay"]
 language: en
 audiences: ["schema-authors"]
-intent: "Record how machines made a page and how they may use it, with manni:ai-context:1.0.0."
+intent: "Record how machines made a page and how they may use it, with manni:ai-context:1.1.0."
 lifecycle: published
 applies-to: ["domain:meta"]
 concepts: ["schema", "JSON Pointer"]
 sample-questions:
-  - "Which fields does manni:ai-context:1.0.0 define?"
+  - "Which fields does manni:ai-context:1.1.0 define?"
   - "Where does provenance live?"
   - "What does the ai-context strict overlay narrow?"
+  - "How does a sample question pin its answer?"
 graph:
   label: "manni ai-context vocabulary"
   type: reference
-last-updated: 2026-09-27
-resource: https://hawkeyexl.github.io/manni/schemas/ai-context/1.0.0.json
+last-updated: 2026-10-19
+resource: https://hawkeyexl.github.io/manni/schemas/ai-context/1.1.0.json
 tags:
   - schema
   - ai-context
@@ -43,9 +44,9 @@ related-pages:
 risks: read-only
 ---
 
-**Built-in id:** `manni:ai-context:1.0.0`
+**Built-in id:** `manni:ai-context:1.1.0`
 
-Published at `https://hawkeyexl.github.io/manni/schemas/ai-context/1.0.0.json`.
+Published at `https://hawkeyexl.github.io/manni/schemas/ai-context/1.1.0.json`.
 A `$schema` that names this URL resolves to the bundled copy, with no network
 call.
 
@@ -79,11 +80,36 @@ meta:
 | `provenance` | list of entries | `external` | Which body lines a machine wrote, one entry per range. Each entry names the machine, the lines, and an integrity hash that pins them. `manni meta derive` manages it |
 | `meta-provenance` | list of entries | `external` | Per-model attribution of machine-proposed metadata, meaning which fields and evals, at what confidence |
 | `risks` | string or list, open | `page` | Pre-flight flags for agents and reviewers. The seven recommended flags are `cost-incurring`, `destructive`, `irreversible`, `privileged`, `open-world`, `read-only` and `idempotent`. Any other non-empty string is valid |
-| `sample-questions` | string or list | `page` | Questions this page should answer. Retrieval evals use them |
+| `sample-questions` | one item or a list | `page` | Questions a reader asks that should find this page. An item can also pin the lines that answer it. `manni graph check` asks them |
 
 No field is required. Both lists of entries need at least one entry, with no
-duplicates. `risks` and `sample-questions` take one non-empty string, or a
-non-empty list of unique ones.
+duplicates. `risks` takes one non-empty string, or a non-empty list of unique
+ones. `sample-questions` takes one item, or a non-empty list of unique items.
+
+A sample question is a non-empty string, or an object that requires
+`question`. A string is a question this page must be found for.
+
+| Key | Type | Notes |
+|---|---|---|
+| `question` | string, non-empty | The question, as a reader would ask it |
+| `answers` | list of pins | The lines on this page that answer it. Without it, the page itself must be found |
+| `generated-by` | string, non-empty | The model that drafted the question or any of its pins, as `provider/model` |
+| `confidence` | number from 0 to 1 | The drafting model's confidence |
+| `reviewed` | boolean | `false` marks a drafted question, and its pins are drafts with it. Absent means `true` |
+| `reviewed-by` | string, non-empty | Who confirmed the question |
+
+A pin in `answers` requires `lines`.
+
+| Key | Type | Notes |
+|---|---|---|
+| `lines` | integer or string | One body line, or a range such as `"41-43"`, counted as a `provenance` entry counts them |
+| `integrity` | string | `sha256-` and 64 lowercase hex digits over those lines. Without it, the lines are not checked for change |
+| `reviewed` | boolean | `false` marks a pin nobody has confirmed, on a question that is itself confirmed. Absent means `true` |
+
+Neither object takes any other key. [`manni graph
+check`](/manni/graph/reference/cli/#graph-check) asks each question. A pinned one
+must find the section that holds its lines, and a pin whose lines moved or
+changed is reported.
 
 A `provenance` entry requires all three of its keys.
 
@@ -119,8 +145,8 @@ used.
 
 Allowed at the root. A generator's keys and the other vocabularies' keys pass
 beside ai-context's, which checks only the four keys it claims. The entries in
-`provenance` and `meta-provenance` are closed, so a misspelled key inside an
-entry fails.
+`provenance` and `meta-provenance` are closed, and so are a sample question's
+object and its pins. A misspelled key inside any of them fails.
 
 ## Example
 
@@ -142,9 +168,22 @@ meta-provenance:
 risks: [privileged, cost-incurring]
 sample-questions:
   - How do I install the operator on EKS?
-  - Which Helm values enable the webhook?
+  - question: Which Helm values enable the webhook?
+    answers:
+      - lines: 21-23
+        integrity: sha256-43f97ea38783c4c88d2a558e429656b86aa00e3f5fcf5e5b284293cc41430496
+  - question: How do I roll the operator back?
+    answers:
+      - lines: 30-32
+    generated-by: anthropic/claude-sonnet-5-5
+    confidence: 0.82
+    reviewed: false
 ---
 ```
+
+The first question must find the page. The second must find the section that
+holds body lines 21 to 23. A model drafted the third, and nobody has reviewed
+it yet.
 
 ## A common mistake
 
@@ -162,10 +201,10 @@ meta-provenance:
 ```
 
 ```text
-$ manni meta validate page.md --no-config -s manni:core:1.0.0 -s manni:ai-context:1.0.0
+$ manni meta validate page.md --no-config -s manni:core:1.0.0 -s manni:ai-context:1.1.0
 ✗ page.md
-    /meta-provenance/0/fields/0  must match pattern "^/"  (line 6)  [manni:ai-context:1.0.0]
-    /meta-provenance  warning "meta-provenance" is stored in the page; manni:ai-context:1.0.0 prefers external metadata, and --no-config leaves it no manifest.  (line 4)  [location:external]
+    /meta-provenance/0/fields/0  must match pattern "^/"  (line 6)  [manni:ai-context:1.1.0]
+    /meta-provenance  warning "meta-provenance" is stored in the page; manni:ai-context:1.1.0 prefers external metadata, and --no-config leaves it no manifest.  (line 4)  [location:external]
 
 1 file checked, 0 passed, 1 failed, 1 error, 1 warning
 ```
@@ -205,9 +244,20 @@ mark, which fires because `--no-config` gives the page no manifest.
   unannotated page has not been assessed, which is different from being safe.
   For the same reason, a consumer that branches on a flag treats an unknown
   value as a caution.
-- **`sample-questions` closes the retrieval loop.** Ask them against the
-  corpus and measure whether this page carries the answer. Per-page
-  assertions belong to the evals vocabulary instead.
+- **`sample-questions` closes the retrieval loop.** `manni graph check` asks
+  each one through the retrieval `manni graph search` uses. It reports a page
+  outside the top results for its own question. It measures finding, not
+  answering. Per-page assertions belong to the evals vocabulary instead.
+- **A pinned answer holds the question to the passage, not the page.** A long
+  page can rank first for every question and prove nothing about the
+  paragraph that answers one. A pin names those lines by hash, the way a
+  citation does. So a rewrite that moves or changes the answer is reported,
+  where an unpinned question would still find the page.
+- **Review state travels with the question.** `reviewed: false` marks a
+  draft, and a missing key means a person wrote or confirmed it. A pointer
+  into `meta-provenance` would name a different question as soon as an
+  earlier one was deleted. A pin has its own `reviewed`, so pairing a
+  person's question with a drafted answer leaves the question confirmed.
 
 ## Strict overlay
 
@@ -227,6 +277,8 @@ still passes it.
 
 `provenance` is the same in both. `manni meta derive` writes a commit
 trailer's name there as git records it, such as `Claude Opus 5.5`.
+`sample-questions` is the same in both too, which is why this 1.0.0 overlay
+pairs with `manni:ai-context:1.1.0`.
 
 `strict: true` stacks it right after the vocabulary, with every other
 default's overlay beside its own base:
@@ -257,7 +309,7 @@ risks: [privileged, needs-vpn]
 ```
 
 ```text
-$ manni meta validate page.md --no-config -s manni:core:1.0.0 -s manni:ai-context:1.0.0 -s manni:ai-context-strict:1.0.0
+$ manni meta validate page.md --no-config -s manni:core:1.0.0 -s manni:ai-context:1.1.0 -s manni:ai-context-strict:1.0.0
 ✗ page.md
     /risks/1  must be equal to one of the allowed values  (line 4)  [manni:ai-context-strict:1.0.0]
 
@@ -265,3 +317,23 @@ $ manni meta validate page.md --no-config -s manni:core:1.0.0 -s manni:ai-contex
 ```
 
 The open vocabulary accepts `needs-vpn`, so the overlay alone fails the page.
+
+## Version 1.0.0
+
+**Built-in id:** `manni:ai-context:1.0.0`
+
+Published at `https://hawkeyexl.github.io/manni/schemas/ai-context/1.0.0.json`.
+It defines the same four fields, and a sample question is a string only. A
+config that lists it replaces 1.1.0 in the default set. A page held to it that
+pins an answer fails:
+
+```text
+$ manni meta validate old.md --no-config -s manni:core:1.0.0 -s manni:ai-context:1.0.0
+✗ old.md
+    /sample-questions/0  must be string  (line 5)  [manni:ai-context:1.0.0]
+    /sample-questions  must match "then" schema  (line 4)  [manni:ai-context:1.0.0]
+
+1 file checked, 0 passed, 1 failed, 2 errors
+```
+
+The same page passes under 1.1.0.

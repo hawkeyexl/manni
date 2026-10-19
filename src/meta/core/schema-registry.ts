@@ -73,6 +73,9 @@ import manniStewardship110 from "../schemas/stewardship/1.1.0.json" with { type:
 import manniStewardshipStrict110 from "../schemas/stewardship-strict/1.1.0.json" with { type: "json" };
 import manniTerminology110 from "../schemas/terminology/1.1.0.json" with { type: "json" };
 import manniTerminologyStrict110 from "../schemas/terminology-strict/1.1.0.json" with { type: "json" };
+import manniTerminology120 from "../schemas/terminology/1.2.0.json" with { type: "json" };
+import manniTerminologyStrict120 from "../schemas/terminology-strict/1.2.0.json" with { type: "json" };
+import manniAiContext110 from "../schemas/ai-context/1.1.0.json" with { type: "json" };
 import { errorMessage } from "../../shared/errors.js";
 
 export interface BuiltinInfo {
@@ -136,6 +139,9 @@ const BUILTINS = new Map<string, Record<string, unknown>>([
   ["manni:stewardship-strict:1.1.0", manniStewardshipStrict110],
   ["manni:terminology:1.1.0", manniTerminology110],
   ["manni:terminology-strict:1.1.0", manniTerminologyStrict110],
+  ["manni:terminology:1.2.0", manniTerminology120],
+  ["manni:terminology-strict:1.2.0", manniTerminologyStrict120],
+  ["manni:ai-context:1.1.0", manniAiContext110],
 ]);
 
 /**
@@ -184,6 +190,13 @@ export function assertPublishableBuiltinId(id: string): void {
       `Built-in id "${id}" is not publishable: the "encrypted" first segment is reserved for encryption finding identities (encrypted:plain, encrypted:unreadable, proposal 0045).`,
     );
   }
+  // `term:undefined`, `term:outside-branch` and `term:alt-label` are the
+  // identities of the findings for a field marked `x-manni-term` (proposal 0086).
+  if (first === "term") {
+    throw new Error(
+      `Built-in id "${id}" is not publishable: the "term" first segment is reserved for term finding identities (term:undefined, term:outside-branch, term:alt-label, proposal 0086).`,
+    );
+  }
   // `derived:stale` is the identity of a managed field whose asserted value
   // differs from what git, CODEOWNERS or the review record says, reserved likewise.
   if (first === "derived") {
@@ -219,11 +232,23 @@ export interface RegisteredSchema {
 export type RegisteredSchemas = ReadonlyMap<string, RegisteredSchema>;
 
 /**
+ * Built-in versions whose strict overlay keeps an earlier version, because
+ * nothing the overlay narrows changed. ai-context 1.1.0 only widens
+ * `sample-questions`, which the 1.0.0 overlay never constrains (proposal 0087).
+ */
+const STRICT_OVERLAY_OF: ReadonlyMap<string, string> = new Map([
+  ["manni:ai-context:1.1.0", "manni:ai-context-strict:1.0.0"],
+]);
+
+/**
  * The strict version's id for `id`, by the naming the manni overlays use:
- * `vendor:name:version` becomes `vendor:name-strict:version`. `undefined`
- * for anything that is not a three-segment id, a URL included.
+ * `vendor:name:version` becomes `vendor:name-strict:version`, unless
+ * `STRICT_OVERLAY_OF` pairs it with an earlier overlay. `undefined` for
+ * anything that is not a three-segment id, a URL included.
  */
 export function strictIdOf(id: string): string | undefined {
+  const paired = STRICT_OVERLAY_OF.get(id);
+  if (paired !== undefined) return paired;
   if (classifyRef(id).kind !== "builtin") return undefined;
   const parts = id.split(":");
   if (parts.length !== 3) return undefined;
@@ -328,6 +353,9 @@ const PUBLISHED_PATHS: readonly (readonly [string, string])[] = [
   ["stewardship-strict/1.1.0.json", "manni:stewardship-strict:1.1.0"],
   ["terminology/1.1.0.json", "manni:terminology:1.1.0"],
   ["terminology-strict/1.1.0.json", "manni:terminology-strict:1.1.0"],
+  ["terminology/1.2.0.json", "manni:terminology:1.2.0"],
+  ["terminology-strict/1.2.0.json", "manni:terminology-strict:1.2.0"],
+  ["ai-context/1.1.0.json", "manni:ai-context:1.1.0"],
 ];
 
 /** Published URL → built-in id, under the current base. */

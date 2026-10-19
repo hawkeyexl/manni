@@ -1,7 +1,7 @@
 /**
  * `manni term formats`: what is read and written, from the registries alone. A
  * construct a reader does not exist for is not listed, and `write` appears
- * only where a reader has `apply` or a registered document writer renders the
+ * only where a reader has `apply` or a registered writer renders the
  * construct, so the listing never promises more than the build does.
  */
 import { TERM_READERS } from "../core/readers/index.js";
@@ -44,13 +44,16 @@ const INTERCHANGE_LABELS: Partial<Record<TermWriteFormat, string>> = {
   tbx: "TBX v2",
   tbx3: "TBX v3",
   skos: "JSON-LD",
+  "skos-ttl": "Turtle",
   vale: "style",
 };
 
+/** Whether a writer renders the construct: a document writer by its shapes, an interchange writer by its own name. */
 function rendered(writers: readonly TermWriter[], format: string, construct: TermConstruct): boolean {
   return writers.some((writer) => {
     const render = DOCUMENT_RENDERS[writer.format];
-    if (render?.input !== format) return false;
+    if (render === undefined) return writer.format === format;
+    if (render.input !== format) return false;
     return writer.shapes.some((shape) => render.shapes[shape] === construct);
   });
 }

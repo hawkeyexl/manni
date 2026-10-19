@@ -211,7 +211,8 @@ function followRef(
   return project(target, defs, new Set([...seen, ref]));
 }
 
-function resolvePointer(ref: string, defs: ProjectionDefs): unknown {
+/** The target of a local `$ref` into the envelope's definitions, or `undefined`. */
+export function resolvePointer(ref: string, defs: ProjectionDefs): unknown {
   const match = /^#\/(\$defs|definitions)\/(.+)$/.exec(ref);
   const block = match?.[1];
   const rest = match?.[2];

@@ -8,12 +8,18 @@
  * guide's `concepts:` is what `undefined-term` and `unused-term` are about.
  * Its `graph:` block joins the hierarchy `broader-cycle` reads (proposal 0086).
  *
+ * A `.ttl` or `.jsonld` file is SKOS when it is named or listed under
+ * `term.manifests`, and never when a walk passes it: the graph's own output is
+ * Turtle, and walking it would read the graph back into the termbase.
+ *
  * A file that cannot be read or parsed is an error, not a skip. A term set that
  * quietly lost a file would pass `check` on what was left, and report the
  * missing terms as undefined on pages that spell them correctly.
  */
 import { readFile } from "node:fs/promises";
 import { extname, resolve } from "node:path";
+import { pathToFileURL } from "node:url";
+import { DataFactory, Writer, type Quad } from "n3";
 import {
   STDIN_LABEL,
   STDIN_TOKEN,
@@ -47,6 +53,112 @@ export function tbxInput(content: string, file: string, path?: string): TermInpu
   return { content, file, ...(path === undefined ? {} : { path }), format: TBX_FORMAT, metadata: {}, lineFor: () => undefined };
 }
 
+/** The `TermInput.format` a SKOS file is offered as, and the `--as` value that reads stdin as one. */
+export const SKOS_FORMAT = "skos";
+
+/** The extensions a named or listed file is read as SKOS by. A walk never keeps them. */
+const SKOS_EXTENSIONS: ReadonlySet<string> = new Set([".ttl", ".jsonld"]);
+
+function isSkos(file: string): boolean {
+  return SKOS_EXTENSIONS.has(extname(file).toLowerCase());
+}
+
+/** One quad of `jsonld`'s RDF dataset, as far as it is read here. */
+interface JsonLdTerm {
+  termType: string;
+  value: string;
+  language?: string;
+  datatype?: { value: string };
+}
+
+const XSD_STRING = "http://www.w3.org/2001/XMLSchema#string";
+
+/**
+ * JSON-LD as N-Quads, which the SKOS reader parses as it parses Turtle. A
+ * remote `@context` is refused, not fetched: reading a termbase never
+ * touches the network.
+ */
+async function jsonLdToNQuads(
+  content: string,
+  file: string,
+  path: string | undefined,
+  parsed?: unknown,
+): Promise<string> {
+  let document: unknown = parsed;
+  if (document === undefined) {
+    try {
+      document = JSON.parse(content);
+    } catch (error) {
+      throw new TermError(`${file}: could not be read as SKOS: ${errorMessage(error)}`);
+    }
+  }
+  const { default: jsonld } = await import("jsonld");
+  let remote: string | undefined;
+  let dataset: { subject: JsonLdTerm; predicate: JsonLdTerm; object: JsonLdTerm }[];
+  try {
+    dataset = (await jsonld.toRDF(document as Parameters<typeof jsonld.toRDF>[0], {
+      base: pathToFileURL(path ?? resolve(file)).href,
+      documentLoader: (url: string) => {
+        remote = url;
+        return Promise.reject(new Error(`${url} is not fetched`));
+      },
+    })) as unknown as typeof dataset;
+  } catch (error) {
+    if (remote !== undefined) {
+      throw new TermError(
+        `${file}: names the remote @context ${remote}, which is not fetched. Inline the context to read it.`,
+      );
+    }
+    throw new TermError(`${file}: could not be read as SKOS: ${errorMessage(error)}`);
+  }
+  const node = (t: JsonLdTerm) =>
+    t.termType === "BlankNode" ? DataFactory.blankNode(t.value.replace(/^_:/, "")) : DataFactory.namedNode(t.value);
+  const literal = (t: JsonLdTerm) =>
+    DataFactory.literal(
+      t.value,
+      t.language !== undefined && t.language !== "" ? t.language : DataFactory.namedNode(t.datatype?.value ?? XSD_STRING),
+    );
+  // Every quad lands in the default graph: SKOS vocabularies keep their
+  // concepts there, and a named graph's name carries no term field.
+  const quads: Quad[] = dataset.map((q) =>
+    DataFactory.quad(
+      node(q.subject),
+      DataFactory.namedNode(q.predicate.value),
+      q.object.termType === "Literal" ? literal(q.object) : node(q.object),
+    ),
+  );
+  return new Writer({ format: "N-Quads" }).quadsToString(quads);
+}
+
+/** The parsed JSON, or `undefined` when the text is not JSON. Parsed once, and reused. */
+function parseJson(content: string): unknown {
+  try {
+    return JSON.parse(content) as unknown;
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * A SKOS file as the reader takes it: Turtle as written, JSON-LD expanded to
+ * N-Quads first. `.jsonld` is JSON-LD and `.ttl` is Turtle; stdin, which has
+ * no extension, is JSON-LD when it parses as JSON. A first byte alone cannot
+ * tell them apart, because Turtle may open a blank node with `[`.
+ */
+export async function skosInput(content: string, file: string, path?: string): Promise<TermInput> {
+  const ext = extname(file).toLowerCase();
+  const parsed = ext === ".ttl" ? undefined : parseJson(content);
+  const jsonLd = ext === ".jsonld" || parsed !== undefined;
+  return {
+    content: jsonLd ? await jsonLdToNQuads(content, file, path, parsed) : content,
+    file,
+    ...(path === undefined ? {} : { path }),
+    format: SKOS_FORMAT,
+    metadata: {},
+    lineFor: () => undefined,
+  };
+}
+
 /** What a directory or glob walk keeps when `--ext` is not given: every extractor's extensions, and TBX. */
 function defaultExtensions(): string[] {
   return [...supportedExtensions(), TBX_EXTENSION];
@@ -74,6 +186,8 @@ export interface LoadTermSetOptions {
   onNotice?: (message: string) => void;
   /** The readers to offer files to. Tests hand in their own. */
   readers?: readonly TermReader[];
+  /** Every page the run extracted, term page or not, as it was read. */
+  onPage?: (input: TermInput) => void;
 }
 
 /** One value or a list of them, as `concepts:` is spelled. Anything else contributes nothing. */
@@ -125,13 +239,40 @@ function blocksOf(input: TermInput): TermBlock[] {
       ...lineAt(input, ["graph", field]),
     })),
   );
-  return [{ file: input.file, ...lineAt(input, ["graph"]), ...languageOf(input), label, edges }];
+  const altLabels = labelsOf(valueAt(input.metadata, ["graph", "alt-labels"]));
+  const definition = valueAt(input.metadata, ["graph", "definition"]);
+  return [
+    {
+      file: input.file,
+      ...lineAt(input, ["graph"]),
+      ...languageOf(input),
+      label,
+      edges,
+      ...(altLabels.length > 0 ? { altLabels } : {}),
+      ...(typeof definition === "string" && definition.trim() !== "" ? { definition } : {}),
+    },
+  ];
 }
 
-/** What every page contributes beside its terms: its references, and its graph block. */
-function pageFacts(input: TermInput, set: TermSet): void {
+/** A page's free `keywords:`, which `keyword-candidate` reads. A term page's are about the term, so it has none. */
+function keywordsOf(input: TermInput): TermReference[] {
+  const type = input.metadata["type"];
+  if (type === "term" || type === "term-set") return [];
+  return labelsOf(input.metadata["keywords"]).map((label) => ({
+    file: input.file,
+    ...lineAt(input, ["keywords"]),
+    label,
+    field: "keywords",
+    ...languageOf(input),
+  }));
+}
+
+/** What every page contributes beside its terms: its references, its graph block and its keywords. */
+function pageFacts(input: TermInput, set: TermSet, onPage?: (input: TermInput) => void): void {
   set.references.push(...referencesOf(input));
   set.blocks.push(...blocksOf(input));
+  (set.keywords ??= []).push(...keywordsOf(input));
+  onPage?.(input);
 }
 
 function read(input: TermInput, readers: readonly TermReader[], set: TermSet): void {
@@ -193,7 +334,7 @@ export async function loadTermSet(opts: LoadTermSetOptions): Promise<TermSet> {
     );
   }
 
-  const set: TermSet = { terms: [], references: [], blocks: [], notices: [] };
+  const set: TermSet = { terms: [], references: [], blocks: [], keywords: [], notices: [] };
 
   if (inputs.length > 0) {
     const { files, gitignoreSkipped, named } = await resolveTargetSet({
@@ -230,6 +371,10 @@ export async function loadTermSet(opts: LoadTermSetOptions): Promise<TermSet> {
         read(manifestInput(await readInput(path, file), file, path), readers, set);
         continue;
       }
+      if (namedFiles.has(file) && isSkos(file)) {
+        read(await skosInput(await readInput(path, file), file, path), readers, set);
+        continue;
+      }
       if (extname(file).toLowerCase() === TBX_EXTENSION) {
         read(tbxInput(await readInput(path, file), file, path), readers, set);
         continue;
@@ -241,17 +386,19 @@ export async function loadTermSet(opts: LoadTermSetOptions): Promise<TermSet> {
         throw new TermError(`${file}: no reader for its extension. Pass --as <format> through stdin to read it.`);
       }
       const input = extractInput(await readInput(path, file), file, path, extractor.name);
-      pageFacts(input, set);
+      pageFacts(input, set, opts.onPage);
       read(input, readers, set);
     }
   }
 
-  if (usingStdin && opts.as !== undefined) {
+  if (usingStdin && opts.as?.toLowerCase() === SKOS_FORMAT) {
+    read(await skosInput(opts.stdin ?? "", STDIN_LABEL), readers, set);
+  } else if (usingStdin && opts.as !== undefined) {
     const input =
       opts.as.toLowerCase() === TBX_FORMAT
         ? tbxInput(opts.stdin ?? "", STDIN_LABEL)
         : extractInput(opts.stdin ?? "", STDIN_LABEL, undefined, opts.as);
-    pageFacts(input, set);
+    pageFacts(input, set, opts.onPage);
     read(input, readers, set);
   }
 
@@ -262,6 +409,10 @@ export async function loadTermSet(opts: LoadTermSetOptions): Promise<TermSet> {
     } catch {
       const source = run.configSource ?? "manni.config.yaml";
       throw new TermError(`${source}: term.manifests "${written}" does not exist.`);
+    }
+    if (isSkos(path)) {
+      read(await skosInput(content, path, path), readers, set);
+      continue;
     }
     const isTbx = extname(path).toLowerCase() === TBX_EXTENSION;
     read(isTbx ? tbxInput(content, path, path) : manifestInput(content, path, path), readers, set);

@@ -2,7 +2,7 @@
 title: Frontmatter reference
 description: Every field an eval can carry, and how page evals resolve against config evals and suites.
 type: reference
-last-updated: 2026-10-02
+last-updated: 2026-10-18
 ---
 
 Eval declarations live in page frontmatter under three keys, validated against
@@ -10,7 +10,7 @@ Eval declarations live in page frontmatter under three keys, validated against
 ships for per-page quality assertions. manni docevals validates every page against that schema,
 bundled into the CLI, and implements the graders behind it. Which machines wrote the page and
 proposed its evals is recorded in two keys from
-[`manni:ai-context:1.0.0`](/manni/meta/reference/schemas/manni-ai-context/), described
+[`manni:ai-context:1.1.0`](/manni/meta/reference/schemas/manni-ai-context/), described
 [below](#provenance-and-meta-provenance). Verified against those schemas,
 `src/docevals/core/resolve.ts` and `src/docevals/core/external.ts`.
 
@@ -34,7 +34,7 @@ error docs/limits.md:3 frontmatter/eval-provenance: unknown key "eval-provenance
 ```
 
 :::note[Machine-proposed evals]
-The evals a machine proposed are recorded in `meta-provenance`, from `manni:ai-context:1.0.0`.
+The evals a machine proposed are recorded in `meta-provenance`, from `manni:ai-context:1.1.0`.
 Each entry carries its `generated-by`, `evals` and `confidence`.
 :::
 

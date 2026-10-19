@@ -18,9 +18,10 @@ import type { ToolsConfig } from "../shared/tools.js";
 // The record
 
 /**
- * The root fields of `manni:terminology:1.1.0`: the ten 1.0.0 fields in the
- * order the reference lists them, then the TBX data categories (proposal
- * 0084), then the three blocks.
+ * The root fields of `manni:terminology:1.2.0`: the ten 1.0.0 fields in the
+ * order the reference lists them, then `notation` and the five match keys
+ * (proposal 0086), then the TBX data categories (proposal 0084), then the
+ * three blocks.
  */
 export const TERM_FIELDS = [
   "label",
@@ -33,6 +34,12 @@ export const TERM_FIELDS = [
   "related-terms",
   "see",
   "scope-note",
+  "notation",
+  "exact-matches",
+  "close-matches",
+  "broad-matches",
+  "narrow-matches",
+  "related-matches",
   "subject-field",
   "contexts",
   "notes",
@@ -59,6 +66,20 @@ export const TERM_LIST_FIELDS = [
   "related-terms",
 ] as const satisfies readonly TermField[];
 export type TermListField = (typeof TERM_LIST_FIELDS)[number];
+
+/**
+ * The mapping fields, in the order a finding names them: each holds the IRIs
+ * of concepts in other vocabularies. The vocabulary accepts an IRI or a list;
+ * a reader always yields a list.
+ */
+export const TERM_MATCH_FIELDS = [
+  "exact-matches",
+  "close-matches",
+  "broad-matches",
+  "narrow-matches",
+  "related-matches",
+] as const satisfies readonly TermField[];
+export type TermMatchField = (typeof TERM_MATCH_FIELDS)[number];
 
 /**
  * The aux fields: valid at the root (language level), in `concept-entry`
@@ -164,6 +185,13 @@ export interface TermRecord extends TermAuxRecord {
   "related-terms"?: string[];
   see?: string;
   "scope-note"?: string;
+  /** A code that identifies the concept in another system. */
+  notation?: string;
+  "exact-matches"?: string[];
+  "close-matches"?: string[];
+  "broad-matches"?: string[];
+  "narrow-matches"?: string[];
+  "related-matches"?: string[];
   /** Concept level: what every language's term of this id says. */
   "concept-entry"?: TermAuxRecord;
   /** Per-designation detail, in source order. */
@@ -189,6 +217,8 @@ export const TERM_CONSTRUCTS = [
   "rst-glossary",
   /** One `termEntry` (TBX v2) or `conceptEntry` (TBX v3): a term per language it holds. */
   "tbx-entry",
+  /** One `skos:Concept` in Turtle or JSON-LD: a term per language its `skos:prefLabel` holds. */
+  "skos",
 ] as const;
 export type TermConstruct = (typeof TERM_CONSTRUCTS)[number];
 
@@ -237,7 +267,7 @@ export interface TermInput {
   file: string;
   /** As `TermLocation.path`. */
   path?: string;
-  /** The extractor that read the file (`markdown`, `mdx`, `asciidoc`, `rst`, `html`, `xml`), or `manifest` or `tbx`. */
+  /** The extractor that read the file (`markdown`, `mdx`, `asciidoc`, `rst`, `html`, `xml`), or `manifest`, `tbx` or `skos`. */
   format: string;
   /** The file's extracted metadata. `{}` for a manifest, which has none. */
   metadata: Record<string, unknown>;
@@ -297,6 +327,7 @@ export const TERM_WRITE_FORMATS = [
   "tbx",
   "tbx3",
   "skos",
+  "skos-ttl",
   "csv",
   "json",
   "vale",
@@ -411,6 +442,10 @@ export interface TermBlock {
   label: string;
   /** One per value of `broader`, `narrower` and `related-concepts`, on its field's line. */
   edges: { field: "broader" | "narrower" | "related-concepts"; value: string; line?: number }[];
+  /** The block's `alt-labels`, when it has any. */
+  altLabels?: string[];
+  /** The block's `definition`, when it has one. */
+  definition?: string;
 }
 
 export interface TermSet {
@@ -419,6 +454,8 @@ export interface TermSet {
   references: TermReference[];
   /** Every labelled `graph:` block in every file the run loaded. */
   blocks: TermBlock[];
+  /** Every `keywords:` value on every page the run loaded but a term page, `field` `keywords`. */
+  keywords?: TermReference[];
   /** Readers' notices, in load order. */
   notices: string[];
 }
@@ -432,14 +469,24 @@ export const TERM_RULES = [
   "duplicate-id",
   "label-collision",
   "alt-label-collision",
+  "label-overlap",
   "dangling-reference",
   "broader-cycle",
   "see-not-empty",
+  "missing-definition",
+  "conflicting-matches",
   "asymmetric-hierarchy",
+  "asymmetric-related",
+  "related-in-hierarchy",
   "alt-label-reference",
+  "ambiguous-alt-label",
+  "deprecated-label",
   "abstract-too-long",
   "unused-term",
   "hierarchy-outside-termbase",
+  "related-siblings",
+  "orphan-term",
+  "keyword-candidate",
 ] as const;
 export type TermRule = (typeof TERM_RULES)[number];
 
@@ -486,6 +533,22 @@ export interface TermConfig {
   severity?: Partial<Record<TermRule, TermSeverity>>;
   allowEmpty?: boolean;
   respectGitignore?: boolean;
+  /** `term.provider`: the provider `term fill` drafts with. */
+  provider?: string;
+  /** `term.model`. */
+  model?: string;
+  fill?: TermFillConfig;
+}
+
+/** `term.fill`. */
+export interface TermFillConfig {
+  /** Where new term pages go, as written: resolved from the config directory. */
+  out?: string;
+  confidenceThreshold?: number;
+  /** Inference calls per run; `null` is unbounded. */
+  maxTurns?: number | null;
+  cacheDir?: string;
+  crawl?: { minPages?: number };
 }
 
 export interface LoadedTermConfig {

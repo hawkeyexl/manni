@@ -1,6 +1,7 @@
 # A termbase and a guide whose graph: block adds to its hierarchy. The block
 # closes a broader cycle, adds two edges the termbase lacks, and names a term
-# by its alt-label: one error, one warning and two notices.
+# by its alt-label. Pluggable auth layer sits outside the hierarchy: one
+# error, one warning and three notices.
 collections:
   - name: site
     paths:

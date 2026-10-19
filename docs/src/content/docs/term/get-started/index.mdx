@@ -28,7 +28,7 @@ sample-questions:
 graph:
   label: Get started
   type: learning
-last-updated: 2026-10-18
+last-updated: 2026-10-19
 tags:
   - tutorial
   - getting-started
@@ -252,6 +252,75 @@ The notice stays until a page names `bifocal` in its `concepts:`. A set written
 ahead of its pages can turn it off with `severity: {unused-term: off}` under
 `term:`.
 
+## Start from the concepts your pages name
+
+A docset often names its concepts before it has a termbase. `manni term fill`
+writes a term page for each name no entry claims. A name counts when a page
+mentions it in `concepts:` or in a `graph:` block's edges. Here a guide about
+trifocals names `trifocal`, and its `graph:` block puts it under
+`corrective lens`:
+
+```markdown title="docs/guides/trifocals.md"
+---
+title: Fitting trifocals
+concepts: [progressive lens, trifocal]
+graph:
+  label: trifocal
+  broader: [corrective lens]
+---
+# Fitting trifocals
+```
+
+The block's `label` alone would not count. It is the guide naming its own
+topic, so it only adds to a page another mention asks for.
+
+<Steps>
+
+1. **See what is missing.** `--offline` sends nothing off this machine, and
+   `--dry-run` writes nothing. This is a machine with no local model
+   downloaded, so the run says why the page has no definition:
+
+   ```sh
+   manni term fill --offline --dry-run
+   ```
+
+   ```
+   manni: no model is available offline, so new terms have no definition; download one first with --local, or drop --offline.
+   would create docs/terms/trifocal.md   trifocal   stub, no definition
+   1 term would be created, 0 would be filled, 1 left without a definition
+   ```
+
+   The page goes beside the term pages you already have, in their format.
+
+2. **Write the pages.** With a model provider configured, drop `--offline`, and
+   a model drafts each definition. A draft is written only when its confidence
+   clears `term.fill.confidenceThreshold`, and the page records which model
+   wrote it. Without one, each page is a stub that carries what the guide says:
+
+   ```markdown title="docs/terms/trifocal.md"
+   ---
+   title: trifocal
+   type: term
+   id: trifocal
+   label: trifocal
+   broader:
+     - corrective lens
+   ---
+   ```
+
+3. **Write the definitions a stub lacks**, then run `manni term check`.
+
+</Steps>
+
+`--crawl` goes further. It sends each page's body to the model, which proposes
+terms no metadata names yet. The [CLI
+reference](/manni/term/reference/cli/#term-fill) has every flag, and the
+[configuration reference](/manni/term/reference/configuration/#filling-the-termbase)
+has the keys.
+
+[From tags to a knowledge graph](/manni/family/concept-lifecycle/) takes these
+steps on to a governed termbase and a checked graph.
+
 ## Where to go next
 
 <CardGrid>
@@ -268,7 +337,7 @@ ahead of its pages can turn it off with `severity: {unused-term: off}` under
   <LinkCard
     title="Check rules"
     href="/manni/term/reference/rules/"
-    description="All twelve rules, their default severities, and what fixes each one."
+    description="All twenty-two rules, their default severities, and what fixes each one."
   />
   <LinkCard
     title="Move and hand off a termbase"

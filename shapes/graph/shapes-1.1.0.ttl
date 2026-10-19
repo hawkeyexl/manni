@@ -10,6 +10,12 @@
 #     skos:topConceptOf. A term's concept carries the first three, and every
 #     concept with no broader concept is a top concept of the scheme.
 #   - ConceptScheme learns skos:hasTopConcept, the other direction.
+#   - Concept learns skos:notation and the five mapping properties,
+#     skos:exactMatch, closeMatch, broadMatch, narrowMatch and relatedMatch,
+#     each an IRI. They come from a term's notation and match keys. A mapping
+#     into the scheme itself is a check-core finding, because SHACL Core cannot
+#     tell a concept of this scheme from one elsewhere without naming the
+#     scheme.
 #   - A term in several languages carries one prefLabel per language, so the
 #     prefLabel collision is sh:uniqueLang now rather than sh:maxCount 1. Two
 #     untagged prefLabels on one concept (one slug, two spellings) are still a
@@ -17,6 +23,8 @@
 #     untagged value", so graph's check core reports that one.
 #   - The shapes namespace moves with the version: dsh: is now
 #     https://hawkeyexl.github.io/manni/graph/shapes/1.1.0#.
+#   - Document learns graph:sampleQuestion (proposal 0086 §7), a page's
+#     `sample-questions`, each a string or a language-tagged string.
 #
 # 1.0.0 was the first file the three-segment convention in CLAUDE.md bound. It
 # was MAJOR, because a graph that used to validate could fail on the language
@@ -116,6 +124,7 @@ dsh:DocumentShape
     dsh:Document-brokenSectionRef ,
     dsh:Document-image ,
     dsh:Document-codeLanguage ,
+    dsh:Document-sampleQuestion ,
     dsh:Document-topicType ,
     dsh:Document-appliesToVariant ,
     dsh:Document-softwareLifecyclePhase ,
@@ -251,6 +260,12 @@ dsh:Document-codeLanguage
   a sh:PropertyShape ;
   sh:path graph:codeLanguage ;
   sh:datatype xsd:string .
+
+# Tagged with the page's language when it declares one, so either datatype.
+dsh:Document-sampleQuestion
+  a sh:PropertyShape ;
+  sh:path graph:sampleQuestion ;
+  sh:or ( [ sh:datatype xsd:string ] [ sh:datatype rdf:langString ] ) .
 
 # iiRDS Core topic type: exactly the six published Generic* instances.
 dsh:Document-topicType
@@ -506,7 +521,13 @@ dsh:ConceptShape
     dsh:Concept-topConceptOf ,
     dsh:Concept-broader ,
     dsh:Concept-narrower ,
-    dsh:Concept-related .
+    dsh:Concept-related ,
+    dsh:Concept-notation ,
+    dsh:Concept-exactMatch ,
+    dsh:Concept-closeMatch ,
+    dsh:Concept-broadMatch ,
+    dsh:Concept-narrowMatch ,
+    dsh:Concept-relatedMatch .
 
 dsh:Concept-prefLabel
   a sh:PropertyShape ;
@@ -574,6 +595,36 @@ dsh:Concept-related
   sh:nodeKind sh:IRI ;
   sh:class skos:Concept ;
   sh:disjoint skos:broader .
+
+dsh:Concept-notation
+  a sh:PropertyShape ;
+  sh:path skos:notation ;
+  sh:nodeKind sh:Literal .
+
+dsh:Concept-exactMatch
+  a sh:PropertyShape ;
+  sh:path skos:exactMatch ;
+  sh:nodeKind sh:IRI .
+
+dsh:Concept-closeMatch
+  a sh:PropertyShape ;
+  sh:path skos:closeMatch ;
+  sh:nodeKind sh:IRI .
+
+dsh:Concept-broadMatch
+  a sh:PropertyShape ;
+  sh:path skos:broadMatch ;
+  sh:nodeKind sh:IRI .
+
+dsh:Concept-narrowMatch
+  a sh:PropertyShape ;
+  sh:path skos:narrowMatch ;
+  sh:nodeKind sh:IRI .
+
+dsh:Concept-relatedMatch
+  a sh:PropertyShape ;
+  sh:path skos:relatedMatch ;
+  sh:nodeKind sh:IRI .
 
 dsh:SchemeShape
   a sh:NodeShape ;

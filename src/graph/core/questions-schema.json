@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "manni:graph:questions",
+  "title": "manni graph golden-set file",
+  "description": "A list of reader questions that span pages or that the docs don't answer (proposal 0087). Each item is a page sample question's object form, plus `answers[].file` and `language`. `graph.questionFiles` names the files, and `manni graph check` asks their questions.",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": ["question", "answers"],
+    "properties": {
+      "question": {
+        "type": "string",
+        "minLength": 1,
+        "description": "The question, as a reader would ask it."
+      },
+      "answers": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["file", "lines"],
+          "properties": {
+            "file": {
+              "type": "string",
+              "minLength": 1,
+              "description": "The page that holds this answer, relative to the config file."
+            },
+            "lines": {
+              "oneOf": [
+                { "type": "integer", "minimum": 1 },
+                { "type": "string", "pattern": "^[1-9][0-9]*-[1-9][0-9]*$" }
+              ],
+              "description": "Body lines of that page, counted as for a citation's claim."
+            },
+            "integrity": {
+              "type": "string",
+              "pattern": "^sha256-[0-9a-f]{64}$",
+              "description": "The pin over those lines, under cite's hashing rule. Without it, the lines are not checked for change."
+            },
+            "reviewed": {
+              "type": "boolean",
+              "description": "`false` marks a pin nobody has confirmed. Absent means `true`."
+            }
+          }
+        },
+        "description": "The lines that answer the question, on one page or several. An empty list marks a known gap: a question the docs don't answer."
+      },
+      "language": {
+        "type": "string",
+        "pattern": "^[A-Za-z]{2,3}(-[A-Za-z]{4})?(-([A-Za-z]{2}|[0-9]{3}))?(-([A-Za-z0-9]{5,8}|[0-9][A-Za-z0-9]{3}))*$",
+        "description": "The question's language, as a BCP-47 tag. Absent, it is the first answer's page language."
+      },
+      "generated-by": {
+        "type": "string",
+        "minLength": 1,
+        "description": "The model that drafted the question or any of its pins, as `provider/model`."
+      },
+      "confidence": {
+        "type": "number",
+        "minimum": 0,
+        "maximum": 1,
+        "description": "The drafting model's confidence, 0..1."
+      },
+      "reviewed": {
+        "type": "boolean",
+        "description": "`false` marks a drafted question, and its pins are drafts with it. Absent means `true`."
+      },
+      "reviewed-by": {
+        "type": "string",
+        "minLength": 1,
+        "description": "Who confirmed the question. An optional record."
+      }
+    }
+  }
+}

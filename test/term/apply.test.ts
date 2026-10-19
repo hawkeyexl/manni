@@ -109,8 +109,8 @@ function byId(terms: readonly Term[], id: string): Term {
 }
 
 describe("in-place write-back", () => {
-  it("every reader writes in place except html-dfn", () => {
-    expect(TERM_READERS.filter((r) => r.apply === undefined).map((r) => r.construct)).toEqual(["html-dfn"]);
+  it("every reader writes in place except html-dfn and skos", () => {
+    expect(TERM_READERS.filter((r) => r.apply === undefined).map((r) => r.construct)).toEqual(["html-dfn", "skos"]);
   });
 
   const cases = noOpCases();

@@ -1,0 +1,3 @@
+# A known gap: the docs don't answer it, so it is counted and never asked.
+- question: Does manni run on Windows on ARM?
+  answers: []
