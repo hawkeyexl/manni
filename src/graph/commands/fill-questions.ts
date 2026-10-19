@@ -352,7 +352,8 @@ export async function fillPageQuestions(input: PageQuestionsInput): Promise<Page
     const after = bodyOf(next, format).body;
     if (!relocate(pins, before, after)) break;
     if (round === 2) {
-      // Three writes and the pins still moved: write what there is, and say so.
+      // Three writes and the pins still moved: write the latest pins, and say so.
+      next = write();
       warnings.push(`${path}: the answer pins did not settle after three writes, so check their lines.`);
       break;
     }
