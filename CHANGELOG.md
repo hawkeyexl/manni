@@ -4,6 +4,13 @@
 4.13.1. Entries below that version are docmeta releases; the repository
 history is the same one.
 
+## [4.12.4](https://github.com/hawkeyexl/manni/compare/v4.12.3...v4.12.4) (2026-10-19)
+
+
+### Bug Fixes
+
+* **lint:** let a TGDP reference page end with See also without Commands ([#204](https://github.com/hawkeyexl/manni/issues/204)) ([ed878fc](https://github.com/hawkeyexl/manni/commit/ed878fcb43c48672d1fa6e21c511a8bb2b3ad1de)), closes [#203](https://github.com/hawkeyexl/manni/issues/203)
+
 ## [4.12.3](https://github.com/hawkeyexl/manni/compare/v4.12.2...v4.12.3) (2026-10-19)
 
 
