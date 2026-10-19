@@ -115,6 +115,8 @@ export function termMarksIn(candidate: Candidate, defs: ProjectionDefs): TermMar
     if (typeof properties === "object" && properties !== null) {
       for (const [key, sub] of Object.entries(properties)) walk(sub, [...path, key]);
     }
+    // Off the stack once walked: the stack only breaks cycles, so a `$defs`
+    // entry two branches share is still walked from each.
     stack.delete(node);
   };
   walk(candidate.subschema, [candidate.key]);

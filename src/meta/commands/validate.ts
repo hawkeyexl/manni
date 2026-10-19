@@ -550,7 +550,9 @@ export async function runValidate(
     const scheme = await (termbase ??= readTermbase());
     if (scheme === undefined) {
       // ponytail: an all-digit segment is read as an array index, so a mark
-      // on `items` counts once per field, not once per item.
+      // on `items` counts once per field, not once per item. This assumes no
+      // marked field is an object with all-digit keys, whose keys would be
+      // stripped the same way.
       if (!termbaseUnreadable) {
         for (const hit of hits) uncheckedTermFields.add(hit.pointer.replace(/\/\d+(?=\/|$)/g, ""));
       }
