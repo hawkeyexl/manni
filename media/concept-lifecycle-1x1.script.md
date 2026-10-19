@@ -199,6 +199,10 @@ manni graph check; echo $?
 
 ## Reproduce
 
+The capture script runs in Git Bash on Windows only. It makes the `C:\concepts`
+junction with `cmd /c mklink /J` and converts paths with `cygpath`, so macOS
+and Linux stop at `cmd: not found`.
+
 ```bash
 # 0. Build the CLI (repo root).
 npm ci && npm run build
