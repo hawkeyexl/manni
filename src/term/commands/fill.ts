@@ -29,6 +29,7 @@ import { DEFAULT_CHUNK_CHARS, splitBody } from "../../meta/commands/fill-prompt.
 import { errorMessage } from "../../shared/errors.js";
 import {
   assertKnownProvider,
+  DEFAULT_PROVIDER,
   assertLocalFlag,
   assertModelHasProvider,
   localNotice,
@@ -176,14 +177,15 @@ function keywordsOf(value: unknown): string[] {
   return typeof value === "string" ? strings([value]) : strings(value);
 }
 
-/** The 1-based line `label` first appears on in `content`, ignoring case. */
-/**
- * The line a label first appears on as a whole word, ignoring case, so `API`
- * does not land on `CAPABILITIES`. Letters and digits of any script bound it.
- */
-export function lineOf(content: string, label: string): number | undefined {
+/** A label as a whole word, ignoring case: letters and digits of any script bound it. */
+function wholeWord(label: string): RegExp {
   const escaped = label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const match = new RegExp(`(?<![\\p{L}\\p{N}])${escaped}(?![\\p{L}\\p{N}])`, "iu").exec(content);
+  return new RegExp(`(?<![\\p{L}\\p{N}])${escaped}(?![\\p{L}\\p{N}])`, "iu");
+}
+
+/** The line a label first appears on as a whole word, so `API` does not land on `CAPABILITIES`. */
+export function lineOf(content: string, label: string): number | undefined {
+  const match = wholeWord(label).exec(content);
   return match === null ? undefined : content.slice(0, match.index).split("\n").length;
 }
 
@@ -236,6 +238,9 @@ async function resolveModel(opts: FillOptions, run: Awaited<ReturnType<typeof re
   const { provider: name, model: chosen } = selection;
   assertKnownProvider(name, toTermError);
   assertModelHasProvider(name, chosen, "term.provider", toTermError);
+  const named = [flags.provider, flags.model, run.config?.provider, run.config?.model, family.provider, family.model].some(
+    (value) => value !== undefined && value !== DEFAULT_PROVIDER,
+  );
   const notice = localNotice(selection, flags);
   if (notice !== undefined) opts.onNotice?.(notice);
   try {
@@ -244,7 +249,11 @@ async function resolveModel(opts: FillOptions, run: Awaited<ReturnType<typeof re
     if (identity === undefined) return undefined;
     if (opts.providerInstance !== undefined) return injected(opts.providerInstance);
     return { provider: makeInferenceProvider(providerSpecFor(family, identity)), identity };
-  } catch {
+  } catch (error) {
+    // The run still degrades to stubs, as a run with no provider does. A
+    // provider or model someone named says why it could not run, so the cause
+    // is not lost behind "no model provider is configured".
+    if (named) opts.onNotice?.(`the configured provider "${name}" could not run: ${errorMessage(error)}`);
     return undefined;
   }
 }
@@ -376,9 +385,10 @@ export async function runFill(opts: FillOptions): Promise<FillReport> {
         const value = nonEmpty(page.metadata[key]);
         if (value !== undefined) lines.push(`${key}: ${value}`);
       }
+      const word = wholeWord(label);
       const uses = page.content
         .split("\n")
-        .filter((line) => line.toLowerCase().includes(label.toLowerCase()))
+        .filter((line) => word.test(line))
         .slice(0, 3);
       for (const use of uses) lines.push(`> ${use.trim()}`);
     }

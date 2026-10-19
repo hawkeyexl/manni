@@ -95,7 +95,8 @@ interface FillCliOptions extends InputCliOptions {
 function numeric(name: string, value: number | undefined, min: number, max: number, integer = false): void {
   if (value === undefined) return;
   if (!Number.isFinite(value) || value < min || value > max || (integer && !Number.isInteger(value))) {
-    throw new TermError(`${name} must be a number between ${String(min)} and ${String(max)}, got ${String(value)}.`);
+    const kind = integer ? "a whole number" : "a number";
+    throw new TermError(`${name} must be ${kind} between ${String(min)} and ${String(max)}, got ${String(value)}.`);
   }
 }
 
