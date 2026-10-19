@@ -91,6 +91,10 @@ export interface TermMarkAt {
  * its `items`, or on a property nested in it, through `$ref`, `allOf`, `anyOf`
  * and `oneOf`. Read from the schema rather than recorded by Ajv, as validate
  * records it, because the value fill asks for is not there yet.
+ *
+ * Every branch's mark is collected, so `anyOf`/`oneOf` branches that mark one
+ * field under different terms make fill ask for a value under all of them,
+ * where the schema needs only one. Such a schema is almost certainly a mistake.
  */
 export function termMarksIn(candidate: Candidate, defs: ProjectionDefs): TermMarkAt[] {
   const out: TermMarkAt[] = [];
