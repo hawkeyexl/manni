@@ -17,6 +17,7 @@ templates:
   reference:
     types:
       - reference
+    guide: https://gitlab.com/tgdp/templates/-/blob/v1.6.0/reference/guide_reference.md
     description: >-
       Describe the parts of the product in a structured form the reader can
       scan quickly. Keep step-by-step instructions out of it.

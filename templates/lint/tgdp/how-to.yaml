@@ -18,6 +18,7 @@ templates:
   how-to:
     types:
       - how-to
+    guide: https://gitlab.com/tgdp/templates/-/blob/v1.6.0/how-to/guide_how-to.md
     description: >-
       Walk a reader who already knows the product through the steps to
       complete one task.

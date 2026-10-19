@@ -1,0 +1,5 @@
+# A template that links its author's guide.
+templates:
+  how-to:
+    guide: https://example.com/guide_how-to.md
+    types: [how-to]

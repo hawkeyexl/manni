@@ -32,6 +32,7 @@ templates:
   release-notes:
     types:
       - release-notes
+    guide: https://gitlab.com/tgdp/templates/-/blob/v1.6.0/release-notes/guide_release-notes.md
     # The page itself. Upstream titles it
     # `Release notes - {Product name} {Release number}`; only the braced
     # parts are placeholders, so the literal prefix is the one thing this

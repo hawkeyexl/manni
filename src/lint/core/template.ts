@@ -6,7 +6,7 @@
  * Two things are worth knowing before reading it.
  *
  * A template *is* a rule. It describes the page, so it takes every rule key,
- * plus `title`, `types` and `extends`. It may not take `min` or `max`, because
+ * plus `title`, `types`, `guide` and `extends`. It may not take `min` or `max`, because
  * a page is one page, and the loader refuses those two by hand.
  *
  * A rule's children are a **list**, not a map. The v1 format keyed section
@@ -158,7 +158,7 @@ export const BLOCK_KIND_NODE: Record<BlockKind, ContentKind> = {
 export interface Rule extends Occurrences {
   /** Handle, unique among siblings. `extends` targets it. */
   id?: string;
-  /** Prose description of what the rule is for. Never checked. */
+  /** What the rule's section is for, written for the page's author. Never checked. */
   description?: string;
   heading?: HeadingRule;
   /** Rules matched in order as one unit, repeated by this rule's `min`/`max`. */
@@ -177,6 +177,8 @@ export interface Template extends Rule {
   title?: string;
   /** Doctypes this template serves, matched against a page's `type`. */
   types?: string[];
+  /** Link to the author's guide for this doctype. Inherited through `extends`. */
+  guide?: string;
   /** Built-in id, path, or URL to inherit from. */
   extends?: string;
 }

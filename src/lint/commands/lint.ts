@@ -309,6 +309,7 @@ function parseFinding(message: string): Finding {
     message,
     position: origin(),
     severity: "error",
+    template: null,
   };
 }
 
@@ -403,6 +404,7 @@ function unknownTypeFinding(
       `Declare it on a template with "types:", then pass that file with --templates.`,
     position,
     severity: "error",
+    template: null,
   };
 }
 
@@ -492,6 +494,7 @@ async function lintOne(
           message: errorMessage(err),
           position: metaPosition,
           severity: "error",
+          template: null,
         },
       ],
       template: resolution.ref,
@@ -572,6 +575,8 @@ async function lintOne(
   try {
     findings = validateDocument(tree, template, {
       ...templateIdentity(ref),
+      // The ref the page routed to, as the result's own `template` names it.
+      ref: resolution.ref,
       kinds: parser.kinds,
     });
   } catch (err) {
@@ -755,6 +760,7 @@ function ditaOtFinding(message: DitaOtMessage): Finding {
     message: message.message,
     position: point === null ? origin() : { start: point, end: point },
     severity: message.severity,
+    template: null,
   };
 }
 

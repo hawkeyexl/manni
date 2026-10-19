@@ -26,6 +26,7 @@ templates:
   tutorial:
     types:
       - tutorial
+    guide: https://gitlab.com/tgdp/templates/-/blob/v1.6.0/tutorial/guide_tutorial.md
     description: >-
       Teach the reader a new skill by walking them through a hands-on project
       from start to finish.

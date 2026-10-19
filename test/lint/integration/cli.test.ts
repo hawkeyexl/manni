@@ -101,6 +101,22 @@ describe("manni lint (built bin)", () => {
       expect(bad.status).toBe(1);
     });
 
+    // Issue #202: a finding carries what the template asks for, from the
+    // built-in's YAML as the published package ships it.
+    it("names the template, the rule and its guide on each JSON finding", () => {
+      const r = run(["structure", BROKEN, "--no-config", "-f", "json"]);
+      expect(r.status).toBe(1);
+      const errors: { type: string; template: Record<string, unknown> | null }[] =
+        JSON.parse(r.stdout)[0].errors;
+      const missing = errors.find((e) => e.type === "missing_section");
+      expect(missing?.template).toMatchObject({
+        id: "tgdp:how-to:1.6",
+        rule: "see-also",
+        guide: "https://gitlab.com/tgdp/templates/-/blob/v1.6.0/how-to/guide_how-to.md",
+      });
+      expect(typeof missing?.template?.["description"]).toBe("string");
+    });
+
     it("explains how each page routed, and lints nothing", () => {
       const r = run(["structure", HOW_TO, "--explain"]);
       expect(r.status).toBe(0);
@@ -362,6 +378,16 @@ describe("manni lint (built bin)", () => {
       const r = run(["templates", "--no-config"]);
       expect(r.status).toBe(0);
       expect(r.stdout).toContain("tgdp:how-to:1.6");
+    });
+
+    it("lists each template's guide as JSON", () => {
+      const r = run(["templates", "--no-config", "-f", "json"]);
+      expect(r.status).toBe(0);
+      const entries: { id: string; guide: string | null }[] = JSON.parse(r.stdout).templates;
+      expect(entries.find((e) => e.id === "tgdp:how-to:1.6")?.guide).toBe(
+        "https://gitlab.com/tgdp/templates/-/blob/v1.6.0/how-to/guide_how-to.md",
+      );
+      for (const entry of entries) expect(entry).toHaveProperty("guide");
     });
 
     it("takes one --templates path per occurrence", () => {

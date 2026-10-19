@@ -1,0 +1,5 @@
+# `guide` must be a web link. A relative path is refused by the schema.
+templates:
+  how-to:
+    guide: docs/guide_how-to.md
+    types: [how-to]

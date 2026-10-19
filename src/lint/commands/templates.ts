@@ -41,6 +41,7 @@ import type { TemplateFile } from "../core/template.js";
 import { resolveLintRun } from "../core/config.js";
 import {
   listBuiltins,
+  loadTemplate,
   loadTemplateFile,
 } from "../core/template-registry.js";
 
@@ -59,6 +60,8 @@ export interface TemplateInfo {
   types: string[];
   /** `builtin`, or the template file this entry came from. */
   source: string;
+  /** Link to the author's guide for the doctype, or null when it names none. */
+  guide: string | null;
 }
 
 export interface TemplatesInfo {
@@ -73,12 +76,17 @@ export interface TemplatesOptions {
 export async function runTemplates(
   opts: TemplatesOptions = {},
 ): Promise<TemplatesInfo> {
-  const templates: TemplateInfo[] = listBuiltins().map((builtin) => ({
-    id: builtin.id,
-    title: builtin.title,
-    types: builtin.types,
-    source: BUILTIN_SOURCE,
-  }));
+  // A built-in's guide lives in its YAML, not the manifest, so each is loaded.
+  // They are cached, and a run that lints pages loads them anyway.
+  const templates: TemplateInfo[] = await Promise.all(
+    listBuiltins().map(async (builtin) => ({
+      id: builtin.id,
+      title: builtin.title,
+      types: builtin.types,
+      source: BUILTIN_SOURCE,
+      guide: (await loadTemplate(builtin.id)).guide ?? null,
+    })),
+  );
 
   // Listed after the built-ins, in the order supplied - the same order
   // `buildTypeIndex` applies them in, so a later entry claiming the same
@@ -98,6 +106,7 @@ export async function runTemplates(
         title: "",
         types: template.types ?? [],
         source: path,
+        guide: template.guide ?? null,
       });
     }
   }

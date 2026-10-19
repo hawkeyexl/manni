@@ -33,6 +33,7 @@ templates:
   troubleshooting:
     types:
       - troubleshooting
+    guide: https://gitlab.com/tgdp/templates/-/blob/v1.6.0/troubleshooting/guide_troubleshooting.md
     # The page itself (H1). Upstream titles it
     # `# Troubleshooting {product name, feature, or task}`, a placeholder,
     # so the text is left free. What the doctype does ask for is underneath

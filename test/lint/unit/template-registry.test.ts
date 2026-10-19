@@ -220,6 +220,25 @@ describe("loadTemplateFile", () => {
     expect(message).toContain("must NOT have additional properties");
     expect(message).toContain("paragrafs");
   });
+
+  it("reads a template's guide", async () => {
+    const file = await loadTemplateFile(join(fixtures, "guide.yaml"));
+    expect(file.templates?.["how-to"]?.guide).toBe("https://example.com/guide_how-to.md");
+  });
+
+  it("refuses a guide that is not a web link", async () => {
+    const message = await rejectionMessage(loadTemplateFile(join(fixtures, "bad-guide.yaml")));
+    expect(message).toContain('is not a valid template file: /templates/how-to/guide must match pattern "^https?://"');
+  });
+
+  it("refuses a guide on a section rule", async () => {
+    const message = await rejectionMessage(
+      loadTemplateFile(join(fixtures, "guide-on-section.yaml")),
+    );
+    expect(message).toContain("/templates/how-to/sections/0");
+    expect(message).toContain("must NOT have additional properties");
+    expect(message).toContain("guide");
+  });
 });
 
 /**
@@ -517,6 +536,18 @@ describe("resolveExtends", () => {
     expect(merged.title).toBe("House how-to");
     // The chain is resolved, so nothing downstream tries to resolve it again.
     expect(merged.extends).toBeUndefined();
+  });
+
+  it("inherits the parent's guide unless the child sets its own", async () => {
+    const guides: Record<string, Template> = {
+      base: { guide: "https://example.com/base.md" },
+      plain: { extends: "base" },
+      own: { extends: "base", guide: "https://example.com/own.md" },
+    };
+    const resolve = (name: string) =>
+      resolveExtends(defined(guides[name], name), resolverFor(guides));
+    expect((await resolve("plain")).guide).toBe("https://example.com/base.md");
+    expect((await resolve("own")).guide).toBe("https://example.com/own.md");
   });
 
   it("replaces an inherited rule in place, keeping the parent's order", async () => {

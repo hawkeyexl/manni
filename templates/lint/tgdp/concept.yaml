@@ -32,6 +32,7 @@ templates:
     types:
       - concept
       - explanation
+    guide: https://gitlab.com/tgdp/templates/-/blob/v1.6.0/concept/guide_concept.md
     # The page title, whatever the author calls the concept. Its body is the
     # summary that introduces the concept and the definition that follows -
     # upstream notes the definition deliberately carries no heading of its

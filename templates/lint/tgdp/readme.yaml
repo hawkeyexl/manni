@@ -33,6 +33,7 @@ templates:
   readme:
     types:
       - readme
+    guide: https://gitlab.com/tgdp/templates/-/blob/v1.6.0/readme/guide_readme.md
     description: >-
       Introduce the project, say who it is for, and show how to install,
       use, and contribute to it.

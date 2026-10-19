@@ -41,7 +41,7 @@ import {
   type RuleContext,
 } from "../rules/index.js";
 import { parserByName } from "../parsers/index.js";
-import { matchSections, type MatchOptions } from "./match.js";
+import { aboutRule, matchSections, type MatchOptions } from "./match.js";
 import { BLOCK_KINDS, BLOCK_KIND_NODE } from "./template.js";
 import type {
   BlockKind,
@@ -60,6 +60,11 @@ export interface ValidateOptions {
   source?: string;
   /** Template within that file. Named in messages about the template. */
   template?: string;
+  /**
+   * The template's ref, which every finding names. Defaults to the name
+   * messages use: `template`, else the template's `title`.
+   */
+  ref?: string;
   /**
    * Content kinds the parser that produced this tree emits. Defaults to what
    * the registry declares for `tree.format`, which is what the CLI wants; a
@@ -128,6 +133,8 @@ interface UncheckedRule {
   rule: string;
   /** What is missing, in words: `tables`, `table columns`, `list items`. */
   noun: string;
+  /** The template rule that asked, the first one when several did. */
+  owner: Rule;
 }
 
 /** What each block-rule key asks about, as a message says it. */
@@ -157,6 +164,8 @@ class Pruner {
   private readonly emitted: Set<ContentKind>;
   /** Keyed by message, so one rule asked twice is reported once. */
   private readonly missing = new Map<string, UncheckedRule>();
+  /** The rule being pruned, which a dropped key belongs to. */
+  private owner: Rule = {};
 
   constructor(kinds: ContentKind[]) {
     this.emitted = new Set(kinds);
@@ -171,7 +180,8 @@ class Pruner {
   }
 
   private drop(rule: string, noun: string): void {
-    this.missing.set(`${rule}: ${noun}`, { rule, noun });
+    const key = `${rule}: ${noun}`;
+    if (!this.missing.has(key)) this.missing.set(key, { rule, noun, owner: this.owner });
   }
 
   /** A table rule without its `columns`, when the parser reports no cells. */
@@ -326,6 +336,9 @@ class Pruner {
   }
 
   rule<T extends Rule>(rule: T): T {
+    // Set before the holder and never restored: everything dropped from this
+    // rule is dropped here, before the recursion into its children moves it on.
+    this.owner = rule;
     const kept = this.holder(rule);
     let changed = kept !== rule;
     const out = changed ? kept : { ...rule };
@@ -388,6 +401,7 @@ function uncheckedFinding(
   format: string,
   name: string,
   gap: UncheckedRule,
+  options: MatchOptions,
 ): Finding {
   return {
     type: "unsupported_content_kind",
@@ -402,6 +416,7 @@ function uncheckedFinding(
     // finding - so a docset of mixed formats stays green while still saying
     // which rules went unchecked, and where.
     severity: "warning",
+    ...aboutRule(gap.owner, options),
   };
 }
 
@@ -410,12 +425,13 @@ function uncheckedFinding(
  * -------------------------------------------------------------------------- */
 
 /** Content and heading rules for one matched pair, without recursion. */
-function checkSection(section: SectionNode, rule: Rule): Finding[] {
+function checkSection(section: SectionNode, rule: Rule, options: MatchOptions): Finding[] {
+  const about = aboutRule(rule, options);
   return [
     ...checkHeading(section, rule.heading),
     ...checkSequence(section, rule.sequence),
     ...checkContains(section, rule.contains),
-  ];
+  ].map((finding) => ({ ...finding, ...about }));
 }
 
 /** Match one level of sections, check each pair, then recurse. */
@@ -428,7 +444,7 @@ export function validateSections(
   const all = [...findings];
 
   for (const match of matches) {
-    all.push(...checkSection(match.section, match.rule));
+    all.push(...checkSection(match.section, match.rule, options));
     all.push(
       ...validateSections(match.section.sections, match.rule.sections, {
         ...options,
@@ -459,30 +475,37 @@ export function validateDocument(
   // The template's own name, for the messages that have to say which template
   // asked. The caller knows it; `title` is the next best thing a file carries.
   const name = options.template ?? template.title ?? "unnamed";
+  const page = pageSection(tree);
+  const matching: MatchOptions = {
+    parent: page,
+    source: options.source,
+    template: options.template,
+    ref: options.ref ?? name,
+    guide: template.guide,
+  };
 
   const findings: Finding[] = pruned.gaps.map((gap) =>
-    uncheckedFinding(tree.format, name, gap),
+    uncheckedFinding(tree.format, name, gap, matching),
   );
 
   // The page is the template's subject. Its content is checked through the
   // `*In` rules rather than the section-shaped ones so that a finding about a
   // page with no heading of its own carries no heading either, instead of the
   // empty string a headless section's title is.
-  const page = pageSection(tree);
   const ctx: RuleContext = {
     heading: page.title || null,
     position: page.position,
   };
-  findings.push(...checkHeading(page, rules.heading));
-  findings.push(...checkSequenceIn(page.children, rules.sequence, ctx));
-  findings.push(...checkContainsIn(page.children, rules.contains, ctx));
+  // The template is the rule for the page's own title and content.
+  const about = aboutRule(rules, matching);
   findings.push(
-    ...validateSections(page.sections, rules.sections, {
-      parent: page,
-      source: options.source,
-      template: options.template,
-    }),
+    ...[
+      ...checkHeading(page, rules.heading),
+      ...checkSequenceIn(page.children, rules.sequence, ctx),
+      ...checkContainsIn(page.children, rules.contains, ctx),
+    ].map((finding) => ({ ...finding, ...about })),
   );
+  findings.push(...validateSections(page.sections, rules.sections, matching));
 
   // Rules fire in rule order, which is not necessarily document order once a
   // template mixes optional sections and subsections. Readers scan a report top

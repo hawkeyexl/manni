@@ -133,6 +133,26 @@ export interface MatchOptions {
   source?: string;
   /** Template within that file. Used only to name the state-cap failure. */
   template?: string;
+  /**
+   * The template's ref, which every finding names beside the rule it is about.
+   * Without it findings carry no `template`.
+   */
+  ref?: string;
+  /** The template's `guide`, carried beside the ref. */
+  guide?: string;
+}
+
+/** The `template` a finding about `rule` carries; `null` is no rule at all. */
+export function aboutRule(rule: Rule | null, options: MatchOptions): Pick<Finding, "template"> {
+  if (options.ref === undefined) return {};
+  return {
+    template: {
+      id: options.ref,
+      rule: rule?.id ?? null,
+      description: rule?.description ?? null,
+      guide: options.guide ?? null,
+    },
+  };
 }
 
 /* -------------------------------------------------------------------------- *
@@ -961,6 +981,7 @@ export function matchSections(
       message: orderMessage(section, placement.neighbour, placement.after),
       position: section.position,
       severity: "error",
+      ...aboutRule(placement.occ.rule, options),
     };
   };
 
@@ -985,6 +1006,7 @@ export function matchSections(
           message: unexpectedMessage(section),
           position: section.position,
           severity: "error",
+          ...aboutRule(null, options),
         },
       );
       continue;
@@ -1004,6 +1026,7 @@ export function matchSections(
         message: missingGroupMessage(group),
         position: where.position,
         severity: "error",
+        ...aboutRule(group.rule, options),
       });
       continue;
     }
@@ -1014,6 +1037,7 @@ export function matchSections(
       message: missingMessage(step.occ.rule),
       position: where.position,
       severity: "error",
+      ...aboutRule(step.occ.rule, options),
     });
   }
 

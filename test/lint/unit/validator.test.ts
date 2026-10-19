@@ -575,3 +575,154 @@ describe("a warning never changes the exit code", () => {
     expect(run.summary.failed).toBe(0);
   });
 });
+
+/* -------------------------------------------------------------------------- *
+ * The template rule each finding is about (issue #202)
+ * -------------------------------------------------------------------------- */
+
+describe("each finding names the template rule it is about", () => {
+  const GUIDE = "https://example.com/guide_how-to.md";
+  const template: Template = {
+    guide: GUIDE,
+    description: "The page itself.",
+    contains: { paragraphs: { min: 1 } },
+    sections: [
+      {
+        id: "overview",
+        heading: "Overview",
+        description: "Say what the task does.",
+        contains: { paragraphs: { min: 2 } },
+      },
+      { id: "steps", heading: "Steps", max: 1, description: "List the steps." },
+      { id: "see-also", heading: "See also", description: "Link onward." },
+    ],
+  };
+  const ref = "house.yaml#how-to";
+
+  /** The one finding of `type`, which the test expects to be there. */
+  const only = (findings: Finding[], type: string): Finding => {
+    const hits = findings.filter((f) => f.type === type);
+    expect(hits, `${type} in ${types(findings).join(", ")}`).toHaveLength(1);
+    return at(hits, 0, type);
+  };
+
+  const findingsFor = (sections: SectionNode[]) =>
+    validateDocument(tree(sections), template, { ref, kinds: BASIC });
+
+  const page = findingsFor([
+    section({ title: "Overview", line: 1, children: [paragraph("One.", 2)] }),
+    section({ title: "Stepz", line: 3 }),
+  ]);
+
+  it("names the missing rule on missing_section", () => {
+    expect(only(page, "missing_section").template).toEqual({
+      id: ref,
+      rule: "see-also",
+      description: "Link onward.",
+      guide: GUIDE,
+    });
+  });
+
+  it("names the rule a coerced section was paired with on heading_error", () => {
+    expect(only(page, "heading_error").template?.rule).toBe("steps");
+  });
+
+  it("names the matched rule on a section's count error", () => {
+    const counts = page.filter((f) => f.type === "paragraphs_count_error");
+    const onOverview = counts.find((f) => f.heading === "Overview");
+    expect(onOverview?.template).toEqual({
+      id: ref,
+      rule: "overview",
+      description: "Say what the task does.",
+      guide: GUIDE,
+    });
+  });
+
+  it("names the template itself for the page's own content", () => {
+    const counts = page.filter((f) => f.type === "paragraphs_count_error");
+    const onPage = counts.find((f) => f.heading === null);
+    expect(onPage?.template).toEqual({
+      id: ref,
+      rule: null,
+      description: "The page itself.",
+      guide: GUIDE,
+    });
+  });
+
+  it("names the rule that accepts a misplaced section on section_order", () => {
+    const findings = findingsFor([
+      section({ title: "Overview", line: 1, children: [paragraph("a", 2), paragraph("b", 3)] }),
+      section({ title: "See also", line: 4 }),
+      section({ title: "Steps", line: 5 }),
+    ]);
+    const order = only(findings, "section_order");
+    const expected = order.heading === "Steps" ? "steps" : "see-also";
+    expect(order.template?.rule).toBe(expected);
+  });
+
+  it("names no rule on unexpected_section, but still the template and its guide", () => {
+    const findings = validateDocument(
+      tree([section({ title: "Overview", line: 1 }), section({ title: "Extra", line: 2 })]),
+      { guide: GUIDE, sections: [{ id: "overview", heading: "Overview" }] },
+      { ref, kinds: BASIC },
+    );
+    expect(only(findings, "unexpected_section").template).toEqual({
+      id: ref,
+      rule: null,
+      description: null,
+      guide: GUIDE,
+    });
+  });
+
+  it("names the repeat group's rule on missing_group", () => {
+    const findings = validateDocument(
+      tree([section({ title: "Overview", line: 1 })]),
+      {
+        sections: [
+          { id: "overview", heading: "Overview" },
+          { id: "tasks", description: "One task each.", repeat: [{ heading: "Task" }, { heading: "Result" }] },
+        ],
+      },
+      { ref, kinds: BASIC },
+    );
+    expect(only(findings, "missing_group").template).toEqual({
+      id: ref,
+      rule: "tasks",
+      description: "One task each.",
+      guide: null,
+    });
+  });
+
+  it("names the rule that could not be checked on unsupported_content_kind", () => {
+    const findings = validateDocument(
+      tree([section({ title: "Overview", line: 1 })]),
+      { sections: [{ id: "overview", heading: "Overview", contains: { tables: { min: 1 } } }] },
+      { ref, kinds: BASIC },
+    );
+    expect(only(findings, "unsupported_content_kind").template?.rule).toBe("overview");
+  });
+});
+
+describe("a finding with no template behind it", () => {
+  it("carries template: null for an unknown type and a parse failure", async () => {
+    const unknown = await runLint({
+      inputs: ["-"],
+      as: "markdown",
+      stdinContent: "---\ntype: nope\n---\n# Page\n",
+      noConfig: true,
+    });
+    const finding = at(at(unknown.results, 0, "result").findings, 0, "finding");
+    expect(finding.type).toBe("unknown_type");
+    expect(finding.template).toBeNull();
+
+    const broken = await runLint({
+      inputs: ["-"],
+      as: "xml",
+      stdinContent: "<topic><title>Unclosed",
+      noConfig: true,
+    });
+    const parse = at(at(broken.results, 0, "result").findings, 0, "finding");
+    expect(parse.type).toBe("parse_error");
+    expect(parse.template).toBeNull();
+  });
+});

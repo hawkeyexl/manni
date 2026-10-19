@@ -259,6 +259,28 @@ describe("renderSarif results", () => {
     expect(result.properties).toBeUndefined();
   });
 
+  it("adds the template context lines to the message and the object to properties", () => {
+    const template = {
+      id: "tgdp:how-to:1.6",
+      rule: "see-also",
+      description: "Link to related topics.",
+      guide: "https://example.com/guide_how-to.md",
+    };
+    const result = theRun(sarif([file({ findings: [finding({ template })] })])).results[0];
+    expect(result.message.text).toBe(
+      "Prerequisites: Required section is missing\n" +
+        "tgdp:how-to:1.6 see-also: Link to related topics.\n" +
+        "Guide: https://example.com/guide_how-to.md",
+    );
+    expect(result.properties).toEqual({ heading: "Prerequisites", template });
+  });
+
+  it("leaves the message alone when a finding has no template", () => {
+    const result = theRun(sarif([file({ findings: [finding({ template: null })] })])).results[0];
+    expect(result.message.text).toBe("Prerequisites: Required section is missing");
+    expect(result.properties).toEqual({ heading: "Prerequisites" });
+  });
+
   it("keeps newlines, unlike the one-line github reporter", () => {
     const result = theRun(
       sarif([

@@ -83,6 +83,15 @@ describe.each(manifest.templates)("$id", (entry) => {
     expect(template.types).toEqual(entry.types);
   });
 
+  // Issue #202. The guide an author reads beside each finding is upstream's
+  // own, at the pinned release, for the doctype this template was derived from.
+  it("links upstream's guide for its doctype at the pinned release", async () => {
+    const doctype = entry.source.split("/")[0] ?? "";
+    expect((await loadTemplate(entry.id)).guide).toBe(
+      `${manifest.upstream}/-/blob/${manifest.pin}/${doctype}/guide_${doctype}.md`,
+    );
+  });
+
   // Issue #202. An author reads these under each finding, so every rule says
   // what its section is for, catch-alls and `repeat` members included.
   it("describes the template and every rule in it", async () => {
