@@ -134,8 +134,16 @@ describe("skos reader", () => {
   });
 
   it("reads Turtle on stdin that opens with a blank node as Turtle", async () => {
-    const ttl = `[ <http://www.w3.org/2004/02/skos/core#prefLabel> "Orphan" ] .\n`;
-    await expect(readSkos(ttl, "<stdin>")).resolves.toBeDefined();
+    // Opens with `[`, so a first-byte sniff would take it for JSON. Read as
+    // Turtle, the named concept after the blank node comes back as a term.
+    const skos = "http://www.w3.org/2004/02/skos/core#";
+    const ttl = [
+      `[ <${skos}prefLabel> "Orphan" ] .`,
+      `<https://e.org/v/retry> a <${skos}Concept> ; <${skos}prefLabel> "Retry"@en .`,
+      "",
+    ].join("\n");
+    const { terms } = await readSkos(ttl, "<stdin>");
+    expect(terms.map((t) => [t.id, t.record.label])).toEqual([["retry", "Retry"]]);
   });
 
   it("reports what it did not read, once per predicate per file", async () => {
