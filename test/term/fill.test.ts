@@ -233,6 +233,34 @@ describe("term fill, with a model", () => {
   });
 });
 
+describe("term fill, when the provider cannot run", () => {
+  function configure(provider: string): void {
+    writeFileSync(join(work, "manni.config.yaml"), `${readFileSync(join(work, "manni.config.yaml"), "utf8")}term:\n  provider: ${provider}\n`);
+  }
+
+  it("says why a provider named in config could not run, then writes stubs", async () => {
+    vi.stubEnv("ANTHROPIC_API_KEY", "");
+    configure("anthropic");
+    const notices: string[] = [];
+    const report = await fill({ onNotice: (m) => notices.push(m) });
+    expect(notices).toEqual([
+      'the configured provider "anthropic" could not run: Anthropic provider needs ANTHROPIC_API_KEY set (or choose another provider)',
+    ]);
+    expect(report.summary.withoutDefinition).toBe(2);
+  });
+
+  it("adds no notice under auto, which named no provider", async () => {
+    vi.stubEnv("ANTHROPIC_API_KEY", "");
+    vi.stubEnv("OPENAI_API_KEY", "");
+    vi.stubEnv("PATH", "");
+    configure("auto");
+    const notices: string[] = [];
+    const report = await fill({ onNotice: (m) => notices.push(m) });
+    expect(notices).toEqual([]);
+    expect(report.summary.withoutDefinition).toBe(2);
+  });
+});
+
 describe("term fill --crawl", () => {
   const drafts = [definition("A.", 0.9), definition("B.", 0.9), definition("C.", 0.9)];
 
