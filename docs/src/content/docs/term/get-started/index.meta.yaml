@@ -47,19 +47,22 @@ docs/src/content/docs/term/get-started/index.mdx:
       lines: 138-143
       integrity: sha256-a5ddb16f8ba42bd26024ab4f0a5c9bcc98cb6ecf1e9b9779f3d657df7d0ac851
     - generated-by: Claude Opus 5
-      lines: 145-224
-      integrity: sha256-5f27c15d3dd153dc22d53304cd4504f5c796aae030f1b3689a93f25a5559306e
+      lines: 145-207
+      integrity: sha256-996356980a77e9a02d6979b6e3cd43e221a7857440eda8dd89992ee195a32768
     - generated-by: Claude Opus 5.5
-      lines: 225
-      integrity: sha256-5771e00e3f7d04a0a99c7a264504d45f161936ef4b67f8d775d70e181e394d6d
+      lines: 275-276
+      integrity: sha256-efbc72c855d8f83a11d1921a8c0bb9c52bc727f61cee06bdaf00c87e29f5175b
     - generated-by: Claude Opus 5
-      lines: 226-229
+      lines: 278-293
+      integrity: sha256-39527b7d1bec31fab24999a051265fdfb3bfc48b89232141b334240db2520a0b
+    - generated-by: Claude Opus 5
+      lines: 295-298
       integrity: sha256-0bfd322815c321565abe0845495733053985f58693fbc034ad42c76c24af6aa9
     - generated-by: Claude Opus 5.5
-      lines: 230
+      lines: 299
       integrity: sha256-3f6957d957afa517f8d6d2699cb1d78d72e713d8a0fb0170c1145b18ddce33dc
     - generated-by: Claude Opus 5
-      lines: 231-232
+      lines: 300-301
       integrity: sha256-f42eec30b19a414928406bad9c4721ff57b38b5e881b49d57bd9a2b1599c48f3
   owner:
     - "@hawkeyexl"

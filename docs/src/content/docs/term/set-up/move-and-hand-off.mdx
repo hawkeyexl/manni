@@ -1,6 +1,6 @@
 ---
 title: Move and hand off a termbase
-description: "Read a glossary from any construct manni reads, render it as term pages, a single glossary file, TBX, SKOS, CSV or JSON, see which fields each target keeps, and hand the set to a translation system and read its TBX back."
+description: "Read a glossary from any construct manni reads, render it as term pages, a single glossary file, TBX, SKOS, CSV or JSON, see which fields each target keeps, hand the set to a translation system and read its TBX back, and bring a SKOS concept scheme in and out."
 sidebar:
   order: 2
 type: how-to
@@ -31,10 +31,11 @@ sample-questions:
   - Which fields does each manni term write format keep?
   - What does a round trip through manni term write lose?
   - How do I read a TBX termbase from a translation system into term pages?
+  - How do I bring a SKOS concept scheme into term pages, and write one out?
 graph:
   label: Move and hand off a termbase
   type: task
-last-updated: 2026-10-18
+last-updated: 2026-10-19
 tags:
   - conversion
   - translation
@@ -70,6 +71,7 @@ has nowhere to put a scope note, so no scope note is read from one.
 | Page metadata, `type: term`, in any format | n/a | every field |
 | YAML or JSON manifest under [`term.manifests`](/manni/term/reference/configuration/#a-manifest) | n/a | every field |
 | TBX v2 or v3 entry, in a `.tbx` file | no | every field except `abstract`, `broader`, `narrower`, `related-terms`, `see` and `scope-note`, a term per language |
+| SKOS concept, in a `.ttl` or `.jsonld` file you name or list | no | `label`, `definition`, `alt-labels`, `hidden-labels`, `broader`, `narrower`, `related-terms`, `scope-note`, `notation`, the five match fields, `notes`, `contexts`, a term per language |
 | DITA `<glossentry>` topic | no | `label`, `definition`, `alt-labels`, `scope-note`, `id` |
 | DITA `<glossgroup>` | no | the same, per child `<glossentry>` |
 | DocBook `<glossary>` | no | `label`, `definition`, `alt-labels`, `see`, `related-terms`, `id` |
@@ -275,8 +277,9 @@ PAL
 A definition list has no place for `see`, and an entry with no definition
 reads back as nothing. So `varifocal` is left out, and the run names it. The
 same goes for an AsciiDoc `[glossary]` list, a `.. glossary::` and an HTML
-`<dl>`. DITA, TBX and SKOS drop `see` too. Keep redirects in pages, a
-manifest, DocBook, CSV or JSON.
+`<dl>`. DITA and TBX drop `see` too. SKOS writes a redirect as an alt-label
+of the concept it points to. Keep redirects in pages, a manifest, DocBook, CSV
+or JSON.
 </Aside>
 
 {/* cite dry-run-files-then-notes */}
@@ -307,7 +310,8 @@ does, it prints that the target is up to date.
 | `docbook` | refused | a `<glossary>` | `label`, `definition`, `alt-labels`, `see`, `related-terms`, `id` |
 | `tbx` | refused | TBX v2 | every field except `abstract`, `broader`, `narrower`, `related-terms`, `see`, `scope-note`, `notation` and the five match fields |
 | `tbx3` | refused | TBX v3 | the same as `tbx` |
-| `skos` | refused | a SKOS concept scheme in JSON-LD | the ten SKOS fields except `abstract` and `see` |
+| `skos` | refused | a SKOS concept scheme in JSON-LD | the ten SKOS fields except `abstract`, plus `notation`, the five match fields, `notes` and `contexts`. A `see` entry is an alt-label of its target |
+| `skos-ttl` | refused | a SKOS concept scheme in Turtle | the same as `skos` |
 | `csv` | refused | one row per id | the ten SKOS fields, a column set per language |
 | `json` | refused | `{ "terms": [...] }` | every field |
 | `vale` | the `Terms` style | n/a | see [the generated style](/manni/term/set-up/#the-generated-style) |
@@ -790,6 +794,147 @@ converted between v2's `<bpt>`/`<ept>` and v3's `<sc>`/`<ec>`. `abstract`,
 category, so a TBX render drops them and says so.
 
 Only UTF-8 TBX is read.
+
+## Bring a SKOS scheme in
+
+A taxonomy kept in a thesaurus editor leaves it as SKOS, in Turtle or JSON-LD.
+This one holds two concepts in English and German:
+
+```turtle title="l10n/optics.ttl"
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix ex: <https://example.com/optics/> .
+
+ex: a skos:ConceptScheme ;
+  skos:hasTopConcept ex:spectacle-lens .
+
+ex:spectacle-lens a skos:Concept ;
+  skos:inScheme ex: ;
+  skos:topConceptOf ex: ;
+  skos:prefLabel "spectacle lens"@en, "Brillenglas"@de ;
+  skos:definition "A lens worn in front of the eye to correct vision."@en ;
+  skos:narrower ex:progressive-lens .
+
+ex:progressive-lens a skos:Concept ;
+  skos:inScheme ex: ;
+  skos:prefLabel "progressive lens"@en, "Gleitsichtglas"@de ;
+  skos:altLabel "PAL"@en ;
+  skos:definition "Corrective lenses whose power increases continuously."@en,
+    "Brillenglas mit stufenlos zunehmender Wirkung."@de ;
+  skos:broader ex:spectacle-lens ;
+  skos:notation "OPT-2" ;
+  skos:closeMatch <http://www.wikidata.org/entity/Q1052424> ;
+  skos:changeNote "Definition shortened."@en .
+```
+
+<Steps>
+
+1. **See what is read.** Each concept is a term per language its
+   `skos:prefLabel` holds, with the id its IRI ends in:
+
+   ```console
+   $ manni term list l10n/optics.ttl
+   manni: l10n/optics.ttl: skos:changeNote is not a term field, so 1 value was not read.
+   progressive-lens   de   Gleitsichtglas
+   progressive-lens   en   progressive lens   PAL
+   spectacle-lens     de   Brillenglas
+   spectacle-lens     en   spectacle lens
+   4 terms
+   ```
+
+   A property no term field holds is named once per file on stderr, and the
+   exit code stays `0`. A `.ttl` or `.jsonld` file is read when you name it,
+   or when `term.manifests` lists it. A directory walk never picks one up,
+   because `manni graph build` writes Turtle too. `-` reads one from stdin
+   with `--as skos`.
+
+2. **Look at one term.** A relation holds the id of the concept it points to,
+   and a match holds the IRI as written:
+
+   ```console
+   $ manni term get PAL l10n/optics.ttl
+   manni: l10n/optics.ttl: skos:changeNote is not a term field, so 1 value was not read.
+   progressive lens                        l10n/optics.ttl:1
+     id               progressive-lens
+     language         en
+     alt-labels       PAL
+     broader          spectacle-lens
+     notation         OPT-2
+     close-matches    http://www.wikidata.org/entity/Q1052424
+     definition       Corrective lenses whose power increases continuously.
+     other languages  de (Gleitsichtglas)
+   ```
+
+3. **Render the pages.** A SKOS file is not rewritten in place, so the set
+   moves into pages with `-f`:
+
+   ```console
+   $ manni term write l10n/optics.ttl -f markdown -o docs/glossary/
+   manni: l10n/optics.ttl: skos:changeNote is not a term field, so 1 value was not read.
+   Wrote 4 terms to docs/glossary/, one file each
+   ```
+
+   ```markdown title="docs/glossary/de/progressive-lens.md"
+   ---
+   title: Gleitsichtglas
+   type: term
+   id: progressive-lens
+   language: de
+   label: Gleitsichtglas
+   definition: Brillenglas mit stufenlos zunehmender Wirkung.
+   broader:
+     - spectacle-lens
+   notation: OPT-2
+   close-matches:
+     - http://www.wikidata.org/entity/Q1052424
+   ---
+   ```
+
+</Steps>
+
+`manni term write l10n/optics.ttl` with no `-f` stops with exit `2`:
+
+```
+manni: l10n/optics.ttl: skos:changeNote is not a term field, so 1 value was not read.
+manni: l10n/optics.ttl is SKOS and is not rewritten in place; render it with -f skos or -f skos-ttl.
+```
+
+## Hand a SKOS scheme out
+
+`-f skos-ttl` writes the set as a concept scheme in Turtle, and `-f skos`
+writes the same scheme in JSON-LD. Each id is one concept, with every
+language's labels on it. A concept with no broader one is a top concept of the
+scheme:
+
+```console
+$ manni term write docs/glossary/ -f skos-ttl -o build/optics.ttl
+Wrote 4 terms to build/optics.ttl
+$ cat build/optics.ttl
+@prefix skos: <http://www.w3.org/2004/02/skos/core#>.
+@prefix dcterms: <http://purl.org/dc/terms/>.
+
+<> a skos:ConceptScheme;
+    dcterms:description "Generated by manni term write.";
+    skos:hasTopConcept <#spectacle-lens>.
+<#progressive-lens> a skos:Concept;
+    skos:inScheme <>;
+    skos:prefLabel "Gleitsichtglas"@de, "progressive lens"@en;
+    skos:altLabel "PAL"@en;
+    skos:definition "Brillenglas mit stufenlos zunehmender Wirkung."@de, "Corrective lenses whose power increases continuously."@en;
+    skos:notation "OPT-2";
+    skos:broader <#spectacle-lens>;
+    skos:closeMatch <http://www.wikidata.org/entity/Q1052424>.
+<#spectacle-lens> a skos:Concept;
+    skos:inScheme <>;
+    skos:topConceptOf <>;
+    skos:prefLabel "Brillenglas"@de, "spectacle lens"@en;
+    skos:definition "A lens worn in front of the eye to correct vision."@en;
+    skos:narrower <#progressive-lens>.
+```
+
+The concepts sit at `#<id>` in the document, so a tool that loads the file
+resolves them against its URL. Every field SKOS holds comes back equal when
+the file is read again. `abstract` has no SKOS property, so the render drops it
+and says so.
 
 ## Write back in place
 

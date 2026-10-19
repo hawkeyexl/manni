@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "graph": {
+      "type": "object",
+      "properties": {
+        "concepts": { "$ref": "#/$defs/terms" }
+      }
+    },
+    "role": { "type": "string", "x-manni-term": { "under": "role" } }
+  },
+  "$defs": {
+    "terms": { "type": "array", "items": { "type": "string", "x-manni-term": {} } }
+  }
+}

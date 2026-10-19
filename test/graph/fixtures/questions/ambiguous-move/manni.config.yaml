@@ -1,0 +1,15 @@
+# The ambiguous-move fixture (proposal 0087). `top: 1` keeps the corpus small: the
+# node that answers a question must be the first one found.
+collections:
+  - name: questions
+    paths:
+      - "docs/**/*.*"
+
+graph:
+  baseIri: https://example.com/graph/
+  out: graph.ttl
+  build:
+    derive: [frontmatter, sections]
+  check:
+    questions:
+      top: 1

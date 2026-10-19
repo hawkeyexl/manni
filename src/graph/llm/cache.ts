@@ -5,8 +5,8 @@
  * content.
  */
 import { JsonCache, buildCacheKey, sha256 } from "@hawkeyexl/inference";
-import type { FillField } from "../core/config.js";
-import { PROMPT_VERSION } from "./prompt.js";
+import type { GraphFillField as FillField } from "../core/config.js";
+import { PROMPT_VERSION, QUESTION_PROMPT_VERSION } from "./prompt.js";
 
 export { sha256 };
 
@@ -29,6 +29,27 @@ export function cacheKey(
     // and a different prompt, so its answer must not be served from a
     // doc-only entry (or the other way round).
     sections ? "sections" : "doc-only",
+  ]);
+}
+
+/**
+ * The key of one question request (proposal 0087): its own prompt, so its own
+ * key. `request` is everything the prompt says besides the text, so a page
+ * whose questions or concepts change asks again.
+ */
+export function questionCacheKey(
+  provider: string,
+  model: string,
+  chunk: string,
+  request: unknown,
+): string {
+  return buildCacheKey([
+    provider,
+    model,
+    `q${QUESTION_PROMPT_VERSION}`,
+    sha256(chunk),
+    "questions",
+    sha256(JSON.stringify(request)),
   ]);
 }
 

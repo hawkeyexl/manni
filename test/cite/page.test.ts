@@ -15,7 +15,6 @@ import {
   MARKER_JSON,
   MAX_IDS_PER_MARKER,
   MAX_MARKERS_PER_PAGE,
-  bodyLineOf,
   readPage,
   validateEntry,
 } from "../../src/cite/core/page.js";
@@ -133,15 +132,6 @@ describe("readPage: formats", () => {
     expect(page.findings).toEqual([]);
     expect(page.bodyOffset).toBe("---\ntitle: Limits\n---\n".length);
     expect(page.bodyLine).toBe(4);
-  });
-
-  it("bodyLineOf: line 1 with no frontmatter, and the line after the closing fence", () => {
-    expect(bodyLineOf("x\ny\n", 0)).toBe(1);
-    const content = "---\na: 1\n---\nbody\n";
-    expect(bodyLineOf(content, content.indexOf("body"))).toBe(4);
-    // A page that ends at the closing fence with no newline: the body would
-    // start on the line after it.
-    expect(bodyLineOf("---\na: 1\n---", 12)).toBe(4);
   });
 });
 

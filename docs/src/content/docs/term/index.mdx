@@ -54,7 +54,7 @@ sample-questions:
 graph:
   label: manni term
   type: concept
-last-updated: 2026-10-18
+last-updated: 2026-10-19
 tags:
   - cli-tool
   - documentation-tools
@@ -92,7 +92,8 @@ A term reaches manni in one of two shapes.
   `<glossary>`, an AsciiDoc `[glossary]` list and a `.. glossary::` directive
   say what they are. A Markdown definition list and an HTML `<dl>` are read
   where the file declares `type: term-set`. A TBX termbase, v2 or v3, holds
-  an entry per concept, and each language in it is a term.
+  an entry per concept, and each language in it is a term. So does a SKOS
+  concept scheme in Turtle or JSON-LD, read when you name it.
 
 ## Six commands
 
@@ -100,7 +101,7 @@ A term reaches manni in one of two shapes.
 |---|---|
 | `manni term list [paths...]` | Lists every entry the set resolves to, with its id, label and alt-labels. |
 | `manni term get <term> [paths...]` | Shows one entry and the line it was read from. |
-| `manni term check [paths...]` | Checks the set and every `concepts:` reference into it, against fourteen rules. |
+| `manni term check [paths...]` | Checks the set and every `concepts:` reference into it, against twenty-two rules. |
 | `manni term lint [paths...]` | Runs Vale over each definition, abstract and scope note. |
 | `manni term write [paths...]` | Writes the set back in place, or renders it as pages, a glossary file, TBX, SKOS, CSV, JSON or a Vale style. |
 | `manni term formats` | Lists the constructs read and written, per format. |
@@ -178,7 +179,7 @@ error. The [configuration reference](/manni/term/reference/configuration/)
 covers the `term:` keys. The
 [terminology reference](/manni/term/reference/terminology/) covers the
 fields, and the [rules reference](/manni/term/reference/rules/) covers the
-fourteen checks.
+twenty-two checks.
 
 ## What manni term checks, and what it doesn't
 
@@ -193,9 +194,10 @@ fourteen checks.
     voice.
   </Card>
   <Card title="It doesn't" icon="close">
-    Read the body of a page for how a term is used. That is what the Vale
-    style `write -f vale` generates is for, run by Vale over the docs. It
-    doesn't judge whether a definition is correct, either.
+    Check how the body of a page uses a term. That is what the Vale style
+    `write -f vale` generates is for, run by Vale over the docs. Only
+    `fill --crawl` reads a body, to propose terms. It doesn't judge whether a
+    definition is correct, either.
   </Card>
 </CardGrid>
 

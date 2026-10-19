@@ -26,7 +26,7 @@ sample-questions:
 graph:
   label: Configuration reference
   type: reference
-last-updated: 2026-10-18
+last-updated: 2026-10-19
 tags:
   - configuration
   - yaml
@@ -114,12 +114,48 @@ it.
 
 | Key | Type | Default | Mirrors | Description |
 |---|---|---|---|---|
-| `manifests` | list of paths | `[]` | none | YAML or JSON manifests, or TBX files, holding entries outside any document. Paths are relative to the config file. Read on every run that loads the config. |
+| `manifests` | list of paths | `[]` | none | YAML or JSON manifests, TBX files, or SKOS files in Turtle or JSON-LD, holding entries outside any document. Paths are relative to the config file. Read on every run that loads the config. |
 | `abstractMaxLength` | non-negative integer | `60` | none | The length, in UTF-16 code units, past which `abstract-too-long` fires. |
 | `baseline` | path | none | `--baseline` | A [baseline](/manni/term/reference/cli/#baselines) file, relative to the config file. Setting it compares every `check` run against the file, without the flag. With `--baseline` and no key, the file is `.manni-term-baseline.json`. |
 | `severity` | mapping | the [defaults](/manni/term/reference/rules/) | none | Per-rule level: `error`, `warning`, `notice` or `off`. Only the rules named change. |
 | `allowEmpty` | boolean | `false` | `--allow-empty` | Treat a missing path, no matched files or no terms as success. The flag wins. |
 | `respectGitignore` | boolean | `true` | `--no-gitignore` | Skip files `.gitignore` covers when expanding directories and globs. The flag wins for one run. |
+| `provider` | string | the family `providers:`, else `auto` | `--provider` | The provider [`term fill`](/manni/term/reference/cli/#term-fill) drafts definitions with. |
+| `model` | string | the provider's default | `--model` | The model `term fill` asks. Needs a provider named here, in `providers:` or on the command line. |
+| `fill.out` | path | the one directory every term page shares | `-o, --out` | Where `term fill` writes new term pages, relative to the config file. |
+| `fill.confidenceThreshold` | number from 0 to 1 | `0.7` | `--confidence` | The confidence a drafted definition, or a crawl candidate, must reach. |
+| `fill.maxTurns` | positive integer or `null` | `null`, unbounded | `--max-turns` | Inference calls per run. A cached answer costs none. |
+| `fill.cacheDir` | path | `.manni/term/cache` | `--no-cache` turns it off | Where the model's answers are kept, relative to the config file. |
+| `fill.crawl.minPages` | positive integer | `2` | none | How many pages a term found by `--crawl` must appear on to get a page. `term check` reads it too, as the pages a `keyword-candidate` needs. |
+
+## Filling the termbase
+
+`term fill` needs no keys. With none, new pages go in the directory the term
+pages already share, and the provider is the family's. Set `fill.out` when the
+termbase has no pages yet, or keeps them in more than one directory.
+
+Before:
+
+```yaml title="manni.config.yaml"
+term:
+  manifests: [terms/legacy.tbx]
+```
+
+After:
+
+```yaml title="manni.config.yaml"
+term:
+  manifests: [terms/legacy.tbx]
+  provider: anthropic
+  model: claude-sonnet-5-5
+  fill:
+    out: docs/glossary/
+    confidenceThreshold: 0.7
+    maxTurns: null
+    cacheDir: .manni/term/cache
+    crawl:
+      minPages: 2
+```
 
 ## A manifest
 
@@ -174,11 +210,28 @@ term:
 [Move and hand off a termbase](/manni/term/set-up/move-and-hand-off/#read-the-termbase-back)
 covers reading TBX, and what a write back keeps.
 
+## A SKOS file
+
+A `term.manifests` path ending in `.ttl` or `.jsonld` is read as a SKOS
+concept scheme, in Turtle or JSON-LD. Each `skos:Concept` is a term per
+language its `skos:prefLabel` holds. A scheme kept in a thesaurus editor can
+sit outside the docs and still be checked with them:
+
+```yaml title="manni.config.yaml"
+term:
+  manifests:
+    - terms.yaml
+    - taxonomy/optics.ttl
+```
+
+[Move and hand off a termbase](/manni/term/set-up/move-and-hand-off/#bring-a-skos-scheme-in)
+covers what is read, and how to write the scheme back out.
+
 ## Severity
 
 {/* cite ten-rules */}
 {/* cite severity-off-drops-rule */}
-`severity:` moves any of the fourteen rules to another level, or turns it off. The
+`severity:` moves any of the twenty-two rules to another level, or turns it off. The
 defaults and each rule's message are on the
 [rules reference](/manni/term/reference/rules/).
 
@@ -218,9 +271,10 @@ manni: manni.config.yaml: term does not carry "vale". Vale's settings live under
 refusal names the key and what it expected:
 
 ```
-manni: Unknown key "maxLength" under term: in manni.config.yaml. Supported keys: manifests, abstractMaxLength, baseline, severity, allowEmpty, respectGitignore.
+manni: Unknown key "maxLength" under term: in manni.config.yaml. Supported keys: manifests, abstractMaxLength, baseline, severity, allowEmpty, respectGitignore, provider, model, fill.
 manni: manni.config.yaml: term.severity.undefined-term "fatal" is not a level. Expected notice | warning | error | off.
 manni: term.abstractMaxLength in manni.config.yaml must be a non-negative integer.
+manni: term.fill.confidenceThreshold in manni.config.yaml must be a number from 0 to 1.
 ```
 
 {/* cite type-error-never-repeats-value */}

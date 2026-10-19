@@ -1,0 +1,11 @@
+{
+    "cat docs/auth.md": "---\ntitle: Auth\n---\n\n# Auth\n",
+    "cat docs-meta.yaml": "# Keys are document paths relative to this config's directory.\ndocs/auth.md:\n  source: internal/auth-design.md\n  jira: PLAT-412\ndocs/billing.md:\n  jira: not-a-ticket\ndocs/ops.md:\n  jira: PLAT-9\n",
+    "cat manni.config.yaml": "# Sidecar fixture (proposal 0034): the private half of a public docset.\nmeta:\n  paths:\n    - \"docs/**/*.md\"\n  sidecars:\n    - file: ./docs-meta.yaml\n      keys: [source, jira]\n  overrides:\n    - files: \"docs/**/*.md\"\n      schemas:\n        - ./private.schema.json\n",
+    "manni meta validate": "Using manni.config.yaml (.)\n\u001b[32m✓\u001b[39m docs/auth.md\n\u001b[31m✗\u001b[39m docs/billing.md\n    \u001b[36m/jira\u001b[39m  must match pattern \"^PLAT-[0-9]+$\"\u001b[2m  (docs-meta.yaml:6)\u001b[22m  \u001b[2m[./private.schema.json]\u001b[22m\n\u001b[31m✗\u001b[39m docs/new.md\n    \u001b[36m(root)\u001b[39m  must have required property 'jira'\u001b[2m  (line 1)\u001b[22m  \u001b[2m[./private.schema.json]\u001b[22m\n\u001b[31m✗\u001b[39m docs/ops.md\n    \u001b[36m/jira\u001b[39m  \"jira\" is owned by sidecar docs-meta.yaml; remove it from the document\u001b[2m  (line 3)\u001b[22m  \u001b[2m[sidecar:owned]\u001b[22m\n\n\u001b[31m4 files checked, 1 passed, 3 failed, 3 errors\u001b[39m\n",
+    "manni meta query": "Using manni.config.yaml (.)\nmanni: \"docs/auth.md\": \"jira\" is owned by sidecar docs-meta.yaml; edit the sidecar file instead.\n",
+    "exits": {
+        "validate": "validate exit=1",
+        "query": "query exit=2"
+    }
+}

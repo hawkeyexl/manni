@@ -29,6 +29,12 @@ export interface FieldHint {
   path: readonly string[];
   kind: "term" | "page";
   values: readonly string[];
+  /**
+   * For a field its schema marks `x-manni-term`: the labels and ids its
+   * check accepts, and the branch they are under, when the mark names one.
+   */
+  accepts?: readonly string[];
+  under?: string;
 }
 
 /** One model proposal, before gating. */
@@ -190,12 +196,10 @@ export interface FillOptions {
   /** Called once when a config governs the run, so the CLI can report it. */
   onConfigLoaded?: (info: ConfigNotice) => void;
   /**
-   * `--offline`: never fetch a remote **schema**. Absent leaves config
+   * `--offline`: no network egress. No remote schema is fetched, no remote
+   * provider runs, and llama-cpp runs only with a model already downloaded;
+   * with none, the run is an operational error. Absent leaves config
    * `offline:` in charge.
-   *
-   * Scoped to schema loading only. It says nothing about the inference
-   * provider, which is a separate network dependency with its own controls
-   * (`--provider mock`, `--dry-run`).
    */
   offline?: boolean;
   /** Restrict proposals to these top-level fields. */

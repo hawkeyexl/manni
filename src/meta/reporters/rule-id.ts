@@ -64,6 +64,18 @@ export const LOCATION_EXTERNAL_RULE = "location:external/location";
  */
 export const LOCATION_PAGE_RULE = "location:page/location";
 
+/**
+ * A value of a field its schema marks `x-manni-term` that names no term
+ * (proposal 0086). Builtin-shaped like `location:external`.
+ */
+export const TERM_UNDEFINED_RULE = "term:undefined/term";
+
+/** A marked value that names a term outside the mark's `under` branch. */
+export const TERM_OUTSIDE_BRANCH_RULE = "term:outside-branch/term";
+
+/** A marked value that names a term by an alt-label. A warning. */
+export const TERM_ALT_LABEL_RULE = "term:alt-label/term";
+
 /** What each reserved rule means, for the consumer's rule listing. */
 export const RESERVED_RULES: Record<string, string> = {
   [LOCATION_EXTERNAL_RULE]:
@@ -74,6 +86,12 @@ export const RESERVED_RULES: Record<string, string> = {
     "A property the schema marks x-manni-encrypt holds a plain value; the page must hold it encrypted.",
   [ENCRYPTED_UNREADABLE_RULE]:
     "A property the schema marks x-manni-encrypt holds a value that does not decrypt under the current key.",
+  [TERM_UNDEFINED_RULE]:
+    "A value of a field the schema marks x-manni-term names no term in the termbase.",
+  [TERM_OUTSIDE_BRANCH_RULE]:
+    "A value of a field the schema marks x-manni-term names a term outside the branch its under names.",
+  [TERM_ALT_LABEL_RULE]:
+    "A value of a field the schema marks x-manni-term names a term by an alt-label; use the label.",
   [PARSE_ERROR_RULE]: "The document's metadata block could not be parsed.",
   [SCHEMA_ERROR_RULE]: "No schema set could be resolved for the document.",
   [EXTERNAL_OWNED_RULE]:

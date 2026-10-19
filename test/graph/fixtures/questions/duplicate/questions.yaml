@@ -1,0 +1,5 @@
+- question: How do I retry a failed upload?
+  answers:
+    - file: docs/retry.md
+      lines: 4
+      integrity: sha256-9899c337f576a14f3150bf2b2dae6ccc69a21eada258658a452f6168bf456a57

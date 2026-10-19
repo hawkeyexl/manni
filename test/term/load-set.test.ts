@@ -119,6 +119,20 @@ describe("loadTermSet", () => {
     ]);
   });
 
+  it("gathers every page's free keywords, but a term page's, on the keywords: line (proposal 0086)", async () => {
+    const root = await tree({
+      "terms/retry.md": "---\ntype: term\nlabel: Retry\nkeywords: [backoff]\n---\n",
+      "guides/net.md": "---\ntitle: Net\nlanguage: de\nkeywords:\n  - retries\n  - ''\n  - timeouts\n---\n",
+      "guides/one.md": "---\nkeywords: retries\n---\n",
+    });
+    const set = await loadTermSet({ run: runFor(root, ["terms", "guides"]), readers: [standIn] });
+    expect(set.keywords).toEqual([
+      { file: "guides/net.md", line: 4, label: "retries", field: "keywords", language: "de" },
+      { file: "guides/net.md", line: 4, label: "timeouts", field: "keywords", language: "de" },
+      { file: "guides/one.md", line: 2, label: "retries", field: "keywords" },
+    ]);
+  });
+
   it("reads graph.concepts only: a kg block contributes no reference (proposal 0063)", async () => {
     const root = await tree({
       "terms/lens.md": "---\ntype: term\nlabel: lens\n---\n",

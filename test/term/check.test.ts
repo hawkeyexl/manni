@@ -40,8 +40,13 @@ function ref(label: string, file = "docs/guides/page.md", line?: number): TermRe
   return line === undefined ? { file, label } : { file, line, label };
 }
 
-function set(terms: Term[], references: TermReference[] = [], blocks: TermBlock[] = []): TermSet {
-  return { terms, references, blocks, notices: [] };
+function set(
+  terms: Term[],
+  references: TermReference[] = [],
+  blocks: TermBlock[] = [],
+  keywords: TermReference[] = [],
+): TermSet {
+  return { terms, references, blocks, keywords, notices: [] };
 }
 
 /** A page's `graph:` block, each field on its own line below the block's. */
@@ -510,9 +515,9 @@ describe("checkTermSet", () => {
         broader: ["resilience"],
         "related-terms": ["timeout"],
       }),
-      term({ label: "Networking", definition: "d" }),
-      term({ label: "Resilience", definition: "d", narrower: ["retry"] }),
-      term({ id: "timeout", label: "Time-out", definition: "d", "alt-labels": ["TTL"] }),
+      term({ label: "Networking", definition: "d", broader: ["Resilience"] }),
+      term({ label: "Resilience", definition: "d", narrower: ["retry", "Networking"] }),
+      term({ id: "timeout", label: "Time-out", definition: "d", "alt-labels": ["TTL"], "related-terms": ["Retry"] }),
     ];
     const refs = terms.map((t) => ref(t.record.label));
 
@@ -897,6 +902,7 @@ describe("checkTermSet", () => {
       "unused-term": ["(none)"],
       "missing-definition": ["definition"],
       "conflicting-matches": ["exact-matches"],
+      "orphan-term": ["(none)"],
     });
   });
 
@@ -927,5 +933,281 @@ describe("checkTermSet", () => {
       ["a.md", 3, "manni:term/undefined-term", 'concepts: "nope" names no entry.'],
       ["a.md", 5, "manni:term/unused-term", "no page's concepts: names this term"],
     ]);
+  });
+});
+
+describe("checkTermSet: the thesaurus rules (proposal 0086 § 4)", () => {
+  const messages = (findings: TermFinding[], rule: TermRule): [string | undefined, number | undefined, string][] =>
+    only(findings, rule).map((f) => [f.id, f.line, f.message]);
+
+  describe("asymmetric-related", () => {
+    it("warns on the entry that omits the other half, at its related-terms line", () => {
+      const terms = [
+        term({ label: "lens", definition: "d", "related-terms": ["Prism"] }),
+        term({ label: "prism", definition: "d", fieldLines: { "related-terms": 7 } }),
+      ];
+      const findings = only(checkTermSet(used(terms)), "asymmetric-related");
+      expect(findings.map((f) => [f.id, f.line, f.severity, f.field, f.message])).toEqual([
+        ["prism", 7, "warning", "related-terms", 'related-terms: omits "lens", which lists this entry as related.'],
+      ]);
+    });
+
+    it("is quiet when both halves are there, by label or id, ignoring case", () => {
+      const terms = [
+        term({ label: "lens", definition: "d", "related-terms": ["PRISM-ID"] }),
+        term({ id: "prism-id", label: "prism", definition: "d", "related-terms": ["Lens"] }),
+      ];
+      expect(only(checkTermSet(used(terms)), "asymmetric-related")).toEqual([]);
+    });
+  });
+
+  describe("related-in-hierarchy", () => {
+    it("warns when a related term is also broader or narrower, at any depth", () => {
+      const terms = [
+        term({ label: "optics", definition: "d", narrower: ["lens"], "related-terms": ["bifocal"] }),
+        term({ label: "lens", definition: "d", broader: ["optics"], narrower: ["bifocal"] }),
+        term({
+          label: "bifocal",
+          definition: "d",
+          broader: ["lens"],
+          "related-terms": ["Optics"],
+          fieldLines: { "related-terms": 9 },
+        }),
+      ];
+      const findings = checkTermSet(used(terms));
+      expect(messages(findings, "related-in-hierarchy")).toEqual([
+        ["bifocal", 9, 'related-terms: "Optics" is also broader than this entry, so keep one of the two.'],
+        ["optics", 1, 'related-terms: "bifocal" is also narrower than this entry, so keep one of the two.'],
+      ]);
+      expect(only(findings, "related-in-hierarchy").map((f) => f.severity)).toEqual(["warning", "warning"]);
+    });
+
+    it("reads a graph block's broader as part of the hierarchy", () => {
+      const terms = [
+        term({ label: "lens", definition: "d", "related-terms": ["optics"] }),
+        term({ label: "optics", definition: "d", "related-terms": ["lens"] }),
+      ];
+      const blocks = [block("lens", { broader: ["optics"] })];
+      const findings = checkTermSet(set(terms, terms.map((t) => ref(t.record.label)), blocks));
+      expect(messages(findings, "related-in-hierarchy")).toEqual([
+        ["lens", 1, 'related-terms: "optics" is also broader than this entry, so keep one of the two.'],
+        ["optics", 1, 'related-terms: "lens" is also narrower than this entry, so keep one of the two.'],
+      ]);
+    });
+  });
+
+  describe("related-siblings", () => {
+    const family = (extra: Partial<Record<"bifocal" | "trifocal", string[]>>): Term[] => [
+      term({ label: "lens", definition: "d", narrower: ["bifocal", "trifocal"] }),
+      term({ label: "bifocal", definition: "d", broader: ["lens"], ...(extra.bifocal ? { "related-terms": extra.bifocal } : {}) }),
+      term({ label: "trifocal", definition: "d", broader: ["lens"], ...(extra.trifocal ? { "related-terms": extra.trifocal } : {}) }),
+    ];
+
+    it("notes a related pair under one broader term once, on the first that lists the other", () => {
+      const findings = checkTermSet(used(family({ bifocal: ["trifocal"], trifocal: ["bifocal"] })));
+      expect(only(findings, "related-siblings").map((f) => [f.id, f.severity, f.message])).toEqual([
+        ["bifocal", "notice", 'related-terms: "trifocal" shares the broader term "lens", which already relates them.'],
+      ]);
+    });
+
+    it("is quiet when two terms share only a deeper ancestor", () => {
+      const terms = [
+        term({ label: "optics", definition: "d", narrower: ["lens", "prism"] }),
+        term({ label: "lens", definition: "d", broader: ["optics"], narrower: ["bifocal"] }),
+        term({ label: "prism", definition: "d", broader: ["optics"], "related-terms": ["bifocal"] }),
+        term({ label: "bifocal", definition: "d", broader: ["lens"], "related-terms": ["prism"] }),
+      ];
+      expect(only(checkTermSet(used(terms)), "related-siblings")).toEqual([]);
+    });
+
+    it("sits on the only entry that lists the other", () => {
+      const findings = checkTermSet(used(family({ trifocal: ["Bifocal"] })));
+      expect(messages(findings, "related-siblings")).toEqual([
+        ["trifocal", 1, 'related-terms: "Bifocal" shares the broader term "lens", which already relates them.'],
+      ]);
+    });
+  });
+
+  describe("label-overlap", () => {
+    it("fires on an alt-label or hidden-label that repeats the entry's own names", () => {
+      const terms = [
+        term({
+          label: "lens",
+          definition: "d",
+          "alt-labels": ["Lens", "optic"],
+          "hidden-labels": ["LENS", "Optic"],
+          fieldLines: { "alt-labels": 4, "hidden-labels": 5 },
+        }),
+      ];
+      const findings = only(checkTermSet(used(terms)), "label-overlap");
+      expect(findings.map((f) => [f.line, f.severity, f.field, f.message])).toEqual([
+        [4, "error", "alt-labels", 'alt-labels: "Lens" repeats this entry\'s label.'],
+        [5, "error", "hidden-labels", 'hidden-labels: "LENS" repeats this entry\'s label.'],
+        [5, "error", "hidden-labels", 'hidden-labels: "Optic" repeats this entry\'s alt-label.'],
+      ]);
+    });
+
+    it("fires on a hidden-label that is another entry's label or alt-label, naming it", () => {
+      const terms = [
+        term({ label: "progressive lens", definition: "d", "alt-labels": ["PAL"], line: 2 }),
+        term({ label: "bifocal", definition: "d", line: 3 }),
+        term({ label: "varifocal", definition: "d", "hidden-labels": ["pal", "Bifocal"] }),
+      ];
+      expect(messages(checkTermSet(used(terms)), "label-overlap")).toEqual([
+        ["varifocal", 1, 'hidden-labels: "Bifocal" is the label of docs/terms/bifocal.md:3.'],
+        ["varifocal", 1, 'hidden-labels: "pal" is an alt-label of docs/terms/progressive-lens.md:2.'],
+      ]);
+    });
+
+    it("lets one spelling stand in two languages", () => {
+      const terms = [
+        term({ label: "API", definition: "d", language: "en" }),
+        term({ label: "Schnittstelle", definition: "d", language: "de", "hidden-labels": ["API"] }),
+      ];
+      expect(only(checkTermSet(used(terms)), "label-overlap")).toEqual([]);
+    });
+  });
+
+  describe("ambiguous-alt-label", () => {
+    it("warns on the later entry sharing an alt-label, naming the first", () => {
+      const terms = [
+        term({ label: "progressive lens", definition: "d", "alt-labels": ["PAL"] }),
+        term({ label: "pluggable auth layer", definition: "d", "alt-labels": ["pal"], fieldLines: { "alt-labels": 4 } }),
+      ];
+      const findings = only(checkTermSet(used(terms)), "ambiguous-alt-label");
+      expect(findings.map((f) => [f.id, f.line, f.severity, f.message])).toEqual([
+        [
+          "pluggable-auth-layer",
+          4,
+          "warning",
+          'alt-labels: "pal" is also an alt-label of docs/terms/progressive-lens.md:1, so a reader can\'t tell which term it means.',
+        ],
+      ]);
+    });
+
+    it("lets one spelling stand in two languages", () => {
+      const terms = [
+        term({ id: "pal", label: "progressive lens", definition: "d", language: "en", "alt-labels": ["PAL"] }),
+        term({ id: "pal", label: "Gleitsichtglas", definition: "d", language: "de", "alt-labels": ["PAL"], file: "de/pal.md" }),
+      ];
+      expect(only(checkTermSet(used(terms)), "ambiguous-alt-label")).toEqual([]);
+    });
+  });
+
+  describe("deprecated-label", () => {
+    it("warns when the label's designation is deprecated or superseded, at the label's line", () => {
+      const terms = [
+        term({
+          label: "lens",
+          definition: "d",
+          designations: [{ term: "Lens", "administrative-status": "deprecated" }],
+          fieldLines: { label: 2 },
+        }),
+        term({ label: "prism", definition: "d", designations: [{ term: "prism", "administrative-status": "Superseded" }] }),
+        term({ label: "optic", definition: "d", designations: [{ term: "optic", "administrative-status": "preferred" }] }),
+      ];
+      const findings = only(checkTermSet(used(terms)), "deprecated-label");
+      const text = (label: string): string =>
+        `label: "${label}" is deprecated in designations, so promote another label or redirect with see:.`;
+      expect(findings.map((f) => [f.id, f.line, f.severity, f.field, f.message])).toEqual([
+        ["lens", 2, "warning", "label", text("lens")],
+        ["prism", 1, "warning", "label", text("prism")],
+      ]);
+    });
+
+    it("is quiet on a redirect", () => {
+      const terms = [
+        term({ label: "lens", see: "optic", designations: [{ term: "lens", "administrative-status": "deprecated" }] }),
+        term({ label: "optic", definition: "d" }),
+      ];
+      expect(only(checkTermSet(used(terms)), "deprecated-label")).toEqual([]);
+    });
+  });
+
+  describe("orphan-term", () => {
+    it("notes an entry with no broader, narrower or related term, once the termbase has a hierarchy", () => {
+      const terms = [
+        term({ label: "lens", definition: "d", narrower: ["bifocal"] }),
+        term({ label: "bifocal", definition: "d", broader: ["lens"] }),
+        term({ label: "prism", definition: "d", "related-terms": ["lens"] }),
+        term({ label: "monocle", definition: "d", line: 3 }),
+        term({ label: "pal", see: "lens" }),
+      ];
+      const findings = only(checkTermSet(used(terms)), "orphan-term");
+      expect(findings.map((f) => [f.id, f.line, f.severity, f.field, f.message])).toEqual([
+        ["monocle", 3, "notice", undefined, "no broader, narrower or related term, so place it in the hierarchy."],
+      ]);
+    });
+
+    it("never fires when the only edges join names no term defines", () => {
+      const terms = [term({ label: "lens", definition: "d" }), term({ label: "monocle", definition: "d" })];
+      const blocks = [block("Optics", { broader: ["Physics"] })];
+      expect(only(checkTermSet(set(terms, terms.map((t) => ref(t.record.label)), blocks)), "orphan-term")).toEqual([]);
+    });
+
+    it("never fires on a flat glossary", () => {
+      const terms = [
+        term({ label: "lens", definition: "d", "related-terms": ["prism"] }),
+        term({ label: "monocle", definition: "d" }),
+      ];
+      expect(only(checkTermSet(used(terms)), "orphan-term")).toEqual([]);
+    });
+
+    it("counts a graph block's edges, and places every language of a placed concept", () => {
+      const terms = [
+        term({ id: "lens", label: "lens", definition: "d", language: "en" }),
+        term({ id: "lens", label: "Linse", definition: "d", language: "de", file: "de/lens.md" }),
+        term({ label: "monocle", definition: "d" }),
+      ];
+      const blocks = [block("lens", { broader: ["optics"] })];
+      const findings = checkTermSet(set(terms, terms.map((t) => ref(t.record.label)), blocks));
+      expect(only(findings, "orphan-term").map((f) => f.id)).toEqual(["monocle"]);
+    });
+  });
+
+  describe("keyword-candidate", () => {
+    const kw = (label: string, file: string, line?: number): TermReference =>
+      line === undefined ? { file, label, field: "keywords" } : { file, line, label, field: "keywords" };
+    const terms = [term({ id: "lens-id", label: "lens", definition: "d", "alt-labels": ["optic"] })];
+
+    it("notes a keyword on enough pages that names no term, once, at its first page", () => {
+      const keywords = [
+        kw("retries", "b.md", 4),
+        kw("Retries", "a.md", 3),
+        kw("retries", "a.md", 3),
+        kw("RETRIES", "c.md"),
+        kw("backoff", "a.md", 3),
+      ];
+      const findings = only(checkTermSet(set(terms, [ref("lens")], [], keywords)), "keyword-candidate");
+      expect(findings.map((f) => [f.file, f.line, f.severity, f.id, f.message])).toEqual([
+        [
+          "a.md",
+          3,
+          "notice",
+          undefined,
+          'keywords: "Retries" is on 3 pages and names no term, so add it to concepts: or run manni term fill --crawl.',
+        ],
+      ]);
+    });
+
+    it("never offers a keyword a term's label, id or alt-label names", () => {
+      const keywords = ["LENS", "lens-id", "Optic"].flatMap((k) => [kw(k, "a.md"), kw(k, "b.md")]);
+      expect(only(checkTermSet(set(terms, [ref("lens")], [], keywords)), "keyword-candidate")).toEqual([]);
+    });
+
+    it("honours minPages", () => {
+      const keywords = [kw("retries", "a.md"), kw("retries", "b.md")];
+      const findings = checkTermSet(set(terms, [ref("lens")], [], keywords), { minPages: 3 });
+      expect(only(findings, "keyword-candidate")).toEqual([]);
+    });
+  });
+
+  it("drops a new rule set to off", () => {
+    const terms = [
+      term({ label: "lens", definition: "d", "alt-labels": ["lens"], "related-terms": ["prism"] }),
+      term({ label: "prism", definition: "d" }),
+    ];
+    const findings = checkTermSet(used(terms), { severity: { "label-overlap": "off", "asymmetric-related": "off" } });
+    expect(findings).toEqual([]);
   });
 });

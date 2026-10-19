@@ -1,0 +1,16 @@
+# The fill-repair fixture (proposal 0087). The pinned answer changed, so fill
+# asks for the passage again and writes the new pin unreviewed.
+collections:
+  - name: questions
+    paths:
+      - "docs/**/*.*"
+
+graph:
+  baseIri: https://example.com/graph/
+  out: graph.ttl
+  build:
+    derive: [frontmatter, sections]
+  fill:
+    fields: [sample-questions]
+    questions:
+      perPage: 1

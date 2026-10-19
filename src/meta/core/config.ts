@@ -498,7 +498,9 @@ export interface DocmetaConfig {
   /**
    * Never fetch a remote schema. A URL reference resolves from the schema
    * cache; an uncached one is an operational error naming the URL. Built-in and
-   * local-file references are unaffected — neither touches the network.
+   * local-file references are unaffected — neither touches the network. `fill`
+   * also runs no remote provider, and llama-cpp only with a model already
+   * downloaded.
    */
   offline?: boolean;
   /**

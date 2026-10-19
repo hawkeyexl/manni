@@ -15,19 +15,35 @@
  *
  * The hierarchy is the concept scheme's (proposal 0086): every term's
  * `broader` and `narrower`, plus every page's `graph:` block. A name on a page
- * resolves as the graph resolves it, by label, then id, then alt-label.
+ * resolves as the graph resolves it, by label, then id, then alt-label. The
+ * thesaurus rules (proposal 0086 § 4) read that union too, and
+ * `keyword-candidate` reads the free `keywords:` of every page loaded.
  */
 import { TERM_RELATION_FIELDS } from "../../shared/reference-fields.js";
-import { DEFAULT_ABSTRACT_MAX_LENGTH } from "./config.js";
+import { DEFAULT_ABSTRACT_MAX_LENGTH, DEFAULT_CRAWL_MIN_PAGES } from "./config.js";
 import { languageKey as language } from "./writers/render-util.js";
 import { resolveSeverity, ruleId } from "./severity.js";
-import { TERM_MATCH_FIELDS, type Term, type TermField, type TermFinding, type TermRule, type TermSet, type TermSeverity } from "../types.js";
+import {
+  TERM_MATCH_FIELDS,
+  type Term,
+  type TermField,
+  type TermFinding,
+  type TermReference,
+  type TermRule,
+  type TermSet,
+  type TermSeverity,
+} from "../types.js";
 
 export interface CheckTermSetOptions {
   severity?: Partial<Record<TermRule, TermSeverity>>;
   /** Default `DEFAULT_ABSTRACT_MAX_LENGTH`. */
   abstractMaxLength?: number;
+  /** The pages a keyword needs to be a `keyword-candidate`: `term.fill.crawl.minPages`. Default `DEFAULT_CRAWL_MIN_PAGES`. */
+  minPages?: number;
 }
+
+/** The `administrative-status` values that retire a designation, as 0084 reads them from TBX. */
+const RETIRED_STATUSES: ReadonlySet<string> = new Set(["deprecated", "superseded"]);
 
 /** The fields whose values name other entries. */
 const REFERENCE_FIELDS = TERM_RELATION_FIELDS;
@@ -65,8 +81,10 @@ export function checkTermSet(set: TermSet, opts: CheckTermSetOptions = {}): Term
   const byId = new Map<string, number>();
   const inLanguage = new Map<string, number>();
   const byAlt = new Map<string, number>();
-  // Every entry per folded label, in set order, for the collision rules.
+  // Every entry per folded label, and per folded alt-label, in set order, for
+  // the collision rules.
   const labelled = new Map<string, number[]>();
+  const altHeld = new Map<string, Set<number>>();
   const claim = (map: Map<string, number>, key: string, index: number): void => {
     if (!map.has(key)) map.set(key, index);
   };
@@ -81,6 +99,9 @@ export function checkTermSet(set: TermSet, opts: CheckTermSetOptions = {}): Term
     for (const alt of t.record["alt-labels"] ?? []) {
       claim(byAlt, fold(alt), index);
       claim(inLanguage, `${language(t)} alt ${fold(alt)}`, index);
+      const holders = altHeld.get(fold(alt));
+      if (holders === undefined) altHeld.set(fold(alt), new Set([index]));
+      else holders.add(index);
     }
   });
   /** Whether `t`'s label `a` collides with `other`'s label `b`: within a language when they fold alike, across languages only when their spelling differs too. */
@@ -92,6 +113,16 @@ export function checkTermSet(set: TermSet, opts: CheckTermSetOptions = {}): Term
       if (otherIndex === index || (before && otherIndex > index)) continue;
       const other = terms[otherIndex];
       if (other !== undefined && clash(t, value, other, other.record.label)) return other;
+    }
+    return undefined;
+  };
+  /** As `collider`, against other entries' alt-labels. */
+  const altCollider = (t: Term, index: number, value: string, before: boolean): Term | undefined => {
+    for (const otherIndex of altHeld.get(fold(value)) ?? []) {
+      if (otherIndex === index || (before && otherIndex > index)) continue;
+      const other = terms[otherIndex];
+      const alt = other?.record["alt-labels"]?.find((a) => fold(a) === fold(value));
+      if (other !== undefined && alt !== undefined && clash(t, value, other, alt)) return other;
     }
     return undefined;
   };
@@ -215,6 +246,55 @@ export function checkTermSet(set: TermSet, opts: CheckTermSetOptions = {}): Term
           onEntry(t, "alt-label-collision", `alt-labels: "${alt}" is the label of ${where(owner)}`, "alt-labels"),
         );
       }
+      // label-overlap: an alt-label that repeats the entry's own label.
+      if (fold(alt) === fold(t.record.label)) {
+        drafts.push(onEntry(t, "label-overlap", `alt-labels: "${alt}" repeats this entry's label.`, "alt-labels"));
+      }
+      // ambiguous-alt-label: on each later entry, naming the first.
+      const sharer = altCollider(t, index, alt, true);
+      if (sharer !== undefined) {
+        drafts.push(
+          onEntry(
+            t,
+            "ambiguous-alt-label",
+            `alt-labels: "${alt}" is also an alt-label of ${where(sharer)}, so a reader can't tell which term it means.`,
+            "alt-labels",
+          ),
+        );
+      }
+    }
+
+    // label-overlap: a hidden-label is a name the entry or another one goes by.
+    const ownAlts = new Set((t.record["alt-labels"] ?? []).map(fold));
+    for (const hidden of t.record["hidden-labels"] ?? []) {
+      const labelOf = collider(t, index, hidden, false);
+      const altOf = labelOf === undefined ? altCollider(t, index, hidden, false) : undefined;
+      const overlap =
+        fold(hidden) === fold(t.record.label)
+          ? "repeats this entry's label."
+          : ownAlts.has(fold(hidden))
+            ? "repeats this entry's alt-label."
+            : labelOf !== undefined
+              ? `is the label of ${where(labelOf)}.`
+              : altOf !== undefined
+                ? `is an alt-label of ${where(altOf)}.`
+                : undefined;
+      if (overlap !== undefined) {
+        drafts.push(onEntry(t, "label-overlap", `hidden-labels: "${hidden}" ${overlap}`, "hidden-labels"));
+      }
+    }
+
+    // deprecated-label: the designation of the label itself is retired.
+    const status = t.record.designations?.find((d) => fold(d.term) === fold(t.record.label))?.["administrative-status"];
+    if (t.record.see === undefined && status !== undefined && RETIRED_STATUSES.has(fold(status))) {
+      drafts.push(
+        onEntry(
+          t,
+          "deprecated-label",
+          `label: "${t.record.label}" is deprecated in designations, so promote another label or redirect with see:.`,
+          "label",
+        ),
+      );
     }
 
     // dangling-reference: one finding per value that resolves to nothing.
@@ -276,7 +356,7 @@ export function checkTermSet(set: TermSet, opts: CheckTermSetOptions = {}): Term
   });
 
   // The resolved hierarchy, one edge per pair.
-  const edges = (field: "broader" | "narrower"): Set<number>[] =>
+  const edges = (field: "broader" | "narrower" | "related-terms"): Set<number>[] =>
     terms.map((t) => {
       const targets = new Set<number>();
       for (const value of referenceValues(t, field)) {
@@ -287,6 +367,24 @@ export function checkTermSet(set: TermSet, opts: CheckTermSetOptions = {}): Term
     });
   const broader = edges("broader");
   const narrower = edges("narrower");
+  const related = edges("related-terms");
+
+  // asymmetric-related: on the entry that omits the other half.
+  terms.forEach((t, index) => {
+    for (const other of related[index] ?? []) {
+      const otherTerm = terms[other];
+      if (otherTerm !== undefined && !(related[other]?.has(index) ?? false)) {
+        drafts.push(
+          onEntry(
+            otherTerm,
+            "asymmetric-related",
+            `related-terms: omits "${t.record.label}", which lists this entry as related.`,
+            "related-terms",
+          ),
+        );
+      }
+    }
+  });
 
   // asymmetric-hierarchy: each missing half, on the entry that should carry it.
   terms.forEach((t, index) => {
@@ -393,6 +491,111 @@ export function checkTermSet(set: TermSet, opts: CheckTermSetOptions = {}): Term
         ...(line === undefined ? {} : { line }),
       });
     }
+  }
+
+  // Every concept above a node, at any depth, over the whole union.
+  const ancestors = (start: number): Set<number> => {
+    const seen = new Set<number>();
+    const stack = [...(up[start] ?? [])];
+    for (let next = stack.pop(); next !== undefined; next = stack.pop()) {
+      if (seen.has(next)) continue;
+      seen.add(next);
+      stack.push(...(up[next] ?? []));
+    }
+    return seen;
+  };
+
+  // related-in-hierarchy on the entry that lists the link; related-siblings
+  // once per pair, on the first entry that lists the other.
+  const siblingPairs = new Set<string>();
+  terms.forEach((t, index) => {
+    const above = ancestors(index);
+    const seen = new Set<number>();
+    for (const value of referenceValues(t, "related-terms")) {
+      const other = resolveReference(t, value);
+      if (other === undefined || other === index || seen.has(other)) continue;
+      seen.add(other);
+      const direction = above.has(other) ? "broader" : ancestors(other).has(index) ? "narrower" : undefined;
+      if (direction !== undefined) {
+        drafts.push(
+          onEntry(
+            t,
+            "related-in-hierarchy",
+            `related-terms: "${value}" is also ${direction} than this entry, so keep one of the two.`,
+            "related-terms",
+          ),
+        );
+        continue;
+      }
+      // Z39.19 siblings share an immediate broader term, not just an ancestor.
+      const parent = [...(up[index] ?? [])].find((p) => up[other]?.has(p) ?? false);
+      const pair = `${String(Math.min(index, other))}~${String(Math.max(index, other))}`;
+      if (parent === undefined || siblingPairs.has(pair)) continue;
+      siblingPairs.add(pair);
+      drafts.push(
+        onEntry(
+          t,
+          "related-siblings",
+          `related-terms: "${value}" shares the broader term "${names[parent] ?? ""}", which already relates them.`,
+          "related-terms",
+        ),
+      );
+    }
+  });
+
+  // orphan-term: only once a term sits in the hierarchy at all, so a flat
+  // glossary never hears of it, nor one whose only edges join names no term
+  // defines (those sit past the terms in `names`). A concept is placed in
+  // every language.
+  const isTerm = (index: number): boolean => index < terms.length;
+  if (up.some((parents, child) => isTerm(child) || [...parents].some(isTerm))) {
+    const placed = new Set<string>();
+    const place = (index: number | undefined): void => {
+      if (index === undefined) return;
+      const t = terms[index];
+      if (t !== undefined) placed.add(fold(t.id));
+    };
+    up.forEach((parents, child) => {
+      place(child);
+      for (const parent of parents) place(parent);
+    });
+    related.forEach((others, index) => {
+      if (others.size > 0) place(index);
+      for (const other of others) place(other);
+    });
+    for (const block of set.blocks) {
+      for (const edge of block.edges) {
+        if (edge.field !== "related-concepts") continue;
+        place(resolveName(block.label, block.language));
+        place(resolveName(edge.value, block.language));
+      }
+    }
+    for (const t of terms) {
+      if (t.record.see === undefined && !placed.has(fold(t.id))) {
+        drafts.push(onEntry(t, "orphan-term", "no broader, narrower or related term, so place it in the hierarchy."));
+      }
+    }
+  }
+
+  // keyword-candidate: once per keyword, at its first page in sort order.
+  const minPages = opts.minPages ?? DEFAULT_CRAWL_MIN_PAGES;
+  const byKeyword = new Map<string, TermReference[]>();
+  for (const keyword of set.keywords ?? []) {
+    const uses = byKeyword.get(fold(keyword.label));
+    if (uses === undefined) byKeyword.set(fold(keyword.label), [keyword]);
+    else uses.push(keyword);
+  }
+  for (const [key, uses] of byKeyword) {
+    if (byLabel.has(key) || byId.has(key) || byAlt.has(key)) continue;
+    const pages = new Set(uses.map((use) => use.file)).size;
+    const first = [...uses].sort((a, b) => compareText(a.file, b.file) || (a.line ?? 0) - (b.line ?? 0))[0];
+    if (pages < minPages || first === undefined) continue;
+    drafts.push({
+      rule: "keyword-candidate",
+      message: `keywords: "${first.label}" is on ${String(pages)} pages and names no term, so add it to concepts: or run manni term fill --crawl.`,
+      file: first.file,
+      ...(first.line === undefined ? {} : { line: first.line }),
+    });
   }
 
   const findings: TermFinding[] = [];
