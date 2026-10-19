@@ -494,27 +494,27 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         integrity: sha256-f4babb8249ebef95b64565947bf85205707ae07e121ef78f2bb1e5930fb32f93
       source:
         file: src/cite/core/sidecar.ts
-        lines: 172-179
+        lines: 176-183
         integrity: sha256-ce34530c329522305158a6f54fc76a9a817ddf7d6db999005531eb11af6c15c9
-        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
+        commit-sha: 7b7c49d360ab5cab83c27e35abe3c8999fce2f81
     - id: url-manifest-may-not-own-citations
       claim:
         lines: 577-579
         integrity: sha256-a0acafceccd3463330e81fb7eb329980a391f22578eafd0a3b985c6e79fdf442
       source:
         file: src/cite/core/sidecar.ts
-        lines: 206-211
+        lines: 210-215
         integrity: sha256-d46775f654bb6e98cb804184b23d749dd7121d8c3509c345b1a9efd71639c2ba
-        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
+        commit-sha: 7b7c49d360ab5cab83c27e35abe3c8999fce2f81
     - id: citation-finding-sits-on-the-manifest
       claim:
         lines: 580-584
         integrity: sha256-dbbc615fad3976bd0457a6300aabd973a03c5150c10b7f3968b41be34d087d18
       source:
         file: src/cite/core/sidecar.ts
-        lines: 343-351
+        lines: 353-361
         integrity: sha256-c090ea05df7887a8c9d4ffb6daccc40f3f486fcac65bb348ada25f5cc0b07fd4
-        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
+        commit-sha: 7b7c49d360ab5cab83c27e35abe3c8999fce2f81
     - id: page-citations-beside-an-owning-manifest-is-invalid
       claim:
         integrity: sha256-c85540d48165f4c20ba7f27b10363e53bf5b923e34bec1f3d28793b39210c158
@@ -2847,9 +2847,9 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         integrity: sha256-7ea791a69f42aa9e880cc2cfdf03a1bd0142a320ea1acaa62a4ccdcd5e7f6082
       source:
         file: src/cite/core/sidecar.ts
-        lines: 189-234
+        lines: 193-238
         integrity: sha256-5357c27ae0453f98915d4fd08236edcce43143769299de71d74913904aba63b0
-        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
+        commit-sha: 7b7c49d360ab5cab83c27e35abe3c8999fce2f81
     - id: meta-defaults-key
       claim:
         lines: 1450

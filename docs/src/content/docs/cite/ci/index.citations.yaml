@@ -90,18 +90,18 @@ docs/src/content/docs/cite/ci/index.mdx:
         integrity: sha256-c55fbb1fe519fc5fb5d48ebe6a8c486b2ec68a9db3b5d8c2b517a7062d625d6f
       source:
         file: src/cite/commands/check.ts
-        lines: 361-363
+        lines: 367-369
         integrity: sha256-d51b978f9fa088753d24578d22c1dbbd55f75f157ec76b756d82b78ad164740e
-        commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e
+        commit-sha: 7b7c49d360ab5cab83c27e35abe3c8999fce2f81
     - id: exit-two-no-inputs
       claim:
         lines: 24
         integrity: sha256-7e96fbbc32f1af5b6e5f4c8ce93c492565b18a8831ae48274fad1d6842056854
       source:
         file: src/cite/commands/check.ts
-        lines: 165-169
+        lines: 170-174
         integrity: sha256-dd1fd746781a236fa50aca4af4a370c3d18e06a6eb84ceda7b7eb3eb133f10cb
-        commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
+        commit-sha: 7b7c49d360ab5cab83c27e35abe3c8999fce2f81
     - id: format-pretty-default
       claim:
         lines: 70
@@ -353,9 +353,9 @@ docs/src/content/docs/cite/ci/index.mdx:
         integrity: sha256-e65fea832a3e2fe3a5a00d2f1b2aea62c897d1cf7020a071e2e822bbc0109392
       source:
         file: src/cite/commands/check.ts
-        lines: 342-345
+        lines: 348-351
         integrity: sha256-df9e2099e2cacae4348d2fafecabf6ffe16e6f7a0c74f462c0d0edd44d388b2a
-        commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e
+        commit-sha: 7b7c49d360ab5cab83c27e35abe3c8999fce2f81
     - id: collections-fallback-no-args
       claim:
         lines: 170-171
@@ -415,9 +415,9 @@ docs/src/content/docs/cite/ci/index.mdx:
         integrity: sha256-381a44b0cd4b1692ac26d6e1407fa0009060cbc8d7bda2f4ebe0eb6f56c9a3d7
       source:
         file: src/cite/commands/check.ts
-        lines: 361-363
+        lines: 367-369
         integrity: sha256-d51b978f9fa088753d24578d22c1dbbd55f75f157ec76b756d82b78ad164740e
-        commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e
+        commit-sha: 7b7c49d360ab5cab83c27e35abe3c8999fce2f81
     - id: baseline-optional-path
       claim:
         lines: 326

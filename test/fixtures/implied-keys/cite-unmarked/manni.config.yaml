@@ -1,0 +1,16 @@
+# Issue #198: a keyless manifest joined on id, under schemas that mark
+# personas external and citations not at all. The manifest keeps no page's
+# citations, so its entries are meta's, and cite must still see the page that
+# carries each id.
+meta:
+  defaults: false
+  schemas:
+    - manni:core:1.0.0
+    - manni:stewardship:1.1.0
+    - manni:audience:1.0.0
+collections:
+  - name: site
+    paths: ["docs/**/*.md"]
+    externalMetadata:
+      - file: ./docs.metadata.yaml
+        join: id

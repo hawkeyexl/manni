@@ -249,8 +249,11 @@ docs/src/content/docs/cite/reference/citations.mdx:
       lines: 474-475
       integrity: sha256-56c5925a2a64495a2b178dbb3a5ab964e16279dd2fcc8572253da6d14f757122
     - generated-by: Claude Fable 5.1
-      lines: 476-489
-      integrity: sha256-5797848a4ec71d503a858e2820ecc1d1cb75c6824d2aeff02997c2afd672c00a
+      lines: 476-487
+      integrity: sha256-ae6326942e48e6fe84b39be511896b27ac5e3635b0b71209b11092aa70d7c822
+    - generated-by: Claude Fable 5.1
+      lines: 489
+      integrity: sha256-a2650d444a13d9c2c2b251d02e18458dc0a573726c1f62b11b468900dcb6d9aa
     - generated-by: Claude Opus 5
       lines: 491
       integrity: sha256-ce4b329ab246d658766f7a857ec3a4b6dbbe42b275f3c38c05b4956682a44283

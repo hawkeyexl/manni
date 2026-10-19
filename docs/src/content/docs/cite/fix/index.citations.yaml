@@ -656,9 +656,9 @@ docs/src/content/docs/cite/fix/index.mdx:
         integrity: sha256-2ceecd35e11baf9139dfa666f37ea3034f136c5d4601e0886822241e1734cef8
       source:
         file: src/cite/core/sidecar.ts
-        lines: 420-429
+        lines: 430-439
         integrity: sha256-9afb8537d728598c8fb40c46d67f0821d1cd9011e20a185cac8451a9904b48c0
-        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
+        commit-sha: 7b7c49d360ab5cab83c27e35abe3c8999fce2f81
     - id: exit-table-zero
       claim:
         lines: 546
@@ -674,9 +674,9 @@ docs/src/content/docs/cite/fix/index.mdx:
         integrity: sha256-045efe64a562de93f7bf62d08ababbce49159b7992227362e697e0941bed547f
       source:
         file: src/cite/commands/check.ts
-        lines: 361-363
+        lines: 367-369
         integrity: sha256-d51b978f9fa088753d24578d22c1dbbd55f75f157ec76b756d82b78ad164740e
-        commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e
+        commit-sha: 7b7c49d360ab5cab83c27e35abe3c8999fce2f81
     - id: exit-table-one-update
       claim:
         lines: 547
@@ -701,9 +701,9 @@ docs/src/content/docs/cite/fix/index.mdx:
         integrity: sha256-7fb56a40fc34390add7b23de0486c46bd90c891a7a1f96b0bb26119fd1b6c8a9
       source:
         file: src/cite/commands/check.ts
-        lines: 165-169
+        lines: 170-174
         integrity: sha256-dd1fd746781a236fa50aca4af4a370c3d18e06a6eb84ceda7b7eb3eb133f10cb
-        commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
+        commit-sha: 7b7c49d360ab5cab83c27e35abe3c8999fce2f81
     - id: exit-table-two-unknown-format
       claim:
         lines: 548
@@ -728,9 +728,9 @@ docs/src/content/docs/cite/fix/index.mdx:
         integrity: sha256-7fb56a40fc34390add7b23de0486c46bd90c891a7a1f96b0bb26119fd1b6c8a9
       source:
         file: src/cite/core/sidecar.ts
-        lines: 162-165
+        lines: 166-169
         integrity: sha256-60f4e2f84d656eb0e532a8dd12d2afb786d141ae7268cb753b3229a14381d04d
-        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
+        commit-sha: 7b7c49d360ab5cab83c27e35abe3c8999fce2f81
     - id: source-changed-sample
       claim:
         lines: 131-136
