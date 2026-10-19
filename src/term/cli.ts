@@ -1,8 +1,8 @@
 /**
  * The `term` domain's commander program. Mounted by `src/cli.ts` under
  * `manni term`; no entry point of its own. Grammar per proposal 0034: the verbs
- * are `list`, `get`, `check`, `lint`, `write` and `formats`, and there is no
- * default subcommand.
+ * are `list`, `get`, `check`, `lint`, `write`, `fill` and `formats`, and there
+ * is no default subcommand.
  *
  * Follows clig.dev as the family does: primary output to stdout, diagnostics
  * and notices to stderr, colour only on a TTY and never under
@@ -17,6 +17,7 @@ import { fail } from "../shared/run.js";
 import { notice } from "../shared/warn.js";
 import { OMITTED_WHEN_CLEAN, STDIN_TOKEN } from "../meta/internal.js";
 import { runCheck } from "./commands/check.js";
+import { FILL_FORMATS, runFill } from "./commands/fill.js";
 import { FINDING_FORMATS, type FindingFormat, type TermReport } from "./commands/findings.js";
 import { FORMATS_FORMATS, listFormats } from "./commands/formats.js";
 import { GET_FORMATS, runGet } from "./commands/get.js";
@@ -37,6 +38,9 @@ import {
   renderWritePretty,
 } from "./reporters/pretty.js";
 import { renderFindingsSarif } from "./reporters/sarif.js";
+import { renderFillJson, renderFillPretty } from "./reporters/fill.js";
+import { LOCAL_FLAG_HELP } from "../shared/providers.js";
+import { TermError } from "./errors.js";
 
 /** What commander hands every verb that reads terms. */
 interface InputCliOptions {
@@ -69,6 +73,31 @@ interface WriteCliOptions extends InputCliOptions {
   out?: string;
   check?: boolean;
   dryRun?: boolean;
+}
+
+interface FillCliOptions extends InputCliOptions {
+  format: string;
+  out?: string;
+  crawl?: boolean;
+  offline?: boolean;
+  provider?: string;
+  model?: string;
+  local?: boolean;
+  confidence?: number;
+  maxTurns?: number;
+  chunkChars?: number;
+  /** `--no-cache`: `false` when given. */
+  cache: boolean;
+  dryRun?: boolean;
+}
+
+/** A numeric flag in range, or the refusal. `parseFloat("abc")` is NaN, which no range check catches. */
+function numeric(name: string, value: number | undefined, min: number, max: number, integer = false): void {
+  if (value === undefined) return;
+  if (!Number.isFinite(value) || value < min || value > max || (integer && !Number.isInteger(value))) {
+    const kind = integer ? "a whole number" : "a number";
+    throw new TermError(`${name} must be ${kind} between ${String(min)} and ${String(max)}, got ${String(value)}.`);
+  }
 }
 
 /** Colour for a verb's pretty output: off under `--no-color` or `NO_COLOR`, on only for a TTY. */
@@ -285,6 +314,62 @@ export function buildProgram(): Command {
         print(renderWritePretty(report));
         if (report.wiring !== undefined) process.stderr.write(`${renderValeWiring(report.wiring)}\n`);
         process.exitCode = report.check && report.changes.length > 0 ? 1 : 0;
+      } catch (err) {
+        fail(err);
+      }
+    });
+
+  withInputs(
+    program
+      .command("fill")
+      .description("Create term pages for the concepts pages name, and draft missing definitions")
+      .argument("[paths...]", "files, directories, or globs to read (use - for stdin)"),
+  )
+    .option("-o, --out <dir>", "directory for new term pages")
+    .option("--crawl", "also ask the model for terms that page bodies and keywords use")
+    .option("--offline", "no network egress: only a model already downloaded, never a remote provider")
+    .option("--provider <name>", "provider: auto (default), anthropic, openai, claude-cli, llama-cpp")
+    .option("--model <model>", "model override; needs a named provider, from here or config")
+    .option("--local", LOCAL_FLAG_HELP)
+    .option("--confidence <n>", "minimum confidence to write a definition (0-1)", parseFloat)
+    .option("--max-turns <n>", "stop after this many inference calls", parseFloat)
+    .option("--chunk-chars <n>", "characters of page per call under --crawl (default 12000)", parseFloat)
+    .option("--no-cache", "bypass the answer cache")
+    .option("--dry-run", "write nothing; print what would change")
+    .option("-f, --format <format>", `output: ${FILL_FORMATS.join(" | ")}`, "pretty")
+    .addHelpText(
+      "after",
+      [
+        "",
+        "Examples:",
+        "  manni term fill --offline --dry-run         # what is missing, nothing sent",
+        "  manni term fill                             # pages and drafted definitions",
+        "  manni term fill --crawl -o docs/glossary/   # terms no metadata named",
+        "  manni term fill --dry-run -f json           # for a script",
+      ].join("\n"),
+    )
+    .action(async (paths: string[], options: FillCliOptions) => {
+      try {
+        const format = formatChoice(options.format, FILL_FORMATS);
+        numeric("--confidence", options.confidence, 0, 1);
+        numeric("--max-turns", options.maxTurns, 1, Number.MAX_SAFE_INTEGER, true);
+        numeric("--chunk-chars", options.chunkChars, 1, Number.MAX_SAFE_INTEGER, true);
+        const report = await runFill({
+          ...(await coreOptions(paths, options)),
+          ...(options.out === undefined ? {} : { out: options.out }),
+          ...(options.crawl === true ? { crawl: true } : {}),
+          ...(options.offline === true ? { offline: true } : {}),
+          ...(options.provider === undefined ? {} : { provider: options.provider }),
+          ...(options.model === undefined ? {} : { model: options.model }),
+          ...(options.local === true ? { local: true } : {}),
+          ...(options.confidence === undefined ? {} : { confidence: options.confidence }),
+          ...(options.maxTurns === undefined ? {} : { maxTurns: options.maxTurns }),
+          ...(options.chunkChars === undefined ? {} : { chunkChars: options.chunkChars }),
+          ...(options.cache ? {} : { noCache: true }),
+          ...(options.dryRun === true ? { dryRun: true } : {}),
+        });
+        print(format === "json" ? renderFillJson(report) : renderFillPretty(report));
+        process.exitCode = 0;
       } catch (err) {
         fail(err);
       }

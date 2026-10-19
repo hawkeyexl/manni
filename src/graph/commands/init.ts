@@ -48,7 +48,7 @@ out: graph/graph.ttl
 
 # What to derive triples from. Remove entries to opt out.
 build:
-  derive: [frontmatter, sections, links, tags, images, code, provenance]
+  derive: [frontmatter, sections, links, tags, images, code, provenance, terms]
 
 # PROV-O settings. Git history is detected, not switched: per-file dates and
 # author agents, rename -> prov:wasRevisionOf, and the build activity's HEAD
@@ -66,7 +66,7 @@ provenance:
 # stewardship people fields (owner, stakeholders, reviewed-by) out.
 
 # SHACL shapes \`manni graph check\` validates the built graph against. Default:
-# the shapes contract bundled with manni (shapes/graph/shapes-1.0.0.ttl).
+# the shapes contract bundled with manni (shapes/graph/shapes-1.1.0.ttl).
 # check:
 #   shapes: ["./my-shapes.ttl"]
 
@@ -85,7 +85,7 @@ provenance:
 # provider: anthropic          # auto | anthropic | openai | claude-cli | llama-cpp
 # model: claude-sonnet-4-5     # the provider's default when omitted
 
-# LLM settings for \`manni graph fill\` (SKOS frontmatter proposals).
+# LLM settings for \`manni graph fill\` (SKOS frontmatter proposals and sample questions).
 fill:
   temperature: 0
   # Stop after this many inference calls. One page is one turn, and a cached
@@ -104,6 +104,13 @@ fill:
   # Also propose per-section metadata. Off by default: it costs more output per
   # call, and section metadata is explicit-only, so review it as carefully.
   sections: false
+  # Sample questions: draft until a page has perPage, each pinned to the lines
+  # that answer it. A question request sends at most chunkChars of a page.
+  questions:
+    perPage: 3
+  chunkChars: 12000
+  # Send nothing off this machine: only a local model already downloaded.
+  offline: false
 
 # Local embeddings for semantic search (\`manni graph embed\`). Needs the optional
 # peer: npm install @huggingface/transformers

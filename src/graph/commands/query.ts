@@ -24,7 +24,7 @@ export interface QueryOptions {
 export interface QueryMatch {
   s: string;
   p: string;
-  o: { kind: "iri" | "literal"; value: string; datatype?: string };
+  o: { kind: "iri" | "literal"; value: string; datatype?: string; language?: string };
 }
 
 export interface QueryResult {
@@ -58,7 +58,8 @@ export function runQuery(opts: QueryOptions = {}): QueryResult {
           ? {
               kind: "literal",
               value: obj.value,
-              ...(obj.datatype.value !==
+              ...(obj.language !== "" ? { language: obj.language } : {}),
+              ...(obj.language === "" && obj.datatype.value !==
               "http://www.w3.org/2001/XMLSchema#string"
                 ? { datatype: obj.datatype.value }
                 : {}),
@@ -80,7 +81,8 @@ export function runQuery(opts: QueryOptions = {}): QueryResult {
       byCodeUnit(a.s, b.s) ||
       byCodeUnit(a.p, b.p) ||
       byCodeUnit(a.o.kind, b.o.kind) ||
-      byCodeUnit(a.o.value, b.o.value),
+      byCodeUnit(a.o.value, b.o.value) ||
+      byCodeUnit(a.o.language ?? "", b.o.language ?? ""),
   );
   return { matches };
 }
@@ -95,7 +97,7 @@ export function renderQuery(
     const o =
       m.o.kind === "iri"
         ? `<${m.o.value}>`
-        : `"${m.o.value}"${m.o.datatype ? `^^${compactIri(m.o.datatype)}` : ""}`;
+        : `"${m.o.value}"${m.o.language ? `@${m.o.language}` : m.o.datatype ? `^^${compactIri(m.o.datatype)}` : ""}`;
     return `<${m.s}> ${compactIri(m.p)} ${o}`;
   });
   lines.push(`\n${result.matches.length} match(es)`);

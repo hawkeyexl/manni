@@ -193,7 +193,9 @@ export function projectPackage(
         null,
       )) {
         const o = q.object;
-        if (o.termType === "Literal") {
+        if (o.termType === "Literal" && o.language !== "") {
+          add(doc, pred, { kind: "literal", value: o.value, language: o.language });
+        } else if (o.termType === "Literal") {
           const dt = o.datatype.value;
           add(doc, pred, lit(o.value, dt !== XSD_STRING ? dt : undefined));
         } else {

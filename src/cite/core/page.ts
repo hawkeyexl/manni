@@ -39,9 +39,11 @@ import type {
 import { isKeyedPin } from "./hash.js";
 import { parseLines, spellSource, tooWide } from "./range.js";
 import { DEFAULT_SEVERITY, ruleId } from "./severity.js";
-import { lineAt, parseStatements } from "./statements.js";
+import { bodyLineOf } from "../../shared/pin.js";
+import { parseStatements } from "./statements.js";
 
 export { MAX_IDS_PER_MARKER } from "./statements.js";
+export { bodyLineOf };
 
 export const MAX_MARKERS_PER_PAGE = 500;
 
@@ -195,14 +197,6 @@ function byLine(a: CitationFinding, b: CitationFinding): number {
   return (a.line ?? Number.MAX_SAFE_INTEGER) - (b.line ?? Number.MAX_SAFE_INTEGER);
 }
 
-/** File line of body line 1: the first line after the frontmatter, or 1. */
-export function bodyLineOf(content: string, bodyOffset: number): number {
-  if (bodyOffset <= 0) return 1;
-  const line = lineAt(content, bodyOffset);
-  // A page that ends at the closing fence with no newline leaves the body
-  // starting on the line after the one the offset sits at the end of.
-  return content.charCodeAt(bodyOffset - 1) === 10 ? line : line + 1;
-}
 
 /**
  * A page's citation entries as they are written, each with where it sits: the

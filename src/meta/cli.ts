@@ -1361,7 +1361,7 @@ export function buildProgram(): Command {
     .option("--no-gitignore", "fill files .gitignore covers")
     .option(
       "--offline",
-      "never fetch a remote schema; resolve URL refs from the schema cache",
+      "no network egress: no remote schema or provider, and only a model already downloaded",
     )
     .addHelpText(
       "after",

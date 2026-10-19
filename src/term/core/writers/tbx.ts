@@ -18,7 +18,7 @@
  * - anything else: manni's own header, and each TBX source is reported as a
  *   header dropped.
  */
-import { TERM_FIELDS, type MergeConflict, type Term, type TermField, type TermShape, type TermWriter } from "../../types.js";
+import { TERM_FIELDS, TERM_MATCH_FIELDS, type MergeConflict, type Term, type TermField, type TermShape, type TermWriter } from "../../types.js";
 import { exportTbxSource } from "../readers/tbx.js";
 import {
   TBX_V3_NAMESPACE,
@@ -34,7 +34,16 @@ import { conceptGroups, mergeFirst } from "./merge.js";
 import { DEFAULT_LANGUAGE, droppedFields, requireShape } from "./render-util.js";
 
 /** TBX-Basic has no category for these. */
-const NOT_HELD: readonly TermField[] = ["abstract", "broader", "narrower", "related-terms", "see", "scope-note"];
+const NOT_HELD: readonly TermField[] = [
+  "abstract",
+  "broader",
+  "narrower",
+  "related-terms",
+  "see",
+  "scope-note",
+  "notation",
+  ...TERM_MATCH_FIELDS,
+];
 const HOLDS: readonly TermField[] = TERM_FIELDS.filter((field) => !NOT_HELD.includes(field));
 
 /** The designation fields only TBX-Linguist defines. A v3 file carrying one declares itself TBX-Linguist. */

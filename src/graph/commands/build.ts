@@ -9,7 +9,7 @@ import { GraphError } from "../types.js";
 import { analyzeDoc } from "../core/analyze.js";
 import { ANALYZE_CACHE_DIR, AnalyzeCache } from "../core/analyze-cache.js";
 import { loadRunConfig } from "../core/config.js";
-import { deriveGraph } from "../core/derive.js";
+import { deriveGraph, termConceptCount } from "../core/derive.js";
 import {
   assertInputFormat,
   documentBase,
@@ -26,6 +26,8 @@ import { collectGitHistory } from "../core/git.js";
 import { suppressGraphOutput } from "../core/graph-output.js";
 import { openMetaView, withExternalMetadata } from "../core/external.js";
 import { errorMessage } from "../../shared/errors.js";
+import { termLabelSource, type TermLabel } from "../../shared/term-labels.js";
+import { NS, RDF_TYPE } from "../core/vocab.js";
 import pkg from "../../../package.json" with { type: "json" };
 
 export interface BuildOptions extends DocumentInputOptions {
@@ -64,6 +66,12 @@ export interface BuildResult {
   outPath: string;
   docs: number;
   quads: number;
+  /**
+   * The concepts the graph holds, and how many of them the termbase defines
+   * (proposal 0086 §1). `fromTermbase` is 0 when the `terms` derive source
+   * is off or no termbase is set up.
+   */
+  concepts: { total: number; fromTermbase: number };
   /**
    * Non-fatal diagnostics: the build succeeded, but something it would have
    * done by default could not run (see ADR 01010). Rendered to stderr by the
@@ -111,7 +119,14 @@ export async function buildGraph(opts: BuildOptions = {}): Promise<BuiltGraph> {
     if (opts.allowEmpty) {
       // Zero documents is an empty graph, written where the graph goes, so a
       // later step that reads it finds a file rather than a stale one.
-      return { outPath, docs: 0, quads: 0, warnings: [], turtle: emitTurtle([]) };
+      return {
+        outPath,
+        docs: 0,
+        quads: 0,
+        concepts: { total: 0, fromTermbase: 0 },
+        warnings: [],
+        turtle: emitTurtle([]),
+      };
     }
     throw new GraphError(
       `No input files matched: ${documentSetPatterns(config, opts).join(", ")} (cwd: ${cwd})`,
@@ -180,6 +195,27 @@ export async function buildGraph(opts: BuildOptions = {}): Promise<BuiltGraph> {
     }
   }
 
+  // The termbase `manni term check` reads, from the same config, under the
+  // `terms` derive source (proposal 0086 §1). Nothing registers a source
+  // under a library call, and then the graph builds as it always did. A
+  // termbase that cannot be read is `term check`'s failure to report, so the
+  // graph warns once and builds the rest, as it does without git.
+  const source = termLabelSource();
+  let termbase: readonly TermLabel[] = [];
+  if (config.build.derive.includes("terms") && source !== undefined) {
+    try {
+      termbase = await source({
+        cwd,
+        ...(opts.config === undefined ? {} : { configPath: opts.config }),
+        ...(opts.noConfig === true ? { noConfig: true } : {}),
+      });
+    } catch (e) {
+      warnings.push(
+        `the graph holds no termbase concepts: the termbase could not be read — ${errorMessage(e)}`,
+      );
+    }
+  }
+
   const quads = deriveGraph(docs, {
     baseIri: config.baseIri,
     derive: config.build.derive,
@@ -188,9 +224,15 @@ export async function buildGraph(opts: BuildOptions = {}): Promise<BuiltGraph> {
     toolVersion: pkg.version,
     gitHistory,
     qualified: config.provenance.qualified,
+    termbase,
   });
+  const concept = `${NS.skos}Concept`;
+  const concepts = {
+    total: quads.filter((q) => q.p === RDF_TYPE && q.o.value === concept).length,
+    fromTermbase: termConceptCount(termbase),
+  };
   const turtle = emitTurtle(quads);
   await cache.flush();
 
-  return { outPath, docs: docs.length, quads: quads.length, warnings, turtle };
+  return { outPath, docs: docs.length, quads: quads.length, concepts, warnings, turtle };
 }

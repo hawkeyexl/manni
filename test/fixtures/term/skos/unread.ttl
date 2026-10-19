@@ -1,0 +1,20 @@
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix ex: <https://example.com/optics/> .
+
+ex:lens a skos:Concept ;
+  skos:prefLabel "lens"@en, "Linse"@de ;
+  skos:altLabel "lentille"@fr ;
+  skos:definition "A shaped piece of glass."@en, "A curved piece of glass."@en ;
+  skos:changeNote "Added."@en, "Reworded."@en ;
+  dcterms:created "2026-01-01" .
+
+ex:prism a skos:Concept ;
+  skos:prefLabel "prism"@en ;
+  skos:broader "lens" ;
+  skos:changeNote "Added."@en .
+
+ex:unlabelled a skos:Concept ;
+  skos:definition "Nothing names it."@en .
+
+ex:not-a-concept skos:prefLabel "ignored"@en .

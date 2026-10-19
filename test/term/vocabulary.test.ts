@@ -632,3 +632,44 @@ describe("manni:terminology:1.1.0, validating pages", () => {
     expect(r.ok).toBe(false);
   });
 });
+
+/**
+ * `manni:terminology:1.2.0` (proposal 0086 § 2) adds `notation` and five match
+ * keys, each match an IRI or a list of them. A `type: term` page needs only a
+ * `label` now. `term check` reports a missing definition, and the strict
+ * overlay keeps the requirement.
+ */
+const TERMINOLOGY_120 = "manni:terminology:1.2.0";
+const STRICT_120 = "manni:terminology-strict:1.2.0";
+
+describe("manni:terminology:1.2.0, validating pages", () => {
+  it("accepts a page carrying a notation and every match key, under strict", async () => {
+    const r = await check("mapped-term-1-2-0.md", [CORE, TERMINOLOGY_120, STRICT_120]);
+    expect(r.errors).toEqual([]);
+  });
+
+  it("accepts every 1.1.0 page", async () => {
+    for (const fixture of ["full-term.md", "full-term-1-1-0.md", "redirect-term.md", "unrelated-page.md"]) {
+      const r = await check(fixture, [CORE, TERMINOLOGY_120, STRICT_120]);
+      expect(r.errors, fixture).toEqual([]);
+    }
+  });
+
+  it("requires only a label on a term page, and strict still requires definition or see", async () => {
+    const yaml = "type: term\nlabel: lens";
+    expect((await checkStdin(yaml, [TERMINOLOGY_120])).errors).toEqual([]);
+    const strict = await checkStdin(yaml, [TERMINOLOGY_120, STRICT_120]);
+    expect(strict.ok).toBe(false);
+    for (const e of strict.errors) expect(e.schema).toBe(STRICT_120);
+    expect((await checkStdin("type: term\ndefinition: A lens.", [TERMINOLOGY_120])).ok).toBe(false);
+  });
+
+  it("rejects a match that is not an IRI, a repeated one, and an empty list", async () => {
+    const r = await checkStdin(
+      "type: term\nlabel: lens\nexact-matches: not an iri\nclose-matches: [https://a.example/x, https://a.example/x]\nbroad-matches: []",
+      [TERMINOLOGY_120],
+    );
+    const paths = r.errors.map((e) => e.instancePath);
+    expect(paths).toEqual(expect.arrayContaining(["/exact-matches", "/close-matches", "/broad-matches"]));
+  });
+});

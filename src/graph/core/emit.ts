@@ -77,6 +77,7 @@ function renderTerm(term: Term): string {
   if (term.datatype === INTEGER && INTEGER_RE.test(term.value))
     return term.value;
   const quoted = `"${escapeLiteral(term.value)}"`;
+  if (term.language) return `${quoted}@${term.language}`;
   return term.datatype ? `${quoted}^^${shorten(term.datatype)}` : quoted;
 }
 
@@ -87,7 +88,9 @@ function compareTerms(a: Term, b: Term): number {
   if (byValue !== 0) return byValue;
   const da = a.kind === "literal" ? (a.datatype ?? "") : "";
   const db = b.kind === "literal" ? (b.datatype ?? "") : "";
-  return byCodeUnit(da, db);
+  const la = a.kind === "literal" ? (a.language ?? "") : "";
+  const lb = b.kind === "literal" ? (b.language ?? "") : "";
+  return byCodeUnit(da, db) || byCodeUnit(la, lb);
 }
 
 export function emitTurtle(quads: Quad[]): string {

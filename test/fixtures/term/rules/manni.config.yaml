@@ -1,0 +1,6 @@
+# A termbase and two guides that break every term check rule. The rules
+# reference page's transcript is this fixture's run.
+collections:
+  - name: site
+    paths:
+      - "docs/**/*.md"

@@ -23,6 +23,14 @@
       "type": "string",
       "minLength": 1
     },
+    "questionFiles": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "description": "Golden-set files, relative to the config file. They hold questions that span pages or that the docs don't answer, and `check` asks them beside each page's sample-questions. Default none."
+    },
     "routes": {
       "type": "array",
       "items": {
@@ -72,7 +80,8 @@
               "tags",
               "images",
               "code",
-              "provenance"
+              "provenance",
+              "terms"
             ]
           }
         }
@@ -87,6 +96,26 @@
           "items": {
             "type": "string",
             "minLength": 1
+          }
+        },
+        "questions": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "top": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "severity": {
+              "enum": ["notice", "warning", "error", "off"]
+            },
+            "foundThreshold": {
+              "anyOf": [
+                { "type": "number", "minimum": 0, "maximum": 100 },
+                { "type": "null" }
+              ],
+              "description": "`check` exits 1 when the percentage of reviewed questions found in the top `top` falls below this, 0-100. The same scale as stats.coverageThreshold. Null (the default) sets no rate gate. questions.severity does not touch it."
+            }
           }
         }
       }
@@ -174,6 +203,11 @@
                   "type": "number",
                   "minimum": 0,
                   "maximum": 100
+                },
+                "sample-questions": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 100
                 }
               }
             }
@@ -227,12 +261,33 @@
               "about-product-lifecycle",
               "about-product-aspect",
               "not-applicable-to",
-              "not-about-product-aspect"
+              "not-about-product-aspect",
+              "sample-questions"
             ]
           }
         },
         "sections": {
           "type": "boolean"
+        },
+        "chunkChars": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "The largest body piece one question request sends. Default 12000, as meta fill's. `--chunk-chars` wins over it."
+        },
+        "offline": {
+          "type": "boolean",
+          "description": "Send nothing off this machine: use only a local model that is already downloaded. Default false. `--offline` wins over it."
+        },
+        "questions": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "perPage": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Draft until a page has this many sample questions, reviewed or drafted. Default 3."
+            }
+          }
         }
       }
     },

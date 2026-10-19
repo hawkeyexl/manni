@@ -139,6 +139,18 @@ describe("page", () => {
     expect(terms[0]?.location.fieldLines).toEqual({ label: 3, "alt-labels": 6, broader: 8 });
   });
 
+  it("reads notation as text and each match key as a list, as it reads the label lists", () => {
+    const { terms } = reader("page").read(inputFor("page/matches.md", "markdown"));
+    expect(terms[0]?.record).toEqual({
+      label: "progressive lens",
+      definition: "A lens whose power changes from top to bottom.",
+      notation: "OPT-0412",
+      "exact-matches": ["https://www.wikidata.org/wiki/Q1424588"],
+      "close-matches": ["http://id.loc.gov/authorities/subjects/sh85107289"],
+    });
+    expect(terms[0]?.location.fieldLines).toMatchObject({ notation: 5, "exact-matches": 6, "close-matches": 7 });
+  });
+
   it("reads nothing from a page without type: term", () => {
     expect(reader("page").read(inputFor("page/not-term.md", "markdown"))).toEqual(EMPTY);
   });

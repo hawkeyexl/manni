@@ -1,5 +1,6 @@
-# The clean set, with a guide that names a term by its alt-label:
-# `manni term check` exits 1 with one undefined-term error.
+# The clean set, with a guide that names a term by its alt-label and names
+# one no entry claims: `manni term check` exits 1 with one undefined-term
+# error and one alt-label-reference warning.
 collections:
   - name: site
     paths:

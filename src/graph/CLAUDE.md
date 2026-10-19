@@ -108,9 +108,10 @@ The base IRI for minted nodes defaults to `urn:manni:graph:`.
   feature. A change that alters what the graph contains is not done until the
   shapes say so, in the same commit.
 
-`src/graph/core/shacl.ts` also carries the two SKOS integrity checks core SHACL
-cannot express: `skos:broader` cycles, and `skos:related` conflicting with
-`skos:broaderTransitive`.
+`src/graph/core/shacl.ts` also carries the SKOS integrity checks core SHACL
+cannot express: `skos:broader` cycles, `skos:related` conflicting with
+`skos:broaderTransitive`, and two untagged prefLabels on one concept. It also
+reports a mapping such as `skos:exactMatch` that points into the scheme itself.
 
 ## Two build platforms, and why the runtime stays browser-pure
 

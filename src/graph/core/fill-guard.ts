@@ -71,7 +71,8 @@ function toStore(quads: Quad[]): Store {
           ? DataFactory.namedNode(q.o.value)
           : DataFactory.literal(
               q.o.value,
-              q.o.datatype ? DataFactory.namedNode(q.o.datatype) : undefined,
+              q.o.language ??
+                (q.o.datatype ? DataFactory.namedNode(q.o.datatype) : undefined),
             ),
       ),
     );

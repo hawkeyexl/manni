@@ -61,7 +61,9 @@ function compareTerms(a: Term, b: Term): number {
   if (v !== 0) return v;
   const da = a.kind === "literal" ? (a.datatype ?? "") : "";
   const db = b.kind === "literal" ? (b.datatype ?? "") : "";
-  return byCodeUnit(da, db);
+  const la = a.kind === "literal" ? (a.language ?? "") : "";
+  const lb = b.kind === "literal" ? (b.language ?? "") : "";
+  return byCodeUnit(da, db) || byCodeUnit(la, lb);
 }
 
 export function emitRdfXml(
@@ -112,6 +114,10 @@ export function emitRdfXml(
         if (term.kind === "iri") {
           lines.push(
             `    <${qname} rdf:resource="${escapeAttr(term.value)}"/>`,
+          );
+        } else if (term.language) {
+          lines.push(
+            `    <${qname} xml:lang="${escapeAttr(term.language)}">${escapeText(term.value)}</${qname}>`,
           );
         } else if (term.datatype && term.datatype !== XSD_STRING) {
           lines.push(

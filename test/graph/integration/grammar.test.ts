@@ -22,7 +22,7 @@ const cli = join(root, "dist", "cli.js");
 // and a corpus built inside this checkout would carry HEAD's committer
 // date. See test/graph/helpers/corpus.ts.
 const corpus = detachedCorpus();
-const bundledShapes = join(root, "shapes", "graph", "shapes-1.0.0.ttl");
+const bundledShapes = join(root, "shapes", "graph", "shapes-1.1.0.ttl");
 
 const CONFIG_DOC = "https://example.com/graph/doc/docs/configuration.md";
 
@@ -175,7 +175,7 @@ describe("graph export takes its target as a positional", () => {
   it("refuses an unknown target, naming the three", () => {
     const { status, stderr } = run(["export", "nope", "-g", graph]);
     expect(stderr).toContain(
-      'Unknown export target "nope". Use jsonld | iirds | search.',
+      'Unknown export target "nope". Use jsonld | iirds | search | questions.',
     );
     expect(status).toBe(2);
   });

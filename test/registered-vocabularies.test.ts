@@ -237,3 +237,60 @@ describe("manni:terminology:1.1.0 and its strict overlay", () => {
     expect(strict.description).toEqual(expect.stringContaining("manni:terminology:1.1.0"));
   });
 });
+
+/**
+ * `manni:terminology:1.2.0` (proposal 0086 § 2) is 1.1.0 plus `notation` and
+ * the five match keys, with the `iriList` they share, and with `definition`
+ * no longer required. Its strict overlay is 1.1.0's plus the requirement the
+ * open vocabulary dropped.
+ */
+describe("manni:terminology:1.2.0 and its strict overlay", () => {
+  const ADDED = ["notation", "exact-matches", "close-matches", "broad-matches", "narrow-matches", "related-matches"];
+
+  it("is 1.1.0 plus the mapping keys, requiring label only", async () => {
+    const v110 = await load("manni:terminology:1.1.0");
+    const v120 = await load("manni:terminology:1.2.0");
+    const props = v120.properties as JsonObject;
+    expect(Object.keys(props).filter((key) => !Object.hasOwn(v110.properties as JsonObject, key))).toEqual(ADDED);
+    const { iriList: _iri, ...defs } = v120.$defs as JsonObject;
+    const asOld: JsonObject = {
+      ...v120,
+      properties: Object.fromEntries(Object.entries(props).filter(([key]) => !ADDED.includes(key))),
+      $defs: defs,
+    };
+    const old = withoutProse(v110) as JsonObject;
+    const then = ((old.allOf as JsonObject[])[0] as JsonObject).then as JsonObject;
+    delete then.anyOf;
+    expect(withoutProse(asOld)).toEqual(old);
+  });
+
+  it("takes an IRI or a list of them in each match key, and text in notation", async () => {
+    const v120 = await load("manni:terminology:1.2.0");
+    const props = v120.properties as JsonObject;
+    expect(props.notation).toMatchObject({ type: "string" });
+    for (const key of ADDED.slice(1)) expect(props[key]).toMatchObject({ $ref: "#/$defs/iriList" });
+  });
+
+  it("is the 1.1.0 overlay plus the definition-or-see requirement", async () => {
+    const v110 = await load("manni:terminology-strict:1.1.0");
+    const v120 = await load("manni:terminology-strict:1.2.0");
+    const { allOf, ...rest } = v120;
+    expect(withoutProse(rest)).toEqual(withoutProse(v110));
+    expect(withoutProse(allOf as Json)).toEqual([
+      {
+        if: { properties: { type: { const: "term" } }, required: ["type"] },
+        then: { anyOf: [{ required: ["definition"] }, { required: ["see"] }] },
+      },
+    ]);
+  });
+
+  it("names its neighbours at 1.2.0", async () => {
+    for (const ref of ["manni:terminology:1.2.0", "manni:terminology-strict:1.2.0"]) {
+      const schema = await load(ref);
+      expect(schema.$id).toBe(ref);
+      expect(JSON.stringify(schema)).not.toMatch(/-proposal\.\d|docmeta:|terminology(-strict)?:1\.[01]\.0/);
+    }
+    const strict = await load("manni:terminology-strict:1.2.0");
+    expect(strict.description).toEqual(expect.stringContaining("manni:terminology:1.2.0"));
+  });
+});

@@ -1,0 +1,380 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "manni:terminology-strict:1.2.0",
+  "title": "manni terminology strict overlay v1.2.0",
+  "description": "The strict overlay for manni:terminology:1.2.0. Stack it beside the open vocabulary. It narrows the form of values the open vocabulary already claims. An entry either defines its term or redirects with `see`, so strict requires one of the two on a `type: term` page and rejects a page that carries both. The open vocabulary leaves both cases to `manni term check`. Strict also closes the TBX picklists to the values TBX names, holds a subject field, a designation's term and a link's target to one trimmed line, and requires each `tbx-elements` item to be an element.",
+  "additionalProperties": true,
+  "type": "object",
+  "properties": {
+    "label": {
+      "type": "string",
+      "pattern": "^\\S(?:.*\\S)?$",
+      "description": "Strict holds the preferred label to one line with no surrounding space."
+    },
+    "see": {
+      "type": "string",
+      "pattern": "^\\S(?:.*\\S)?$",
+      "description": "Strict holds the redirect target to one line with no surrounding space, the form a label takes."
+    },
+    "subject-field": {
+      "type": "string",
+      "pattern": "^\\S(?:.*\\S)?$",
+      "description": "Strict holds the subject field to one line with no surrounding space."
+    },
+    "cross-references": {
+      "type": "array",
+      "items": {
+        "if": {
+          "type": "string"
+        },
+        "then": {
+          "pattern": "^\\S(?:.*\\S)?$"
+        },
+        "else": {
+          "properties": {
+            "target": {
+              "type": "string",
+              "pattern": "^\\S(?:.*\\S)?$"
+            }
+          }
+        }
+      },
+      "description": "Strict holds each link's target to one line with no surrounding space."
+    },
+    "external-cross-references": {
+      "type": "array",
+      "items": {
+        "if": {
+          "type": "string"
+        },
+        "then": {
+          "pattern": "^\\S(?:.*\\S)?$"
+        },
+        "else": {
+          "properties": {
+            "target": {
+              "type": "string",
+              "pattern": "^\\S(?:.*\\S)?$"
+            }
+          }
+        }
+      },
+      "description": "Strict holds each link's target to one line with no surrounding space."
+    },
+    "graphics": {
+      "type": "array",
+      "items": {
+        "if": {
+          "type": "string"
+        },
+        "then": {
+          "pattern": "^\\S(?:.*\\S)?$"
+        },
+        "else": {
+          "properties": {
+            "target": {
+              "type": "string",
+              "pattern": "^\\S(?:.*\\S)?$"
+            }
+          }
+        }
+      },
+      "description": "Strict holds each link's target to one line with no surrounding space."
+    },
+    "tbx-elements": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^<"
+      },
+      "description": "Strict requires each item to be an element, starting with `<`."
+    },
+    "concept-entry": {
+      "type": "object",
+      "properties": {
+        "subject-field": {
+          "type": "string",
+          "pattern": "^\\S(?:.*\\S)?$",
+          "description": "Strict holds the subject field to one line with no surrounding space."
+        },
+        "cross-references": {
+          "type": "array",
+          "items": {
+            "if": {
+              "type": "string"
+            },
+            "then": {
+              "pattern": "^\\S(?:.*\\S)?$"
+            },
+            "else": {
+              "properties": {
+                "target": {
+                  "type": "string",
+                  "pattern": "^\\S(?:.*\\S)?$"
+                }
+              }
+            }
+          },
+          "description": "Strict holds each link's target to one line with no surrounding space."
+        },
+        "external-cross-references": {
+          "type": "array",
+          "items": {
+            "if": {
+              "type": "string"
+            },
+            "then": {
+              "pattern": "^\\S(?:.*\\S)?$"
+            },
+            "else": {
+              "properties": {
+                "target": {
+                  "type": "string",
+                  "pattern": "^\\S(?:.*\\S)?$"
+                }
+              }
+            }
+          },
+          "description": "Strict holds each link's target to one line with no surrounding space."
+        },
+        "graphics": {
+          "type": "array",
+          "items": {
+            "if": {
+              "type": "string"
+            },
+            "then": {
+              "pattern": "^\\S(?:.*\\S)?$"
+            },
+            "else": {
+              "properties": {
+                "target": {
+                  "type": "string",
+                  "pattern": "^\\S(?:.*\\S)?$"
+                }
+              }
+            }
+          },
+          "description": "Strict holds each link's target to one line with no surrounding space."
+        },
+        "tbx-elements": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^<"
+          },
+          "description": "Strict requires each item to be an element, starting with `<`."
+        }
+      },
+      "description": "Strict narrows the concept level as it does the root."
+    },
+    "designations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "term": {
+            "type": "string",
+            "pattern": "^\\S(?:.*\\S)?$",
+            "description": "Strict holds the designation to one line with no surrounding space, the form a label takes."
+          },
+          "administrative-status": {
+            "enum": [
+              "preferred",
+              "admitted",
+              "deprecated",
+              "superseded",
+              "none"
+            ],
+            "description": "Strict closes the status to preferred, admitted, deprecated, superseded and none."
+          },
+          "part-of-speech": {
+            "enum": [
+              "adjective",
+              "noun",
+              "other",
+              "verb",
+              "adverb",
+              "properNoun"
+            ],
+            "description": "Strict closes the part of speech to the TBX-Basic picklist."
+          },
+          "grammatical-gender": {
+            "enum": [
+              "masculine",
+              "feminine",
+              "neuter",
+              "other"
+            ],
+            "description": "Strict closes the gender to the TBX picklist."
+          },
+          "grammatical-number": {
+            "enum": [
+              "singular",
+              "plural",
+              "dual",
+              "mass",
+              "otherNumber"
+            ],
+            "description": "Strict closes the number to the TBX picklist."
+          },
+          "term-type": {
+            "enum": [
+              "fullForm",
+              "acronym",
+              "abbreviation",
+              "shortForm",
+              "variant",
+              "phrase"
+            ],
+            "description": "Strict closes the term type to the TBX-Basic picklist."
+          },
+          "term-location": {
+            "enum": [
+              "checkBox",
+              "comboBox",
+              "comboBoxElement",
+              "dialogBox",
+              "groupBox",
+              "informativeMessage",
+              "interactiveMessage",
+              "menuItem",
+              "progressBar",
+              "pushButton",
+              "radioButton",
+              "slider",
+              "spinBox",
+              "tab",
+              "tableText",
+              "textBox",
+              "toolTip",
+              "user-definedType"
+            ],
+            "description": "Strict closes the term location to the TBX-Basic picklist."
+          },
+          "register": {
+            "enum": [
+              "colloquialRegister",
+              "neutralRegister",
+              "technicalRegister",
+              "in-houseRegister",
+              "bench-levelRegister",
+              "slangRegister",
+              "vulgarRegister"
+            ],
+            "description": "Strict closes the register to the TBX picklist."
+          },
+          "subject-field": {
+            "type": "string",
+            "pattern": "^\\S(?:.*\\S)?$",
+            "description": "Strict holds the subject field to one line with no surrounding space."
+          },
+          "cross-references": {
+            "type": "array",
+            "items": {
+              "if": {
+                "type": "string"
+              },
+              "then": {
+                "pattern": "^\\S(?:.*\\S)?$"
+              },
+              "else": {
+                "properties": {
+                  "target": {
+                    "type": "string",
+                    "pattern": "^\\S(?:.*\\S)?$"
+                  }
+                }
+              }
+            },
+            "description": "Strict holds each link's target to one line with no surrounding space."
+          },
+          "external-cross-references": {
+            "type": "array",
+            "items": {
+              "if": {
+                "type": "string"
+              },
+              "then": {
+                "pattern": "^\\S(?:.*\\S)?$"
+              },
+              "else": {
+                "properties": {
+                  "target": {
+                    "type": "string",
+                    "pattern": "^\\S(?:.*\\S)?$"
+                  }
+                }
+              }
+            },
+            "description": "Strict holds each link's target to one line with no surrounding space."
+          },
+          "graphics": {
+            "type": "array",
+            "items": {
+              "if": {
+                "type": "string"
+              },
+              "then": {
+                "pattern": "^\\S(?:.*\\S)?$"
+              },
+              "else": {
+                "properties": {
+                  "target": {
+                    "type": "string",
+                    "pattern": "^\\S(?:.*\\S)?$"
+                  }
+                }
+              }
+            },
+            "description": "Strict holds each link's target to one line with no surrounding space."
+          },
+          "tbx-elements": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^<"
+            },
+            "description": "Strict requires each item to be an element, starting with `<`."
+          }
+        }
+      },
+      "description": "Strict narrows each designation: its term, its picklists, and the aux fields it carries."
+    }
+  },
+  "not": {
+    "required": [
+      "definition",
+      "see"
+    ]
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "term"
+          }
+        },
+        "required": [
+          "type"
+        ]
+      },
+      "then": {
+        "anyOf": [
+          {
+            "required": [
+              "definition"
+            ]
+          },
+          {
+            "required": [
+              "see"
+            ]
+          }
+        ],
+        "description": "A term entry defines its term or redirects with `see`."
+      }
+    }
+  ]
+}

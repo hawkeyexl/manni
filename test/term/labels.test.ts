@@ -13,7 +13,11 @@ const fixtureDir = join(here, "..", "fixtures", "fill", "hints");
 describe("termLabels", () => {
   it("returns the termbase's labels and ids, read as term check reads them", async () => {
     const terms = await termLabels({ cwd: fixtureDir });
-    expect([...terms].sort((a, b) => a.label.localeCompare(b.label))).toEqual([
+    expect(
+      [...terms]
+        .map(({ label, id }) => ({ label, id }))
+        .sort((a, b) => a.label.localeCompare(b.label)),
+    ).toEqual([
       { label: "extractor", id: "metadata-extractor" },
       { label: "schema set", id: "schema-set" },
     ]);
