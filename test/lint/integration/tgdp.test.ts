@@ -82,3 +82,38 @@ describe.each(manifest.templates)("$id", (entry) => {
     expect(template.types).toEqual(entry.types);
   });
 });
+
+// Issue #203. The entry slot is an unbounded wildcard, so before `related`
+// existed it claimed a trailing "See also" whenever no `Commands` section
+// stood between them, and asked it for a table.
+describe("tgdp:reference:1.6 trailing sections", () => {
+  const lint = async (...sections: string[]) => {
+    const content = `# T\n\n## About\n\nWhat this covers.\n\n${sections.join("\n\n")}\n`;
+    const tree = markdownParser.parse(content, "ref.md");
+    const findings = validateDocument(tree, await loadTemplate("tgdp:reference:1.6"));
+    return findings.map((f) => `${f.heading ?? ""}: ${f.message}`);
+  };
+  const entry = "## Fields\n\n| a | b |\n|---|---|\n| 1 | 2 |";
+  const seeAlso = "## See also\n\n- [x](y)";
+
+  it.each(["See also", "Related information", "Related resources", "Notes"])(
+    "accepts a trailing %s with no Commands section",
+    async (heading) => {
+      expect(await lint(entry, `## ${heading}\n\nMore.`)).toEqual([]);
+    },
+  );
+
+  it("accepts a trailing See also after Commands", async () => {
+    expect(await lint(entry, "## Commands\n\nRun it.", seeAlso)).toEqual([]);
+  });
+
+  it("accepts two trailing sections", async () => {
+    expect(await lint(entry, "## Notes\n\nCareful.", seeAlso)).toEqual([]);
+  });
+
+  it("still asks a tableless entry for a table", async () => {
+    expect(await lint(entry, "## Limits\n\nNone.", seeAlso)).toEqual([
+      "Limits: Expected at least 1 table, but found 0",
+    ]);
+  });
+});
