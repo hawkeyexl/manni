@@ -282,6 +282,33 @@ says what each flag is; the ladder shows whether the flags compose into a
 command a person would type. It is where a missing default, an awkward pairing,
 or a parity break with `meta` gets caught before it ships.
 
+**Plans end with an acceptance checklist.** The last section lists every
+artifact and behavior that is in place once the plan is fully built. A reviewer
+holds the finished branch against it and ticks each item off without rereading
+the plan. So each item is a checkable fact about the result, not a task.
+"`manni cite check -f sarif` prints SARIF and exits 1 on a drifted pin" is an
+item. "Add SARIF output" is not. Cover what is new, what changes and what goes
+away:
+
+- each file added, changed or removed, by path;
+- each command, flag and config key, with the behavior to observe and its exit
+  code;
+- each message and output shape from the sections above;
+- the tests and fixtures that pin that behavior;
+- the obligations this file sets elsewhere, such as the reference page and its
+  `docs:check-cli` coverage, a proposal's `Status:` line and the demo video for
+  a `feat:`.
+
+The checklist ships with the work. The PR description carries it under
+`## Acceptance checklist` as a task list, and the CI review checks the diff
+against each item. A plan split across a stack of PRs gives each PR the items
+it delivers.
+
+The interface sections tell the reviewer what to approve. The checklist tells
+them what to verify. Without it, checking a build means rereading the plan and
+searching the diff. The item nobody named, a docs page or a video, is the one
+that gets missed.
+
 ### One separator per list
 
 A list reaches a command in exactly one of three shapes, and a given flag uses
