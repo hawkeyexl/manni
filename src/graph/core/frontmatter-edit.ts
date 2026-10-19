@@ -6,7 +6,15 @@
  * YAML frontmatter only; TOML/JSON frontmatter cannot be edited in place.
  * `writeGraphFields` routes every other format to meta's writer.
  */
-import { Document, YAMLMap, YAMLSeq, isMap, parseDocument } from "yaml";
+import {
+  Document,
+  YAMLMap,
+  YAMLSeq,
+  isCollection,
+  isMap,
+  parseDocument,
+  visit,
+} from "yaml";
 import { GraphError } from "../types.js";
 import { extractorFor, metadataOf, type DocFormat } from "./analyze.js";
 
@@ -156,7 +164,7 @@ export function applyGraphFields(
     });
     const graph = doc.get("graph", true);
     if (isMap(graph)) flowSeqs(graph);
-    let block = doc.toString();
+    let block = doc.toString({ lineWidth: 0 });
     if (eol === "\r\n") block = block.replace(/(?<!\r)\n/g, "\r\n");
     return {
       content: `---${eol}${block}---${eol}${eol}${content}`,
@@ -196,9 +204,33 @@ export function applyGraphFields(
     return { content, applied, skipped };
   }
 
-  let newBlock = doc.toString();
+  // Keep the page's own style: flow padding as the page writes it, and no
+  // folding, so a key the fill does not touch comes back as written.
+  let newBlock = doc.toString({
+    flowCollectionPadding: flowPadding(doc, split.block),
+    lineWidth: 0,
+  });
   if (split.eol === "\r\n") newBlock = newBlock.replace(/(?<!\r)\n/g, "\r\n");
   return { content: split.open + newBlock + split.suffix, applied, skipped };
+}
+
+/**
+ * Whether the page pads its flow collections, the rule meta's writer uses:
+ * `[ a` is padded, `[a` is not, and an empty `[]` says nothing. The first
+ * collection that decides wins. A page with none keeps yaml's default, padded.
+ */
+function flowPadding(doc: Document, block: string): boolean {
+  let padded: boolean | undefined;
+  visit(doc, (_key, node) => {
+    if (!isCollection(node) || node.flow !== true || node.items.length === 0) {
+      return;
+    }
+    if (!node.range) return;
+    const start = node.range[0];
+    padded = /^[[{][ \t]/.test(block.slice(start, start + 2));
+    return visit.BREAK;
+  });
+  return padded ?? true;
 }
 
 /** The proposed values worth writing: no empty value and no empty list. */
