@@ -39,9 +39,9 @@ docs/src/content/docs/a11y/get-started/index.mdx:
         integrity: sha256-a05f5a975e07696a54da8bc0ee1f5992e86da4c4ab2555297bf8320d4f47b25d
       source:
         file: src/a11y/core/analyzer.ts
-        lines: 145-148
+        lines: 146-149
         integrity: sha256-afbde11586384b5b22eebcfc3548f538603de13df38ae3ca8fb083ef742144d3
-        commit-sha: a47a74489105e77a82f35af1613faddc7a0670d9
+        commit-sha: ec343480b7a714b61e5b630df34da58f6c536691
     - id: no-browser-exit-2
       claim:
         integrity: sha256-6fc17d690a173d593ae62170b0fdb81c169999f634caeae1696b052a3d6d3273
