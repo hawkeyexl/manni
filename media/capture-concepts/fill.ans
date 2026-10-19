@@ -1,0 +1,4 @@
+manni: no model is available offline, so new terms have no definition; download one first with --local, or drop --offline.
+created docs/glossary/quota.md   Quota   stub, no definition
+created docs/glossary/retry.md   Retry   stub, no definition
+2 terms created, 0 filled, 2 left without a definition

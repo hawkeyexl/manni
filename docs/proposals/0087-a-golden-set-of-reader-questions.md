@@ -1,6 +1,6 @@
 # 0087: A golden set of reader questions, pinned to their answers
 
-- **Status:** Proposed
+- **Status:** Implemented (#191–#195)
 - **Serves:** Three groups of readers.
   - Maya · M18 and M20. She wants a golden set of the questions readers ask,
     so a search or a docs bot can be held to it.
@@ -27,7 +27,8 @@
   `src/shared/pin.ts`, `src/graph/core/` (`questions.ts` new, `derive.ts`,
   `analyze.ts`, `config-schema.json`, `config.ts`, `coverage.ts`),
   `src/graph/runtime/resolve.ts`, `src/graph/commands/` (`questions.ts`,
-  `check.ts`, `stats.ts`, `fill.ts`, `export.ts`), `src/graph/llm/prompt.ts`,
+  `check.ts`, `stats.ts`, `fill.ts`, `fill-questions.ts` new, `export.ts`),
+  `src/graph/llm/` (`prompt.ts`, `cache.ts`, `provider.ts`),
   `src/graph/cli.ts`, `docs/src/content/docs/`, `test/`
 - **Verdict:** A sample question can pin the lines that answer it, with cite's
   pin, so it fails when the answer changes. A golden-set file holds questions
@@ -377,6 +378,7 @@ graph:
     confidenceThreshold: 0.7
     writeProvenance: true
     chunkChars: 12000      # new; integer >= 1
+    offline: false         # new; boolean
     questions:
       perPage: 3           # new; integer >= 1
 ```
@@ -385,6 +387,17 @@ graph:
 and bounds. Pretty output adds one line per question under its page. JSON
 gains a `questions` list per result, each with an `action` of `drafted`,
 `paired`, `re-paired`, `re-pinned`, `dropped` or `not-paired`.
+
+`--offline` overrides `graph.fill.offline`. It means no egress, as it does for
+`meta fill` and `term fill`, and it reuses their rule and their messages.
+`auto` resolves only to a local model already downloaded, and a hosted
+`--provider` beside it is a usage error. With no local model, only the re-pins
+run. Each page that needed a model is `skipped` as `offline`, and the run
+exits 0 with one warning.
+
+A changed answer in a golden-set file is not re-paired, because `fill` only
+moves that file's lines. Its `check` message therefore keeps `…so re-pin it
+and review it.`, while a page's changed answer names `graph fill`.
 
 ### 5. `graph export questions`
 
@@ -403,8 +416,9 @@ export time, so the source stays pinned, not copied.
 
 The default path is `questions.jsonl` beside the graph, and `-o` overrides it.
 `expected[].id` uses the ids `graph export search` writes, for ID-based
-recall. A gap has `"answerable": false`. Drafts are included with
-`reviewed: false`. A changed answer is exported with `"stale": true`, and one
+recall. It names the node that indexes the answer's first line. A gap has
+`"answerable": false`. Drafts are included with `reviewed: false`. A changed
+answer, or one whose page is gone, is exported with `"stale": true`, and one
 warning names the count. The CLI reference maps the format into Ragas,
 DeepEval and promptfoo datasets.
 

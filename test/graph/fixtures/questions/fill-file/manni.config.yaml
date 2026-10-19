@@ -1,0 +1,18 @@
+# The fill-file fixture (proposal 0087). The golden-set file's first answer
+# moved, and its second has no integrity, so fill re-pins the one and mints
+# the other, with no model. rotate.md is complete at perPage 1.
+collections:
+  - name: questions
+    paths:
+      - "docs/**/*.*"
+
+graph:
+  baseIri: https://example.com/graph/
+  out: graph.ttl
+  questionFiles: [questions.yaml]
+  build:
+    derive: [frontmatter, sections]
+  fill:
+    fields: [sample-questions]
+    questions:
+      perPage: 1

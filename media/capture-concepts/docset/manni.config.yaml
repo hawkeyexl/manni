@@ -1,0 +1,15 @@
+collections:
+  - name: pages
+    paths: ["docs/**/*.md"]
+
+graph:
+  baseIri: https://acme.dev/
+  out: graph.ttl
+  provider: llama-cpp
+  model: granite-4.1-3b-q2
+  fill:
+    questions:
+      perPage: 1
+  check:
+    questions:
+      top: 1

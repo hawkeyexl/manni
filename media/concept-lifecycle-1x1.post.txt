@@ -1,0 +1,11 @@
+Your pages tag concepts freely. Your glossary covers half of them. And the questions your docs promise to answer are written down nowhere a tool can check.
+
+manni term check now fails on a concept no term page defines. manni term fill creates those pages. With a model it drafts the definitions, and with --offline nothing leaves the machine.
+
+The graph takes its concept scheme from that termbase, so one concept is one node, however a page spells it.
+
+Each page can declare the questions it answers. manni graph fill pins each question to the lines that answer it, here with a 3B model running locally on CPU.
+
+Change those lines and manni graph check says so: that answer is no longer where the question was pinned.
+
+#technicalwriting #docsascode #taxonomy #knowledgegraph
