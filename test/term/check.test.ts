@@ -1010,6 +1010,16 @@ describe("checkTermSet: the thesaurus rules (proposal 0086 § 4)", () => {
       ]);
     });
 
+    it("is quiet when two terms share only a deeper ancestor", () => {
+      const terms = [
+        term({ label: "optics", definition: "d", narrower: ["lens", "prism"] }),
+        term({ label: "lens", definition: "d", broader: ["optics"], narrower: ["bifocal"] }),
+        term({ label: "prism", definition: "d", broader: ["optics"], "related-terms": ["bifocal"] }),
+        term({ label: "bifocal", definition: "d", broader: ["lens"], "related-terms": ["prism"] }),
+      ];
+      expect(only(checkTermSet(used(terms)), "related-siblings")).toEqual([]);
+    });
+
     it("sits on the only entry that lists the other", () => {
       const findings = checkTermSet(used(family({ trifocal: ["Bifocal"] })));
       expect(messages(findings, "related-siblings")).toEqual([
@@ -1127,6 +1137,12 @@ describe("checkTermSet: the thesaurus rules (proposal 0086 § 4)", () => {
       expect(findings.map((f) => [f.id, f.line, f.severity, f.field, f.message])).toEqual([
         ["monocle", 3, "notice", undefined, "no broader, narrower or related term, so place it in the hierarchy."],
       ]);
+    });
+
+    it("never fires when the only edges join names no term defines", () => {
+      const terms = [term({ label: "lens", definition: "d" }), term({ label: "monocle", definition: "d" })];
+      const blocks = [block("Optics", { broader: ["Physics"] })];
+      expect(only(checkTermSet(set(terms, terms.map((t) => ref(t.record.label)), blocks)), "orphan-term")).toEqual([]);
     });
 
     it("never fires on a flat glossary", () => {
