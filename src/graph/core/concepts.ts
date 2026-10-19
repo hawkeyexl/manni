@@ -40,7 +40,21 @@ const primary = (tag: string): string => (tag.split("-")[0] ?? "").toLowerCase()
 /** A redirect chain longer than this is a loop, and names nothing. */
 const MAX_REDIRECTS = 8;
 
+/**
+ * Each termbase's index, by the array it was built from: one `graph build`
+ * asks for it twice (the concept count and the derivation), and builds it once.
+ */
+const built = new WeakMap<readonly TermLabel[], TermIndex>();
+
 export function termIndex(terms: readonly TermLabel[]): TermIndex {
+  const cached = built.get(terms);
+  if (cached !== undefined) return cached;
+  const index = buildTermIndex(terms);
+  built.set(terms, index);
+  return index;
+}
+
+function buildTermIndex(terms: readonly TermLabel[]): TermIndex {
   const sorted = [...terms]
     .map((t) => ({ term: t, language: canonicalLanguage(t.language) }))
     .sort(

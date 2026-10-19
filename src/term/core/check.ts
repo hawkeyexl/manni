@@ -84,7 +84,7 @@ export function checkTermSet(set: TermSet, opts: CheckTermSetOptions = {}): Term
   // Every entry per folded label, and per folded alt-label, in set order, for
   // the collision rules.
   const labelled = new Map<string, number[]>();
-  const altHeld = new Map<string, number[]>();
+  const altHeld = new Map<string, Set<number>>();
   const claim = (map: Map<string, number>, key: string, index: number): void => {
     if (!map.has(key)) map.set(key, index);
   };
@@ -100,8 +100,8 @@ export function checkTermSet(set: TermSet, opts: CheckTermSetOptions = {}): Term
       claim(byAlt, fold(alt), index);
       claim(inLanguage, `${language(t)} alt ${fold(alt)}`, index);
       const holders = altHeld.get(fold(alt));
-      if (holders === undefined) altHeld.set(fold(alt), [index]);
-      else if (!holders.includes(index)) holders.push(index);
+      if (holders === undefined) altHeld.set(fold(alt), new Set([index]));
+      else holders.add(index);
     }
   });
   /** Whether `t`'s label `a` collides with `other`'s label `b`: within a language when they fold alike, across languages only when their spelling differs too. */
@@ -513,7 +513,8 @@ export function checkTermSet(set: TermSet, opts: CheckTermSetOptions = {}): Term
   if (up.some((parents) => parents.size > 0)) {
     const placed = new Set<string>();
     const place = (index: number | undefined): void => {
-      const t = terms[index ?? -1];
+      if (index === undefined) return;
+      const t = terms[index];
       if (t !== undefined) placed.add(fold(t.id));
     };
     up.forEach((parents, child) => {
