@@ -121,5 +121,6 @@ describe.skipIf(browser === null)("one page's navigation and the next page (real
       await analyzer.close();
       await server.close();
     }
-  }, 120_000);
+    // Above twenty 10s guards, so a stall reports its own message first.
+  }, 240_000);
 });
