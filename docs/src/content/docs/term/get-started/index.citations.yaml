@@ -229,9 +229,9 @@ docs/src/content/docs/term/get-started/index.mdx:
         integrity: sha256-52028e9fd46da01dc8dd44f7a7c13366864af94d1a68d5016a23e4fbe23ecd7b
       source:
         file: src/term/core/check.ts
-        lines: 598-601
+        lines: 601-604
         integrity: sha256-ac5c04db385a7e23b10575811dd5dcfe302962265aab018985fe3e78ab43f425
-        commit-sha: 9dd4b2441ba8f6c28717a0727dc5c898423749dd
+        commit-sha: 0089eabdbae8c34f6a65fe57024a60d7f24ef697
     - id: ships-with-meta
       claim:
         integrity: sha256-4d4b100f9efa1514978b7bed61225a6ef4843aa13b6019d73dbb9bbd5d90f78d
