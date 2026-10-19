@@ -110,9 +110,9 @@ docs/src/content/docs/term/ci/index.mdx:
         integrity: sha256-9b015819e7092508be074a1a0824ac885cdacae4d19efff3cf47765abe4096a6
       source:
         file: src/term/core/check.ts
-        lines: 164-172
+        lines: 199-207
         integrity: sha256-24200c8215e7460603f94d3087fb99bc2c7f08f3990be19d28da105ccba924c2
-        commit-sha: cf32cb0944109e3009965678faff5455537fba2f
+        commit-sha: 4a6402354961e71777456c12376a14b9cc96840b
     - id: lint-github-same-renderer
       claim:
         integrity: sha256-70c60d6211778341eb324e58c93e8964ed306a1da67ba341946d7ef0c0a143ed
@@ -265,18 +265,18 @@ docs/src/content/docs/term/ci/index.mdx:
         integrity: sha256-4af4bdcec0babfdf53c6f5793bd1d3718f61d07e3d45ea2806d0f9a65bc1376a
       source:
         file: src/term/core/check.ts
-        lines: 167-171
+        lines: 202-206
         integrity: sha256-075801ef34164c4844827f510020defe8b95e8526bebf4082f9b67e58bc6389a
-        commit-sha: cf32cb0944109e3009965678faff5455537fba2f
+        commit-sha: 4a6402354961e71777456c12376a14b9cc96840b
     - id: verify-unused-term-notice
       claim:
         lines: 209
         integrity: sha256-3cd53c77449a0c68df54a4cae7376b308d1ebf40b490a20415021a176dd6d90c
       source:
         file: src/term/core/check.ts
-        lines: 317-320
+        lines: 352-355
         integrity: sha256-954b82577746a6912498b135e7a0dabd737721897d3f6da4c4bbca20d1fad59d
-        commit-sha: cf32cb0944109e3009965678faff5455537fba2f
+        commit-sha: 4a6402354961e71777456c12376a14b9cc96840b
     - id: verify-unused-term-level
       claim:
         lines: 209
