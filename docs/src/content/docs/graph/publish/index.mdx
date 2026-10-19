@@ -13,7 +13,7 @@ concepts:
   - vector sidecar
   - localization manifest
   - x-manni-graph-output
-last-updated: 2026-10-18
+last-updated: 2026-10-19
 ---
 
 The graph is worth more outside CI than inside it. `manni graph export`
@@ -264,6 +264,8 @@ produce something nobody checked.
 {/* step {"description":"iirds writes a conformant package.","runShell":{"command":"manni graph export iirds -c test/graph/fixtures/dd/docs.config.yaml","exitCodes":[0],"stdio":"Wrote"}} */}
 
 {/* step {"description":"search writes the index and the localization manifest.","runShell":{"command":"manni graph export search -c test/graph/fixtures/dd/docs.config.yaml","exitCodes":[0],"stdio":"localizations.json"}} */}
+
+{/* step {"description":"questions writes the question set as JSON Lines.","runShell":{"command":"manni graph export questions -c test/graph/fixtures/dd/docs.config.yaml","exitCodes":[0],"stdio":"/Wrote \\d+ questions/"}} */}
 
 {/* step {"description":"An unknown target is refused with the allowed set named.","runShell":{"command":"manni graph export turtle -c test/graph/fixtures/dd/docs.config.yaml","exitCodes":[2],"stdio":"Use jsonld | iirds | search | questions."}} */}
 

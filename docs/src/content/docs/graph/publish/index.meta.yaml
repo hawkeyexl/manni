@@ -163,7 +163,7 @@ docs/src/content/docs/graph/publish/index.mdx:
       lines: 241-249
       integrity: sha256-1d17504fccd7c48b73ec99419f7d75d037738d92e93cb2d6b44a5fc64390afd4
     - generated-by: Claude Opus 5.5
-      lines: 253
+      lines: 255
       integrity: sha256-9e54c31bd048aca7ee538042d2728aec01fa02f331c9a65d50e790f27d4c4149
   owner:
     - "@hawkeyexl"
