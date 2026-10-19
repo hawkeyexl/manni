@@ -828,8 +828,8 @@ export async function exportSampleQuestions(
   store: Store,
   sources: string,
   view: { source: MetaViewSource; cwd: string },
-  questionFiles: readonly string[] = [],
-  configDir: string = sources,
+  questionFiles: readonly string[],
+  configDir: string,
 ): Promise<{ lines: string[]; stale: number }> {
   const sets = questionFiles.map((label) => ({
     label,
