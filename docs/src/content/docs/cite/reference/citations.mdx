@@ -542,7 +542,7 @@ Refusals follow the metadata tool's rules, and each is exit 2:
 |---|---|
 | A URL manifest that owns `citations`. | cite writes citations, and a URL manifest cannot be written. It would also put private paths in public CI output. |
 | A page in two collections whose manifests both own `citations`. | Two owners for one key, with nothing to say which writes. |
-| Two pages sharing one `join:` value. | The metadata tool's duplicate rule. |
+| Two pages sharing one `join:` value, where the manifest keeps their citations. | The metadata tool's duplicate rule. |
 | A manifest entry naming a page that is gone. | The metadata tool's orphan rule, on a whole-collection run. A `git mv` is the usual cause. |
 
 {/* cite owned-entry-invalid */}
