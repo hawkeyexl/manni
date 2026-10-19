@@ -47,7 +47,7 @@ docs/src/content/docs/meta/ci/recipes.mdx:
         file: src/meta/commands/validate.ts
         lines: 1217-1227
         integrity: sha256-705564be93671f57572066f8b5c65e89e68fc6228453bf1746a821f580d13aa1
-        commit-sha: 5f05739873cc71822eb1e6650ac3ccc937c05d55
+        commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
     - id: recipes-operational-error-exits-2
       claim:
         lines: 11-12

@@ -7,7 +7,7 @@ docs/src/content/docs/meta/reference/schemas/passo-uno-seven-action.mdx:
         file: src/meta/core/resolve-schema.ts
         lines: 30-53
         integrity: sha256-b54808f6b4048bcbfe7769da91fcc4f60324f6a203e1476455e180cc34c89488
-        commit-sha: 5f05739873cc71822eb1e6650ac3ccc937c05d55
+        commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
     - id: taxonomy-only-the-enum-values-validate
       claim:
         integrity: sha256-d913699491c1be6f76b61428ba514185997dea8fa7c31ce39bc7011af4591347
