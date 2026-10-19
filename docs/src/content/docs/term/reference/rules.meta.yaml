@@ -72,6 +72,9 @@ docs/src/content/docs/term/reference/rules.mdx:
       lines: 101
       integrity: sha256-2debb556d4380198ca956e1b73647156076dd3f283b1467f3d58e1b6201e36d6
     - generated-by: Claude Opus 5
+      lines: 111
+      integrity: sha256-89f61f48c61eb083dba92970a96b6c0cb62d7a70bcd565ea40b6041cf3a6e208
+    - generated-by: Claude Opus 5
       lines: 125
       integrity: sha256-c78e394d86b98c06718403073549a89d3a9a63829d0f9a5bc55cb1a3af28b614
     - generated-by: Claude Opus 5
