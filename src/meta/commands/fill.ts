@@ -555,6 +555,8 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
   let termbase: Promise<TermIndex | undefined> | undefined;
   const readTermbase = async (): Promise<TermIndex | undefined> => {
     if (opts.termLabels !== undefined) {
+      // A test seam: each label is its own id and carries no alt-labels, so
+      // a value offered here never resolves as an alt-label.
       const labels = [...opts.termLabels];
       return { labels, ids: [], scheme: termScheme(labels.map((label) => ({ label, id: label }))) };
     }
