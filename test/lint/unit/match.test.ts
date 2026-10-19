@@ -17,7 +17,8 @@ import {
 } from "../../../src/lint/core/match.js";
 import type { Rule } from "../../../src/lint/core/template.js";
 import { LintError } from "../../../src/lint/types.js";
-import { at } from "../helpers.js";
+import type { SectionNode } from "../../../src/lint/types.js";
+import { at, defined } from "../helpers.js";
 
 /** Sibling sections one level below a single H1, the common template shape. */
 function subsectionsOf(md: string) {
@@ -538,6 +539,156 @@ describe("cost ties", () => {
         { id: "summary", heading: "Symptom summary", min: 1, max: 1 },
       ]),
     ).toEqual([["summary", "Symptom summary"]]);
+  });
+});
+
+describe("skipping a required rule", () => {
+  // Issue #202. Skipping a required rule cost less than one wildcard match, so
+  // the alignment dropped a rule whose section was on the page and let a
+  // wildcard swallow it. A present section now makes the skip a full edit.
+  it("costs a full edit when the rule's section is present", () => {
+    const doc = subsectionsOf("# T\n\n## How it works\n\n## Use cases\n");
+    const { matches } = matchSections(doc, [one("Use cases"), { min: 0 }]);
+    expect(matches.map((m) => [m.rule.heading ?? "*", m.section.title])).toEqual([
+      ["Use cases", "Use cases"],
+    ]);
+  });
+
+  // With the section absent, "Missing section" is the right report, and the
+  // wildcard keeps the section it can take rather than losing it to a
+  // coercion.
+  it("costs less than any wildcard match when the section is absent", () => {
+    const doc = subsectionsOf("# T\n\n## How it works\n");
+    const { matches, findings } = matchSections(doc, [one("Use cases"), { min: 0 }]);
+    expect(findings.map((f) => f.message)).toEqual(['Missing section "Use cases"']);
+    expect(matches.map((m) => [m.rule.heading ?? "*", m.section.title, m.coerced])).toEqual([
+      ["*", "How it works", false],
+    ]);
+  });
+});
+
+describe("the coercion condition", () => {
+  it("coerces a misspelt heading when no sibling carries the right one", () => {
+    const doc = subsectionsOf("# T\n\n## Overview\n\n## See Also!\n");
+    const { matches, findings } = matchSections(doc, [one("Overview"), one("See also")]);
+    expect(findings).toEqual([]);
+    expect(matches.map((m) => [m.section.title, m.coerced])).toEqual([
+      ["Overview", false],
+      ["See Also!", true],
+    ]);
+  });
+
+  // Coercing "How it works" onto `Use cases` while "Use cases" sits further
+  // down reported a heading error about the wrong section.
+  it("refuses when a sibling carries a heading the rule accepts", () => {
+    const doc = subsectionsOf("# T\n\n## How it works\n\n## Use cases\n");
+    const { matches } = matchSections(doc, [one("Use cases"), { min: 0 }]);
+    expect(matches.some((m) => m.coerced)).toBe(false);
+  });
+});
+
+describe("section order", () => {
+  const order = (sections: SectionNode[], rules: Rule[]): (string | null)[][] =>
+    matchSections(sections, rules).findings.map((f) => [f.type, f.heading, f.message]);
+
+  it("reports a section a later wildcard would take as out of order", () => {
+    expect(
+      order(subsectionsOf("# T\n\n## How it works\n\n## Use cases\n"), [
+        { heading: { pattern: "^Background$" }, min: 0, max: 1 },
+        one("Use cases"),
+        { min: 0 },
+      ]),
+    ).toEqual([
+      ["section_order", "How it works", 'Section "How it works" must come after "Use cases"'],
+    ]);
+  });
+
+  it("names the section a skipped required rule wants, in place of missing", () => {
+    expect(
+      order(subsectionsOf("# T\n\n## B\n\n## A\n"), [one("A"), { min: 0 }, one("B")]),
+    ).toEqual([["section_order", "A", 'Section "A" must come before "B"']]);
+  });
+
+  // A required wildcard whose section is absent keeps the raw skip weight, so
+  // See also stays matched and the task slot reports missing. The extra
+  // section after it belongs in that slot, so the two findings become one.
+  it("moves an extra section into a required wildcard's empty slot", () => {
+    expect(
+      order(subsectionsOf("# T\n\n## Overview\n\n## See also\n\n## Install\n"), [
+        one("Overview"),
+        { id: "task" },
+        one("See also"),
+      ]),
+    ).toEqual([
+      ["section_order", "Install", 'Section "Install" must come before "See also"'],
+    ]);
+  });
+
+  // Gap 4: the task slot is satisfied, so nothing is missing for the extra
+  // section to replace, and it stays extra.
+  it("leaves an extra section unexpected when the wildcard's slot is filled", () => {
+    expect(
+      order(
+        subsectionsOf("# T\n\n## Overview\n\n## Rotate it\n\n## See also\n\n## Troubleshooting\n"),
+        [one("Overview"), { id: "task" }, one("See also")],
+      ).map((f) => [f[0], f[1]]),
+    ).toEqual([["unexpected_section", "Troubleshooting"]]);
+  });
+
+  it("names a section an optional rule passed over", () => {
+    expect(
+      order(
+        subsectionsOf(
+          "# T\n\n## Overview\n\n## Install\n\n## See also\n\n## Before you start\n",
+        ),
+        [one("Overview"), one("Before you start", { min: 0 }), { id: "task" }, one("See also")],
+      ),
+    ).toEqual([
+      [
+        "section_order",
+        "Before you start",
+        'Section "Before you start" must come before "Install"',
+      ],
+    ]);
+  });
+
+  // A wildcard earlier in the rule list is no place to move a section to, so a
+  // section after the template's last rule stays unexpected.
+  it("leaves a section after the last rule unexpected", () => {
+    expect(
+      order(subsectionsOf("# T\n\n## X\n\n## A\n\n## Extra\n"), [{ min: 0 }, one("A")]).map(
+        (f) => f[0],
+      ),
+    ).toEqual(["unexpected_section"]);
+  });
+
+  // Markdown only yields a section without a heading as a lone root, so these
+  // two strip the heading off a parsed sibling. Other formats can carry one
+  // between headed siblings.
+  const unheaded = (section: SectionNode): SectionNode => ({
+    ...section,
+    title: "",
+    titlePosition: null,
+  });
+
+  it("names a section without a heading as such", () => {
+    const [intro, a] = subsectionsOf("# T\n\n## Intro\n\n## A\n");
+    const sections = [unheaded(defined(intro)), defined(a)];
+    expect(order(sections, [one("A"), { heading: false, min: 0, max: 1 }])).toEqual([
+      ["section_order", null, 'Section without a heading must come after "A"'],
+    ]);
+  });
+
+  it("names a neighbour without a heading by its line", () => {
+    const [intro, a] = subsectionsOf("# T\n\n## Intro\n\n## A\n");
+    const sections = [unheaded(defined(intro)), defined(a)];
+    expect(order(sections, [one("A", { min: 0 }), { heading: false, max: 1 }])).toEqual([
+      [
+        "section_order",
+        "A",
+        'Section "A" must come before the section without a heading at line 3',
+      ],
+    ]);
   });
 });
 

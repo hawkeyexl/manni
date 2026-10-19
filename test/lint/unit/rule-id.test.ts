@@ -23,7 +23,8 @@ import {
  *
  * Sources, in the order a run reaches them:
  *   commands/lint.ts  parse_error, unknown_type, template_error
- *   core/match.ts     missing_section, unexpected_section
+ *   core/match.ts     missing_section, missing_group, unexpected_section,
+ *                     section_order
  *   rules/*.ts        the remaining nine
  */
 const TABLE: Record<string, string> = {
@@ -31,7 +32,9 @@ const TABLE: Record<string, string> = {
   unknown_type: "manni:lint/structure/unknown-type",
   template_error: "manni:lint/structure/template",
   missing_section: "manni:lint/structure/missing-section",
+  missing_group: "manni:lint/structure/missing-group",
   unexpected_section: "manni:lint/structure/unexpected-section",
+  section_order: "manni:lint/structure/section-order",
   code_blocks_count_error: "manni:lint/structure/code-blocks-count",
   heading_const_error: "manni:lint/structure/heading-const",
   heading_pattern_error: "manni:lint/structure/heading-pattern",
