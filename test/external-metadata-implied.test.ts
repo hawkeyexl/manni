@@ -284,5 +284,6 @@ describe("cite and a keyless manifest that keeps no page's citations (#198)", ()
     writeFileSync(join(dir, "docs/twin.md"), read(dir, "docs/intro.md"));
     const run = await check(dir);
     expect(run.pages).toHaveLength(2);
+    expect(run.summary.failed).toBe(0);
   });
 });
