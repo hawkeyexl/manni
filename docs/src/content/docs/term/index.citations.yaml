@@ -13,9 +13,9 @@ docs/src/content/docs/term/index.mdx:
         integrity: sha256-8eaf928fa69b8abbeb9e1db43d6afa52a06d2515bac29efe1504083aab7d1a8d
       source:
         file: src/term/core/load-set.ts
-        lines: 203-217
+        lines: 213-227
         integrity: sha256-22d3f07e3ba16e32162c57c05faa7e4a92c4ec72b884ed1c6e175dccadd3d4bc
-        commit-sha: 30b322ddca2461dbd8f84630f68bf2fba07db563
+        commit-sha: be3f8ac9f3076a761d4bd19757f09b7e1daa7c99
     - id: term-record-fields
       claim:
         integrity: sha256-8eaf928fa69b8abbeb9e1db43d6afa52a06d2515bac29efe1504083aab7d1a8d
@@ -190,9 +190,9 @@ docs/src/content/docs/term/index.mdx:
         integrity: sha256-144ee026405365e268f3915e93caaddb22552f0b606e25b5b0d844c6d3199f20
       source:
         file: src/term/core/load-set.ts
-        lines: 201-237
+        lines: 211-247
         integrity: sha256-359ebfc884cd6a1bf08bd397e489a31be7850fd45e5230391a5138f54ed173b3
-        commit-sha: 30b322ddca2461dbd8f84630f68bf2fba07db563
+        commit-sha: be3f8ac9f3076a761d4bd19757f09b7e1daa7c99
     - id: checks-references-resolve
       claim:
         lines: 120-121
