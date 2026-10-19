@@ -232,9 +232,9 @@ docs/src/content/docs/term/reference/configuration.mdx:
         integrity: sha256-0f9187f4c00efecce25491bdfd5db145ba849f863fa6b0b84823bcdbe6b8ff8a
       source:
         file: src/term/core/check.ts
-        lines: 600-601
+        lines: 603-604
         integrity: sha256-2f265af85f9d91efeb2ae0c4d46f04963f7dbc82990a636954e00086b5be55ab
-        commit-sha: de94f90834cbab2e31b668f65e5c280a499cab05
+        commit-sha: 6cb5274249878fc67b7a4c19d520e70d790bb0a3
     - id: severity-family-levels-plus-off
       claim:
         integrity: sha256-19bf69bbaca754e83b9842320fc2402a33cccee5e1c8993bc24b9d73c3d3861e
