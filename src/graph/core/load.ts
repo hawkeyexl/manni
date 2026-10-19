@@ -41,7 +41,9 @@ export function storeToQuads(store: Store): Quad[] {
   return store.getQuads(null, null, null, null).map((q) => {
     const o = q.object;
     let term: Term;
-    if (o.termType === "Literal") {
+    if (o.termType === "Literal" && o.language !== "") {
+      term = { kind: "literal", value: o.value, language: o.language };
+    } else if (o.termType === "Literal") {
       const dt = o.datatype.value;
       term =
         dt && dt !== XSD_STRING

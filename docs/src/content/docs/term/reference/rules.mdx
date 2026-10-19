@@ -1,6 +1,6 @@
 ---
 title: Check rules
-description: "The ten rules manni term check applies to a term set, with each one's default severity, the message it prints, where it is reported, and what fixes it."
+description: "The twenty-two rules manni term check applies to a term set, with each one's default severity, the message it prints, where it is reported, and what fixes it."
 sidebar:
   order: 4
 type: reference
@@ -15,7 +15,7 @@ language: en
 audiences:
   - schema-authors
   - docs-engineers
-intent: Look up each of the ten term check rules, its default severity, its message and what fixes it.
+intent: Look up each of the twenty-two term check rules, its default severity, its message and what fixes it.
 lifecycle: published
 applies-to:
   - domain:term
@@ -23,10 +23,11 @@ sample-questions:
   - What rules does manni term check apply?
   - Which term rules fail a run by default?
   - How do I fix an asymmetric-hierarchy finding?
+  - What does term check report about a missing definition?
 graph:
   label: Check rules
   type: reference
-last-updated: 2026-10-18
+last-updated: 2026-10-19
 tags:
   - validation
   - rules
@@ -56,16 +57,33 @@ set. It reads no prose; `manni term lint` does that. Each rule id is
 
 | Rule | Default | Fires when |
 |---|---|---|
-| `undefined-term` | error | A page's `concepts:` names a label no entry claims as its preferred label. |
+| `undefined-term` | error | A page's `concepts:` names no entry, by label, id or alt-label. |
 | `duplicate-id` | error | Two entries in one language share an `id`, ignoring case. |
 | `label-collision` | error | Two entries claim the same preferred label, ignoring case. Across languages, only when the spellings differ. |
 | `alt-label-collision` | error | An entry's alt-label is another entry's preferred label, ignoring case. Across languages, only when the spellings differ. |
+| `label-overlap` | error | An alt-label repeats the entry's own label, or a hidden-label repeats any name the entry or another entry goes by. |
 | `dangling-reference` | error | A value of `broader`, `narrower`, `related-terms` or `see` names no entry, by label or by id. |
-| `broader-cycle` | error | A chain of `broader` returns to where it started. |
+| `broader-cycle` | error | A chain of `broader` returns to where it started, across the terms and every page's `graph:` block. |
 | `see-not-empty` | error | An entry with `see` also carries a `definition`. |
+| `missing-definition` | error | An entry has neither a `definition` nor a `see`. |
+| `conflicting-matches` | error | One IRI is listed under two of an entry's match fields. |
 | `asymmetric-hierarchy` | warning | A names B as `broader`, and B omits A from `narrower`, or the reverse. |
+| `asymmetric-related` | warning | A names B in `related-terms`, and B omits A. |
+| `related-in-hierarchy` | warning | A `related-terms` value is also above or below the entry in the hierarchy, at any depth. |
+| `alt-label-reference` | warning | A page's `concepts:` names an entry by one of its alt-labels. |
+| `ambiguous-alt-label` | warning | Two entries share an alt-label, ignoring case. |
+| `deprecated-label` | warning | The entry's own label is deprecated or superseded in its `designations`, and the entry has no `see`. |
 | `abstract-too-long` | notice | An `abstract` is longer than [`abstractMaxLength`](/manni/term/reference/configuration/#keys), `60` by default. |
-| `unused-term` | notice | No page's `concepts:` names the preferred label of the entry, or of an entry in another language with its `id`. |
+| `unused-term` | notice | No page's `concepts:` names the entry, or an entry in another language with its `id`. |
+| `hierarchy-outside-termbase` | notice | A page's `graph:` block gives a term a `broader`, `narrower` or `related-concepts` value that the term's own entry does not list. |
+| `related-siblings` | notice | Two related terms share a `broader` term. |
+| `orphan-term` | notice | An entry has no broader, narrower or related term, in a termbase that has a hierarchy. |
+| `keyword-candidate` | notice | A free `keywords:` value is on enough pages and names no term. |
+
+{/* cite page-names-resolve */}
+A name on a page resolves the way the graph resolves it. A label comes first,
+then an id, then an alt-label, ignoring case. `concepts:` here stands for
+`graph.concepts` too, and a message names the field the value came from.
 
 {/* cite labels-ignore-case */}
 {/* cite vale-keys-lowercased */}
@@ -77,18 +95,19 @@ collide there without a word.
 
 A set can hold one term per language for a concept, joined on `id`. A term
 that names no `language` counts as `en`, and languages compare ignoring case.
-The rules and their messages stay the same, and four of them read the language:
+The rules and their messages stay the same, and the rules that compare names
+read the language:
 
 | Rule | In a set of several languages |
 |---|---|
 | `duplicate-id` | Compares ids within one language. A German and an English term with one id are one concept, not a duplicate. |
-| `label-collision`, `alt-label-collision` | Within a language, as in a set of one. Across languages, the names collide only when they match ignoring case and differ in spelling. `API` in both languages is one word. `Kubernetes` against `kubernetes` collides, because the Vale style could not tell them apart. |
-| `dangling-reference`, `broader-cycle`, `asymmetric-hierarchy` | A value resolves to a label in the entry's own language, then to an id in it. Failing both, any language's label or id will do. |
-| `unused-term` | A page that names any language's label of a concept uses every term of that concept. |
+| `label-collision`, `alt-label-collision`, `label-overlap`, `ambiguous-alt-label` | Within a language, as in a set of one. Across languages, the names collide only when they match ignoring case and differ in spelling. `API` in both languages is one word. `Kubernetes` against `kubernetes` collides, because the Vale style could not tell them apart. |
+| `dangling-reference`, `broader-cycle`, `asymmetric-hierarchy`, `asymmetric-related`, `related-in-hierarchy`, `related-siblings` | A value resolves to a label in the entry's own language, then to an id in it. Failing both, any language's label or id will do. |
+| `undefined-term`, `alt-label-reference`, `hierarchy-outside-termbase` | A name on a page resolves as the graph resolves it. The page's own `language` comes first, then its base language, so `en-GB` finds an `en-US` term. Then any language. Each pass tries a label, an id, then an alt-label. A page or term with no `language` takes part only in the last pass. |
+| `unused-term`, `orphan-term` | A page that names any language's term of a concept uses every term of that concept. A concept placed in the hierarchy in one language is placed in all of them. |
 
-`undefined-term` resolves `concepts:` against the preferred labels of every
-language. The others do not compare names at all. This set holds three
-concepts in English and German, with `unused-term` turned off:
+The others do not compare names at all. This set holds three concepts in
+English and German, with `unused-term` turned off:
 
 ```console
 $ manni term check docs/terms
@@ -101,50 +120,68 @@ docs/terms/en/kubernetes.md:5
 ## Every rule in one run
 
 {/* cite finding-line */}
-This set breaks each rule once. Each finding sits on the line of the field
-that caused it, or on the entry's first line when no field did:
+This set breaks every rule. Each finding sits on the line
+of the field that caused it, or on the entry's first line when no field did:
 
 ```console
-$ manni term check docs
-docs/glossary/bifocals.md:1
-  error  manni:term/duplicate-id          id: "bifocal" is also used by docs/terms/bifocal.md:1
-docs/guides/fitting.md:3
-  error  manni:term/undefined-term        concepts: "PAL" names no entry.
-                                          "progressive lens" lists it as an alt-label.
-docs/terms/bifocal.md:1
-  error  manni:term/duplicate-id          id: "bifocal" is also used by docs/glossary/bifocals.md:1
-docs/terms/bifocal.md:4
-  error  manni:term/label-collision       "bifocal" is claimed by docs/glossary/bifocals.md:1 as "Bifocal"
+$ manni term check
+docs/glossary/varifocals.md:1
+  error  manni:term/duplicate-id                id: "varifocal" is also used by docs/terms/varifocal.md:1
+docs/guides/care.md:3
+  notice manni:term/keyword-candidate           keywords: "coatings" is on 2 pages and names no term, so add it to concepts: or run manni term fill --crawl.
+docs/guides/fitting.md:4
+  warning manni:term/alt-label-reference         concepts: "PAL" is an alt-label of "progressive lens", so name the label.
+  error  manni:term/undefined-term              concepts: "monofocal" names no entry.
+docs/guides/fitting.md:7
+  error  manni:term/broader-cycle               broader: corrective lens > lens > corrective lens
+  notice manni:term/hierarchy-outside-termbase  graph: broader "corrective lens" on "lens" is not on its term page (docs/terms/lens.md), so add it there.
 docs/terms/bifocal.md:5
-  error  manni:term/dangling-reference    related-terms: "trifocal" names no entry
-docs/terms/bifocal.md:6
-  notice manni:term/abstract-too-long     abstract: 85 characters is over the limit of 60, so shorten it
-docs/terms/corrective-lens.md:5
-  error  manni:term/broader-cycle         broader: corrective lens > lens > corrective lens
+  notice manni:term/abstract-too-long           abstract: 81 characters is over the limit of 60, so shorten it
+docs/terms/bifocal.md:7
+  notice manni:term/related-siblings            related-terms: "trifocal" shares the broader term "lens", which already relates them.
+docs/terms/bifocal.md:8
+  error  manni:term/label-overlap               hidden-labels: "multifocal" is an alt-label of docs/terms/progressive-lens.md:1.
+docs/terms/corrective-lens.md:3
+  warning manni:term/deprecated-label            label: "corrective lens" is deprecated in designations, so promote another label or redirect with see:.
 docs/terms/lens.md:1
-  warning manni:term/asymmetric-hierarchy  narrower: omits "corrective lens", which lists this entry as broader
+  warning manni:term/asymmetric-related          related-terms: omits "optics", which lists this entry as related.
+docs/terms/lens.md:6
+  warning manni:term/asymmetric-hierarchy        narrower: omits "corrective lens", which lists this entry as broader
+docs/terms/monocle.md:1
+  error  manni:term/missing-definition          definition: missing, so write one or run manni term fill.
+docs/terms/optics.md:6
+  warning manni:term/related-in-hierarchy        related-terms: "lens" is also narrower than this entry, so keep one of the two.
+docs/terms/optics.md:7
+  error  manni:term/conflicting-matches         exact-matches: "https://vocab.example.com/optics" is also in broad-matches, and a mapping has one kind.
 docs/terms/progressive-lens.md:1
-  notice manni:term/unused-term           no page's concepts: names this term
+  notice manni:term/orphan-term                 no broader, narrower or related term, so place it in the hierarchy.
+docs/terms/trifocal.md:1
+  notice manni:term/unused-term                 no page's concepts: names this term
+docs/terms/trifocal.md:5
+  warning manni:term/ambiguous-alt-label         alt-labels: "Multifocal" is also an alt-label of docs/terms/progressive-lens.md:1, so a reader can't tell which term it means.
+docs/terms/trifocal.md:7
+  error  manni:term/dangling-reference          related-terms: "tetrafocal" names no entry
+docs/terms/varifocal.md:1
+  error  manni:term/duplicate-id                id: "varifocal" is also used by docs/glossary/varifocals.md:1
+docs/terms/varifocal.md:3
+  error  manni:term/label-collision             "varifocal" is claimed by docs/glossary/varifocals.md:1 as "Varifocal"
+docs/terms/varifocal.md:4
+  error  manni:term/alt-label-collision         alt-labels: "Lens" is the label of docs/terms/lens.md:1
 docs/terms/varifocal.md:5
-  error  manni:term/alt-label-collision   alt-labels: "Lens" is the label of docs/terms/lens.md:1
-docs/terms/varifocal.md:6
-  error  manni:term/see-not-empty         see: "progressive lens" redirects this entry, so remove its definition
+  error  manni:term/see-not-empty               see: "progressive lens" redirects this entry, so remove its definition
 
-8 errors, 1 warning, 2 notices in 6 terms
+11 errors, 6 warnings, 6 notices in 9 terms
 ```
 
 ## What each rule means
 
 ### `undefined-term`
 
-{/* cite concepts-preferred-labels-only */}
-{/* cite undefined-term-names-synonym */}
-{/* cite undefined-term-concepts-line */}
-{/* cite graph-concepts-resolved */}
-`concepts:` resolves against preferred labels only. An id or an alt-label is
-not enough. When the value is some entry's alt-label, the message names that
-entry, because the fix is to write its preferred label instead. The finding
-sits on the page's `concepts:` line. `graph.concepts` is resolved the same way.
+{/* cite concepts-preferred-labels-only undefined-term-concepts-line graph-concepts-resolved */}
+A `concepts:` value resolves against labels, then ids, then alt-labels. It
+fires only when none of the three claims the value. The finding sits on the
+page's `concepts:` line. `graph.concepts` is resolved the same way, and its
+message says `graph.concepts:`. Add the missing entry, or correct the value.
 
 ### `duplicate-id`
 
@@ -173,6 +210,22 @@ make one entry an alt-label of the other.
 An alt-label that is another entry's preferred label makes one name mean two
 entries. Remove the alt-label, or merge the two entries.
 
+### `label-overlap`
+
+A name has one status in a termbase. An alt-label that repeats the entry's own
+label says nothing new. A hidden-label marks a name not to use, so it cannot
+also be a name the termbase uses. The message names what the value repeats:
+
+```
+alt-labels: "Lens" repeats this entry's label.
+hidden-labels: "lens" repeats this entry's alt-label.
+hidden-labels: "multifocal" is the label of docs/terms/multifocal.md:1.
+hidden-labels: "multifocal" is an alt-label of docs/terms/progressive-lens.md:1.
+```
+
+The finding sits on the entry holding the repeated value, on that field's
+line. Remove the value, or move it to the field that matches its status.
+
 ### `dangling-reference`
 
 {/* cite dangling-one-per-value */}
@@ -183,22 +236,103 @@ case. Add the missing entry, or correct the value.
 
 ### `broader-cycle`
 
-{/* cite broader-cycle-once */}
-{/* cite broader-cycle-message */}
-Each cycle is reported once, on the entry of the cycle read first. The message
-spells the chain. Remove the `broader` value that closes it.
+{/* cite broader-cycle-union */}
+The chain reads every term's `broader`, every term's `narrower` in reverse,
+and the `broader` and `narrower` of every page's `graph:` block. A block's
+values that name no term are concepts of their own, so a chain can pass
+through them.
+
+{/* cite broader-cycle-once broader-cycle-message */}
+Each cycle is reported once. When the terms close it alone, it sits on the
+entry of the cycle read first. When a block's edge closes it, it sits on that
+block's field line. The message spells the chain. Remove the value that
+closes it.
 
 ### `see-not-empty`
 
 An entry with `see` is a redirect to the entry that defines the term. Remove
 its `definition`, or remove `see` and keep it as an entry of its own.
 
+### `missing-definition`
+
+{/* cite missing-definition-fires */}
+The schema requires only a `label`, so a term page can land before its
+meaning is written. This rule keeps the gap visible. It sits on the entry's
+first line and names the `definition` field. A redirect needs no definition,
+and one that carries a definition is `see-not-empty` instead. Write the
+definition, or turn the rule down under `term.severity` while a termbase is
+being filled in.
+
+### `conflicting-matches`
+
+{/* cite conflicting-matches-once-per-iri */}
+`exact-matches`, `close-matches`, `broad-matches`, `narrow-matches` and
+`related-matches` each say how a concept elsewhere relates to this one. An IRI
+under two of them says two different things. The rule reports each such IRI
+once, on the line of the first field that lists it:
+
+```
+exact-matches: "https://www.wikidata.org/wiki/Q1424588" is also in broad-matches, and a mapping has one kind.
+```
+
+The message names the first field in the order exact, close, broad, narrow,
+related, then the other. Keep the IRI under the one kind that holds.
+
 ### `asymmetric-hierarchy`
 
 {/* cite asymmetric-on-missing-half */}
 Reported on the entry that should carry the missing half, naming the entry
 that carries the other. Add the label to that field, or remove the one-sided
-value.
+value. Only the terms' own fields count here. A page's `graph:` block is
+`hierarchy-outside-termbase`'s concern.
+
+### `asymmetric-related`
+
+A related link holds both ways. When A lists B in `related-terms` and B does
+not list A, the finding sits on B's `related-terms` line, naming A. Add A to
+B, or remove B from A.
+
+### `related-in-hierarchy`
+
+A related link joins two concepts that sit apart in the hierarchy. When the
+related term is also above or below the entry, at any depth, the hierarchy
+already relates them. The chain reads the same union `broader-cycle` reads,
+so a page's `graph:` block counts:
+
+```
+related-terms: "lens" is also narrower than this entry, so keep one of the two.
+```
+
+The finding sits on the entry's `related-terms` line. Keep the hierarchy and
+drop the related link, unless the hierarchy is the mistake.
+
+### `alt-label-reference`
+
+{/* cite alt-label-reference-message */}
+The graph resolves an alt-label to its entry, so the page still lands on the
+right concept. The message names that entry, because the fix is to write its
+label instead:
+
+```
+concepts: "PAL" is an alt-label of "Pluggable auth layer", so name the label.
+```
+
+The finding sits on the page's `concepts:` or `graph.concepts` line.
+
+### `ambiguous-alt-label`
+
+An alt-label that two entries share resolves to the first one read, so a
+page that names it may land on the wrong concept. The finding sits on each
+later entry's `alt-labels` line, naming the first. Keep the alt-label on the
+entry it belongs to.
+
+### `deprecated-label`
+
+A `designations` item can mark one of the entry's names with an
+`administrative-status`. When the item for the entry's own label says
+`deprecated` or `superseded`, the preferred name is one the termbase retires.
+The finding sits on the `label` line. Promote an alt-label to `label`, or turn
+the entry into a redirect with `see`. A redirect never fires the rule.
 
 ### `abstract-too-long`
 
@@ -214,4 +348,57 @@ An `abstract` is the short form a hover card shows. Shorten it, or raise
 {/* cite check-exit-code */}
 A notice, so it never fails a run. A termbase written before the pages that
 use it is entirely unused terms. Set `severity: {unused-term: off}` while that
-is the case.
+is the case. A value that names the entry by its id or an alt-label is a use.
+
+### `hierarchy-outside-termbase`
+
+{/* cite hierarchy-outside-termbase-message */}
+A page's `graph:` block whose `label` names a term can give that term a
+`broader`, `narrower` or `related-concepts` value. The graph keeps both the
+term's edges and the block's. This rule notes each block value that the term's
+own `broader`, `narrower` or `related-terms` does not list:
+
+```
+graph: broader "Networking" on "Retry" is not on its term page (docs/glossary/retry.md), so add it there.
+```
+
+The finding sits on the block's field line. A term read from a manifest, a
+TBX file or a glossary construct is a term entry, not a term page. Add the
+value to the term, or remove it from the block.
+
+### `related-siblings`
+
+Two terms under one `broader` term are already related through it. A related
+link between them may still help a reader, so this is a notice. It is reported
+once per pair, on the first entry that lists the other:
+
+```
+related-terms: "trifocal" shares the broader term "lens", which already relates them.
+```
+
+Keep the link when it says something the shared parent does not. Otherwise
+drop it.
+
+### `orphan-term`
+
+An entry with no broader, narrower or related term sits outside the concept
+scheme. The rule runs only when the termbase has a hierarchy at all, so a flat
+glossary never hears of it. A `graph:` block's edges count, and a redirect is
+never an orphan. Add a `broader` term, or a related one.
+
+### `keyword-candidate`
+
+A free `keywords:` value that several pages share is a concept nobody has
+defined. The rule counts the pages each keyword is on, ignoring case. A
+keyword that is a term's label, id or alt-label is never a candidate. It
+needs as many pages as
+[`fill.crawl.minPages`](/manni/term/reference/configuration/#keys) asks for,
+`2` by default:
+
+```
+keywords: "retries" is on 7 pages and names no term, so add it to concepts: or run manni term fill --crawl.
+```
+
+The finding sits on the `keywords:` line of the first page in path order, once
+per keyword. A term page's own keywords are not counted. Define the term, or
+let `manni term fill --crawl` propose one.

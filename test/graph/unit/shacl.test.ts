@@ -17,7 +17,7 @@ const HASH = "a".repeat(64);
 
 /** Store builder: [s, p, o] with strings; o starting with "http" is an IRI. */
 function build(
-  triples: Array<[string, string, string | { lit: string; dt?: string }]>,
+  triples: Array<[string, string, string | { lit: string; dt?: string; lang?: string }]>,
 ): Store {
   const store = new Store();
   for (const [s, p, o] of triples) {
@@ -27,7 +27,10 @@ function build(
         DataFactory.namedNode(p),
         typeof o === "string"
           ? DataFactory.namedNode(o)
-          : DataFactory.literal(o.lit, o.dt ? DataFactory.namedNode(o.dt) : undefined),
+          : DataFactory.literal(
+              o.lit,
+              o.lang ?? (o.dt ? DataFactory.namedNode(o.dt) : undefined),
+            ),
       ),
     );
   }
@@ -140,6 +143,130 @@ describe("validateGraph", () => {
     expect(hit).toBeDefined();
     expect(hit?.severity).toBe("warning");
     expect(hit?.shaclSeverity).toBe("warning");
+    expect(hit?.message).toBe(
+      "concept carries multiple prefLabels (same slug, different spellings) — settle on one spelling",
+    );
+    expect(findings.filter((f) => f.focusNode === c)).toHaveLength(1);
+  });
+
+  it("admits one prefLabel per language, and warns on two in one language", async () => {
+    const c = concept("widget");
+    const label = (
+      lit: string,
+      lang: string,
+    ): [string, string, { lit: string; lang: string }] => [
+      c,
+      `${NS.skos}prefLabel`,
+      { lit, lang },
+    ];
+    const typed: Array<[string, string, string]> = [
+      [c, RDF_TYPE, `${NS.skos}Concept`],
+      [c, `${NS.skos}inScheme`, SCHEME],
+    ];
+    const ok = await validateGraph(
+      build([
+        ...conformingTriples(),
+        ...typed,
+        label("Widget", "en"),
+        label("Widget-Komponente", "de"),
+      ]),
+      SHAPES,
+    );
+    expect(ok.filter((f) => f.focusNode === c)).toEqual([]);
+    const twice = await validateGraph(
+      build([
+        ...conformingTriples(),
+        ...typed,
+        label("Widget", "en"),
+        label("Gadget", "en"),
+      ]),
+      SHAPES,
+    );
+    const hit = twice.find((f) => f.focusNode === c);
+    expect(hit?.severity).toBe("warning");
+    expect(hit?.path).toBe(`${NS.skos}prefLabel`);
+  });
+
+  it("admits a term concept's notes and the top concepts, both ways round", async () => {
+    const c = concept("setup");
+    const findings = await validateGraph(
+      build([
+        ...conformingTriples(),
+        [c, `${NS.skos}definition`, { lit: "Getting started.", lang: "en" }],
+        [c, `${NS.skos}scopeNote`, { lit: "Install only." }],
+        [c, `${NS.skos}hiddenLabel`, { lit: "stup" }],
+        [c, `${NS.skos}topConceptOf`, SCHEME],
+        [SCHEME, `${NS.skos}hasTopConcept`, c],
+      ]),
+      SHAPES,
+    );
+    expect(findings).toEqual([]);
+  });
+
+  it("admits a concept's notation and its mappings to other vocabularies", async () => {
+    const c = concept("setup");
+    const findings = await validateGraph(
+      build([
+        ...conformingTriples(),
+        [c, `${NS.skos}notation`, { lit: "S-1" }],
+        [c, `${NS.skos}exactMatch`, "https://www.wikidata.org/wiki/Q1"],
+        [c, `${NS.skos}closeMatch`, "https://e.org/close"],
+        [c, `${NS.skos}broadMatch`, "https://e.org/broad"],
+        [c, `${NS.skos}narrowMatch`, "https://e.org/narrow"],
+        [c, `${NS.skos}relatedMatch`, "https://e.org/related"],
+      ]),
+      SHAPES,
+    );
+    expect(findings).toEqual([]);
+  });
+
+  it("rejects a mapping whose object is a literal", async () => {
+    const c = concept("setup");
+    const findings = await validateGraph(
+      build([...conformingTriples(), [c, `${NS.skos}closeMatch`, { lit: "https://e.org/close" }]]),
+      SHAPES,
+    );
+    expect(findings.map((f) => [f.severity, f.path])).toEqual([["error", `${NS.skos}closeMatch`]]);
+  });
+
+  it("flags a mapping that points into this scheme, naming the concept", async () => {
+    const c = concept("setup");
+    const other = concept("install");
+    const findings = await validateGraph(
+      build([
+        ...conformingTriples(),
+        [other, RDF_TYPE, `${NS.skos}Concept`],
+        [other, `${NS.skos}prefLabel`, { lit: "install" }],
+        [other, `${NS.skos}inScheme`, SCHEME],
+        [c, `${NS.skos}exactMatch`, other],
+        [c, `${NS.skos}relatedMatch`, "https://e.org/related"],
+      ]),
+      SHAPES,
+    );
+    expect(findings.map((f) => [f.severity, f.focusNode, f.path, f.message])).toEqual([
+      [
+        "error",
+        c,
+        `${NS.skos}exactMatch`,
+        `skos:exactMatch points into this scheme (${other}), so use broader, narrower or related instead.`,
+      ],
+    ]);
+  });
+
+  it("leaves a mapping to a concept of another scheme alone", async () => {
+    const c = concept("setup");
+    const outside = "https://e.org/vocab/install";
+    const findings = await validateGraph(
+      build([
+        ...conformingTriples(),
+        [outside, RDF_TYPE, `${NS.skos}Concept`],
+        [outside, `${NS.skos}prefLabel`, { lit: "install" }],
+        [outside, `${NS.skos}inScheme`, "https://e.org/vocab"],
+        [c, `${NS.skos}exactMatch`, outside],
+      ]),
+      SHAPES,
+    );
+    expect(findings.filter((f) => f.path === `${NS.skos}exactMatch`)).toEqual([]);
   });
 
   it("closed Document shape rejects unexpected predicates", async () => {
@@ -467,7 +594,7 @@ describe("SHACL severity maps onto the family scale", () => {
   const EX = "https://example.com/severity#";
 
   async function findingsByMessage(): Promise<
-    Map<string, { severity: string; shaclSeverity: string }>
+    Map<string, { severity: string; shaclSeverity: string | undefined }>
   > {
     const store = build([
       [THING, RDF_TYPE, `${EX}Thing`],

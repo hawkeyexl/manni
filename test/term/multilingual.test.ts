@@ -334,13 +334,15 @@ describe("a multilingual set", () => {
   });
 
   describe("skos", () => {
-    it("writes each language's labels on a concept of the shared id", async () => {
+    it("writes one concept per id, with each language's labels on it", async () => {
       const render = writer("skos").render(await fixtureSet(), { path: join(tmp, "x.jsonld"), shape: "file" }, NO_EXISTING);
       const graph = (JSON.parse(render.files[0]?.content ?? "{}") as { "@graph": Record<string, unknown>[] })["@graph"];
       const api = graph.filter((node) => node["@id"] === "#api").map((node) => node["skos:prefLabel"]);
       expect(api).toEqual([
-        { "@value": "API", "@language": "de" },
-        { "@value": "API", "@language": "en" },
+        [
+          { "@value": "API", "@language": "de" },
+          { "@value": "API", "@language": "en" },
+        ],
       ]);
     });
   });

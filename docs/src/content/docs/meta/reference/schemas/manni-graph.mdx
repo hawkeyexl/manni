@@ -19,7 +19,7 @@ sample-questions:
 graph:
   label: "manni graph vocabulary"
   type: reference
-last-updated: 2026-10-18
+last-updated: 2026-10-19
 resource: https://hawkeyexl.github.io/manni/schemas/graph/1.0.0.json
 tags:
   - graph
@@ -80,7 +80,7 @@ the page level adds terminology, which is not.
 ```yaml
 meta:
   schemas:
-    - manni:terminology:1.1.0
+    - manni:terminology:1.2.0
 ```
 
 ## Fields
@@ -213,12 +213,12 @@ The exit code is 1. Spelling `label` correctly clears both findings.
   graph builder may derive it from the page's `type`. `how-to` becomes `task`,
   `tutorial` becomes `learning`, and `explanation` becomes `concept`. An
   explicit block always wins.
-- **Terminology's root fields are the fallback for seven more.** On a page
-  with no `graph` block, a graph builder reads the root fields of
-  [terminology](/manni/meta/reference/schemas/manni-terminology/). `label`,
-  `alt-labels`, `broader`, `narrower`, `definition` and `abstract` map by name,
-  and `related-terms` maps to `related-concepts`. A page that opens a `graph`
-  block keeps the block's behaviour exactly.
+- **A term entry is a concept of its own.** `manni graph build` reads the
+  [terminology](/manni/meta/reference/schemas/manni-terminology/) termbase
+  beside this block, and every concept label resolves through it first. So
+  `graph.broader: [Access token]` points at the term's concept. A term page
+  whose `graph` block names no `label` is about its own term. A block that
+  names one keeps the block's behaviour exactly.
 - **Plain-language kebab names, with the RDF mapping in the descriptions.**
   iiRDS itself spells its properties in kebab case (`has-topic-type`), so
   mirroring a vocabulary's internal spellings in the key names gains nothing.

@@ -19,7 +19,7 @@ import { RDF_TYPE } from "../core/vocab.js";
 /** An object value: an IRI reference or a literal. */
 export type Value =
   | { kind: "iri"; value: string }
-  | { kind: "literal"; value: string; datatype?: string };
+  | { kind: "literal"; value: string; datatype?: string; language?: string };
 
 export interface GraphNode {
   id: string;
@@ -43,7 +43,9 @@ function compareValues(a: Value, b: Value): number {
   if (v !== 0) return v;
   const da = a.kind === "literal" ? (a.datatype ?? "") : "";
   const db = b.kind === "literal" ? (b.datatype ?? "") : "";
-  return byCodeUnit(da, db);
+  const la = a.kind === "literal" ? (a.language ?? "") : "";
+  const lb = b.kind === "literal" ? (b.language ?? "") : "";
+  return byCodeUnit(da, db) || byCodeUnit(la, lb);
 }
 
 export class GraphIndex {
@@ -87,9 +89,11 @@ export class GraphIndex {
       const value: Value =
         o.kind === "iri"
           ? { kind: "iri", value: o.value }
-          : o.datatype && o.datatype !== XSD_STRING
-            ? { kind: "literal", value: o.value, datatype: o.datatype }
-            : { kind: "literal", value: o.value };
+          : o.language
+            ? { kind: "literal", value: o.value, language: o.language }
+            : o.datatype && o.datatype !== XSD_STRING
+              ? { kind: "literal", value: o.value, datatype: o.datatype }
+              : { kind: "literal", value: o.value };
       index.addTriple(q.s, q.p, value);
     }
     index.finalize();
@@ -158,6 +162,9 @@ export class GraphIndex {
         // JSON.stringify spells a number or boolean the way String() would,
         // and gives an object a lexical form instead of "[object Object]".
         const lexical = typeof raw === "string" ? raw : JSON.stringify(raw);
+        if (typeof o["@language"] === "string") {
+          return { kind: "literal", value: lexical, language: o["@language"] };
+        }
         const dt =
           typeof o["@type"] === "string" ? this.expand(o["@type"]) : undefined;
         return dt && dt !== XSD_STRING

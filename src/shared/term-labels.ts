@@ -1,18 +1,43 @@
 /**
- * Where `meta fill` gets the termbase's labels from.
+ * Where `meta fill` and `graph build` get the termbase from.
  *
  * The layering runs one way: `term` imports `meta`, and nothing under
- * `src/meta` imports `term`. So the term domain registers a source here when
- * its module loads, and `fill` reads it when one is registered. Under the
- * `manni` bin the umbrella loads the term domain, so a source is there. Under
- * the `docmeta` bin, or a library call that loads no term module, there is
- * none, and `fill` offers no term values.
+ * `src/meta` imports `term`. So the `manni` umbrella registers a source here,
+ * one that loads the term domain when asked, and `fill` reads it when one is
+ * registered. Under the `docmeta` bin, or a library call, nothing registers
+ * one, and `fill` offers no term values.
  */
 
-/** One term: its preferred label, and its id. */
+/**
+ * One term, as the family outside the term domain reads it: its preferred
+ * label and id, and the facts the graph's concept scheme carries. Relations
+ * are written as the term wrote them, a label or an id each.
+ */
 export interface TermLabel {
   label: string;
   id: string;
+  /** The term's language tag, when it carries one. */
+  language?: string;
+  altLabels?: readonly string[];
+  hiddenLabels?: readonly string[];
+  broader?: readonly string[];
+  narrower?: readonly string[];
+  related?: readonly string[];
+  /** A redirect: this entry's label is another term's, named here. */
+  see?: string;
+  definition?: string;
+  scopeNote?: string;
+  /** A code that identifies the concept in another system. */
+  notation?: string;
+  /** IRIs of concepts in other vocabularies, one list per kind of mapping. */
+  exactMatches?: readonly string[];
+  closeMatches?: readonly string[];
+  broadMatches?: readonly string[];
+  narrowMatches?: readonly string[];
+  relatedMatches?: readonly string[];
+  /** Where the term was read: the file, absolute, and its line. */
+  file?: string;
+  line?: number;
 }
 
 /** What a run tells the source, so it reads the termbase `term check` reads. */

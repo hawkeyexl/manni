@@ -1,0 +1,42 @@
+---
+title: "Golden set"
+description: "What golden set means in manni graph, and where the tool uses it."
+type: term
+id: golden-set
+label: "golden set"
+abstract: "The reviewed reader questions, pinned to their answers."
+definition: "The reader questions a docset is held to, each pinned to the lines that answer it and reviewed by a person."
+keywords:
+  - "golden set"
+  - "questionFiles"
+  - "foundThreshold"
+language: en
+audiences:
+  - "docs-engineers"
+  - "ci-engineers"
+  - "schema-authors"
+  - "contributors"
+intent: "Say what golden set means in manni graph."
+lifecycle: published
+applies-to:
+  - "domain:graph"
+sample-questions:
+  - "What is a golden set in manni graph?"
+  - "Where do questions that span pages go?"
+graph:
+  label: "golden set"
+  type: concept
+action: understand
+risks: read-only
+related-terms:
+  - "sample-question"
+last-updated: 2026-10-18
+---
+
+<p>{frontmatter.definition}</p>
+
+It is every page's `sample-questions` plus the golden-set files that
+`graph.questionFiles` names. `graph fill` drafts questions marked
+`reviewed: false`, and only reviewed ones count toward
+`foundThreshold`. See
+[Keep a golden set of reader questions](/manni/graph/questions/).

@@ -54,7 +54,7 @@ sample-questions:
 graph:
   label: manni term
   type: concept
-last-updated: 2026-10-18
+last-updated: 2026-10-19
 tags:
   - cli-tool
   - documentation-tools
@@ -92,7 +92,8 @@ A term reaches manni in one of two shapes.
   `<glossary>`, an AsciiDoc `[glossary]` list and a `.. glossary::` directive
   say what they are. A Markdown definition list and an HTML `<dl>` are read
   where the file declares `type: term-set`. A TBX termbase, v2 or v3, holds
-  an entry per concept, and each language in it is a term.
+  an entry per concept, and each language in it is a term. So does a SKOS
+  concept scheme in Turtle or JSON-LD, read when you name it.
 
 ## Six commands
 
@@ -100,7 +101,7 @@ A term reaches manni in one of two shapes.
 |---|---|
 | `manni term list [paths...]` | Lists every entry the set resolves to, with its id, label and alt-labels. |
 | `manni term get <term> [paths...]` | Shows one entry and the line it was read from. |
-| `manni term check [paths...]` | Checks the set and every `concepts:` reference into it, against ten rules. |
+| `manni term check [paths...]` | Checks the set and every `concepts:` reference into it, against twenty-two rules. |
 | `manni term lint [paths...]` | Runs Vale over each definition, abstract and scope note. |
 | `manni term write [paths...]` | Writes the set back in place, or renders it as pages, a glossary file, TBX, SKOS, CSV, JSON or a Vale style. |
 | `manni term formats` | Lists the constructs read and written, per format. |
@@ -109,12 +110,12 @@ A term reaches manni in one of two shapes.
 
 You don't need to install anything. Two term pages define `corrective lens`
 and `progressive lens`, and `PAL` is an alt-label of the second. A guide
-names three concepts:
+names four concepts:
 
 ```markdown title="docs/guides/fitting.md"
 ---
 title: Fitting lenses
-concepts: [PAL, corrective lens, progressive lens]
+concepts: [PAL, trifocal, corrective lens, progressive lens]
 ---
 ```
 
@@ -124,18 +125,17 @@ npx @hawkeyexl/manni term check
 
 ```
 docs/guides/fitting.md:3
-  error  manni:term/undefined-term       concepts: "PAL" names no entry.
-                                         "progressive lens" lists it as an alt-label.
+  warning manni:term/alt-label-reference  concepts: "PAL" is an alt-label of "progressive lens", so name the label.
+  error  manni:term/undefined-term       concepts: "trifocal" names no entry.
 
-1 error in 2 terms
+1 error, 1 warning in 2 terms
 ```
 
-{/* cite proof-exit-one */}
-{/* cite proof-exit-one-error-fails */}
-{/* cite proof-names-claiming-entry */}
-The exit code is `1`. `PAL` is a name the set knows, and the finding says
-which entry claims it, so the fix is the preferred label. Drop `PAL`, which
-the guide already names by its label, and the check passes:
+{/* cite proof-exit-one proof-exit-one-error-fails proof-names-claiming-entry */}
+The exit code is `1`, from the error. No entry claims `trifocal`. `PAL` is a
+name the set knows, and the warning says which entry claims it, so the fix is
+the label. Drop `trifocal`, and `PAL`, which the guide already names by its
+label, and the check passes:
 
 ```
 ✓ 2 terms, 2 references, no findings
@@ -178,28 +178,31 @@ The reference shelf holds the detail. The
 error. The [configuration reference](/manni/term/reference/configuration/)
 covers the `term:` keys. The
 [terminology reference](/manni/term/reference/terminology/) covers the
-fields, and the [rules reference](/manni/term/reference/rules/) covers the ten
-checks.
+fields, and the [rules reference](/manni/term/reference/rules/) covers the
+twenty-two checks.
 
 ## What manni term checks, and what it doesn't
 
 <CardGrid>
   <Card title="It checks" icon="approve-check">
-    That every `concepts:` value names an entry by its preferred label. That
-    ids and labels are unique within a language, ignoring case. That `broader`, `narrower`,
-    `related-terms` and `see` resolve, and that the hierarchy has no cycle.
+    That every `concepts:` value names an entry by its label. That ids and
+    labels are unique within a language, ignoring case. That `broader`,
+    `narrower`, `related-terms` and `see` resolve. That the hierarchy has no
+    cycle, counting each page's `graph:` block, and that a block's hierarchy
+    is on its term.
     With Vale, it checks the prose of each definition against your house
     voice.
   </Card>
   <Card title="It doesn't" icon="close">
-    Read the body of a page for how a term is used. That is what the Vale
-    style `write -f vale` generates is for, run by Vale over the docs. It
-    doesn't judge whether a definition is correct, either.
+    Check how the body of a page uses a term. That is what the Vale style
+    `write -f vale` generates is for, run by Vale over the docs. Only
+    `fill --crawl` reads a body, to propose terms. It doesn't judge whether a
+    definition is correct, either.
   </Card>
 </CardGrid>
 
 Term entries are written in the built-in
-[`manni:terminology:1.1.0`](/manni/meta/reference/schemas/manni-terminology/)
+[`manni:terminology:1.2.0`](/manni/meta/reference/schemas/manni-terminology/)
 vocabulary. `manni meta validate` checks one page's shape against it when the
-page's schema set includes it, as `-s manni:terminology:1.1.0` does. `manni
+page's schema set includes it, as `-s manni:terminology:1.2.0` does. `manni
 term check` checks the set.

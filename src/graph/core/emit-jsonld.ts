@@ -9,8 +9,8 @@
  *
  * Deliberately hand-rolled rather than the `jsonld` library, for the same
  * reason the Turtle emitter avoids N3.Writer: library formatting and ordering
- * are incidental, not a stability contract. dockg emits no blank nodes and no
- * language-tagged literals, so neither is handled here.
+ * are incidental, not a stability contract. dockg emits no blank nodes, so
+ * none is handled here. A language-tagged literal is `{@value, @language}`.
  */
 import { compactIri } from "./load.js";
 import type { Quad, Term } from "./derive.js";
@@ -33,6 +33,8 @@ interface RenderedValue {
   primary: string;
   /** Datatype IRI for typed literals; "" for IRIs and plain literals. */
   datatype: string;
+  /** Language tag for tagged literals; "" otherwise. */
+  language: string;
 }
 
 function renderValue(term: Term): RenderedValue {
@@ -42,6 +44,16 @@ function renderValue(term: Term): RenderedValue {
       kind: 0,
       primary: term.value,
       datatype: "",
+      language: "",
+    };
+  }
+  if (term.language) {
+    return {
+      value: { "@value": term.value, "@language": term.language },
+      kind: 1,
+      primary: term.value,
+      datatype: "",
+      language: term.language,
     };
   }
   if (term.datatype && term.datatype !== XSD_STRING) {
@@ -50,16 +62,17 @@ function renderValue(term: Term): RenderedValue {
       kind: 1,
       primary: term.value,
       datatype: term.datatype,
+      language: "",
     };
   }
-  return { value: term.value, kind: 1, primary: term.value, datatype: "" };
+  return { value: term.value, kind: 1, primary: term.value, datatype: "", language: "" };
 }
 
 function compareRendered(a: RenderedValue, b: RenderedValue): number {
   if (a.kind !== b.kind) return a.kind - b.kind;
   const p = byCodeUnit(a.primary, b.primary);
   if (p !== 0) return p;
-  return byCodeUnit(a.datatype, b.datatype);
+  return byCodeUnit(a.datatype, b.datatype) || byCodeUnit(a.language, b.language);
 }
 
 /** Collapse a sorted value list to a scalar (n=1) or array (n>1). */

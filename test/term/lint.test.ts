@@ -36,7 +36,7 @@ function term(
 }
 
 function set(...terms: Term[]): TermSet {
-  return { terms, references: [], notices: [] };
+  return { terms, references: [], blocks: [], notices: [] };
 }
 
 function alert(Check: string, Line: number, Severity: ValeAlert["Severity"] = "error", Message = "m"): ValeAlert {

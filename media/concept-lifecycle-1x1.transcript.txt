@@ -1,0 +1,71 @@
+One concept scheme, from freeform tags to checked questions: demo video transcript
+(silent video; text describes what is on screen)
+
+Frame: 1080x1080, 30 fps, 43.4 s. Every terminal line is real output of grep, sed, echo, bash's
+time and `node dist/cli.js ...` (typed as manni), run in C:\concepts, a junction to
+media/scratch-concepts/, built by media/capture-concepts/capture.sh. graph fill took 7.35 s;
+the replay shortens only that wait, to 2.1 s, and shows bash's real time line.
+
+[0:00-0:08] Title: Concepts nobody defined (1 / 5)
+$ grep concepts: docs/*.md
+docs/limits.md:concepts: [Upload, Quota]
+docs/retry.md:concepts: [Upload, Retry]
+$ manni term check; echo $?
+docs/limits.md:4   (bold)
+  error  manni:term/undefined-term       concepts: "Quota" names no entry.   ("error" in red)
+docs/retry.md:4   (bold)
+  error  manni:term/undefined-term       concepts: "Retry" names no entry.   ("error" in red)
+
+2 errors in 1 term
+1
+Highlighted rows: lines containing "undefined-term"
+Caption: Pages name concepts freely. Retry and Quota have no term page, so term check fails: exit 1.
+
+[0:08-0:16] Title: term fill --offline (2 / 5)
+$ manni term fill --offline
+manni: no model is available offline, so new terms have no definition; download one first with --local, or drop --offline.
+created docs/glossary/quota.md   Quota   stub, no definition
+created docs/glossary/retry.md   Retry   stub, no definition
+2 terms created, 0 filled, 2 left without a definition
+Highlighted rows: lines containing "created "
+Caption: --offline sends nothing off the machine. With no local model, term fill writes a stub per concept.
+
+[0:16-0:21] Title: What is left to write (3 / 5)
+$ manni term check; echo $?
+docs/glossary/quota.md:1   (bold)
+  error  manni:term/missing-definition   definition: missing, so write one or run manni term fill.   ("error" in red)
+docs/glossary/retry.md:1   (bold)
+  error  manni:term/missing-definition   definition: missing, so write one or run manni term fill.   ("error" in red)
+
+2 errors in 3 terms
+1
+Highlighted rows: lines containing "missing-definition"
+Caption: No undefined terms left. check now names the two definitions a person, or a model, still writes.
+
+[0:21-0:33] Title: Questions pinned to answers (4 / 5)
+$ manni graph build
+Wrote C:\concepts\graph.ttl (5 docs, 100 triples, 3 concepts (3 from the termbase))
+$ time manni graph fill docs/*.md --fields sample-questions --offline
+filled    docs/limits.md (sample-questions)
+            re-pinned  "How large can an upload be?"  lines 2
+filled    docs/retry.md (sample-questions)
+            paired     "How do I retry a failed upload?"  lines 2 (0.90)
+
+real	0m7.350s
+Highlighted rows: lines containing "3 from the termbase", "re-pinned", "paired", "real"
+Caption: 3 concepts, all from the termbase. A local model pins each page's question to its answer's lines.
+
+[0:33-0:43] Title: The answer changed (5 / 5)
+$ sed -i 's/one gigabyte/two gigabytes/' docs/limits.md
+$ manni graph check; echo $?
+warning: https://acme.dev/doc/docs/limits.md graph:sampleQuestion — lines 2 no longer hold the answer to "How large can an upload be?" as pinned, so re-pair it with manni graph fill --fields sample-questions and review it. [docs/limits.md]
+
+questions  2: 2 reviewed, 0 drafted, on 2 pages
+  found    1 of 2 reviewed in the top 1 (50%), 1 first (50%)
+  answers  2 pinned, 1 not reviewed: 1 current, 0 moved, 1 changed; 0 not pinned
+
+0 errors, 1 warning, 0 notices
+0
+Highlighted rows: lines containing "no longer hold", "1 changed"
+Caption: Edit the pinned line, and graph check flags the question: its answer is no longer there.
+

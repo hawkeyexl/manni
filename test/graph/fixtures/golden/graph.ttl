@@ -30,7 +30,9 @@
 
 <https://example.com/graph/concept/administration> a skos:Concept ;
   skos:inScheme <https://example.com/graph/scheme> ;
-  skos:prefLabel "Administration" .
+  skos:narrower <https://example.com/graph/concept/configuration> ;
+  skos:prefLabel "Administration" ;
+  skos:topConceptOf <https://example.com/graph/scheme> .
 
 <https://example.com/graph/concept/configuration> a skos:Concept ;
   skos:altLabel "config", "settings" ;
@@ -41,19 +43,24 @@
 
 <https://example.com/graph/concept/installation> a skos:Concept ;
   skos:inScheme <https://example.com/graph/scheme> ;
-  skos:prefLabel "Installation", "installation" .
+  skos:prefLabel "Installation", "installation" ;
+  skos:related <https://example.com/graph/concept/configuration> ;
+  skos:topConceptOf <https://example.com/graph/scheme> .
 
 <https://example.com/graph/concept/reference> a skos:Concept ;
   skos:inScheme <https://example.com/graph/scheme> ;
-  skos:prefLabel "reference" .
+  skos:prefLabel "reference" ;
+  skos:topConceptOf <https://example.com/graph/scheme> .
 
 <https://example.com/graph/concept/setup> a skos:Concept ;
   skos:inScheme <https://example.com/graph/scheme> ;
-  skos:prefLabel "setup" .
+  skos:prefLabel "setup" ;
+  skos:topConceptOf <https://example.com/graph/scheme> .
 
 <https://example.com/graph/concept/upgrade> a skos:Concept ;
   skos:inScheme <https://example.com/graph/scheme> ;
-  skos:prefLabel "upgrade" .
+  skos:prefLabel "upgrade" ;
+  skos:topConceptOf <https://example.com/graph/scheme> .
 
 <https://example.com/graph/doc/docs/configuration.md> a prov:Entity, graph:Document ;
   iirds:has-subject iirdsSft:Interface ;
@@ -241,4 +248,5 @@
   dcterms:title "SP-X300" .
 
 <https://example.com/graph/scheme> a skos:ConceptScheme ;
-  dcterms:title "manni graph concepts" .
+  dcterms:title "manni graph concepts" ;
+  skos:hasTopConcept <https://example.com/graph/concept/administration>, <https://example.com/graph/concept/installation>, <https://example.com/graph/concept/reference>, <https://example.com/graph/concept/setup>, <https://example.com/graph/concept/upgrade> .

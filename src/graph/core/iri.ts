@@ -66,6 +66,15 @@ export function mintConceptIri(base: string, label: string): string {
 }
 
 /**
+ * `{base}concept/{id}` — a concept the termbase defines (proposal 0086 §1).
+ * The id is the term's own, encoded as one segment. A term's id defaults to
+ * its label's slug, so most term concepts keep the IRI a label would mint.
+ */
+export function mintTermConceptIri(base: string, id: string): string {
+  return `${base}concept/${encodeSegment(id)}`;
+}
+
+/**
  * `{base}product/{slug(label)}` — iiRDS ProductVariant nodes (graph.applies-to).
  * Separate `product/` segment so a product and a concept sharing a label
  * cannot converge on one IRI.

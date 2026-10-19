@@ -1,0 +1,30 @@
+docs/src/content/docs/family/concept-lifecycle.mdx:
+  personas:
+    - sara
+  journeys:
+    - s15
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: "src/term/commands/fill.ts"
+    - path: "src/term/core/check.ts"
+    - path: "src/graph/core/derive.ts"
+    - path: "src/meta/core/validator.ts"
+    - path: "src/graph/commands/fill-questions.ts"
+  eval-suite: family
+  evals:
+    - id: walk-the-lifecycle
+      assertion: "A reader can name the seven steps from freeform concepts to a checked graph, and the command that runs each one."
+      type: capability
+      grader: ai
+    - id: review-drafts
+      assertion: "A reader can say how to review a definition term fill drafted, and what a surviving meta-provenance entry means."
+      type: capability
+      grader: ai
+  owner:
+    - "@hawkeyexl"
+  created: 2026-10-18
+  provenance:
+    - generated-by: Claude Opus 5.5
+      lines: 2-640
+      integrity: sha256-59cc23252eb8874c6254fd1b427476c32afe362c51238f06277f5bf8cf4aaab8

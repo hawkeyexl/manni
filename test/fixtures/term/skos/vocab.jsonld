@@ -1,0 +1,70 @@
+{
+  "@context": {
+    "skos": "http://www.w3.org/2004/02/skos/core#",
+    "ex": "https://example.com/optics/",
+    "prefLabel": { "@id": "skos:prefLabel", "@container": "@language" },
+    "broader": { "@id": "skos:broader", "@type": "@id" }
+  },
+  "@graph": [
+    {
+      "@id": "ex:",
+      "@type": "skos:ConceptScheme",
+      "skos:hasTopConcept": { "@id": "ex:spectacle-lens" }
+    },
+    {
+      "@id": "ex:spectacle-lens",
+      "@type": "skos:Concept",
+      "skos:inScheme": { "@id": "ex:" },
+      "skos:topConceptOf": { "@id": "ex:" },
+      "prefLabel": { "en": "spectacle lens", "de": "Brillenglas" },
+      "skos:definition": [
+        { "@value": "A lens worn in front of the eye to correct vision.", "@language": "en" },
+        { "@value": "Ein Glas vor dem Auge, das die Sicht korrigiert.", "@language": "de" }
+      ],
+      "skos:narrower": [{ "@id": "ex:progressive-lens" }, { "@id": "ex:bifocal" }],
+      "skos:notation": "OPT-1"
+    },
+    {
+      "@id": "ex:progressive-lens",
+      "@type": "skos:Concept",
+      "skos:inScheme": { "@id": "ex:" },
+      "prefLabel": { "en": "progressive lens", "de": "Gleitsichtglas" },
+      "skos:altLabel": [
+        { "@value": "PAL", "@language": "en" },
+        { "@value": "graduated lens", "@language": "en" },
+        { "@value": "Gleitsichtbrille", "@language": "de" }
+      ],
+      "skos:hiddenLabel": { "@value": "no-line bifocal", "@language": "en" },
+      "skos:definition": [
+        { "@value": "A spectacle lens whose power changes gradually, with no visible line.", "@language": "en" },
+        { "@value": "Ein Brillenglas, dessen Stärke stufenlos zunimmt.", "@language": "de" }
+      ],
+      "skos:scopeNote": [
+        { "@value": "Eyewear only, not camera optics.", "@language": "en" },
+        { "@value": "Nur Brillen, keine Kameraoptik.", "@language": "de" }
+      ],
+      "broader": "ex:spectacle-lens",
+      "skos:related": { "@id": "ex:bifocal" },
+      "skos:notation": "OPT-2",
+      "skos:exactMatch": { "@id": "http://www.wikidata.org/entity/Q1052424" },
+      "skos:closeMatch": { "@id": "https://vocab.example.org/varifocal" },
+      "skos:broadMatch": { "@id": "https://vocab.example.org/lens" },
+      "skos:narrowMatch": { "@id": "https://vocab.example.org/office-progressive" },
+      "skos:relatedMatch": { "@id": "https://vocab.example.org/presbyopia" },
+      "skos:note": [
+        { "@value": "Also called varifocal.", "@language": "en" },
+        { "@value": "Auch Gleitsichtbrille genannt.", "@language": "de" }
+      ],
+      "skos:example": { "@value": "She switched to progressive lenses at 45.", "@language": "en" }
+    },
+    {
+      "@id": "ex:bifocal",
+      "@type": "skos:Concept",
+      "skos:inScheme": { "@id": "ex:" },
+      "prefLabel": { "en": "bifocal", "de": "Bifokalglas" },
+      "skos:definition": { "@value": "A lens with two distinct powers.", "@language": "en" },
+      "broader": "ex:spectacle-lens",
+      "skos:related": { "@id": "ex:progressive-lens" }
+    }
+  ]
+}

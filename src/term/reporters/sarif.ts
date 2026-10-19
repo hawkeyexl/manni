@@ -20,16 +20,29 @@ const RULES_URI = "https://hawkeyexl.github.io/manni/term/reference/rules/";
 
 /** What each `check` rule is, as the rules reference's table says it. */
 const RULE_DESCRIPTIONS: Readonly<Record<TermRule, string>> = {
-  "undefined-term": "A page's concepts: names a label no entry claims as its preferred label.",
+  "undefined-term": "A page's concepts: names no entry, by label, id or alt-label.",
   "duplicate-id": "Two entries share an id.",
   "label-collision": "Two entries claim the same preferred label, ignoring case.",
   "alt-label-collision": "An entry's alt-label is another entry's preferred label, ignoring case.",
   "dangling-reference": "A value of broader, narrower, related-terms or see names no entry, by label or by id.",
   "broader-cycle": "A chain of broader returns to where it started.",
   "see-not-empty": "An entry with see also carries a definition.",
+  "missing-definition": "An entry has neither a definition nor see.",
+  "conflicting-matches": "One IRI is listed under two of an entry's match kinds.",
   "asymmetric-hierarchy": "A names B as broader, and B omits A from narrower, or the reverse.",
+  "alt-label-reference": "A page's concepts: names an entry by one of its alt-labels.",
   "abstract-too-long": "An abstract is longer than term.abstractMaxLength.",
-  "unused-term": "No page's concepts: names the entry's preferred label.",
+  "unused-term": "No page's concepts: names the entry.",
+  "hierarchy-outside-termbase":
+    "A page's graph: block gives a term a broader, narrower or related concept its own entry does not list.",
+  "label-overlap": "A hidden-label or alt-label repeats one of the entry's own names, or a hidden-label is another entry's label or alt-label.",
+  "asymmetric-related": "A names B in related-terms, and B omits A.",
+  "related-in-hierarchy": "A related term is also broader or narrower than the entry, at any depth.",
+  "ambiguous-alt-label": "Two entries share an alt-label, ignoring case.",
+  "deprecated-label": "The entry's label is deprecated or superseded in its designations.",
+  "related-siblings": "Two related terms share a broader term.",
+  "orphan-term": "An entry has no broader, narrower or related term, in a termbase with a hierarchy.",
+  "keyword-candidate": "A free keyword is on several pages and names no term.",
 };
 
 const PROSE_PREFIX = `${RULE_ID_PREFIX}/prose/`;

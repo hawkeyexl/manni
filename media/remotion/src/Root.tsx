@@ -20,6 +20,7 @@ import { beats as graphImpactBeats, totalFrames as graphImpactTotalFrames, TYPIN
 import { beats as testBeats, totalFrames as testTotalFrames, TYPING_MS as testTypingMs } from "./test/beats";
 import { beats as siteBeats, totalFrames as siteTotalFrames, TYPING_MS as siteTypingMs } from "./site/beats";
 import { beats as tbxBeats, totalFrames as tbxTotalFrames, TYPING_MS as tbxTypingMs } from "./tbx/beats";
+import { beats as conceptsBeats, totalFrames as conceptsTotalFrames, TYPING_MS as conceptsTypingMs } from "./concepts/beats";
 import { beats as graphFormatsBeats, totalFrames as graphFormatsTotalFrames, TYPING_MS as graphFormatsTypingMs } from "./graph-formats/beats";
 
 /** sidecar-url-1x1: 23 px / 75 columns, derived in media/sidecar-url-1x1.script.md. */
@@ -100,6 +101,12 @@ const DemoSystemPrompt: React.FC = () => <DemoView beats={systemPromptBeats} fon
  * (media/capture-tbx/cols.mjs). Ligatures off: the TBX tags' `</` and `/>` would draw as one glyph.
  */
 const DemoTbx: React.FC = () => <DemoView beats={tbxBeats} fontPx={22} linePx={31} cols={78} typingMs={tbxTypingMs} ligatures={false} />;
+
+/**
+ * concept-lifecycle-1x1: 23 px / 75 columns, derived in media/concept-lifecycle-1x1.script.md
+ * (media/capture-concepts/cols.mjs). Ligatures off: a terminal prints `--` and `//` as two glyphs.
+ */
+const DemoConcepts: React.FC = () => <DemoView beats={conceptsBeats} fontPx={23} linePx={32} cols={75} typingMs={conceptsTypingMs} ligatures={false} />;
 
 export const Root: React.FC = () => (
   <>
@@ -262,6 +269,14 @@ export const Root: React.FC = () => (
       height={1080}
       fps={FPS}
       durationInFrames={tbxTotalFrames}
+    />
+    <Composition
+      id="ConceptLifecycleDemo"
+      component={DemoConcepts}
+      width={1080}
+      height={1080}
+      fps={FPS}
+      durationInFrames={conceptsTotalFrames}
     />
   </>
 );

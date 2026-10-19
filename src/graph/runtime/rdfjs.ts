@@ -29,6 +29,7 @@ import { byCodeUnit } from "../core/sort.js";
 import type { GraphIndex, Value } from "./graph.js";
 
 const XSD_STRING = "http://www.w3.org/2001/XMLSchema#string";
+const RDF_LANG_STRING = "http://www.w3.org/1999/02/22-rdf-syntax-ns#langString";
 
 export interface RdfTerm {
   termType: "NamedNode" | "Literal" | "DefaultGraph";
@@ -67,18 +68,20 @@ export function defaultGraph(): RdfTerm {
   };
 }
 
-export function literal(value: string, datatype?: string): RdfTerm {
-  const dt = namedNode(datatype ?? XSD_STRING);
+export function literal(value: string, datatype?: string, language?: string): RdfTerm {
+  const lang = language ?? "";
+  const dt = namedNode(lang ? RDF_LANG_STRING : (datatype ?? XSD_STRING));
   return {
     termType: "Literal",
     value,
-    language: "",
+    language: lang,
     datatype: dt,
     equals(other) {
       return (
         !!other &&
         other.termType === "Literal" &&
         other.value === value &&
+        (other.language ?? "") === lang &&
         !!other.datatype &&
         other.datatype.value === dt.value
       );
@@ -87,7 +90,7 @@ export function literal(value: string, datatype?: string): RdfTerm {
 }
 
 function toTerm(v: Value): RdfTerm {
-  return v.kind === "iri" ? namedNode(v.value) : literal(v.value, v.datatype);
+  return v.kind === "iri" ? namedNode(v.value) : literal(v.value, v.datatype, v.language);
 }
 
 function makeQuad(s: string, p: string, o: Value): RdfQuad {

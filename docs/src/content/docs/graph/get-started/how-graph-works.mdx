@@ -18,7 +18,7 @@ concepts:
   - section
   - harvest rule
   - near miss
-last-updated: 2026-10-06
+last-updated: 2026-10-19
 ---
 
 You have built a graph and asked it a question. This page is the model behind
@@ -74,7 +74,7 @@ files it was given.
 |---|---|
 | Document | One per source file. Carries its path and a content hash. |
 | Section | One per heading, with its level, its order in the page, and its slug. |
-| Concept | A SKOS concept, one per distinct subject, tag or `graph` concept reference. |
+| Concept | A SKOS concept, one per term in the termbase, and one per other distinct subject, tag or `graph` concept reference. |
 | Concept scheme | The set the concepts belong to. |
 | Product variant | Named by `applies-to`. |
 | Agent | A person, an organization, or a software agent, from frontmatter or git. |
@@ -90,7 +90,7 @@ section reference.
 
 ## What becomes an edge
 
-`build.derive` names the sources, and all seven are on by default:
+`build.derive` names the sources, and all eight are on by default:
 
 | Source | What it contributes |
 |---|---|
@@ -101,6 +101,7 @@ section reference.
 | `images` | Images a page carries. |
 | `code` | Code blocks and their languages. |
 | `provenance` | Revision history and commit agents, from git. |
+| `terms` | The termbase, each term as a concept. |
 
 Narrowing the list makes a smaller graph, not a wrong one. A predicate nothing
 derives simply has no triples, and `graph stats` will show the row at zero.
@@ -115,6 +116,39 @@ collection is declared, so no manifest is read.
 and a published site path all resolve to the file that serves them, through the
 `routes` config. That is why a broken internal link means the target does not
 exist rather than that it was spelled unusually.
+
+## One concept scheme
+
+Every concept belongs to one SKOS concept scheme. Under the `terms` source, the
+termbase feeds it too. That is the set of term entries
+[`manni term check`](/manni/term/) reads, from the same config.
+
+Each term becomes a concept at `{baseIri}concept/{id}`. A term written in
+several languages is one concept, joined on its `id`. Its `prefLabel`,
+`altLabel`, `hiddenLabel`, `definition` and `scopeNote` carry the term's
+language tag. A term's `notation` becomes `skos:notation`, untagged. Each of
+its match fields becomes the SKOS mapping property of that kind, such as
+`skos:closeMatch`, pointing at the IRI it names. A `see` entry is no concept of
+its own. Its label becomes an `altLabel` of the term it points to.
+
+A concept label on a page resolves through the termbase first. That covers
+`concepts`, `tags`, `keywords`, a section's `concepts`, and the `graph:` block's
+`label`, `broader`, `narrower` and `related-concepts`. A label matches a term
+by its label, then its id, then an alt-label, and case is ignored. The page's
+own language is tried first, then the same base language, then any.
+
+So `concepts: [PAL]` and a term that lists PAL as an alt-label meet on one
+node. A label no term defines is a freeform concept at
+`{baseIri}concept/{slug}`. A term's id defaults to its label's slug, so most
+IRIs stay put when a term page lands.
+
+The hierarchy is the union of every source. Each `broader` edge comes with its
+`narrower`, and each `related` edge runs both ways. A concept with no broader
+concept is a top concept of the scheme, linked in both directions. A term page
+whose `graph:` block names no `label` has its term as its primary topic.
+
+[From tags to a knowledge graph](/manni/family/concept-lifecycle/) builds one
+scheme step by step, from freeform tags to term pages and a checked graph.
 
 ## The `graph:` block
 

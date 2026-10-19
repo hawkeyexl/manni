@@ -1,0 +1,670 @@
+---
+title: From tags to a knowledge graph
+description: "Grow the concepts your pages name into a governed termbase and a checked graph, one manni command at a time, with real output at every step."
+sidebar:
+  order: 3
+id: "family-concept-lifecycle"
+type: "tutorial"
+keywords: ["concept lifecycle", "termbase", "concept scheme", "term fill", "SKOS", "x-manni-term", "sample questions"]
+language: en
+audiences: ["schema-authors"]
+intent: "Take a docset from freeform concepts to a governed termbase, metadata held to it, a SKOS hand-off, and a graph whose pages are found for their own questions."
+lifecycle: published
+applies-to: ["domain:family", "domain:term", "domain:graph", "domain:meta"]
+prerequisites: ["term-get-started"]
+next-steps: ["term-reference-rules", "meta-schemas-term-values", "graph-questions"]
+concepts: ["concept scheme", "meta-provenance", "x-manni-term", "concept mapping", "sample question", "golden set"]
+sample-questions: ["How do I turn the concepts my pages name into a termbase?", "How do the termbase and the knowledge graph share one set of concepts?", "In what order do I build a vocabulary, a taxonomy and a graph with manni?"]
+graph: { label: "From tags to a knowledge graph", type: learning }
+last-updated: 2026-10-19
+tags:
+  - terminology
+  - knowledge-graph
+  - tutorial
+action: practice
+related-pages:
+  - term-get-started
+  - term-reference-cli
+  - graph-get-started-how-graph-works
+  - term-set-up-move-and-hand-off
+---
+
+import { Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';
+
+Pages name their concepts long before anyone writes a glossary. One page says
+`Retry` and another says `Retries`. A third tags `idempotency key` with a
+lowercase i. Each spelling is a separate node in the graph, and nothing says
+what any of them means.
+
+This page takes one small docset from those free tags to a governed termbase
+and a checked graph. Each step runs one domain's commands and links to that
+domain's reference for the detail. The steps run from vocabulary to schema,
+taxonomy, thesaurus and graph.
+
+Every transcript below is real output from the built tool. The docset starts
+from a copy of `test/fixtures/term/fill/basic/`. Each page adds a
+`sample-questions` entry, the payments page adds `audiences:`, and the config
+adds a `graph:` section. It grows with each step.
+
+## The docset
+
+Two API pages name their concepts in `concepts:`, `keywords:` and a `graph:`
+block. Neither knows the other's spelling:
+
+```markdown title="docs/api/retries.md"
+---
+title: Retries
+description: How the client retries failed requests.
+language: en
+concepts: [Retry, Time-out]
+keywords: [idempotency key]
+sample-questions: [How does the client retry a request that timed out?]
+graph:
+  label: Retry
+  alt-labels: [Retries]
+  broader: [Errors]
+  related-concepts: [Backoff]
+---
+```
+
+```markdown title="docs/api/payments.md"
+---
+title: Payments
+description: Taking a payment safely.
+language: en
+audiences: [developers, Ops]
+concepts: [Retries]
+keywords: [Idempotency key]
+sample-questions: [How do I stop a retry from charging a card twice?]
+graph:
+  label: Backoff
+  definition: Waiting longer between each retry.
+---
+```
+
+The glossary holds two term pages. `Timeout` lists `Time-out` as an
+alt-label, and `Jitter` has no definition yet. The config declares one
+collection and a `graph:` section:
+
+```yaml title="manni.config.yaml"
+collections:
+  - name: pages
+    paths: ["docs/**/*.md"]
+
+graph:
+  baseIri: https://example.com/graph/
+  out: graph.ttl
+```
+
+## 1. Name concepts freely
+
+The graph accepts whatever the pages name. Build it, then ask which concept
+each page is about:
+
+```console
+$ manni graph build
+$ manni graph query --predicate dcterms:subject
+<https://example.com/graph/doc/docs/api/payments.md> dcterms:subject <https://example.com/graph/concept/idempotency-key>
+<https://example.com/graph/doc/docs/api/payments.md> dcterms:subject <https://example.com/graph/concept/retries>
+<https://example.com/graph/doc/docs/api/retries.md> dcterms:subject <https://example.com/graph/concept/idempotency-key>
+<https://example.com/graph/doc/docs/api/retries.md> dcterms:subject <https://example.com/graph/concept/retry>
+<https://example.com/graph/doc/docs/api/retries.md> dcterms:subject <https://example.com/graph/concept/timeout>
+
+5 match(es)
+```
+
+`Time-out` already lands on `concept/timeout`, because the term lists it as an
+alt-label. The termbase and the pages feed one
+[concept scheme](/manni/graph/get-started/how-graph-works/#one-concept-scheme),
+and a label resolves to a term by its label, its id, then an alt-label.
+`Retry` and `Retries` are two nodes, because no term joins them yet.
+`graph check` sees the two spellings of the idempotency key:
+
+```console
+$ manni graph check
+warning: https://example.com/graph/concept/idempotency-key skos:prefLabel — concept carries multiple prefLabels (same slug, different spellings) — settle on one spelling [docs/api/payments.md, docs/api/retries.md]
+
+questions  2: 2 reviewed, 0 drafted, on 2 pages
+  found    2 of 2 reviewed in the top 5 (100%), 2 first (100%)
+  answers  0 pinned, 0 not reviewed: 0 current, 0 moved, 0 changed; 2 not pinned
+
+0 errors, 1 warning, 0 notices
+```
+
+The `questions` rows count the pages' `sample-questions`. Step 6 comes back
+to them.
+
+`manni term check` says the same thing from the termbase's side, and exits
+`1`:
+
+```console
+$ manni term check
+docs/api/payments.md:6
+  error  manni:term/undefined-term       concepts: "Retries" names no entry.
+docs/api/payments.md:7
+  notice manni:term/keyword-candidate    keywords: "Idempotency key" is on 2 pages and names no term, so add it to concepts: or run manni term fill --crawl.
+docs/api/retries.md:5
+  warning manni:term/alt-label-reference  concepts: "Time-out" is an alt-label of "Timeout", so name the label.
+  error  manni:term/undefined-term       concepts: "Retry" names no entry.
+docs/glossary/jitter.md:1
+  error  manni:term/missing-definition   definition: missing, so write one or run manni term fill.
+  notice manni:term/orphan-term          no broader, narrower or related term, so place it in the hierarchy.
+  notice manni:term/unused-term          no page's concepts: names this term
+docs/glossary/timeout.md:1
+  notice manni:term/orphan-term          no broader, narrower or related term, so place it in the hierarchy.
+
+3 errors, 1 warning, 4 notices in 2 terms
+```
+
+## 2. Bootstrap the termbase
+
+`manni term fill` writes a term page for each concept the pages name and the
+termbase lacks. `--dry-run` writes nothing. `--offline` sends nothing off this
+machine, so only a model already downloaded here may run. This run points
+`INFERENCE_MODELS_DIR` at an empty directory, so it shows a machine with no
+model at all:
+
+```console
+$ INFERENCE_MODELS_DIR=$(mktemp -d) manni term fill --offline --dry-run
+manni: no model is available offline, so new terms have no definition; download one first with --local, or drop --offline.
+would create docs/glossary/retry.md     Retry     stub, no definition
+would create docs/glossary/errors.md    Errors    stub, no definition
+would create docs/glossary/backoff.md   Backoff   definition from graph: block
+3 terms would be created, 0 would be filled, 2 left without a definition
+```
+
+`Backoff` takes its definition from the `graph:` block on the payments page.
+The other two are stubs. With a model, `fill` drafts their definitions, and
+fills `Jitter` too. This docset names a small local model in the family's
+`providers:` map, which `graph fill` reads as well:
+
+```yaml title="manni.config.yaml"
+providers:
+  provider: llama-cpp
+  model: granite-4.1-3b-q2
+```
+
+```console
+$ manni term fill
+created docs/glossary/retry.md     Retry     definition drafted (0.85)
+created docs/glossary/errors.md    Errors    definition drafted (0.70)
+created docs/glossary/backoff.md   Backoff   definition from graph: block
+filled  docs/glossary/jitter.md    Jitter    definition drafted (0.70)
+3 terms created, 1 filled, 0 left without a definition
+```
+
+A new page carries what the pages said about the concept. Its alt-labels and
+hierarchy come from the `graph:` blocks, and `meta-provenance` names the model
+that wrote each field:
+
+```markdown title="docs/glossary/retry.md"
+---
+title: Retry
+type: term
+id: retry
+language: en
+label: Retry
+definition: A retry is an attempt to execute a failed operation again after a brief pause, typically to handle temporary issues like network errors or transient server problems.
+alt-labels:
+  - Retries
+broader:
+  - Errors
+related-terms:
+  - Backoff
+meta-provenance:
+  - generated-by: granite-4.1-3b-q2
+    fields:
+      - /definition
+    confidence:
+      /definition: 0.85
+---
+```
+
+`--crawl` goes further. It sends page bodies and free `keywords:` to the
+model, which proposes terms the metadata never named:
+
+```console
+$ manni term fill --crawl
+created docs/glossary/idempotency-key.md   Idempotency key   definition drafted (0.95)
+1 term created, 0 filled, 0 left without a definition
+```
+
+The [CLI reference](/manni/term/reference/cli/#term-fill) has every flag, and
+where new pages go.
+
+## 3. Define and govern
+
+A draft is a proposal. Run the check over the filled termbase:
+
+```console
+$ manni term check
+docs/api/payments.md:6
+  warning manni:term/alt-label-reference   concepts: "Retries" is an alt-label of "Retry", so name the label.
+docs/api/retries.md:5
+  warning manni:term/alt-label-reference   concepts: "Time-out" is an alt-label of "Timeout", so name the label.
+docs/glossary/backoff.md:1
+  warning manni:term/asymmetric-related    related-terms: omits "Retry", which lists this entry as related.
+  notice manni:term/unused-term           no page's concepts: names this term
+docs/glossary/errors.md:1
+  warning manni:term/asymmetric-hierarchy  narrower: omits "Retry", which lists this entry as broader
+  notice manni:term/unused-term           no page's concepts: names this term
+docs/glossary/idempotency-key.md:1
+  notice manni:term/orphan-term           no broader, narrower or related term, so place it in the hierarchy.
+  notice manni:term/unused-term           no page's concepts: names this term
+docs/glossary/jitter.md:1
+  notice manni:term/orphan-term           no broader, narrower or related term, so place it in the hierarchy.
+  notice manni:term/unused-term           no page's concepts: names this term
+docs/glossary/timeout.md:1
+  notice manni:term/orphan-term           no broader, narrower or related term, so place it in the hierarchy.
+
+4 warnings, 7 notices in 6 terms
+```
+
+The errors are gone. What is left are the rules a thesaurus needs. A related
+link must hold both ways, a broader term must list its narrower one, and each
+term needs a place in the hierarchy. The
+[check rules](/manni/term/reference/rules/) say what each one means.
+
+Then read every draft. A 3B model wrote these, and its `Jitter` describes
+network jitter, which is the wrong sense here. Rewrite it and place the term
+under `Backoff`. Then delete the `meta-provenance` entry, because a surviving
+entry marks fields no person has reviewed:
+
+```markdown title="docs/glossary/jitter.md"
+---
+title: Jitter
+type: term
+id: jitter
+label: Jitter
+definition: A random amount added to each backoff wait, so that clients do not retry in step.
+broader: [Backoff]
+---
+```
+
+The crawl's `Idempotency key` draft copied a sentence from the payments page.
+It also proposed `Unique identifier` as an alt-label. Rewrite the one, and
+replace the other with `Idempotency token`. Relate `Idempotency key` to
+`Retry`, and place `Timeout` under `Errors`. Give each related link and each
+broader link its other half. In
+`concepts:`, name labels rather than alt-labels, and list each term the page
+is about. The check comes back with one notice:
+
+```console
+$ manni term check
+docs/glossary/errors.md:1
+  notice manni:term/unused-term          no page's concepts: names this term
+
+1 notice in 6 terms
+```
+
+## 4. Hold metadata to the vocabulary
+
+A taxonomy is a branch of the termbase. Write an `Audience` term with
+`Developer` and `Operator` below it, and give `Operator` the alt-label `Ops`:
+
+```markdown title="docs/glossary/operator.md"
+---
+title: Operator
+type: term
+id: operator
+label: Operator
+definition: A reader who runs the service in production.
+broader: [Audience]
+alt-labels: [Ops]
+---
+```
+
+Then mark the field in the pages' schema with
+[`x-manni-term`](/manni/meta/schemas/term-values/). `under` limits its values
+to terms below that branch:
+
+```json title="page.schema.json"
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/page.json",
+  "type": "object",
+  "properties": {
+    "audiences": {
+      "type": "array",
+      "items": { "type": "string" },
+      "x-manni-term": { "under": "Audience" }
+    }
+  }
+}
+```
+
+```yaml title="manni.config.yaml"
+meta:
+  overrides:
+    - files: "docs/api/**"
+      schemas: [./page.schema.json]
+```
+
+`manni meta validate` reads the same termbase `manni term check` reads:
+
+```console
+$ manni meta validate docs/api/
+Using manni.config.yaml (.)
+✗ docs/api/payments.md
+    /audiences/0  "developers" names no term; page.schema.json marks this field x-manni-term.  (line 5)  [term:undefined]
+    /audiences/1  warning "Ops" is an alt-label of "Operator", so use the label.  (line 5)  [term:alt-label]
+✓ docs/api/retries.md
+
+2 files checked, 1 passed, 1 failed, 1 error, 1 warning
+```
+
+Write `audiences: [Developer, Operator]` and both pages pass. `manni meta fill`
+offers only the labels under the branch.
+
+## 5. Map outward and exchange
+
+A term can say which concept it matches in another vocabulary. The mapping
+keys are `exact-matches`, `close-matches`, `broad-matches`, `narrow-matches`
+and `related-matches`. Each takes an IRI or a list:
+
+```yaml title="docs/glossary/idempotency-key.md"
+related-terms: [Retry]
+exact-matches: https://example.org/http-vocab/idempotency-key
+```
+
+`term check` reports an IRI listed under two kinds, as
+[`conflicting-matches`](/manni/term/reference/rules/#conflicting-matches).
+`graph check` reports a
+[mapping that points into the scheme](/manni/graph/fix/#a-mapping-that-points-into-the-scheme)
+itself.
+
+The termbase leaves as SKOS. `-f skos-ttl` writes Turtle, and `-f skos`
+writes JSON-LD:
+
+```console
+$ manni term write docs/glossary/ -f skos-ttl -o build/retries.ttl
+Wrote 9 terms to build/retries.ttl
+```
+
+The scheme lists its top concepts, and the mapping becomes `skos:exactMatch`.
+This excerpt is the scheme and one concept:
+
+```turtle title="build/retries.ttl"
+<> a skos:ConceptScheme;
+    dcterms:description "Generated by manni term write.";
+    skos:hasTopConcept <#audience>, <#backoff>, <#errors>, <#idempotency-key>.
+<#idempotency-key> a skos:Concept;
+    skos:inScheme <>;
+    skos:topConceptOf <>;
+    skos:prefLabel "Idempotency key"@en;
+    skos:altLabel "Idempotency token"@en;
+    skos:definition "A value sent with a request so that the server applies a repeated request only once."@en;
+    skos:related <#retry>;
+    skos:exactMatch <https://example.org/http-vocab/idempotency-key>.
+```
+
+A `.ttl` file named on the command line reads back as a termbase:
+
+```console
+$ manni term list build/retries.ttl
+audience          Audience
+backoff           Backoff
+developer         Developer
+errors            Errors
+idempotency-key   Idempotency key   Idempotency token
+jitter            Jitter
+operator          Operator          Ops
+retry             Retry             Retries
+timeout           Timeout           Time-out
+9 terms
+```
+
+A scheme kept in a thesaurus editor comes in the same way. A translation
+system takes TBX instead, with `-f tbx` or `-f tbx3`.
+[Move and hand off a termbase](/manni/term/set-up/move-and-hand-off/#bring-a-skos-scheme-in)
+covers both directions.
+
+## 6. Build and check the graph against its questions
+
+Each page declares `sample-questions`, the questions a reader asks to reach
+it. `graph check` asks each one, and reports a page that is not found for its
+own question. `top: 1` keeps this small docset honest, because a page must be
+the first one found. `perPage` comes into play when `graph fill` drafts:
+
+```yaml title="manni.config.yaml"
+graph:
+  baseIri: https://example.com/graph/
+  out: graph.ttl
+  check:
+    questions:
+      top: 1
+  fill:
+    questions:
+      perPage: 2
+```
+
+A new page about rate limits asks how long to wait before a retry. Its title
+and description never mention one:
+
+```markdown title="docs/api/rate-limits.md"
+---
+title: Rate limits
+description: What the API does when a client sends too many requests.
+language: en
+concepts: [Retry]
+sample-questions: [How long should I wait before I retry?]
+---
+
+A 429 response carries a Retry-After header.
+Wait that many seconds before you send the request again.
+```
+
+```console
+$ manni graph build
+$ manni graph check
+warning: https://example.com/graph/doc/docs/api/rate-limits.md graph:sampleQuestion — "How long should I wait before I retry?" does not find this page in the top 1 (it ranks 2; first is docs/api/retries.md) [docs/api/rate-limits.md]
+
+questions  3: 3 reviewed, 0 drafted, on 3 pages
+  found    2 of 3 reviewed in the top 1 (66%), 2 first (66%)
+  answers  0 pinned, 0 not reviewed: 0 current, 0 moved, 0 changed; 3 not pinned
+
+0 errors, 1 warning, 0 notices
+```
+
+The check measures retrieval only. It says whether a reader finds the page,
+and nothing about whether the page is right. Say what the page is for in the
+words a reader uses:
+
+```yaml
+description: How long to wait before you retry a request the API turned away.
+```
+
+The build now reports nine concepts, all nine from the termbase, and all three
+questions find their pages.
+
+### Pin the answers
+
+Finding a page proves little when the page is long. A question can also pin
+the body lines that answer it, under
+[`manni:ai-context:1.1.0`](/manni/meta/reference/schemas/manni-ai-context/).
+`graph fill` pairs each question with those lines, and drafts more until a
+page has `perPage`:
+
+```console
+$ manni graph fill docs/api/ --fields sample-questions
+filled    docs/api/payments.md (sample-questions)
+            paired     "How do I stop a retry from charging a card twice?"  lines 2 (0.90)
+            dropped    "How do I stop a retry from charging a card twice?"  duplicate of docs/api/payments.md
+filled    docs/api/rate-limits.md (sample-questions)
+            paired     "How long should I wait before I retry?"  lines 3 (0.90)
+            dropped    "How long should I wait before I retry?"  duplicate of docs/api/rate-limits.md
+filled    docs/api/retries.md (sample-questions)
+            paired     "How does the client retry a request that timed out?"  lines 2 (0.90)
+            dropped    "How does the client retry a request that timed out?"  duplicate of docs/api/retries.md
+            drafted    "What should be sent with each retry?"  lines 3 (0.80)
+```
+
+The model proposed three drafts that repeat a question the page already asks,
+and the gate dropped them. A pin holds lines and a hash over them, as a
+citation does. Every new pin and draft is marked `reviewed: false`:
+
+```yaml title="docs/api/retries.md"
+sample-questions:
+  - question: How does the client retry a request that timed out?
+    answers:
+      - lines: 2
+        integrity: sha256-bff8b23baf4b1930ec50d0bef7e833de857b0a151b908593b3d072e4166350d5
+        reviewed: false
+  - question: What should be sent with each retry?
+    answers:
+      - lines: 3
+        integrity: sha256-5bf70da25ba1240afbd22b4279c03fef6c783a2812d76b59eee05addbe1cbcb2
+    generated-by: llama-cpp/granite-4.1-3b-q2
+    confidence: 0.8
+    reviewed: false
+```
+
+### Review the drafts
+
+`graph check` reports drafts at notice, and counts them apart until a person
+reviews them:
+
+```console
+$ manni graph check
+notice: https://example.com/graph/doc/docs/api/retries.md graph:sampleQuestion — "How does the client retry a request that timed out?" repeats 5 of its 9 word pairs from its answer, so it tests matching words more than finding. [docs/api/retries.md]
+
+questions  4: 3 reviewed, 1 drafted, on 3 pages
+  found    3 of 3 reviewed in the top 1 (100%), 3 first (100%)
+  drafted  1 of 1 in the top 1, not counted until reviewed
+  answers  4 pinned, 4 not reviewed: 4 current, 0 moved, 0 changed; 0 not pinned
+
+0 errors, 0 warnings, 1 notice
+```
+
+The notice is about the hand-written question. It borrows the answer's own
+words, so it tests word matching more than finding. Reword it as a reader
+would ask:
+
+```yaml
+  - question: What does the client do when a request times out?
+```
+
+Read each pinned line and each draft, then delete every `reviewed: false`.
+A question or pin with no `reviewed` key counts as reviewed:
+
+```console
+$ manni graph check
+questions  4: 4 reviewed, 0 drafted, on 3 pages
+  found    4 of 4 reviewed in the top 1 (100%), 4 first (100%)
+  answers  4 pinned, 0 not reviewed: 4 current, 0 moved, 0 changed; 0 not pinned
+
+0 errors, 0 warnings, 0 notices
+```
+
+### Gate on the found rate
+
+`foundThreshold` turns the `found` row into a gate. Below it, `graph check`
+exits `1`:
+
+```yaml title="manni.config.yaml"
+graph:
+  check:
+    questions:
+      top: 1
+      foundThreshold: 100
+```
+
+Then someone rewrites the line the rate-limits question is pinned to:
+
+```markdown
+Wait the number of seconds the header names.
+```
+
+```console
+$ manni graph check
+error: questions — 3 of 4 reviewed questions are found in the top 1 (75%), under the 100% that graph.check.questions.foundThreshold asks for.
+warning: https://example.com/graph/doc/docs/api/rate-limits.md graph:sampleQuestion — lines 3 no longer hold the answer to "How long should I wait before I retry?" as pinned, so re-pair it with manni graph fill --fields sample-questions and review it. [docs/api/rate-limits.md]
+
+questions  4: 4 reviewed, 0 drafted, on 3 pages
+  found    3 of 4 reviewed in the top 1 (75%), 3 first (75%)
+  answers  4 pinned, 0 not reviewed: 3 current, 0 moved, 1 changed; 0 not pinned
+
+1 error, 1 warning, 0 notices
+```
+
+A changed pin counts as not found. `graph fill` re-pairs it, and marks the
+new pin unreviewed:
+
+```console
+$ manni graph fill docs/api/rate-limits.md --fields sample-questions
+filled    docs/api/rate-limits.md (sample-questions)
+            re-paired  "How long should I wait before I retry?"  lines 3 (0.90)
+            dropped    "How long should I wait before I retry?"  duplicate of docs/api/rate-limits.md
+```
+
+The check passes again, with `1 not reviewed` in its `answers` row until
+someone reads line 3 and deletes the flag.
+[Keep a golden set of reader questions](/manni/graph/questions/) covers
+questions that span pages, answers that move, and handing the set to an eval
+tool.
+
+## 7. Close the loop
+
+Pages keep naming new concepts. A webhooks page and the payments page both
+tag `dead-letter queue`. The payments page's `graph:` block also relates
+`Backoff` to `Idempotency key`, which the term page does not:
+
+```console
+$ manni term check
+docs/api/payments.md:7
+  notice manni:term/keyword-candidate           keywords: "dead-letter queue" is on 2 pages and names no term, so add it to concepts: or run manni term fill --crawl.
+docs/api/payments.md:16
+  notice manni:term/hierarchy-outside-termbase  graph: related-concepts "Idempotency key" on "Backoff" is not on its term page (docs/glossary/backoff.md), so add it there.
+docs/glossary/audience.md:1
+  notice manni:term/unused-term                 no page's concepts: names this term
+docs/glossary/developer.md:1
+  notice manni:term/unused-term                 no page's concepts: names this term
+docs/glossary/errors.md:1
+  notice manni:term/unused-term                 no page's concepts: names this term
+docs/glossary/operator.md:1
+  notice manni:term/unused-term                 no page's concepts: names this term
+
+6 notices in 9 terms
+```
+
+Both are notices, so nothing fails. `keyword-candidate` names the next term
+to write, and `hierarchy-outside-termbase` names an edge to move into the
+termbase or drop. The next round of `term fill` picks up the keyword:
+
+```console
+$ manni term fill --crawl --dry-run
+would create docs/glossary/dead-letter-queue.md   dead-letter queue   definition drafted (0.85)
+1 term would be created, 0 would be filled, 0 left without a definition
+```
+
+That is step 1 again, with a termbase that is a little larger each time.
+
+<Aside type="note">
+The graph reads the termbase and never writes it. Only `term fill` and a
+person write term pages.
+</Aside>
+
+## Where to go next
+
+<CardGrid>
+  <LinkCard
+    title="Check rules"
+    href="/manni/term/reference/rules/"
+    description="Every rule term check runs, its default severity, and what fixes it."
+  />
+  <LinkCard
+    title="Hold a field's values to the termbase"
+    href="/manni/meta/schemas/term-values/"
+    description="x-manni-term, its under argument, and what validate and fill do with it."
+  />
+  <LinkCard
+    title="How graph works"
+    href="/manni/graph/get-started/how-graph-works/#one-concept-scheme"
+    description="How a concept resolves to a term, and what the scheme carries."
+  />
+  <LinkCard
+    title="Govern the graph"
+    href="/manni/graph/govern/"
+    description="The shapes, the severity mapping, and the sample-question check."
+  />
+</CardGrid>

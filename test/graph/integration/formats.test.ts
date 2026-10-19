@@ -104,7 +104,7 @@ describe("graph build over every format", () => {
   });
 
   it("round-trips through the n3 parser, every triple the build reported", () => {
-    const reported = /\((\d+) docs, (\d+) triples\)/.exec(buildStdout);
+    const reported = /\((\d+) docs, (\d+) triples, \d+ concepts\)/.exec(buildStdout);
     expect(reported?.[1]).toBe("6");
     expect(store.size).toBe(Number(reported?.[2]));
   });

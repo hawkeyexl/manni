@@ -99,8 +99,8 @@ meta:
       schemas:
         - ./docs/doc-frontmatter.schema.json
         - astro:starlight:0.41
-        - manni:terminology:1.1.0
-        - manni:terminology-strict:1.1.0
+        - manni:terminology:1.2.0
+        - manni:terminology-strict:1.2.0
     # Every other published page. Each one must declare a non-empty title and
     # description, which the house schema requires.
     - collection: site
@@ -261,7 +261,7 @@ graph:
   # rather than the docs, and it would make the gate's output depend on how
   # the work happened to be committed.
   build:
-    derive: [frontmatter, sections, links, tags, images, code]
+    derive: [frontmatter, sections, links, tags, images, code, terms]
 
   # The bundled shapes are the contract. Nothing is added: what this job
   # checks is that the section a reader browses holds together as a graph,

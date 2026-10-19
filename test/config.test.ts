@@ -826,6 +826,11 @@ describe("the repository's own manni.config.yaml", () => {
     ].flatMap((family) => {
       // Stewardship's default is 1.1.0, which adds the graph output marks (0074).
       const v = family === "stewardship" ? "1.1.0" : "1.0.0";
+      // ai-context 1.1.0 lets a question pin its answer (0087), and keeps the
+      // 1.0.0 overlay, which never constrains sample-questions.
+      if (family === "ai-context") {
+        return ["manni:ai-context:1.1.0", "manni:ai-context-strict:1.0.0"];
+      }
       return [`manni:${family}:${v}`, `manni:${family}-strict:${v}`];
     }),
   ];
@@ -914,8 +919,8 @@ describe("the repository's own manni.config.yaml", () => {
       ...STRICT_DEFAULTS,
       "./docs/doc-frontmatter.schema.json",
       "astro:starlight:0.41",
-      "manni:terminology:1.1.0",
-      "manni:terminology-strict:1.1.0",
+      "manni:terminology:1.2.0",
+      "manni:terminology-strict:1.2.0",
     ]);
     // The glossary's index is not a term page. It declares a TGDP type, and
     // the glossary's glob leaves it out, so it takes the site's set.

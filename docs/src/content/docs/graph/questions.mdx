@@ -1,0 +1,336 @@
+---
+title: Keep a golden set of reader questions
+description: "Draft the questions readers ask with graph fill, review them, gate CI on how many are found, and keep each pinned answer true as pages change."
+type: how-to
+id: graph-questions
+keywords: ["golden set", "sample questions", "answer pins", "foundThreshold", "question export", "retrieval eval"]
+language: en
+audiences: ["docs-engineers"]
+intent: "Draft, review and gate a set of reader questions pinned to the lines that answer them, and keep the pins current as pages change."
+lifecycle: published
+applies-to: ["domain:graph"]
+prerequisites: ["graph-get-started"]
+next-steps: ["graph-reference-cli", "graph-reference-configuration", "graph-ci"]
+concepts: ["golden set", "sample question", "meta-provenance"]
+sample-questions: ["How do I draft sample questions for pages that have none?", "How do I gate CI on how many sample questions find their answers?", "What do I do when a pinned answer moves?"]
+graph: { label: "Keep a golden set of reader questions", type: task }
+last-updated: 2026-10-19
+tags:
+  - knowledge-graph
+  - retrieval
+  - sample-questions
+action: develop
+related-pages:
+  - graph-reference-cli
+  - graph-reference-configuration
+  - graph-govern
+  - family-concept-lifecycle
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+A search box or a docs bot is only as good as what it finds for a real
+question. To hold one to that, you need the questions, and the lines on each
+page that answer them. Nobody writes three questions for each of two hundred
+pages. Even when someone does, a rewrite moves the answer and nothing says so.
+
+This page builds a golden set for a small docset and keeps it true. A model
+drafts the questions, a person reviews them, and `manni graph check` gates on
+how many are found. Every check is retrieval only. It says whether a reader's
+question finds the lines that answer it. Whether those lines are right is for
+a person, or for an eval tool you hand the set to.
+
+Every transcript below is real output from the built tool, over the three
+pages this page shows. Drafts come from a small local model, and yours will
+differ.
+
+## The docset
+
+Three pages with headings and no questions. Each body line counts from the
+line after the closing `---`, as a citation counts it:
+
+```markdown title="docs/retry.md"
+---
+title: Retry a failed upload
+description: Send a failed upload again.
+---
+
+## Retry a failed upload
+
+Open the upload list and choose retry.
+
+## Retry limits
+
+Uploads retry three times, waiting 2, 4 and 8 seconds.
+```
+
+`docs/upload.md` holds a size limit and the archive formats.
+`docs/quotas.md` holds the monthly quota and how to free space. The config
+asks for two questions a page, and a page's answer must be in the top two
+results:
+
+```yaml title="manni.config.yaml"
+collections:
+  - name: pages
+    paths: ["docs/**/*.md"]
+
+providers:
+  provider: llama-cpp
+  model: granite-4.1-3b-q2
+
+graph:
+  baseIri: https://example.com/graph/
+  out: graph.ttl
+  build:
+    derive: [frontmatter, sections]
+  check:
+    questions:
+      top: 2
+  fill:
+    questions:
+      perPage: 2
+```
+
+Run `manni graph build`, then `manni graph stats`, to see the starting point.
+Its document coverage reads `sample-questions 0/3 0.0%`, and `graph check` prints
+no question summary, because there are no questions.
+
+## Draft the questions
+
+`graph fill --fields sample-questions` drafts questions until each page has
+`perPage`. The model quotes the passage that answers each one, and `fill`
+pins the whole lines that quote touches. Run `--dry-run` first:
+
+```console
+$ manni graph fill --fields sample-questions --dry-run
+proposed  docs/quotas.md (sample-questions) — dry run, not written
+            drafted    "What is the maximum storage capacity per account for each month?"  lines 4 (0.90)
+            drafted    "How can I free up space in my account?"  lines 5 (0.70)
+proposed  docs/retry.md (sample-questions) — dry run, not written
+            drafted    "What is the maximum number of retries for a failed upload?"  lines 8 (0.90)
+            drafted    "How long does each retry wait before attempting again?"  lines 8 (0.90)
+proposed  docs/upload.md (sample-questions) — dry run, not written
+            drafted    "What is the maximum size allowed for each upload file?"  lines 4 (0.90)
+            drafted    "Which archive formats are supported for upload?"  lines 8 (0.85)
+```
+
+Drop `--dry-run` to write them. Each draft lands in the page's
+`sample-questions`, under
+[`manni:ai-context:1.1.0`](/manni/meta/reference/schemas/manni-ai-context/):
+
+```yaml title="docs/retry.md"
+sample-questions:
+  - question: What is the maximum number of retries for a failed upload?
+    answers:
+      - lines: 8
+        integrity: sha256-90d32ac055b1700ffe37c64c7bcecb048c7073504e768c4fc6003b507367c90c
+    generated-by: llama-cpp/granite-4.1-3b-q2
+    confidence: 0.9
+    reviewed: false
+```
+
+`lines` names the body lines, and `integrity` is a hash over them.
+`reviewed: false` marks a draft. Drafts never count toward the found rate,
+and their findings report at notice:
+
+```console
+$ manni graph check
+notice: https://example.com/graph/doc/docs/retry.md graph:sampleQuestion — "How long does each retry wait before attempting again?" does not find the section that answers it, § Retry limits, in the top 2 (it ranks 3; first is docs/quotas.md) (drafted, not reviewed) [docs/retry.md]
+notice: https://example.com/graph/doc/docs/retry.md graph:sampleQuestion — "What is the maximum number of retries for a failed upload?" does not find the section that answers it, § Retry limits, in the top 2 (it ranks 6; first is docs/retry.md § Retry a failed upload) (drafted, not reviewed) [docs/retry.md]
+
+questions  6: 0 reviewed, 6 drafted, on 3 pages
+  found    0 of 0 reviewed in the top 2 (0%), 0 first (0%)
+  drafted  4 of 6 in the top 2, not counted until reviewed
+  answers  6 pinned, 6 not reviewed: 6 current, 0 moved, 0 changed; 0 not pinned
+
+0 errors, 0 warnings, 2 notices
+```
+
+A pinned question must find the section that holds its lines, not just the
+page. Both retry questions find the page's other section first.
+
+## Review the drafts
+
+The YAML diff is the review. Read each question and the lines it pins. Rewrite
+a question the way a reader would ask it, delete one that is wrong, and delete
+`reviewed: false` from each one you keep. Here the retry questions become
+`How many times does a failed upload retry?` and
+`How long does an upload wait between retries?`.
+
+## Gate on the found rate
+
+`foundThreshold` is the percentage of reviewed questions that must be found.
+Below it, `graph check` exits `1`:
+
+```yaml title="manni.config.yaml"
+graph:
+  check:
+    questions:
+      top: 2
+      foundThreshold: 90
+```
+
+```console
+$ manni graph check
+error: questions — 4 of 6 reviewed questions are found in the top 2 (66%), under the 90% that graph.check.questions.foundThreshold asks for.
+warning: https://example.com/graph/doc/docs/retry.md graph:sampleQuestion — "How long does an upload wait between retries?" does not find the section that answers it, § Retry limits, in the top 2 (it ranks 3; first is docs/retry.md § Retry a failed upload) [docs/retry.md]
+warning: https://example.com/graph/doc/docs/retry.md graph:sampleQuestion — "How many times does a failed upload retry?" does not find the section that answers it, § Retry limits, in the top 2 (it ranks 3; first is docs/retry.md) [docs/retry.md]
+
+questions  6: 6 reviewed, 0 drafted, on 3 pages
+  found    4 of 6 reviewed in the top 2 (66%), 3 first (50%)
+  answers  6 pinned, 0 not reviewed: 6 current, 0 moved, 0 changed; 0 not pinned
+
+1 error, 2 warnings, 0 notices
+```
+
+The reviewed questions now count, and two of them miss. The answer is on the
+page, under a heading no reader would search for. Fix the page, not the
+question. A heading in the reader's words is enough here:
+
+```markdown
+## How often a failed upload retries, and how long it waits
+```
+
+The heading is not a pinned line, so every pin stays current:
+
+```console
+$ manni graph check
+questions  6: 6 reviewed, 0 drafted, on 3 pages
+  found    6 of 6 reviewed in the top 2 (100%), 4 first (66%)
+  answers  6 pinned, 0 not reviewed: 6 current, 0 moved, 0 changed; 0 not pinned
+
+0 errors, 0 warnings, 0 notices
+```
+
+The `found` row is the number to watch. Under `-f json` the same counts sit
+in a `questions` key, so storing the report per CI run gives you the trend.
+[Run it in CI](/manni/graph/ci/) has the job.
+
+## Add the questions no page holds
+
+Some questions need two pages, and some have no answer in the docs at all.
+Neither fits in one page's frontmatter. They go in a golden-set file, named
+in `graph.questionFiles`:
+
+```yaml title="questions.yaml"
+- question: Two gigabytes is the limit, but my storage is full. How do I free space?
+  answers:
+    - file: docs/upload.md
+      lines: 4
+    - file: docs/quotas.md
+      lines: 5
+- question: Can I upload a whole folder?
+  answers: []
+```
+
+```yaml title="manni.config.yaml"
+graph:
+  questionFiles: [questions.yaml]
+```
+
+Each answer names its page. An empty `answers` list marks a known gap, which
+is counted and never asked. A pin written by hand needs no `integrity`.
+`graph fill` adds one, and that step needs no model. `--offline` sends nothing
+off this machine. This run points `INFERENCE_MODELS_DIR` at an empty
+directory, so no local model exists either, and only the re-pin runs:
+
+```console
+$ INFERENCE_MODELS_DIR=$(mktemp -d) manni graph fill --fields sample-questions --offline
+complete  docs/quotas.md
+complete  docs/retry.md
+complete  docs/upload.md
+filled    questions.yaml (sample-questions)
+            re-pinned  "Two gigabytes is the limit, but my storage is full. How do I free space?"  docs/upload.md lines 4
+            re-pinned  "Two gigabytes is the limit, but my storage is full. How do I free space?"  docs/quotas.md lines 5
+```
+
+Every page already has its two questions, so no page needed a model. A
+cross-page question is found only when each answer is:
+
+```console
+$ manni graph check
+questions  8: 8 reviewed, 0 drafted, on 3 pages and in questions.yaml
+  found    7 of 7 reviewed in the top 2 (100%), 4 first (57%)
+  answers  8 pinned, 0 not reviewed: 8 current, 0 moved, 0 changed; 0 not pinned
+  gaps     1 question the docs don't answer
+
+0 errors, 0 warnings, 0 notices
+```
+
+## Keep the pins true as pages change
+
+Someone adds a sentence to the size-limit section of `docs/upload.md`, above
+the pinned line:
+
+```markdown
+## Size limit
+
+The limit applies to each file, not to each request.
+Uploads may be two gigabytes each.
+```
+
+Three pins now point one line too high. `graph check` finds each answer at its
+new place, asks the question there, and reports the move as a notice:
+
+```console
+$ manni graph check
+notice: https://example.com/graph/doc/docs/upload.md graph:sampleQuestion — the answer to "What is the maximum size allowed for each upload file?" moved from lines 4 to 5, so manni graph fill --fields sample-questions re-pins it. [docs/upload.md]
+notice: https://example.com/graph/doc/docs/upload.md graph:sampleQuestion — the answer to "Which archive formats are supported for upload?" moved from lines 8 to 9, so manni graph fill --fields sample-questions re-pins it. [docs/upload.md]
+notice: questions.yaml:1 — the answer to "Two gigabytes is the limit, but my storage is full. How do I free space?" in docs/upload.md moved from lines 4 to 5, so manni graph fill --fields sample-questions re-pins it. [questions.yaml]
+
+questions  8: 8 reviewed, 0 drafted, on 3 pages and in questions.yaml
+  found    7 of 7 reviewed in the top 2 (100%), 4 first (57%)
+  answers  8 pinned, 0 not reviewed: 5 current, 3 moved, 0 changed; 0 not pinned
+  gaps     1 question the docs don't answer
+
+0 errors, 0 warnings, 3 notices
+```
+
+The same offline run re-pins all three, on the page and in the file:
+
+```console
+$ INFERENCE_MODELS_DIR=$(mktemp -d) manni graph fill --fields sample-questions --offline
+complete  docs/quotas.md
+complete  docs/retry.md
+filled    docs/upload.md (sample-questions)
+            re-pinned  "What is the maximum size allowed for each upload file?"  lines 4 to 5
+            re-pinned  "Which archive formats are supported for upload?"  lines 8 to 9
+filled    questions.yaml (sample-questions)
+            re-pinned  "Two gigabytes is the limit, but my storage is full. How do I free space?"  docs/upload.md lines 4 to 5
+```
+
+A rewrite that changes the pinned lines is different. The question counts as
+not found, at `questions.severity`, until `graph fill` re-pairs it and a
+person reviews the new pin.
+[From tags to a knowledge graph](/manni/family/concept-lifecycle/#gate-on-the-found-rate)
+walks that case. A golden-set file is only ever re-pinned, so a changed answer
+there is yours to re-pin by hand.
+
+## Hand the set to an eval tool
+
+`manni graph export questions` writes the set as JSON Lines, `questions.jsonl`
+beside the graph. Each line carries the answer text, read from the pins at
+export time. A gap exports as `"answerable": false`:
+
+```json
+{"id":"questions.yaml#two-gigabytes-is-the-limit-but-my-storage-is-full-how-do-i-free-space","question":"Two gigabytes is the limit, but my storage is full. How do I free space?","language":"und","reviewed":true,"answerable":true,"expected":[{"id":"https://example.com/graph/doc/docs/upload.md#size-limit","file":"docs/upload.md","lines":"5","reviewed":true,"text":"Uploads may be two gigabytes each."},{"id":"https://example.com/graph/doc/docs/quotas.md#monthly-quota","file":"docs/quotas.md","lines":"5","reviewed":true,"text":"Delete old uploads to free space."}]}
+{"id":"questions.yaml#can-i-upload-a-whole-folder","question":"Can I upload a whole folder?","language":"und","reviewed":true,"answerable":false,"expected":[]}
+```
+
+These pages declare no `language`, so it exports as `und`. The
+[CLI reference](/manni/graph/reference/cli/#the-question-set) maps the format
+into Ragas, DeepEval and promptfoo datasets.
+
+<Aside type="note">
+manni checks that a question finds its lines. It never judges an answer. An
+eval tool given this set can judge what your docs bot says.
+</Aside>
+
+## Reference
+
+- [`graph check`](/manni/graph/reference/cli/#graph-check): every question
+  finding, golden-set files, and the summary rows.
+- [`graph fill`](/manni/graph/reference/cli/#sample-questions): the four steps,
+  the gates, and offline runs.
+- [Configuration](/manni/graph/reference/configuration/#check): `top`,
+  `severity`, `foundThreshold`, `questionFiles` and `fill.questions.perPage`.

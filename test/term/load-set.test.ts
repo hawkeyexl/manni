@@ -88,7 +88,48 @@ describe("loadTermSet", () => {
     expect(set.references).toEqual([
       { file: "guides/fitting.md", line: 3, label: "PAL" },
       { file: "guides/fitting.md", line: 3, label: "bifocal" },
-      { file: "guides/fitting.md", line: 5, label: "lens" },
+      { file: "guides/fitting.md", line: 5, label: "lens", field: "graph.concepts" },
+    ]);
+  });
+
+  it("gathers each labelled graph block, and names graph.concepts and the page's language (proposal 0086)", async () => {
+    const root = await tree({
+      "terms/retry.md": "---\ntype: term\nlabel: Retry\n---\n",
+      "guides/net.md":
+        "---\nlanguage: de\ngraph:\n  label: Retry\n  broader: Networking\n  narrower: [a, b]\n  related-concepts: [c]\n  concepts: [PAL]\n---\n",
+      "guides/bare.md": "---\ngraph:\n  broader: Networking\n---\n",
+    });
+    const set = await loadTermSet({ run: runFor(root, ["terms", "guides"]), readers: [standIn] });
+    expect(set.references).toEqual([
+      { file: "guides/net.md", line: 8, label: "PAL", field: "graph.concepts", language: "de" },
+    ]);
+    expect(set.blocks).toEqual([
+      {
+        file: "guides/net.md",
+        line: 3,
+        language: "de",
+        label: "Retry",
+        edges: [
+          { field: "broader", value: "Networking", line: 5 },
+          { field: "narrower", value: "a", line: 6 },
+          { field: "narrower", value: "b", line: 6 },
+          { field: "related-concepts", value: "c", line: 7 },
+        ],
+      },
+    ]);
+  });
+
+  it("gathers every page's free keywords, but a term page's, on the keywords: line (proposal 0086)", async () => {
+    const root = await tree({
+      "terms/retry.md": "---\ntype: term\nlabel: Retry\nkeywords: [backoff]\n---\n",
+      "guides/net.md": "---\ntitle: Net\nlanguage: de\nkeywords:\n  - retries\n  - ''\n  - timeouts\n---\n",
+      "guides/one.md": "---\nkeywords: retries\n---\n",
+    });
+    const set = await loadTermSet({ run: runFor(root, ["terms", "guides"]), readers: [standIn] });
+    expect(set.keywords).toEqual([
+      { file: "guides/net.md", line: 4, label: "retries", field: "keywords", language: "de" },
+      { file: "guides/net.md", line: 4, label: "timeouts", field: "keywords", language: "de" },
+      { file: "guides/one.md", line: 2, label: "retries", field: "keywords" },
     ]);
   });
 
