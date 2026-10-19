@@ -33,9 +33,9 @@ docs/src/content/docs/cite/get-started/index.mdx:
         integrity: sha256-ebb876f939c27df3f6d82751d2fb89d27c065f610bee15f81baf79ce6d208694
       source:
         file: src/cite/commands/check.ts
-        lines: 312-323
+        lines: 318-329
         integrity: sha256-f5d72b7b89c8460408018e6f8979dfcc7d57a25f66d11ccea8b17ac59a2d9be7
-        commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
+        commit-sha: 7b7c49d360ab5cab83c27e35abe3c8999fce2f81
     - id: no-git-notice
       claim:
         lines: 19

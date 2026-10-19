@@ -204,9 +204,9 @@ docs/src/content/docs/cite/set-up/public-docs-private-code.mdx:
         integrity: sha256-f1cfea2e6f24bdc432e0171c2be07edddff6d118c039afafa5175dd3df5626af
       source:
         file: src/cite/core/sidecar.ts
-        lines: 208-211
+        lines: 212-215
         integrity: sha256-c05a70a897a67097d072cd86a70e60c2c668ea2ebb65ea203fe4f0bf4e66d881
-        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
+        commit-sha: 7b7c49d360ab5cab83c27e35abe3c8999fce2f81
     - id: key-set-256-bits
       claim:
         lines: 195
@@ -370,9 +370,9 @@ docs/src/content/docs/cite/set-up/public-docs-private-code.mdx:
         integrity: sha256-cc726f2799ec65b1b55d5667a42946f097107a27b89040bf5628ea573d75c0c4
       source:
         file: src/cite/commands/check.ts
-        lines: 161
+        lines: 166
         integrity: sha256-967888f703b7f5b60bd0f842e101bb63b94d885534dcf2c70481f47e9d95c274
-        commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
+        commit-sha: 7b7c49d360ab5cab83c27e35abe3c8999fce2f81
     - id: output-rule-findings-test
       claim:
         lines: 157-158
