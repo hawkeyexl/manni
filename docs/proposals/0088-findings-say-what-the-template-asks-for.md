@@ -1,6 +1,6 @@
 # 0088: Findings say what the template asks for
 
-- **Status:** Proposed
+- **Status:** Implemented (#205)
 - **Serves:** Two journeys.
   - Theo · T5, "Read a structure failure and fix it". A finding names what
     failed, but not what the section is for, so he edits until the check
