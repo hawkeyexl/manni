@@ -32,77 +32,105 @@ templates:
   release-notes:
     types:
       - release-notes
+    # The page itself. Upstream titles it
+    # `Release notes - {Product name} {Release number}`; only the braced
+    # parts are placeholders, so the literal prefix is the one thing this
+    # template insists on. Its body carries the release version, the
+    # release date, and an optional high-level summary.
     description: >-
-      The page itself. Upstream titles it
-      `Release notes - {Product name} {Release number}`; only the braced
-      parts are placeholders, so the literal prefix is the one thing this
-      template insists on. Its body carries the release version, the
-      release date, and an optional high-level summary.
+      Tell readers what changed in one release and why it matters to them.
+      Start the title with Release notes, then the product name and release
+      number.
     heading:
       pattern: '^Release [Nn]otes\b'
     sections:
+      # Functionality this release adds. Omitted by a release that adds none.
       - id: new-features
-        description: Functionality this release adds. Omitted by a release that adds none.
+        description: >-
+          Describe each new feature and how it benefits the reader, most
+          important first.
         heading: New features
         min: 0
         max: 1
         sections:
           - min: 0
+            description: Add any subsections this section needs here.
 
+      # New functionality that does not switch itself on. Separated from
+      # `New features` upstream because these entries are action items
+      # for the reader, not announcements.
       - id: new-features-requiring-configuration-updates
         description: >-
-          New functionality that does not switch itself on. Separated from
-          `New features` upstream because these entries are action items
-          for the reader, not announcements.
+          Describe each new feature the reader must configure before using
+          it, and what they need to change.
         heading: New features requiring configuration updates
         min: 0
         max: 1
         sections:
           - min: 0
+            description: Add any subsections this section needs here.
 
+      # Changes to functionality that already existed - speed, usability,
+      # behaviour.
       - id: improvements
-        description: Changes to functionality that already existed - speed, usability, behaviour.
+        description: >-
+          Describe changes to existing features and how they benefit the
+          reader, most important first.
         heading: Improvements
         min: 0
         max: 1
         sections:
           - min: 0
+            description: Add any subsections this section needs here.
 
+      # Changes to programmatic interfaces, which have a different audience
+      # from the rest of the page.
       - id: api-web-service-updates
-        description: Changes to programmatic interfaces, which have a different audience from the rest of the page.
+        description: Describe changes to the product's APIs and web services.
         heading: API/Web service updates
         min: 0
         max: 1
         sections:
           - min: 0
+            description: Add any subsections this section needs here.
 
+      # Defects resolved in this release.
       - id: bug-fixes
-        description: Defects resolved in this release.
+        description: >-
+          Describe what each fix changes for the reader, by comparing what
+          the software did before with what it does now.
         heading: Bug fixes
         min: 0
         max: 1
         sections:
+          # Defects that are known and *not* resolved. Upstream nests this
+          # under `Bug fixes` rather than making it a category of its own,
+          # which puts what is still broken next to what was fixed.
           - id: known-issues
             description: >-
-              Defects that are known and *not* resolved. Upstream nests this
-              under `Bug fixes` rather than making it a category of its own,
-              which puts what is still broken next to what was fixed.
+              Describe the problems this release does not fix, with a
+              workaround where one exists.
             heading: Known issues
             min: 0
             max: 1
             sections:
               - min: 0
+                description: Add any subsections this section needs here.
           - min: 0
+            description: Add any other subsections here, after the ones above.
 
+      # Functionality being retired, with the date it stops being
+      # supported and what replaces it. Upstream writes the heading as
+      # `Optional: Deprecation notice`, so the pattern accepts the
+      # published form as well as the one a real page would use.
       - id: deprecation-notice
         description: >-
-          Functionality being retired, with the date it stops being
-          supported and what replaces it. Upstream writes the heading as
-          `Optional: Deprecation notice`, so the pattern accepts the
-          published form as well as the one a real page would use.
+          Name each feature being removed, say when support ends, and say
+          what replaces it and what the reader must do.
         heading:
           pattern: '^(Optional: )?Deprecation notice$'
         min: 0
         max: 1
         sections:
           - min: 0
+            description: Add any subsections this section needs here.

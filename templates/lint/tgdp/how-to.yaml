@@ -18,47 +18,60 @@ templates:
   how-to:
     types:
       - how-to
+    description: >-
+      Walk a reader who already knows the product through the steps to
+      complete one task.
     sections:
+      # What the guide explains, and optionally when and why a reader
+      # would want to do it. A how-to that does not say what task it
+      # covers is not a how-to, so at least one paragraph is required.
       - id: overview
         description: >-
-          What the guide explains, and optionally when and why a reader
-          would want to do it. A how-to that does not say what task it
-          covers is not a how-to, so at least one paragraph is required.
+          Say what task this guide covers, and when and why a reader would
+          do it.
         heading: Overview
         max: 1
         contains:
           paragraphs:
             min: 1
+      # Prerequisites. Upstream marks this "{This section is optional}",
+      # and the authoring guide repeats that, so it is not required.
+      # Its shape varies too much to constrain - a lead-in and a bullet
+      # list in the template, but prose or grouped categories in the
+      # guide's own examples - so no content counts are set.
       - id: before-you-start
         description: >-
-          Prerequisites. Upstream marks this "{This section is optional}",
-          and the authoring guide repeats that, so it is not required.
-          Its shape varies too much to constrain - a lead-in and a bullet
-          list in the template, but prose or grouped categories in the
-          guide's own examples - so no content counts are set.
+          List what the reader needs before starting, such as background
+          knowledge, software, access, or other guides to read first.
         heading: Before you start
         min: 0
         max: 1
+      # The steps. Upstream's heading is the placeholder "{Task name}",
+      # so this is a slot; leaving `max` unbounded lets a page carry
+      # several task sections, which the guide explicitly contemplates
+      # ("you may break down the task into multiple logical sub-tasks").
+      # No `lists` floor: a task that delegates its procedure to
+      # sub-tasks legitimately holds no ordered list of its own.
       - id: task
         description: >-
-          The steps. Upstream's heading is the placeholder "{Task name}",
-          so this is a slot; leaving `max` unbounded lets a page carry
-          several task sections, which the guide explicitly contemplates
-          ("you may break down the task into multiple logical sub-tasks").
-          No `lists` floor: a task that delegates its procedure to
-          sub-tasks legitimately holds no ordered list of its own.
+          Name the task, starting with a verb, then give its steps as a
+          numbered list with one action per step.
         sections:
+          # "### {Sub-task}" - another placeholder heading, and upstream
+          # says to "include a sub-task only if the task is big and
+          # complex", so it is optional and may occur more than once.
           - id: sub-task
             description: >-
-              "### {Sub-task}" - another placeholder heading, and upstream
-              says to "include a sub-task only if the task is big and
-              complex", so it is optional and may occur more than once.
+              Break a large task into smaller parts, each with its own
+              numbered steps.
             min: 0
+      # Related reading. Upstream includes it unconditionally and does not
+      # mark it optional the way it marks "Before you start", so it is
+      # required. Its body is a mix of prose and links, so nothing is
+      # counted.
       - id: see-also
         description: >-
-          Related reading. Upstream includes it unconditionally and does not
-          mark it optional the way it marks "Before you start", so it is
-          required. Its body is a mix of prose and links, so nothing is
-          counted.
+          Link to related topics the reader may want next but does not need
+          to finish this task.
         heading: See also
         max: 1
