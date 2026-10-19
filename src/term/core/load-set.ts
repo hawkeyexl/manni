@@ -78,12 +78,19 @@ const XSD_STRING = "http://www.w3.org/2001/XMLSchema#string";
  * remote `@context` is refused, not fetched: reading a termbase never
  * touches the network.
  */
-async function jsonLdToNQuads(content: string, file: string, path: string | undefined): Promise<string> {
-  let document: unknown;
-  try {
-    document = JSON.parse(content);
-  } catch (error) {
-    throw new TermError(`${file}: could not be read as SKOS: ${errorMessage(error)}`);
+async function jsonLdToNQuads(
+  content: string,
+  file: string,
+  path: string | undefined,
+  parsed?: unknown,
+): Promise<string> {
+  let document: unknown = parsed;
+  if (document === undefined) {
+    try {
+      document = JSON.parse(content);
+    } catch (error) {
+      throw new TermError(`${file}: could not be read as SKOS: ${errorMessage(error)}`);
+    }
   }
   const { default: jsonld } = await import("jsonld");
   let remote: string | undefined;
@@ -111,6 +118,8 @@ async function jsonLdToNQuads(content: string, file: string, path: string | unde
       t.value,
       t.language !== undefined && t.language !== "" ? t.language : DataFactory.namedNode(t.datatype?.value ?? XSD_STRING),
     );
+  // Every quad lands in the default graph: SKOS vocabularies keep their
+  // concepts there, and a named graph's name carries no term field.
   const quads: Quad[] = dataset.map((q) =>
     DataFactory.quad(
       node(q.subject),
@@ -127,20 +136,21 @@ async function jsonLdToNQuads(content: string, file: string, path: string | unde
  * no extension, is JSON-LD when it parses as JSON. A first byte alone cannot
  * tell them apart, because Turtle may open a blank node with `[`.
  */
-function parsesAsJson(content: string): boolean {
+/** The parsed JSON, or `undefined` when the text is not JSON. Parsed once, and reused. */
+function parseJson(content: string): unknown {
   try {
-    JSON.parse(content);
-    return true;
+    return JSON.parse(content) as unknown;
   } catch {
-    return false;
+    return undefined;
   }
 }
 
 export async function skosInput(content: string, file: string, path?: string): Promise<TermInput> {
   const ext = extname(file).toLowerCase();
-  const jsonLd = ext === ".jsonld" || (ext !== ".ttl" && parsesAsJson(content));
+  const parsed = ext === ".ttl" ? undefined : parseJson(content);
+  const jsonLd = ext === ".jsonld" || parsed !== undefined;
   return {
-    content: jsonLd ? await jsonLdToNQuads(content, file, path) : content,
+    content: jsonLd ? await jsonLdToNQuads(content, file, path, parsed) : content,
     file,
     ...(path === undefined ? {} : { path }),
     format: SKOS_FORMAT,
