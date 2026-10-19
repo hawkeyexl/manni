@@ -35,7 +35,7 @@ docs/src/content/docs/cite/set-up/citations-in-a-sidecar.mdx:
         file: src/cite/core/sidecar.ts
         lines: 438-444
         integrity: sha256-73b7fc9bbd56ebaa6bec7a55d284fc4478257e2e30dd33034dc40ab03e9ea90c
-        commit-sha: 7b7c49d360ab5cab83c27e35abe3c8999fce2f81
+        commit-sha: c4c8820ad03b39bd78625127e699a02af7e46588
     - id: no-config-frontmatter-only
       claim:
         lines: 196-197
@@ -44,7 +44,7 @@ docs/src/content/docs/cite/set-up/citations-in-a-sidecar.mdx:
         file: src/cite/core/sidecar.ts
         lines: 438-439
         integrity: sha256-dae4c906327d834b6eb32a2c2a313026a27656063640423ff509549c598aa7d3
-        commit-sha: 7b7c49d360ab5cab83c27e35abe3c8999fce2f81
+        commit-sha: c4c8820ad03b39bd78625127e699a02af7e46588
     - id: entry-finding-on-manifest-line
       claim:
         integrity: sha256-ce3ca41f20885edc437fb252412f3526187520fcb91bed6f063594664bc80654
@@ -141,7 +141,7 @@ docs/src/content/docs/cite/set-up/citations-in-a-sidecar.mdx:
         file: src/cite/core/sidecar.ts
         lines: 336-341
         integrity: sha256-44391d04d9c2963a5cbbb57a723fc3aa4a33f741c3a927590a7851eff3697a19
-        commit-sha: 7b7c49d360ab5cab83c27e35abe3c8999fce2f81
+        commit-sha: c4c8820ad03b39bd78625127e699a02af7e46588
     - id: duplicate-join-refused
       claim:
         integrity: sha256-290e56f298c2b37338c9d647aca729b9426de925a8ba57540f9c7c9d6cee4f5e
@@ -149,7 +149,7 @@ docs/src/content/docs/cite/set-up/citations-in-a-sidecar.mdx:
         file: src/cite/commands/check.ts
         lines: 119-125
         integrity: sha256-506b89248ce5b18857a526760333cd21d7b58af58e2a191e623d565270d0b9d1
-        commit-sha: 7b7c49d360ab5cab83c27e35abe3c8999fce2f81
+        commit-sha: c4c8820ad03b39bd78625127e699a02af7e46588
     - id: refusal-url-manifest
       claim:
         lines: 375
@@ -158,7 +158,7 @@ docs/src/content/docs/cite/set-up/citations-in-a-sidecar.mdx:
         file: src/cite/core/sidecar.ts
         lines: 167-169
         integrity: sha256-8aa228d0b9756d7398b3298b92246502a0421ec4f7f60af0de60c0f358c76b67
-        commit-sha: 7b7c49d360ab5cab83c27e35abe3c8999fce2f81
+        commit-sha: c4c8820ad03b39bd78625127e699a02af7e46588
     - id: refusal-two-manifests
       claim:
         lines: 376
@@ -167,7 +167,7 @@ docs/src/content/docs/cite/set-up/citations-in-a-sidecar.mdx:
         file: src/cite/core/sidecar.ts
         lines: 172-174
         integrity: sha256-3d2d4aeaa0fa6d82490907ae98526eb59ce655b28ed26c3757b0d1bab5f06231
-        commit-sha: 7b7c49d360ab5cab83c27e35abe3c8999fce2f81
+        commit-sha: c4c8820ad03b39bd78625127e699a02af7e46588
     - id: refusal-stdin-add
       claim:
         lines: 377
@@ -185,7 +185,7 @@ docs/src/content/docs/cite/set-up/citations-in-a-sidecar.mdx:
         file: src/cite/commands/check.ts
         lines: 291-295
         integrity: sha256-4e6250b5a5a8d5c1a9ddd794eb44e4b3998ac34979dee798af600c75cb781cab
-        commit-sha: 7b7c49d360ab5cab83c27e35abe3c8999fce2f81
+        commit-sha: c4c8820ad03b39bd78625127e699a02af7e46588
     - id: page-placeholder-refuses-join
       claim:
         integrity: sha256-428b360d38cb84522d7c52b017e3972dfcb3700495b2de0e01091387bd2b6644

@@ -496,7 +496,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         file: src/cite/core/sidecar.ts
         lines: 176-183
         integrity: sha256-ce34530c329522305158a6f54fc76a9a817ddf7d6db999005531eb11af6c15c9
-        commit-sha: 7b7c49d360ab5cab83c27e35abe3c8999fce2f81
+        commit-sha: c4c8820ad03b39bd78625127e699a02af7e46588
     - id: url-manifest-may-not-own-citations
       claim:
         lines: 577-579
@@ -505,7 +505,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         file: src/cite/core/sidecar.ts
         lines: 210-215
         integrity: sha256-d46775f654bb6e98cb804184b23d749dd7121d8c3509c345b1a9efd71639c2ba
-        commit-sha: 7b7c49d360ab5cab83c27e35abe3c8999fce2f81
+        commit-sha: c4c8820ad03b39bd78625127e699a02af7e46588
     - id: citation-finding-sits-on-the-manifest
       claim:
         lines: 580-584
@@ -514,7 +514,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         file: src/cite/core/sidecar.ts
         lines: 353-361
         integrity: sha256-c090ea05df7887a8c9d4ffb6daccc40f3f486fcac65bb348ada25f5cc0b07fd4
-        commit-sha: 7b7c49d360ab5cab83c27e35abe3c8999fce2f81
+        commit-sha: c4c8820ad03b39bd78625127e699a02af7e46588
     - id: page-citations-beside-an-owning-manifest-is-invalid
       claim:
         integrity: sha256-c85540d48165f4c20ba7f27b10363e53bf5b923e34bec1f3d28793b39210c158
@@ -2849,7 +2849,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         file: src/cite/core/sidecar.ts
         lines: 193-238
         integrity: sha256-5357c27ae0453f98915d4fd08236edcce43143769299de71d74913904aba63b0
-        commit-sha: 7b7c49d360ab5cab83c27e35abe3c8999fce2f81
+        commit-sha: c4c8820ad03b39bd78625127e699a02af7e46588
     - id: meta-defaults-key
       claim:
         lines: 1450

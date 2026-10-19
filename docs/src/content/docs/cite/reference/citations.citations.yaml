@@ -517,7 +517,7 @@ docs/src/content/docs/cite/reference/citations.mdx:
         file: src/cite/core/sidecar.ts
         lines: 438-444
         integrity: sha256-73b7fc9bbd56ebaa6bec7a55d284fc4478257e2e30dd33034dc40ab03e9ea90c
-        commit-sha: 7b7c49d360ab5cab83c27e35abe3c8999fce2f81
+        commit-sha: c4c8820ad03b39bd78625127e699a02af7e46588
     - id: sidecar-reading-merge
       claim:
         integrity: sha256-5cfd5e7f578297d8adfb156c11c648b255958f4a69de4690ebfcdb5657f32402
@@ -525,7 +525,7 @@ docs/src/content/docs/cite/reference/citations.mdx:
         file: src/cite/core/sidecar.ts
         lines: 328-331
         integrity: sha256-7e7543544710999fcacdf8ff5c03761e02f9bd578a770ab3520ae366224b0a9d
-        commit-sha: 7b7c49d360ab5cab83c27e35abe3c8999fce2f81
+        commit-sha: c4c8820ad03b39bd78625127e699a02af7e46588
     - id: sidecar-update-writes-once
       claim:
         integrity: sha256-0489712fbe78c0301c3972b850bdd07c4e70fd47c7478b48de48978fecda4511
@@ -558,7 +558,7 @@ docs/src/content/docs/cite/reference/citations.mdx:
         file: src/cite/core/sidecar.ts
         lines: 207-215
         integrity: sha256-ac7e60f539137039fb6f6a96ac2ff205a3ce74635ec3440cac6bc0722b03d631
-        commit-sha: 7b7c49d360ab5cab83c27e35abe3c8999fce2f81
+        commit-sha: c4c8820ad03b39bd78625127e699a02af7e46588
     - id: refuse-duplicate-join
       claim:
         lines: 488
@@ -567,7 +567,7 @@ docs/src/content/docs/cite/reference/citations.mdx:
         file: src/cite/core/sidecar.ts
         lines: 413-420
         integrity: sha256-06de91b252178d10cb21e1f9ad513dc60eb94da74bdf22f9d5ff9dca05acce99
-        commit-sha: 7b7c49d360ab5cab83c27e35abe3c8999fce2f81
+        commit-sha: c4c8820ad03b39bd78625127e699a02af7e46588
     - id: refuse-orphan
       claim:
         lines: 489
@@ -576,7 +576,7 @@ docs/src/content/docs/cite/reference/citations.mdx:
         file: src/cite/core/sidecar.ts
         lines: 400-405
         integrity: sha256-45de5b3e538d53dcf72022488aefca3e485901c10abd8c14e44a84ccf9af6962
-        commit-sha: 7b7c49d360ab5cab83c27e35abe3c8999fce2f81
+        commit-sha: c4c8820ad03b39bd78625127e699a02af7e46588
     - id: owned-entry-invalid
       claim:
         integrity: sha256-70b76bf1ae95694492e458da65f3372ca36024bfecf91ac07f09157b622295fd
@@ -593,7 +593,7 @@ docs/src/content/docs/cite/reference/citations.mdx:
         file: src/cite/core/sidecar.ts
         lines: 166-169
         integrity: sha256-60f4e2f84d656eb0e532a8dd12d2afb786d141ae7268cb753b3229a14381d04d
-        commit-sha: 7b7c49d360ab5cab83c27e35abe3c8999fce2f81
+        commit-sha: c4c8820ad03b39bd78625127e699a02af7e46588
     - id: refusal-two-message
       claim:
         lines: 497
@@ -602,7 +602,7 @@ docs/src/content/docs/cite/reference/citations.mdx:
         file: src/cite/core/sidecar.ts
         lines: 171-174
         integrity: sha256-bed53c7858bca30ddd399888eea20b95eaccbbe0535203f2b959312b944b4063
-        commit-sha: 7b7c49d360ab5cab83c27e35abe3c8999fce2f81
+        commit-sha: c4c8820ad03b39bd78625127e699a02af7e46588
     - id: refusal-stdin-message
       claim:
         lines: 498
@@ -1330,7 +1330,7 @@ docs/src/content/docs/cite/reference/citations.mdx:
         file: src/cite/core/sidecar.ts
         lines: 313-320
         integrity: sha256-3ab1c4a3526ab1da70b5d9be4fe239dadad0fa3d6dbbb32237ae0aa8d201be83
-        commit-sha: 7b7c49d360ab5cab83c27e35abe3c8999fce2f81
+        commit-sha: c4c8820ad03b39bd78625127e699a02af7e46588
     - id: source-missing-meaning
       claim:
         lines: 544

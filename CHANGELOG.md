@@ -4,6 +4,13 @@
 4.13.1. Entries below that version are docmeta releases; the repository
 history is the same one.
 
+## [4.12.2](https://github.com/hawkeyexl/manni/compare/v4.12.1...v4.12.2) (2026-10-19)
+
+
+### Bug Fixes
+
+* **cite:** match a page to a keyless manifest that keeps none of its citations ([#199](https://github.com/hawkeyexl/manni/issues/199)) ([c4c8820](https://github.com/hawkeyexl/manni/commit/c4c8820ad03b39bd78625127e699a02af7e46588)), closes [#198](https://github.com/hawkeyexl/manni/issues/198)
+
 ## [4.12.1](https://github.com/hawkeyexl/manni/compare/v4.12.0...v4.12.1) (2026-10-19)
 
 
