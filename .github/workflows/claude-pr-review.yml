@@ -86,6 +86,21 @@ jobs:
             TypeScript CLI (published to npm) that validates document metadata
             against JSON Schema. Focus areas:
 
+            Acceptance checklist
+            - Look for an "Acceptance checklist" section in the PR description.
+              It is the plan's list of artifacts and behaviors this PR must
+              leave in place.
+            - Check every item against the diff and the checked-out tree,
+              whether or not the author ticked it. You cannot run the CLI, so
+              verify a behavior item from the code plus a test that asserts it.
+            - Classify each item as met, unmet or unverifiable. An unmet item is
+              Blocking. An item met only in code, with no test asserting it, is
+              Important.
+            - Flag anything the diff adds to the user-facing surface (a command,
+              flag, config key, message or output shape) that no item names.
+            - If the section is absent, say so in one line of the summary and
+              move on. Not every PR comes from a plan.
+
             Correctness & completeness
             - Obvious bugs, logic errors, or areas with complex logic needing extra scrutiny
             - Unfinished work, incomplete implementations, or low-quality code
@@ -125,6 +140,9 @@ jobs:
 
             The review body is your summary comment. Structure it as:
               - One-line verdict with reasoning.
+              - The acceptance checklist, one line per item: met, unmet or
+                unverifiable, with the file:line or test that settles it. Or the
+                one line saying the PR description has none.
               - Issues grouped by severity: **Blocking**, **Important**, **Nit**. Each entry: short description + file:line link.
               - If no issues: confirm PR looks good.
 
@@ -133,4 +151,4 @@ jobs:
             --model claude-sonnet-4-6
             --max-turns 100
             --mcp-config /tmp/mcp-config.json
-            --allowedTools "Bash(git diff:*),Bash(git log:*),Read,Glob,mcp__github__get_pull_request_diff,mcp__github__create_pending_pull_request_review,mcp__github__add_comment_to_pending_review,mcp__github__add_pull_request_review_comment_to_pending_review,mcp__github__submit_pending_pull_request_review,mcp__github__get_issue_comments,mcp__context7__resolve-library-id,mcp__context7__query-docs"
+            --allowedTools "Bash(git diff:*),Bash(git log:*),Read,Glob,Grep,mcp__github__get_pull_request_diff,mcp__github__create_pending_pull_request_review,mcp__github__add_comment_to_pending_review,mcp__github__add_pull_request_review_comment_to_pending_review,mcp__github__submit_pending_pull_request_review,mcp__github__get_issue_comments,mcp__context7__resolve-library-id,mcp__context7__query-docs"
