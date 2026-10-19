@@ -23,6 +23,21 @@ describe("termLabels", () => {
     ]);
   });
 
+  it("carries each term's names, relations, definition and place, and leaves out what it lacks", async () => {
+    const terms = await termLabels({ cwd: join(here, "..", "fixtures", "term", "concept-scheme") });
+    const byId = new Map(terms.map((t) => [t.id, t]));
+    expect(byId.get("pluggable-auth-layer")).toEqual({
+      label: "Pluggable auth layer",
+      id: "pluggable-auth-layer",
+      altLabels: ["PAL"],
+      definition: "The seam an authentication provider plugs into.",
+      file: expect.stringMatching(/[\\/]docs[\\/]glossary[\\/]pluggable-auth-layer\.md$/) as string,
+      line: 1,
+    });
+    expect(byId.get("retry")).toMatchObject({ broader: ["Resilience"], line: 1 });
+    expect(byId.get("retry")).not.toHaveProperty("narrower");
+  });
+
   it("returns no terms when no config names any files", async () => {
     expect(await termLabels({ cwd: fixtureDir, noConfig: true })).toEqual([]);
   });

@@ -48,7 +48,10 @@ function termLabel(term: Term): TermLabel {
   if (r.definition !== undefined) out.definition = r.definition;
   if (r["scope-note"] !== undefined) out.scopeNote = r["scope-note"];
   if (r.notation !== undefined) out.notation = r.notation;
-  if (term.location.path !== undefined) out.file = term.location.path;
-  out.line = term.location.line;
+  // A line means something only with its file, so a term read from stdin has neither.
+  if (term.location.path !== undefined) {
+    out.file = term.location.path;
+    out.line = term.location.line;
+  }
   return out;
 }
