@@ -1,0 +1,18 @@
+# The fill-pair fixture (proposal 0087). One question has no answer, so fill
+# pairs it. One pin has lines and no integrity, so fill mints one, and one
+# answer moved, so fill re-pins it. Three questions meet perPage, so nothing
+# is drafted.
+collections:
+  - name: questions
+    paths:
+      - "docs/**/*.*"
+
+graph:
+  baseIri: https://example.com/graph/
+  out: graph.ttl
+  build:
+    derive: [frontmatter, sections]
+  fill:
+    fields: [sample-questions]
+    questions:
+      perPage: 3

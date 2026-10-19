@@ -6,7 +6,7 @@
 import { describe, expect, it } from "vitest";
 import { defined } from "../helpers/defined.js";
 import { proposalSchema } from "../../../src/graph/llm/prompt.js";
-import type { FillField } from "../../../src/graph/core/config.js";
+import type { GraphFillField as FillField } from "../../../src/graph/core/config.js";
 
 const A: FillField[] = ["label", "related-concepts", "concepts"];
 const B: FillField[] = ["concepts", "label", "related-concepts"];

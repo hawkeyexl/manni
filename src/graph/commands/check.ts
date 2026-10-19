@@ -2,7 +2,8 @@
  * `manni graph check` — graph-level validation: run the published SHACL shapes
  * (plus the TS-side SKOS integrity checks) over the built graph and report
  * findings with the doc paths responsible. Each page's sample questions are
- * asked too (proposal 0086 §7). Errors exit 1; warnings and notices are
+ * asked too (proposal 0086 §7), with each golden-set file's, and the question
+ * set's health is summed up after the findings (proposal 0087). Errors exit 1; warnings and notices are
  * reported but pass.
  */
 import { dirname, resolve } from "node:path";
@@ -16,7 +17,11 @@ import {
   validateGraph,
   type CheckFinding,
 } from "../core/shacl.js";
-import { askSampleQuestions } from "./questions.js";
+import {
+  askSampleQuestions,
+  renderQuestionSummary,
+  type QuestionSummary,
+} from "./questions.js";
 import { renderCheckGithub } from "../reporters/github.js";
 import type { CheckFormat } from "../reporters/index.js";
 
@@ -44,6 +49,8 @@ export interface CheckReport {
   notices: number;
   /** Shapes files used, as given (for reporting). */
   shapes: string[];
+  /** The question set's health (proposal 0087); absent when no question exists. */
+  questions?: QuestionSummary;
   exitCode: 0 | 1;
 }
 
@@ -71,17 +78,27 @@ export async function runCheck(opts: CheckOptions = {}): Promise<CheckReport> {
       ? shapesInput.map((p) => resolve(cwd, p))
       : [bundledShapesPath(import.meta.url)];
 
-  const findings = [
-    ...(await validateGraph(store, shapes)),
-    // Pages read from where `build` labels them, and a vector sidecar from
-    // beside the graph, as `export search` and `search` read them.
-    ...(await askSampleQuestions(
-      store,
-      config.check.questions,
-      documentBase(config, {}, cwd),
-      dirname(graphPath),
-    )),
-  ].sort(compareFindings);
+  // Pages read from where `build` labels them, and a vector sidecar from
+  // beside the graph, as `export search` and `search` read them. Golden-set
+  // files resolve from the config file's directory.
+  const asked = await askSampleQuestions(
+    store,
+    config.check.questions,
+    documentBase(config, {}, cwd),
+    dirname(graphPath),
+    {
+      source: {
+        ...(opts.config === undefined ? {} : { configPath: opts.config }),
+        ...(opts.noConfig === undefined ? {} : { noConfig: opts.noConfig }),
+      },
+      cwd,
+    },
+    config.questionFiles,
+    config.configDir,
+  );
+  const findings = [...(await validateGraph(store, shapes)), ...asked.findings].sort(
+    compareFindings,
+  );
   const count = (severity: Severity): number =>
     findings.filter((f) => f.severity === severity).length;
   const errors = count("error");
@@ -92,6 +109,7 @@ export async function runCheck(opts: CheckOptions = {}): Promise<CheckReport> {
     warnings: count("warning"),
     notices: count("notice"),
     shapes,
+    ...(asked.summary ? { questions: asked.summary } : {}),
     // Only an `error` fails the run; a warning and a notice are reported and
     // pass, as they were when they were called violations and warnings.
     exitCode: errors > 0 ? 1 : 0,
@@ -108,7 +126,13 @@ export function renderCheck(report: CheckReport, format: CheckFormat): string {
     const { exitCode: _exitCode, ...rest } = report;
     return JSON.stringify(rest, null, 2);
   }
-  if (format === "github") return renderCheckGithub(report);
+  const summary = report.questions ? renderQuestionSummary(report.questions) : [];
+  if (format === "github") {
+    // The summary is plain text after the annotations, which GitHub logs as is.
+    const annotations = renderCheckGithub(report);
+    if (summary.length === 0) return annotations;
+    return [...(annotations === "" ? [] : [annotations, ""]), ...summary].join("\n");
+  }
   const lines: string[] = [];
   for (const f of report.findings) {
     const where = f.docs.length > 0 ? ` [${f.docs.join(", ")}]` : "";
@@ -119,6 +143,7 @@ export function renderCheck(report: CheckReport, format: CheckFormat): string {
     );
   }
   if (report.findings.length > 0) lines.push("");
+  if (summary.length > 0) lines.push(...summary, "");
   lines.push(
     `${plural(report.errors, "error")}, ${plural(report.warnings, "warning")}, ${plural(report.notices, "notice")}`,
   );

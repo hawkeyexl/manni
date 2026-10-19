@@ -1,0 +1,42 @@
+---
+title: "Sample question"
+description: "What sample question means in manni graph, and where the tool uses it."
+type: term
+id: sample-question
+label: "sample question"
+abstract: "A question a reader asks to reach a page."
+definition: "A question a reader asks to reach a page, declared in its `sample-questions` and asked of the graph by `graph check`."
+keywords:
+  - "sample question"
+  - "retrieval"
+  - "graph check"
+language: en
+audiences:
+  - "docs-engineers"
+  - "ci-engineers"
+  - "schema-authors"
+  - "contributors"
+intent: "Say what sample question means in manni graph."
+lifecycle: published
+applies-to:
+  - "domain:graph"
+sample-questions:
+  - "What is a sample question in manni graph?"
+  - "What does graph check do with a page's sample questions?"
+graph:
+  label: "sample question"
+  type: concept
+action: understand
+risks: read-only
+related-terms:
+  - "search-index"
+  - "golden-set"
+last-updated: 2026-10-18
+---
+
+<p>{frontmatter.definition}</p>
+
+`graph check` reports a page that its own question does not find in the
+top results. The check measures retrieval only, so it gives the same result
+on every run. See
+[Govern the graph](/manni/graph/govern/#sample-questions-find-their-pages).

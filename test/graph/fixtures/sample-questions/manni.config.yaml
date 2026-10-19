@@ -6,7 +6,8 @@ collections:
     paths:
       - "docs/**/*.md"
 
-# hidden.md's question is marked out of the graph, so check never asks it.
+# hidden.md's question is marked out of the graph, and check still asks it,
+# because check reads questions from the page sources (proposal 0087).
 meta:
   overrides:
     - files: "docs/hidden.md"

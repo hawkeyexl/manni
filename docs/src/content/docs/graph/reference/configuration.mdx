@@ -10,7 +10,7 @@ concepts:
   - base IRI
   - turn
   - confidence
-last-updated: 2026-10-18
+last-updated: 2026-10-19
 ---
 
 manni graph reads one file, `manni.config.yaml`, and one key in it, `graph:`. Two
@@ -82,7 +82,11 @@ graph:
     sections: false
     fields: [label, alt-labels, broader, narrower, related-concepts, concepts,
              type, applies-to, about-product-lifecycle, about-product-aspect,
-             not-applicable-to, not-about-product-aspect]
+             not-applicable-to, not-about-product-aspect, sample-questions]
+    chunkChars: 12000
+    offline: false
+    questions:
+      perPage: 3
 
   embed:
     model: onnx-community/granite-embedding-small-english-r2-ONNX
@@ -156,6 +160,7 @@ error.
 | `model` | string | unset | The model within the provider named beside it. Unset, the inference library's default for that provider is used; manni pins none, and every cache key names the model it resolved to. This is not `embed.model`. |
 | `baseIri` | string | `urn:manni:graph:` | The base every minted node IRI hangs off. A value not ending in `/` or `:` gets a trailing slash. Use an HTTP base when the graph is published, so its nodes dereference. |
 | `out` | string | `graph/graph.ttl` | Where `graph build` writes the Turtle, and where every graph reader looks for it. Resolved from the working directory. `-o` overrides it for one build, `-g` for one read. |
+| `questionFiles` | list of paths | `[]` | Golden-set files, relative to the config file. They hold questions that span pages or that the docs don't answer. `graph check` asks them beside each page's `sample-questions`. A missing file, or one that fails its schema, stops `check` with exit 2. |
 
 ### `routes`
 
@@ -184,8 +189,24 @@ Routes are corpus-defining, so they are config-only. There is no flag.
 | Key | Type | Default | What it does |
 |---|---|---|---|
 | `shapes` | list of paths | `[]` | The SHACL shapes `graph check` validates the built graph against. Empty means the shapes shipped in the package, `shapes/graph/shapes-1.1.0.ttl`. Naming shapes here **replaces** the bundled set rather than adding to it, so list the bundled file too when you mean to extend it. `--shapes` overrides this for one run. |
-| `questions.top` | integer, 1 or more | `5` | How high a page must rank for each of its own `sample-questions`. `graph check` asks each question through the retrieval `graph search` uses, and reports a page outside the top results. |
-| `questions.severity` | `notice`, `warning`, `error` or `off` | `warning` | The severity of a question that does not find its page. `error` fails the run. `off` asks no questions. |
+| `questions.top` | integer, 1 or more | `5` | How high a page must rank for each of its own `sample-questions`, or the section holding a pinned answer. `graph check` asks each question through the retrieval `graph search` uses, and reports one outside the top results. |
+| `questions.severity` | `notice`, `warning`, `error` or `off` | `warning` | The severity of a question that does not find its page or its answer, and of an answer whose lines changed. A question asked twice, and an answer whose page is gone, take it too. A drafted question or pin reports at `notice` instead. `error` fails the run. `off` reports none of these, and still reports a moved answer. |
+| `questions.foundThreshold` | number 0–100, or `null` | `null` | `graph check` exits 1 when the percentage of reviewed questions found falls below this. It is the same scale as `stats.coverageThreshold`. `questions.severity` does not touch it. `null` sets no rate gate. |
+
+```yaml
+graph:
+  questionFiles: [docs/questions.yaml]
+  check:
+    questions:
+      top: 5
+      severity: warning
+      foundThreshold: 95
+```
+
+The found rate counts reviewed questions that have a test: a page, or at least
+one pin. Gaps and drafts are left out. A question with several answers is found
+only when every answer is. A changed answer, or one whose page is gone, counts
+as not found.
 
 The questions have no flag. They are asked in their page's language, against
 an index built from the graph in memory. A vector sidecar and an embedder
@@ -207,9 +228,9 @@ stronger contract writes it as a shape over the built graph.
 
 | Key | Type | Default | What it does |
 |---|---|---|---|
-| `coverageThreshold` | number 0–100, or a map | `{}` | The minimum share of documents that must carry each measured field. A single number applies to every measured field. A map sets them one at a time, keyed by field name. Empty gates nothing. Enforced only under `stats --check`; `--coverage-threshold` overrides it for one run. |
+| `coverageThreshold` | number 0–100, or a map | `{}` | The minimum share of documents that must carry each measured field. A single number applies to every measured field but `sample-questions`, which only a map gates. A map sets them one at a time, keyed by field name. Empty gates nothing. Enforced only under `stats --check`; `--coverage-threshold` overrides it for one run. |
 
-There are twelve measured document-level fields, and the
+There are thirteen measured document-level fields, and the
 [Coverage](/manni/graph/govern/coverage/) page lists them with what fills each.
 
 ```yaml
@@ -229,10 +250,13 @@ graph:
 | `maxTurns` | integer ≥ 1, or `null` | `null` | Stop after this many inference calls. One page is one turn; a cached page spends none. `null` is unbounded. A page the budget stopped at is reported `skipped`, reason `turn budget`. |
 | `cacheDir` | string | `.manni/graph/cache` | Where raw proposals are cached. Caching happens **before** the confidence gate, so re-running at a different `--confidence` spends nothing. |
 | `confidenceThreshold` | number 0–1 | `0.7` | The self-reported confidence a proposed value must clear to be written. Below it the value is reported and not written. |
-| `writeProvenance` | boolean | `true` | Record what was written in the page's `meta-provenance`, naming the model and the fields. Turning it off removes the review trail; leave it on. |
+| `writeProvenance` | boolean | `true` | Record what was written in the page's `meta-provenance`, naming the model and the fields. A drafted question gets `generated-by` and `confidence` instead. Turning it off removes the review trail; leave it on. |
 | `validateGraph` | boolean | `true` | Vet each proposal against the SHACL shapes before writing it, simulating it in the derived graph. Accepted proposals fold into that state, so two pages in one run cannot jointly corrupt the graph. |
 | `sections` | boolean | `false` | Also propose per-section metadata, not only page-level. Opt-in, because it is a great deal more output to review. |
-| `fields` | list | every field | Which fields may be proposed at all: `label`, `alt-labels`, `broader`, `narrower`, `related-concepts`, `concepts`, `type`, `applies-to`, `about-product-lifecycle`, `about-product-aspect`, `not-applicable-to`, `not-about-product-aspect`. |
+| `fields` | list | every field | Which fields may be proposed at all: `label`, `alt-labels`, `broader`, `narrower`, `related-concepts`, `concepts`, `type`, `applies-to`, `about-product-lifecycle`, `about-product-aspect`, `not-applicable-to`, `not-about-product-aspect`, `sample-questions`. |
+| `chunkChars` | integer ≥ 1 | `12000` | The most characters of a page one question request sends. A longer body is split at line boundaries. The name, default and bounds match `meta fill`'s. `--chunk-chars` overrides it. |
+| `offline` | boolean | `false` | Send nothing off this machine, and run only a local model already downloaded. It means what `offline` means for `meta fill` and `term fill`. `--offline` overrides it. |
+| `questions.perPage` | integer ≥ 1 | `3` | `fill` drafts questions until a page has this many, reviewed or drafted. |
 
 ### `embed`
 

@@ -300,7 +300,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         file: src/meta/core/load-files.ts
         lines: 17
         integrity: sha256-ff2d1966e27b4ba5da2346d39a2cfd154b335f989818dfdaaa561b9e4132d6e8
-        commit-sha: 2cecafc0f138bb8c091147ed916d63e991ae4c8b
+        commit-sha: 4f328876e968607185d8b48a691ed2b876e0afb0
     - id: url-is-where-the-collection-is-published
       claim:
         integrity: sha256-4c817dc1da81b7fae1f03ceead41ee7f611e75963d4795b81d6bc964ea9c3444
@@ -520,9 +520,9 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         integrity: sha256-c85540d48165f4c20ba7f27b10363e53bf5b923e34bec1f3d28793b39210c158
       source:
         file: src/cite/core/page.ts
-        lines: 78-81
+        lines: 80-83
         integrity: sha256-8832eaa02c1fafc08d583f77347091315ddb862f8db9a290ed6071648d848046
-        commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e
+        commit-sha: 942b3afa182cd1d62ab41682675de48ec825c9b8
     - id: join-field-keys-the-manifest
       claim:
         integrity: sha256-503b16cb612ed5f58150898070c75d6a1bd7fc33f7c5bd8eca6fc0e0274e24b1
@@ -1165,7 +1165,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         file: src/shared/tools.ts
         lines: 40-47
         integrity: sha256-7fae44993c18c9a022070e40f8ebd3e6ff1d207abe31e1919570119d52af627c
-        commit-sha: 2cecafc0f138bb8c091147ed916d63e991ae4c8b
+        commit-sha: 4f328876e968607185d8b48a691ed2b876e0afb0
     - id: vale-config-is-resolved-from-the-config-file
       claim:
         lines: 1409
@@ -1174,7 +1174,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         file: src/shared/tools.ts
         lines: 143-147
         integrity: sha256-b248aaca8b99cb46607d73bde9edc4de970ee17c88ab0cb232ad5ed6992116ed
-        commit-sha: 2cecafc0f138bb8c091147ed916d63e991ae4c8b
+        commit-sha: 4f328876e968607185d8b48a691ed2b876e0afb0
     - id: term-starts-vale-with-the-configured-file
       claim:
         lines: 1413-1418
@@ -1183,7 +1183,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         file: src/term/commands/run.ts
         lines: 112-120
         integrity: sha256-4202cb306a2b7f42e0467af1a01a248c18f9d05a7806bec913279c119211b3ff
-        commit-sha: e2c0c84afce71957d73676c38088613e12f48de4
+        commit-sha: eab40def5d16b0a8c54f5173faeeb64f00b529a3
     - id: tools-key-counts-for-discovery
       claim:
         lines: 1420-1422
@@ -1308,7 +1308,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         file: src/meta/core/load-files.ts
         lines: 405-406
         integrity: sha256-fe70e2a6e37e41b892f66e1cb51aa030b785c4dd34ed5c29169ac290c6901a3d
-        commit-sha: 2cecafc0f138bb8c091147ed916d63e991ae4c8b
+        commit-sha: 4f328876e968607185d8b48a691ed2b876e0afb0
     - id: unknown-key-rule-applies-to-nested-mappings
       claim:
         integrity: sha256-aeb0a709c72ec2f4b66561390db840eb4bc1d3ca59fa2f91ff025ec1dbbf0fa4
@@ -1425,9 +1425,9 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         integrity: sha256-a0445253f21233dd09149c4dcbb9ca1f871514f2a509d21ee22874f7f3acf86b
       source:
         file: src/meta/core/schema-registry.ts
-        lines: 1029-1037
+        lines: 1044-1052
         integrity: sha256-0fdd2bc93eb0acbc84d62eaaf5f1c7ec2795441da58714327642a7d7ee77c36c
-        commit-sha: ff3c96da86b0902113ec05ac4a780450486eef85
+        commit-sha: 942b3afa182cd1d62ab41682675de48ec825c9b8
     - id: offline-flag-is-per-run
       claim:
         integrity: sha256-50cc1fbd993bc5e2a23e9cdb9373a16358550f893478fc626477be551f7abcc7
@@ -2498,7 +2498,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         file: src/shared/tools.ts
         lines: 143-147
         integrity: sha256-b248aaca8b99cb46607d73bde9edc4de970ee17c88ab0cb232ad5ed6992116ed
-        commit-sha: 2cecafc0f138bb8c091147ed916d63e991ae4c8b
+        commit-sha: 4f328876e968607185d8b48a691ed2b876e0afb0
     - id: override-globs-match-the-config-relative-path
       claim:
         lines: 2768
@@ -2613,7 +2613,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         file: src/meta/core/load-files.ts
         lines: 405-406
         integrity: sha256-fe70e2a6e37e41b892f66e1cb51aa030b785c4dd34ed5c29169ac290c6901a3d
-        commit-sha: 2cecafc0f138bb8c091147ed916d63e991ae4c8b
+        commit-sha: 4f328876e968607185d8b48a691ed2b876e0afb0
     - id: unknown-tools-key-is-exit-2
       claim:
         lines: 1423-1425
@@ -2622,7 +2622,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         file: src/shared/tools.ts
         lines: 75-94
         integrity: sha256-79651ee83ab9d9ef589a5fe0f999feb1ba8ded9ac2caf11a4cb524252fc7ab1a
-        commit-sha: 2cecafc0f138bb8c091147ed916d63e991ae4c8b
+        commit-sha: 4f328876e968607185d8b48a691ed2b876e0afb0
     - id: missing-vale-config-refused-when-vale-runs
       claim:
         lines: 1422-1425

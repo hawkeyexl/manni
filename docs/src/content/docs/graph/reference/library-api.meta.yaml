@@ -40,8 +40,8 @@ docs/src/content/docs/graph/reference/library-api.mdx:
       lines: 86-88
       integrity: sha256-5f487f91535c8b421521def2b2ed54e783fa22e7f70bcb7ae1a52e1a56082860
     - generated-by: Claude Opus 5
-      lines: 89-93
-      integrity: sha256-920f7485daa13850f06564dc52290783c0e3bf1d8fa37c81a26ba3db19d1adcc
+      lines: 89-91
+      integrity: sha256-db77d7748e607beebab423807d122a63dc77c8966687f39e1a88d2e7879f9605
     - generated-by: Claude Opus 5.5
       lines: 94
       integrity: sha256-98922f4a38b3789f1c286d4357d05c0f461d416abfeddb5ced7992fe8ec599a0
