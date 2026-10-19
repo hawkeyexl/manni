@@ -27,7 +27,7 @@ sample-questions:
 graph:
   label: Check rules
   type: reference
-last-updated: 2026-10-18
+last-updated: 2026-10-19
 tags:
   - validation
   - rules
@@ -94,7 +94,7 @@ The rules and their messages stay the same, and four of them read the language:
 | `duplicate-id` | Compares ids within one language. A German and an English term with one id are one concept, not a duplicate. |
 | `label-collision`, `alt-label-collision` | Within a language, as in a set of one. Across languages, the names collide only when they match ignoring case and differ in spelling. `API` in both languages is one word. `Kubernetes` against `kubernetes` collides, because the Vale style could not tell them apart. |
 | `dangling-reference`, `broader-cycle`, `asymmetric-hierarchy` | A value resolves to a label in the entry's own language, then to an id in it. Failing both, any language's label or id will do. |
-| `undefined-term`, `alt-label-reference`, `hierarchy-outside-termbase` | A name on a page resolves in the page's own `language` first, then in any language. A page with no `language` counts as `en`. |
+| `undefined-term`, `alt-label-reference`, `hierarchy-outside-termbase` | A name on a page resolves as the graph resolves it. The page's own `language` comes first, then its base language, so `en-GB` finds an `en-US` term. Then any language. Each pass tries a label, an id, then an alt-label. A page or term with no `language` takes part only in the last pass. |
 | `unused-term` | A page that names any language's term of a concept uses every term of that concept. |
 
 The others do not compare names at all. This set holds three concepts in
