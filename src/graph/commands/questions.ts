@@ -284,6 +284,8 @@ export function matchList(ranges: readonly PageLines[]): string {
   const spelled = ranges.map(spellLines);
   const head = spelled.slice(0, -1);
   const last = spelled[spelled.length - 1] ?? "";
+  // An ambiguous pin always has two or more; one range still reads right.
+  if (head.length === 0) return `lines ${last} match`;
   const both = head.length === 1 ? "both" : "all";
   return `lines ${head.join(", ")} and ${last} ${both} match`;
 }
