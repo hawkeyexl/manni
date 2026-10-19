@@ -17,6 +17,10 @@ describe("locateQuote", () => {
     expect(locateQuote(body, "this needs admin access")).toEqual({ start: 1, end: 1, ambiguous: true });
   });
 
+  it("counts copies that do not overlap, so a quote overlapping itself is one", () => {
+    expect(locateQuote(["Say aaa."], "aa")).toEqual({ start: 1, end: 1 });
+  });
+
   it("finds nothing for a quote the page does not hold", () => {
     expect(locateQuote(["One line."], "another line")).toBeUndefined();
   });

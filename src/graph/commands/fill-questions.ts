@@ -189,7 +189,7 @@ export function locateQuote(
   if (start === undefined || end === undefined) return undefined;
   // The first match is the one pinned; a quote the page holds twice says so,
   // so the caller can warn that the pin may name the wrong copy.
-  const twice = folded.indexOf(wanted, found + 1) >= 0;
+  const twice = folded.indexOf(wanted, found + wanted.length) >= 0;
   return { start: lineAt(start), end: lineAt(end), ...(twice ? { ambiguous: true as const } : {}) };
 }
 
@@ -352,7 +352,8 @@ export async function fillPageQuestions(input: PageQuestionsInput): Promise<Page
     const after = bodyOf(next, format).body;
     if (!relocate(pins, before, after)) break;
     if (round === 2) {
-      // Three writes and the pins still moved: write the latest pins, and say so.
+      // The third write still moved the pins: write the latest ones once more,
+      // unchecked, and say so.
       next = write();
       warnings.push(`${path}: the answer pins did not settle after three writes, so check their lines.`);
       break;
