@@ -1,0 +1,61 @@
+# Every heading form and occurrence `manni lint templates show` prints, in one
+# template: exact, list, pattern, `false` and absent headings; required,
+# optional, repeating, `min: 2`, `N to M` and `max: 0`; a `repeat` group;
+# nested sections; and `contains:`/`sequence:` content lines.
+templates:
+  sample:
+    title: Sample page
+    types: [sample, example]
+    description: Show every form the renderer prints.
+    guide: https://example.com/guide
+    contains:
+      paragraphs:
+        min: 1
+    sections:
+      - id: intro
+        heading: false
+        max: 1
+        description: Open with one sentence.
+      - id: overview
+        heading: Overview
+        max: 1
+        contains:
+          tables:
+            min: 1
+            columns: [Field, Type]
+          codeBlocks:
+            min: 2
+            language: [sh, bash]
+      - id: setup
+        heading: [Setup, Installation]
+        min: 0
+        max: 1
+        sequence:
+          - paragraphs: {}
+          - lists:
+              ordered: true
+      - id: step
+        heading:
+          pattern: '^Step \d+$'
+        min: 2
+        sections:
+          - id: detail
+            min: 0
+            description: Explain the step.
+      - id: examples
+        heading: Examples
+        min: 1
+        max: 3
+      - id: pair
+        min: 0
+        repeat:
+          - id: question
+            heading:
+              pattern: '\?$'
+          - id: answer
+            heading: Answer
+      - id: legacy
+        heading: Legacy
+        max: 0
+      - min: 0
+        description: Anything else.

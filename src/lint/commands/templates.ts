@@ -15,8 +15,11 @@
  * lives here is the plumbing around it - which parser reads the page, what the
  * template is called, and where the file goes.
  *
- * Both return data; `src/lint/reporters/index.ts` renders the listing, and an
- * inferred template is already the text it will be written as.
+ * `runTemplateShow` resolves one ref the way `--template` does and returns the
+ * template it names, for `src/lint/reporters/template-show.ts` to print.
+ *
+ * All three return data; `src/lint/reporters/index.ts` renders the listing, and
+ * an inferred template is already the text it will be written as.
  */
 import { existsSync } from "node:fs";
 import { mkdir, readFile } from "node:fs/promises";
@@ -37,10 +40,12 @@ import {
   renderTemplateFile,
   type InferFormat,
 } from "../core/infer.js";
-import type { TemplateFile } from "../core/template.js";
+import type { Template, TemplateFile } from "../core/template.js";
 import { resolveLintRun } from "../core/config.js";
 import {
+  classifyRef,
   listBuiltins,
+  loadResolvedTemplate,
   loadTemplate,
   loadTemplateFile,
 } from "../core/template-registry.js";
@@ -286,4 +291,49 @@ export async function runTemplatesInfer(
   await mkdir(dirname(absOut), { recursive: true });
   await writeTextAtomic(absOut, text);
   return { name, file, text, written: opts.out };
+}
+
+/* -------------------------------------------------------------------------- *
+ * show
+ * -------------------------------------------------------------------------- */
+
+export interface TemplateShowOptions {
+  /** A built-in id, a path, a `path#name`, or a URL: what `--template` takes. */
+  ref: string;
+}
+
+/** One resolved template, after `extends` and `$ref`, with where it came from. */
+export interface TemplateShow extends Omit<Template, "extends" | "id"> {
+  /** The built-in id, or the template's name inside its file. */
+  id: string;
+  /** `builtin`, or the file or URL the template came from. */
+  source: string;
+}
+
+/**
+ * Resolve one template ref and return the template it names.
+ *
+ * The loader is `--template`'s own, so a ref that fails there fails here with
+ * the same message, and a template that inherits shows what it inherited.
+ */
+export async function runTemplateShow(
+  opts: TemplateShowOptions,
+): Promise<TemplateShow> {
+  const template = await loadResolvedTemplate(opts.ref);
+  const { extends: _extends, id: _id, ...body } = template;
+
+  if (classifyRef(opts.ref).kind === "builtin") {
+    const title = listBuiltins().find((b) => b.id === opts.ref)?.title;
+    return { id: opts.ref, source: BUILTIN_SOURCE, ...(title ? { title } : {}), ...body };
+  }
+
+  // A file names its template by fragment, or holds only one - the loader
+  // above has already refused anything else.
+  const hash = opts.ref.lastIndexOf("#");
+  const source = hash === -1 ? opts.ref : opts.ref.slice(0, hash);
+  const fragment = hash === -1 ? "" : opts.ref.slice(hash + 1);
+  const id =
+    fragment ||
+    (Object.keys((await loadTemplateFile(source)).templates ?? {})[0] ?? "");
+  return { id, source, ...body };
 }

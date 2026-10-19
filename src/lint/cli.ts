@@ -45,7 +45,11 @@ import {
 } from "../meta/index.js";
 import { LintError } from "./types.js";
 import { runLint } from "./commands/lint.js";
-import { runTemplates, runTemplatesInfer } from "./commands/templates.js";
+import {
+  runTemplateShow,
+  runTemplates,
+  runTemplatesInfer,
+} from "./commands/templates.js";
 import { runTools } from "./commands/tools.js";
 import { INFER_FORMATS, isInferFormat, type InferFormat } from "./core/infer.js";
 import {
@@ -62,6 +66,12 @@ import {
   type ListFormat,
   type ReportFormat,
 } from "./reporters/index.js";
+import {
+  SHOW_FORMATS,
+  isShowFormat,
+  renderTemplateShow,
+  type ShowFormat,
+} from "./reporters/template-show.js";
 
 /** The options `check` and `structure` share, in the family's spelling. */
 interface InputCliOptions {
@@ -177,6 +187,17 @@ function inferFormat(value: unknown): InferFormat {
   const format = String(value);
   if (!isInferFormat(format)) {
     throw new LintError(`Unknown --format "${format}". Use yaml or json.`);
+  }
+  return format;
+}
+
+/** `templates show -f`: a report, a template's data, or a page skeleton. */
+function showFormat(value: unknown): ShowFormat {
+  const format = String(value);
+  if (!isShowFormat(format)) {
+    throw new LintError(
+      `Unknown --format "${format}". Use pretty, json or markdown.`,
+    );
   }
   return format;
 }
@@ -553,6 +574,40 @@ export function buildProgram(): Command {
         }
       },
     );
+
+  templates
+    .command("show")
+    .description(
+      "Print what a template asks for: each section, how often it may occur, what it must contain, and what it is for",
+    )
+    .argument(
+      "<ref>",
+      "template to show: a built-in id, a path, a path#name, or a URL",
+    )
+    .option("-f, --format <format>", `output: ${SHOW_FORMATS.join(" | ")}`, "pretty")
+    .addHelpText(
+      "after",
+      [
+        "",
+        "Examples:",
+        "  manni lint templates show tgdp:how-to:1.6",
+        "  manni lint templates show ./templates.yaml#how-to",
+        "  manni lint templates show tgdp:reference:1.6 -f json",
+        "  manni lint templates show tgdp:how-to:1.6 -f markdown > docs/rotate-key.md",
+      ].join("\n"),
+    )
+    .action(async (ref: string, _options: unknown, command: Command) => {
+      try {
+        // `-f` is read through `optionValue`: the parent `templates` declares
+        // it too, and commander hands it any `-f` typed after `show`.
+        const format = showFormat(optionValue(command, "format"));
+        const show = await runTemplateShow({ ref });
+        const color = resolveColor(program);
+        process.stdout.write(`${renderTemplateShow(show, format, { color })}\n`);
+      } catch (err) {
+        fail(err);
+      }
+    });
 
   withConfigOptions(
     program

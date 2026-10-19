@@ -474,6 +474,55 @@ describe("manni lint (built bin)", () => {
         expect(forced.status).toBe(0);
       });
     });
+
+    describe("show", () => {
+      it("prints what a built-in asks for", () => {
+        const r = run(["templates", "show", "tgdp:reference:1.6"]);
+        expect(r.status).toBe(0);
+        expect(r.stdout).toContain("structured-entry · optional, repeats");
+      });
+
+      it("prints the resolved template as JSON", () => {
+        const r = run(["templates", "show", "tgdp:reference:1.6", "-f", "json"]);
+        expect(r.status).toBe(0);
+        const parsed = JSON.parse(r.stdout) as { id: string; source: string };
+        expect(parsed.id).toBe("tgdp:reference:1.6");
+        expect(parsed.source).toBe("builtin");
+      });
+
+      it("prints a page skeleton as Markdown", () => {
+        const r = run(["templates", "show", "tgdp:how-to:1.6", "-f", "markdown"]);
+        expect(r.status).toBe(0);
+        expect(r.stdout.startsWith("---\ntype: how-to\n---\n")).toBe(true);
+        expect(r.stdout).toContain("## {task}");
+      });
+
+      it("refuses an unknown built-in", () => {
+        const r = run(["templates", "show", "tgdp:nope:1.6"]);
+        expect(r.status).toBe(2);
+        expect(r.stderr).toContain('manni: Unknown built-in template "tgdp:nope:1.6". Available: ');
+      });
+
+      it("refuses a missing ref", () => {
+        const r = run(["templates", "show"]);
+        expect(r.status).toBe(2);
+        expect(r.stderr).toContain("error: missing required argument 'ref'");
+      });
+
+      it("refuses an unknown format", () => {
+        const r = run(["templates", "show", "tgdp:how-to:1.6", "-f", "yaml"]);
+        expect(r.status).toBe(2);
+        expect(r.stderr).toContain(
+          'manni: Unknown --format "yaml". Use pretty, json or markdown.',
+        );
+      });
+
+      it("leaves the bare listing in place", () => {
+        const r = run(["templates", "--no-config"]);
+        expect(r.status).toBe(0);
+        expect(r.stdout).toContain("Templates:");
+      });
+    });
   });
 });
 

@@ -27,11 +27,17 @@ export type {
   LintSummary,
   LintFileResult,
 } from "./commands/lint.js";
-export { runTemplates, BUILTIN_SOURCE } from "./commands/templates.js";
+export {
+  runTemplates,
+  runTemplateShow,
+  BUILTIN_SOURCE,
+} from "./commands/templates.js";
 export type {
   TemplateInfo,
   TemplatesInfo,
   TemplatesOptions,
+  TemplateShow,
+  TemplateShowOptions,
 } from "./commands/templates.js";
 export { runTools, BUILT_IN_DEFAULTS } from "./commands/tools.js";
 export type { FormatInfo, ToolInfo, ToolsOptions } from "./commands/tools.js";
@@ -117,6 +123,13 @@ export type {
   ReportOptions,
   ListFormat,
 } from "./reporters/index.js";
+export {
+  SHOW_FORMATS,
+  isShowFormat,
+  occurrenceWords,
+  renderTemplateShow,
+} from "./reporters/template-show.js";
+export type { ShowFormat } from "./reporters/template-show.js";
 export { renderSarif } from "./reporters/sarif.js";
 export type { SarifOptions } from "./reporters/sarif.js";
 // A finding's durable identity, so a caller filing or correlating findings
