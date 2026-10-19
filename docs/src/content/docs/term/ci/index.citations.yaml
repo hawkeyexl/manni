@@ -5,18 +5,18 @@ docs/src/content/docs/term/ci/index.mdx:
         integrity: sha256-4991b9422d7c334a027e2fd7c05584202baf4ae479e58ac3466f6319f9b84fc1
       source:
         file: src/term/cli.ts
-        lines: 315
+        lines: 316
         integrity: sha256-6c93d7529351c9410b26d3c459bb936649605aaf66cfb3cd6e5705925fef1d56
-        commit-sha: c771aa95c37e38307cf8d4c739bec5c2fabf4c5f
+        commit-sha: 15f2dad1fc4f7d67d46cd2b37b3f64e9d88a0c7c
     - id: exit-zero-clean
       claim:
         lines: 20
         integrity: sha256-bf4bf44fcc85b716425cb735d41f19a9a44d3c1dec9b1477a4b0dc5073bb7765
       source:
         file: src/term/cli.ts
-        lines: 160
+        lines: 161
         integrity: sha256-642aa7bc0402e0101838821cd5ed5ee06a261d3134bb836e1a23650376a401d2
-        commit-sha: c771aa95c37e38307cf8d4c739bec5c2fabf4c5f
+        commit-sha: 15f2dad1fc4f7d67d46cd2b37b3f64e9d88a0c7c
     - id: exit-two-no-terms
       claim:
         lines: 22
@@ -118,9 +118,9 @@ docs/src/content/docs/term/ci/index.mdx:
         integrity: sha256-70c60d6211778341eb324e58c93e8964ed306a1da67ba341946d7ef0c0a143ed
       source:
         file: src/term/cli.ts
-        lines: 273-277
+        lines: 274-278
         integrity: sha256-16ec9c73536b0f867f0b27a1096bd188d56dd361f1983cd15168834ec743362b
-        commit-sha: c771aa95c37e38307cf8d4c739bec5c2fabf4c5f
+        commit-sha: 15f2dad1fc4f7d67d46cd2b37b3f64e9d88a0c7c
     - id: lint-prose-rule-id
       claim:
         integrity: sha256-70c60d6211778341eb324e58c93e8964ed306a1da67ba341946d7ef0c0a143ed
@@ -152,9 +152,9 @@ docs/src/content/docs/term/ci/index.mdx:
         integrity: sha256-fc7d50ccfd85da9c8a89f5d76e973854679ec97e458e32672aa59a11ab7899a4
       source:
         file: src/term/cli.ts
-        lines: 153
+        lines: 154
         integrity: sha256-b1d76731e86f841f6007d397c2ee26353efb88d6c9ec5ebf192817056dcc3161
-        commit-sha: c771aa95c37e38307cf8d4c739bec5c2fabf4c5f
+        commit-sha: 15f2dad1fc4f7d67d46cd2b37b3f64e9d88a0c7c
     - id: vale-style-terms-dir
       claim:
         lines: 83
@@ -301,6 +301,6 @@ docs/src/content/docs/term/ci/index.mdx:
         integrity: sha256-844fedfb8debb2add340c3288bc6d2beb701be118fc5fcf208b272c36aaaf03a
       source:
         file: src/term/cli.ts
-        lines: 315
+        lines: 316
         integrity: sha256-6c93d7529351c9410b26d3c459bb936649605aaf66cfb3cd6e5705925fef1d56
-        commit-sha: c771aa95c37e38307cf8d4c739bec5c2fabf4c5f
+        commit-sha: 15f2dad1fc4f7d67d46cd2b37b3f64e9d88a0c7c
