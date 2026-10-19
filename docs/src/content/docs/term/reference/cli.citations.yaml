@@ -179,8 +179,8 @@ docs/src/content/docs/term/reference/cli.mdx:
       source:
         file: src/term/core/check.ts
         lines: 130-152
-        integrity: sha256-86381decb3e807212bfab43e503e206073fd29b435ed844991e3eff337dbeb26
-        commit-sha: cf32cb0944109e3009965678faff5455537fba2f
+        integrity: sha256-bbfc6ccac2b1de47c32011bd3a40d830e60c04f82a9d799b37389afa260f8020
+        commit-sha: 636381071c1f4b7ad917a3dfd8c1a89812c8d8c7
     - id: check-reference-fields-label-or-id
       claim:
         integrity: sha256-4298800b481d91c9d4fe535889957335977bf07becf8dd9f52560bb245f27131
