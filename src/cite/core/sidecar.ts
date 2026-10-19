@@ -37,6 +37,7 @@ import {
   externalMetadataJoin,
   loadExternalMetadata,
   memberOf,
+  mergeExternalMetadata,
   orphanEntries,
   orphanError,
   orphanJoins,
@@ -103,7 +104,10 @@ export interface PageSidecar {
   entry?: string;
   /** The manifest's entries for this page, when it supplies any. */
   citations?: CitationInput[];
-  /** Field-joined entries this page matched, for the duplicate-join check. */
+  /**
+   * Field-joined entries this page matched, for the orphan check, and for the
+   * duplicate-join check when the page has an `owner`.
+   */
   joins: readonly ExternalMetadataJoin[];
 }
 
@@ -304,7 +308,15 @@ function sidecars(
     // two of them is a refusal even when only one has an entry today.
     const mine = manifests.filter((m) => members.includes(m.collection) && keeps(m));
     const [declared, second] = mine;
-    if (declared === undefined) return { joins: [] };
+    if (declared === undefined) {
+      // A keyless manifest keeps none of this page's citations, but its entry
+      // still names the page. Without the page's joins, that entry would read
+      // as an orphan. Unmarked, the merge only matches: nothing is judged.
+      const { joins } = mergeExternalMetadata(label, extract(), index, members, base, {
+        encryptionKey: () => opts.key,
+      });
+      return { joins };
+    }
     if (second !== undefined) {
       throw toError(twoManifestsRefusal(label, declared.collection, second.collection));
     }

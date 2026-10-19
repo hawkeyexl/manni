@@ -260,3 +260,29 @@ describe("the writers follow the marks", () => {
     expect(page?.citations[0]?.origin.kind).toBe("manifest");
   });
 });
+
+describe("cite and a keyless manifest that keeps no page's citations (#198)", () => {
+  const check = (cwd: string): ReturnType<typeof runCheck> =>
+    runCheck({ cwd, inputs: [], gitClient: noGit(), env: {} });
+
+  it("matches each entry to the page carrying its id, so none is an orphan", async () => {
+    const run = await check(join(FIXTURES, "cite-unmarked"));
+    expect(run.pages.map((p) => [p.file, p.citations.length])).toEqual([["docs/intro.md", 0]]);
+    expect(run.summary.failed).toBe(0);
+  });
+
+  it("still refuses an entry whose id no page carries, exit 2", async () => {
+    const dir = copy("cite-unmarked");
+    writeFileSync(join(dir, "docs.metadata.yaml"), `${read(dir, "docs.metadata.yaml")}ghost:\n  personas: [writer]\n`);
+    await expect(check(dir)).rejects.toThrow(
+      'Manifest docs.metadata.yaml:3 names id "ghost", which no loaded document carries. Fix the entry, or remove it.',
+    );
+  });
+
+  it("leaves two pages carrying one id to meta, since cite writes neither's citations there", async () => {
+    const dir = copy("cite-unmarked");
+    writeFileSync(join(dir, "docs/twin.md"), read(dir, "docs/intro.md"));
+    const run = await check(dir);
+    expect(run.pages).toHaveLength(2);
+  });
+});

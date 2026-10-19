@@ -83,7 +83,10 @@ export interface PreparedRun {
 /** One page's manifest entries, and the check options that carry them. */
 export interface PageSetup {
   options: CheckPageOptions;
-  /** Absent when no manifest owns this page's citations. */
+  /**
+   * Absent when no collection keeps citations in a manifest. Its `owner` is
+   * absent when none keeps this page's.
+   */
   sidecar?: PageSidecar;
 }
 
@@ -107,6 +110,8 @@ export function joinHits(): JoinHits {
         const values = matched.get(join.field) ?? new Set<string>();
         values.add(join.value);
         matched.set(join.field, values);
+        // cite writes only the citations a manifest keeps, so only those pages collide.
+        if (page.owner === undefined) continue;
         const id = `${join.field}\u0000${join.value}`;
         const hit = seen.get(id) ?? { file: join.file, labels: [] };
         if (!hit.labels.includes(label)) hit.labels.push(label);
@@ -231,7 +236,8 @@ export async function prepareRun(
   const sidecars = await sidecarsFor(run, { pages: files.map((file) => resolve(base, file)) });
   const setupFor = async (label: string, content: string): Promise<PageSetup> => {
     const page = await sidecars?.forPage(label, content, forced?.name);
-    if (page?.owner === undefined) return { options: pageOptions };
+    if (page === undefined) return { options: pageOptions };
+    if (page.owner === undefined) return { options: pageOptions, sidecar: page };
     return {
       sidecar: page,
       options: {
