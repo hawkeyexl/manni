@@ -34,7 +34,7 @@ describe("manni graph export questions", () => {
     const cwd = built();
     const r = run(["export", "questions"], cwd);
     expect(r.status, r.stdout + r.stderr).toBe(0);
-    expect(r.stdout).toBe(`Wrote 8 questions to ${join(cwd, "questions.jsonl")}\n`);
+    expect(r.stdout).toBe(`Wrote 9 questions to ${join(cwd, "questions.jsonl")}\n`);
     expect(readFileSync(join(cwd, "questions.jsonl"), "utf8")).toBe(
       readFileSync(join(fixture, "expected.jsonl"), "utf8"),
     );
@@ -42,10 +42,11 @@ describe("manni graph export questions", () => {
   });
 
   it("warns once with the count of changed answers, exported as stale", () => {
+    // One answer whose lines changed, and one whose page is gone.
     const cwd = built();
     const r = run(["export", "questions"], cwd);
     expect(r.stderr).toBe(
-      "manni: 1 answer changed since it was pinned, so it is exported as it reads now, marked stale.\n",
+      "manni: 2 answers changed since they were pinned, so they are exported as they read now, marked stale.\n",
     );
     rmSync(cwd, { recursive: true, force: true });
   });
@@ -54,7 +55,7 @@ describe("manni graph export questions", () => {
     const cwd = built();
     const a = run(["export", "questions", "-o", "eval/golden.jsonl"], cwd);
     expect(a.status, a.stdout + a.stderr).toBe(0);
-    expect(a.stdout).toBe(`Wrote 8 questions to ${join(cwd, "eval", "golden.jsonl")}\n`);
+    expect(a.stdout).toBe(`Wrote 9 questions to ${join(cwd, "eval", "golden.jsonl")}\n`);
     const first = readFileSync(join(cwd, "eval", "golden.jsonl"), "utf8");
     run(["export", "questions", "-o", "eval/golden.jsonl"], cwd);
     expect(readFileSync(join(cwd, "eval", "golden.jsonl"), "utf8")).toBe(first);
