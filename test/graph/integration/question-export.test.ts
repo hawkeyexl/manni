@@ -4,7 +4,7 @@
  * with each answer's text rendered from its pin as the page reads now.
  */
 import { spawnSync } from "node:child_process";
-import { cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
@@ -21,7 +21,8 @@ function run(args: string[], cwd: string): { stdout: string; stderr: string; sta
 
 /** A fresh, built copy of the fixture, outside any repository. */
 function built(): string {
-  const cwd = mkdtempSync(join(tmpdir(), "manni-graph-export-questions-"));
+  // realpath: macOS hands out /var/... while the CLI prints /private/var/...
+  const cwd = realpathSync(mkdtempSync(join(tmpdir(), "manni-graph-export-questions-")));
   cpSync(fixture, cwd, { recursive: true });
   const b = run(["build"], cwd);
   expect(b.status, b.stdout + b.stderr).toBe(0);

@@ -825,8 +825,11 @@ The file is shown wrapped here. On disk, each question is one line.
 | `expected[].text` | The answer's lines, as the page reads at export time. |
 
 A question with no pin has one `expected` entry for its page, with no `lines`
-or `text`. A stale answer is written as its lines read now. One warning on
-stderr gives the count, and the exit code is still 0:
+or `text`. A stale answer is written as its lines read now. A stale entry with
+no `text` is an answer whose page is gone. A pin whose text now matches in more
+than one place is written at its first match, and `graph check` reports the
+ambiguity. One warning on stderr gives the stale count, and the exit code is
+still 0:
 
 ```text
 manni: 5 answers changed since they were pinned, so they are exported as they read now, marked stale.

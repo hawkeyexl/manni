@@ -749,7 +749,10 @@ export async function askSampleQuestions(
         const page = pageAt(abs);
         if (page === undefined) {
           if (existsSync(abs)) {
-            // On disk, but in no collection the graph was built from.
+            // On disk, but in no collection the graph was built from. Its
+            // freshness cannot be read without the page's graph record, so the
+            // pin counts in no freshness bucket, and pinned can exceed
+            // current + moved + changed by these. Its finding says why.
             const nodes = await rank(language, q.question);
             report("knob", `"${q.question}" does not find ${pin.file} in the top ${String(top)} (${where(0, nodes[0])})`, draft);
           } else {
@@ -878,7 +881,9 @@ export async function exportSampleQuestions(
         const abs = resolve(configDir, pin.file);
         const page = pageAt(abs);
         if (page) return pinned(page, pin.file, pin, reviewed);
-        // A page outside the graph has no node to name; a page that is gone is stale.
+        // A page outside the graph has no node to name, and its freshness is
+        // not checked, since that needs the page's graph record. A page that
+        // is gone is stale.
         const gone = !existsSync(abs);
         if (gone) stale += 1;
         return { file: pin.file, lines: spellLines(pin.lines), reviewed, ...(gone ? { stale: true as const } : {}) };
