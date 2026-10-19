@@ -47,9 +47,9 @@ docs/src/content/docs/term/fix/index.mdx:
         integrity: sha256-18f4122ea2085c11a10080563197f6a9f459ca227c28e89824980814075405b0
       source:
         file: src/term/cli.ts
-        lines: 313-315
+        lines: 314-316
         integrity: sha256-e84582b17549a50e19531d2aff43de0e1573913f028e2a161064d6e750d61916
-        commit-sha: c771aa95c37e38307cf8d4c739bec5c2fabf4c5f
+        commit-sha: 15f2dad1fc4f7d67d46cd2b37b3f64e9d88a0c7c
     - id: row-undefined-term
       claim:
         lines: 52
@@ -119,9 +119,9 @@ docs/src/content/docs/term/fix/index.mdx:
         integrity: sha256-b022a960c43624fb481903e92299e885f4f791430e77d10b4119b1dd1d105be8
       source:
         file: src/term/cli.ts
-        lines: 315
+        lines: 316
         integrity: sha256-6c93d7529351c9410b26d3c459bb936649605aaf66cfb3cd6e5705925fef1d56
-        commit-sha: c771aa95c37e38307cf8d4c739bec5c2fabf4c5f
+        commit-sha: 15f2dad1fc4f7d67d46cd2b37b3f64e9d88a0c7c
     - id: default-severities
       claim:
         integrity: sha256-b76baeb56c77373a9ba95543bafb5adf4ed28fd351a2faf1b797ae0a2b75dad8
@@ -387,9 +387,9 @@ docs/src/content/docs/term/fix/index.mdx:
         integrity: sha256-84a5878ad8367cbfef8d5275f6dee4dad2216ca3f3f7e3e7d8491f664d62fa73
       source:
         file: src/term/cli.ts
-        lines: 160
+        lines: 161
         integrity: sha256-642aa7bc0402e0101838821cd5ed5ee06a261d3134bb836e1a23650376a401d2
-        commit-sha: c771aa95c37e38307cf8d4c739bec5c2fabf4c5f
+        commit-sha: 15f2dad1fc4f7d67d46cd2b37b3f64e9d88a0c7c
     - id: exit-one-baseline-holds
       claim:
         lines: 409
@@ -405,9 +405,9 @@ docs/src/content/docs/term/fix/index.mdx:
         integrity: sha256-02fcc141853531cc52599684036430d9fa33b21ae55be8753c97922c8a4431a0
       source:
         file: src/term/cli.ts
-        lines: 315
+        lines: 316
         integrity: sha256-6c93d7529351c9410b26d3c459bb936649605aaf66cfb3cd6e5705925fef1d56
-        commit-sha: c771aa95c37e38307cf8d4c739bec5c2fabf4c5f
+        commit-sha: 15f2dad1fc4f7d67d46cd2b37b3f64e9d88a0c7c
     - id: exit-two-stderr-prefix
       claim:
         lines: 410
