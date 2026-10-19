@@ -544,9 +544,8 @@ export function deriveGraph(docs: DocModel[], options: DeriveOptions): Quad[] {
       // the block as written (frontmatter key `graph`, RDF prefix `graph:`).
       const blockLabel = block ? asString(block["label"]) : undefined;
       if (block) {
-        const label = blockLabel;
-        if (label) {
-          const topic = concept(label, pageLanguage);
+        if (blockLabel) {
+          const topic = concept(blockLabel, pageLanguage);
           add(docIri, `${NS.foaf}primaryTopic`, iri(topic));
           for (const alt of asStringArray(block["alt-labels"])) {
             add(topic, `${NS.skos}altLabel`, lit(alt));
