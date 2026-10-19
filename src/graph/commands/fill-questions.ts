@@ -511,6 +511,8 @@ export function repinQuestionFile(
   // One read: the file is validated and edited from the same bytes.
   const text = existsSync(abs) ? readFileSync(abs, "utf8") : undefined;
   readQuestionFile(abs, label, text);
+  // readQuestionFile throws when the file is absent, so text is set here. The
+  // fallback only satisfies the type, which a throw does not narrow.
   const doc = parseDocument(text ?? "");
   const outcomes: QuestionOutcome[] = [];
   const warnings: string[] = [];
