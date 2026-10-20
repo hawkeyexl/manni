@@ -429,9 +429,9 @@ docs/src/content/docs/term/reference/configuration.mdx:
         integrity: sha256-e3fddc012ce5bb146ba5bd067310adbaab7a06782d884e4ffbca13ca5adb8d11
       source:
         file: src/meta/core/load-files.ts
-        lines: 406
+        lines: 408
         integrity: sha256-da70dbb9bcc1db6c1d1532237399e11fa14a9f72563d7fca972d0bb400e2e69f
-        commit-sha: 1f74e683fc25a937666751b9d8887f49afa0ce97
+        commit-sha: 7c1e74de55b039326da5de3c739f1c2be86b2fdd
     - id: duplicate-id-on-every-entry
       claim:
         integrity: sha256-44ef57a62c574467369a2141e4e556b88bba96ee6875dd0337e0ae01896c92b1

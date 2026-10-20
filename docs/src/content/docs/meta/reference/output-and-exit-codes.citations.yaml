@@ -123,26 +123,26 @@ docs/src/content/docs/meta/reference/output-and-exit-codes.mdx:
         integrity: sha256-c360b83cfa44c47b59476c3bc86072b934de2e96349cc9b2975e28758c6daf5b
       source:
         file: src/meta/core/load-files.ts
-        lines: 398-434
+        lines: 400-436
         integrity: sha256-2c850bc72c67ae7942ad990cbb181ec2a9e766749960fa3777d9b494697292ab
-        commit-sha: 1f74e683fc25a937666751b9d8887f49afa0ce97
+        commit-sha: 7c1e74de55b039326da5de3c739f1c2be86b2fdd
     - id: output-empty-input-messages
       claim:
         lines: 671-674
-        integrity: sha256-190c84da97df4c3ff7d33bdc36f3ed12ffee682871a4afbbb533a17037b21359
+        integrity: sha256-eaa806eb1c426c48c1a94883933ad1e18314c81459cbb3313e0d98448ddc35a3
       source:
         file: src/meta/core/load-files.ts
         lines: 375-378
-        integrity: sha256-a78c409acb132831471c314c84f82af32fe4f51a8abe374e2fc0cc84b584641a
-        commit-sha: 1f74e683fc25a937666751b9d8887f49afa0ce97
+        integrity: sha256-c75f312543fbc290f9baf8119524a21b0863e9c96ecbe2eef67177631ad5f912
+        commit-sha: 7c1e74de55b039326da5de3c739f1c2be86b2fdd
     - id: output-zero-files-is-exit-2
       claim:
         integrity: sha256-4b3e18ac67f597f3165b47187d1e9e5a8008019fa49a0abedbe34e5b84e53ce5
       source:
         file: src/meta/core/load-files.ts
-        lines: 403-434
+        lines: 405-436
         integrity: sha256-c7134bb61b7c846ac9ea078cb391ee795fb7f408ed7c07091baab8d8bccab2db
-        commit-sha: 1f74e683fc25a937666751b9d8887f49afa0ce97
+        commit-sha: 7c1e74de55b039326da5de3c739f1c2be86b2fdd
     - id: output-fingerprint-includes-the-schema-ref
       claim:
         integrity: sha256-a62694f5b0f545613fd629388361a6b6324f95d848a7918f07857b9390d3f236
@@ -563,9 +563,9 @@ docs/src/content/docs/meta/reference/output-and-exit-codes.mdx:
         integrity: sha256-0f49da81fc4c17faf28e2a44049c4e4150cca06304cb018eafdfafdd4c65057f
       source:
         file: src/a11y/core/analyzer.ts
-        lines: 383-401
+        lines: 384-402
         integrity: sha256-789cbf0f45ab76622d0cbb762d0eff7279d099060069c26cf74770dfd5607ba3
-        commit-sha: c87d5ca0745927b7e094c8b3d4cbef6f1ac62e4c
+        commit-sha: 7c1e74de55b039326da5de3c739f1c2be86b2fdd
     - id: output-what-makes-each-tool-exit-1
       claim:
         lines: 512-516

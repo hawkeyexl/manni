@@ -595,8 +595,8 @@ docs/src/content/docs/cite/reference/cli.mdx:
       source:
         file: src/cite/core/sources.ts
         lines: 113-120
-        integrity: sha256-655510c99cfc05d9f114f7a082489617a09f94d4c9bcdd3ed708e8d34a58603a
-        commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e
+        integrity: sha256-fa53e6109a58839877b6625616a41dfef1d14b214499381ae6b70bd883d25c1c
+        commit-sha: 7c1e74de55b039326da5de3c739f1c2be86b2fdd
     - id: check-exit-2-unknown-key
       claim:
         lines: 339
@@ -809,8 +809,8 @@ docs/src/content/docs/cite/reference/cli.mdx:
       source:
         file: src/cite/core/sources.ts
         lines: 113-120
-        integrity: sha256-655510c99cfc05d9f114f7a082489617a09f94d4c9bcdd3ed708e8d34a58603a
-        commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e
+        integrity: sha256-fa53e6109a58839877b6625616a41dfef1d14b214499381ae6b70bd883d25c1c
+        commit-sha: 7c1e74de55b039326da5de3c739f1c2be86b2fdd
     - id: update-only-ids
       claim:
         lines: 599-603

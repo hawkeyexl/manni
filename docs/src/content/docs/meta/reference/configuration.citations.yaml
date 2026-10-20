@@ -627,8 +627,8 @@ docs/src/content/docs/meta/reference/configuration.mdx:
       source:
         file: src/shared/collections.ts
         lines: 104-120
-        integrity: sha256-fc5b0aaaebc16254c7c8d9d2a49298365f6a37c2cbd816403e207fbc83ea177f
-        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
+        integrity: sha256-cb6944ef51b2027602a131a17adc8c4c7a76d6b5560a486cb7e5b82db0459d68
+        commit-sha: 7c1e74de55b039326da5de3c739f1c2be86b2fdd
     - id: cross-origin-redirect-drops-the-token
       claim:
         lines: 782-785
@@ -1306,9 +1306,9 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         integrity: sha256-0a0e1eb42907b7b80b9c2ca95fe19c949eeb3255f49fd3387bcfa881291b3fb4
       source:
         file: src/meta/core/load-files.ts
-        lines: 405-406
+        lines: 407-408
         integrity: sha256-fe70e2a6e37e41b892f66e1cb51aa030b785c4dd34ed5c29169ac290c6901a3d
-        commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
+        commit-sha: 7c1e74de55b039326da5de3c739f1c2be86b2fdd
     - id: unknown-key-rule-applies-to-nested-mappings
       claim:
         integrity: sha256-aeb0a709c72ec2f4b66561390db840eb4bc1d3ca59fa2f91ff025ec1dbbf0fa4
@@ -2611,9 +2611,9 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         integrity: sha256-84d7c8fcb1fe06c11cbae99f0d48d547ec8a404411bcad82f28acccb177f75e1
       source:
         file: src/meta/core/load-files.ts
-        lines: 405-406
+        lines: 407-408
         integrity: sha256-fe70e2a6e37e41b892f66e1cb51aa030b785c4dd34ed5c29169ac290c6901a3d
-        commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
+        commit-sha: 7c1e74de55b039326da5de3c739f1c2be86b2fdd
     - id: unknown-tools-key-is-exit-2
       claim:
         lines: 1423-1425
