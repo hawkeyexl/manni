@@ -462,7 +462,8 @@ JUnit failure's message leaves the guidance lines out.
 {/* cite sarif-vale-rule-no-helpuri */}
 JUnit testcases carry the classname `manni.term`, one per file read. A `lint`
 rule, `manni:term/prose/<Style.Rule>`, is Vale's, so its SARIF description
-names the Vale rule and it has no `helpUri`.
+names the Vale rule. Its `fullDescription` and `helpUri` come from Vale's
+first alert for that rule, when Vale gives them.
 
 ### Baselines
 
