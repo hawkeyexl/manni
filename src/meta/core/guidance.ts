@@ -58,29 +58,37 @@ function localRef(root: unknown, ref: string): unknown {
  * Follow it when a finding's guidance needs a property only a referenced
  * schema describes.
  */
-function expand(root: unknown, node: unknown, out: Record<string, unknown>[] = []): Record<string, unknown>[] {
-  if (!isRecord(node) || out.includes(node)) return out;
+function expand(
+  root: unknown,
+  node: unknown,
+  out: Record<string, unknown>[] = [],
+  seen = new Set<unknown>(),
+): Record<string, unknown>[] {
+  if (!isRecord(node) || seen.has(node)) return out;
+  seen.add(node);
   out.push(node);
-  if (typeof node.$ref === "string") expand(root, localRef(root, node.$ref), out);
+  if (typeof node.$ref === "string") expand(root, localRef(root, node.$ref), out, seen);
   for (const key of ["allOf", "anyOf", "oneOf"]) {
     const branches = node[key];
-    if (Array.isArray(branches)) for (const b of branches) expand(root, b, out);
+    if (Array.isArray(branches)) for (const b of branches) expand(root, b, out, seen);
   }
-  expand(root, node.then, out);
-  expand(root, node.else, out);
+  expand(root, node.then, out, seen);
+  expand(root, node.else, out, seen);
   return out;
 }
 
 /** The subschemas that apply to one child of the values `nodes` describe. */
 function child(root: unknown, nodes: Record<string, unknown>[], segment: string, index: boolean): Record<string, unknown>[] {
   const out: Record<string, unknown>[] = [];
+  // One `seen` across every node, so a subschema two of them share is listed once.
+  const seen = new Set<unknown>();
   for (const n of nodes) {
     if (index) {
       const prefix = n.prefixItems;
       const items = Array.isArray(prefix) ? (prefix[Number(segment)] as unknown) ?? n.items : n.items;
-      expand(root, Array.isArray(items) ? (items[Number(segment)] as unknown) : items, out);
+      expand(root, Array.isArray(items) ? (items[Number(segment)] as unknown) : items, out, seen);
     } else if (isRecord(n.properties)) {
-      expand(root, n.properties[segment], out);
+      expand(root, n.properties[segment], out, seen);
     }
   }
   return out;
