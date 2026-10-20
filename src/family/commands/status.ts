@@ -16,8 +16,11 @@ import type { Envelope } from "../core/envelope.js";
 import {
   COMMANDS,
   DOMAINS,
+  NEXT,
   NOT_CHECKED,
   NOT_SET_UP,
+  NO_COLLECTIONS,
+  NO_COLLECTIONS_NEXT,
   collectionsOf,
   listMembers,
   loadFamily,
@@ -41,6 +44,8 @@ export interface DomainRow {
   name: string;
   status: DomainState;
   reason: string;
+  /** What to do about it. Absent on an `in-play` row. */
+  next?: string;
   /** tracevals in play: the model judging inside a hook, and the one extracting rules. */
   models?: { hook: ModelRole; extraction: ModelRole };
   /** tracevals in play with a model host running: each model it holds. */
@@ -95,7 +100,13 @@ async function tracevalsRow(cwd: string, opts: StatusOptions): Promise<DomainRow
     };
   } catch (err) {
     const message = errorMessage(err).split("\n", 1)[0] ?? "";
-    return { name: "tracevals", status: "unknown", reason: `manni tracevals check could not run: ${message}` };
+    // `tracevals check` needs a trace, so running it again is no way to see more.
+    return {
+      name: "tracevals",
+      status: "unknown",
+      reason: `manni tracevals check could not run: ${message}`,
+      next: "Fix what the reason names, then run manni status again.",
+    };
   }
 }
 
@@ -143,7 +154,7 @@ async function citedPages(cwd: string, configPath: string): Promise<number> {
 async function row(domain: Domain, family: Family, cwd: string, members: readonly string[]): Promise<DomainRow> {
   const configPath = family.configPath;
   const inPlay = (reason: string): DomainRow => ({ name: domain, status: "in-play", reason });
-  const notSetUp: DomainRow = { name: domain, status: "not-set-up", reason: NOT_SET_UP[domain] };
+  const notSetUp: DomainRow = { name: domain, status: "not-set-up", reason: NOT_SET_UP[domain], next: NEXT[domain] };
   const section = family.sections.has(domain);
   switch (domain) {
     case "meta": {
@@ -187,7 +198,7 @@ async function statusUnshared(opts: StatusOptions): Promise<StatusReport> {
     // `check` only reads collection members, so with no collections every
     // domain has nothing to check, whatever sections the config carries.
     if (family.collections.length === 0) {
-      domains.push({ name: domain, status: "not-set-up", reason: "no collections: in manni.config.yaml" });
+      domains.push({ name: domain, status: "not-set-up", reason: NO_COLLECTIONS, next: NO_COLLECTIONS_NEXT });
       continue;
     }
     try {
@@ -197,14 +208,19 @@ async function statusUnshared(opts: StatusOptions): Promise<StatusReport> {
       // reported in its row rather than ending the run, as unknown: whether it is
       // set up is the thing it could not read.
       const message = errorMessage(err).split("\n", 1)[0] ?? "";
-      domains.push({ name: domain, status: "unknown", reason: `manni ${COMMANDS[domain]} could not run: ${message}` });
+      domains.push({
+        name: domain,
+        status: "unknown",
+        reason: `manni ${COMMANDS[domain]} could not run: ${message}`,
+        next: `Run manni ${COMMANDS[domain]} to see the whole error.`,
+      });
     }
   }
-  for (const [name, reason] of NOT_CHECKED) {
+  for (const [name, reason, next] of NOT_CHECKED) {
     domains.push(
       name === "tracevals" && family.runtime
         ? await tracevalsRow(cwd, opts)
-        : { name, status: "not-checked", reason },
+        : { name, status: "not-checked", reason, next },
     );
   }
   return {
@@ -225,7 +241,12 @@ const STATE_LABEL: Readonly<Record<DomainState, string>> = {
   unknown: "unknown",
 };
 
-export function renderStatus(report: StatusReport, format: StatusFormat): string {
+export interface RenderStatusOptions {
+  /** Print each row's next step. Default true; the SessionStart briefing turns it off. */
+  next?: boolean;
+}
+
+export function renderStatus(report: StatusReport, format: StatusFormat, opts: RenderStatusOptions = {}): string {
   if (format === "json") return JSON.stringify(report, null, 2);
   const head = [
     `manni ${report.version}`,
@@ -235,13 +256,18 @@ export function renderStatus(report: StatusReport, format: StatusFormat): string
   // tracevals in play judges each turn, which is what its row says.
   const label = (d: DomainRow): string => (d.models !== undefined ? "judges each turn" : STATE_LABEL[d.status]);
   const width = Math.max(14, ...report.domains.map((d) => label(d).length + 3));
-  const rows = report.domains.flatMap((d) => [
+  const indent = "".padEnd(11 + width);
+  const rows = report.domains.flatMap((d, i) => [
     `${d.name.padEnd(11)}${label(d).padEnd(width)}${d.reason}`,
     ...(d.host ?? []).map(
       (m) =>
         `${"".padEnd(11)}${"model host".padEnd(width)}${m.model} loaded, ${plural(m.sessions, "session")}, ` +
         `idle ${String(Math.floor(m.idleMs / 60_000))}m`,
     ),
+    // A next step a run of rows shares is said once, under the last of them.
+    ...(opts.next !== false && d.next !== undefined && report.domains[i + 1]?.next !== d.next
+      ? [`${indent}${d.next}`]
+      : []),
   ]);
   return [head, "", ...rows].join("\n");
 }
@@ -251,6 +277,9 @@ export function renderStatus(report: StatusReport, format: StatusFormat): string
  * `test/plugin.test.ts` checks both halves against `plugin/manni`.
  */
 export const FIX_SKILL = "manni:fix";
+
+/** The sentence the briefing and every hook block end on. */
+export const FIX_SENTENCE = `The ${FIX_SKILL} skill says how to repair each finding.`;
 
 /** The set-wide checks a stop runs when a collection document changed, as the briefing names them. */
 const PAGE_WIDE: ReadonlyArray<readonly [Domain, string]> = [["term", "the glossary"]];
@@ -273,7 +302,7 @@ export function agentLines(report: StatusReport): string {
   return [
     `After you edit a file in ${names}, manni check runs on it, and errors come back to you at once.`,
     `Before you finish, manni check runs on every file you changed${plus}.${also} You get one repair pass.`,
-    `The ${FIX_SKILL} skill says how to repair each finding.`,
+    FIX_SENTENCE,
   ].join("\n");
 }
 

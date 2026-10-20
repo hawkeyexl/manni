@@ -1,0 +1,51 @@
+{
+  "version": 1,
+  "generatedWith": "4.13.0",
+  "entries": {
+    "docs/glossary/varifocals.md": [
+      "760e2ba39963c332"
+    ],
+    "docs/guides/care.md": [
+      "a2ba3e752a68b3e6"
+    ],
+    "docs/guides/fitting.md": [
+      "176e6e6f9b82da54",
+      "5120d8486572a758",
+      "bc724e097f91a827",
+      "d37179dd1ce39ea2"
+    ],
+    "docs/terms/bifocal.md": [
+      "2fb978343e0545cc",
+      "57bcd7db200f1f13",
+      "9ae3a46a64c961b3"
+    ],
+    "docs/terms/corrective-lens.md": [
+      "bfc50d5507b0407e"
+    ],
+    "docs/terms/lens.md": [
+      "1b7c0e269e464815",
+      "805842a3ea0f2823"
+    ],
+    "docs/terms/monocle.md": [
+      "b993d77e14a63c7f"
+    ],
+    "docs/terms/optics.md": [
+      "30dfdae61ca8911c",
+      "da2d3a64609fc5cf"
+    ],
+    "docs/terms/progressive-lens.md": [
+      "3c0ff626147217ee"
+    ],
+    "docs/terms/trifocal.md": [
+      "163067c94de1adf2",
+      "44d98e50f90fef92",
+      "91f0d70783e66216"
+    ],
+    "docs/terms/varifocal.md": [
+      "7be4a9934037d8f7",
+      "7d0b0f1a1bca8bf2",
+      "8148c70f9ce4e125",
+      "c39628de94caf6dd"
+    ]
+  }
+}

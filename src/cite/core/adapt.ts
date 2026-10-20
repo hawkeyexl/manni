@@ -82,7 +82,7 @@ export function messageFor(source: SourceEnd): string {
       return `moved -> ${shortSrc(source.newSrc ?? "?")}`;
     case "moved-ambiguous": {
       const candidates = source.candidates ?? [];
-      return `moved, ${plural(candidates.length, "candidate")} (${candidates.map(shortSrc).join(", ")}); widen the range`;
+      return `moved, ${plural(candidates.length, "candidate")} (${candidates.map(shortSrc).join(", ")})`;
     }
     case "changed": {
       // Where the old first and last line sit now, when the in-range search
@@ -260,14 +260,20 @@ export function findingsFor(
           claimLine(claim) === undefined && result.markerLine === undefined
             ? entrySite(result)
             : { line: claimLine(claim) ?? result.markerLine };
-        push(result, rule, claimMessageFor(result), site);
+        push(result, rule, withRemedy(claimMessageFor(result), remedyFor(rule, result)), site);
       }
     }
     const rule = sourceRuleOf(result.source.status);
     if (rule === undefined) continue;
     const extra =
       result.source.newSrc === undefined ? undefined : { newSrc: result.source.newSrc };
-    push(result, rule, messageFor(result.source), anchorSite(result), extra);
+    push(
+      result,
+      rule,
+      withRemedy(messageFor(result.source), remedyFor(rule, result)),
+      anchorSite(result),
+      extra,
+    );
   }
   return out;
 }
@@ -331,4 +337,71 @@ export function toValidationResult(report: PageCitationReport): ValidationResult
     schemas: [RULE_ID_PREFIX],
     errors,
   };
+}
+
+/**
+ * A message, then what to do about it. A message that ends a sentence keeps
+ * its stop; a status such as `changed` gains one.
+ */
+export function withRemedy(message: string, remedy: string | undefined): string {
+  if (remedy === undefined) return message;
+  return `${message}${/[.?!]$/.test(message) ? "" : "."} ${remedy}`;
+}
+
+/** What to do about a missing source: the cause in its message decides. */
+function missingRemedy(result: CitationResult): string {
+  if (citesEncrypted(result.source.src)) {
+    switch (result.source.missingReason) {
+      case "no-key":
+        return "Set MANNI_ENCRYPTION_KEY, or encryptionKey: at the top of manni.config.yaml.";
+      case "undecryptable":
+        return "Use the key the source was encrypted with. After a key rotation, update the secret too.";
+      case "untracked":
+        return "Point --root at the code checkout, or re-add the citation against the new path.";
+      case "unreadable":
+      case undefined:
+        break;
+    }
+  }
+  const id = result.citation.id;
+  return id === undefined
+    ? "Remove the entry, then add it again against the file's new path."
+    : `Run manni cite remove --only ${id}, then manni cite add against the file's new path.`;
+}
+
+/**
+ * What to do about an end finding, in one sentence: the command that clears
+ * it, with `--only <id>` when the entry has an id. Any other finding's
+ * message says what to do where it is composed, so it has none here.
+ *
+ * The message carries it after the status, and pretty output prints it under
+ * the row, since the status column has no room for it.
+ */
+export function remedyFor(rule: CiteRule, result: CitationResult | undefined): string | undefined {
+  if (rule === "marker-misplaced") return "Run manni cite update to move it.";
+  if (result === undefined) return undefined;
+  const id = result.citation.id;
+  const accept = `manni cite update --accept${id === undefined ? "" : ` --only ${id}`}`;
+  switch (rule) {
+    case "source-moved":
+    case "claim-moved":
+    case "claim-reanchored":
+      return "Run manni cite update.";
+    case "source-moved-ambiguous":
+      return `Widen source.lines until the range occurs once, then run ${accept}.`;
+    case "source-changed":
+    case "source-never-true":
+      return `Check the sentence against the source, then run ${accept}.`;
+    case "source-missing":
+      return missingRemedy(result);
+    case "claim-moved-ambiguous":
+      return "Pin a range that occurs once, or anchor the claim with a marker.";
+    case "claim-changed":
+      if (result.claim?.fileLines === undefined && result.markerLine === undefined) {
+        return id === undefined ? "Add claim.lines." : `Add claim.lines, or a marker that names ${id}.`;
+      }
+      return `Check it still matches the source, then run ${accept}.`;
+    default:
+      return undefined;
+  }
 }

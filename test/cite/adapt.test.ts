@@ -7,9 +7,15 @@
  * survive a move, a line shift and an accepted claim.
  */
 import { describe, expect, it } from "vitest";
-import { claimMessageFor, findingsFor, messageFor, toValidationResult } from "../../src/cite/core/adapt.js";
+import {
+  claimMessageFor,
+  findingsFor,
+  messageFor,
+  remedyFor,
+  toValidationResult,
+} from "../../src/cite/core/adapt.js";
 import { shortSrc } from "../../src/cite/core/spell.js";
-import { DEFAULT_SEVERITY, resolveSeverity } from "../../src/cite/core/severity.js";
+import { DEFAULT_SEVERITY, guidanceFor, resolveSeverity } from "../../src/cite/core/severity.js";
 import type {
   CitationFinding,
   CitationResult,
@@ -74,7 +80,7 @@ describe("messageFor", () => {
           candidates: ["lib/limits.ts:4", "lib/limits.ts:11"],
         }),
       ),
-    ).toBe("moved, 2 candidates (lib/limits.ts:4, lib/limits.ts:11); widen the range");
+    ).toBe("moved, 2 candidates (lib/limits.ts:4, lib/limits.ts:11)");
     expect(messageFor(source({ status: "changed" }))).toBe("changed");
     expect(messageFor(source({ status: "changed", commitSha: COMMIT }))).toBe("changed since 3f9c2a1");
     expect(
@@ -221,7 +227,8 @@ describe("findingsFor", () => {
         rule: "claim-changed",
         ruleId: "manni:cite/claim-changed",
         severity: "warning",
-        message: "fetch-timeout: the claim at line 9 has changed since it was pinned.",
+        message:
+          "fetch-timeout: the claim at line 9 has changed since it was pinned. Check it still matches the source, then run manni cite update --accept --only fetch-timeout.",
         src: "lib/limits.ts:2",
         index: 0,
         line: 9,
@@ -231,7 +238,7 @@ describe("findingsFor", () => {
         rule: "source-moved",
         ruleId: "manni:cite/source-moved",
         severity: "warning",
-        message: "moved -> lib/limits.ts:4",
+        message: "moved -> lib/limits.ts:4. Run manni cite update.",
         src: "lib/limits.ts:2",
         index: 0,
         line: 9,
@@ -354,7 +361,7 @@ describe("toValidationResult", () => {
       {
         schema: "manni:cite",
         instancePath: "/citations/0",
-        message: "moved -> lib/limits.ts:4",
+        message: "moved -> lib/limits.ts:4. Run manni cite update.",
         keyword: "source-moved",
         subject: "fetch-timeout",
         line: 9,
@@ -363,7 +370,7 @@ describe("toValidationResult", () => {
       {
         schema: "manni:cite",
         instancePath: "/citations/1",
-        message: "changed",
+        message: "changed. Check the sentence against the source, then run manni cite update --accept.",
         keyword: "source-changed",
         subject: "sha256-" + "3".repeat(64),
         line: 13,
@@ -555,5 +562,102 @@ describe("leak sentinel", () => {
     expect(text).not.toContain("SECRET");
     expect(text).not.toContain(KEY);
     expect(text).toContain(TOKEN);
+  });
+});
+
+describe("remedyFor", () => {
+  const severity = resolveSeverity();
+  /** The one finding an entry's end reports, with its remedy appended. */
+  const messageOf = (r: CitationResult): string | undefined => findingsFor([r], severity)[0]?.message;
+
+  it("names the command that clears each source finding, with --only <id>", () => {
+    expect(messageOf(result({ source: source({ status: "moved", newSrc: "src/moved.ts:4" }) }))).toBe(
+      "moved -> src/moved.ts:4. Run manni cite update.",
+    );
+    expect(
+      messageOf(
+        result({
+          citation: { id: "retries", source: { file: "lib/dup.ts", lines: 2, integrity: PIN } },
+          source: source({ status: "moved-ambiguous", candidates: ["lib/dup.ts:3", "lib/dup.ts:5"] }),
+        }),
+      ),
+    ).toBe(
+      "moved, 2 candidates (lib/dup.ts:3, lib/dup.ts:5). Widen source.lines until the range occurs once, then run manni cite update --accept --only retries.",
+    );
+    const check =
+      ". Check the sentence against the source, then run manni cite update --accept --only fetch-timeout.";
+    expect(messageOf(result({ source: source({ status: "changed" }) }))).toBe(`changed${check}`);
+    expect(messageOf(result({ source: source({ status: "changed", commitSha: COMMIT }) }))).toBe(
+      `changed since 3f9c2a1${check}`,
+    );
+    expect(
+      messageOf(result({ source: source({ status: "changed", commitSha: COMMIT, historyAvailable: false }) })),
+    ).toBe(`changed (history unavailable: commit 3f9c2a1 not found; fetch-depth: 0)${check}`);
+    expect(messageOf(result({ source: source({ status: "never-true", commitSha: COMMIT }) }))).toBe(
+      `never true: the pin does not match at 3f9c2a1${check}`,
+    );
+  });
+
+  it("says how to re-add a missing source, and names the cause an encrypted one gives", () => {
+    expect(messageOf(result({ source: source({ status: "missing" }) }))).toBe(
+      "missing. Run manni cite remove --only fetch-timeout, then manni cite add against the file's new path.",
+    );
+    expect(
+      messageOf(
+        result({
+          citation: { source: { file: "lib/limits.ts", lines: 2, integrity: PIN } },
+          source: source({ status: "missing" }),
+        }),
+      ),
+    ).toBe("missing. Remove the entry, then add it again against the file's new path.");
+    const encrypted = (missingReason: MissingReason): string | undefined =>
+      messageOf(result({ source: source({ src: `${TOKEN}:2`, status: "missing", missingReason }) }));
+    expect(encrypted("no-key")).toBe(
+      "missing (no encryption key is available to decrypt it). Set MANNI_ENCRYPTION_KEY, or encryptionKey: at the top of manni.config.yaml.",
+    );
+    expect(encrypted("undecryptable")).toBe(
+      "missing (does not decrypt under the current key). Use the key the source was encrypted with. After a key rotation, update the secret too.",
+    );
+    expect(encrypted("untracked")).toBe(
+      "missing (no tracked file matches; wrong --root?). Point --root at the code checkout, or re-add the citation against the new path.",
+    );
+  });
+
+  it("names the command that clears each claim finding", () => {
+    const current = source({ status: "current" });
+    expect(messageOf(result({ source: current, claim: claim({ status: "moved", newFileLines: "17" }) }))).toBe(
+      "fetch-timeout: the claim moved from line 9 to line 17. Run manni cite update.",
+    );
+    expect(
+      messageOf(result({ source: current, claim: claim({ status: "moved-ambiguous", candidateFileLines: ["17", "21"] }) })),
+    ).toBe(
+      "fetch-timeout: the claim at line 9 now appears at lines 17 and 21. Pin a range that occurs once, or anchor the claim with a marker.",
+    );
+    expect(messageOf(result({ source: current, claim: claim({ status: "reanchored" }) }))).toBe(
+      "fetch-timeout: the claim at line 9 was reanchored. Its words are unchanged. Run manni cite update.",
+    );
+    expect(messageOf(result({ source: current, claim: claim({ status: "changed" }) }))).toBe(
+      "fetch-timeout: the claim at line 9 has changed since it was pinned. Check it still matches the source, then run manni cite update --accept --only fetch-timeout.",
+    );
+    expect(messageOf(unanchored({ source: current, claim: { status: "changed" } }))).toBe(
+      "fetch-timeout: the claim has no lines and no marker names the entry, so its pin anchors nothing. Add claim.lines, or a marker that names fetch-timeout.",
+    );
+  });
+
+  it("is one sentence for a misplaced marker, and none for a finding the message already settles", () => {
+    expect(remedyFor("marker-misplaced", undefined)).toBe("Run manni cite update to move it.");
+    expect(remedyFor("marker-orphan", undefined)).toBeUndefined();
+    expect(remedyFor("entry-invalid", result({ source: source({ status: "current" }) }))).toBeUndefined();
+  });
+});
+
+describe("guidanceFor", () => {
+  it("names the rule, what it means, and its section of the fix page", () => {
+    expect(guidanceFor("source-changed")).toEqual({
+      id: "manni:cite",
+      rule: "source-changed",
+      description: "The cited lines are not what they were.",
+      guide: "https://hawkeyexl.github.io/manni/cite/fix/#source-changed",
+    });
   });
 });

@@ -863,8 +863,8 @@ docs/src/content/docs/meta/reference/cli.mdx:
       lines: 1711-1838
       integrity: sha256-77abee929e006175cbff1f6e7fb17f0b70fd908f526e67cbf0dad075495d6c57
     - generated-by: Claude Fable 5.1
-      lines: 1839-1840
-      integrity: sha256-e4962d9d2e818719ce73b819f9f2b143f5b54ec593c98caf66c7278f353f1711
+      lines: 1840
+      integrity: sha256-7bee541e3ed3f7bae24332261b9ae56093e93663d8ea5aca6fe9e2430c16909b
     - generated-by: Claude Opus 5
       lines: 1842-1845
       integrity: sha256-9f72ad7bffc4ab8681000593294ff70bbe0a6dfc0bef4f8a4d3c7a4cdc9ca08f

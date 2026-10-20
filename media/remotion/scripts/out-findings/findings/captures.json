@@ -1,0 +1,13 @@
+{
+    "cat dcmi-bad-date.md": "---\ntitle: Undated report\ndate: June 5th\n---\n",
+    "before": "\u001b[31m✗\u001b[39m dcmi-bad-date.md\n    \u001b[36m/date\u001b[39m  must match pattern \"^[0-9]{4}(-[0-9]{2}(-[0-9]{2}(T[0-9]{2}:[0-9]{2}(:[0-9]{2}(\\.[0-9]+)?)?(Z|[+-][0-9]{2}:[0-9]{2}))?)?)?$\"\u001b[2m  (line 3)\u001b[22m  \u001b[2m[dcmi:elements:1.1]\u001b[22m\n    \u001b[36m/date\u001b[39m  must match \"else\" schema\u001b[2m  (line 3)\u001b[22m  \u001b[2m[dcmi:elements:1.1]\u001b[22m\n\n\u001b[31m1 file checked, 0 passed, 1 failed, 2 errors\u001b[39m\n",
+    "after": "\u001b[31m✗\u001b[39m dcmi-bad-date.md\n    \u001b[36m/date\u001b[39m  must match pattern \"^[0-9]{4}(-[0-9]{2}(-[0-9]{2}(T[0-9]{2}:[0-9]{2}(:[0-9]{2}(\\.[0-9]+)?)?(Z|[+-][0-9]{2}:[0-9]{2}))?)?)?$\"\u001b[2m  (line 3)\u001b[22m  \u001b[2m[dcmi:elements:1.1]\u001b[22m\n      \u001b[2mdcmi:elements:1.1 date: A point or period of time associated with an event in the lifecycle of the resource.\u001b[22m\n      \u001b[2mGuide: https://hawkeyexl.github.io/manni/meta/reference/schemas/dcmi-elements/\u001b[22m\n\n\u001b[31m1 file checked, 0 passed, 1 failed, 1 error\u001b[39m\n",
+    "show": "---\n# manni:core:1.0.0, manni core vocabulary v1.0.0\n# Guide: https://hawkeyexl.github.io/manni/meta/reference/schemas/manni-core/\n# What the page is called, as one non-empty string.\ntitle:\n# One full non-empty sentence saying what the page is for.\ndescription:\n# Stable identifier for this page, independent of its path.\n# id:\n# The kind of content this page is, as one string.\n# type:\n# Search keywords.\n# keywords:\n# The natural language the page is written in, as one string.\n# language:\n---\n",
+    "cite": "\u001b[31m✗\u001b[39m pages/source-changed.md\n    \u001b[31m✗\u001b[39m \u001b[36mfetch-timeout\u001b[39m   :15 current   src/changed.ts:2 changed\n      Check the sentence against the source, then run manni cite update --accept --only fetch-timeout.\n      \u001b[2mmanni:cite source-changed: The cited lines are not what they were.\u001b[22m\n      \u001b[2mGuide: https://hawkeyexl.github.io/manni/cite/fix/#source-changed\u001b[22m\n\n\u001b[31m1 file checked, 0 passed, 1 failed, 1 finding\u001b[39m\n",
+    "exits": {
+        "before": "1",
+        "after": "1",
+        "show": "0",
+        "cite": "1"
+    }
+}

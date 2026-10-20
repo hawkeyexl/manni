@@ -138,8 +138,11 @@ export const MAX_IDS_PER_MARKER = 25;
  * token is not an id, and the message quotes it back (proposal 0034's one
  * separator per list).
  */
+/** A marker with nothing in it, and what to do about it. */
+const EMPTY_PAYLOAD = "empty payload. Name an entry id, or remove the marker.";
+
 function payloadOf(payload: string): InlineStatement["payload"] {
-  if (payload === "") return { kind: "bad", reason: "empty payload" };
+  if (payload === "") return { kind: "bad", reason: EMPTY_PAYLOAD };
   // A marker is one line: `isMarkerLine` tests one line, so half a wrapped
   // marker would land inside the pin of the text below it.
   if (/[\r\n]/.test(payload)) {
@@ -148,7 +151,7 @@ function payloadOf(payload: string): InlineStatement["payload"] {
   // Destructured rather than cast: a `ref` carries at least one id, and the
   // head is what proves it to the compiler.
   const [head, ...rest] = payload.split(" ").filter((word) => word !== "");
-  if (head === undefined) return { kind: "bad", reason: "empty payload" };
+  if (head === undefined) return { kind: "bad", reason: EMPTY_PAYLOAD };
   const words: [string, ...string[]] = [head, ...rest];
   // An entry lives in frontmatter or a manifest; the body carries names. This
   // runs before the id test so the more actionable message fires.
@@ -162,13 +165,18 @@ function payloadOf(payload: string): InlineStatement["payload"] {
     };
   }
   const bad = words.find((word) => !ID.test(word));
-  if (bad !== undefined) return { kind: "bad", reason: `"${bad}" is not an id` };
+  if (bad !== undefined) {
+    return {
+      kind: "bad",
+      reason: `"${bad}" is not an id. An id is lowercase letters, digits and hyphens. Separate ids with spaces.`,
+    };
+  }
   const seen = new Set<string>();
   for (const word of words) {
     // One id named twice inside one marker has no second anchor and no winner
     // to pick, so it is a typo in one line rather than `marker-repeated`.
     if (seen.has(word)) {
-      return { kind: "bad", reason: `"${word}" is named twice in one marker` };
+      return { kind: "bad", reason: `"${word}" is named twice in one marker. Remove one.` };
     }
     seen.add(word);
   }

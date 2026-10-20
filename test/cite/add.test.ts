@@ -1770,7 +1770,7 @@ describe("runAdd", () => {
         "Reading from stdin (`-`) requires --as <format> to choose an extractor.",
       );
       expect(await refusal(add({ page: "pages/nope.md", src: "src/limits.ts:2" }))).toBe(
-        'File not found: "pages/nope.md".',
+        'File not found: "pages/nope.md". Check the path. Named paths resolve from the working directory.',
       );
     });
 
@@ -1779,7 +1779,7 @@ describe("runAdd", () => {
       const missing = join(cwd, "no-such-dir");
       expect(
         await refusal(add({ page: "pages/no-citations.md", pageLines: { start: 6, end: 6 }, src: "src/limits.ts:2", root: missing })),
-      ).toBe(`Root directory not found: ${missing}.`);
+      ).toBe(`Root directory not found: ${missing}. Fix --root, or cite.root in manni.config.yaml.`);
       expect(onDisk("pages/no-citations.md")).toBe(readFileSync(join(PAGES, "no-citations.md"), "utf8"));
     });
 

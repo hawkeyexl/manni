@@ -54,7 +54,7 @@ const FENCE_ONLY = new Set(["markdown", "mdx"]);
 
 /** What a marker with a JSON payload is told, since an entry never lives in the body. */
 export const MARKER_JSON =
-  "A marker names an entry by id. Write the entry in frontmatter or the sidecar.";
+  "invalid marker: a marker names entry ids, not an entry. Move the entry to citations:, in frontmatter or the sidecar, and name its id.";
 
 export interface ReadPageOptions {
   /** Extractor name; derived from the file's extension when absent. */
@@ -358,7 +358,9 @@ export function readPage(
     citations.push(page);
     if (citation.id !== undefined) {
       if (ids.has(citation.id)) {
-        findings.push(finding("entry-invalid", `duplicate id "${citation.id}"`, subject));
+        findings.push(
+          finding("entry-invalid", `duplicate id "${citation.id}". Give each entry its own id.`, subject),
+        );
       } else {
         ids.add(citation.id);
         byId.set(citation.id, page);
@@ -402,7 +404,7 @@ export function readPage(
       const target = byId.get(id);
       if (target === undefined) {
         findings.push(
-          finding("marker-orphan", `no entry has id "${id}"`, {
+          finding("marker-orphan", `no entry has id "${id}". Fix the marker's id, or add the entry with manni cite add.`, {
             line: statement.line,
             id,
           }),
@@ -414,7 +416,7 @@ export function readPage(
         findings.push(
           finding(
             "marker-repeated",
-            `${id} is named by markers at lines ${String(first)} and ${String(statement.line)}; the first anchors it.`,
+            `${id} is named by markers at lines ${String(first)} and ${String(statement.line)}; the first anchors it. Remove ${id} from the marker at line ${String(statement.line)}.`,
             {
               line: statement.line,
               id,
@@ -478,7 +480,11 @@ export function readPage(
     }
     if (citation.quote === true && citation.claim?.lines === undefined && marker === undefined) {
       findings.push(
-        finding("anchor-invalid", named(citation.id, "quote needs a claim or a marker."), subject),
+        finding(
+          "anchor-invalid",
+          named(citation.id, "quote needs a claim or a marker. Add claim.lines over the block, or a marker above it."),
+          subject,
+        ),
       );
     }
   }

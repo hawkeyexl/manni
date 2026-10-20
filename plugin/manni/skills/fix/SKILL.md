@@ -6,7 +6,7 @@ allowed-tools: Bash(npx manni *), Bash(node "${CLAUDE_PLUGIN_ROOT}/hooks/manni.m
 
 # Repair manni findings
 
-Start from the report of `node "${CLAUDE_PLUGIN_ROOT}/hooks/manni.mjs" check`. Each section names the check. Match it to a repair below.
+Start from the report the hook handed you, or from `node "${CLAUDE_PLUGIN_ROOT}/hooks/manni.mjs" check`. Each section names the check. Match it to a repair below.
 
 ## Guardrails
 
@@ -14,6 +14,14 @@ Start from the report of `node "${CLAUDE_PLUGIN_ROOT}/hooks/manni.mjs" check`. E
 - Never run `manni cite update --accept` before you read the changed source lines.
 - Run `manni check` after every repair. A fix in one domain can break another.
 - If a finding is wrong, stop and tell the user why. Do not hide it.
+
+## When a check could not run
+
+A hook can say a check could not run. The cause is in manni's setup, not in the page.
+
+- Tell the user what the message says. It names the fix.
+- Do not edit `manni.config.yaml`, a template, a schema or an eval to get past it.
+- Carry on with the page. The other checks still ran.
 
 ## meta validate
 
@@ -28,22 +36,36 @@ Do not hand-edit a managed field. `derive` writes it.
 
 ## cite check
 
-Each finding has a rule id.
+Each finding ends with what to do. Under it, the report names the rule, says what it means and links its guide. Read those lines before you edit.
 
 | Rule | Repair |
 |---|---|
-| `source-moved` | The cited lines moved. Run `manni cite update <path>`. |
-| `claim-moved`, `claim-reanchored` | The sentence moved. Run `manni cite update <path>`. |
-| `source-changed` | The cited source changed since the pin. Read the lines at the current commit. If the sentence is still true, run `manni cite update --accept --only <id> <path>`. If it is not, rewrite the sentence first, then accept. |
-| `source-never-true`, `source-missing`, `source-moved-ambiguous` | Open the source and find the lines the sentence rests on. Fix the pin or the sentence. |
-| `marker-orphan`, `marker-invalid`, `anchor-invalid`, `entry-invalid` | Fix the marker or the entry the finding names. |
+| `source-moved`, `claim-moved`, `claim-reanchored`, `marker-misplaced` | Run `manni cite update <path>`. |
+| `source-changed`, `source-never-true`, `claim-changed` | Read the source with `manni cite check --show-diff <path>`. Rewrite the sentence if it no longer holds. Then run `manni cite update --accept --only <id> <path>`. |
+| `source-moved-ambiguous` | Widen `source.lines` until the range occurs once, then run `manni cite update --accept --only <id> <path>`. |
+| `claim-moved-ambiguous` | Re-add the citation over a range that occurs once, or with `--marker`. |
+| `source-missing` | Find where the lines live now. Run `manni cite remove --only <id> <path>`, then `manni cite add` against the new path. If the message names a key or `--root`, stop and tell the user. |
+| `marker-orphan`, `marker-invalid`, `marker-repeated`, `anchor-invalid`, `entry-invalid`, `quote-drift` | Do what the message says to the marker, entry or block it names. |
 
-Preview any rewrite with `--dry-run`. It prints the diffs and writes nothing.
+Never edit `integrity` or `commit-sha` by hand. `update` writes them. Change `source.lines` only to widen an ambiguous range. Preview any rewrite with `--dry-run`.
 
-## term check
+## term check and term lint
 
-The glossary and the `concepts:` pages disagree. Fix the term page or the concept name.
-After you change a term page, run `manni term write` to regenerate any rendered output the repository commits. Add `--check` to see whether it is stale.
+Each finding names the field and the value, then says what to do. Under it, the report names the rule, says what it means and links the rules page. A `prose/` finding links Vale's own rule page when Vale gives one. Read those lines before you edit.
+
+| Rule | Repair |
+|---|---|
+| `undefined-term`, `dangling-reference` | Use the name the message suggests, or fix the typo. If the value names a new concept, ask the user before adding a term. |
+| `alt-label-reference` | Write the label the message names. |
+| `duplicate-id`, `label-collision`, `alt-label-collision`, `ambiguous-alt-label` | Two entries claim one name. Ask the user which keeps it before you rename or merge. |
+| `asymmetric-hierarchy`, `asymmetric-related` | Add the missing value on the entry the finding sits on. |
+| `broader-cycle` | Remove the one `broader` value that is wrong. Ask if you cannot tell which. |
+| `missing-definition` | Run `manni term fill <path>`. It records the draft for review. |
+| Any other error or warning | Do what the message says on the field it names. |
+| A notice | Notices never fail. Fix one only when the user asks. |
+| `prose/<Style.Rule>` | Rewrite the sentence. Never add a Vale exception. |
+
+Never delete a term, a label or an alt-label, and never set a rule `off`, to make a finding go away. After you change a term page, run `manni term write`. Add `--check` to see whether the committed output is stale.
 
 ## lint check
 

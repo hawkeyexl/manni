@@ -1,6 +1,6 @@
 # 0089: Findings say what to do, across the family
 
-- **Status:** Proposed
+- **Status:** Implemented (#206–#212)
 - **Serves:** Every persona who reads a finding.
   - Theo · T1, T2, T3, T4, T6, T7 and T8. He reads a failure in one domain
     and has to find out elsewhere what fixes it.

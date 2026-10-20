@@ -169,7 +169,7 @@ describe("readPage: entries", () => {
       { rule: "entry-invalid", line: 13, index: 2, id: "fetch-timeout" },
     ]);
     expect(page.findings[0]?.message).toBe("/source must have required property 'integrity'");
-    expect(page.findings[1]?.message).toBe('duplicate id "fetch-timeout"');
+    expect(page.findings[1]?.message).toBe('duplicate id "fetch-timeout". Give each entry its own id.');
     // The first entry never validated; the duplicate is kept but unresolvable.
     expect(page.citations.map((c) => c.origin.index)).toEqual([1, 2]);
   });
@@ -351,7 +351,7 @@ describe("readPage: markers", () => {
     expect(page.findings).toMatchObject([
       { rule: "marker-orphan", ruleId: "manni:cite/marker-orphan", severity: "error", line: 12, id: "nope" },
     ]);
-    expect(page.findings[0]?.message).toBe('no entry has id "nope"');
+    expect(page.findings[0]?.message).toBe(`no entry has id "nope". Fix the marker's id, or add the entry with manni cite add.`);
   });
 
   it("reports a repeated marker and keeps the first as the anchor", () => {
@@ -369,7 +369,7 @@ describe("readPage: markers", () => {
       },
     ]);
     expect(page.findings[0]?.message).toBe(
-      "retries is named by markers at lines 14 and 19; the first anchors it.",
+      "retries is named by markers at lines 14 and 19; the first anchors it. Remove retries from the marker at line 19.",
     );
   });
 
@@ -385,15 +385,15 @@ describe("readPage: markers", () => {
     ]);
     expect(page.findings[0]?.message).toBe(MARKER_JSON);
     expect(MARKER_JSON).toBe(
-      "A marker names an entry by id. Write the entry in frontmatter or the sidecar.",
+      "invalid marker: a marker names entry ids, not an entry. Move the entry to citations:, in frontmatter or the sidecar, and name its id.",
     );
   });
 
   it("reports a payload that is not an id, and an empty one, with the reason", () => {
     const page = readPage("p.md", "<!-- cite Fetch Timeout -->\nx\n\n<!-- cite -->\ny\n");
     expect(rules(page.findings)).toEqual(["marker-invalid", "marker-invalid"]);
-    expect(page.findings[0]?.message).toBe('invalid marker: "Fetch" is not an id');
-    expect(page.findings[1]?.message).toBe("invalid marker: empty payload");
+    expect(page.findings[0]?.message).toBe('invalid marker: "Fetch" is not an id. An id is lowercase letters, digits and hyphens. Separate ids with spaces.');
+    expect(page.findings[1]?.message).toBe("invalid marker: empty payload. Name an entry id, or remove the marker.");
   });
 
   it("never scans the frontmatter for markers", () => {
@@ -442,7 +442,7 @@ describe("readPage: anchors", () => {
     expect(page.findings).toMatchObject([
       { rule: "anchor-invalid", severity: "error", line: 4, id: "header", index: 0 },
     ]);
-    expect(page.findings[0]?.message).toBe("header: quote needs a claim or a marker.");
+    expect(page.findings[0]?.message).toBe("header: quote needs a claim or a marker. Add claim.lines over the block, or a marker above it.");
   });
 
   it("accepts a quote anchored by claim lines, and one anchored by a marker", () => {
@@ -456,7 +456,7 @@ describe("readPage: anchors", () => {
       pageWith(`  - source:\n      file: src/limits.ts\n      lines: 2\n      integrity: ${PIN}\n    quote: true\n`),
     );
     expect(page.findings).toMatchObject([{ rule: "anchor-invalid", line: 4, index: 0 }]);
-    expect(page.findings[0]?.message).toBe("quote needs a claim or a marker.");
+    expect(page.findings[0]?.message).toBe("quote needs a claim or a marker. Add claim.lines over the block, or a marker above it.");
     expect(page.findings[0]?.id).toBeUndefined();
   });
 });
@@ -550,8 +550,8 @@ describe("readPage: a marker naming several ids", () => {
     );
     expect(rules(page.findings)).toEqual(["marker-orphan", "marker-orphan"]);
     expect(page.findings.map((f) => f.message)).toEqual([
-      'no entry has id "retires"',
-      'no entry has id "backof"',
+      `no entry has id "retires". Fix the marker's id, or add the entry with manni cite add.`,
+      `no entry has id "backof". Fix the marker's id, or add the entry with manni cite add.`,
     ]);
     // The word that was spelled right still anchors its entry.
     expect(page.citations[0]?.marker?.line).toBe(25);
@@ -560,7 +560,7 @@ describe("readPage: a marker naming several ids", () => {
   it("reports one marker-invalid for a marker with two bad words", () => {
     const page = readPage("p.md", three("<!-- cite Retries Backoff -->\nThe claim.\n"));
     expect(rules(page.findings)).toEqual(["marker-invalid"]);
-    expect(page.findings[0]?.message).toBe('invalid marker: "Retries" is not an id');
+    expect(page.findings[0]?.message).toBe('invalid marker: "Retries" is not an id. An id is lowercase letters, digits and hyphens. Separate ids with spaces.');
   });
 
   it("keeps marker-repeated for an id two markers both name", () => {
@@ -572,7 +572,7 @@ describe("readPage: a marker naming several ids", () => {
     );
     expect(rules(page.findings)).toEqual(["marker-repeated"]);
     expect(page.findings[0]?.message).toBe(
-      "retries is named by markers at lines 25 and 26; the first anchors it.",
+      "retries is named by markers at lines 25 and 26; the first anchors it. Remove retries from the marker at line 26.",
     );
     // The first marker anchors it, and the rest of both lists resolve.
     expect(page.citations.map((c) => c.marker?.line)).toEqual([25, 25, 26]);
@@ -618,7 +618,7 @@ describe("readPage: a marker naming several ids", () => {
     const page = readPage("p.md", content);
     expect(rules(page.findings)).toEqual(["marker-repeated"]);
     expect(page.findings[0]?.message).toBe(
-      "quoted-limits is named by markers at lines 18 and 23; the first anchors it.",
+      "quoted-limits is named by markers at lines 18 and 23; the first anchors it. Remove quoted-limits from the marker at line 23.",
     );
     // The first marker keeps the quote; the plain id takes the second.
     expect(page.citations.map((c) => c.marker?.line)).toEqual([18, 23]);

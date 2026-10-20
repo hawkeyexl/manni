@@ -5,6 +5,7 @@
  * runs back to the left edge.
  */
 import { palette, type Colors } from "../../shared/color.js";
+import { guidanceLines } from "../../shared/guidance.js";
 import type { TermReport } from "../commands/findings.js";
 import type { FormatRow } from "../commands/formats.js";
 import { displayPath, plural } from "../commands/run.js";
@@ -273,6 +274,8 @@ export function renderFindingsPretty(report: TermReport, opts: FindingsPrettyOpt
         i === 0 ? `  ${severityText(c, finding.severity)} ${finding.ruleId.padEnd(ruleWidth)}${text}` : `${indent}${text}`,
       );
     });
+    // The rule behind the finding, dim, at the indent the message wraps to.
+    for (const line of guidanceLines(finding.guidance)) lines.push(`${indent}${c.dim(line)}`);
   }
   lines.push("", `${counts(report.findings)} in ${terms}${baselined}`);
   return lines.join("\n");
