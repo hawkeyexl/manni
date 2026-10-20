@@ -123,7 +123,10 @@ function firstObject(store: Store, subject: string, predicate: string): string |
 
 function nodeShapeRow(resolved: Resolved, iri: string): NodeShapeRow {
   const { loaded, sourceOf } = resolved;
-  const file = loaded.fileOf.get(iri) ?? loaded.files[0];
+  // Every node shape listed here is the subject of its own `a sh:NodeShape`
+  // triple, and every triple came from a file, so the lookup always finds one.
+  // No fallback to another file, which would misattribute the row.
+  const file = loaded.fileOf.get(iri);
   const store = loaded.store;
   const targetClass = firstObject(store, iri, `${SH}targetClass`);
   const objectsOf = firstObject(store, iri, `${SH}targetObjectsOf`);
