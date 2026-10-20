@@ -27,8 +27,6 @@ import type { TraceJudge } from "../judge/trace-judge.js";
 import type { TracevalsConfig } from "./config.js";
 import type { EvalResult, RunReport, RunSummary } from "../types.js";
 
-/** Where a result's guidance sends the reader. */
-
 /** The implicit eval has no assertion of its own; this is what it checks. */
 const IMPLICIT_DESCRIPTION = "The session follows every instruction in this artifact.";
 
