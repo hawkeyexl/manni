@@ -1132,4 +1132,19 @@ describe("a merged finding's messages", () => {
       "Shorten the code; one character is the limit",
     ]);
   });
+
+  it("says each distinct message once when two constraints on one path fail", async () => {
+    const two = "https://example.com/two#";
+    const findings = await validateGraph(
+      build([
+        [`${two}thing`, RDF_TYPE, `${two}Thing`],
+        [`${two}thing`, `${two}code`, { lit: "ABCD" }],
+      ]),
+      [join(dirname(fileURLToPath(import.meta.url)), "..", "fixtures", "two-constraint-shapes.ttl")],
+    );
+    expect(findings).toHaveLength(1);
+    const parts = defined(findings[0]).message.split("; ");
+    expect(parts).toHaveLength(2);
+    expect(new Set(parts).size).toBe(2);
+  });
 });
