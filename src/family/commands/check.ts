@@ -44,6 +44,7 @@ import {
   type Family,
 } from "../core/in-play.js";
 import { withSharedWalks } from "../../meta/core/load-files.js";
+import { FIX_SENTENCE } from "./status.js";
 
 export const CHECK_FORMATS = ["pretty", "json", "github"] as const;
 export type CheckFormat = (typeof CHECK_FORMATS)[number];
@@ -326,6 +327,17 @@ function firstLine(message: string): string {
   return message.split("\n", 1)[0] ?? "";
 }
 
+/**
+ * What an agent is told when a check could not run. The cause is the
+ * config owner's to fix, so the agent reports it rather than editing config.
+ */
+function couldNotCheck(command: string, files: string, message: string): string {
+  return (
+    `manni ${command} could not check ${files}. The cause is in manni's setup, not in the file. ` +
+    `Tell the user what it says, and leave manni.config.yaml as it is.\n${message}`
+  );
+}
+
 /** What an agent is handed when a hook blocks: the failing checks' reports, nothing else. */
 function renderFailures(run: FamilyCheckRun): string {
   return run.checks
@@ -419,14 +431,12 @@ export function hookReply(run: FamilyCheckRun, envelope: Envelope): HookReply {
     if (failed) {
       return {
         exitCode: 2,
-        stderr: `manni found errors in ${files}. Fix them before you continue.\n\n${renderFailures(run)}\n`,
+        stderr: `manni found errors in ${files}. Fix them before you continue. ${FIX_SENTENCE}\n\n${renderFailures(run)}\n`,
       };
     }
     const errors = run.checks.filter((c): c is NotRunCheck => c.status === "error");
     if (errors.length === 0) return { exitCode: 0 };
-    const additionalContext = errors
-      .map((c) => `manni ${c.command} could not check ${files}: ${firstLine(c.message)}`)
-      .join("\n");
+    const additionalContext = errors.map((c) => couldNotCheck(c.command, files, c.message)).join("\n");
     return {
       exitCode: 0,
       stdout: `${JSON.stringify({ hookSpecificOutput: { hookEventName: "PostToolUse", additionalContext } })}\n`,
@@ -460,7 +470,9 @@ export function turnReply(
     if (envelope.stopHookActive) {
       messages.push("manni still reports errors after one repair pass. Run manni check to see them.");
     } else {
-      reasons.push(`manni found errors in the files you changed. Fix them, then finish.\n\n${renderFailures(run)}`);
+      reasons.push(
+        `manni found errors in the files you changed. Fix them, then finish. ${FIX_SENTENCE}\n\n${renderFailures(run)}`,
+      );
     }
   }
   if (turn?.broken !== undefined) {
@@ -551,7 +563,7 @@ export async function runTurnCheck(
 /** The reply when the run itself could not happen, under a hook. */
 export function hookFailure(message: string, envelope: Envelope, file: string | undefined): HookReply {
   if (envelope.event !== "PostToolUse" || file === undefined) return { exitCode: 0 };
-  const additionalContext = `manni check could not check ${file}: ${firstLine(message)}`;
+  const additionalContext = couldNotCheck("check", file, message);
   return {
     exitCode: 0,
     stdout: `${JSON.stringify({ hookSpecificOutput: { hookEventName: "PostToolUse", additionalContext } })}\n`,

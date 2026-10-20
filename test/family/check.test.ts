@@ -232,7 +232,7 @@ describe.skipIf(!gitAvailable())("runFamilyCheck", () => {
     const err = await runFamilyCheck({ cwd: dir, scope: { kind: "all" } }).catch((e: unknown) => e);
     expect(err).toBeInstanceOf(FamilyError);
     expect((err as FamilyError).message).toBe(
-      `No manni.config.yaml found from ${dir} up to the repository root. manni check runs the checks it sets up.`,
+      `No manni.config.yaml found from ${dir} up to the repository root. Create one there with a collections: entry for your docs.`,
     );
     expect((err as FamilyError).quiet).toBe(true);
   });
@@ -246,7 +246,7 @@ describe.skipIf(!gitAvailable())("runFamilyCheck", () => {
     });
     const err = await runFamilyCheck({ cwd: dir, scope: { kind: "all" } }).catch((e: unknown) => e);
     expect((err as FamilyError).message).toBe(
-      "Nothing is set up to check in manni.config.yaml. manni status says what each domain needs.",
+      "Nothing is set up to check in manni.config.yaml. Run manni status to see what each domain needs.",
     );
   });
 });
@@ -294,21 +294,36 @@ describe.skipIf(!gitAvailable())("hookReply", () => {
     const reply = hookReply(run, env("post-tool-use-member"));
     expect(reply.exitCode).toBe(2);
     expect(reply.stdout).toBeUndefined();
-    expect(reply.stderr?.startsWith("manni found errors in docs/page.md. Fix them before you continue.\n\n")).toBe(true);
+    expect(
+      reply.stderr?.startsWith(
+        "manni found errors in docs/page.md. Fix them before you continue. The manni:fix skill says how to repair each finding.\n\n",
+      ),
+    ).toBe(true);
     expect(reply.stderr).not.toContain("\u001b[");
   });
 
-  it("after an edit, a check that could not run is context, not a block", () => {
+  it("after an edit, a check that could not run is context, not a block, with the whole message and its owner", () => {
     const run: FamilyCheckRun = {
       status: "pass",
       files: ["docs/limits.md"],
       checks: [{ command: "lint check", status: "error", message: "bad template\nsecond line" }],
     };
+    const additionalContext =
+      "manni lint check could not check docs/limits.md. The cause is in manni's setup, not in the file. " +
+      "Tell the user what it says, and leave manni.config.yaml as it is.\nbad template\nsecond line";
     expect(hookReply(run, env("post-tool-use-member"))).toEqual({
       exitCode: 0,
-      stdout:
-        '{"hookSpecificOutput":{"hookEventName":"PostToolUse","additionalContext":"manni lint check could not check docs/limits.md: bad template"}}\n',
+      stdout: `${JSON.stringify({ hookSpecificOutput: { hookEventName: "PostToolUse", additionalContext } })}\n`,
     });
+  });
+
+  it("a run that could not happen names manni check, its owner and the whole message", () => {
+    const reply = hookFailure("bad YAML\nat line 2", env("post-tool-use-member"), "docs/page.md");
+    const doc = JSON.parse(reply.stdout ?? "") as { hookSpecificOutput: { additionalContext: string } };
+    expect(doc.hookSpecificOutput.additionalContext).toBe(
+      "manni check could not check docs/page.md. The cause is in manni's setup, not in the file. " +
+        "Tell the user what it says, and leave manni.config.yaml as it is.\nbad YAML\nat line 2",
+    );
   });
 
   const failing: FamilyCheckRun = {
@@ -322,7 +337,11 @@ describe.skipIf(!gitAvailable())("hookReply", () => {
     expect(reply.exitCode).toBe(0);
     const doc = JSON.parse(reply.stdout ?? "") as { decision: string; reason: string };
     expect(doc.decision).toBe("block");
-    expect(doc.reason.startsWith("manni found errors in the files you changed. Fix them, then finish.\n\nmeta validate\n")).toBe(true);
+    expect(
+      doc.reason.startsWith(
+        "manni found errors in the files you changed. Fix them, then finish. The manni:fix skill says how to repair each finding.\n\nmeta validate\n",
+      ),
+    ).toBe(true);
   });
 
   it("a block carries the failing checks' reports, not the passing ones", () => {

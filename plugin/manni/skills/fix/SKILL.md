@@ -6,7 +6,7 @@ allowed-tools: Bash(npx manni *), Bash(node "${CLAUDE_PLUGIN_ROOT}/hooks/manni.m
 
 # Repair manni findings
 
-Start from the report of `node "${CLAUDE_PLUGIN_ROOT}/hooks/manni.mjs" check`. Each section names the check. Match it to a repair below.
+Start from the report the hook handed you, or from `node "${CLAUDE_PLUGIN_ROOT}/hooks/manni.mjs" check`. Each section names the check. Match it to a repair below.
 
 ## Guardrails
 
@@ -14,6 +14,14 @@ Start from the report of `node "${CLAUDE_PLUGIN_ROOT}/hooks/manni.mjs" check`. E
 - Never run `manni cite update --accept` before you read the changed source lines.
 - Run `manni check` after every repair. A fix in one domain can break another.
 - If a finding is wrong, stop and tell the user why. Do not hide it.
+
+## When a check could not run
+
+A hook can say a check could not run. The cause is in manni's setup, not in the page.
+
+- Tell the user what the message says. It names the fix.
+- Do not edit `manni.config.yaml`, a template, a schema or an eval to get past it.
+- Carry on with the page. The other checks still ran.
 
 ## meta validate
 

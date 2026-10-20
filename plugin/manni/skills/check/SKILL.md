@@ -15,6 +15,6 @@ allowed-tools: Bash(npx manni *), Bash(node "${CLAUDE_PLUGIN_ROOT}/hooks/manni.m
 5. For each error, follow the `fix` skill. Do not guess a repair from the message alone.
 6. Run `manni check` again until it exits 0.
 
-A skipped check means its domain is not set up. That is not a failure.
+A skipped check means its domain is not set up. That is not a failure. `manni status` names what would set it up. That choice is the user's, so add no config section unasked.
 If the report says no config was found, use the `setup` skill.
-Exit code 2 means a check could not run. Read its message and fix the cause before you trust the result.
+Exit code 2 means a check could not run. Its message names the cause and the fix. Tell the user, and do not edit the config to get past it.
