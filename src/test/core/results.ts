@@ -54,6 +54,8 @@ const ACTIONS = new Set([
   "wait",
 ]);
 
+// Each page is the action name lowercased with nothing between the words:
+// `draganddrop`, `checklink`, `httprequest`. Kebab-case slugs 404 there.
 const ACTIONS_GUIDE = "https://docs.doc-detective.com/docs/actions/";
 
 export const ZERO_COUNTS: ResultCounts = { pass: 0, fail: 0, warning: 0, skipped: 0 };
