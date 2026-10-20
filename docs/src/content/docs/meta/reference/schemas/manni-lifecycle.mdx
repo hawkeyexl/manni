@@ -134,16 +134,18 @@ lifecycle: deprecated
 $ manni meta validate page.md --no-config -s manni:core:1.0.0 -s manni:lifecycle:1.0.0
 ✗ page.md
     (root)  must have required property 'replaced-by'  (line 1)  [manni:lifecycle:1.0.0]
+      manni:lifecycle:1.0.0 replaced-by: The page, id, or URL that supersedes this one.
+      Guide: https://hawkeyexl.github.io/manni/meta/reference/schemas/manni-lifecycle/
     (root)  must have required property 'remove-by'  (line 1)  [manni:lifecycle:1.0.0]
-    (root)  must match a schema in anyOf  (line 1)  [manni:lifecycle:1.0.0]
-    (root)  must match "then" schema  (line 1)  [manni:lifecycle:1.0.0]
+      manni:lifecycle:1.0.0 remove-by: When the page should be removed, as a W3CDTF date.
+      Guide: https://hawkeyexl.github.io/manni/meta/reference/schemas/manni-lifecycle/
 
-1 file checked, 0 passed, 1 failed, 4 errors
+1 file checked, 0 passed, 1 failed, 2 errors
 ```
 
-The exit code is 1. The four lines are one rule, reported from each branch it
-tried. Adding either key clears all four. A typo such as `lifecycle: depreciated`
-fails too, with `must be equal to one of the allowed values`.
+The exit code is 1. The two findings are one rule, reported from each branch it
+tried. Adding either key clears both. A typo such as `lifecycle: depreciated`
+fails too, with `must be one of: "draft", "published", "deprecated", "archived"`.
 
 ## Design decisions
 
@@ -222,6 +224,8 @@ remove-by: 2027-01
 $ manni meta validate page.md --no-config -s manni:lifecycle:1.0.0 -s manni:lifecycle-strict:1.0.0
 ✗ page.md
     /remove-by  must match pattern "^[0-9]{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12][0-9]|3[01])$"  (line 6)  [manni:lifecycle-strict:1.0.0]
+      manni:lifecycle-strict:1.0.0 remove-by: Strict holds the removal date to an RFC 3339 full date, `YYYY-MM-DD`.
+      Guide: https://hawkeyexl.github.io/manni/meta/reference/schemas/manni-lifecycle/
     /remove-by  warning "remove-by" is stored in the page; manni:lifecycle:1.0.0 prefers external metadata, and --no-config leaves it no manifest.  (line 6)  [location:external]
 
 1 file checked, 0 passed, 1 failed, 1 error, 1 warning

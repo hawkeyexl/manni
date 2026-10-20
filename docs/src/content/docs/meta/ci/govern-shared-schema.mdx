@@ -358,9 +358,12 @@ other document is validated exactly as before:
 
 ```
 ✗ contributed.md
-    Refusing the "$schema" URL "https://example.invalid/permissive.json":
-    schemaTrust.documentRefs is "local" …
+    (root)  $schema names the URL "https://example.invalid/permissive.json", and this repository accepts only built-in ids and schema files here. Use one of those, or remove $schema.  [(parse)]
 ```
+
+The message speaks to the page's author, who can act on the page but not on
+the config. The advice for whoever owns the config is on the
+[fix page](/manni/meta/fix/#your-pages-schema-is-refused).
 
 {/* cite refused-document-ref-is-a-failing-file */}
 It is a **failing file** and exit 1, rather than a stopped run. So with

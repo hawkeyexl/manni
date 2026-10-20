@@ -332,7 +332,9 @@ closes each picklist to the values TBX names:
 ```console
 $ manni meta validate --no-config -s manni:terminology:1.2.0 -s manni:terminology-strict:1.2.0 strict-picklist-verb.md
 ✗ strict-picklist-verb.md
-    /designations/0/part-of-speech  must be equal to one of the allowed values  (line 7)  [manni:terminology-strict:1.2.0]
+    /designations/0/part-of-speech  must be one of: "adjective", "noun", "other", "verb", "adverb", "properNoun"  (line 7)  [manni:terminology-strict:1.2.0]
+      manni:terminology-strict:1.2.0 designations/part-of-speech: Strict closes the part of speech to the TBX-Basic picklist.
+      Guide: https://hawkeyexl.github.io/manni/meta/reference/schemas/manni-terminology/
 
 1 file checked, 0 passed, 1 failed, 1 error
 ```
@@ -460,9 +462,11 @@ at validation as well:
 $ manni meta validate --no-config -s manni:terminology:1.2.0 -s manni:terminology-strict:1.2.0 term-without-definition-or-see.md
 ✗ term-without-definition-or-see.md
     (root)  must have required property 'definition'  (line 1)  [manni:terminology-strict:1.2.0]
+      manni:terminology-strict:1.2.0
+      Guide: https://hawkeyexl.github.io/manni/meta/reference/schemas/manni-terminology/
     (root)  must have required property 'see'  (line 1)  [manni:terminology-strict:1.2.0]
-    (root)  must match a schema in anyOf  (line 1)  [manni:terminology-strict:1.2.0]
-    (root)  must match "then" schema  (line 1)  [manni:terminology-strict:1.2.0]
+      manni:terminology-strict:1.2.0 see: Strict holds the redirect target to one line with no surrounding space, the form a label takes.
+      Guide: https://hawkeyexl.github.io/manni/meta/reference/schemas/manni-terminology/
 
-1 file checked, 0 passed, 1 failed, 4 errors
+1 file checked, 0 passed, 1 failed, 2 errors
 ```

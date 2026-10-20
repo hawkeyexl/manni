@@ -109,7 +109,9 @@ not one of the four forms:
 
 ```text
 ✗ docs/rotate-keys.md
-    /type  must be equal to one of the allowed values  (line 2)  [diataxis:diataxis:1.0]
+    /type  must be one of: "tutorial", "how-to", "reference", "explanation"  (line 2)  [diataxis:diataxis:1.0]
+      diataxis:diataxis:1.0 type: Which of the four Diataxis forms this page is.
+      Guide: https://hawkeyexl.github.io/manni/meta/reference/schemas/diataxis/
 ```
 
 A page with no `type` at all fails too, because the key is required. The

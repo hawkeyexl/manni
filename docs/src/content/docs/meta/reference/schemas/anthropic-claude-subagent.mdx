@@ -156,6 +156,8 @@ An agent file with no `description` is the one Claude Code refuses to load:
 ```text
 ✗ .claude/agents/reviewer.md
     (root)  must have required property 'description'  (line 1)  [anthropic:claude-subagent:2.1]
+      anthropic:claude-subagent:2.1 description: When to delegate to this agent, which is how Claude decides whether to call it and what the Agent tool listing shows.
+      Guide: https://hawkeyexl.github.io/manni/meta/reference/schemas/anthropic-claude-subagent/
 ```
 
 ## `background` is not the flag a skill uses
@@ -207,7 +209,9 @@ Five fields have closed, published value sets, so a typo in one is an error:
 
 ```text
 ✗ .claude/agents/db-reader.md
-    /permissionMode  must be equal to one of the allowed values  (line 5)  [anthropic:claude-subagent:2.1]
+    /permissionMode  must be one of: "acceptEdits", "auto", "bypassPermissions", "default", "dontAsk", "manual", "plan"  (line 5)  [anthropic:claude-subagent:2.1]
+      anthropic:claude-subagent:2.1 permissionMode: Permission mode the agent runs in, defaulting to the spawning conversation's.
+      Guide: https://hawkeyexl.github.io/manni/meta/reference/schemas/anthropic-claude-subagent/
 ```
 
 {/* cite subagent-color-is-a-closed-set-of-eight */}

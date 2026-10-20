@@ -138,11 +138,14 @@ open branch and matches no slug either, and each check reports its own line.
 ```text
 $ manni meta validate page.md --no-config -s tgdp:templates:1.1
 ✗ page.md
-    /type  must NOT have fewer than 1 characters  (line 2)  [tgdp:templates:1.1]
-    /type  must be equal to one of the allowed values  (line 2)  [tgdp:templates:1.1]
-    /type  must match a schema in anyOf  (line 2)  [tgdp:templates:1.1]
+    /type  must not be empty  (line 2)  [tgdp:templates:1.1]
+      tgdp:templates:1.1 type: Which page type this page is, as a Good Docs Project template slug where one fits.
+      Guide: https://hawkeyexl.github.io/manni/meta/reference/schemas/tgdp-templates/
+    /type  must be one of: "api-getting-started", "api-reference", "bug-report", "changelog", "code-of-conduct", "code-of-conduct-incident-record", "code-of-conduct-remediation-record", "code-of-conduct-response-plan", "concept", "contact-support", "contributing-guide", "glossary", "how-to", "installation-guide", "our-team", "quickstart", "readme", "reference", "release-notes", "sdk-overview", "style-guide", "terminology-system", "troubleshooting", "tutorial", "user-personas"  (line 2)  [tgdp:templates:1.1]
+      tgdp:templates:1.1 type: Which page type this page is, as a Good Docs Project template slug where one fits.
+      Guide: https://hawkeyexl.github.io/manni/meta/reference/schemas/tgdp-templates/
 
-1 file checked, 0 passed, 1 failed, 3 errors
+1 file checked, 0 passed, 1 failed, 2 errors
 ```
 
 A near-miss spelling such as `howto` passes this schema, because it is a
@@ -186,7 +189,9 @@ title: Billing questions
 ```text
 $ manni meta validate page.md --no-config -s tgdp:templates:1.1 -s tgdp:templates-strict:1.1
 ✗ page.md
-    /type  must be equal to one of the allowed values  (line 2)  [tgdp:templates-strict:1.1]
+    /type  must be one of: "api-getting-started", "api-reference", "bug-report", "changelog", "code-of-conduct", "code-of-conduct-incident-record", "code-of-conduct-remediation-record", "code-of-conduct-response-plan", "concept", "contact-support", "contributing-guide", "glossary", "how-to", "installation-guide", "our-team", "quickstart", "readme", "reference", "release-notes", "sdk-overview", "style-guide", "terminology-system", "troubleshooting", "tutorial", "user-personas"  (line 2)  [tgdp:templates-strict:1.1]
+      tgdp:templates-strict:1.1 type: Stacked beside tgdp:templates:1.1, strict closes `type` to the 25 template slugs.
+      Guide: https://hawkeyexl.github.io/manni/meta/reference/schemas/tgdp-templates/
 
 1 file checked, 0 passed, 1 failed, 1 error
 ```

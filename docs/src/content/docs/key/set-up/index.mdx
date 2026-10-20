@@ -204,7 +204,8 @@ $ manni meta validate
 ✗ docs/stale.md
     /owner  /owner does not decrypt under the current key: encrypted under another key, or edited by hand.  (owners.yaml:9)  [encrypted:unreadable]
 ✗ docs/wrong.md
-    /owner  must be equal to one of the allowed values  (owners.yaml:7)  [../encrypted.schema.json]
+    /owner  must be one of the values the schema allows  (owners.yaml:7)  [../encrypted.schema.json]
+      ../encrypted.schema.json owner
 
 3 files checked, 1 passed, 2 failed, 2 errors
 # exit 1

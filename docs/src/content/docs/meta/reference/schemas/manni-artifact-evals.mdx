@@ -233,10 +233,11 @@ metadata:
 $ manni meta validate SKILL.md --no-config -s anthropic:claude-skill:2.1 -s manni:artifact-evals:1.1.0
 ✗ SKILL.md
     /metadata/evals/0  must have required property 'id'  (line 6)  [manni:artifact-evals:1.1.0]
-    /metadata/evals/0  must match "else" schema  (line 6)  [manni:artifact-evals:1.1.0]
+      manni:artifact-evals:1.1.0 metadata/evals/id: Unique (per artifact) kebab-case identifier.
+      Guide: https://hawkeyexl.github.io/manni/meta/reference/schemas/manni-artifact-evals/
     /metadata  warning "metadata" is stored in the page; manni:artifact-evals:1.1.0 prefers external metadata, and --no-config leaves it no manifest.  (line 4)  [location:external]
 
-1 file checked, 0 passed, 1 failed, 2 errors, 1 warning
+1 file checked, 0 passed, 1 failed, 1 error, 1 warning
 ```
 
 The exit code is 1. The warning is the `external` location mark at work, and
@@ -327,12 +328,15 @@ metadata:
 ```text
 $ manni meta validate SKILL.md --no-config -s anthropic:claude-skill:2.1 -s manni:artifact-evals:1.1.0 -s manni:artifact-evals-strict:1.1.0
 ✗ SKILL.md
-    /metadata/evals/0/grader  must be equal to one of the allowed values  (line 8)  [manni:artifact-evals-strict:1.1.0]
+    /metadata/evals/0/grader  must be one of: "ai", "human", "command", "tool-usage", "skill-invoked", "file-access", "turn-count", "cost", "regex", "json-output", "tool-order"  (line 8)  [manni:artifact-evals-strict:1.1.0]
+      manni:artifact-evals-strict:1.1.0 metadata/evals/grader: One of the eleven named graders, or a `tool:<kebab>` integration.
+      Guide: https://hawkeyexl.github.io/manni/meta/reference/schemas/manni-artifact-evals/
     /metadata/evals/0/grader  must match pattern "^tool:[a-z0-9][a-z0-9-]*$"  (line 8)  [manni:artifact-evals-strict:1.1.0]
-    /metadata/evals/0/grader  must match a schema in anyOf  (line 8)  [manni:artifact-evals-strict:1.1.0]
+      manni:artifact-evals-strict:1.1.0 metadata/evals/grader: One of the eleven named graders, or a `tool:<kebab>` integration.
+      Guide: https://hawkeyexl.github.io/manni/meta/reference/schemas/manni-artifact-evals/
     /metadata  warning "metadata" is stored in the page; manni:artifact-evals:1.1.0 prefers external metadata, and --no-config leaves it no manifest.  (line 4)  [location:external]
 
-1 file checked, 0 passed, 1 failed, 3 errors, 1 warning
+1 file checked, 0 passed, 1 failed, 2 errors, 1 warning
 ```
 
 The exit code is 1. The open vocabulary accepts `tool-useage` as a kebab name,

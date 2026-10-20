@@ -245,9 +245,10 @@ definition: Corrective lenses whose power increases from the top to the bottom.
 $ manni meta validate page.md --no-config -s manni:core:1.0.0 -s manni:terminology:1.2.0
 ✗ page.md
     (root)  must have required property 'label'  (line 1)  [manni:terminology:1.2.0]
-    (root)  must match "then" schema  (line 1)  [manni:terminology:1.2.0]
+      manni:terminology:1.2.0 label: The one preferred name of the term (skos:prefLabel).
+      Guide: https://hawkeyexl.github.io/manni/meta/reference/schemas/manni-terminology/
 
-1 file checked, 0 passed, 1 failed, 2 errors
+1 file checked, 0 passed, 1 failed, 1 error
 ```
 
 The exit code is 1. A `designations` item without its `term` fails at the
@@ -256,6 +257,8 @@ item:
 ```text
 ✗ page.md
     /designations/0  must have required property 'term'  (line 9)  [manni:terminology:1.2.0]
+      manni:terminology:1.2.0 designations/term: The designation this item describes.
+      Guide: https://hawkeyexl.github.io/manni/meta/reference/schemas/manni-terminology/
 ```
 
 ## Design decisions
@@ -358,6 +361,8 @@ definition: A progressive lens, under the name opticians in the UK use.
 $ manni meta validate page.md --no-config -s manni:core:1.0.0 -s manni:terminology:1.2.0 -s manni:terminology-strict:1.2.0
 ✗ page.md
     (root)  must NOT be valid  (line 1)  [manni:terminology-strict:1.2.0]
+      manni:terminology-strict:1.2.0
+      Guide: https://hawkeyexl.github.io/manni/meta/reference/schemas/manni-terminology/
 
 1 file checked, 0 passed, 1 failed, 1 error
 ```

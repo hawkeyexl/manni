@@ -176,7 +176,9 @@ last-updated: 2026-08-20
 ```text
 $ manni meta validate page.md --no-config -s manni:core:1.0.0 -s manni:stewardship:1.1.0
 ✗ page.md
-    /authors  must NOT have fewer than 1 items  (line 4)  [manni:stewardship:1.1.0]
+    /authors  must not be empty  (line 4)  [manni:stewardship:1.1.0]
+      manni:stewardship:1.1.0 authors: Who wrote the page: a name, a list of names, or the structured person objects MyST and Docusaurus define.
+      Guide: https://hawkeyexl.github.io/manni/meta/reference/schemas/manni-stewardship/
     /authors  warning "authors" is stored in the page; manni:stewardship:1.1.0 prefers external metadata, and --no-config leaves it no manifest.  (line 4)  [location:external]
 
 1 file checked, 0 passed, 1 failed, 1 error, 1 warning
@@ -312,7 +314,11 @@ last-updated: 2026-08-20
 $ manni meta validate page.md --no-config -s manni:stewardship:1.1.0 -s manni:stewardship-strict:1.1.0
 ✗ page.md
     /authors  must be array  (line 4)  [manni:stewardship-strict:1.1.0]
+      manni:stewardship-strict:1.1.0 authors: Strict takes authors as a list of unique entries.
+      Guide: https://hawkeyexl.github.io/manni/meta/reference/schemas/manni-stewardship/
     /verified-against  must have required property 'version'  (line 5)  [manni:stewardship-strict:1.1.0]
+      manni:stewardship-strict:1.1.0
+      Guide: https://hawkeyexl.github.io/manni/meta/reference/schemas/manni-stewardship/
     /authors  warning "authors" is stored in the page; manni:stewardship:1.1.0 prefers external metadata, and --no-config leaves it no manifest.  (line 4)  [location:external]
     /verified-against  warning "verified-against" is stored in the page; manni:stewardship:1.1.0 prefers external metadata, and --no-config leaves it no manifest.  (line 5)  [location:external]
 

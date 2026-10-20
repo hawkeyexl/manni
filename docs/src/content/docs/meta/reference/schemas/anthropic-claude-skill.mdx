@@ -105,7 +105,9 @@ one is an error:
 
 ```text
 ✗ .claude/skills/audit/SKILL.md
-    /effort  must be equal to one of the allowed values  (line 4)  [anthropic:claude-skill:2.1]
+    /effort  must be one of: "low", "medium", "high", "xhigh", "max"  (line 4)  [anthropic:claude-skill:2.1]
+      anthropic:claude-skill:2.1 effort: Reasoning effort while the skill is active, overriding the session level.
+      Guide: https://hawkeyexl.github.io/manni/meta/reference/schemas/anthropic-claude-skill/
 ```
 
 {/* cite skills-model-is-not-enumerated */}
@@ -144,6 +146,8 @@ not one of the spellings still fails:
 ```text
 ✗ .claude/skills/audit/SKILL.md
     /disable-model-invocation  must match pattern "^(?:[Tt][Rr][Uu][Ee]|…)$"  (line 4)  [anthropic:claude-skill:2.1]
+      anthropic:claude-skill:2.1 disable-model-invocation: `true` keeps Claude from loading the skill on its own, leaving `/name` as the only way in.
+      Guide: https://hawkeyexl.github.io/manni/meta/reference/schemas/anthropic-claude-skill/
 ```
 
 ## Additional properties
@@ -172,5 +176,7 @@ An `effort` value outside the published set, such as `effort: extreme`, fails:
 
 ```text
 ✗ .claude/skills/audit/SKILL.md
-    /effort  must be equal to one of the allowed values  (line 4)  [anthropic:claude-skill:2.1]
+    /effort  must be one of: "low", "medium", "high", "xhigh", "max"  (line 4)  [anthropic:claude-skill:2.1]
+      anthropic:claude-skill:2.1 effort: Reasoning effort while the skill is active, overriding the session level.
+      Guide: https://hawkeyexl.github.io/manni/meta/reference/schemas/anthropic-claude-skill/
 ```
