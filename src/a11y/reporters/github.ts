@@ -47,6 +47,8 @@ interface Group {
 
 export function renderGithub(run: CheckRun): string {
   // Each entry is a finished load annotation or a group still collecting pages.
+  // A group is pushed once and its `pages` grow in place below, so by the time
+  // the entries are rendered after the loop, every group lists all its pages.
   const entries: (string | Group)[] = [];
   const groups = new Map<string, Group>();
   for (const page of run.results) {
