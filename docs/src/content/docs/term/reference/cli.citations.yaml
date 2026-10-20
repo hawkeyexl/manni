@@ -571,12 +571,12 @@ docs/src/content/docs/term/reference/cli.mdx:
     - id: err-file-not-found
       claim:
         lines: 968
-        integrity: sha256-5a7a47a23d93ad29bc73a1032c97a9e22a285d0ca58161a95448feed5dc49b03
+        integrity: sha256-703a26414f10eff277bb86d02f7f55aa515bc51b1e4540d1911c2f82baa897b6
       source:
         file: src/meta/core/load-files.ts
-        lines: 375-378
-        integrity: sha256-a78c409acb132831471c314c84f82af32fe4f51a8abe374e2fc0cc84b584641a
-        commit-sha: 1f74e683fc25a937666751b9d8887f49afa0ce97
+        lines: 376-379
+        integrity: sha256-7b5623491a6462184202e54921f9bd3343cd39da9da0090dcf4dca37bdd92830
+        commit-sha: d6bd36aaebffe3f03c0676e2517dc8a0d79e7039
     - id: err-collection-with-paths
       claim:
         lines: 969
@@ -772,9 +772,9 @@ docs/src/content/docs/term/reference/cli.mdx:
         integrity: sha256-74fa46af823202103651db56fef4dc331fcfb1be9c6cff0886a1b554826baee9
       source:
         file: src/meta/core/load-files.ts
-        lines: 406
+        lines: 408
         integrity: sha256-da70dbb9bcc1db6c1d1532237399e11fa14a9f72563d7fca972d0bb400e2e69f
-        commit-sha: 1f74e683fc25a937666751b9d8887f49afa0ce97
+        commit-sha: d6bd36aaebffe3f03c0676e2517dc8a0d79e7039
     - id: write-change-lines
       claim:
         integrity: sha256-c1bf52ffa807562bfa7500e9c177620ee8179ac4b56e044c89307ff72422442c
