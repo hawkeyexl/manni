@@ -24,17 +24,18 @@ Do not hand-edit a managed field. `derive` writes it.
 
 ## cite check
 
-Each finding has a rule id.
+Each finding ends with what to do. Under it, the report names the rule, says what it means and links its guide. Read those lines before you edit.
 
 | Rule | Repair |
 |---|---|
-| `source-moved` | The cited lines moved. Run `manni cite update <path>`. |
-| `claim-moved`, `claim-reanchored` | The sentence moved. Run `manni cite update <path>`. |
-| `source-changed` | The cited source changed since the pin. Read the lines at the current commit. If the sentence is still true, run `manni cite update --accept --only <id> <path>`. If it is not, rewrite the sentence first, then accept. |
-| `source-never-true`, `source-missing`, `source-moved-ambiguous` | Open the source and find the lines the sentence rests on. Fix the pin or the sentence. |
-| `marker-orphan`, `marker-invalid`, `anchor-invalid`, `entry-invalid` | Fix the marker or the entry the finding names. |
+| `source-moved`, `claim-moved`, `claim-reanchored`, `marker-misplaced` | Run `manni cite update <path>`. |
+| `source-changed`, `source-never-true`, `claim-changed` | Read the source with `manni cite check --show-diff <path>`. Rewrite the sentence if it no longer holds. Then run `manni cite update --accept --only <id> <path>`. |
+| `source-moved-ambiguous` | Widen `source.lines` until the range occurs once, then run `manni cite update --accept --only <id> <path>`. |
+| `claim-moved-ambiguous` | Re-add the citation over a range that occurs once, or with `--marker`. |
+| `source-missing` | Find where the lines live now. Run `manni cite remove --only <id> <path>`, then `manni cite add` against the new path. If the message names a key or `--root`, stop and tell the user. |
+| `marker-orphan`, `marker-invalid`, `marker-repeated`, `anchor-invalid`, `entry-invalid`, `quote-drift` | Do what the message says to the marker, entry or block it names. |
 
-Preview any rewrite with `--dry-run`. It prints the diffs and writes nothing.
+Never edit `integrity` or `commit-sha` by hand. `update` writes them. Change `source.lines` only to widen an ambiguous range. Preview any rewrite with `--dry-run`.
 
 ## term check
 

@@ -11,7 +11,8 @@
  */
 import type { ValidationResult } from "../../meta/index.js";
 import { palette } from "../../shared/color.js";
-import { errorSite, messageFor } from "../core/adapt.js";
+import { guidanceLines } from "../../shared/guidance.js";
+import { errorSite, messageFor, remedyFor } from "../core/adapt.js";
 import { parseSrc } from "../core/range.js";
 import { shortCommit, shortPin, shortSrc, spellAt } from "../core/spell.js";
 import type {
@@ -312,6 +313,9 @@ export function renderCheckPretty(run: CheckRun, opts: PrettyOptions): string {
     if (file === undefined) return c.dim(`   (line ${String(line)})`);
     return c.dim(`   (${file}:${String(line)})`);
   };
+  // The rule behind a finding, dim, two spaces deeper than the finding's line.
+  const guidance = (finding: CitationFinding, indent: number): string[] =>
+    guidanceLines(finding.guidance).map((line) => `${" ".repeat(indent)}${c.dim(line)}`);
 
   run.pages.forEach((page, index) => {
     const { reported, baselined } = splitBaselined(page, resultFor(run, index));
@@ -363,11 +367,19 @@ export function renderCheckPretty(run: CheckRun, opts: PrettyOptions): string {
       const under: string[] = [];
       for (const finding of own) {
         const isEnd = [...endRules].some((prefix) => finding.rule.startsWith(prefix));
-        if (isEnd) continue;
+        if (isEnd) {
+          // The row says the status; what to do and the rule go under it.
+          if (isBaselined.has(finding)) continue;
+          const remedy = remedyFor(finding.rule, result);
+          if (remedy !== undefined) under.push(`      ${remedy}`);
+          under.push(...guidance(finding, 6));
+          continue;
+        }
         const text = isBaselined.has(finding)
           ? c.dim(`${finding.message} (baselined)`)
           : finding.message;
         under.push(`      ${severityMark(finding.severity, c)} ${text}${location(finding)}`);
+        if (!isBaselined.has(finding)) under.push(...guidance(finding, 8));
       }
       if (opts.showDiff) {
         if (own.some((f) => f.rule === "source-changed")) under.push(...diffLines(result, c.dim));
@@ -408,11 +420,14 @@ export function renderCheckPretty(run: CheckRun, opts: PrettyOptions): string {
     for (const finding of page.findings) {
       if (placed.has(finding)) continue;
       const label = c.cyan(labelOfFinding(finding));
-      lines.push(
-        isBaselined.has(finding)
-          ? `    ${c.dim("·")} ${label}   ${c.dim(`${finding.message} (baselined)`)}${location(finding)}`
-          : `    ${severityMark(finding.severity, c)} ${label}   ${finding.message}${location(finding)}`,
-      );
+      if (isBaselined.has(finding)) {
+        lines.push(
+          `    ${c.dim("·")} ${label}   ${c.dim(`${finding.message} (baselined)`)}${location(finding)}`,
+        );
+        continue;
+      }
+      lines.push(`    ${severityMark(finding.severity, c)} ${label}   ${finding.message}${location(finding)}`);
+      lines.push(...guidance(finding, 6));
     }
   });
 

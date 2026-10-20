@@ -200,27 +200,27 @@ describe("parseStatements", () => {
     ).toEqual([]);
   });
 
-  it("treats a bare `cite` with no whitespace after it as an empty payload", () => {
+  it("treats a bare `cite` with no whitespace after it as an empty payload. Name an entry id, or remove the marker.", () => {
     expect(parseStatements("<!--cite-->\nx\n", "markdown")[0]?.payload).toEqual({
       kind: "bad",
-      reason: "empty payload",
+      reason: "empty payload. Name an entry id, or remove the marker.",
     });
   });
 
-  it("reports an empty payload and a payload that is not an id", () => {
+  it("reports an empty payload and a payload that is not an id. An id is lowercase letters, digits and hyphens. Separate ids with spaces.", () => {
     expect(parseStatements("<!-- cite -->\nx\n", "markdown")[0]?.payload).toEqual({
       kind: "bad",
-      reason: "empty payload",
+      reason: "empty payload. Name an entry id, or remove the marker.",
     });
     // A list has several words and only one of them is wrong, so the message
     // names the word that failed, leftmost first (proposal 0056).
     expect(parseStatements("<!-- cite Fetch Timeout -->\nx\n", "markdown")[0]?.payload).toEqual({
       kind: "bad",
-      reason: '"Fetch" is not an id',
+      reason: '"Fetch" is not an id. An id is lowercase letters, digits and hyphens. Separate ids with spaces.',
     });
     expect(parseStatements("<!-- cite -Leading -->\nx\n", "markdown")[0]?.payload).toEqual({
       kind: "bad",
-      reason: '"-Leading" is not an id',
+      reason: '"-Leading" is not an id. An id is lowercase letters, digits and hyphens. Separate ids with spaces.',
     });
   });
 
@@ -305,7 +305,7 @@ describe("parseStatements reads a list of ids", () => {
   it("is a comma that is not a separator: the token is one word, and not an id", () => {
     expect(payloadOf("<!-- cite fetch-timeout,retries -->\nx\n")).toEqual({
       kind: "bad",
-      reason: '"fetch-timeout,retries" is not an id',
+      reason: '"fetch-timeout,retries" is not an id. An id is lowercase letters, digits and hyphens. Separate ids with spaces.',
     });
   });
 
@@ -330,14 +330,14 @@ describe("parseStatements reads a list of ids", () => {
   it("refuses an id named twice in one marker, naming the leftmost repeat", () => {
     expect(payloadOf("<!-- cite retries backoff retries -->\nx\n")).toEqual({
       kind: "bad",
-      reason: '"retries" is named twice in one marker',
+      reason: '"retries" is named twice in one marker. Remove one.',
     });
   });
 
-  it("names the leftmost word that is not an id", () => {
+  it("names the leftmost word that is not an id. An id is lowercase letters, digits and hyphens. Separate ids with spaces.", () => {
     expect(payloadOf("<!-- cite retries Backoff Jitter -->\nx\n")).toEqual({
       kind: "bad",
-      reason: '"Backoff" is not an id',
+      reason: '"Backoff" is not an id. An id is lowercase letters, digits and hyphens. Separate ids with spaces.',
     });
   });
 

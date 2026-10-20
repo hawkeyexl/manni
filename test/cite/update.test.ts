@@ -1625,7 +1625,10 @@ describe("runUpdate: a marker inside a paragraph", () => {
         "marker-misplaced",
         "robots: the marker at line 23 stays, because its claim changed since it was pinned. update --accept moves it and re-pins.",
       ],
-      ["claim-changed", "robots: the claim at line 24 has changed since it was pinned."],
+      [
+        "claim-changed",
+        "robots: the claim at line 24 has changed since it was pinned. Check it still matches the source, then run manni cite update --accept --only robots.",
+      ],
     ]);
     // One write: the movable marker moved and the other did not, in one page.
     expect(bodyOf("stacked-run.mdx").slice(20, 24)).toEqual([
@@ -1911,7 +1914,7 @@ describe("runUpdate: a marker inside a paragraph", () => {
     ]);
   });
 
-  it("keeps an orphan marker in a run, and an anchor-invalid entry's marker", async () => {
+  it("keeps an orphan marker in a run, skipped as marker-orphan alone, and an anchor-invalid entry's marker", async () => {
     const orphan = write("orphan-run.md", [
       "---",
       "title: Limits",
@@ -1922,11 +1925,7 @@ describe("runUpdate: a marker inside a paragraph", () => {
     ]);
     const orphanRun = await update({ inputs: [orphan] });
     expect(orphanRun.pages[0]?.skipped.map((f) => [f.rule, f.message])).toEqual([
-      ["marker-orphan", 'no entry has id "nobody"'],
-      [
-        "marker-misplaced",
-        "the marker at line 5 stays, because it names no entry update can check.",
-      ],
+      ["marker-orphan", `no entry has id "nobody". Fix the marker's id, or add the entry with manni cite add.`],
     ]);
     expect(orphanRun.exitCode).toBe(1);
 
