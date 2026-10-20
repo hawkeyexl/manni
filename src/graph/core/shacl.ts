@@ -237,7 +237,8 @@ function quotedList(values: string[]): string {
 /** What a finding a shape reported says about that shape. */
 function shapeGuidance(loaded: LoadedShapes, shape: Term | null): Guidance | null {
   if (shape === null) return null;
-  const file = loaded.fileOf.get(shape.value) ?? loaded.files[0];
+  // Unreachable miss: a shape that reports has constraint triples, and every triple came from a file.
+  const file = loaded.fileOf.get(shape.value);
   if (file === undefined) return null;
   const named = shape.termType === "NamedNode";
   return {
@@ -721,9 +722,11 @@ export async function validateGraph(
 
   // One finding per (shape, focus node, path): a shape that fails on two
   // values of one property is one mistake, so it reports once. Nested maps
-  // rather than a joined key, for the reason `relatedConflicts` gives.
-  const merged = new Map<string, Map<string, Map<string, CheckFinding>>>();
-  const findings: CheckFinding[] = [];
+  // rather than a joined key, for the reason `relatedConflicts` gives. Each
+  // keeps its distinct messages, joined once the results are all read.
+  type Merged = { found: CheckFinding; messages: string[] };
+  const merged = new Map<string, Map<string, Map<string, Merged>>>();
+  const groups: Merged[] = [];
   for (const result of report.results as ShaclResult[]) {
     const focus = result.focusNode?.value ?? "";
     const path = result.path?.value;
@@ -742,15 +745,13 @@ export async function validateGraph(
         : messages.length > 0
           ? messages.join("; ")
           : `constraint violated${path ? ` on ${compactIri(path)}` : ""}`;
-    const byFocus = merged.get(result.sourceShape?.value ?? "") ?? new Map<string, Map<string, CheckFinding>>();
+    const byFocus = merged.get(result.sourceShape?.value ?? "") ?? new Map<string, Map<string, Merged>>();
     merged.set(result.sourceShape?.value ?? "", byFocus);
-    const byPath = byFocus.get(focus) ?? new Map<string, CheckFinding>();
+    const byPath = byFocus.get(focus) ?? new Map<string, Merged>();
     byFocus.set(focus, byPath);
     const earlier = byPath.get(path ?? "");
     if (earlier !== undefined) {
-      if (!earlier.message.split("; ").includes(message)) {
-        earlier.message = `${earlier.message}; ${message}`;
-      }
+      if (!earlier.messages.includes(message)) earlier.messages.push(message);
       continue;
     }
     const found = finding(severityOf(result.severity?.value), {
@@ -760,9 +761,11 @@ export async function validateGraph(
       docs: blameDocs(store, focus),
       guidance: shapeGuidance(shapes, result.sourceShape),
     });
-    byPath.set(path ?? "", found);
-    findings.push(found);
+    const group = { found, messages: [message] };
+    byPath.set(path ?? "", group);
+    groups.push(group);
   }
+  const findings = groups.map(({ found, messages }) => ({ ...found, message: messages.join("; ") }));
 
   // Shapes 1.0.0 still says the untagged collision itself, with this message.
   // The check core's copy adds nothing beside it.

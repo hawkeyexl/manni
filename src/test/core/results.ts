@@ -152,7 +152,7 @@ export function collectFindings(results: DocDetectiveResults | null, cwd: string
             guidance: {
               id: "Doc Detective",
               rule: action ?? null,
-              description: typeof stated === "string" ? stated : null,
+              description: typeof stated === "string" && stated !== "" ? stated : null,
               guide: action === undefined ? null : `${ACTIONS_GUIDE}${action.toLowerCase()}`,
             },
           });

@@ -105,6 +105,18 @@ describe("renderPretty", () => {
     ]);
   });
 
+  it("treats an empty step description as none, so the head line ends in the action", () => {
+    const text = readFileSync(join(FIXTURES, "results-fail-described.json"), "utf8")
+      .replaceAll("__CWD__", CWD.replace(/\\/g, "/"))
+      .replace('"The Settings button opens the settings page."', '""');
+    const parsed = parseResults(text);
+    if (parsed === undefined || parsed === null) throw new Error("not a results object");
+    const findings = collectFindings(parsed, CWD);
+    expect(findings[0]?.guidance?.description).toBeNull();
+    const run: TestRunResult = { ...failing, findings };
+    expect(renderPretty(run, { color: false }).split("\n")[2]).toBe("              Doc Detective click");
+  });
+
   it("prints only the summary when nothing failed or warned", () => {
     expect(renderPretty(passing, { color: false })).toBe(
       "14 tests: 14 passed, 0 failed, 0 warnings, 0 skipped",
