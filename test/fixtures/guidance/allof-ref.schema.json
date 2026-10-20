@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/allof-ref.schema.json",
+  "title": "A schema whose required keys live behind an allOf $ref",
+  "type": "object",
+  "allOf": [{ "$ref": "#/$defs/base" }],
+  "properties": {
+    "title": { "type": "string", "description": "The page title." },
+    "summary": { "type": "string", "description": "A one-line summary." }
+  },
+  "$defs": {
+    "base": { "required": ["title"] }
+  }
+}
