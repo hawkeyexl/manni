@@ -196,7 +196,10 @@ describe("tool-order grader", () => {
     });
     const r = await gradeWith(windowed, { before: "Read", after: "Write" });
     expect(r.findings).toHaveLength(1);
-    expect(r.findings[0]?.message).toBe("Write was used without Read ever being used first");
+    expect(r.findings[0]?.message).toBe(
+      "Write was used without Read ever being used first. " +
+        "Redo the session work so it holds, or fix the eval if the artifact does not ask for this.",
+    );
   });
 
   it("skips, never passes, when the skill was never invoked", async () => {

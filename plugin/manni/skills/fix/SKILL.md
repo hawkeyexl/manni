@@ -60,6 +60,21 @@ Each failing eval prints its finding, then what the eval asks for, then a guide 
 Run `manni docevals list <path> --eval <name>` to see one eval in full.
 Never edit an eval to pass. To change one on purpose, use the `evals` skill.
 
+## tracevals
+
+The Stop hook reports the rules your last turn broke. Each entry names the source file, the rule and its text, then what the judge observed.
+
+- Redo the work so the rule holds. Or say in your reply why the rule does not apply to this turn.
+- Never edit `CLAUDE.md`, a skill or another rule source to make the check pass.
+- An entry marked `?` needs review and never blocks. Mention it to the user.
+- The hook blocks once. If rules stay broken, tell the user to run `manni tracevals check <trace>`.
+
+A `manni tracevals run` failure names the artifact, the eval and its assertion.
+
+- A finding or `AI judge: fail` means the session broke the eval. Redo the work, or report it to the user.
+- An eval no session could meet is a defect in the artifact. Tell its owner. Do not edit the eval.
+- ERROR means the eval itself broke. REVIEW and SKIP are not failures of the work.
+
 ## graph check
 
 A shape failed. The finding names the node and the property. Fix the frontmatter, the link or the heading it points at.

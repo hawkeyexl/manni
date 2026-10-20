@@ -1,6 +1,14 @@
 /** Markdown report, suitable for PR comments and docs. */
-import type { RunReport } from "../types.js";
-import { locationLabel } from "./ci.js";
+import type { EvalResult, RunReport } from "../types.js";
+import { errorText, judgedLines, locationLabel } from "./ci.js";
+import { guidanceLines } from "../../shared/guidance.js";
+
+/** The outcomes the Findings section lists, by their label. */
+const FINDING_LABEL: Partial<Record<EvalResult["outcome"], string>> = {
+  fail: "FAIL",
+  error: "ERROR",
+  "needs-review": "REVIEW",
+};
 import {
   availabilityLines,
   coverageLocation,
@@ -44,6 +52,33 @@ export function renderMarkdown(report: RunReport): string {
     );
   }
   lines.push("");
+
+  // What to act on, with what each rule asks for (proposal 0089). Left out
+  // when nothing failed, errored or waits for review.
+  const findings = report.evalResults.flatMap((r) => {
+    const label = FINDING_LABEL[r.outcome];
+    return label === undefined ? [] : [{ r, label }];
+  });
+  if (findings.length > 0) {
+    lines.push(`## Findings`);
+    lines.push("");
+    for (const { r, label } of findings) {
+      lines.push(
+        `- **${label}** ${r.artifactName} › ${r.evalName} · \`${locationLabel(r.location)}\``,
+      );
+      const body =
+        r.outcome === "error"
+          ? [errorText(r)]
+          : r.findings !== undefined && r.findings.length > 0
+            ? r.findings.map((f) => f.message)
+            : (judgedLines(r) ?? []);
+      for (const line of [...body, ...guidanceLines(r.guidance)]) {
+        // One line per item: a newline would end the list item early.
+        lines.push(`  - ${line.replace(/\r?\n/g, " ")}`);
+      }
+    }
+    lines.push("");
+  }
 
   lines.push(`## Artifact coverage`);
   lines.push("");
