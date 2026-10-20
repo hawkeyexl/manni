@@ -46,7 +46,7 @@ import {
 import { withSharedWalks } from "../../meta/core/load-files.js";
 import { FIX_SENTENCE } from "./status.js";
 
-export const CHECK_FORMATS = ["pretty", "json", "github"] as const;
+export const CHECK_FORMATS = ["pretty", "json", "github", "sarif"] as const;
 export type CheckFormat = (typeof CHECK_FORMATS)[number];
 
 export type Scope =
@@ -129,25 +129,37 @@ async function runDomain(domain: Domain, ctx: Context): Promise<Outcome> {
       };
     }
     case "cite": {
-      const [{ runCheck: runCite }, { renderCheckPretty: citePretty }, { renderCheckJson: citeJson }, { renderCheckGithub: citeGithub }] =
-        await Promise.all([
-          import("../../cite/commands/check.js"),
-          import("../../cite/reporters/pretty.js"),
-          import("../../cite/reporters/json.js"),
-          import("../../cite/reporters/github.js"),
-        ]);
+      const [
+        { runCheck: runCite },
+        { renderCheckPretty: citePretty },
+        { renderCheckJson: citeJson },
+        { renderCheckGithub: citeGithub },
+        { renderCheckSarif: citeSarif },
+      ] = await Promise.all([
+        import("../../cite/commands/check.js"),
+        import("../../cite/reporters/pretty.js"),
+        import("../../cite/reporters/json.js"),
+        import("../../cite/reporters/github.js"),
+        import("../../cite/reporters/sarif.js"),
+      ]);
       const run = await runCite({ inputs, configPath, cwd, onNotice });
       if (!run.pages.some((p) => p.citations.length > 0 || p.findings.length > 0)) {
         return { skipped: NOT_SET_UP.cite };
       }
       return {
         failed: run.summary.failed > 0,
-        render: (format, color) =>
-          format === "json"
-            ? citeJson(run)
-            : format === "github"
-              ? citeGithub(run)
-              : citePretty(run, { color, quiet: true }),
+        render: (format, color) => {
+          switch (format) {
+            case "pretty":
+              return citePretty(run, { color, quiet: true });
+            case "json":
+              return citeJson(run);
+            case "github":
+              return citeGithub(run);
+            case "sarif":
+              return citeSarif(run, { onNotice });
+          }
+        },
       };
     }
     case "lint": {
@@ -159,7 +171,10 @@ async function runDomain(domain: Domain, ctx: Context): Promise<Outcome> {
       const run = await runLint({ inputs, configPath, cwd, onNotice });
       return {
         failed: run.summary.failed > 0,
-        render: (format, color) => renderLint(run, format, { color }),
+        // SARIF locations resolve from `root`, which is where the run's labels
+        // start: the config's directory for a bare run, else the working one.
+        render: (format, color) =>
+          renderLint(run, format, { color, root: inputs.length === 0 ? resolve(cwd, family.file.dir) : cwd }),
       };
     }
     case "docevals": {
@@ -190,23 +205,35 @@ async function runDomain(domain: Domain, ctx: Context): Promise<Outcome> {
       };
     }
     case "term": {
-      const [{ runCheck: runTerm }, { renderFindingsPretty: termPretty }, { renderFindingsJson: termJson }, { renderFindingsGithub: termGithub }] =
-        await Promise.all([
-          import("../../term/commands/check.js"),
-          import("../../term/reporters/pretty.js"),
-          import("../../term/reporters/json.js"),
-          import("../../term/reporters/github.js"),
-        ]);
+      const [
+        { runCheck: runTerm },
+        { renderFindingsPretty: termPretty },
+        { renderFindingsJson: termJson },
+        { renderFindingsGithub: termGithub },
+        { renderFindingsSarif: termSarif },
+      ] = await Promise.all([
+        import("../../term/commands/check.js"),
+        import("../../term/reporters/pretty.js"),
+        import("../../term/reporters/json.js"),
+        import("../../term/reporters/github.js"),
+        import("../../term/reporters/sarif.js"),
+      ]);
       const report = await runTerm({ inputs, configPath, cwd, allowEmpty: true, onNotice });
       if (report.terms === 0) return { skipped: NOT_SET_UP.term };
       return {
         failed: report.summary.failed > 0,
-        render: (format, color) =>
-          format === "json"
-            ? termJson(report)
-            : format === "github"
-              ? termGithub(report)
-              : termPretty(report, { color, references: true }),
+        render: (format, color) => {
+          switch (format) {
+            case "pretty":
+              return termPretty(report, { color, references: true });
+            case "json":
+              return termJson(report);
+            case "github":
+              return termGithub(report);
+            case "sarif":
+              return termSarif(report, { onNotice });
+          }
+        },
       };
     }
     case "graph": {
@@ -405,8 +432,91 @@ export function renderGithub(run: FamilyCheckRun): string {
     .join("\n");
 }
 
+interface SarifRun {
+  automationDetails?: { id: string };
+  invocations?: unknown[];
+  [key: string]: unknown;
+}
+
+interface SarifNotification {
+  level: "note" | "error";
+  message: { text: string };
+}
+
+/**
+ * One SARIF 2.1.0 log for the whole run. Each check that ran contributes its
+ * domain's own runs, each under the category `manni/<domain>/`: meta, cite
+ * and term share the driver `manni`, so the category is what tells them apart.
+ * A last `manni-check` run, with no results, names the checks that were
+ * skipped or could not run. A check that could not run gets no run of its
+ * own: an empty run would tell code scanning every open alert in its
+ * category is fixed.
+ */
+export function renderSarif(run: FamilyCheckRun): string {
+  const runs: SarifRun[] = [];
+  const notifications: SarifNotification[] = [];
+  const say = (level: SarifNotification["level"], text: string): void => {
+    notifications.push({ level, message: { text } });
+  };
+  for (const c of run.checks) {
+    if (!isRan(c)) {
+      if (c.status === "skipped") say("note", `${c.command} skipped: ${c.message}.`);
+      else say("error", `${c.command} could not run: ${c.message}`);
+      continue;
+    }
+    const domain = c.command.split(" ", 1)[0] ?? c.command;
+    let own: SarifRun[];
+    try {
+      own = (JSON.parse(c.render("sarif", false)) as { runs: SarifRun[] }).runs;
+      if (!Array.isArray(own)) throw new TypeError("no runs");
+    } catch {
+      // As in JSON: one reporter's bad output must not take the others with it.
+      say("error", `${c.command} -f sarif printed output that is not SARIF.`);
+      continue;
+    }
+    for (const r of own) {
+      runs.push({
+        ...r,
+        automationDetails: { id: `manni/${domain}/` },
+        invocations: r.invocations ?? [{ executionSuccessful: true }],
+      });
+    }
+  }
+  runs.push({
+    tool: {
+      driver: {
+        name: "manni-check",
+        version: pkg.version,
+        informationUri: "https://hawkeyexl.github.io/manni/family/reference/cli/",
+      },
+    },
+    automationDetails: { id: "manni/check/" },
+    invocations: [
+      {
+        executionSuccessful: !notifications.some((n) => n.level === "error"),
+        ...(notifications.length > 0 ? { toolExecutionNotifications: notifications } : {}),
+      },
+    ],
+    results: [],
+  });
+  return JSON.stringify(
+    { $schema: "https://json.schemastore.org/sarif-2.1.0.json", version: "2.1.0", runs },
+    null,
+    2,
+  );
+}
+
 export function render(run: FamilyCheckRun, format: CheckFormat, color: boolean): string {
-  return format === "json" ? renderJson(run) : format === "github" ? renderGithub(run) : renderPretty(run, color);
+  switch (format) {
+    case "pretty":
+      return renderPretty(run, color);
+    case "json":
+      return renderJson(run);
+    case "github":
+      return renderGithub(run);
+    case "sarif":
+      return renderSarif(run);
+  }
 }
 
 /** What a hook command ends with: its exit code, and what it prints where. */

@@ -127,10 +127,11 @@ export function buildCheck(): Command {
       [
         "",
         "Examples:",
-        "  manni check                       # every in-play check, the CI gate",
-        "  manni check docs/limits.md        # per-file checks on one page",
-        "  manni check -f github             # in a GitHub workflow",
-        "  manni check docs/ -f json         # scripting form",
+        "  manni check                         # every in-play check, the CI gate",
+        "  manni check docs/limits.md          # per-file checks on one page",
+        "  manni check -f github               # in a GitHub workflow",
+        "  manni check -f sarif > manni.sarif  # one SARIF log for code scanning",
+        "  manni check docs/ -f json           # scripting form",
       ].join("\n"),
     )
     .action(async (paths: string[], options: CheckCliOptions) => {

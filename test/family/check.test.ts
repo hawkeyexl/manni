@@ -6,22 +6,28 @@
  * their own reporters' output, so a report is compared against the domain
  * core's own `-f json` where the output is deterministic.
  */
-import { readFileSync, rmSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { existsSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath, pathToFileURL } from "node:url";
+import * as AjvDraft04Ns from "ajv-draft-04";
 import { afterEach, describe, expect, it } from "vitest";
 import {
   exitCodeFor,
   hookFailure,
   hookReply,
+  render,
   renderGithub,
   renderJson,
   renderPretty,
+  renderSarif,
   runFamilyCheck,
   type CheckOutcome,
   type FamilyCheckRun,
 } from "../../src/family/commands/check.js";
 import { parseEnvelope, type Envelope } from "../../src/family/core/envelope.js";
 import { FamilyError } from "../../src/family/core/in-play.js";
+import { runLint } from "../../src/lint/commands/lint.js";
+import { render as renderLint } from "../../src/lint/reporters/index.js";
 import { runValidate } from "../../src/meta/commands/validate.js";
 import { render as renderMeta } from "../../src/meta/reporters/index.js";
 import { gitAvailable, makeTempRepo, removeTempRepo } from "../helpers/temp-repo.js";
@@ -387,5 +393,158 @@ describe("renderJson", () => {
       { command: "meta validate", status: "error", message: "meta validate -f json printed output that is not JSON" },
       { command: "cite check", status: "pass", report: { ok: true } },
     ]);
+  });
+});
+
+// The meta-schema is vendored, and draft-04 is the dialect the OASIS TC
+// published it in, as test/reporters.test.ts explains.
+type AjvCtor = typeof import("ajv/dist/2020.js").default;
+const AjvDraft04 = AjvDraft04Ns.default as unknown as AjvCtor;
+const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
+const validateSarif = new AjvDraft04({ allErrors: true, strict: false, validateFormats: false, logger: false }).compile(
+  JSON.parse(readFileSync(join(repoRoot, "test/fixtures/sarif-2.1.0.schema.json"), "utf8")) as Record<string, unknown>,
+);
+
+interface SarifRun {
+  tool: { driver: { name: string } };
+  automationDetails?: { id: string };
+  invocations?: {
+    executionSuccessful: boolean;
+    toolExecutionNotifications?: { level: string; message: { text: string } }[];
+  }[];
+  results: unknown[];
+}
+
+function sarifOf(text: string): { version: string; runs: SarifRun[] } {
+  const log = JSON.parse(text) as { version: string; runs: SarifRun[] };
+  const ok = validateSarif(log);
+  expect(ok ? [] : (validateSarif.errors ?? []).map((e) => `${e.instancePath} ${e.message ?? ""}`)).toEqual([]);
+  return log;
+}
+
+describe.skipIf(!gitAvailable())("renderSarif", () => {
+  it("one log: each domain's own run under its category, then the manni-check run with the skips", async () => {
+    dir = fixtureRepo("meta-and-lint");
+    const run = await runFamilyCheck({ cwd: dir, scope: { kind: "all" } });
+    expect(exitCodeFor(run)).toBe(1);
+    const log = sarifOf(render(run, "sarif", false));
+    expect(log.version).toBe("2.1.0");
+    expect(log.runs.map((r) => r.automationDetails?.id)).toEqual(["manni/meta/", "manni/lint/", "manni/check/"]);
+
+    // Each domain's run is its own -f sarif run, with the category and a default invocation added.
+    const meta = await runValidate({ inputs: [], cwd: dir, skipDefaultOnly: true });
+    const ownMeta = (
+      JSON.parse(renderMeta("sarif", meta.results, meta.summary, { frame: meta.frame })) as { runs: SarifRun[] }
+    ).runs[0];
+    expect(log.runs[0]).toEqual({
+      ...ownMeta,
+      automationDetails: { id: "manni/meta/" },
+      invocations: [{ executionSuccessful: true }],
+    });
+    const lint = await runLint({ inputs: [], cwd: dir });
+    const ownLint = (JSON.parse(renderLint(lint, "sarif", { root: dir })) as { runs: SarifRun[] }).runs[0];
+    expect(log.runs[1]).toEqual({ ...ownLint, automationDetails: { id: "manni/lint/" } });
+    expect(log.runs[1]?.results).not.toEqual([]);
+
+    expect(log.runs[2]).toMatchObject({
+      tool: { driver: { name: "manni-check" } },
+      results: [],
+      invocations: [
+        {
+          executionSuccessful: true,
+          toolExecutionNotifications: [
+            { level: "note", message: { text: "cite check skipped: no page carries citations." } },
+            { level: "note", message: { text: "docevals run skipped: no page resolves any evals." } },
+            { level: "note", message: { text: "term check skipped: no terms in any collection." } },
+            { level: "note", message: { text: "graph check skipped: no graph: section." } },
+          ],
+        },
+      ],
+    });
+  });
+
+  it("-c from another directory: every location still names a file that exists", async () => {
+    dir = fixtureRepo("meta-and-lint");
+    const parent = dir;
+    mkdirSync(join(dir, "site"));
+    for (const name of ["manni.config.yaml", "templates.yaml", "docs"]) renameSync(join(dir, name), join(dir, "site", name));
+    const run = await runFamilyCheck({ cwd: dir, configPath: "site/manni.config.yaml", scope: { kind: "all" } });
+    const log = JSON.parse(renderSarif(run)) as {
+      runs: {
+        originalUriBaseIds?: Record<string, { uri: string }>;
+        results: { locations: { physicalLocation: { artifactLocation: { uri: string; uriBaseId?: string } } }[] }[];
+      }[];
+    };
+    const located = log.runs.flatMap((r) =>
+      r.results.map((res) => {
+        const { uri, uriBaseId } = res.locations[0]?.physicalLocation.artifactLocation ?? { uri: "" };
+        const base = uriBaseId === undefined ? pathToFileURL(`${parent}/`).href : (r.originalUriBaseIds?.[uriBaseId]?.uri ?? "");
+        return fileURLToPath(new URL(uri, base));
+      }),
+    );
+    expect(located.length).toBeGreaterThan(1);
+    for (const path of located) expect(existsSync(path), path).toBe(true);
+  });
+
+  it("cite and term render SARIF, not pretty", async () => {
+    dir = fixtureRepo("everything");
+    const run = await runFamilyCheck({ cwd: dir, scope: { kind: "all" } });
+    const log = sarifOf(renderSarif(run));
+    expect(log.runs.map((r) => r.automationDetails?.id)).toEqual([
+      "manni/meta/",
+      "manni/cite/",
+      "manni/lint/",
+      "manni/docevals/",
+      "manni/term/",
+      "manni/graph/",
+      "manni/check/",
+    ]);
+  });
+
+  it("a check that could not run gets no run of its own, and the manni-check run says so", () => {
+    const run: FamilyCheckRun = {
+      status: "pass",
+      files: ["docs/a.md"],
+      checks: [
+        { command: "meta validate", status: "skipped", message: "no meta: section" },
+        { command: "lint check", status: "error", message: "bad template\nsecond line" },
+      ],
+    };
+    const log = sarifOf(renderSarif(run));
+    expect(log.runs).toHaveLength(1);
+    expect(log.runs[0]?.invocations).toEqual([
+      {
+        executionSuccessful: false,
+        toolExecutionNotifications: [
+          { level: "note", message: { text: "meta validate skipped: no meta: section." } },
+          { level: "error", message: { text: "lint check could not run: bad template\nsecond line" } },
+        ],
+      },
+    ]);
+  });
+
+  it("a reporter whose SARIF does not parse becomes an error notification", () => {
+    const run: FamilyCheckRun = {
+      status: "pass",
+      files: ["docs/a.md"],
+      checks: [{ command: "meta validate", status: "pass", render: () => "not sarif" }],
+    };
+    const log = sarifOf(renderSarif(run));
+    expect(log.runs.map((r) => r.automationDetails?.id)).toEqual(["manni/check/"]);
+    expect(log.runs[0]?.invocations).toEqual([
+      {
+        executionSuccessful: false,
+        toolExecutionNotifications: [
+          { level: "error", message: { text: "meta validate -f sarif printed output that is not SARIF." } },
+        ],
+      },
+    ]);
+  });
+
+  it("nothing ran: the manni-check run alone, with no notifications", () => {
+    const log = sarifOf(renderSarif({ status: "pass", files: [], checks: [] }));
+    expect(log.runs).toHaveLength(1);
+    expect(log.runs[0]?.invocations).toEqual([{ executionSuccessful: true }]);
+    expect(log.runs[0]?.results).toEqual([]);
   });
 });

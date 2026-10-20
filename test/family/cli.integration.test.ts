@@ -115,11 +115,73 @@ describe.skipIf(!gitAvailable())("manni check, by hand", () => {
 
   it("an unknown format is a usage error", () => {
     dir = fixtureRepo("only-docevals");
-    const r = run(["check", "-f", "sarif"], dir);
+    const r = run(["check", "-f", "sarf"], dir);
     expect(r.status).toBe(2);
     expect(r.stderr.split("\n")[0]).toBe(
-      "error: option '-f, --format <format>' argument 'sarif' is invalid. Allowed choices are pretty, json, github.",
+      "error: option '-f, --format <format>' argument 'sarf' is invalid. Allowed choices are pretty, json, github, sarif.",
     );
+  });
+
+  describe("-f sarif", () => {
+    interface Log {
+      version: string;
+      runs: {
+        automationDetails: { id: string };
+        results: unknown[];
+        invocations: { executionSuccessful: boolean; toolExecutionNotifications?: { level: string }[] }[];
+      }[];
+    }
+    const ids = (log: Log): string[] => log.runs.map((r) => r.automationDetails.id);
+
+    it("one log with each domain's run and the manni-check run, exit 1 on errors", () => {
+      dir = fixtureRepo("meta-and-lint");
+      const r = run(["check", "-f", "sarif"], dir);
+      expect(r.status).toBe(1);
+      const log = JSON.parse(r.stdout) as Log;
+      expect(log.version).toBe("2.1.0");
+      expect(ids(log)).toEqual(["manni/meta/", "manni/lint/", "manni/check/"]);
+      expect(log.runs[2]?.invocations[0]?.toolExecutionNotifications).toHaveLength(4);
+    });
+
+    it("a page that passes: runs with no results, exit 0", () => {
+      dir = fixtureRepo("meta-and-lint");
+      const r = run(["check", "docs/index.md", "-f", "sarif"], dir);
+      expect(r.status).toBe(0);
+      const log = JSON.parse(r.stdout) as Log;
+      expect(ids(log)).toEqual(["manni/meta/", "manni/lint/", "manni/check/"]);
+      expect(log.runs[0]?.results).toEqual([]);
+      expect(log.runs[1]?.results).toEqual([]);
+    });
+
+    it("a file outside every collection: the notice on stderr, the manni-check run alone", () => {
+      dir = fixtureRepo("meta-and-lint");
+      const r = run(["check", "README.md", "-f", "sarif"], dir);
+      expect(r.status).toBe(0);
+      expect(r.stderr).toBe("manni: Skipped 1 file outside every collection: README.md\n");
+      const log = JSON.parse(r.stdout) as Log;
+      expect(ids(log)).toEqual(["manni/check/"]);
+      expect(log.runs[0]?.invocations).toEqual([{ executionSuccessful: true }]);
+    });
+
+    it("a check that could not run has no run, and the manni-check run reports it, exit 2", () => {
+      dir = fixtureRepo("meta-and-lint");
+      writeFileSync(join(dir, "templates.yaml"), "templates:\n  how-to:\n    heading: 7\n");
+      const r = run(["check", "-f", "sarif"], dir);
+      expect(r.status).toBe(2);
+      expect(r.stderr).toMatch(/^manni lint check could not run: .+/m);
+      const log = JSON.parse(r.stdout) as Log;
+      expect(ids(log)).toEqual(["manni/meta/", "manni/check/"]);
+      const invocation = log.runs[1]?.invocations[0];
+      expect(invocation?.executionSuccessful).toBe(false);
+      expect(invocation?.toolExecutionNotifications?.map((n) => n.level)).toContain("error");
+    });
+
+    it("every option at once", () => {
+      dir = fixtureRepo("meta-and-lint");
+      const r = run(["check", "docs/**/*.md", "-c", "manni.config.yaml", "-f", "sarif", "--no-color"], dir);
+      expect(r.status).toBe(1);
+      expect(ids(JSON.parse(r.stdout) as Log)).toEqual(["manni/meta/", "manni/lint/", "manni/check/"]);
+    });
   });
 
   it("no config: exit 2", () => {

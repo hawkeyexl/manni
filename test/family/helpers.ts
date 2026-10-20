@@ -16,7 +16,7 @@ import { commitAll } from "../helpers/temp-repo.js";
 const here = dirname(fileURLToPath(import.meta.url));
 export const FIXTURES = resolve(here, "fixtures");
 
-export type FixtureRepo = "only-docevals" | "only-citations" | "only-graph" | "everything";
+export type FixtureRepo = "only-docevals" | "only-citations" | "only-graph" | "everything" | "meta-and-lint";
 
 /** Copy `name` to a temp directory, `git init` it and commit everything. */
 export function fixtureRepo(name: FixtureRepo): string {
