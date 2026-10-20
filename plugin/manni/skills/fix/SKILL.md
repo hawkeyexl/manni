@@ -37,10 +37,23 @@ Each finding ends with what to do. Under it, the report names the rule, says wha
 
 Never edit `integrity` or `commit-sha` by hand. `update` writes them. Change `source.lines` only to widen an ambiguous range. Preview any rewrite with `--dry-run`.
 
-## term check
+## term check and term lint
 
-The glossary and the `concepts:` pages disagree. Fix the term page or the concept name.
-After you change a term page, run `manni term write` to regenerate any rendered output the repository commits. Add `--check` to see whether it is stale.
+Each finding names the field and the value, then says what to do. Under it, the report names the rule, says what it means and links the rules page. A `prose/` finding links Vale's own rule page when Vale gives one. Read those lines before you edit.
+
+| Rule | Repair |
+|---|---|
+| `undefined-term`, `dangling-reference` | Use the name the message suggests, or fix the typo. If the value names a new concept, ask the user before adding a term. |
+| `alt-label-reference` | Write the label the message names. |
+| `duplicate-id`, `label-collision`, `alt-label-collision`, `ambiguous-alt-label` | Two entries claim one name. Ask the user which keeps it before you rename or merge. |
+| `asymmetric-hierarchy`, `asymmetric-related` | Add the missing value on the entry the finding sits on. |
+| `broader-cycle` | Remove the one `broader` value that is wrong. Ask if you cannot tell which. |
+| `missing-definition` | Run `manni term fill <path>`. It records the draft for review. |
+| Any other error or warning | Do what the message says on the field it names. |
+| A notice | Notices never fail. Fix one only when the user asks. |
+| `prose/<Style.Rule>` | Rewrite the sentence. Never add a Vale exception. |
+
+Never delete a term, a label or an alt-label, and never set a rule `off`, to make a finding go away. After you change a term page, run `manni term write`. Add `--check` to see whether the committed output is stale.
 
 ## lint check
 
