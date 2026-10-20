@@ -468,7 +468,9 @@ export function renderSarif(run: FamilyCheckRun): string {
     let own: SarifRun[];
     try {
       own = (JSON.parse(c.render("sarif", false)) as { runs: SarifRun[] }).runs;
-      if (!Array.isArray(own)) throw new TypeError("no runs");
+      // An empty `runs` would drop the domain from the log without a word, so
+      // it counts as bad output too.
+      if (!Array.isArray(own) || own.length === 0) throw new TypeError("no runs");
     } catch {
       // As in JSON: one reporter's bad output must not take the others with it.
       say("error", `${c.command} -f sarif printed output that is not SARIF.`);

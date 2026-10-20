@@ -541,6 +541,26 @@ describe.skipIf(!gitAvailable())("renderSarif", () => {
     ]);
   });
 
+  it("a reporter whose SARIF holds no runs becomes an error notification", () => {
+    const run: FamilyCheckRun = {
+      status: "pass",
+      files: ["docs/a.md"],
+      checks: [
+        { command: "meta validate", status: "pass", render: () => '{"version":"2.1.0","runs":[]}' },
+      ],
+    };
+    const log = sarifOf(renderSarif(run));
+    expect(log.runs.map((r) => r.automationDetails?.id)).toEqual(["manni/check/"]);
+    expect(log.runs[0]?.invocations).toEqual([
+      {
+        executionSuccessful: false,
+        toolExecutionNotifications: [
+          { level: "error", message: { text: "meta validate -f sarif printed output that is not SARIF." } },
+        ],
+      },
+    ]);
+  });
+
   it("nothing ran: the manni-check run alone, with no notifications", () => {
     const log = sarifOf(renderSarif({ status: "pass", files: [], checks: [] }));
     expect(log.runs).toHaveLength(1);
