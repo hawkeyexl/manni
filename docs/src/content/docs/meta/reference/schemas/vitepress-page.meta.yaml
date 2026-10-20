@@ -19,7 +19,7 @@ docs/src/content/docs/meta/reference/schemas/vitepress-page.mdx:
   provenance:
     - generated-by: Claude Opus 5.5
       lines: 2-132
-      integrity: sha256-ce09d48b7adf90264f3f049a2ad4f7bd68b64c6b25702a74f8dd9ecfbcf74828
+      integrity: sha256-42e912d7acec5bb1071a2533b9b41feb13e3f434722f7e82fa1cd5def480d829
   owner:
     - "@hawkeyexl"
   created: 2026-09-26

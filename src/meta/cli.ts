@@ -34,6 +34,7 @@ import {
   DEFAULT_VENDOR_DIR,
   getSchemasInfo,
   runInferSchema,
+  runShowSchema,
   runVendorSchema,
 } from "./commands/schemas.js";
 import { runFill } from "./commands/fill.js";
@@ -82,6 +83,12 @@ import {
 import { renderGet } from "./reporters/get.js";
 import { renderQuery, renderQueryCsv } from "./reporters/query.js";
 import { renderInfer } from "./reporters/infer.js";
+import {
+  SHOW_FORMATS,
+  SHOW_FORMAT_LIST,
+  isShowFormat,
+  renderSchemaShow,
+} from "./reporters/schema-show.js";
 import { shouldColor, palette } from "../shared/color.js";
 
 function resolveColor(program: Command): boolean {
@@ -675,6 +682,13 @@ interface InferCliOptions extends InputCliOptions {
   gitignore: boolean;
   /** `--offline`; a no-op here by construction, see `InferOptions.offline`. */
   offline?: boolean;
+}
+
+interface ShowCliOptions {
+  /** `-f, --format`; read through `formatFor`, because `schemas` declares one too. */
+  format: string;
+  /** `-c, --config <path>`, or `false` from `--no-config`. */
+  config?: string | false;
 }
 
 interface VendorCliOptions {
@@ -1848,6 +1862,39 @@ export function buildProgram(): Command {
           color: resolveColor(command.parent?.parent ?? command),
         });
         process.stdout.write(`${text}\n`);
+      } catch (err) {
+        fail(err);
+      }
+    });
+
+  schemas
+    .command("show")
+    .description("Print what a schema asks for, property by property")
+    .argument("<ref>", "the schema: any ref --schema takes")
+    .option("-f, --format <format>", `output: ${SHOW_FORMATS.join(" | ")}`, "pretty")
+    .option("-c, --config <path>", "path to a manni config file")
+    .option("--no-config", "ignore any discovered config file")
+    .addHelpText(
+      "after",
+      [
+        "",
+        "Examples:",
+        "  manni meta schemas show manni:core:1.0.0",
+        "  manni meta schemas show ./schemas/page.json -f json",
+        "  manni meta schemas show manni:core:1.0.0 -f markdown > docs/new-page.md",
+        "",
+        "markdown prints a frontmatter skeleton: required keys, optional keys",
+        "commented out, and the first sentence of each description above its key.",
+      ].join("\n"),
+    )
+    .action(async (ref: string, options: ShowCliOptions, command: Command) => {
+      try {
+        const format = String(formatFor(command, options.format));
+        if (!isShowFormat(format)) {
+          throw new DocmetaError(`Unknown --format "${format}". Use ${SHOW_FORMAT_LIST}.`);
+        }
+        const shown = await runShowSchema({ ref, ...configOption(options.config) });
+        process.stdout.write(renderSchemaShow(shown, format));
       } catch (err) {
         fail(err);
       }

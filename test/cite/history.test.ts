@@ -224,7 +224,7 @@ describe.skipIf(!HAS_GIT)("the derived baseline", () => {
       expect(claimRule(report)).toBe("claim-reanchored");
       expect(report.findings.find((f) => f.rule === "claim-reanchored")?.severity).toBe("notice");
       expect(claimFinding(report)).toBe(
-        `retries: the claim at line 15 was reanchored since ${first.slice(0, 7)}, to lines 15-16. Its words are unchanged.`,
+        `retries: the claim at line 15 was reanchored since ${first.slice(0, 7)}, to lines 15-16. Its words are unchanged. Run manni cite update.`,
       );
     } finally {
       removeTempRepo(repo.dir);
@@ -244,7 +244,7 @@ describe.skipIf(!HAS_GIT)("the derived baseline", () => {
       expect(claimOf(report)?.status).toBe("changed");
       expect(claimRule(report)).toBe("claim-changed");
       expect(claimFinding(report)).toBe(
-        `fetch-timeout: the claim at line 15 has changed since ${first.slice(0, 7)}, 1 commit.`,
+        `fetch-timeout: the claim at line 15 has changed since ${first.slice(0, 7)}, 1 commit. Check it still matches the source, then run manni cite update --accept --only fetch-timeout.`,
       );
     } finally {
       removeTempRepo(repo.dir);
@@ -261,7 +261,7 @@ describe.skipIf(!HAS_GIT)("the derived baseline", () => {
       writeFileSync(join(repo.dir, "docs", "limits.md"), edited, "utf8");
       const report = await repo.report(edited);
       expect(claimFinding(report)).toBe(
-        `fetch-timeout: the claim at line 15 has changed since ${head.slice(0, 7)}, uncommitted.`,
+        `fetch-timeout: the claim at line 15 has changed since ${head.slice(0, 7)}, uncommitted. Check it still matches the source, then run manni cite update --accept --only fetch-timeout.`,
       );
     } finally {
       removeTempRepo(repo.dir);
@@ -306,7 +306,7 @@ describe.skipIf(!HAS_GIT)("the derived baseline", () => {
       expect(claimOf(report)?.status).toBe("changed");
       expect(claimOf(report)?.commitSha).toBeUndefined();
       expect(claimFinding(report)).toBe(
-        "fetch-timeout: the claim at line 15 has changed since it was pinned.",
+        "fetch-timeout: the claim at line 15 has changed since it was pinned. Check it still matches the source, then run manni cite update --accept --only fetch-timeout.",
       );
     } finally {
       removeTempRepo(repo.dir);
@@ -323,7 +323,7 @@ describe.skipIf(!HAS_GIT)("the derived baseline", () => {
     );
     expect(claimOf(report)?.status).toBe("changed");
     expect(claimFinding(report)).toBe(
-      "fetch-timeout: the claim at line 15 has changed since it was pinned.",
+      "fetch-timeout: the claim at line 15 has changed since it was pinned. Check it still matches the source, then run manni cite update --accept --only fetch-timeout.",
     );
   });
 
@@ -412,7 +412,7 @@ describe.skipIf(!HAS_GIT)("the derived baseline", () => {
       expect(claimOf(report)?.status).toBe("reanchored");
       expect(claimOf(report)?.commitSha).toBe(first);
       expect(claimFinding(report)).toBe(
-        `retries: the claim at lines 15-17 was reanchored since ${first.slice(0, 7)}. Its words are unchanged.`,
+        `retries: the claim at lines 15-17 was reanchored since ${first.slice(0, 7)}. Its words are unchanged. Run manni cite update.`,
       );
     } finally {
       removeTempRepo(repo.dir);
@@ -483,7 +483,7 @@ describe.skipIf(!HAS_GIT)("the derived baseline", () => {
       expect(claimOf(report)?.status).toBe("changed");
       expect(claimOf(report)?.historyAvailable).toBe(false);
       expect(claimFinding(report)).toBe(
-        "fetch-timeout: the claim at line 15 has changed since it was pinned (history unavailable; fetch-depth: 0).",
+        "fetch-timeout: the claim at line 15 has changed since it was pinned (history unavailable; fetch-depth: 0). Check it still matches the source, then run manni cite update --accept --only fetch-timeout.",
       );
       expect(report.notices).toContain(
         "the page history ends before the pin held; use fetch-depth: 0 to tell reanchored claims from changed ones",

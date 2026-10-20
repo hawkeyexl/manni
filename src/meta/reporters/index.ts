@@ -12,6 +12,7 @@ import {
 import type { FingerprintContext } from "../core/baseline.js";
 import { palette } from "../../shared/color.js";
 import { fieldLabel } from "./rule-id.js";
+import { guidanceLines } from "../../shared/guidance.js";
 import { renderSarif, type SarifOptions } from "./sarif.js";
 import { renderJunit, type JunitOptions } from "./junit.js";
 import {
@@ -265,6 +266,8 @@ export function renderPretty(
           `[${e.schema}]`,
         )}`,
       );
+      // What the schema asks of the property, under the finding (0089).
+      for (const line of guidanceLines(e.guidance)) lines.push(`      ${c.dim(line)}`);
     }
   }
 
@@ -299,7 +302,13 @@ export function renderJson(
   results: ValidationResult[],
   summary: RunSummary,
 ): string {
-  return JSON.stringify({ summary, results }, null, 2);
+  // Every error carries `guidance`, last, and `null` where nothing judged it
+  // (proposal 0089), so a consumer reads one shape.
+  const shaped = results.map((r) => ({
+    ...r,
+    errors: r.errors.map(({ guidance, ...rest }) => ({ ...rest, guidance: guidance ?? null })),
+  }));
+  return JSON.stringify({ summary, results: shaped }, null, 2);
 }
 
 export function renderGithub(results: ValidationResult[]): string {
@@ -312,7 +321,7 @@ export function renderGithub(results: ValidationResult[]): string {
       // Escaped as one string, after assembly: the schema id and the field
       // label are as capable of carrying a `%` as the message is.
       const msg = escapeWorkflowCommandMessage(
-        `[${e.schema}] ${fieldLabel(e.instancePath)} ${e.message}`,
+        [`[${e.schema}] ${fieldLabel(e.instancePath)} ${e.message}`, ...guidanceLines(e.guidance)].join("\n"),
       );
       // The family scale was chosen to be GitHub's, so the level is the
       // severity, and an absent one is `error` (`isErrorSeverity`).

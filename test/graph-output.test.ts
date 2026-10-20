@@ -9,7 +9,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { Validator } from "../src/meta/core/validator.js";
 import { GRAPH_OUTPUT_KEYWORD } from "../src/meta/core/graph-output.js";
-import { DocmetaError } from "../src/meta/types.js";
+import { DocmetaError, type FieldError } from "../src/meta/types.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const fixtures = join(here, "fixtures", "graph-output");
@@ -180,8 +180,9 @@ describe("x-manni-graph-output in manni:stewardship (proposal 0074)", () => {
   it("1.1.0 validates exactly as 1.0.0 does", async () => {
     const v = new Validator();
     const bad = { owner: "", "last-reviewed": "soon", authors: [] };
-    const strip = (errors: { schema: string }[]) =>
-      errors.map((e) => ({ ...e, schema: "" }));
+    // The schema ref is the one thing that differs, and the guidance names it.
+    const strip = (errors: FieldError[]) =>
+      errors.map((e) => ({ ...e, schema: "", guidance: e.guidance ? { ...e.guidance, id: "" } : e.guidance }));
     const old = await v.validate(bad, ["manni:stewardship:1.0.0"], () => undefined);
     const now = await v.validate(bad, ["manni:stewardship:1.1.0"], () => undefined);
     expect(old.length).toBeGreaterThan(0);

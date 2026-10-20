@@ -20,7 +20,7 @@ sample-questions:
 graph:
   label: "manni ai-context vocabulary"
   type: reference
-last-updated: 2026-10-19
+last-updated: 2026-10-20
 resource: https://hawkeyexl.github.io/manni/schemas/ai-context/1.1.0.json
 tags:
   - schema
@@ -204,6 +204,8 @@ meta-provenance:
 $ manni meta validate page.md --no-config -s manni:core:1.0.0 -s manni:ai-context:1.1.0
 ✗ page.md
     /meta-provenance/0/fields/0  must match pattern "^/"  (line 6)  [manni:ai-context:1.1.0]
+      manni:ai-context:1.1.0 meta-provenance/fields
+      Guide: https://hawkeyexl.github.io/manni/meta/reference/schemas/manni-ai-context/
     /meta-provenance  warning "meta-provenance" is stored in the page; manni:ai-context:1.1.0 prefers external metadata, and --no-config leaves it no manifest.  (line 4)  [location:external]
 
 1 file checked, 0 passed, 1 failed, 1 error, 1 warning
@@ -311,7 +313,9 @@ risks: [privileged, needs-vpn]
 ```text
 $ manni meta validate page.md --no-config -s manni:core:1.0.0 -s manni:ai-context:1.1.0 -s manni:ai-context-strict:1.0.0
 ✗ page.md
-    /risks/1  must be equal to one of the allowed values  (line 4)  [manni:ai-context-strict:1.0.0]
+    /risks/1  must be one of: "cost-incurring", "destructive", "irreversible", "privileged", "open-world", "read-only", "idempotent"  (line 4)  [manni:ai-context-strict:1.0.0]
+      manni:ai-context-strict:1.0.0 risks: One of the seven named flags.
+      Guide: https://hawkeyexl.github.io/manni/meta/reference/schemas/manni-ai-context/
 
 1 file checked, 0 passed, 1 failed, 1 error
 ```
@@ -331,9 +335,10 @@ pins an answer fails:
 $ manni meta validate old.md --no-config -s manni:core:1.0.0 -s manni:ai-context:1.0.0
 ✗ old.md
     /sample-questions/0  must be string  (line 5)  [manni:ai-context:1.0.0]
-    /sample-questions  must match "then" schema  (line 4)  [manni:ai-context:1.0.0]
+      manni:ai-context:1.0.0 sample-questions
+      Guide: https://hawkeyexl.github.io/manni/meta/reference/schemas/manni-ai-context/
 
-1 file checked, 0 passed, 1 failed, 2 errors
+1 file checked, 0 passed, 1 failed, 1 error
 ```
 
 The same page passes under 1.1.0.

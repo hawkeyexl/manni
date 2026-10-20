@@ -13,6 +13,7 @@ import type { CollectionConfig } from "../shared/collections.js";
 import type { ConfigFile } from "../shared/config-file.js";
 import type { KeySource } from "../shared/encryption-key.js";
 import type { LineSpec, PageLines } from "../shared/pin.js";
+import type { Guidance } from "../shared/guidance.js";
 import type { Confirm } from "../shared/prompt.js";
 import type { Severity } from "../shared/severity.js";
 
@@ -275,6 +276,8 @@ export interface CitationFinding {
   newSrc?: string;
   /** Index in the page's `citations` for a finding about one entry. */
   index?: number;
+  /** The rule behind the finding: what it means, and its section of the fix page. */
+  guidance?: Guidance | null;
 }
 
 export interface PageCitationReport {

@@ -22,7 +22,7 @@ const cli = join(root, "dist", "cli.js");
 // and a corpus built inside this checkout would carry HEAD's committer
 // date. See test/graph/helpers/corpus.ts.
 const corpus = detachedCorpus();
-const bundledShapes = join(root, "shapes", "graph", "shapes-1.1.0.ttl");
+const bundledShapes = join(root, "shapes", "graph", "shapes-1.1.1.ttl");
 
 const CONFIG_DOC = "https://example.com/graph/doc/docs/configuration.md";
 
@@ -136,7 +136,7 @@ describe("graph -f is the output format, and it is checked", () => {
   it("names check's own list, which carries github", () => {
     const { status, stderr } = run(["check", "-f", "xml"]);
     expect(stderr).toContain(
-      'Unknown --format "xml". Use pretty | json | github.',
+      'Unknown --format "xml". Use pretty | json | github | sarif.',
     );
     expect(status).toBe(2);
   });

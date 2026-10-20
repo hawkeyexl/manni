@@ -28,7 +28,7 @@ import type {
   SourceEnd,
   SourceIndex,
 } from "../types.js";
-import { findingsFor, misplacedMessageFor } from "./adapt.js";
+import { findingsFor, misplacedMessageFor, remedyFor, withRemedy } from "./adapt.js";
 import { misplacedMarkers, type MisplacedMarker } from "./reanchor.js";
 import { spellLines } from "../../shared/pin.js";
 import { classifyCitation, MOVE_BUDGET_BYTES } from "./classify.js";
@@ -40,7 +40,7 @@ import { readPage } from "./page.js";
 import { STDIN_LABEL } from "../../meta/internal.js";
 import { parseSrc, sourceRange, spellSource } from "./range.js";
 import { buildSourceIndex, readSource } from "./sources.js";
-import { resolveSeverity, ruleId } from "./severity.js";
+import { guidanceFor, resolveSeverity, ruleId } from "./severity.js";
 import { anchoredLines, fenceSpanAt } from "./statements.js";
 
 function byLine(a: CitationFinding, b: CitationFinding): number {
@@ -123,7 +123,8 @@ async function quoteFindings(
       return [
         {
           rule: "quote-drift",
-          message: "quote: true, but no fenced block follows the marker",
+          message:
+            "quote: true, but no fenced block follows the marker. Put the quoted block right after the marker.",
           ...(result.markerLine === undefined ? {} : { line: result.markerLine }),
         },
       ];
@@ -137,7 +138,7 @@ async function quoteFindings(
         {
           rule: "anchor-invalid",
           message: named(
-            `the quote's claim lines ${at.start === at.end ? String(at.start) : `${String(at.start)}-${String(at.end)}`} are no longer a fenced block.`,
+            `the quote's claim lines ${at.start === at.end ? String(at.start) : `${String(at.start)}-${String(at.end)}`} are no longer a fenced block. Restore the fences, or re-add the citation over the block.`,
           ),
           line: at.start,
         },
@@ -154,7 +155,8 @@ async function quoteFindings(
   return [
     {
       rule: "quote-drift",
-      message: "quote: true, but the fenced block does not reproduce the cited lines",
+      message:
+        "quote: true, but the fenced block does not reproduce the cited lines. Copy the cited lines into the block again.",
       line: block.start,
     },
   ];
@@ -300,34 +302,40 @@ export async function checkCitations(
     }
   }
 
-  // One finding per misplaced marker, so a run of three is three. An orphan
-  // in a run is reported too, with no id, beside its `marker-orphan`.
+  // One finding per misplaced marker, so a run of three is three. A marker
+  // that names no entry is left to its `marker-orphan`: fixing the orphan
+  // settles it, and once the entry exists the next check reports the
+  // misplacement with its id.
   const misplacedLevel = severity["marker-misplaced"];
   if (misplacedLevel !== "off") {
     for (const found of misplaced) {
       const entry = found.entry;
+      if (entry === undefined) continue;
       const finding: CitationFinding = {
         rule: "marker-misplaced",
         ruleId: ruleId("marker-misplaced"),
         severity: misplacedLevel,
-        message: misplacedMessageFor(entry?.citation.id, {
-          line: found.line,
-          unit: spellLines(found.unit),
-          place: found.place,
-          block: found.block,
-        }),
+        message: withRemedy(
+          misplacedMessageFor(entry.citation.id, {
+            line: found.line,
+            unit: spellLines(found.unit),
+            place: found.place,
+            block: found.block,
+          }),
+          remedyFor("marker-misplaced", undefined),
+        ),
         line: found.line,
+        index: entry.origin.index,
+        src: spellSource(entry.citation.source),
       };
-      if (entry !== undefined) {
-        finding.index = entry.origin.index;
-        finding.src = spellSource(entry.citation.source);
-        if (entry.citation.id !== undefined) finding.id = entry.citation.id;
-      }
+      if (entry.citation.id !== undefined) finding.id = entry.citation.id;
       findings.push(finding);
     }
   }
 
   findings.push(...findingsFor(results, severity));
+  // Every finding names its rule, what it means and its section of the fix page.
+  for (const finding of findings) finding.guidance = guidanceFor(finding.rule);
 
   // History is read for a citation with a commit, and for every claim that no
   // longer holds, so a page holding either and with no git to read it through

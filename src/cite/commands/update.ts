@@ -24,6 +24,7 @@
 import { resolve } from "node:path";
 import { writeFileAtomic } from "../../meta/index.js";
 import { STDIN_LABEL } from "../../meta/internal.js";
+import { remedyFor } from "../core/adapt.js";
 import { checkCitations } from "../core/check-page.js";
 import {
   noUnitAt,
@@ -1502,7 +1503,16 @@ export async function runUpdate(opts: UpdateOptions): Promise<UpdateRun> {
         }
         const turned = finding.index === undefined ? undefined : declined.get(finding.index);
         const why = turned?.rule === finding.rule ? turned.why : undefined;
-        return why === undefined ? finding : { ...finding, message: `${finding.message} ${why}` };
+        if (why === undefined) return finding;
+        // The check's advice names the command that just declined, so the
+        // reason it declined takes the advice's place.
+        const result = report.citations.find((r) => r.origin.index === finding.index);
+        const remedy = remedyFor(finding.rule, result);
+        const said =
+          remedy !== undefined && finding.message.endsWith(` ${remedy}`)
+            ? finding.message.slice(0, -(remedy.length + 1))
+            : finding.message;
+        return { ...finding, message: `${said} ${why}` };
       });
     const diff = after === content ? "" : unifiedDiff(label, content, after);
     const written = after !== content && path !== undefined && opts.dryRun !== true;

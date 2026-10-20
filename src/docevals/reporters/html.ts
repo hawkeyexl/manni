@@ -14,6 +14,8 @@
  */
 import type { EngineReport } from "../core/engine.js";
 import { declaringEntry, locationLabel } from "./location.js";
+import { resultGuidance } from "./judged.js";
+import { evidenceVerdict } from "../../shared/verdict-lines.js";
 import type { EvalResult } from "../types.js";
 
 const OUTCOME_LABEL: Record<string, string> = {
@@ -78,7 +80,7 @@ function evalBlock(r: EvalResult): string {
 
   // The judge's own words. This is the reason a docs owner opens the report at
   // all — a verdict without the quotation it rests on is not reviewable.
-  const verdict = r.consensus?.runs.find((run) => run.verdict)?.verdict;
+  const verdict = r.consensus ? evidenceVerdict(r.consensus) : undefined;
   if (verdict) {
     bits.push(
       `<p class="reason">${esc(verdict.reasoning)}</p>`,
@@ -112,6 +114,7 @@ function evalBlock(r: EvalResult): string {
         `${esc(f.message)}${f.line ? ` <span class="muted">(line ${String(f.line)})</span>` : ""}</p>`,
     );
   }
+  for (const line of resultGuidance(r)) bits.push(`<p class="muted">${esc(line)}</p>`);
   bits.push("</div>");
   return bits.filter(Boolean).join("\n");
 }

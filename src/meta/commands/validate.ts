@@ -81,7 +81,7 @@ import {
   resolveElements,
 } from "../core/resolve-schema.js";
 import { Validator } from "../core/validator.js";
-import { schemaLoadOptions } from "../core/schema-registry.js";
+import { documentSchemaMessage, schemaLoadOptions } from "../core/schema-registry.js";
 import { runChecks, type CheckEntry } from "../core/checks.js";
 import {
   encryptionFindings,
@@ -1018,7 +1018,7 @@ export async function runValidate(
         throw err;
       }
       results.push(
-        parseErrorResult(label, extractor.name, err.message, "schema"),
+        parseErrorResult(label, extractor.name, documentSchemaMessage(err), "schema"),
       );
       return;
     }

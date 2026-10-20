@@ -1,7 +1,8 @@
 /** Human-readable terminal report. */
 import { palette, type Colors } from "../../shared/color.js";
 import type { EvalResult, RunReport } from "../types.js";
-import { locationLabel } from "./ci.js";
+import { judgedLines, locationLabel } from "./ci.js";
+import { guidanceLines } from "../../shared/guidance.js";
 import type { CoverageEntry } from "../artifacts/types.js";
 import {
   availabilityLines,
@@ -70,21 +71,29 @@ export function renderPretty(report: RunReport, opts: ColorOptions = {}): string
     lines.push(
       `  ${label} ${name}${result.implicit ? pc.dim(" (implicit)") : ""}  ${pc.dim(locationLabel(result.location))}`,
     );
+    let printed = false;
     for (const finding of result.findings ?? []) {
       if (result.outcome !== "pass" || finding.severity !== "error") {
         lines.push(`         ${pc.dim(`[${finding.severity}]`)} ${finding.message}`);
+        printed = true;
       }
     }
     if (result.error) lines.push(`         ${pc.red(result.error)}`);
-    if (result.skipReason) lines.push(`         ${pc.dim(result.skipReason)}`);
+    // A review queue's judged block says what its skip reason would.
+    if (result.skipReason && result.outcome !== "needs-review") {
+      lines.push(`         ${pc.dim(result.skipReason)}`);
+    }
+    for (const line of judgedLines(result)) lines.push(`         ${line}`);
     if (result.consensus && result.outcome !== "pass") {
       const v = result.consensus.votes;
       lines.push(
-        `         ${pc.dim(`votes pass:${v.pass} fail:${v.fail} partial:${v.partial} error:${v.error} · confidence ${result.consensus.meanConfidence.toFixed(2)}`)}`,
+        `         ${pc.dim(`votes pass:${v.pass} fail:${v.fail} partial:${v.partial} error:${v.error}`)}`,
       );
-      const observed = result.consensus.runs.find((r) => r.verdict)?.verdict
-        ?.observed;
-      if (observed) lines.push(`         ${pc.dim(observed)}`);
+    }
+    // Guidance goes under anything printed above it: a failure, an error, a
+    // review, or a passing eval that still carries a warning finding.
+    if (printed || result.outcome === "fail" || result.outcome === "error" || result.outcome === "needs-review") {
+      for (const line of guidanceLines(result.guidance)) lines.push(`         ${pc.dim(line)}`);
     }
   }
 

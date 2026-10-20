@@ -21,6 +21,7 @@ import { DEFAULT_CITE_BASELINE_PATH } from "../../src/cite/core/config.js";
 import { noGit } from "../../src/cite/core/git.js";
 import { hashLines, hashRange, splitLines } from "../../src/cite/core/hash.js";
 import { readPage } from "../../src/cite/core/page.js";
+import { guidanceFor } from "../../src/cite/core/severity.js";
 import { parseSrc } from "../../src/cite/core/range.js";
 import { decryptSourcePath, encryptSourcePath } from "../../src/cite/core/sources.js";
 import { shortSrc } from "../../src/cite/core/spell.js";
@@ -178,7 +179,7 @@ describe("runCheck: the claim end", () => {
       newFileLines: "17",
     });
     expect(run.pages[0]?.findings.map((f) => [f.rule, f.severity, f.line, f.message])).toEqual([
-      ["claim-moved", "notice", 15, "fetch-timeout: the claim moved from line 15 to line 17."],
+      ["claim-moved", "notice", 15, "fetch-timeout: the claim moved from line 15 to line 17. Run manni cite update."],
     ]);
     expect(run.results[0]?.ok).toBe(true);
     expect(run.summary).toEqual({ files: 1, passed: 1, failed: 0, errors: 0, notices: 1 });
@@ -192,7 +193,11 @@ describe("runCheck: the claim end", () => {
       candidateFileLines: ["17", "21"],
     });
     expect(run.pages[0]?.findings.map((f) => [f.rule, f.severity, f.message])).toEqual([
-      ["claim-moved-ambiguous", "warning", "retries: the claim at line 15 now appears at lines 17 and 21."],
+      [
+        "claim-moved-ambiguous",
+        "warning",
+        "retries: the claim at line 15 now appears at lines 17 and 21. Pin a range that occurs once, or anchor the claim with a marker.",
+      ],
     ]);
     expect(run.results[0]?.ok).toBe(true);
   });
@@ -203,7 +208,12 @@ describe("runCheck: the claim end", () => {
     // `text` is the page as it stands, for `--show-diff`; nothing else prints it.
     expect(run.pages[0]?.citations[0]?.claim?.text).toEqual(["The fetch timeout is 30 seconds."]);
     expect(run.pages[0]?.findings.map((f) => [f.rule, f.severity, f.line, f.message])).toEqual([
-      ["claim-changed", "warning", 15, "fetch-timeout: the claim at line 15 has changed since it was pinned."],
+      [
+        "claim-changed",
+        "warning",
+        15,
+        "fetch-timeout: the claim at line 15 has changed since it was pinned. Check it still matches the source, then run manni cite update --accept --only fetch-timeout.",
+      ],
     ]);
     expect(run.summary).toEqual({ files: 1, passed: 1, failed: 0, errors: 0, warnings: 1 });
   });
@@ -234,7 +244,7 @@ describe("runCheck: markers and anchors", () => {
   it("fails a marker that names no entry, in markdown and in html", async () => {
     const run = await check({ inputs: ["pages/marker-orphan.md", "pages/marker.html"] });
     expect(run.pages[0]?.findings.map((f) => [f.rule, f.severity, f.id, f.line, f.message])).toEqual([
-      ["marker-orphan", "error", "nope", 12, 'no entry has id "nope"'],
+      ["marker-orphan", "error", "nope", 12, `no entry has id "nope". Fix the marker's id, or add the entry with manni cite add.`],
     ]);
     expect(run.pages[1]?.findings.map((f) => [f.rule, f.id, f.line])).toEqual([
       ["marker-orphan", "fetch-timeout", 5],
@@ -249,8 +259,9 @@ describe("runCheck: markers and anchors", () => {
       rule: "marker-invalid",
       ruleId: "manni:cite/marker-invalid",
       severity: "error",
-      message: "A marker names an entry by id. Write the entry in frontmatter or the sidecar.",
+      message: "invalid marker: a marker names entry ids, not an entry. Move the entry to citations:, in frontmatter or the sidecar, and name its id.",
       line: 12,
+      guidance: guidanceFor("marker-invalid"),
     });
     // The entry itself is fine; only the marker is not.
     expect(ends(run)).toEqual([[null, "current"]]);
@@ -260,7 +271,7 @@ describe("runCheck: markers and anchors", () => {
     const run = await check({ inputs: ["pages/marker-repeated.md"] });
     expect(ends(run)).toEqual([["current", "current"]]);
     expect(run.pages[0]?.findings.map((f) => [f.rule, f.severity, f.line, f.message])).toEqual([
-      ["marker-repeated", "warning", 19, "retries is named by markers at lines 14 and 19; the first anchors it."],
+      ["marker-repeated", "warning", 19, "retries is named by markers at lines 14 and 19; the first anchors it. Remove retries from the marker at line 19."],
     ]);
     expect(run.results[0]?.ok).toBe(true);
   });
@@ -277,10 +288,10 @@ describe("runCheck: markers and anchors", () => {
   it("fails a quote with no anchor, and a quote whose claim lines stopped being a block", async () => {
     const run = await check({ inputs: ["pages/anchor-quote.md", "pages/anchor-unfenced.md"] });
     expect(run.pages[0]?.findings.map((f) => [f.rule, f.line, f.message])).toEqual([
-      ["anchor-invalid", 4, "header: quote needs a claim or a marker."],
+      ["anchor-invalid", 4, "header: quote needs a claim or a marker. Add claim.lines over the block, or a marker above it."],
     ]);
     expect(run.pages[1]?.findings.map((f) => [f.rule, f.line, f.message])).toEqual([
-      ["anchor-invalid", 16, "header: the quote's claim lines 16-18 are no longer a fenced block."],
+      ["anchor-invalid", 16, "header: the quote's claim lines 16-18 are no longer a fenced block. Restore the fences, or re-add the citation over the block."],
     ]);
     expect(run.results.map((r) => r.ok)).toEqual([false, false]);
   });
@@ -316,7 +327,7 @@ describe("runCheck: markers and anchors", () => {
       ].join("\n"),
     });
     expect(run.pages[0]?.findings.map((f) => [f.rule, f.severity, f.message])).toEqual([
-      ["quote-drift", "error", "quote: true, but the fenced block does not reproduce the cited lines"],
+      ["quote-drift", "error", "quote: true, but the fenced block does not reproduce the cited lines. Copy the cited lines into the block again."],
     ]);
   });
 });
@@ -330,7 +341,7 @@ describe("runCheck: the source end", () => {
       newLines: "4",
     });
     expect(run.pages[0]?.findings.map((f) => [f.rule, f.severity, f.message])).toEqual([
-      ["source-moved", "warning", "moved -> src/moved.ts:4"],
+      ["source-moved", "warning", "moved -> src/moved.ts:4. Run manni cite update."],
     ]);
     expect(run.results[0]?.ok).toBe(true);
     expect(run.summary).toEqual({ files: 1, passed: 1, failed: 0, errors: 0, warnings: 1 });
@@ -344,7 +355,8 @@ describe("runCheck: the source end", () => {
       {
         schema: "manni:cite",
         instancePath: "/citations/0",
-        message: "changed",
+        message:
+          "changed. Check the sentence against the source, then run manni cite update --accept --only fetch-timeout.",
         keyword: "source-changed",
         severity: "error",
         subject: "fetch-timeout",
@@ -358,7 +370,9 @@ describe("runCheck: the source end", () => {
     const run = await check({ inputs: ["pages/missing.md"] });
     expect(ends(run)).toEqual([["current", "missing"]]);
     expect(run.pages[0]?.citations[0]?.source.missingReason).toBe("untracked");
-    expect(messages(run)).toEqual(["missing"]);
+    expect(messages(run)).toEqual([
+      "missing. Run manni cite remove --only fetch-timeout, then manni cite add against the file's new path.",
+    ]);
     expect(run.results[0]?.ok).toBe(false);
   });
 
@@ -378,7 +392,11 @@ describe("runCheck: the source end", () => {
     const without = await check({ inputs: ["pages/encrypted.md"] });
     expect(ends(without)).toEqual([["current", "missing"]]);
     expect(without.pages[0]?.findings.map((f) => [f.rule, f.severity, f.message])).toEqual([
-      ["source-missing", "error", "missing (no encryption key is available to decrypt it)"],
+      [
+        "source-missing",
+        "error",
+        "missing (no encryption key is available to decrypt it). Set MANNI_ENCRYPTION_KEY, or encryptionKey: at the top of manni.config.yaml.",
+      ],
     ]);
     expect(without.results[0]?.ok).toBe(false);
     expect(without.summary).toEqual({ files: 1, passed: 0, failed: 1, errors: 1 });
@@ -392,7 +410,9 @@ describe("runCheck: the source end", () => {
   it("under another key, an encrypted citation is missing and says so", async () => {
     const run = await check({ inputs: ["pages/encrypted.md"], env: { MANNI_ENCRYPTION_KEY: OTHER } });
     expect(ends(run)).toEqual([["current", "missing"]]);
-    expect(messages(run)).toEqual(["missing (does not decrypt under the current key)"]);
+    expect(messages(run)).toEqual([
+      "missing (does not decrypt under the current key). Use the key the source was encrypted with. After a key rotation, update the secret too.",
+    ]);
   });
 
   it("refuses an encrypted source pinned plain, before it is ever classified", async () => {
@@ -407,7 +427,7 @@ describe("runCheck: the source end", () => {
     const run = await check({ inputs: ["pages/entry-invalid.md"] });
     expect(run.pages[0]?.findings.map((f) => [f.rule, f.line, f.index, f.message])).toEqual([
       ["entry-invalid", 4, 0, "/source must have required property 'integrity'"],
-      ["entry-invalid", 13, 2, 'duplicate id "fetch-timeout"'],
+      ["entry-invalid", 13, 2, 'duplicate id "fetch-timeout". Give each entry its own id.'],
     ]);
     // The entry with no `integrity` is never classified; the two valid ones are.
     expect(ends(run)).toEqual([
@@ -819,7 +839,7 @@ describe("output never says more than the page did", () => {
       [null, "current"],
     ]);
     expect(run.pages[0]?.citations[0]?.source.newSrc).toBe(`${token}:4`);
-    expect(messages(run)).toEqual([`moved -> ${shortSrc(`${token}:4`)}`]);
+    expect(messages(run)).toEqual([`moved -> ${shortSrc(`${token}:4`)}. Run manni cite update.`]);
     // The resolved path is carried for `--reveal` and nowhere else.
     expect(run.pages[0]?.citations.map((c) => c.source.resolvedPath)).toEqual([
       "src/moved.ts",
@@ -961,9 +981,11 @@ describe.skipIf(!gitAvailable())("with git", () => {
     const changed = run.pages[0]?.citations[0]?.source;
     expect(changed?.historyAvailable).toBe(true);
     expect(changed?.commitsSince).toEqual(["raise fetch timeout to 30s"]);
-    expect(run.pages[0]?.findings[0]?.message).toBe(`changed since ${first.slice(0, 7)}, 1 commit`);
+    expect(run.pages[0]?.findings[0]?.message).toBe(
+      `changed since ${first.slice(0, 7)}, 1 commit. Check the sentence against the source, then run manni cite update --accept --only fetch-timeout.`,
+    );
     expect(run.pages[1]?.findings[0]?.message).toBe(
-      `never true: the pin does not match at ${second.slice(0, 7)}`,
+      `never true: the pin does not match at ${second.slice(0, 7)}. Check the sentence against the source, then run manni cite update --accept --only fetch-timeout.`,
     );
     // Where git is not there, both are a plain `changed`, and the run says why once.
     const notices: string[] = [];
@@ -998,8 +1020,8 @@ describe("runCheck: a marker inside a paragraph", () => {
       expect(ends(run)).toEqual([["moved", "current"]]);
       expect(rules(run)).toEqual(["marker-misplaced", "claim-moved"]);
       expect(messages(run)).toEqual([
-        "fresh-context: the marker at line 16 splits the paragraph at lines 14-18. Its place is above line 14.",
-        "fresh-context: the claim moved from lines 17-18 to lines 15-18.",
+        "fresh-context: the marker at line 16 splits the paragraph at lines 14-18. Its place is above line 14. Run manni cite update to move it.",
+        "fresh-context: the claim moved from lines 17-18 to lines 15-18. Run manni cite update.",
       ]);
       expect(markers(run)).toEqual([[16, { unit: "14-18", to: 14 }]]);
       // A warning and a notice, so the page still passes.
@@ -1018,10 +1040,10 @@ describe("runCheck: a marker inside a paragraph", () => {
       ["changed", "current"],
     ]);
     expect(messages(run)).toEqual([
-      "one-at-a-time: the marker at line 22 splits the paragraph at lines 21-24. Its place is above line 21.",
-      "robots: the marker at line 23 splits the paragraph at lines 21-24. Its place is above line 21.",
-      "one-at-a-time: the claim moved from line 24 to lines 23-24.",
-      "robots: the claim at line 24 has changed since it was pinned.",
+      "one-at-a-time: the marker at line 22 splits the paragraph at lines 21-24. Its place is above line 21. Run manni cite update to move it.",
+      "robots: the marker at line 23 splits the paragraph at lines 21-24. Its place is above line 21. Run manni cite update to move it.",
+      "one-at-a-time: the claim moved from line 24 to lines 23-24. Run manni cite update.",
+      "robots: the claim at line 24 has changed since it was pinned. Check it still matches the source, then run manni cite update --accept --only robots.",
     ]);
     expect(markers(run)).toEqual([
       [22, { unit: "21-24", to: 21 }],
@@ -1033,15 +1055,15 @@ describe("runCheck: a marker inside a paragraph", () => {
     const run = await check({ inputs: [MISPLACED("quote-mid.md")] });
     expect(ends(run)).toEqual([["current", "current"]]);
     expect(messages(run)).toEqual([
-      "retries-block: the marker at line 16 splits the paragraph at lines 15-17. Its place is above the block at line 19.",
+      "retries-block: the marker at line 16 splits the paragraph at lines 15-17. Its place is above the block at line 19. Run manni cite update to move it.",
     ]);
   });
 
   it("reports a marker between two list items", async () => {
     const run = await check({ inputs: [MISPLACED("list-items.md")] });
     expect(messages(run)).toEqual([
-      "retries: the marker at line 15 splits the paragraph at lines 14-16. Its place is above line 14.",
-      "retries: the claim moved from line 16 to lines 15-16.",
+      "retries: the marker at line 15 splits the paragraph at lines 14-16. Its place is above line 14. Run manni cite update to move it.",
+      "retries: the claim moved from line 16 to lines 15-16. Run manni cite update.",
     ]);
   });
 
@@ -1060,7 +1082,7 @@ describe("runCheck: a marker inside a paragraph", () => {
       ["current", "current"],
     ]);
     expect(rules(run)).toEqual(["claim-moved"]);
-    expect(messages(run)).toEqual(["host-scope: the claim moved from lines 22-23 to line 23."]);
+    expect(messages(run)).toEqual(["host-scope: the claim moved from lines 22-23 to line 23. Run manni cite update."]);
     expect(markers(run)).toEqual([
       [21, undefined],
       [22, undefined],
@@ -1096,7 +1118,7 @@ describe("runCheck: a marker inside a paragraph", () => {
     expect(rules(off)).toEqual(["claim-moved"]);
   });
 
-  it("reports an orphan marker in a run with no id, beside its marker-orphan", async () => {
+  it("reports an orphan marker in a run as marker-orphan alone", async () => {
     const dir = tempDir();
     mkdirSync(join(dir, "pages"));
     writeFileSync(
@@ -1115,10 +1137,9 @@ describe("runCheck: a marker inside a paragraph", () => {
       "utf8",
     );
     const run = await check({ cwd: dir, inputs: ["pages/orphan-run.md"] });
-    expect(rules(run)).toEqual(["marker-orphan", "marker-misplaced"]);
+    expect(rules(run)).toEqual(["marker-orphan"]);
     expect(messages(run)).toEqual([
-      'no entry has id "nobody"',
-      "the marker at line 7 splits the paragraph at lines 6-8. Its place is above line 6.",
+      `no entry has id "nobody". Fix the marker's id, or add the entry with manni cite add.`,
     ]);
   });
 });

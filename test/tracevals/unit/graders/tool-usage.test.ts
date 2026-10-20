@@ -38,7 +38,10 @@ describe("tool-usage grader", () => {
     });
     expect(result.findings).toHaveLength(1);
     expect(result.findings[0]?.severity).toBe("error");
-    expect(result.findings[0]?.message).toContain("Bash");
+    expect(result.findings[0]?.message).toBe(
+      "tool Bash was used 1 time(s) but must not be. " +
+        "Redo the session work so it holds, or fix the eval if the artifact does not ask for this.",
+    );
   });
 
   it("ignores sidechain calls by default but counts them on request", async () => {

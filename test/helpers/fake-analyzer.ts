@@ -90,13 +90,15 @@ export function violation(
   severity: Violation["severity"],
   impact: Violation["impact"] = IMPACT_FOR[severity],
 ): Violation {
+  const helpUrl = `https://dequeuniversity.com/rules/axe/4.13/${id}`;
   return {
     id,
     severity,
     impact,
     help: `Rule ${id}`,
-    helpUrl: `https://dequeuniversity.com/rules/axe/4.13/${id}`,
+    helpUrl,
     tags: ["wcag2a"],
     nodes: [{ target: "html", html: "<html>", summary: `Fix ${id}` }],
+    guidance: { id: "axe-core 4.13.0", rule: id, description: `Rule ${id} checks`, guide: helpUrl },
   };
 }

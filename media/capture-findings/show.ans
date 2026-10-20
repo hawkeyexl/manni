@@ -1,0 +1,16 @@
+---
+# manni:core:1.0.0, manni core vocabulary v1.0.0
+# Guide: https://hawkeyexl.github.io/manni/meta/reference/schemas/manni-core/
+# What the page is called, as one non-empty string.
+title:
+# One full non-empty sentence saying what the page is for.
+description:
+# Stable identifier for this page, independent of its path.
+# id:
+# The kind of content this page is, as one string.
+# type:
+# Search keywords.
+# keywords:
+# The natural language the page is written in, as one string.
+# language:
+---

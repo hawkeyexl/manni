@@ -47,61 +47,70 @@ docs/src/content/docs/tracevals/reference/graders.mdx:
       lines: 181
       integrity: sha256-3280e4f33d24691c8eb83d2913916134c781a3d1b3b7c56b218cac3ac4f568d5
     - generated-by: Claude Opus 5
-      lines: 183-272
-      integrity: sha256-abadbe87a267087cd4c2ba45e04d32f8a662e850822f465f9ed6aded14e5c280
+      lines: 183-193
+      integrity: sha256-fed7039a5e79af3da955ddcc44d43084fa87cbb7fa7bdc960e4a958f381bf8fb
+    - generated-by: Claude Opus 5
+      lines: 200-277
+      integrity: sha256-2403117993f99e0560964fa0a4a2f2a02001389085b396356b2561776d76d32a
     - generated-by: Claude Opus 5.5
-      lines: 274-275
+      lines: 279-280
       integrity: sha256-9af08280726dc8ceaf83fd6a13c022967369d1bacf6da02619d18b3f67cfda0a
     - generated-by: Claude Opus 5
-      lines: 277-285
+      lines: 282-290
       integrity: sha256-682156090243a9e9d32b666a9d87e4dae7b0708843bcc4c9ae18197089d9ccdd
     - generated-by: Claude Opus 5.5
-      lines: 287-289
+      lines: 292-294
       integrity: sha256-1f6d73128d8634c7ddde45c6e2cec518150691090f56a9230cb1e5ae6b440653
     - generated-by: Claude Opus 5
-      lines: 291-545
-      integrity: sha256-87002e90d24bddd7a51df5bef23d33a68cd21bc726e87308838aa679fe5eaabe
+      lines: 296-516
+      integrity: sha256-3ed8452699e3cdb38d26c35977899f3beac53dbe7a0b4edb78b6652ed0da7ebb
+    - generated-by: Claude Opus 5
+      lines: 521-552
+      integrity: sha256-afd38db9265980057d36ee924f29c4cc4b09b57ebcc2bf10fbb4bb2a106ceaff
     - generated-by: Claude Opus 5.5
-      lines: 547
+      lines: 554
       integrity: sha256-33c8d8aa93f84c475d8cc1a46a7d04b71169b656a959e38d8b4194bd3ac461fd
     - generated-by: Claude Opus 5
-      lines: 548-583
-      integrity: sha256-001169db8a394165571f5ddc3b9b20d97d9941a8354ae74f95cd7716979bc13b
+      lines: 555-580
+      integrity: sha256-1995a7844cbc17af65810b4f76d5834dd678d7b871eca7f4dae7eb24ff9553c3
+    - generated-by: Claude Opus 5
+      lines: 589-597
+      integrity: sha256-bbb99b78105e9a4dafed90e01b42d1da0d2a17ea85433b45cfc9b662ac544b84
     - generated-by: Claude Opus 5.5
-      lines: 585
+      lines: 599
       integrity: sha256-92255e1cb66f6e77841fb28b98e524bb5180a89b3fb7408a2de0b0aaaa8f46b3
     - generated-by: Claude Opus 5
-      lines: 586-605
+      lines: 600-619
       integrity: sha256-41cf7701809ef5ad09209d428cd0cbcedd08facd3feeb91646ce6e81da3768a4
     - generated-by: Claude Opus 5.5
-      lines: 607-608
+      lines: 621-622
       integrity: sha256-b9024f5277d492d9fc3fd46570cd044988ab50b0a91c52c8da202d8f93404039
     - generated-by: Claude Opus 5
-      lines: 610-611
+      lines: 624-625
       integrity: sha256-6408f5bae95ab8b6616b914af3221a6fa9fa09a418da7cae9b97e604606e0a87
     - generated-by: Claude Opus 5.5
-      lines: 612-613
+      lines: 626-627
       integrity: sha256-3c5db10fec579996bcbf47c2e2407307d77debe7040ce55dcf040bf10ebfbd6c
     - generated-by: Claude Opus 5
-      lines: 614-619
+      lines: 628-633
       integrity: sha256-ed59d626e2447ceb23bb318040fdcf78c8dbd330ede7fe5d12d51cd37ab790e0
     - generated-by: Claude Opus 5.5
-      lines: 620
+      lines: 634
       integrity: sha256-f071f63ccf8c351a8d293d723665923e3ba40f5a0277a8e2894412919c6455e3
     - generated-by: Claude Opus 5
-      lines: 621-624
+      lines: 635-638
       integrity: sha256-1c320eaa1d455c686c070b0f6ec3cb5a0148458884805f3dcb683bdd0abaad2e
     - generated-by: Claude Opus 5.5
-      lines: 626-629
+      lines: 640-643
       integrity: sha256-abdd6a68620fa37aaa940b32f6a0e7ad715df7aa18d12038046c6e74ace54bdb
     - generated-by: Claude Opus 5
-      lines: 631-633
+      lines: 645-647
       integrity: sha256-8d1143d4d9139c1f7599d9fb8babff87265242b40771afb5b9a73e40e8e52f08
     - generated-by: Claude Opus 5.5
-      lines: 634
+      lines: 648
       integrity: sha256-cc42fc1101bcd72e1c77f5346842b724a7afbe1de1975062ad8c3461b3ce4dc9
     - generated-by: Claude Opus 5
-      lines: 635-646
+      lines: 649-660
       integrity: sha256-2fa8c3d756a33445cddde2e9a3af2d697935d4fb4c653d029d76b0c56e987bab
   owner:
     - "@hawkeyexl"

@@ -5,41 +5,20 @@
  * every rule as a schema keyword, links meta's fix page, and prefixes each
  * message with the JSON Pointer of the entry, `(root)` for a finding about no
  * entry. This renderer replaces those three with the cite rule's own
- * description, a link to its row of the citations reference, and the message
+ * description, a link to its section of the cite fix page, and the message
  * the github annotation carries, which names the citation the pointer only
- * numbered. A message is no part of a fingerprint, so the baseline is
- * unaffected.
+ * numbered. Each result also carries the rule's guidance, in its message and
+ * in `properties.guidance`. A message is no part of a fingerprint, so the
+ * baseline is unaffected.
  */
-import { renderSarif, type ValidationResult } from "../../meta/index.js";
+import { renderSarif, type FieldError, type ValidationResult } from "../../meta/index.js";
+import { guidanceLines } from "../../shared/guidance.js";
 import { errorSite } from "../core/adapt.js";
-import { RULE_ID_PREFIX, isCiteRule } from "../core/severity.js";
-import type { CheckRun, CiteRule } from "../types.js";
+import { RULE_ID_PREFIX, guidanceFor, isCiteRule } from "../core/severity.js";
+import type { CheckRun, CitationFinding } from "../types.js";
 import { findingMessage } from "./github.js";
 
 const INFORMATION_URI = "https://hawkeyexl.github.io/manni/cite/";
-
-/** The citations reference, whose rule tables anchor each row by rule name. */
-const RULES_URI = "https://hawkeyexl.github.io/manni/cite/reference/citations/";
-
-/** What each rule is, as the citations reference's tables say it. */
-const RULE_DESCRIPTIONS: Readonly<Record<CiteRule, string>> = {
-  "source-moved": "The cited source lines moved to one other place in the file.",
-  "source-moved-ambiguous": "The cited source lines now match at several places in the file.",
-  "source-changed": "The cited source lines changed since the citation pinned them.",
-  "source-never-true": "The pin never matched the source at the recorded commit.",
-  "source-missing": "The cited source file is not tracked under the root, or cannot be decrypted.",
-  "claim-moved": "The cited sentence moved to other lines of the page.",
-  "claim-moved-ambiguous": "The cited sentence now appears at several places on the page.",
-  "claim-reanchored": "The cited sentence's words are unchanged since the claim's baseline, and only its layout moved.",
-  "claim-changed": "The cited sentence was edited since the citation pinned it.",
-  "marker-orphan": "A marker names an id no citation has.",
-  "marker-invalid": "A marker is malformed, or the page has too many markers.",
-  "marker-repeated": "Two markers name the same citation id.",
-  "marker-misplaced": "A marker line sits inside the paragraph it anchors, and splits it.",
-  "anchor-invalid": "A citation's anchor cannot work.",
-  "entry-invalid": "A citation entry is malformed.",
-  "quote-drift": "A quoted block no longer reproduces its source.",
-};
 
 /**
  * The label meta's reporters put before a message: `(root) ` for a finding
@@ -51,6 +30,7 @@ export const ENTRY_LABEL = /^(?:\(root\)|\/citations\/\d+) /;
 export interface SarifRule {
   id: string;
   shortDescription: { text: string };
+  fullDescription?: { text: string };
   helpUri?: string;
 }
 
@@ -58,17 +38,22 @@ export interface SarifRule {
 export interface SarifLog {
   runs: {
     tool: { driver: { informationUri: string; rules: SarifRule[] } };
-    results: { ruleId: string; message: { text: string } }[];
+    results: { ruleId: string; message: { text: string }; properties?: Record<string, unknown> }[];
   }[];
 }
 
 /**
- * The adapted results with each message rewritten as the github annotation
- * says it. An error is paired with its finding by rule, entry, line and
- * message, as the baseline split pairs them; the baseline has already
- * dropped the errors it forgives.
+ * The adapted results with each message rewritten by `compose`, the github
+ * annotation's message unless told otherwise. An error is paired with its
+ * finding by rule, entry, line and message, as the baseline split pairs them;
+ * the baseline has already dropped the errors it forgives. `paired` hears
+ * each rewritten error with the finding it came from.
  */
-export function withFindingMessages(run: CheckRun): ValidationResult[] {
+export function withFindingMessages(
+  run: CheckRun,
+  compose: (finding: CitationFinding) => string = findingMessage,
+  paired?: (error: FieldError, finding: CitationFinding) => void,
+): ValidationResult[] {
   return run.results.map((result) => {
     const page = run.pages.find((p) => p.file === result.file);
     if (page === undefined) return result;
@@ -80,24 +65,44 @@ export function withFindingMessages(run: CheckRun): ValidationResult[] {
           f.message === error.message &&
           (errorSite(f).line ?? null) === (error.line ?? null),
       );
-      return finding === undefined ? error : { ...error, message: findingMessage(finding) };
+      if (finding === undefined) return error;
+      const rewritten = { ...error, message: compose(finding) };
+      paired?.(rewritten, finding);
+      return rewritten;
     });
     return { ...result, errors };
   });
 }
 
-/** A rule as the citation tool describes it. */
+/** A rule as the citation tool describes it, linked to its section of the fix page. */
 function describe(rule: SarifRule): SarifRule {
   const name = rule.id.slice(RULE_ID_PREFIX.length + 1);
   if (!isCiteRule(name)) return rule;
-  return { id: rule.id, shortDescription: { text: RULE_DESCRIPTIONS[name] }, helpUri: `${RULES_URI}#${name}` };
+  const { description, guide } = guidanceFor(name);
+  const text = description ?? "";
+  return {
+    id: rule.id,
+    shortDescription: { text },
+    fullDescription: { text },
+    ...(guide === null ? {} : { helpUri: guide }),
+  };
 }
 
 export function renderCheckSarif(run: CheckRun, opts: { onNotice?: (message: string) => void } = {}): string {
+  const origin = new Map<FieldError, CitationFinding>();
+  const results = withFindingMessages(
+    run,
+    (finding) => [findingMessage(finding), ...guidanceLines(finding.guidance)].join("\n"),
+    (error, finding) => origin.set(error, finding),
+  );
   const log = JSON.parse(
-    renderSarif(withFindingMessages(run), {
+    renderSarif(results, {
       frame: run.frame,
       ...(opts.onNotice === undefined ? {} : { onNotice: opts.onNotice }),
+      resultProperties: (error) => {
+        const guidance = origin.get(error)?.guidance;
+        return guidance == null ? undefined : { guidance };
+      },
     }),
   ) as SarifLog;
   for (const sarifRun of log.runs) {

@@ -27,10 +27,13 @@ docs/src/content/docs/meta/reference/schemas/passo-uno-seven-action.mdx:
       lines: 29-30
       integrity: sha256-111e28d22ca5b54c74688ce0acda8e4e07cfff8859f0c7560fe8d09cdcefe3bc
     - generated-by: Claude Opus 5.5
-      lines: 32-88
-      integrity: sha256-97bb0b469fe4d97c4540713d9ab256f21a34fd26436097fd6248c338a26a71b4
+      lines: 32-75
+      integrity: sha256-2cf9f412ef7cce2543621279ad071dc075c984a9bdabe0217b62842f740ffc0a
     - generated-by: Claude Opus 5.5
-      lines: 93-96
+      lines: 79-90
+      integrity: sha256-04842d449a281f29690f88664bbf1dc8c39f42ffec10a737d1bde8078b1cfb33
+    - generated-by: Claude Opus 5.5
+      lines: 95-98
       integrity: sha256-0b98c1b56531a7de5fdcecc3c60ee2755d9e6b5a8aa6df67d54df43682987111
   owner:
     - "@hawkeyexl"

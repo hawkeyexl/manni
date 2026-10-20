@@ -11,6 +11,7 @@
  */
 import type { CollectionConfig } from "../shared/collections.js";
 import type { ConfigFile } from "../shared/config-file.js";
+import type { Guidance } from "../shared/guidance.js";
 import type { Severity } from "../shared/severity.js";
 import type { ToolsConfig } from "../shared/tools.js";
 
@@ -500,7 +501,16 @@ export interface TermFinding {
   /** `manni:term/<rule>` from `check`; `manni:term/prose/<Style.Rule>` from `lint`. */
   ruleId: string;
   severity: Severity;
+  /** What happened, then what to do about it. */
   message: string;
+  /**
+   * A `check` finding's message as 4.13 spelled it, before any advice. The
+   * baseline fingerprint reads it, so rewording the advice moves no
+   * baseline. Absent when the message is the whole of it. Never printed.
+   */
+  key?: string;
+  /** The rule behind the finding: what it means, and where to read more. */
+  guidance?: Guidance | null;
   file: string;
   line?: number;
   /** The entry the finding is about, when it is about one. */

@@ -8,6 +8,7 @@
  */
 import { existsSync } from "node:fs";
 import { resolve, relative } from "node:path";
+import { notFoundMessage } from "../../meta/internal.js";
 import { palette } from "../../shared/color.js";
 import type { ColorOptions } from "../reporters/pretty.js";
 import { DocevalsError } from "../types.js";
@@ -57,7 +58,7 @@ export function runReview(
   }
   const absPath = resolve(cwd, file);
   if (!existsSync(absPath)) {
-    throw new DocevalsError(`Page not found: ${absPath}`);
+    throw new DocevalsError(notFoundMessage([file]));
   }
   const page = readPage(absPath, cwd);
   const entry: ReviewEntry = {

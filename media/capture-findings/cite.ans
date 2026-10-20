@@ -1,0 +1,7 @@
+[31m✗[39m pages/source-changed.md
+    [31m✗[39m [36mfetch-timeout[39m   :15 current   src/changed.ts:2 changed
+      Check the sentence against the source, then run manni cite update --accept --only fetch-timeout.
+      [2mmanni:cite source-changed: The cited lines are not what they were.[22m
+      [2mGuide: https://hawkeyexl.github.io/manni/cite/fix/#source-changed[22m
+
+[31m1 file checked, 0 passed, 1 failed, 1 finding[39m

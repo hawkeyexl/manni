@@ -31,7 +31,7 @@ sample-questions:
 graph:
   label: Get started
   type: learning
-last-updated: 2026-09-24
+last-updated: 2026-10-20
 tags:
   - citation
   - tutorial
@@ -234,6 +234,10 @@ entry the page has, its path follows the page on the page's own line.
 | `<source end>` | The source as the entry spelled it, then its status: `lib/limits.ts:2 current`, `~AQm4…:5 changed since 3f9c2a1, 1 commit`. |
 | `<manifest>` | Where the entry is kept, as in `docs-citations.yaml:6`, when the page's entries come from more than one place. Empty for a frontmatter entry. |
 
+Under a row with a finding, one line says what to do. Two dim lines follow:
+the rule with what it means, and a Guide link to its section of
+[Fix a failing check](/manni/cite/fix/).
+
 {/* cite summary-counts */}
 {/* cite summary-green */}
 {/* cite check-exit-code */}
@@ -256,6 +260,9 @@ manni cite check
 ```
 ✗ docs/limits.md
     ✗ fetch-timeout   :16-17 current   lib/limits.ts:2 changed since 9265563, 1 commit
+      Check the sentence against the source, then run manni cite update --accept --only fetch-timeout.
+      manni:cite source-changed: The cited lines are not what they were.
+      Guide: https://hawkeyexl.github.io/manni/cite/fix/#source-changed
 
 1 file checked, 0 passed, 1 failed, 1 finding
 ```
@@ -277,6 +284,9 @@ manni cite check --show-diff
 ```
 ✗ docs/limits.md
     ✗ fetch-timeout   :16-17 current   lib/limits.ts:2 changed since 9265563, 1 commit
+      Check the sentence against the source, then run manni cite update --accept --only fetch-timeout.
+      manni:cite source-changed: The cited lines are not what they were.
+      Guide: https://hawkeyexl.github.io/manni/cite/fix/#source-changed
         raise fetch timeout to 30s
         diff --git a/lib/limits.ts b/lib/limits.ts
         index 145123e..b40d339 100644
@@ -340,6 +350,9 @@ manni cite check
 ```
 ⚠ docs/limits.md
     ↕ fetch-timeout   :16-17 current   lib/limits.ts:2 moved -> lib/limits.ts:4
+      Run manni cite update.
+      manni:cite source-moved: The cited lines are intact, at a different line number.
+      Guide: https://hawkeyexl.github.io/manni/cite/fix/#source-moved
 
 1 file checked, 1 passed, 0 failed, 1 finding (1 warning)
 ```
@@ -403,6 +416,9 @@ two lines further down, so nothing drifted:
 ```
 ℹ docs/limits.md
     ℹ fetch-timeout   :16-17 moved -> :18-19   lib/limits.ts:4 current
+      Run manni cite update.
+      manni:cite claim-moved: The pinned page text sits at a different line.
+      Guide: https://hawkeyexl.github.io/manni/cite/fix/#claim-moved
 
 1 file checked, 1 passed, 0 failed, 1 finding (1 notice)
 ```
@@ -423,6 +439,9 @@ docs/limits.md: fetch-timeout claim lines 16-17 -> 18-19 (moved)
 ```
 ⚠ docs/limits.md
     ↕ fetch-timeout   :18-19 changed   lib/limits.ts:4 current
+      Check it still matches the source, then run manni cite update --accept --only fetch-timeout.
+      manni:cite claim-changed: The sentence was edited since it was pinned.
+      Guide: https://hawkeyexl.github.io/manni/cite/fix/#claim-changed
 
 1 file checked, 1 passed, 0 failed, 1 finding (1 warning)
 ```

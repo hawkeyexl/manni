@@ -358,6 +358,88 @@ const PUBLISHED_PATHS: readonly (readonly [string, string])[] = [
   ["ai-context/1.1.0.json", "manni:ai-context:1.1.0"],
 ];
 
+/** Where each built-in's reference page lives on the docs site. */
+const GUIDE_BASE = "https://hawkeyexl.github.io/manni/meta/reference/schemas/";
+
+/**
+ * Built-in id → its reference page's slug, for a finding's `Guide:` line
+ * (proposal 0089).
+ *
+ * Written out for the reason `PUBLISHED_PATHS` is: the slug does not follow
+ * from the id (`dcmi:elements:1.1` is `dcmi-elements`, `tgdp:templates:1.0`
+ * is `tgdp-templates-1-0`), and a strict overlay shares its vocabulary's
+ * page. `test/builtin-docs.test.ts` holds each entry to the page whose body
+ * claims the id.
+ */
+const GUIDE_SLUGS: ReadonlyMap<string, string> = new Map([
+  ["agentskills:skill:1.0", "agentskills-skill"],
+  ["anthropic:claude-skill:2.1", "anthropic-claude-skill"],
+  ["anthropic:claude-subagent:2.1", "anthropic-claude-subagent"],
+  ["antora:page:3.1", "antora-page"],
+  ["astro:starlight:0.41", "astro-starlight"],
+  ["dcmi:elements:1.1", "dcmi-elements"],
+  ["diataxis:diataxis:1.0", "diataxis"],
+  ["docusaurus:blog:3.10", "docusaurus-blog"],
+  ["docusaurus:docs:3.10", "docusaurus-docs"],
+  ["docusaurus:pages:3.10", "docusaurus-pages"],
+  ["google:okf:0.1", "google-okf"],
+  ["hugo:page:0.165", "hugo-page"],
+  ["jekyll:page:4.4", "jekyll-page"],
+  ["manni:ai-context:1.0.0", "manni-ai-context"],
+  ["manni:ai-context:1.1.0", "manni-ai-context"],
+  ["manni:ai-context-strict:1.0.0", "manni-ai-context"],
+  ["manni:artifact-evals:1.0.0", "manni-artifact-evals"],
+  ["manni:artifact-evals:1.1.0", "manni-artifact-evals"],
+  ["manni:artifact-evals-strict:1.0.0", "manni-artifact-evals"],
+  ["manni:artifact-evals-strict:1.1.0", "manni-artifact-evals"],
+  ["manni:audience:1.0.0", "manni-audience"],
+  ["manni:audience-strict:1.0.0", "manni-audience"],
+  ["manni:citations:1.0.0", "manni-citations"],
+  ["manni:citations-strict:1.0.0", "manni-citations"],
+  ["manni:core:1.0.0", "manni-core"],
+  ["manni:core-strict:1.0.0", "manni-core"],
+  ["manni:evals:1.0.0", "manni-evals"],
+  ["manni:evals-strict:1.0.0", "manni-evals"],
+  ["manni:graph:1.0.0", "manni-graph"],
+  ["manni:graph-strict:1.0.0", "manni-graph"],
+  ["manni:lifecycle:1.0.0", "manni-lifecycle"],
+  ["manni:lifecycle-strict:1.0.0", "manni-lifecycle"],
+  ["manni:stewardship:1.0.0", "manni-stewardship"],
+  ["manni:stewardship:1.1.0", "manni-stewardship"],
+  ["manni:stewardship-strict:1.0.0", "manni-stewardship"],
+  ["manni:stewardship-strict:1.1.0", "manni-stewardship"],
+  ["manni:structure:1.0.0", "manni-structure"],
+  ["manni:structure-strict:1.0.0", "manni-structure"],
+  ["manni:terminology:1.0.0", "manni-terminology"],
+  ["manni:terminology:1.1.0", "manni-terminology"],
+  ["manni:terminology:1.2.0", "manni-terminology"],
+  ["manni:terminology-strict:1.0.0", "manni-terminology"],
+  ["manni:terminology-strict:1.1.0", "manni-terminology"],
+  ["manni:terminology-strict:1.2.0", "manni-terminology"],
+  ["microsoft:learn:1.0", "microsoft-learn"],
+  ["mkdocs:material:9.7", "mkdocs-material"],
+  ["myst:frontmatter:1.10", "myst-frontmatter"],
+  ["oasis:dita-metadata:1.3", "oasis-dita-metadata"],
+  ["ogp:article:1.0", "ogp-article"],
+  ["passo-uno:seven-action:1.0", "passo-uno-seven-action"],
+  ["sphinx:docinfo:9.1", "sphinx-docinfo"],
+  ["tgdp:templates:1.0", "tgdp-templates-1-0"],
+  ["tgdp:templates:1.1", "tgdp-templates"],
+  ["tgdp:templates-strict:1.1", "tgdp-templates"],
+  ["vitepress:page:1.6", "vitepress-page"],
+  ["x:cards:1.0", "x-cards"],
+]);
+
+/**
+ * The reference page of the built-in `ref` names, by its id or either
+ * published URL, or `null` for any other schema.
+ */
+export function builtinGuide(ref: string): string | null {
+  const id = PUBLISHED_ALIAS.get(ref) ?? LEGACY_PUBLISHED_ALIAS.get(ref) ?? ref;
+  const slug = GUIDE_SLUGS.get(id);
+  return slug === undefined ? null : `${GUIDE_BASE}${slug}/`;
+}
+
 /** Published URL → built-in id, under the current base. */
 const PUBLISHED_ALIAS: ReadonlyMap<string, string> = new Map(
   PUBLISHED_PATHS.map(([path, id]) => [`${PUBLISHED_BASE}${path}`, id]),
@@ -1174,6 +1256,30 @@ export function unknownSchemaMessage(
   return `Unknown schema "${ref}". manni meta schemas lists the built-in ids. Registered by meta.register: ${ids.length > 0 ? ids.join(", ") : "none"}.`;
 }
 
+/**
+ * An id nothing answers to, carrying the id, so a caller that knows a page's
+ * own `$schema` named it can say so to the page's author.
+ */
+export class UnknownSchemaError extends DocmetaError {
+  constructor(
+    readonly ref: string,
+    registered: RegisteredSchemas | undefined,
+  ) {
+    super(unknownSchemaMessage(ref, registered));
+  }
+}
+
+/**
+ * The message for a schema a page's own `$schema` chose that failed to load,
+ * as its author reads it (proposal 0089). An unknown id is said in their
+ * terms. The advice for whoever owns the config lives on the fix page.
+ */
+export function documentSchemaMessage(err: DocmetaError): string {
+  return err instanceof UnknownSchemaError
+    ? `$schema names "${err.ref}", which this repository does not define. Use an id from manni meta schemas, or remove $schema.`
+    : err.message;
+}
+
 /** Load and return the JSON Schema object for a reference. */
 export async function loadSchema(
   ref: string,
@@ -1201,7 +1307,7 @@ export async function loadSchema(
 
   if (kind === "builtin") {
     const schema = BUILTINS.get(ref);
-    if (!schema) throw new DocmetaError(unknownSchemaMessage(ref, options.registered));
+    if (!schema) throw new UnknownSchemaError(ref, options.registered);
     return schema;
   }
 

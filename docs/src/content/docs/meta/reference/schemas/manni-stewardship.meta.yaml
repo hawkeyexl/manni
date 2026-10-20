@@ -27,13 +27,22 @@ docs/src/content/docs/meta/reference/schemas/manni-stewardship.mdx:
       lines: 23-24
       integrity: sha256-e35de401b3128816c9416d0bbf980ca3a437ccbab4b8108139bbec2b40458165
     - generated-by: Claude Opus 5.5
-      lines: 30-234
-      integrity: sha256-1a8ae803f5cd078840ddfc9849f4ea366b108b9b9296d07c1dccb0dfafa530fd
+      lines: 30-135
+      integrity: sha256-8020367cb0e4ef918e950d71771aabe23673c2263467b9b9b4a80cbb290e0ad6
     - generated-by: Claude Opus 5.5
-      lines: 247-291
-      integrity: sha256-8d6990d14bd666d60a35c2a22700390f48b757a50e8b2ad5cc7396c4909cb793
+      lines: 139-236
+      integrity: sha256-7b7117f48341db9d63bd0ceb22d6fea009e0eb21ff031f2e79992543ea2869fe
     - generated-by: Claude Opus 5.5
-      lines: 298-302
+      lines: 249-273
+      integrity: sha256-1da54b4ebeae02d2c39f7547ca46ffccc7af8c72d6f30b23b7aecaf53270bc2c
+    - generated-by: Claude Opus 5.5
+      lines: 276
+      integrity: sha256-a36a2dc8ddfdc29e5307280af0b83fa89e8120057836701bf681ef22218bf2ff
+    - generated-by: Claude Opus 5.5
+      lines: 279-297
+      integrity: sha256-8f2d0eeccc144273f9d1ab2637df8ef4f2274eff9c83d3caac5092ad3358cdec
+    - generated-by: Claude Opus 5.5
+      lines: 304-308
       integrity: sha256-6a664097b1d85ebdb8f6ed99f1646022638d6b5e138a82030b8afc3075b5a63d
   owner:
     - "@hawkeyexl"

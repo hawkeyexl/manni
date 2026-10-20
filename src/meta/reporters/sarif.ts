@@ -37,6 +37,7 @@ import { findGitRoot } from "../core/config.js";
 // `artifactLocation.uri` naming a file that does not exist.
 import { STDIN_LABEL } from "../core/load-files.js";
 import { RESERVED_RULES, fieldLabel, ruleIdFor } from "./rule-id.js";
+import { guidanceLines } from "../../shared/guidance.js";
 
 /** Where a consumer is sent to read about docmeta itself. */
 const INFORMATION_URI = "https://hawkeyexl.github.io/manni/meta/";
@@ -223,14 +224,22 @@ export function renderSarif(
         continue;
       }
       const ruleId = ruleIdFor(e, frame);
-      const properties = resultProperties?.(e, r);
+      const hooked = resultProperties?.(e, r);
+      const guidance = e.guidance ?? undefined;
+      const properties =
+        guidance === undefined && hooked === undefined
+          ? undefined
+          : { ...(guidance === undefined ? {} : { guidance }), ...hooked };
       if (!rules.has(ruleId)) {
         rules.set(ruleId, {
           id: ruleId,
           shortDescription: {
             text: describeRule(ruleId, e, canonicalSchemaRef(e.schema, frame)),
           },
-          helpUri: HELP_URI,
+          // The schema's own page when it has one (proposal 0089). A meta
+          // rule spans every property of a schema, so it gets no
+          // `fullDescription`.
+          helpUri: guidance?.guide ?? HELP_URI,
         });
       }
       sarifResults.push({
@@ -240,7 +249,9 @@ export function renderSarif(
         // `warning` and `note` levels are for a sibling tool's advisory
         // findings (#78).
         level: sarifLevel(e),
-        message: { text: `${fieldLabel(e.instancePath)} ${e.message}` },
+        message: {
+          text: [`${fieldLabel(e.instancePath)} ${e.message}`, ...guidanceLines(e.guidance)].join("\n"),
+        },
         locations: [
           {
             physicalLocation: {

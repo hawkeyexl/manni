@@ -31,7 +31,7 @@ sample-questions:
 graph:
   label: Govern a shared schema across repos
   type: task
-last-updated: 2026-09-27
+last-updated: 2026-10-20
 tags:
   - schema-governance
   - vendoring
@@ -335,6 +335,8 @@ like a bypass:
 ✓ contributed.md
 ✗ honest.md
     (root)  must have required property 'type'  (line 1)  [google:okf:0.1]
+      google:okf:0.1 type: A short string identifying the kind of concept.
+      Guide: https://hawkeyexl.github.io/manni/meta/reference/schemas/google-okf/
 ```
 
 Note what this walks past. `schemas:`, the vendored copy, and the integrity pin
@@ -358,9 +360,12 @@ other document is validated exactly as before:
 
 ```
 ✗ contributed.md
-    Refusing the "$schema" URL "https://example.invalid/permissive.json":
-    schemaTrust.documentRefs is "local" …
+    (root)  $schema names the URL "https://example.invalid/permissive.json", and this repository accepts only built-in ids and schema files here. Use one of those, or remove $schema.  [(parse)]
 ```
+
+The message speaks to the page's author, who can act on the page but not on
+the config. The advice for whoever owns the config is on the
+[fix page](/manni/meta/fix/#your-pages-schema-is-refused).
 
 {/* cite refused-document-ref-is-a-failing-file */}
 It is a **failing file** and exit 1, rather than a stopped run. So with

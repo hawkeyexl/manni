@@ -18,7 +18,7 @@ sample-questions:
 graph:
   label: "Jekyll page schema"
   type: reference
-last-updated: 2026-09-26
+last-updated: 2026-10-20
 resource: https://hawkeyexl.github.io/manni/schemas/jekyll/4.4.json
 tags:
   - jekyll
@@ -143,6 +143,8 @@ published: "false"
 ```text
 ✗ test/fixtures/platform/jekyll-bad-published.md
     /published  must be boolean  (line 3)  [jekyll:page:4.4]
+      jekyll:page:4.4 published: `false` keeps the document out of the generated site.
+      Guide: https://hawkeyexl.github.io/manni/meta/reference/schemas/jekyll-page/
 
 1 file checked, 0 passed, 1 failed, 1 error
 ```

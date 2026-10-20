@@ -2,13 +2,15 @@
  * GitHub workflow commands, one per finding:
  * `::error file=<file>,line=<n>,title=<ruleId>::<id or src> (<src>): <message>`
  * with `::warning` and `::notice` for the lower levels: the family scale is
- * GitHub's, so the level is the severity. Uses meta's escapes. A baselined
+ * GitHub's, so the level is the severity. The rule's guidance lines follow
+ * the message after `%0A`. Uses meta's escapes. A baselined
  * finding is not an annotation; a clean run is the empty string.
  */
 import {
   escapeWorkflowCommandMessage,
   escapeWorkflowCommandProperty,
 } from "../../meta/internal.js";
+import { guidanceLines } from "../../shared/guidance.js";
 import { errorSite } from "../core/adapt.js";
 import type { CheckRun, CitationFinding, CiteRule } from "../types.js";
 import { resultFor, splitBaselined } from "./pretty.js";
@@ -56,9 +58,8 @@ export function renderCheckGithub(run: CheckRun): string {
       const params = [`file=${escapeWorkflowCommandProperty(site.file ?? page.file)}`];
       if (site.line !== undefined) params.push(`line=${String(site.line)}`);
       params.push(`title=${escapeWorkflowCommandProperty(finding.ruleId)}`);
-      lines.push(
-        `::${finding.severity} ${params.join(",")}::${escapeWorkflowCommandMessage(findingMessage(finding))}`,
-      );
+      const message = [findingMessage(finding), ...guidanceLines(finding.guidance)].join("\n");
+      lines.push(`::${finding.severity} ${params.join(",")}::${escapeWorkflowCommandMessage(message)}`);
     }
   });
   return lines.join("\n");

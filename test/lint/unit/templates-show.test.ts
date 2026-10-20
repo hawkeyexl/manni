@@ -49,7 +49,7 @@ describe("runTemplateShow", () => {
       /^Unknown built-in template "tgdp:nope:1\.6"\. Available: /,
     );
     await expect(runTemplateShow({ ref: "./nope.yaml" })).rejects.toThrow(
-      'Template file not found: "./nope.yaml".',
+      'Template file not found: "./nope.yaml". Fix the path, or run manni lint templates to list the templates you can name.',
     );
     await expect(runTemplateShow({ ref: MULTI })).rejects.toThrow(
       /defines 2 templates; name one with a "#" fragment/,

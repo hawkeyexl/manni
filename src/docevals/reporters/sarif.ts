@@ -16,8 +16,9 @@
  *     difference between a finding someone acts on and one they dismiss.
  */
 import type { EngineReport } from "../core/engine.js";
-import type { EvalResult, Finding, Severity } from "../types.js";
+import { FIX_GUIDE, type EvalResult, type Finding, type Severity } from "../types.js";
 import { declaringEntry } from "./location.js";
+import { judgedLines, resultGuidance } from "./judged.js";
 
 const SARIF_SCHEMA =
   "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/main/sarif-2.1/schema/sarif-schema-2.1.0.json";
@@ -67,31 +68,76 @@ interface SarifRule {
   id: string;
   name: string;
   shortDescription: { text: string };
+  fullDescription?: { text: string };
+  helpUri: string;
   defaultConfiguration: { level: "error" | "warning" | "note" };
 }
+
+/**
+ * The `tool:regex` rules, which mean the same thing whichever eval reports
+ * them. Each is named for itself, so its name does not depend on which eval
+ * happened to report it first.
+ */
+const STATIC_RULES: Record<string, { short: string; full: string }> = {
+  "regex/found": {
+    short: "Text the eval forbids is present",
+    full: "The page contains text an eval forbids. The line is the first match.",
+  },
+  "regex/not-found": {
+    short: "Text the eval asks for is missing",
+    full: "The page lacks text an eval asks for.",
+  },
+  "regex/count": {
+    short: "Text matches a different number of times",
+    full: "The page matches an eval's pattern a different number of times than the eval asks. The line is the first match.",
+  },
+  "regex/unreadable-target": {
+    short: "The eval's target cannot be read",
+    full: "The file an eval reads cannot be read. The eval is at fault, not the page.",
+  },
+};
 
 export function renderSarif(report: EngineReport): string {
   const rules = new Map<string, SarifRule>();
   const results: unknown[] = [];
 
+  /** Declares a rule the first time it is reported. */
+  const declare = (
+    id: string,
+    evalName: string,
+    grader: string,
+    level: SarifRule["defaultConfiguration"]["level"],
+  ): void => {
+    if (rules.has(id)) return;
+    const fixed = STATIC_RULES[id];
+    rules.set(id, {
+      id,
+      name: fixed === undefined ? evalName : id,
+      shortDescription: {
+        text: fixed?.short ?? `manni docevals eval "${evalName}" (${grader})`,
+      },
+      ...(fixed === undefined ? {} : { fullDescription: { text: fixed.full } }),
+      helpUri: FIX_GUIDE,
+      defaultConfiguration: { level },
+    });
+  };
+
   for (const evalResult of report.evalResults) {
+    const guidance = resultGuidance(evalResult);
+    // The lines a reader sees, and the object a machine reads, on every
+    // result this eval reports.
+    const message = (lines: string[]) => ({ text: [...lines, ...guidance].join("\n") });
+    const properties =
+      evalResult.guidance == null ? {} : { properties: { guidance: evalResult.guidance } };
+
     for (const finding of evalResult.findings ?? []) {
       const id = ruleIdFor(finding);
       const level = levelFor(finding.severity);
-      if (!rules.has(id)) {
-        rules.set(id, {
-          id,
-          name: finding.evalName,
-          shortDescription: {
-            text: `manni docevals eval "${finding.evalName}" (${evalResult.grader})`,
-          },
-          defaultConfiguration: { level },
-        });
-      }
+      declare(id, finding.evalName, evalResult.grader, level);
       results.push({
         ruleId: id,
         level,
-        message: { text: finding.message },
+        message: message([finding.message]),
         locations: [
           {
             // A finding with a content line keeps it. One without lands on
@@ -108,6 +154,7 @@ export function renderSarif(report: EngineReport): string {
                 : entryLocation(evalResult),
           },
         ],
+        ...properties,
       });
     }
 
@@ -116,48 +163,36 @@ export function renderSarif(report: EngineReport): string {
     // clear" at the moment something actually went wrong.
     if (evalResult.outcome === "error") {
       const id = evalResult.evalName;
-      if (!rules.has(id)) {
-        rules.set(id, {
-          id,
-          name: evalResult.evalName,
-          shortDescription: {
-            text: `manni docevals eval "${evalResult.evalName}" (${evalResult.grader})`,
-          },
-          defaultConfiguration: { level: "error" },
-        });
-      }
+      declare(id, evalResult.evalName, evalResult.grader, "error");
       results.push({
         ruleId: id,
         level: "error",
-        message: { text: evalResult.skipReason ?? "eval errored" },
+        message: message([evalResult.skipReason ?? "eval errored"]),
         locations: [{ physicalLocation: entryLocation(evalResult) }],
+        ...properties,
       });
     }
 
     // A judged eval produces no `Finding`; without this its failure is absent
     // from the dashboard entirely, which reads as "the AI evals all passed".
-    if (evalResult.outcome === "fail" && evalResult.consensus) {
+    // An eval awaiting review is a warning, so the run that fails on it under
+    // --fail-on-review says why.
+    const judged = judgedLines(evalResult);
+    if (judged.length > 0) {
       const id = evalResult.evalName;
-      if (!rules.has(id)) {
-        rules.set(id, {
-          id,
-          name: evalResult.evalName,
-          shortDescription: {
-            text: `manni docevals eval "${evalResult.evalName}" (AI judge)`,
-          },
-          defaultConfiguration: { level: "error" },
-        });
-      }
-      const reasoning =
-        evalResult.consensus.runs.find((r) => r.verdict)?.verdict?.reasoning ??
-        "";
+      const level = evalResult.outcome === "fail" ? "error" : "warning";
+      declare(
+        id,
+        evalResult.evalName,
+        evalResult.grader === "ai" ? "AI judge" : evalResult.grader,
+        level,
+      );
       results.push({
         ruleId: id,
-        level: "error",
-        message: {
-          text: `AI judge: fail (confidence ${evalResult.consensus.meanConfidence.toFixed(2)}). ${reasoning}`.trim(),
-        },
+        level,
+        message: message(judged),
         locations: [{ physicalLocation: entryLocation(evalResult) }],
+        ...properties,
       });
     }
   }

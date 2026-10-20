@@ -30,7 +30,7 @@ sample-questions:
 graph:
   label: Consume results programmatically
   type: concept
-last-updated: 2026-09-21
+last-updated: 2026-10-20
 tags:
   - json
   - api
@@ -104,7 +104,13 @@ The object has a `summary` and a `results` array:
           "message": "must match format \"date-time\"",
           "keyword": "format",
           "subject": "date-time",
-          "line": 4
+          "line": 4,
+          "guidance": {
+            "id": "google:okf:0.1",
+            "rule": "timestamp",
+            "description": "ISO 8601 datetime of last meaningful change.",
+            "guide": "https://hawkeyexl.github.io/manni/meta/reference/schemas/google-okf/"
+          }
         }
       ]
     }
@@ -123,6 +129,7 @@ The fields:
   `instancePath`, a JSON Pointer to the field, or `""` for the document root. It
   also carries `message`, `keyword` and `subject`. Finally `line`, 1-based, when
   manni meta can locate it, and `col`, 1-based, when the format can supply one.
+  A schema finding ends with `guidance`, the schema's own words about the property.
 
 <Aside type="tip" title="Key on keyword, not on message">
 `message` is prose manni meta gets from Ajv, and an Ajv release can reword it.
