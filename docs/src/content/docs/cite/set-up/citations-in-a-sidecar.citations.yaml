@@ -233,6 +233,6 @@ docs/src/content/docs/cite/set-up/citations-in-a-sidecar.mdx:
         integrity: sha256-d15710a4fb1699556d70903c8a1b04996d6215b897187249a989f0f8202bad79
       source:
         file: src/cite/reporters/pretty.ts
-        lines: 396-399
+        lines: 399-402
         integrity: sha256-be4f3b638888dabcbbd4bc74e30b118dbd22e55f905de5ce1294adc81ea3bfe8
-        commit-sha: f4f8bc8842fc5ab412a82024d685c1821e4153fa
+        commit-sha: ea2e5c0c6721224316af600c049de880379df5aa
