@@ -72,7 +72,7 @@ docs/src/content/docs/meta/reference/api.mdx:
     - id: api-reporter-exports
       claim:
         lines: 359-390
-        integrity: sha256-3f595c5367578062a6acfaa686080e03131b3b33b868a199cb4164ba94360746
+        integrity: sha256-5623964245be3983cc67a40d69af6a6efbfe2f441dc60bfafa168b6683714a7c
       source:
         file: src/meta/index.ts
         lines: 215-252
@@ -225,7 +225,7 @@ docs/src/content/docs/meta/reference/api.mdx:
     - id: api-validation-engine-exports
       claim:
         lines: 79-88
-        integrity: sha256-f8c66b1df0fc7de306a0cd5be72afc8dc0401eee5023133e5c795a1b87bff86b
+        integrity: sha256-80e981c3a47880cd2ab34a53b8b25260b1e47a5f238a2200f055df9184de6084
       source:
         file: src/meta/index.ts
         lines: 35-52

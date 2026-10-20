@@ -171,9 +171,9 @@ docs/src/content/docs/cite/ci/index.mdx:
         integrity: sha256-04d2c73c9140efc478f6e41ff97952904423505763ee828965ad89b80bc7af40
       source:
         file: src/meta/reporters/junit.ts
-        lines: 84-109
-        integrity: sha256-8afde07dbddcf28444feae4b802ea3b35a570fd29317b0b2bc8776dff177d82b
-        commit-sha: 922dea44962f188cfa8119a67aa5c744ce824710
+        lines: 85-113
+        integrity: sha256-f2b1e3d42af7921b892c0fbe22f5c6343b290b683f1c703ed5abe51776f8139c
+        commit-sha: 6da83a6a149558ffb5468b62ecf2b2d9b768bbf4
     - id: github-one-command-per-finding
       claim:
         integrity: sha256-a7e6826166cb8f98389c63733932626cae1ad09c36b721aec1fec321e49529ac
