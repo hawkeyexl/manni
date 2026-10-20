@@ -143,15 +143,32 @@ function flatten(root: Record<string, unknown>, node: unknown, seen = new Set<un
   if (!isRecord(node) || seen.has(node)) return {};
   seen.add(node);
   const parts: Record<string, unknown>[] = [];
-  if (typeof node.$ref === "string" && node.$ref.startsWith("#/")) {
-    let at: unknown = root;
-    for (const raw of node.$ref.slice(2).split("/")) {
-      at = isRecord(at) ? at[raw.replace(/~1/g, "/").replace(/~0/g, "~")] : undefined;
-    }
-    parts.push(flatten(root, at, seen));
-  }
+  if (typeof node.$ref === "string") parts.push(flatten(root, localRef(root, node.$ref), seen));
   if (Array.isArray(node.allOf)) for (const entry of node.allOf) parts.push(flatten(root, entry, seen));
   return Object.assign({}, ...parts.reverse(), node) as Record<string, unknown>;
+}
+
+/** The node a local `#/…` pointer names, or `undefined` for any other `$ref`. */
+function localRef(root: Record<string, unknown>, ref: string): unknown {
+  if (!ref.startsWith("#/")) return undefined;
+  let at: unknown = root;
+  for (const raw of ref.slice(2).split("/")) {
+    at = isRecord(at) ? at[raw.replace(/~1/g, "/").replace(/~0/g, "~")] : undefined;
+  }
+  return at;
+}
+
+/**
+ * Every key `node` requires, through a local `$ref` and `allOf` as `flatten`
+ * folds them. `required` is a union across those, not an override.
+ */
+function requiredOf(root: Record<string, unknown>, node: unknown, seen = new Set<unknown>()): string[] {
+  if (!isRecord(node) || seen.has(node)) return [];
+  seen.add(node);
+  const own = Array.isArray(node.required) ? node.required.filter((r): r is string => typeof r === "string") : [];
+  const ref = typeof node.$ref === "string" ? requiredOf(root, localRef(root, node.$ref), seen) : [];
+  const all = Array.isArray(node.allOf) ? node.allOf.flatMap((e: unknown) => requiredOf(root, e, seen)) : [];
+  return [...own, ...ref, ...all];
 }
 
 function showProperty(
@@ -189,12 +206,7 @@ export async function runShowSchema(opts: ShowSchemaOptions): Promise<ShownSchem
     fileBase: cwd,
     ...(registered !== undefined && registered.size > 0 ? { registered } : {}),
   });
-  const allOf: unknown[] = Array.isArray(schema.allOf) ? (schema.allOf as unknown[]) : [];
-  const required = new Set(
-    [schema, ...allOf].flatMap((s) =>
-      isRecord(s) && Array.isArray(s.required) ? s.required.filter((r): r is string => typeof r === "string") : [],
-    ),
-  );
+  const required = new Set(requiredOf(schema, schema));
   const properties = isRecord(schema.properties) ? schema.properties : {};
   return {
     id: typeof schema.$id === "string" ? schema.$id : opts.ref,
