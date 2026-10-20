@@ -59,11 +59,11 @@ const BIN = join("dist", "cli.js");
  * pins and took 31.1s. Two minutes is about four times the slowest of those,
  * which leaves room for a cold runner and a growing corpus.
  *
- * It still fits the job's budget. `release.yml` runs on `timeout-minutes: 20`
- * and spends up to ten of them polling npm after the publish, against a
- * release step that reached that poll five minutes in, so about four minutes
- * are spare. Two minutes of hang-detection leaves half of that. A longer
- * bound would eat it, and a cancelled job reports nothing at all.
+ * It fits the job's budget with room to spare. `release.yml` runs the release
+ * job on `timeout-minutes: 20`, and since the tests and the npm wait moved to
+ * jobs of their own, it reaches the publish in about two minutes. A cancelled
+ * job reports nothing at all, so the bound still matters: a hung git call
+ * should fail this step, not run the job out.
  *
  * `release-sync-versions.mjs` has no bound and keeps none here. It rewrites
  * files and talks to no other process, so it does not hang the way a git
