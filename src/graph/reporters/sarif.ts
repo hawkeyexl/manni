@@ -23,8 +23,7 @@ import type { CheckReport } from "../commands/check.js";
 import type { CheckFinding } from "../core/shacl.js";
 
 const SARIF_VERSION = "2.1.0";
-const SARIF_SCHEMA =
-  "https://docs.oasis-open.org/sarif/sarif/v2.1.0/errata01/os/schemas/sarif-schema-2.1.0.json";
+const SARIF_SCHEMA = "https://json.schemastore.org/sarif-2.1.0.json";
 const INFORMATION_URI = "https://github.com/hawkeyexl/manni";
 
 type SarifLevel = "error" | "warning" | "note";
