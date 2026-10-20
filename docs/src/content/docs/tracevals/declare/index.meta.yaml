@@ -20,8 +20,17 @@ docs/src/content/docs/tracevals/declare/index.mdx:
       lines: 80
       integrity: sha256-6ca6eea69d1ecb3ef1eeb081929787d797a60ebc90618720919b82a6b68f00dc
     - generated-by: Claude Opus 5
-      lines: 81-201
-      integrity: sha256-6945b9c45c4e2f9acd697d99e3107f7cf3b47280ed57b7d2a3173bf3945e9b71
+      lines: 81-167
+      integrity: sha256-77db583fb69e31843d44a2f5c3aea441b1c3f03030e3d2768cae9219760638d5
+    - generated-by: Claude Opus 5
+      lines: 171
+      integrity: sha256-f1b901847390b0ed7e374e7c1e464ec17b46a427c487a5ad6cbd2906405083d5
+    - generated-by: Claude Opus 5
+      lines: 176-181
+      integrity: sha256-5ee69bf6306a6c4dc174576503ffb7c2c8289d5223cdf8e5e2b84d8d0e786e2d
+    - generated-by: Claude Opus 5
+      lines: 185-206
+      integrity: sha256-e249b6ac034279a41520376d5074cc5affe5f0aa0b9713d9fb8906d40ba8381a
   owner:
     - "@hawkeyexl"
   created: 2026-09-16

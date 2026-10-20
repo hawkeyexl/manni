@@ -59,28 +59,31 @@ docs/src/content/docs/tracevals/ci/exit-codes-and-reports.mdx:
       lines: 135-145
       integrity: sha256-7bc2a6ed44e922493c4107d5e7ea30eeb03348cac957416c6014625a681ac660
     - generated-by: Claude Opus 5.5
-      lines: 146-151
-      integrity: sha256-1e57ab14aab8c06b6ba428512ab98a93ce7cde64128eee2b2a3461fb650276dd
+      lines: 146-150
+      integrity: sha256-2ba13b70c6a7393ec79bb1d08ab6684b051ba24cfbd7c8f33764d38beccac4a6
     - generated-by: Claude Opus 5
-      lines: 153-166
+      lines: 152-165
       integrity: sha256-45ee395facfb3914779aa393f562a77fa1d2af055bd2fb6d892f6ad6cbcea336
     - generated-by: Claude Opus 5.5
-      lines: 167-171
-      integrity: sha256-ed91eeeacc73e4ec75d4fddbb8d9d2d6fefce22e149b48acef67d8565d0d0d4e
+      lines: 166
+      integrity: sha256-0a27064f4e42cce942337c8585ec3d7c16bc62de1f2cb364d68f0499f39e1ab5
+    - generated-by: Claude Opus 5.5
+      lines: 168-170
+      integrity: sha256-c51f39727c800d5e3d709387594e72fa80657440d518fe3b221abd7dd7c44e93
     - generated-by: Claude Opus 5
-      lines: 173-196
+      lines: 183-206
       integrity: sha256-eca93786f62a5d3402e7fcd7b7a273f9e0528249965ebb827f476c077b464f91
     - generated-by: Claude Opus 5.5
-      lines: 198-200
+      lines: 208-210
       integrity: sha256-323dd1b5ebf73cda11e346917beacb66cf3b13370a0ec9526910d2579d97c748
     - generated-by: Claude Opus 5
-      lines: 202
+      lines: 217
       integrity: sha256-57ccab9f6537eb36b2e7f7625d6e05f0d1975014b58ec78f7e0160a77e96b3c7
     - generated-by: Claude Opus 5.5
-      lines: 203-204
-      integrity: sha256-10ffedeb15c25f5fa0ea762500100789ba83e64f6838dc3e3e416fd38e11c93c
+      lines: 219
+      integrity: sha256-b0a09b28b6461d9094edc4dd44238c205b647cf29869ce278c3db11bd256047e
     - generated-by: Claude Opus 5
-      lines: 205-226
+      lines: 220-241
       integrity: sha256-6032c6e69807ebbcfc4d736242cfafc1d0267f33e540ca16cc597efabb9d726f
   owner:
     - "@hawkeyexl"

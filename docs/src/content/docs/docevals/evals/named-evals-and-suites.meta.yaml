@@ -55,10 +55,10 @@ docs/src/content/docs/docevals/evals/named-evals-and-suites.mdx:
       lines: 190
       integrity: sha256-82c2ef9a007ea7155257af71846b3e27ae97fd75bd75612c9142d84752a917fb
     - generated-by: Claude Opus 5
-      lines: 191
+      lines: 192
       integrity: sha256-c66fa13ecd00c5d7fcab1eca113d1e01f4c05dc95f3b732da6cf93d6ec8f11f5
     - generated-by: Claude Fable 5.1
-      lines: 196-201
+      lines: 200-205
       integrity: sha256-4fffed8cf206b595febcf4ff85d9319b8a8dbd526544ec6a1a7f2f2b329d74d7
   owner:
     - "@hawkeyexl"
