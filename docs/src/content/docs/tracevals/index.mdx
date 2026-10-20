@@ -28,7 +28,7 @@ tags:
   - adherence-checking
 action: understand
 risks: read-only
-last-updated: 2026-10-11
+last-updated: 2026-10-20
 ---
 
 import { Card, CardGrid, LinkCard, Aside } from '@astrojs/starlight/components';
@@ -97,7 +97,9 @@ npx @hawkeyexl/manni tracevals run ./session.jsonl --deterministic-only
 ```
   PASS   fix-bug › used-read
   FAIL   fix-bug › forbidden-tool
-         [error] tool Bash was used 1 time(s) but must not be
+         [error] tool Bash was used 1 time(s) but must not be. Redo the session work so it holds, or fix the eval if the artifact does not ask for this.
+         .claude/skills/fix-bug/SKILL.md forbidden-tool: The session never ran shell commands; this skill is edit-only.
+         Guide: https://hawkeyexl.github.io/manni/tracevals/triage/
   SKIP   CLAUDE.md › adheres-to-artifact (implicit)
          ai evals skipped (deterministic-only run)
 

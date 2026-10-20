@@ -22,8 +22,11 @@ import {
   renderQuestionSummary,
   type QuestionSummary,
 } from "./questions.js";
+import { palette } from "../../shared/color.js";
+import { guidanceLines } from "../../shared/guidance.js";
 import { renderCheckGithub } from "../reporters/github.js";
 import type { CheckFormat } from "../reporters/index.js";
+import { renderCheckSarif } from "../reporters/sarif.js";
 
 export interface CheckOptions {
   config?: string;
@@ -51,6 +54,11 @@ export interface CheckReport {
   shapes: string[];
   /** The question set's health (proposal 0087); absent when no question exists. */
   questions?: QuestionSummary;
+  /**
+   * The directory each finding's `docs` are labelled from, which SARIF
+   * resolves them against. Not printed in JSON, which labels pages as before.
+   */
+  root: string;
   exitCode: 0 | 1;
 }
 
@@ -73,18 +81,22 @@ export async function runCheck(opts: CheckOptions = {}): Promise<CheckReport> {
   // every other knob.
   const shapesInput =
     opts.shapes && opts.shapes.length > 0 ? opts.shapes : config.check.shapes;
-  const shapes =
+  // Each file keeps the spelling it was given, which a finding's guidance
+  // names when the file carries no header of its own.
+  const sources =
     shapesInput.length > 0
-      ? shapesInput.map((p) => resolve(cwd, p))
+      ? shapesInput.map((p) => ({ path: resolve(cwd, p), label: p }))
       : [bundledShapesPath(import.meta.url)];
+  const shapes = sources.map((s) => (typeof s === "string" ? s : s.path));
 
   // Pages read from where `build` labels them, and a vector sidecar from
   // beside the graph, as `export search` and `search` read them. Golden-set
   // files resolve from the config file's directory.
+  const root = documentBase(config, {}, cwd);
   const asked = await askSampleQuestions(
     store,
     config.check.questions,
-    documentBase(config, {}, cwd),
+    root,
     dirname(graphPath),
     {
       source: {
@@ -96,7 +108,7 @@ export async function runCheck(opts: CheckOptions = {}): Promise<CheckReport> {
     config.questionFiles,
     config.configDir,
   );
-  const findings = [...(await validateGraph(store, shapes)), ...asked.findings].sort(
+  const findings = [...(await validateGraph(store, sources)), ...asked.findings].sort(
     compareFindings,
   );
   const count = (severity: Severity): number =>
@@ -110,6 +122,7 @@ export async function runCheck(opts: CheckOptions = {}): Promise<CheckReport> {
     notices: count("notice"),
     shapes,
     ...(asked.summary ? { questions: asked.summary } : {}),
+    root,
     // Only an `error` fails the run; a warning and a notice are reported and
     // pass, as they were when they were called violations and warnings.
     exitCode: errors > 0 ? 1 : 0,
@@ -121,11 +134,16 @@ function plural(n: number, word: string): string {
   return `${String(n)} ${word}${n === 1 ? "" : "s"}`;
 }
 
-export function renderCheck(report: CheckReport, format: CheckFormat): string {
+export function renderCheck(
+  report: CheckReport,
+  format: CheckFormat,
+  opts: { color?: boolean } = {},
+): string {
   if (format === "json") {
-    const { exitCode: _exitCode, ...rest } = report;
+    const { exitCode: _exitCode, root: _root, ...rest } = report;
     return JSON.stringify(rest, null, 2);
   }
+  if (format === "sarif") return renderCheckSarif(report);
   const summary = report.questions ? renderQuestionSummary(report.questions) : [];
   if (format === "github") {
     // The summary is plain text after the annotations, which GitHub logs as is.
@@ -133,14 +151,15 @@ export function renderCheck(report: CheckReport, format: CheckFormat): string {
     if (summary.length === 0) return annotations;
     return [...(annotations === "" ? [] : [annotations, ""]), ...summary].join("\n");
   }
+  const c = palette(opts.color === true);
   const lines: string[] = [];
   for (const f of report.findings) {
-    const where = f.docs.length > 0 ? ` [${f.docs.join(", ")}]` : "";
-    lines.push(
-      `${f.severity}: ${compactIri(f.focusNode)}${
-        f.path ? ` ${compactIri(f.path)}` : ""
-      } — ${f.message}${where}`,
-    );
+    // The pages first: they are what the author edits. The node and the
+    // predicate follow, dim, for whoever reads the graph.
+    const pages = f.docs.length > 0 ? f.docs.join(", ") : "(no page)";
+    lines.push(`${f.severity}: ${pages}: ${f.message}`);
+    const at = `at ${compactIri(f.focusNode)}${f.path ? ` ${compactIri(f.path)}` : ""}`;
+    for (const line of [at, ...guidanceLines(f.guidance)]) lines.push(`  ${c.dim(line)}`);
   }
   if (report.findings.length > 0) lines.push("");
   if (summary.length > 0) lines.push(...summary, "");

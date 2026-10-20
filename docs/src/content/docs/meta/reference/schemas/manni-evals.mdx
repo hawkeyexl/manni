@@ -19,7 +19,7 @@ sample-questions:
 graph:
   label: "manni evals vocabulary"
   type: reference
-last-updated: 2026-09-27
+last-updated: 2026-10-20
 resource: https://hawkeyexl.github.io/manni/schemas/evals/1.0.0.json
 tags:
   - evals
@@ -220,13 +220,15 @@ eval-sute: how-to
 ```text
 $ manni meta validate page.md --no-config -s manni:core:1.0.0 -s manni:evals:1.0.0
 ✗ page.md
-    /eval-sute  boolean schema is false  (line 4)  [manni:evals:1.0.0]
+    /eval-sute  must not be present  (line 4)  [manni:evals:1.0.0]
+      manni:evals:1.0.0
+      Guide: https://hawkeyexl.github.io/manni/meta/reference/schemas/manni-evals/
 
 1 file checked, 0 passed, 1 failed, 1 error
 ```
 
-The exit code is 1. "Boolean schema is false" is how the reserved prefix
-reports a key it does not know.
+The exit code is 1. "Must not be present" is how the reserved prefix reports a
+key it does not know.
 
 ## Design decisions
 
@@ -324,7 +326,11 @@ evals:
 $ manni meta validate page.md --no-config -s manni:core:1.0.0 -s manni:evals:1.0.0 -s manni:evals-strict:1.0.0
 ✗ page.md
     /evals/0/success-exit-codes/1  must be <= 255  (line 9)  [manni:evals-strict:1.0.0]
+      manni:evals-strict:1.0.0 evals/success-exit-codes
+      Guide: https://hawkeyexl.github.io/manni/meta/reference/schemas/manni-evals/
     /eval-suite  must match pattern "^[a-z0-9][a-z0-9-]*$"  (line 4)  [manni:evals-strict:1.0.0]
+      manni:evals-strict:1.0.0 eval-suite: Strict requires a kebab suite name.
+      Guide: https://hawkeyexl.github.io/manni/meta/reference/schemas/manni-evals/
     /eval-suite  warning "eval-suite" is stored in the page; manni:evals:1.0.0 prefers external metadata, and --no-config leaves it no manifest.  (line 4)  [location:external]
     /evals  warning "evals" is stored in the page; manni:evals:1.0.0 prefers external metadata, and --no-config leaves it no manifest.  (line 5)  [location:external]
 

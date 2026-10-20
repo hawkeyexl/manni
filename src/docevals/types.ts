@@ -8,6 +8,7 @@
  */
 import { ToolError } from "../shared/errors.js";
 import type { Severity } from "../shared/severity.js";
+import type { Guidance } from "../shared/guidance.js";
 
 // The judge vocabulary is shared with the inference layer and is re-exported
 // here so manni docevals code and its consumers keep one import site. A second local
@@ -40,6 +41,9 @@ export type EvalType = "capability" | "regression";
  * affects exit codes.
  */
 export type { Severity };
+
+/** The page every docevals finding links to. */
+export const FIX_GUIDE = "https://hawkeyexl.github.io/manni/docevals/fix/";
 
 /** How an eval is graded. `tool:regex` is the built-in `tool:*` kind; `registerGrader` adds others. */
 export type GraderKind = "ai" | "command" | "human" | `tool:${string}`;
@@ -90,6 +94,12 @@ export interface EvalResult {
    * reports.
    */
   location?: { file: string; line?: number };
+  /**
+   * What the eval asks for (proposal 0089): `id` is the file that declares
+   * it, `rule` its name, `description` its assertion, and `guide` the fix
+   * page. Stamped centrally by the engine on every result, passing ones too.
+   */
+  guidance?: Guidance | null;
   outcome: "pass" | "fail" | "needs-review" | "skipped" | "error";
   /** Present for ai-graded evals. */
   consensus?: ConsensusResult;

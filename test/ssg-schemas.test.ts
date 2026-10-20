@@ -252,14 +252,14 @@ describe("vitepress:page:1.6", () => {
   it("reports a bad outline against outline itself, not the parent", async () => {
     // `outline` is the field most worth checking and the easiest to get wrong,
     // so its errors are held to the house shape: the specific complaint first,
-    // pointing at the key that is wrong, then Ajv's one summary line for the
-    // branch that failed. Nothing about the array branch, which this value
-    // plainly never took.
+    // pointing at the key that is wrong and listing the values that pass.
+    // Ajv's summary line for the failed branch is dropped (proposal 0089),
+    // and nothing is said about the array branch, which this value plainly
+    // never took.
     const r = await check("vitepress-bad-outline.md", [VITEPRESS]);
     expect(r.ok).toBe(false);
     expect(r.errors.map((e) => `${e.instancePath} ${e.message}`)).toEqual([
-      "/outline must be equal to one of the allowed values",
-      '/outline must match "else" schema',
+      '/outline must be one of: 1, 2, 3, 4, 5, 6, "deep", false',
     ]);
   });
 

@@ -576,3 +576,81 @@ describe("weight in the run's pass rate", () => {
     expect(failed.summary.fail).toBeGreaterThan(0);
   });
 });
+
+describe("guidance on every result (proposal 0089)", () => {
+  const GUIDE = "https://hawkeyexl.github.io/manni/tracevals/triage/";
+  const skillPath = "test/tracevals/fixtures/project/.claude/skills/fix-bug/SKILL.md";
+
+  it("stamps guidance on every result, passing ones included", async () => {
+    const report = await run();
+    expect(report.evalResults.some((r) => r.outcome === "pass")).toBe(true);
+    for (const r of report.evalResults) {
+      expect(r.guidance, `${r.evalName} has no guidance`).toBeDefined();
+      expect(r.guidance?.rule).toBe(r.evalName);
+      expect(r.guidance?.guide).toBe(GUIDE);
+    }
+  });
+
+  it("names the artifact as the cwd sees it, the eval as the rule, the assertion as the description", async () => {
+    const report = await run();
+    const forbidden = must(
+      report.evalResults.find((r) => r.evalName === "forbidden-tool"),
+      "the forbidden-tool result",
+    );
+    expect(forbidden.guidance).toEqual({
+      id: skillPath,
+      rule: "forbidden-tool",
+      description: "The session never ran shell commands; this skill is edit-only.",
+      guide: GUIDE,
+    });
+  });
+
+  it("describes the implicit eval with the fixed whole-artifact sentence", async () => {
+    const report = await run();
+    const implicit = report.evalResults.filter((r) => r.implicit);
+    expect(implicit.length).toBeGreaterThan(0);
+    for (const r of implicit) {
+      expect(r.guidance?.description).toBe(
+        "The session follows every instruction in this artifact.",
+      );
+    }
+  });
+
+  it("gives an eval without an assertion a null description", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "manni-tracevals-engine-guidance-"));
+    const skill = join(dir, ".claude", "skills", "fix-bug");
+    await mkdir(skill, { recursive: true });
+    await writeFile(
+      join(skill, "SKILL.md"),
+      [
+        "---",
+        "name: fix-bug",
+        "description: Fix a reported bug.",
+        "metadata:",
+        "  evals:",
+        "    - id: no-bash",
+        "      grader: tool-usage",
+        "      options:",
+        "        tool: Bash",
+        "        expect: not-used",
+        "---",
+        "",
+        "# Fix Bug",
+        "",
+      ].join("\n"),
+    );
+    try {
+      const report = await run({ projectDir: dir });
+      const r = must(
+        report.evalResults.find((x) => x.evalName === "no-bash"),
+        "the no-bash result",
+      );
+      expect(r.guidance?.description).toBeNull();
+      expect(r.guidance?.rule).toBe("no-bash");
+      // Outside the working directory, so absolute and forward-slashed.
+      expect(r.guidance?.id).toBe(r.artifact.replaceAll("\\", "/"));
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+});

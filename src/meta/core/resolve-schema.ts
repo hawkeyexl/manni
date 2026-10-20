@@ -357,8 +357,10 @@ function assertDocumentRefAllowed(
 
   if (kind === "url") {
     if (mode === "local") {
+      // Said to the page's author, who can act on the page and not on the
+      // config (proposal 0089). The fix page holds the config owner's side.
       throw new DocmetaError(
-        `Refusing the "${FILE_SCHEMA_KEY}" URL "${ref}": schemaTrust.documentRefs is "local", so a document may name a built-in id or a schema file inside the repository, but not a URL. Vendor it with \`manni meta schemas vendor ${ref}\` and reference the local copy, or put the URL in \`schemas:\` where an operator controls it.`,
+        `${FILE_SCHEMA_KEY} names the URL "${ref}", and this repository accepts only built-in ids and schema files here. Use one of those, or remove ${FILE_SCHEMA_KEY}.`,
       );
     }
     const hosts = params.config?.schemaTrust?.hosts;
@@ -368,12 +370,12 @@ function assertDocumentRefAllowed(
       url = new URL(ref);
     } catch {
       throw new DocmetaError(
-        `Refusing the "${FILE_SCHEMA_KEY}" URL "${ref}": it cannot be parsed as a URL, so it cannot be checked against schemaTrust.hosts.`,
+        `${FILE_SCHEMA_KEY} names "${ref}", which is not a valid URL. Use a built-in id or a schema file in the repository, or remove ${FILE_SCHEMA_KEY}.`,
       );
     }
     if (!hostAllowed(url, hosts)) {
       throw new DocmetaError(
-        `Refusing the "${FILE_SCHEMA_KEY}" URL "${ref}": host "${url.host}" is not in schemaTrust.hosts (${hosts.join(", ")}). Add the host there, or reference a schema the config already names.`,
+        `${FILE_SCHEMA_KEY} names a schema on "${url.host}", a host this repository does not trust. Use a built-in id or a schema file in the repository, or remove ${FILE_SCHEMA_KEY}.`,
       );
     }
     return;
@@ -399,15 +401,15 @@ function assertDocumentRefAllowed(
   // file that is not there, and the `cwd` case is the one where the boundary
   // moves depending on where the command was run — which is worth saying out
   // loud rather than leaving them to infer it.
-  const boundary =
+  const why =
     root.source === "git"
-      ? `the repository root (${root.dir})`
+      ? ""
       : root.source === "config"
-        ? `${root.dir} — no git repository was found, so the config file's own directory is the boundary`
-        : `${root.dir} — no git repository and no config file were found, so the directory the command was run from is the boundary`;
+        ? " No git repository was found, so the config file's own directory is the boundary."
+        : " No git repository and no config file were found, so the directory the command was run from is the boundary.";
   const scope = root.source === "git" ? "the repository" : "the project";
   throw new DocmetaError(
-    `Refusing the "${FILE_SCHEMA_KEY}" path "${ref}": it resolves outside ${boundary}. A document may only name a schema inside ${scope}; a path in \`schemas:\` or on \`--schema\` is not restricted this way.`,
+    `${FILE_SCHEMA_KEY} "${ref}" points outside ${root.dir}.${why} Use a built-in id or a schema file inside ${scope}, or remove ${FILE_SCHEMA_KEY}.`,
   );
 }
 

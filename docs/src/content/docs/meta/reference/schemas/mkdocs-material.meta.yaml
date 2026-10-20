@@ -18,8 +18,8 @@ docs/src/content/docs/meta/reference/schemas/mkdocs-material.mdx:
       grader: ai
   provenance:
     - generated-by: Claude Opus 5.5
-      lines: 2-213
-      integrity: sha256-24201ae636e2f3f05cd9bfd696054ae550297b6949e726f22ba5d58ee76600c4
+      lines: 2-215
+      integrity: sha256-3980dc96daa20660f4ee0c6dff29e3d46ca242eb7f811dc77299be593c3c14fc
   owner:
     - "@hawkeyexl"
   created: 2026-09-26

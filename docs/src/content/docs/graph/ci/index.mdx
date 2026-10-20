@@ -10,7 +10,7 @@ concepts:
   - severity
   - focus node
   - coverage
-last-updated: 2026-10-04
+last-updated: 2026-10-20
 ---
 
 A pull request that breaks the docset's structure should be red before review.
@@ -70,22 +70,48 @@ Run both. Neither subsumes the other.
 
 ## Annotations
 
-`-f github` writes one workflow annotation per finding, on the documents behind
-it:
+`-f github` writes one workflow annotation per finding:
 
 ```console
 $ manni graph check -c test/graph/fixtures/dd/violations.config.yaml -f github
-::error file=violations/alpha.md::skos:broader cycle through https://example.com/dd/concept/alpha, https://example.com/dd/concept/beta (https://example.com/dd/concept/alpha → https://example.com/dd/concept/beta) — a concept cannot be its own ancestor (https://example.com/dd/concept/alpha)
+::error file=violations/alpha.md::"Alpha" and "Beta" form a broader cycle, so each is its own ancestor. Remove one `broader` or `narrower` value on the cycle. (https://example.com/dd/concept/alpha)%0Amanni:graph-shapes:1.1.1 Concept-broader: A more general concept. A concept is never its own ancestor.%0AGuide: https://hawkeyexl.github.io/manni/graph/fix/
 ```
 
+The message ends with the focus node in parentheses. After each `%0A`, a line
+names the shape behind the finding and says what it is for. The last line links
+the fix page.
+
 A graph finding has a focus node rather than a line, so the annotation lands on
-the file rather than inside it. Where a finding came from several documents,
-each is annotated. The fix is usually in one of them, and naming both is what
-lets a contributor work out which.
+the file rather than inside it. A finding can come from several pages, and the
+annotation lands on the first page it names. The pretty report and the JSON
+`docs` list name every one, because the fix may be in any of them.
 
 `check` also accepts `-f json`, for a dashboard. Every other verb offers
-`pretty` and `json`; `github` is `check`'s alone, because `check` is the one
-that annotates a diff.
+`pretty` and `json`. `github` and `sarif` are `check`'s alone, because `check`
+is the one that annotates a diff.
+
+## Code scanning
+
+`-f sarif` writes one SARIF 2.1.0 log for GitHub code scanning. A run with
+findings is the one worth uploading, so the upload step runs `if: always()`:
+
+```yaml
+      - run: npx @hawkeyexl/manni graph build
+      - name: Graph check
+        run: npx @hawkeyexl/manni graph check -f sarif > graph.sarif
+      - uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: graph.sarif
+          category: manni-graph
+```
+
+Each result lists every page the finding names, at line 1. Its rule is the
+shape's, such as `manni:graph/Concept-broader`, with the shape's description and
+the fix page as its help. A finding that names no page has nowhere to land, so
+it is left out of the results. The run's notes count them instead:
+`2 findings name no page. Run manni graph check to see them.` The exit code is
+the same as in any other format, so an `error` still exits `1`.
 
 ## Exit codes
 
@@ -162,6 +188,8 @@ See [Publish the graph](/manni/graph/publish/).
 {/* step {"description":"The gate is two commands: build, then check.","runShell":{"command":"manni graph build -c test/graph/fixtures/dd/violations.config.yaml","exitCodes":[0]}} */}
 
 {/* step {"description":"github format writes one annotation per finding.","runShell":{"command":"manni graph check -c test/graph/fixtures/dd/violations.config.yaml -f github","exitCodes":[1],"stdio":"::error file="}} */}
+
+{/* step {"description":"sarif format writes one SARIF log, and an error still exits 1.","runShell":{"command":"manni graph check -c test/graph/fixtures/dd/violations.config.yaml -f sarif","exitCodes":[1],"stdio":"manni:graph/Concept-broader"}} */}
 
 {/* step {"description":"A warning-level finding does not fail the job.","runShell":{"command":"manni graph build -c test/graph/fixtures/dd/docs.config.yaml","exitCodes":[0]}} */}
 

@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "house:page:1.0.0",
+  "title": "House page",
+  "description": "Every page names its team and its tier.",
+  "type": "object",
+  "required": ["team", "tier"],
+  "properties": {
+    "team": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The team that answers for the page. Use the slug from the team directory."
+    },
+    "tier": {
+      "enum": ["gold", "silver"],
+      "description": "How quickly the team answers a report."
+    },
+    "review": {
+      "type": "object",
+      "description": "When the page was last reviewed.",
+      "properties": {
+        "date": { "type": "string", "format": "date" }
+      }
+    },
+    "contact": {
+      "oneOf": [
+        { "type": "string", "format": "email" },
+        { "type": "string", "pattern": "^@" }
+      ],
+      "description": "An email address or a chat handle."
+    },
+    "ticket": {
+      "type": "string",
+      "x-manni-location": "external",
+      "description": "The tracking ticket, kept in the collection's manifest."
+    }
+  }
+}

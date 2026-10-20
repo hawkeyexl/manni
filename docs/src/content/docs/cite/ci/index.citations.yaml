@@ -246,9 +246,9 @@ docs/src/content/docs/cite/ci/index.mdx:
         integrity: sha256-85dc0711df94cf047a0b8202feb59200a21fd856395e31c9bd17315c2e196558
       source:
         file: src/meta/reporters/sarif.ts
-        lines: 67
+        lines: 68
         integrity: sha256-a56bd7bc4b2fdc23890628abcea1e7dcaa83db5a3c2f14ae4485cb514d7d12dc
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: ffdbdab4b080ca781c685250214db34edc01ae3b
     - id: never-true-needs-commit
       claim:
         integrity: sha256-9055fd61ec88b6da68589469c0332bf4954d9af905a595d38f2a2921bdbbf01e

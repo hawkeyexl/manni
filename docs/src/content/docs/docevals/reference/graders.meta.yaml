@@ -19,31 +19,31 @@ docs/src/content/docs/docevals/reference/graders.mdx:
       lines: 32
       integrity: sha256-251b8136a47bb1448de6ede36b0a62957c9cc3e3787e9f3383dbee0cd6c2f420
     - generated-by: Claude Fable 5.1
-      lines: 37-39
+      lines: 48-50
       integrity: sha256-ca1a654d355eedba385d751ce613ccde8907067fc74adff5c872552eb57a1f4d
     - generated-by: Claude Opus 5
-      lines: 41
+      lines: 52
       integrity: sha256-0577c75a381de1b0861d36e43d41f40f10f99aa971b7b814519e9fb09e7a48e8
     - generated-by: Claude Opus 5.5
-      lines: 44-46
+      lines: 55-57
       integrity: sha256-b928bb2a0e1930eae950cb30f19dc5c5526ed840a38abff8f29e7e4480e49ee6
     - generated-by: Claude Fable 5.1
-      lines: 48-49
+      lines: 59-60
       integrity: sha256-dd73b49fc4a2ec5fc371e6a85124b04689ee5f00d99d49e29a8ab58f4c9077fd
     - generated-by: Claude Fable 5.1
-      lines: 56-66
+      lines: 67-77
       integrity: sha256-4286dc31ae96a9169a8227f421d6f74d5c70db607b5fb2301e179c903667615d
     - generated-by: Claude Fable 5.1
-      lines: 70-74
+      lines: 81-85
       integrity: sha256-708517715da20a43cadb31e941d12020529a7c57217c09788f09fd25bc087509
     - generated-by: Claude Opus 5
-      lines: 75
+      lines: 86
       integrity: sha256-22a0a38ea012c330c90676e8d1f04b37766621b32fedd22fd40ddaf07e617488
     - generated-by: Claude Fable 5.1
-      lines: 76
+      lines: 87
       integrity: sha256-f1b901847390b0ed7e374e7c1e464ec17b46a427c487a5ad6cbd2906405083d5
     - generated-by: Claude Fable 5.1
-      lines: 88-97
+      lines: 103-112
       integrity: sha256-1ef0785c49078f79ef70e6bbec194adb1a8213499a900a5f83b29f9aafe8b54f
   owner:
     - "@hawkeyexl"

@@ -46,16 +46,19 @@ docs/src/content/docs/tracevals/ci/index.mdx:
       lines: 126-199
       integrity: sha256-39357e9cd72b10070bc82d01390122901ba3ea28bb2efac5fb294bbf6279c44a
     - generated-by: Claude Opus 5.5
-      lines: 201-243
-      integrity: sha256-58e9cf99c00ad9efb62a10a3a8fa96a24592a2a63eb73cb012c3af86f3bcb3eb
+      lines: 201-211
+      integrity: sha256-0fb94c0ee3205c71ccd8114e0a7cc693252731c68db8b9fb4ab2493c167f9ce2
+    - generated-by: Claude Opus 5.5
+      lines: 218-245
+      integrity: sha256-6d0795ed799cc662d39f74bfba8fa17866b6f95012a1b1dacdb285852eb8f1cc
     - generated-by: Claude Opus 5
-      lines: 245-306
+      lines: 247-308
       integrity: sha256-156950c9930b6235a466238b9f0dc03acf46cdde308ff846528db6468c35ae4a
     - generated-by: Claude Opus 5.5
-      lines: 307
+      lines: 309
       integrity: sha256-2661d95d4e3198d8691d1c8451d9ffea33dda21a0be71a788b8fe4e7cdb51efb
     - generated-by: Claude Opus 5
-      lines: 308-358
+      lines: 310-360
       integrity: sha256-87cb9927b4b5c1befbe35052b6b2c3f30d926af7fe4b2f9786a0bc762c94f03e
   owner:
     - "@hawkeyexl"

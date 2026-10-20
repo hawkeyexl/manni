@@ -144,7 +144,7 @@ describe("validateGraph", () => {
     expect(hit?.severity).toBe("warning");
     expect(hit?.shaclSeverity).toBe("warning");
     expect(hit?.message).toBe(
-      "concept carries multiple prefLabels (same slug, different spellings) — settle on one spelling",
+      'Pages spell this concept two ways: "Configuration" and "configuration". Use one spelling on every page that names it.',
     );
     expect(findings.filter((f) => f.focusNode === c)).toHaveLength(1);
   });
@@ -248,7 +248,7 @@ describe("validateGraph", () => {
         "error",
         c,
         `${NS.skos}exactMatch`,
-        `skos:exactMatch points into this scheme (${other}), so use broader, narrower or related instead.`,
+        '`exact-matches` names "install", a concept in this glossary. Use `broader`, `narrower` or `related-terms` for it instead.',
       ],
     ]);
   });
@@ -446,9 +446,7 @@ describe("validateGraph", () => {
     it(`flags a machine attribution on the hand-curated ${field}`, async () => {
       const store = build([...conformingTriples(), ...filled(field)]);
       const findings = await validateGraph(store, SHAPES);
-      const curated = findings.filter((f) =>
-        f.message.includes("curated by hand"),
-      );
+      const curated = findings.filter((f) => f.path === `${NS.graph}filledField`);
       expect(curated).toHaveLength(1);
       expect(curated[0]?.severity).toBe("error");
       expect(curated[0]?.path).toBe(`${NS.graph}filledField`);
@@ -456,16 +454,16 @@ describe("validateGraph", () => {
         `${BASE}doc/docs/a.md#prov.graph-fill.m1`,
       );
       expect(curated[0]?.docs).toEqual(["docs/a.md"]);
-      expect(curated[0]?.message).toContain(`/graph/${field}`);
+      expect(curated[0]?.message).toBe(
+        `\`meta-provenance\` credits m1 with /graph/${field}, a field only a person writes. Check the value, then delete that entry.`,
+      );
     });
   }
 
   it("leaves a machine attribution on a fillable field alone", async () => {
     const store = build([...conformingTriples(), ...filled("label")]);
     const findings = await validateGraph(store, SHAPES);
-    expect(findings.filter((f) => f.message.includes("curated by hand"))).toEqual(
-      [],
-    );
+    expect(findings.filter((f) => f.path === `${NS.graph}filledField`)).toEqual([]);
   });
 
   it("detects a two-node skos:broader cycle", async () => {
@@ -481,7 +479,9 @@ describe("validateGraph", () => {
     expect(hit).toBeDefined();
     expect(hit?.severity).toBe("error");
     expect(hit?.focusNode).toBe(concept("a"));
-    expect(hit?.message).toContain(concept("b"));
+    expect(hit?.message).toBe(
+      '"a" and "b" form a broader cycle, so each is its own ancestor. Remove one `broader` or `narrower` value on the cycle.',
+    );
   });
 
   it("detects a self-loop and a narrower-implied cycle", async () => {
@@ -611,6 +611,17 @@ describe("SHACL severity maps onto the family scale", () => {
       ]),
     );
   }
+
+  it("names the file by its path, and a blank-node shape by no rule", async () => {
+    const store = build([
+      [THING, RDF_TYPE, `${EX}Thing`],
+      [THING, `${EX}violating`, { lit: "x" }],
+    ]);
+    const findings = await validateGraph(store, SEVERITY_SHAPES);
+    expect(findings.map((f) => f.guidance)).toEqual([
+      { id: SEVERITY_SHAPES[0], rule: null, description: null, guide: null },
+    ]);
+  });
 
   it.each([
     ["violation-level constraint", "error", "violation"],
@@ -767,3 +778,336 @@ describe("shapes 1.0.0 — localization", () => {
     );
   });
 });
+
+/**
+ * Proposal 0089: a finding names the frontmatter key and says what to change,
+ * and the lines under it name the shape that judged it. One mistake reports
+ * once.
+ */
+describe("findings speak to the page's author (shapes 1.1.1)", () => {
+  const ID = "manni:graph-shapes:1.1.1";
+  const GUIDE = "https://hawkeyexl.github.io/manni/graph/fix/";
+  const SHAPES_110 = [join(dirname(defined(SHAPES[0])), "shapes-1.1.0.ttl")];
+  const d = doc("docs/a.md");
+  const variant = `${BASE}product/sp-x1`;
+  const variantTriples: Array<[string, string, string | { lit: string }]> = [
+    [variant, RDF_TYPE, `${NS.iirds}ProductVariant`],
+    [variant, `${NS.dcterms}title`, { lit: "SP-X1" }],
+  ];
+  const section = `${d}#install`;
+  const sectionTriples: Array<[string, string, string | { lit: string; dt?: string }]> = [
+    [section, RDF_TYPE, `${NS.graph}Section`],
+    [section, `${NS.dcterms}title`, { lit: "Install" }],
+    [section, `${NS.graph}level`, { lit: "2", dt: `${NS.xsd}integer` }],
+    [section, `${NS.graph}order`, { lit: "1", dt: `${NS.xsd}integer` }],
+  ];
+
+  it("names `lang` for a language name, with the shape that judged it", async () => {
+    const findings = await validateGraph(
+      build([...conformingTriples(), [d, `${NS.dcterms}language`, { lit: "German" }]]),
+      SHAPES,
+    );
+    expect(findings).toEqual([
+      {
+        severity: "error",
+        shaclSeverity: "violation",
+        message: "Set `lang` to a language tag such as `de` or `pt-BR`, not a language name.",
+        focusNode: d,
+        path: `${NS.dcterms}language`,
+        docs: ["docs/a.md"],
+        guidance: {
+          id: ID,
+          rule: "Document-language",
+          description:
+            "The language the page is written in. Search, filters and per-language indexes group pages by it.",
+          guide: GUIDE,
+        },
+      },
+    ]);
+  });
+
+  it("names both variant lists when a page puts one variant in each", async () => {
+    const findings = await validateGraph(
+      build([
+        ...conformingTriples(),
+        ...variantTriples,
+        [d, `${NS.iirds}relates-to-product-variant`, variant],
+        [d, `${NS.graph}notApplicableToVariant`, variant],
+      ]),
+      SHAPES,
+    );
+    expect(findings.map((f) => [f.message, f.guidance?.rule])).toEqual([
+      [
+        "The page lists a variant in both `applies-to` and `not-applicable-to`. Keep it only in the one that is true.",
+        "Document-notApplicableToVariant",
+      ],
+    ]);
+  });
+
+  it("merges results that share a shape, a node and a path into one finding", async () => {
+    const findings = await validateGraph(
+      build([
+        ...conformingTriples(),
+        [d, `${NS.iirds}has-subject`, `${NS.iirdsSft}Interface`],
+        [d, `${NS.iirds}has-subject`, `${NS.iirdsSft}Architecture`],
+        [d, `${NS.graph}notSoftwareSubject`, `${NS.iirdsSft}Interface`],
+        [d, `${NS.graph}notSoftwareSubject`, `${NS.iirdsSft}Architecture`],
+      ]),
+      SHAPES,
+    );
+    expect(findings.map((f) => f.message)).toEqual([
+      "The page lists an aspect in both `about-product-aspect` and `not-about-product-aspect`. Keep it only in the one that is true.",
+    ]);
+  });
+
+  it("says which section list holds a variant and an aspect twice", async () => {
+    const findings = await validateGraph(
+      build([
+        ...conformingTriples(),
+        ...variantTriples,
+        ...sectionTriples,
+        [section, `${NS.iirds}relates-to-product-variant`, variant],
+        [section, `${NS.graph}notApplicableToVariant`, variant],
+        [section, `${NS.iirds}has-subject`, `${NS.iirdsSft}Interface`],
+        [section, `${NS.graph}notSoftwareSubject`, `${NS.iirdsSft}Interface`],
+      ]),
+      SHAPES,
+    );
+    expect(findings.map((f) => [f.message, f.docs])).toEqual([
+      [
+        "A section in `graph.sections` lists a variant in both `applies-to` and `not-applicable-to`. Keep it only in the one that is true.",
+        ["docs/a.md"],
+      ],
+      [
+        "A section in `graph.sections` lists an aspect in both `about-product-aspect` and `not-about-product-aspect`. Keep it only in the one that is true.",
+        ["docs/a.md"],
+      ],
+    ]);
+  });
+
+  it("says a variant is spelled two ways when its node has two titles", async () => {
+    const findings = await validateGraph(
+      build([
+        ...conformingTriples(),
+        ...variantTriples,
+        [variant, `${NS.dcterms}title`, { lit: "sp-x1" }],
+        [d, `${NS.iirds}relates-to-product-variant`, variant],
+      ]),
+      SHAPES,
+    );
+    expect(findings.map((f) => [f.message, f.guidance?.rule, f.docs])).toEqual([
+      [
+        "Pages spell this variant two ways in `applies-to` or `not-applicable-to`. Use one spelling on every page.",
+        "ProductVariant-title",
+        ["docs/a.md"],
+      ],
+    ]);
+  });
+
+  it("names both links when a related concept is also broader", async () => {
+    const findings = await validateGraph(
+      build([
+        ...conformingTriples(),
+        ...conceptTriples("a", "Alpha"),
+        ...conceptTriples("b", "Beta"),
+        [concept("a"), `${NS.skos}broader`, concept("b")],
+        [concept("b"), `${NS.skos}narrower`, concept("a")],
+        [concept("a"), `${NS.skos}related`, concept("b")],
+        [concept("b"), `${NS.skos}related`, concept("a")],
+      ]),
+      SHAPES,
+    );
+    // sh:disjoint fires on Alpha, and the check core says nothing beside it.
+    expect(findings.map((f) => [f.focusNode, f.message, f.guidance?.rule])).toEqual([
+      [
+        concept("a"),
+        "A concept is related to a concept that is also broader than it. Remove one link: from `related-concepts` or `related-terms`, or from `broader` or `narrower`.",
+        "Concept-related",
+      ],
+    ]);
+  });
+
+  it("reports a related-and-ancestor pair once, on the descendant", async () => {
+    const findings = await validateGraph(
+      build([
+        ...conformingTriples(),
+        ...conceptTriples("a", "Alpha"),
+        ...conceptTriples("b", "Beta"),
+        ...conceptTriples("g", "Gamma"),
+        [concept("a"), `${NS.skos}broader`, concept("b")],
+        [concept("b"), `${NS.skos}broader`, concept("g")],
+        // derive writes skos:related both ways round.
+        [concept("a"), `${NS.skos}related`, concept("g")],
+        [concept("g"), `${NS.skos}related`, concept("a")],
+      ]),
+      SHAPES,
+    );
+    expect(findings.map((f) => [f.focusNode, f.path, f.message, f.guidance])).toEqual([
+      [
+        concept("a"),
+        `${NS.skos}related`,
+        '"Gamma" is both related to "Alpha" and one of its ancestors. Remove one link: from `related-concepts` or `related-terms`, or from the `broader` chain between them.',
+        {
+          id: ID,
+          rule: "Concept-related",
+          description:
+            "A concept on the same level as this one. It is never also an ancestor or a descendant.",
+          guide: GUIDE,
+        },
+      ],
+    ]);
+  });
+
+  it("names three cycle members by label", async () => {
+    const findings = await validateGraph(
+      build([
+        ...conformingTriples(),
+        ...conceptTriples("a", "Alpha"),
+        ...conceptTriples("b", "Beta"),
+        ...conceptTriples("c", "Gamma"),
+        [concept("a"), `${NS.skos}broader`, concept("b")],
+        [concept("b"), `${NS.skos}broader`, concept("c")],
+        [concept("c"), `${NS.skos}broader`, concept("a")],
+      ]),
+      SHAPES,
+    );
+    expect(findings.map((f) => [f.message, f.guidance?.rule])).toEqual([
+      [
+        '"Alpha", "Beta" and "Gamma" form a broader cycle, so each is its own ancestor. Remove one `broader` or `narrower` value on the cycle.',
+        "Concept-broader",
+      ],
+    ]);
+  });
+
+  it("names a self-loop's one member", async () => {
+    const findings = await validateGraph(
+      build([
+        ...conformingTriples(),
+        ...conceptTriples("self", "Self"),
+        [concept("self"), `${NS.skos}broader`, concept("self")],
+      ]),
+      SHAPES,
+    );
+    expect(findings.map((f) => f.message)).toEqual([
+      '"Self" forms a broader cycle with itself, so it is its own ancestor. Remove the `broader` or `narrower` value that names it.',
+    ]);
+  });
+
+  it("asks for one label per language on two labels in one language", async () => {
+    const c = concept("widget");
+    const findings = await validateGraph(
+      build([
+        ...conformingTriples(),
+        [c, RDF_TYPE, `${NS.skos}Concept`],
+        [c, `${NS.skos}inScheme`, SCHEME],
+        [c, `${NS.skos}prefLabel`, { lit: "Widget", lang: "en" }],
+        [c, `${NS.skos}prefLabel`, { lit: "Gadget", lang: "en" }],
+      ]),
+      SHAPES,
+    );
+    expect(findings.map((f) => [f.severity, f.message, f.guidance?.rule])).toEqual([
+      [
+        "warning",
+        "This concept has two labels in one language. Give each term page one `label` per language.",
+        "Concept-prefLabel-collision",
+      ],
+    ]);
+  });
+
+  it("sends a closed-shape finding to whoever maintains the shapes", async () => {
+    const findings = await validateGraph(
+      build([...conformingTriples(), [d, `${NS.graph}surprise`, { lit: "?" }]]),
+      SHAPES,
+    );
+    expect(findings.map((f) => [f.message, f.guidance?.rule])).toEqual([
+      [
+        "manni wrote a property this shape does not list. The page is not at fault. Report it to whoever maintains the shapes.",
+        "DocumentShape",
+      ],
+    ]);
+  });
+
+  it("gives every check-core finding the bundled shape for its path", async () => {
+    const other = concept("install");
+    const activity = `${d}#prov.graph-fill.m1`;
+    const findings = await validateGraph(
+      build([
+        ...conformingTriples(),
+        ...conceptTriples("x"),
+        [concept("x"), `${NS.skos}broader`, concept("x")],
+        [other, RDF_TYPE, `${NS.skos}Concept`],
+        [other, `${NS.skos}prefLabel`, { lit: "install" }],
+        [other, `${NS.skos}inScheme`, SCHEME],
+        [concept("setup"), `${NS.skos}closeMatch`, other],
+        [concept("setup"), `${NS.skos}prefLabel`, { lit: "Setup" }],
+        [activity, RDF_TYPE, `${NS.prov}Activity`],
+        [activity, `${NS.graph}filledFieldEntry`, `${activity}.field.sections`],
+        [`${activity}.field.sections`, `${NS.graph}filledField`, { lit: "sections" }],
+      ]),
+      SHAPES,
+    );
+    expect(
+      findings.map((f) => [f.guidance?.id, f.guidance?.rule, f.guidance?.guide].join(" ")).sort(),
+    ).toEqual(
+      [
+        `${ID} Concept-broader ${GUIDE}`,
+        `${ID} Concept-closeMatch ${GUIDE}`,
+        `${ID} Concept-prefLabel-collision ${GUIDE}`,
+        `${ID} FilledFieldEntry-name ${GUIDE}`,
+      ].sort(),
+    );
+    expect(findings.find((f) => f.guidance?.rule === "Concept-closeMatch")?.message).toBe(
+      '`close-matches` names "install", a concept in this glossary. Use `broader`, `narrower` or `related-terms` for it instead.',
+    );
+  });
+
+  it("keeps the library's messages for a pinned 1.1.0, naming the file by its path", async () => {
+    const findings = await validateGraph(
+      build([...conformingTriples(), [d, `${NS.dcterms}language`, { lit: "German" }]]),
+      SHAPES_110,
+    );
+    expect(findings).toHaveLength(1);
+    expect(findings[0]?.message).toMatch(/^Value does not match pattern/);
+    expect(findings[0]?.guidance).toEqual({
+      id: SHAPES_110[0],
+      rule: "Document-language",
+      description: null,
+      guide: null,
+    });
+  });
+
+  it("names a house file by its header", async () => {
+    const house = join(
+      dirname(fileURLToPath(import.meta.url)),
+      "..",
+      "fixtures",
+      "check-guidance",
+      "house-shapes.ttl",
+    );
+    const findings = await validateGraph(build(conformingTriples()), [house]);
+    expect(findings.map((f) => [f.severity, f.message, f.guidance])).toEqual([
+      [
+        "warning",
+        "Add a `description` that says what the page is for.",
+        {
+          id: "house:shapes:1.0.0",
+          rule: "Described-description",
+          description: "Every page carries a one-sentence description.",
+          guide: "https://example.com/house/guide/",
+        },
+      ],
+    ]);
+  });
+
+  it("says how to recover from a shapes path that does not exist", async () => {
+    await expect(validateGraph(build(conformingTriples()), ["nope.ttl"])).rejects.toThrow(
+      "Shapes file not found: nope.ttl. Fix the path in --shapes or graph.check.shapes. Leave both unset to use the bundled shapes.",
+    );
+  });
+});
+
+/** Narrows without a non-null assertion. */
+function defined<T>(value: T | undefined | null): T {
+  if (value === undefined || value === null) throw new Error("expected a value");
+  return value;
+}

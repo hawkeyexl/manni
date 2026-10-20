@@ -2,7 +2,7 @@ docs/src/content/docs/meta/index.mdx:
   citations:
     - id: body-below-frontmatter-never-read
       claim:
-        lines: 100-101
+        lines: 102-103
         integrity: sha256-51deef4abb34be45aea7bddc2af2800a193cdc7ce9380a757913e5717f68ae9f
       source:
         file: src/meta/commands/validate.ts
@@ -11,22 +11,22 @@ docs/src/content/docs/meta/index.mdx:
         commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
     - id: formats-enforced-by-ajv-formats
       claim:
-        lines: 95-96
+        lines: 97-98
         integrity: sha256-a468756f18d56ccaf94e1a02532414aec245950d691be3767ebf9aab297e4ad8
       source:
         file: src/meta/core/validator.ts
-        lines: 95
+        lines: 96
         integrity: sha256-13cad13b9da05a87f1d7e4ed101397327ec94367e2c9e0f6eba648bb4109934b
-        commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
+        commit-sha: ffdbdab4b080ca781c685250214db34edc01ae3b
     - id: required-fields-checked-against-metadata-object
       claim:
-        lines: 95
+        lines: 97
         integrity: sha256-af4f5a31f389ce65cdf3dad01011d038d8fa8b69671d410d8c16078f4db54bda
       source:
         file: src/meta/core/validator.ts
-        lines: 893-894
+        lines: 894-895
         integrity: sha256-b41d2247f4df563b4638532286fcaf90f3105ab234b56e24619fd7f598d68e59
-        commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
+        commit-sha: ffdbdab4b080ca781c685250214db34edc01ae3b
     - id: forty-five-built-in-schemas
       claim:
         integrity: sha256-9e4919db3f2c7b8d5b8d495e05695a990ee087c81083038868822067556ceb18
@@ -40,17 +40,17 @@ docs/src/content/docs/meta/index.mdx:
         integrity: sha256-6e24a2751ad70c15d7e6a0c643456d631350f32d19020526786cb196d44968af
       source:
         file: src/meta/reporters/index.ts
-        lines: 263-267
+        lines: 264-268
         integrity: sha256-eb895ec4689f56368fe1f44400daf0910c2e57dee536b369d0bbc192635b2403
-        commit-sha: 1f2128e838c0dbefac9878def5e544ab59058e13
+        commit-sha: ffdbdab4b080ca781c685250214db34edc01ae3b
     - id: failure-fails-the-build
       claim:
         integrity: sha256-5641af1fab3e0ee0ecc5b8ff5a64e87af036426aa1f4a4a06ff340e640e4b38c
       source:
         file: src/meta/cli.ts
-        lines: 875
+        lines: 889
         integrity: sha256-b900d16ea81ba54da695ee6ec4f8e9c3d17f1700d0b307ed74045692b603e056
-        commit-sha: a589e08250dee7efaee7ed0f58df01986fad8d1d
+        commit-sha: ffdbdab4b080ca781c685250214db34edc01ae3b
     - id: default-run-requires-type
       claim:
         integrity: sha256-5641af1fab3e0ee0ecc5b8ff5a64e87af036426aa1f4a4a06ff340e640e4b38c

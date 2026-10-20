@@ -12,7 +12,7 @@ lifecycle: published
 applies-to: ["domain:tracevals"]
 sample-questions: ["How does the judge reach a verdict?", "Can an errored judge run produce a pass?"]
 graph: { label: "How the judge decides", type: concept }
-last-updated: 2026-09-16
+last-updated: 2026-10-20
 ---
 
 import { Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';
@@ -119,15 +119,25 @@ Change run 3 to `pass` at 0.95 and nothing auto-resolves. The ensemble is split,
 
 ## What the judge cites
 
-For any non-passing judged eval, the report shows the vote split and the first `observed` field:
+For any non-passing judged eval, the report quotes one run's `observed` and `reasoning` fields. That
+is the first run that voted against the session, or the first with a verdict when none did. The
+vote split follows:
 
 ```
-  REVIEW fix-bug › eval-5
-         votes pass:1 fail:2 partial:0 error:0 · confidence 0.87
-         The session edited src/app.ts at turn 2 without a preceding test run.
+  REVIEW fix-bug › eval-5  .claude/skills/fix-bug/SKILL.md:27
+         AI judge: no confident verdict (confidence 0.55). Read the session and decide. If this recurs, sharpen the assertion and run manni tracevals calibrate.
+         Observed: The session edited src/app.ts before any test file.
+         Reasoning: No failing test was written before the fix.
+         votes pass:1 fail:2 partial:0 error:0
+         .claude/skills/fix-bug/SKILL.md eval-5: Reproduce the bug with a failing test before applying the fix.
+         Guide: https://hawkeyexl.github.io/manni/tracevals/triage/
 ```
 
-That `observed` line is the evidence, and it is what makes a judged verdict something you can check.
+A judged `FAIL` opens with
+`AI judge: fail (confidence 0.88). Redo the session work so it holds, or fix the eval if the artifact does not ask for this.`
+instead.
+
+That `Observed:` line is the evidence, and it is what makes a judged verdict something you can check.
 A verdict citing a specific turn and file can be audited; one that says "the session did not comply"
 cannot.
 

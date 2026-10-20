@@ -2,7 +2,7 @@
 title: Fix a failing eval
 description: Your pull request went red on a manni docevals check. Work out which one, fix it, and move on.
 type: troubleshooting
-last-updated: 2026-10-04
+last-updated: 2026-10-20
 ---
 
 You did not configure this check and you do not need to learn the tool. Start with the table.
@@ -17,8 +17,8 @@ Find your CI output in the left column.
 | What you see | What it is | What to do |
 |---|---|---|
 | A message with a **file and line**, like `error:14 [regex/found] …` | A script-based check | [Fix the line](#a-finding-with-a-line) |
-| A message with **reasoning**, mentioning "AI judge" | An AI verdict | [Read the assertion](#an-ai-verdict) |
-| **`needs-review`** | Waiting on a person | [Not yours to fix](#needs-review) |
+| A line starting **`AI judge: fail`**, then `Observed:` and `Reasoning:` | An AI verdict | [Read the assertion](#an-ai-verdict) |
+| **`needs-review`**, `Awaiting human review`, or `AI judge: no confident verdict` | Waiting on a person | [Not yours to fix](#needs-review) |
 | An **assertion changed since its script was generated** | A generated script is out of date | [Not yours to fix](#stale-generated-script) |
 | **Exit code 2**, or "could not run" / missing key / bad config | The tool itself failed | [Not your fault](#exit-2) |
 
@@ -31,11 +31,18 @@ If you are looking at exit 2, stop and tell whoever owns CI.
 
 ```text
 docs/actions/goTo.mdx
-  FAIL no-todo-markers
-       error:14 [regex/found] Pattern /\b(TODO|TBD|FIXME)\b/ found in body, expected absent
+  FAIL no-todo-markers  docs/actions/goTo.mdx:7
+       error:14 [regex/found] Pattern /\b(TODO|TBD|FIXME)\b/ found in body, expected absent. Remove or reword the matching text.
+       docs/actions/goTo.mdx no-todo-markers: The page carries no TODO, TBD or FIXME markers.
+       Guide: https://hawkeyexl.github.io/manni/docevals/fix/
 ```
 
-Read it as `severity:line [rule] message`. A script found something specific at line 14.
+Read the finding as `severity:line [rule] message`. A script found something specific at line 14,
+and the message ends with what to do about it.
+
+The two lines under it say what the eval asks for. The first names the file that declares the
+eval, the eval's name, and its assertion. The second links this page. `docs/actions/goTo.mdx:7`
+on the `FAIL` line is the same declaration, by line.
 
 - Go to that line and make the change the message describes, then
   [re-run that one eval locally](#re-run-only-the-eval-that-failed) before you push.
@@ -48,8 +55,10 @@ Read it as `severity:line [rule] message`. A script found something specific at 
   | `regex/count` | The text appears a different number of times than required. |
   | `regex/unreadable-target` | The check could not read the part of the page it targets. Ask whoever owns the eval. |
 
-- A message starting `Exit code` has no rule. It comes from a command check, and the rest of the
-  message is that command's own output.
+- A message starting `Exit code` has no rule. It comes from a command check. The sentence after
+  the code says what to do, and the command's own output follows `Output:`.
+- A message starting `Command timed out`, `Failed to run command` or `No command to run` is about
+  the eval, not your page. Tell whoever owns the eval.
 
 Only `error` fails the build. If your message says `warning` or `notice`, that check is not what turned
 the build red. Keep reading the log.
@@ -58,21 +67,36 @@ the build red. Keep reading the log.
 
 ## An AI verdict
 
+An example of a judged failure, as the default report prints it:
+
 ```text
-::error file=docs/tutorial.mdx,line=6,title=manni docevals%3A no-future-promises::AI judge: fail (confidence 0.93). The "Coming in v3" section describes unreleased functionality.
+  FAIL no-future-promises [auto-fail]  docs/actions/goTo.mdx:5
+       AI judge: fail (confidence 0.91). Edit the page so the assertion holds.
+       Observed: Waiting for network idle is planned for a later release.
+       Reasoning: Line 16 promises a later release.
+       votes pass:0 fail:3 partial:0
+       docs/actions/goTo.mdx no-future-promises: The page makes no claims about unreleased or future functionality.
+       Guide: https://hawkeyexl.github.io/manni/docevals/fix/
 ```
 
 The judgement is about the page rather than a character position. So the line is the one that
 declares the eval, in the page's frontmatter or in the manifest that holds its evals.
 
-**The rationale tells you what is wrong; the assertion tells you what was required.** Look both up:
+Read it from the top:
+
+- **`Observed`** quotes the text the judge based its verdict on. Search the page for it.
+- **`Reasoning`** says why that text breaks the eval. Both come from a run that did not pass.
+- **The guidance line** is the assertion, what the page was required to do.
+
+The quote tells you where the problem is, and the assertion tells you what was required. To see
+every eval that applies to the page, each with its assertion:
 
 ```bash
-npx @hawkeyexl/manni docevals list docs/tutorial.mdx
+npx @hawkeyexl/manni docevals list docs/actions/goTo.mdx
 ```
 
-That prints which evals apply. Find the named eval, here `no-future-promises`, in
-`manni.config.yaml`, or inline in the page's own frontmatter. It looks like this:
+For the eval's examples, find the named eval, here `no-future-promises`, in `manni.config.yaml`,
+or inline in the page's own frontmatter. It looks like this:
 
 ```yaml
   no-future-promises:
@@ -83,7 +107,7 @@ That prints which evals apply. Find the named eval, here `no-future-promises`, i
 ```
 
 The `examples.fail` line is the useful one. It shows what violating this looks like. Between the
-rationale and that example, the offending sentence is usually obvious.
+`Observed` quote and that example, the offending sentence is usually obvious.
 
 If you genuinely disagree with the verdict, that is a conversation with whoever owns the eval, not a
 thing to work around. Say so in the pull request.
@@ -92,7 +116,16 @@ thing to work around. Say so in the pull request.
 
 ## `needs-review`
 
-The judge was not confident enough either way, so the eval is waiting on a person.
+The judge was not confident enough either way, so the eval is waiting on a person. The report
+says so in one of two lines:
+
+```text
+AI judge: no confident verdict (confidence 0.55). Record a verdict with manni docevals review, or sharpen the assertion and run manni docevals calibrate.
+Awaiting human review. Record a verdict with manni docevals review.
+```
+
+The first comes from a judged eval, with `Observed:` and `Reasoning:` under it. The second comes
+from a `human` eval, which no judge sees.
 
 **You cannot resolve this yourself.** It needs someone with standing to record a verdict. Ask
 whoever owns the docs quality checks in your repo; the command they run is
@@ -186,6 +219,8 @@ Exit `0` means clean.
 {/* step {"description":"The local reproduction command runs with no API key and exits 0 on a clean page.","runShell":{"workingDirectory":"test/docevals/fixtures/pages","command":"manni docevals run docs/actions/find.mdx --deterministic-only --no-generate","exitCodes":[0]}} */}
 
 {/* step {"description":"`list` shows which evals apply to a page without running them.","runShell":{"workingDirectory":"test/docevals/fixtures/pages","command":"manni docevals list docs/actions/goTo.mdx","exitCodes":[0],"stdio":"evals resolved"}} */}
+
+{/* step {"description":"A failing eval prints the guidance line naming the declaring file, the eval and its assertion.","runShell":{"workingDirectory":"test/docevals/fixtures/pages","command":"manni docevals run docs/actions/goTo.mdx --deterministic-only --no-generate","exitCodes":[1],"stdio":"docs/actions/goTo.mdx no-todo-markers: The page carries no TODO, TBD or FIXME markers."}} */}
 
 {/* step {"description":"--eval re-runs one named eval, still exits 1 when it genuinely fails, and marks the suite partial.","runShell":{"workingDirectory":"test/docevals/fixtures/pages","command":"manni docevals run docs/actions/goTo.mdx --deterministic-only --no-generate --eval no-todo-markers","exitCodes":[1],"stdio":"filtered run, target not evaluated"}} */}
 

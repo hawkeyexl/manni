@@ -128,6 +128,10 @@ describe("dcmi:elements:1.1", () => {
     expect(r.ok).toBe(false);
     expect(r.errors[0]?.schema).toBe(DCMI);
     expect(r.errors[0]?.instancePath).toBe("/date");
+    // One finding, not the pattern plus its `else` wrapper, and it says what
+    // the property is for (proposal 0089).
+    expect(r.errors).toHaveLength(1);
+    expect(r.errors[0]?.guidance?.rule).toBe("date");
   });
 
   it("accepts the reduced W3CDTF precisions the profile allows", async () => {

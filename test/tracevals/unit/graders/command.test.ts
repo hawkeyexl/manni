@@ -46,14 +46,22 @@ describe("command grader", () => {
     });
     expect(result.error).toBeUndefined();
     expect(result.findings).toHaveLength(1);
-    expect(result.findings[0]?.message).toContain("exited 1");
-    expect(result.findings[0]?.message).toContain("force push found");
+    expect(result.findings[0]?.message).toBe(
+      "command exited 1 (expected 0). Redo the session work so the check passes, " +
+        "or fix the command if it is broken. Output: force push found",
+    );
     expect(result.findings[0]?.severity).toBe("error");
   });
 
   it("honors success-exit-codes", async () => {
     const argv = [NODE, "-e", "process.exit(3)"];
-    expect((await grade({ command: argv })).findings).toHaveLength(1);
+    const failed = (await grade({ command: argv })).findings;
+    expect(failed).toHaveLength(1);
+    // Nothing on stderr, so no Output part.
+    expect(failed[0]?.message).toBe(
+      "command exited 3 (expected 0). Redo the session work so the check passes, " +
+        "or fix the command if it is broken.",
+    );
     expect(
       (await grade({ command: argv, successExitCodes: [0, 3] })).findings,
     ).toEqual([]);

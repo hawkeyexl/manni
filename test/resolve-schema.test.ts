@@ -242,7 +242,9 @@ describe("schemaTrust · what a document may name", () => {
         trustRoot: ROOT,
         config: { ...trust("local"), schemas: ["x:y:1"] },
       }),
-    ).toThrow(/schemaTrust\.documentRefs/);
+    ).toThrow(
+      `$schema names the URL "${URL_REF}", and this repository accepts only built-in ids and schema files here. Use one of those, or remove $schema.`,
+    );
   });
 
   it("`none` ignores the ref, falls through to config, and says so", () => {
@@ -301,7 +303,9 @@ describe("schemaTrust · what a document may name", () => {
         trustRoot: ROOT,
         config: trust("any", ["schemas.other.example"]),
       }),
-    ).toThrow(/schemaTrust\.hosts/);
+    ).toThrow(
+      '$schema names a schema on "schemas.example.com", a host this repository does not trust. Use a built-in id or a schema file in the repository, or remove $schema.',
+    );
   });
 
   it("allows a document URL whose host is listed, case-insensitively and with a port", () => {
@@ -334,7 +338,7 @@ describe("schemaTrust · what a document may name", () => {
         trustRoot: ROOT,
         config: trust("local", ["schemas.example.com"]),
       }),
-    ).toThrow(/documentRefs/);
+    ).toThrow(/accepts only built-in ids and schema files/);
   });
 
   // Stress test 5. `--schema` is typed by whoever runs the command, and a
@@ -433,9 +437,23 @@ describe("schemaTrust · containing a document-supplied local path", () => {
     } catch (err) {
       message = (err as Error).message;
     }
-    expect(message).toMatch(/outside/);
-    expect(message).toMatch(/no git repository/i);
-    expect(message).toMatch(/config file's own directory/);
+    expect(message).toBe(
+      `$schema "../outside.json" points outside ${REPO}. No git repository was found, so the config file's own directory is the boundary. Use a built-in id or a schema file inside the project, or remove $schema.`,
+    );
+  });
+
+  it("tells the author what a URL that does not parse needs", () => {
+    expect(() =>
+      resolveSchemaSet({
+        filePath: "a.md",
+        fileSchema: "https://[bad",
+        fileBase: REPO,
+        trustRoot: ROOT,
+        config: trust("any", ["schemas.example.com"]),
+      }),
+    ).toThrow(
+      '$schema names "https://[bad", which is not a valid URL. Use a built-in id or a schema file in the repository, or remove $schema.',
+    );
   });
 
   it("does not blame a config file when there is no config file", () => {
@@ -454,9 +472,9 @@ describe("schemaTrust · containing a document-supplied local path", () => {
     } catch (err) {
       message = (err as Error).message;
     }
-    expect(message).toMatch(/no git repository and no config file/i);
-    expect(message).toMatch(/directory the command was run from/);
-    expect(message).not.toMatch(/config file's own directory/);
+    expect(message).toBe(
+      `$schema "../outside.json" points outside ${REPO}. No git repository and no config file were found, so the directory the command was run from is the boundary. Use a built-in id or a schema file inside the project, or remove $schema.`,
+    );
   });
 
   it("names the git root as the repository when there is one", () => {
@@ -472,8 +490,9 @@ describe("schemaTrust · containing a document-supplied local path", () => {
     } catch (err) {
       message = (err as Error).message;
     }
-    expect(message).toMatch(/repository root/i);
-    expect(message).not.toMatch(/no git repository/i);
+    expect(message).toBe(
+      `$schema "../outside.json" points outside ${ROOT.dir}. Use a built-in id or a schema file inside the repository, or remove $schema.`,
+    );
   });
 
   // The resolver is synchronous and pure; finding a git root is a filesystem
@@ -547,7 +566,7 @@ describe("schemaTrust · a published built-in URL (0009)", () => {
         trustRoot: ROOT,
         config: trust("local"),
       }),
-    ).toThrow(/documentRefs/);
+    ).toThrow(/accepts only built-in ids and schema files/);
     expect(() =>
       resolveSchemaSet({
         filePath: "a.md",
@@ -556,7 +575,7 @@ describe("schemaTrust · a published built-in URL (0009)", () => {
         trustRoot: ROOT,
         config: trust("any", ["schemas.example.com"]),
       }),
-    ).toThrow(/schemaTrust\.hosts/);
+    ).toThrow(/a host this repository does not trust/);
   });
 
   it("is still dropped by `none`, like every other document-supplied ref", () => {

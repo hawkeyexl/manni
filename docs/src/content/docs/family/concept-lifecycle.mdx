@@ -16,7 +16,7 @@ next-steps: ["term-reference-rules", "meta-schemas-term-values", "graph-question
 concepts: ["concept scheme", "meta-provenance", "x-manni-term", "concept mapping", "sample question", "golden set"]
 sample-questions: ["How do I turn the concepts my pages name into a termbase?", "How do the termbase and the knowledge graph share one set of concepts?", "In what order do I build a vocabulary, a taxonomy and a graph with manni?"]
 graph: { label: "From tags to a knowledge graph", type: learning }
-last-updated: 2026-10-19
+last-updated: 2026-10-20
 tags:
   - terminology
   - knowledge-graph
@@ -122,7 +122,10 @@ and a label resolves to a term by its label, its id, then an alt-label.
 
 ```console
 $ manni graph check
-warning: https://example.com/graph/concept/idempotency-key skos:prefLabel — concept carries multiple prefLabels (same slug, different spellings) — settle on one spelling [docs/api/payments.md, docs/api/retries.md]
+warning: docs/api/payments.md, docs/api/retries.md: Pages spell this concept two ways: "Idempotency key" and "idempotency key". Use one spelling on every page that names it.
+  at https://example.com/graph/concept/idempotency-key skos:prefLabel
+  manni:graph-shapes:1.1.1 Concept-prefLabel-collision: One name per language, so search and the glossary agree on a spelling.
+  Guide: https://hawkeyexl.github.io/manni/graph/fix/
 
 questions  2: 2 reviewed, 0 drafted, on 2 pages
   found    2 of 2 reviewed in the top 5 (100%), 2 first (100%)
@@ -457,7 +460,8 @@ Wait that many seconds before you send the request again.
 ```console
 $ manni graph build
 $ manni graph check
-warning: https://example.com/graph/doc/docs/api/rate-limits.md graph:sampleQuestion — "How long should I wait before I retry?" does not find this page in the top 1 (it ranks 2; first is docs/api/retries.md) [docs/api/rate-limits.md]
+warning: docs/api/rate-limits.md: "How long should I wait before I retry?" does not find this page in the top 1 (it ranks 2; first is docs/api/retries.md)
+  at https://example.com/graph/doc/docs/api/rate-limits.md graph:sampleQuestion
 
 questions  3: 3 reviewed, 0 drafted, on 3 pages
   found    2 of 3 reviewed in the top 1 (66%), 2 first (66%)
@@ -526,7 +530,8 @@ reviews them:
 
 ```console
 $ manni graph check
-notice: https://example.com/graph/doc/docs/api/retries.md graph:sampleQuestion — "How does the client retry a request that timed out?" repeats 5 of its 9 word pairs from its answer, so it tests matching words more than finding. [docs/api/retries.md]
+notice: docs/api/retries.md: "How does the client retry a request that timed out?" repeats 5 of its 9 word pairs from its answer, so it tests matching words more than finding.
+  at https://example.com/graph/doc/docs/api/retries.md graph:sampleQuestion
 
 questions  4: 3 reviewed, 1 drafted, on 3 pages
   found    3 of 3 reviewed in the top 1 (100%), 3 first (100%)
@@ -577,8 +582,10 @@ Wait the number of seconds the header names.
 
 ```console
 $ manni graph check
-error: questions — 3 of 4 reviewed questions are found in the top 1 (75%), under the 100% that graph.check.questions.foundThreshold asks for.
-warning: https://example.com/graph/doc/docs/api/rate-limits.md graph:sampleQuestion — lines 3 no longer hold the answer to "How long should I wait before I retry?" as pinned, so re-pair it with manni graph fill --fields sample-questions and review it. [docs/api/rate-limits.md]
+error: (no page): 3 of 4 reviewed questions are found in the top 1 (75%), under the 100% that graph.check.questions.foundThreshold asks for.
+  at questions
+warning: docs/api/rate-limits.md: lines 3 no longer hold the answer to "How long should I wait before I retry?" as pinned, so re-pair it with manni graph fill --fields sample-questions and review it.
+  at https://example.com/graph/doc/docs/api/rate-limits.md graph:sampleQuestion
 
 questions  4: 4 reviewed, 0 drafted, on 3 pages
   found    3 of 4 reviewed in the top 1 (75%), 3 first (75%)

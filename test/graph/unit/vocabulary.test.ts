@@ -28,17 +28,22 @@ const root = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
  * follows 1.9.0 rather than preceding it.
  */
 function newestVocabulary(): string {
+  return newestIn(join(root, "ns", "graph"), "ns");
+}
+
+/** The newest `<prefix>-X.Y.Z.ttl` in `dir`, by version. */
+function newestIn(dir: string, prefix: string): string {
   const parse = (name: string): number[] =>
     (name.match(/(\d+)\.(\d+)\.(\d+)/) ?? []).slice(1).map(Number);
-  const files = readdirSync(join(root, "ns", "graph"))
-    .filter((f) => /^ns-\d+\.\d+\.\d+\.ttl$/.test(f))
+  const files = readdirSync(dir)
+    .filter((f) => f.startsWith(`${prefix}-`) && /-\d+\.\d+\.\d+\.ttl$/.test(f))
     .sort((x, y) => {
       const [a, b] = [parse(x), parse(y)];
       for (let i = 0; i < 3; i++) if (a[i] !== b[i]) return (a[i] ?? 0) - (b[i] ?? 0);
       return 0;
     });
   const newest = files[files.length - 1];
-  if (newest === undefined) throw new Error("no vocabulary file in ns/");
+  if (newest === undefined) throw new Error(`no ${prefix} file in ${dir}`);
   return newest;
 }
 
@@ -211,7 +216,7 @@ describe("no file points at a superseded vocabulary version", () => {
    * repository: the monorepo root also holds sibling worktrees and the docs
    * site's dependency tree, neither of which is this tool's to police.
    */
-  function trackedText(): string[] {
+  function trackedText(extra: string[] = []): string[] {
     const out: string[] = [];
     const skip = new Set(["node_modules", ".git", "dist", ".tmp", "ns"]);
     const walk = (dir: string): void => {
@@ -228,6 +233,7 @@ describe("no file points at a superseded vocabulary version", () => {
       join(root, "test", "graph"),
       join(root, "docs", "proposals", "graph"),
       join(root, "shapes", "graph"),
+      ...extra,
     ]) {
       walk(dir);
     }
@@ -254,5 +260,20 @@ describe("no file points at a superseded vocabulary version", () => {
       }
     }
     expect(stale, `superseded, should be ${VOCAB_FILE}`).toEqual([]);
+  });
+
+  it("names only the newest shapes file", () => {
+    // The same guard for the shapes `check` runs (proposal 0089). The docs
+    // pages count too: they are where a reader copies the path from.
+    const newest = newestIn(join(root, "shapes", "graph"), "shapes");
+    const stale: string[] = [];
+    for (const file of trackedText([join(root, "docs", "src", "content", "docs", "graph")])) {
+      for (const m of readFileSync(file, "utf8").matchAll(
+        /shapes\/graph\/(shapes-\d+\.\d+\.\d+\.ttl)/g,
+      )) {
+        if (m[1] !== newest) stale.push(`${file.slice(root.length + 1)} → ${m[1] ?? ""}`);
+      }
+    }
+    expect(stale, `superseded, should be ${newest}`).toEqual([]);
   });
 });

@@ -143,9 +143,9 @@ docs/src/content/docs/term/ci/index.mdx:
         integrity: sha256-fc7d50ccfd85da9c8a89f5d76e973854679ec97e458e32672aa59a11ab7899a4
       source:
         file: src/meta/reporters/sarif.ts
-        lines: 66-67
+        lines: 67-68
         integrity: sha256-d99e433a7e95a84d15df4c85708647b21ca7669c2d3f9219017a3abdb26de928
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: ffdbdab4b080ca781c685250214db34edc01ae3b
     - id: sarif-notice-to-stderr
       claim:
         lines: 63
