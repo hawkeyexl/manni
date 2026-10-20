@@ -163,6 +163,39 @@ describe("reporters", () => {
     expect(lines.join("\n")).not.toContain("The session follows every instruction");
   });
 
+  it("pretty prints guidance under a pass that still carries a warning finding", () => {
+    const GUIDE = "https://hawkeyexl.github.io/manni/tracevals/triage/";
+    const [, passing] = report.evalResults;
+    const warned: RunReport = {
+      ...report,
+      evalResults: [
+        {
+          ...must(passing, "the passing result"),
+          findings: [
+            {
+              evalName: "adheres-to-artifact",
+              artifact: "C:\\work\\demo\\CLAUDE.md",
+              message: "3 turn(s); at most 2 allowed.",
+              severity: "warning",
+            },
+          ],
+          guidance: {
+            id: "CLAUDE.md",
+            rule: "adheres-to-artifact",
+            description: "The session follows every instruction in this artifact.",
+            guide: GUIDE,
+          },
+        },
+      ],
+    };
+    const out = render(warned, "pretty");
+    expect(out).toContain("         [warning] 3 turn(s); at most 2 allowed.");
+    expect(out).toContain(
+      "         CLAUDE.md adheres-to-artifact: The session follows every instruction in this artifact.",
+    );
+    expect(out).toContain(`         Guide: ${GUIDE}`);
+  });
+
   it("markdown output includes eval and coverage tables", () => {
     const out = render(report, "markdown");
     expect(out).toContain("| Outcome | Artifact | Eval | Grader | Detail |");
