@@ -20,7 +20,7 @@ docs/src/content/docs/test/reference/cli.mdx:
   provenance:
     - generated-by: Claude Opus 5.5
       lines: 2-314
-      integrity: sha256-9aaa7c4a8437f01b180a6b614bbded2028e8dec7c9069ed7e1dd847fcb7891c3
+      integrity: sha256-444f40ea6f819789a2123450f4fa2a70de5a4a36300425669655a8d4eaceab42
   owner:
     - "@hawkeyexl"
   created: 2026-10-05
