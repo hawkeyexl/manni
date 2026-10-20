@@ -698,7 +698,9 @@ async function readText(ref: string): Promise<string> {
   } catch (err) {
     const code = (err as NodeJS.ErrnoException | null)?.code;
     if (code === "ENOENT") {
-      throw new LintError(`Template file not found: "${ref}".`);
+      throw new LintError(
+        `Template file not found: "${ref}". Fix the path, or run manni lint templates to list the templates you can name.`,
+      );
     }
     throw new LintError(
       `Template file "${ref}" could not be read: ${errorMessage(err)}`,

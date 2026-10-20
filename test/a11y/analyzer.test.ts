@@ -8,6 +8,7 @@ import { describe, expect, it } from "vitest";
 import {
   createPlaywrightAnalyzer,
   findBrowser,
+  loadFailureMessage,
   refreshUrl,
   severityOf,
   toViolation,
@@ -161,4 +162,20 @@ describe.skipIf(browser === null)("one page's navigation and the next page (real
     }
     // Above twenty 10s guards, so a stall reports its own message first.
   }, 240_000);
+});
+
+describe("loadFailureMessage", () => {
+  it("on this machine, says to start the site", () => {
+    for (const url of ["http://localhost:4321/", "http://127.0.0.1:8080/a", "http://[::1]:3000/"]) {
+      expect(loadFailureMessage(url, "net::ERR_CONNECTION_REFUSED")).toBe(
+        `Could not load ${url}: net::ERR_CONNECTION_REFUSED. Start the site with manni site preview, then run the check again.`,
+      );
+    }
+  });
+
+  it("anywhere else, says to check the site is reachable", () => {
+    expect(loadFailureMessage("https://example.com/", "Timeout 30000ms exceeded.")).toBe(
+      "Could not load https://example.com/: Timeout 30000ms exceeded. Check that the site is up and reachable from this machine.",
+    );
+  });
 });

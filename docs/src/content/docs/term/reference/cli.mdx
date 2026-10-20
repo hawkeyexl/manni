@@ -1017,7 +1017,7 @@ written.
 | A run that finds no terms | `manni: no terms found. A term is a page declaring type: term, or an entry in a file declaring type: term-set.` |
 | No paths and no collections | ``manni: No files to read. Pass paths/globs, or declare a collection under `collections:` in manni.config.yaml.`` |
 | `term check -` with no `--as` | `manni: reading stdin needs --as <format>.` |
-| `term check nowhere/` | `manni: File not found: "nowhere/".` |
+| `term check nowhere/` | `manni: File not found: "nowhere/". Check the path. Named paths resolve from the working directory.` |
 | `term check docs --collection site` | `manni: --collection selects a configured collection; it cannot be combined with paths.` |
 | `term check --collection nope` | `manni: no collection named "nope" in manni.config.yaml. Configured: site.` |
 | `term check -c missing.yaml` | `manni: Config file not found: "missing.yaml".` |

@@ -627,7 +627,7 @@ describe("manni term (usage errors)", () => {
   // loader reports it through meta's target walk, in the family's own words.
   it("a path that matches nothing", () => {
     const r = term(["check", "nowhere/"]);
-    expect(r.stderr).toBe('manni: File not found: "nowhere/".\n');
+    expect(r.stderr).toBe('manni: File not found: "nowhere/". Check the path. Named paths resolve from the working directory.\n');
     expect(r.status).toBe(2);
   });
 

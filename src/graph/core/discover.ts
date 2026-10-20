@@ -310,3 +310,11 @@ export function documentSetPatterns(
     (message) => new GraphError(message),
   ).flatMap((c) => c.paths);
 }
+
+/** The refusal when a run's patterns match no file, with the next step. */
+export function noInputMessage(patterns: readonly string[], cwd: string): string {
+  return (
+    `No input files matched: ${patterns.join(", ")} (cwd: ${cwd}). ` +
+    "Fix the globs, or pass --allow-empty if matching nothing is expected."
+  );
+}

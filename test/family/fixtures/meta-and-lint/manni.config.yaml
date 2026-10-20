@@ -1,0 +1,15 @@
+# meta and lint are set up, and nothing else. docs/limits.md fails both,
+# docs/index.md passes both, and README.md sits outside every collection.
+collections:
+  - name: site
+    paths:
+      - "docs/**/*.md"
+
+meta:
+  overrides:
+    - files: "docs/*.md"
+      schemas:
+        - manni:core:1.0.0
+
+lint:
+  templates: [./templates.yaml]
