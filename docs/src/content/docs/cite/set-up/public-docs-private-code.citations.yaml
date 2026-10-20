@@ -171,7 +171,7 @@ docs/src/content/docs/cite/set-up/public-docs-private-code.mdx:
         file: src/cite/reporters/pretty.ts
         lines: 191-202
         integrity: sha256-16a397b19266b59f14b0a5b24aedddd2ae177b948dd4142039774b326f97538c
-        commit-sha: f4f8bc8842fc5ab412a82024d685c1821e4153fa
+        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: output-rule-test
       claim:
         lines: 155-159
@@ -180,7 +180,7 @@ docs/src/content/docs/cite/set-up/public-docs-private-code.mdx:
         file: test/cite/reporters.test.ts
         lines: 1178-1189
         integrity: sha256-213eb5372ea13e3ae640d32a91319f57b3a367d688f74f936dd24ed7bde89b77
-        commit-sha: f4f8bc8842fc5ab412a82024d685c1821e4153fa
+        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: root-any-directory
       claim:
         integrity: sha256-44cd17c76dea0af27557f70bd0e537154f7b06f6e34eff9792f9d49952933317
@@ -277,7 +277,7 @@ docs/src/content/docs/cite/set-up/public-docs-private-code.mdx:
         file: src/cite/reporters/pretty.ts
         lines: 191-202
         integrity: sha256-16a397b19266b59f14b0a5b24aedddd2ae177b948dd4142039774b326f97538c
-        commit-sha: f4f8bc8842fc5ab412a82024d685c1821e4153fa
+        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: shallow-history-unavailable
       claim:
         integrity: sha256-d9210649377aebf84ba2c1e11f246bf5ea8d4fff752ec51b34dd29fb75de9388
@@ -345,7 +345,7 @@ docs/src/content/docs/cite/set-up/public-docs-private-code.mdx:
         file: src/cite/reporters/pretty.ts
         lines: 354-361
         integrity: sha256-262e6afb0d4c5ba60d3304d8b39325522959012c6666ee4c80561afe41f248a1
-        commit-sha: f4f8bc8842fc5ab412a82024d685c1821e4153fa
+        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: no-key-reports-missing
       claim:
         lines: 267-268
@@ -363,7 +363,7 @@ docs/src/content/docs/cite/set-up/public-docs-private-code.mdx:
         file: src/cite/core/severity.ts
         lines: 26
         integrity: sha256-faa7a1adfe25232aa8ea8d51b0871ab0cf340719a4ccad89a315ddcb579bec69
-        commit-sha: f4f8bc8842fc5ab412a82024d685c1821e4153fa
+        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: check-sources-config
       claim:
         lines: 268-269
@@ -381,7 +381,7 @@ docs/src/content/docs/cite/set-up/public-docs-private-code.mdx:
         file: test/cite/adapt.test.ts
         lines: 555-565
         integrity: sha256-537cebc222cbede7983d0d01e1e617dc443a3136c31031555a78c490f20408ae
-        commit-sha: f4f8bc8842fc5ab412a82024d685c1821e4153fa
+        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: manifest-splice-citations
       claim:
         lines: 189-190
@@ -399,7 +399,7 @@ docs/src/content/docs/cite/set-up/public-docs-private-code.mdx:
         file: src/cite/core/check-page.ts
         lines: 270-277
         integrity: sha256-bafb8e3a9a6a8b7546da1d9761a5363a7362978cc1d692fea02671f8e834051e
-        commit-sha: f4f8bc8842fc5ab412a82024d685c1821e4153fa
+        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: decrypt-then-tracked
       claim:
         integrity: sha256-a584cb8f38343bb9035516da440060c85f945385029785a8166bf29d6ad9076a

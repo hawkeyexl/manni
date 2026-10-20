@@ -83,7 +83,7 @@ docs/src/content/docs/meta/fix/faq.mdx:
         file: src/meta/cli.ts
         lines: 889
         integrity: sha256-b900d16ea81ba54da695ee6ec4f8e9c3d17f1700d0b307ed74045692b603e056
-        commit-sha: ffdbdab4b080ca781c685250214db34edc01ae3b
+        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: faq-exit-0-all-passed
       claim:
         lines: 114
@@ -92,7 +92,7 @@ docs/src/content/docs/meta/fix/faq.mdx:
         file: src/meta/cli.ts
         lines: 889
         integrity: sha256-b900d16ea81ba54da695ee6ec4f8e9c3d17f1700d0b307ed74045692b603e056
-        commit-sha: ffdbdab4b080ca781c685250214db34edc01ae3b
+        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: explicit-file-always-validated
       claim:
         lines: 104-105
@@ -166,7 +166,7 @@ docs/src/content/docs/meta/fix/faq.mdx:
         file: src/meta/core/validator.ts
         lines: 893-895
         integrity: sha256-fd6c62879ca6dd0866db5f17bc5ea78109d35123b28badc7bd9eba85c3ebcc2c
-        commit-sha: ffdbdab4b080ca781c685250214db34edc01ae3b
+        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: first-source-wins-no-merging
       claim:
         integrity: sha256-870e7f7f319c04461f7b4a8ab8deffdefe0b960cbae84284c56cd499c36c0cef
@@ -174,7 +174,7 @@ docs/src/content/docs/meta/fix/faq.mdx:
         file: src/meta/core/resolve-schema.ts
         lines: 546-613
         integrity: sha256-ee86276fe33cd88ca7f656e8447207eb02a119503cdbc5a2cfa23575ab8d5860
-        commit-sha: ffdbdab4b080ca781c685250214db34edc01ae3b
+        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: schema-precedence-chain
       claim:
         integrity: sha256-6b3ac1de2c2e8ba2ef7dc5aa5a2bfc2ff573fd1d670a1172e95af54531cc262b
@@ -190,7 +190,7 @@ docs/src/content/docs/meta/fix/faq.mdx:
         file: src/meta/reporters/index.ts
         lines: 265-266
         integrity: sha256-5c04230352d43cff5b2855ff9f1236decf91cf1c92be1cbcb248f88a7f2f3f1f
-        commit-sha: ffdbdab4b080ca781c685250214db34edc01ae3b
+        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: empty-metadata-still-fails
       claim:
         integrity: sha256-062efac10b43a5fc0c77f354177ee856ddc31f172a119a39b247d5b0d6453b21

@@ -24,7 +24,7 @@ docs/src/content/docs/a11y/get-started/index.mdx:
         file: src/a11y/core/analyzer.ts
         lines: 78-79
         integrity: sha256-3a0636f0eaf41741936dcf42a3b5851b1a8db2f01cbf7bde0d21354dbd022355
-        commit-sha: 7c1e74de55b039326da5de3c739f1c2be86b2fdd
+        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: no-browser-message
       claim:
         integrity: sha256-e54af0bdabd2995b4c6bfa3d95d91171f037b785fd317a6099a56037140829f1
@@ -32,7 +32,7 @@ docs/src/content/docs/a11y/get-started/index.mdx:
         file: src/a11y/core/analyzer.ts
         lines: 75-76
         integrity: sha256-788b2a76c88ddbef9d8580e38c5d634e8629ff840368a418c11e3a94afeb40a7
-        commit-sha: 7c1e74de55b039326da5de3c739f1c2be86b2fdd
+        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: no-browser-before-page
       claim:
         lines: 42-46
@@ -41,7 +41,7 @@ docs/src/content/docs/a11y/get-started/index.mdx:
         file: src/a11y/core/analyzer.ts
         lines: 147-150
         integrity: sha256-afbde11586384b5b22eebcfc3548f538603de13df38ae3ca8fb083ef742144d3
-        commit-sha: 7c1e74de55b039326da5de3c739f1c2be86b2fdd
+        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: no-browser-exit-2
       claim:
         integrity: sha256-6fc17d690a173d593ae62170b0fdb81c169999f634caeae1696b052a3d6d3273
@@ -118,7 +118,7 @@ docs/src/content/docs/a11y/get-started/index.mdx:
         file: src/a11y/reporters/pretty.ts
         lines: 39
         integrity: sha256-4025aff3d5f3cab938378e0048891a7667be9581ad8fee52cfa1635a5f17311b
-        commit-sha: 468db95a0f83449aa7c3cba9d5b6f6111a293085
+        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: report-header-source
       claim:
         lines: 134
@@ -127,7 +127,7 @@ docs/src/content/docs/a11y/get-started/index.mdx:
         file: src/a11y/reporters/pretty.ts
         lines: 82-87
         integrity: sha256-77791016044e071caf93f3d3a9c0c857611d695b5c62b9d62e90959abb68b567
-        commit-sha: 468db95a0f83449aa7c3cba9d5b6f6111a293085
+        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: report-page-line
       claim:
         lines: 135
@@ -136,7 +136,7 @@ docs/src/content/docs/a11y/get-started/index.mdx:
         file: src/a11y/reporters/pretty.ts
         lines: 46-52
         integrity: sha256-09e2b04feddfa1db669c90db8b94859c9366fe0ed7c383ebc5eaf0645bf5c2af
-        commit-sha: 468db95a0f83449aa7c3cba9d5b6f6111a293085
+        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: report-page-line-counts
       claim:
         lines: 135
@@ -145,7 +145,7 @@ docs/src/content/docs/a11y/get-started/index.mdx:
         file: src/a11y/reporters/pretty.ts
         lines: 103-115
         integrity: sha256-edd25fc849b10ef5568ae3e7f524a2f5b677d713bd2cc1767f14196d524eceb4
-        commit-sha: 468db95a0f83449aa7c3cba9d5b6f6111a293085
+        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: report-violation-line
       claim:
         lines: 136
@@ -154,7 +154,7 @@ docs/src/content/docs/a11y/get-started/index.mdx:
         file: src/a11y/reporters/pretty.ts
         lines: 120-121
         integrity: sha256-6b7d37f15b0e1d9e35b26cd4cd0e47762eb8da7cc76e92988f9cafbb3ed5ddb1
-        commit-sha: 468db95a0f83449aa7c3cba9d5b6f6111a293085
+        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: report-node-line
       claim:
         lines: 138
@@ -163,7 +163,7 @@ docs/src/content/docs/a11y/get-started/index.mdx:
         file: src/a11y/reporters/pretty.ts
         lines: 123-126
         integrity: sha256-de916279e98c643c8d60db8c18288bdd3df9bb4a70ecd477ed6fda7e71eefbcb
-        commit-sha: 468db95a0f83449aa7c3cba9d5b6f6111a293085
+        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: report-node-line-max-three
       claim:
         lines: 138
@@ -172,7 +172,7 @@ docs/src/content/docs/a11y/get-started/index.mdx:
         file: src/a11y/reporters/nodes.ts
         lines: 8
         integrity: sha256-ae7a48b7076791968836300745283b32a70b92f9b6fc578e8f5ac676d042aafd
-        commit-sha: 468db95a0f83449aa7c3cba9d5b6f6111a293085
+        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: score-share-of-rules
       claim:
         integrity: sha256-bab92ceb7797df08ee7ed3a2a9e075377f1315f2c00c4adfb817a35717b5202f

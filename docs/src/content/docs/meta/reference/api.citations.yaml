@@ -289,4 +289,4 @@ docs/src/content/docs/meta/reference/api.mdx:
         file: src/meta/reporters/index.ts
         lines: 301-312
         integrity: sha256-96ed1375b03b05a524d20e67fe16600c5dae6b6e7dba967dc7678a0ad2bdb641
-        commit-sha: ffdbdab4b080ca781c685250214db34edc01ae3b
+        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560

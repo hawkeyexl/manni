@@ -39,7 +39,7 @@ docs/src/content/docs/meta/ci/recipes.mdx:
         file: src/meta/cli.ts
         lines: 889
         integrity: sha256-b900d16ea81ba54da695ee6ec4f8e9c3d17f1700d0b307ed74045692b603e056
-        commit-sha: ffdbdab4b080ca781c685250214db34edc01ae3b
+        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: validate-judges-the-derived-stamp
       claim:
         integrity: sha256-3219f33ff597c89ce4d5ecf4eae156536902e01c392bc0b3198016462ff8b762
@@ -65,7 +65,7 @@ docs/src/content/docs/meta/ci/recipes.mdx:
         file: src/meta/reporters/index.ts
         lines: 314-335
         integrity: sha256-2f7b91cc687ca83e4e49b32ee16f32c1b693d3d283dce6c1cb75793823c255ac
-        commit-sha: ffdbdab4b080ca781c685250214db34edc01ae3b
+        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: manni-rebases-paths-onto-the-git-root
       claim:
         lines: 86-87
@@ -74,7 +74,7 @@ docs/src/content/docs/meta/ci/recipes.mdx:
         file: src/meta/reporters/sarif.ts
         lines: 158-161
         integrity: sha256-6679bb684dbe1ea06983c60d39b4ad0769236d43eb6368ade8022992682c2c51
-        commit-sha: 4d274aaab31e92bf39ddc11f636cecc69ea1cf34
+        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: no-git-root-warns-on-stderr
       claim:
         lines: 88-89
@@ -83,7 +83,7 @@ docs/src/content/docs/meta/ci/recipes.mdx:
         file: src/meta/reporters/sarif.ts
         lines: 65-69
         integrity: sha256-5885a7f1a18f3127f0428c6c12d0992d17b49a381685c0157a0be21f9d76fbd9
-        commit-sha: ffdbdab4b080ca781c685250214db34edc01ae3b
+        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: hook-needs-node-24
       claim:
         lines: 301-302

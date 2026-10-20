@@ -7,7 +7,7 @@ docs/src/content/docs/meta/ci/index.mdx:
         file: src/meta/cli.ts
         lines: 741-745
         integrity: sha256-d9459f031fc83234358aaa2e641df4733c5699d2b056031ac59e5f00f9384e98
-        commit-sha: ffdbdab4b080ca781c685250214db34edc01ae3b
+        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: scoped-run-skips-corpus-checks
       claim:
         integrity: sha256-0cd301c79f776f15eafb0ef08236fdf158c5107697a27f3a8cfc2b14fe1624c4
@@ -40,7 +40,7 @@ docs/src/content/docs/meta/ci/index.mdx:
         file: src/meta/reporters/index.ts
         lines: 314-335
         integrity: sha256-2f7b91cc687ca83e4e49b32ee16f32c1b693d3d283dce6c1cb75793823c255ac
-        commit-sha: ffdbdab4b080ca781c685250214db34edc01ae3b
+        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: validate-exits-1-on-failures
       claim:
         lines: 51-52
@@ -49,7 +49,7 @@ docs/src/content/docs/meta/ci/index.mdx:
         file: src/meta/cli.ts
         lines: 889
         integrity: sha256-b900d16ea81ba54da695ee6ec4f8e9c3d17f1700d0b307ed74045692b603e056
-        commit-sha: ffdbdab4b080ca781c685250214db34edc01ae3b
+        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: operational-error-exits-2
       claim:
         lines: 52-53

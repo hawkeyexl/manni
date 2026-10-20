@@ -17,7 +17,7 @@ docs/src/content/docs/meta/index.mdx:
         file: src/meta/core/validator.ts
         lines: 96
         integrity: sha256-13cad13b9da05a87f1d7e4ed101397327ec94367e2c9e0f6eba648bb4109934b
-        commit-sha: ffdbdab4b080ca781c685250214db34edc01ae3b
+        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: required-fields-checked-against-metadata-object
       claim:
         lines: 97
@@ -26,7 +26,7 @@ docs/src/content/docs/meta/index.mdx:
         file: src/meta/core/validator.ts
         lines: 894-895
         integrity: sha256-b41d2247f4df563b4638532286fcaf90f3105ab234b56e24619fd7f598d68e59
-        commit-sha: ffdbdab4b080ca781c685250214db34edc01ae3b
+        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: forty-five-built-in-schemas
       claim:
         integrity: sha256-9e4919db3f2c7b8d5b8d495e05695a990ee087c81083038868822067556ceb18
@@ -42,7 +42,7 @@ docs/src/content/docs/meta/index.mdx:
         file: src/meta/reporters/index.ts
         lines: 264-268
         integrity: sha256-eb895ec4689f56368fe1f44400daf0910c2e57dee536b369d0bbc192635b2403
-        commit-sha: ffdbdab4b080ca781c685250214db34edc01ae3b
+        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: failure-fails-the-build
       claim:
         integrity: sha256-5641af1fab3e0ee0ecc5b8ff5a64e87af036426aa1f4a4a06ff340e640e4b38c
@@ -50,7 +50,7 @@ docs/src/content/docs/meta/index.mdx:
         file: src/meta/cli.ts
         lines: 889
         integrity: sha256-b900d16ea81ba54da695ee6ec4f8e9c3d17f1700d0b307ed74045692b603e056
-        commit-sha: ffdbdab4b080ca781c685250214db34edc01ae3b
+        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: default-run-requires-type
       claim:
         integrity: sha256-5641af1fab3e0ee0ecc5b8ff5a64e87af036426aa1f4a4a06ff340e640e4b38c

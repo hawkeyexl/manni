@@ -131,7 +131,7 @@ docs/src/content/docs/meta/schemas/encrypted-fields.mdx:
         file: src/meta/core/validator.ts
         lines: 131-148
         integrity: sha256-4eed67547bf1a96ae677704ca6a07760f6dfb83a69b785122be7cb374d8f6064
-        commit-sha: ffdbdab4b080ca781c685250214db34edc01ae3b
+        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: encrypt-keyword-is-x-manni-encrypt
       claim:
         integrity: sha256-1c5d5196746ac421b736fec16debdf032a51056c426a9ddd590f957a52967d66
@@ -148,4 +148,4 @@ docs/src/content/docs/meta/schemas/encrypted-fields.mdx:
         file: src/meta/core/validator.ts
         lines: 659-664
         integrity: sha256-32ae7c90403fd1cddb487dfc93579f272e5dbfa59abee2f8f2d13b8f46e11be6
-        commit-sha: ffdbdab4b080ca781c685250214db34edc01ae3b
+        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560

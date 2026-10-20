@@ -17,4 +17,4 @@ docs/src/content/docs/meta/reference/glossary/override.mdx:
         file: src/meta/core/resolve-schema.ts
         lines: 553-612
         integrity: sha256-6fb09f29f342076634fd2a5b5360017ebf8764e897dba65fb192ca2b23584538
-        commit-sha: ffdbdab4b080ca781c685250214db34edc01ae3b
+        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560

@@ -75,7 +75,7 @@ docs/src/content/docs/meta/set-up/new-required-field.mdx:
         file: src/meta/reporters/index.ts
         lines: 295-297
         integrity: sha256-613ff887c2f368bb7e79c0882524de376e7abf681d716f6437416d839beec4e6
-        commit-sha: ffdbdab4b080ca781c685250214db34edc01ae3b
+        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: rerecord-drops-entries-that-no-longer-occur
       claim:
         lines: 116
@@ -93,7 +93,7 @@ docs/src/content/docs/meta/set-up/new-required-field.mdx:
         file: src/meta/reporters/index.ts
         lines: 225-227
         integrity: sha256-849b021b86920d8d60d153dc9af8faf82a85dff305e2b57867aa20490a76444a
-        commit-sha: ffdbdab4b080ca781c685250214db34edc01ae3b
+        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: unbaselined-finding-fails-the-run
       claim:
         lines: 108
@@ -127,7 +127,7 @@ docs/src/content/docs/meta/set-up/new-required-field.mdx:
         file: src/meta/reporters/index.ts
         lines: 240-245
         integrity: sha256-c8aba0f41d20ae5099fc504a1fa7bc6d0c0bff52b9ad48b6a3df092126eca2b6
-        commit-sha: ffdbdab4b080ca781c685250214db34edc01ae3b
+        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: pretty-summary-line-shape
       claim:
         integrity: sha256-be8733ecd60bb4542c3922a3ddf75192528034df3f92d5ad0edf762988c08ef3
@@ -135,7 +135,7 @@ docs/src/content/docs/meta/set-up/new-required-field.mdx:
         file: src/meta/reporters/index.ts
         lines: 292-294
         integrity: sha256-7aa6d0c460018b932f918f7a590a376d89c4a592b7c383d2d71d1c4e9f2c8393
-        commit-sha: ffdbdab4b080ca781c685250214db34edc01ae3b
+        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: summary-reports-baselined-finding-count
       claim:
         integrity: sha256-be8733ecd60bb4542c3922a3ddf75192528034df3f92d5ad0edf762988c08ef3
@@ -143,7 +143,7 @@ docs/src/content/docs/meta/set-up/new-required-field.mdx:
         file: src/meta/reporters/index.ts
         lines: 224-225
         integrity: sha256-1f1bffbcf6da4ce9e97cd1932b613e4f44930f4ebd96ae72d8dd844e0eee5580
-        commit-sha: ffdbdab4b080ca781c685250214db34edc01ae3b
+        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: write-baseline-replaces-the-whole-file
       claim:
         lines: 62
@@ -169,7 +169,7 @@ docs/src/content/docs/meta/set-up/new-required-field.mdx:
         file: src/meta/reporters/index.ts
         lines: 214-222
         integrity: sha256-75a6b1ecf81a5e5fb22cf3178f37e0434299d59a014b9f3ac1a0514a76accbc3
-        commit-sha: ffdbdab4b080ca781c685250214db34edc01ae3b
+        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: write-baseline-records-then-exits-zero
       claim:
         integrity: sha256-85eac28ac1ac50b95b1ca107e97a7461183ce7e5c1fbb7f234df1c21af9f8c3e
@@ -185,7 +185,7 @@ docs/src/content/docs/meta/set-up/new-required-field.mdx:
         file: src/meta/cli.ts
         lines: 889
         integrity: sha256-b900d16ea81ba54da695ee6ec4f8e9c3d17f1700d0b307ed74045692b603e056
-        commit-sha: ffdbdab4b080ca781c685250214db34edc01ae3b
+        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: builtin-schemas-are-immutable
       claim:
         integrity: sha256-d25170d7187579ffa292e40f233ca965860e182402f347daa7e598dfba7d92fb

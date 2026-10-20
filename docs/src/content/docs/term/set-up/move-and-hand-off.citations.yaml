@@ -227,7 +227,7 @@ docs/src/content/docs/term/set-up/move-and-hand-off.mdx:
         file: src/term/reporters/pretty.ts
         lines: 76-88
         integrity: sha256-760c038d026813ceecdc5dbe00dd6c9b5fe09412c17c5b2894c60eb0d6e6431a
-        commit-sha: f4f8bc8842fc5ab412a82024d685c1821e4153fa
+        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: trailing-slash-directory
       claim:
         lines: 107-108
@@ -254,7 +254,7 @@ docs/src/content/docs/term/set-up/move-and-hand-off.mdx:
         file: src/term/reporters/pretty.ts
         lines: 413-415
         integrity: sha256-1b04bdbc4fd9192245b1c24b9485bd0732728068eae38dfa929086b66d6e6fb2
-        commit-sha: f4f8bc8842fc5ab412a82024d685c1821e4153fa
+        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: page-holds-every-field
       claim:
         lines: 132-133
@@ -288,7 +288,7 @@ docs/src/content/docs/term/set-up/move-and-hand-off.mdx:
         file: src/term/reporters/pretty.ts
         lines: 328-339
         integrity: sha256-65ea1338f1819a4643f5de084e834ac640b4cb369c54d4824e58639fadf7a3ae
-        commit-sha: f4f8bc8842fc5ab412a82024d685c1821e4153fa
+        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: dropped-from-construct-name
       claim:
         lines: 173
@@ -332,7 +332,7 @@ docs/src/content/docs/term/set-up/move-and-hand-off.mdx:
         file: src/term/reporters/pretty.ts
         lines: 413-415
         integrity: sha256-1b04bdbc4fd9192245b1c24b9485bd0732728068eae38dfa929086b66d6e6fb2
-        commit-sha: f4f8bc8842fc5ab412a82024d685c1821e4153fa
+        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: deflist-file-declares-term-set
       claim:
         lines: 216-217
@@ -349,7 +349,7 @@ docs/src/content/docs/term/set-up/move-and-hand-off.mdx:
         file: src/term/reporters/pretty.ts
         lines: 405-408
         integrity: sha256-93e4ae30fabffdc25a5d28231ea6643dabf213a1f9e0d4754638c0f3acde8d9b
-        commit-sha: f4f8bc8842fc5ab412a82024d685c1821e4153fa
+        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: dry-run-writes-nothing
       claim:
         integrity: sha256-39e55d00093f9087f34a68b710d4eae35c8318cf9a1e059bd655e573fec28fe6
@@ -366,7 +366,7 @@ docs/src/content/docs/term/set-up/move-and-hand-off.mdx:
         file: src/term/reporters/pretty.ts
         lines: 287-296
         integrity: sha256-4a46913a482241c5208c12db8e4c7d97048bce18ac2a671cd09593de1853404c
-        commit-sha: f4f8bc8842fc5ab412a82024d685c1821e4153fa
+        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: check-prints-only-files
       claim:
         integrity: sha256-9111425de3391d556ef02f85b0eadee4e2323961f6fa74a18f04bfa970807b47
@@ -374,7 +374,7 @@ docs/src/content/docs/term/set-up/move-and-hand-off.mdx:
         file: src/term/reporters/pretty.ts
         lines: 402-404
         integrity: sha256-91827aa4e7867fb2149b65eb178602d35c6cba063f7858a77b977c3437324fe2
-        commit-sha: f4f8bc8842fc5ab412a82024d685c1821e4153fa
+        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: check-exit-1-when-differs
       claim:
         integrity: sha256-9111425de3391d556ef02f85b0eadee4e2323961f6fa74a18f04bfa970807b47
@@ -742,7 +742,7 @@ docs/src/content/docs/term/set-up/move-and-hand-off.mdx:
         file: src/term/reporters/pretty.ts
         lines: 409-410
         integrity: sha256-3534be31216f9ea19f6b11ab49648d95894ca49f825e23cb008bc07adb75b76f
-        commit-sha: f4f8bc8842fc5ab412a82024d685c1821e4153fa
+        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: construct-row-html-dfn
       claim:
         lines: 31
@@ -795,7 +795,7 @@ docs/src/content/docs/term/set-up/move-and-hand-off.mdx:
         file: src/term/reporters/pretty.ts
         lines: 397-399
         integrity: sha256-51d52ae50285c965832b9a85bbe48f4ac702490287a568e31395e8b4033f1947
-        commit-sha: f4f8bc8842fc5ab412a82024d685c1821e4153fa
+        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: write-renders-documents-and-interchange
       claim:
         integrity: sha256-a19930c9b0bb4093c9a3a1d7b2f1d824e5f650266a0ffa5f944f9a0bc37dc254
@@ -812,7 +812,7 @@ docs/src/content/docs/term/set-up/move-and-hand-off.mdx:
         file: src/term/reporters/pretty.ts
         lines: 349-355
         integrity: sha256-8a84022812754e632988d16366426755522a71cdd4d73d18fc088899374d5c1e
-        commit-sha: f4f8bc8842fc5ab412a82024d685c1821e4153fa
+        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: render-row-tbx3
       claim:
         lines: 264

@@ -7,7 +7,7 @@ docs/src/content/docs/meta/reference/schemas/anthropic-claude-subagent.mdx:
         file: src/meta/core/resolve-schema.ts
         lines: 573-590
         integrity: sha256-89b0306867d74134682c6435a02c3d0d7c427c2f9c32ce96b4a14819826e0433
-        commit-sha: ffdbdab4b080ca781c685250214db34edc01ae3b
+        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: subagent-effort-has-no-lower-bound
       claim:
         integrity: sha256-ef3e6a51afd5c08cd93c8f1ae09a48a0dbbcfe6a2fd0458fa4fc00932af3ce5d

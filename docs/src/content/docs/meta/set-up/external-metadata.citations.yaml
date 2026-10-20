@@ -389,7 +389,7 @@ docs/src/content/docs/meta/set-up/external-metadata.mdx:
         file: src/meta/reporters/sarif.ts
         lines: 176-181
         integrity: sha256-ebb9ed7f08e9b8a08041500e0d4ba2ccb6008a040d119519a07130862eea03d7
-        commit-sha: 4d274aaab31e92bf39ddc11f636cecc69ea1cf34
+        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: sarif-uri-relative-to-repository-root
       claim:
         integrity: sha256-9e19159c1eaf38a979fa89546a7ce79ad37a05ad08be3ca54f171daa2aa3a3e5
@@ -397,7 +397,7 @@ docs/src/content/docs/meta/set-up/external-metadata.mdx:
         file: src/meta/reporters/sarif.ts
         lines: 167-170
         integrity: sha256-a04729eaafdf11eef2d13bd1898bdf4205652de8a747a43c54b625e9ada049c5
-        commit-sha: 4d274aaab31e92bf39ddc11f636cecc69ea1cf34
+        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: membership-decided-per-file
       claim:
         lines: 201
@@ -440,7 +440,7 @@ docs/src/content/docs/meta/set-up/external-metadata.mdx:
         file: src/meta/reporters/index.ts
         lines: 317-319
         integrity: sha256-5fb984a693153c4adc59c9dce71225890ed44ab78ac1c1bdfab3a45414b8686c
-        commit-sha: ffdbdab4b080ca781c685250214db34edc01ae3b
+        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: findings-exit-one
       claim:
         integrity: sha256-312f0485854c4b39438e45a31f72245401843d988d1ba3b97aea031ceac86bd6
@@ -448,7 +448,7 @@ docs/src/content/docs/meta/set-up/external-metadata.mdx:
         file: src/meta/cli.ts
         lines: 889
         integrity: sha256-b900d16ea81ba54da695ee6ec4f8e9c3d17f1700d0b307ed74045692b603e056
-        commit-sha: ffdbdab4b080ca781c685250214db34edc01ae3b
+        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: validate-summary-line-format
       claim:
         integrity: sha256-b703fb189e7b60d9d5e33c0c7a1508869101ab61fb8f444b79b2d85f005a5332
@@ -456,7 +456,7 @@ docs/src/content/docs/meta/set-up/external-metadata.mdx:
         file: src/meta/reporters/index.ts
         lines: 292-294
         integrity: sha256-7aa6d0c460018b932f918f7a590a376d89c4a592b7c383d2d71d1c4e9f2c8393
-        commit-sha: ffdbdab4b080ca781c685250214db34edc01ae3b
+        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: owned-key-message-names-manifest-and-collection
       claim:
         integrity: sha256-b703fb189e7b60d9d5e33c0c7a1508869101ab61fb8f444b79b2d85f005a5332
@@ -472,7 +472,7 @@ docs/src/content/docs/meta/set-up/external-metadata.mdx:
         file: src/meta/reporters/index.ts
         lines: 253-260
         integrity: sha256-349c2f846d612a73f2647261e0cd2e7ae530f7108df318636a9d3659a45a04db
-        commit-sha: ffdbdab4b080ca781c685250214db34edc01ae3b
+        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: finding-on-manifest-value-names-manifest-line
       claim:
         integrity: sha256-b703fb189e7b60d9d5e33c0c7a1508869101ab61fb8f444b79b2d85f005a5332
@@ -480,7 +480,7 @@ docs/src/content/docs/meta/set-up/external-metadata.mdx:
         file: src/meta/core/validator.ts
         lines: 1029-1037
         integrity: sha256-5587f39084157694d729b2385ff6a7f3539c881f61e06a2e2053c1d1132d8918
-        commit-sha: fbf4e054ebe577b327e52862c03e40c902467914
+        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: get-prints-manifest-supplied-value
       claim:
         integrity: sha256-14ad244fc010736bbb473235d7746a514acd806569f379a80ab6a90e679777d4

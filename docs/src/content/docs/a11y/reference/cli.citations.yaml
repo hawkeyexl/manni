@@ -25,7 +25,7 @@ docs/src/content/docs/a11y/reference/cli.mdx:
         file: src/a11y/reporters/pretty.ts
         lines: 13-15
         integrity: sha256-acb1496c9c3313fa76236400c61a4c877077954512e03e3d4f7a564ba9e33b64
-        commit-sha: 468db95a0f83449aa7c3cba9d5b6f6111a293085
+        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: check-exit-1-on-failed
       claim:
         integrity: sha256-1b2d84c94790f54c9ebfc1dc5e4f7a813d2941af7ff911abd4122ea2bd3f705a
@@ -150,7 +150,7 @@ docs/src/content/docs/a11y/reference/cli.mdx:
         file: src/a11y/core/analyzer.ts
         lines: 284
         integrity: sha256-bf0c28d68ddd7936d6844bbe088203ec881b829716e4c11e31a0d01aa7c203f7
-        commit-sha: 7c1e74de55b039326da5de3c739f1c2be86b2fdd
+        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: severity-unknown-exit-2
       claim:
         lines: 74
@@ -204,7 +204,7 @@ docs/src/content/docs/a11y/reference/cli.mdx:
         file: src/a11y/core/analyzer.ts
         lines: 219
         integrity: sha256-0edd38d9de01740c5866059c1cebd48e9ad171d35e2ad12ec63b321505d2d094
-        commit-sha: 7c1e74de55b039326da5de3c739f1c2be86b2fdd
+        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: quiet-pretty-only
       claim:
         lines: 76
@@ -213,7 +213,7 @@ docs/src/content/docs/a11y/reference/cli.mdx:
         file: src/a11y/reporters/pretty.ts
         lines: 46-47
         integrity: sha256-0ee1e351abd759093918bd6fd5aa79aa46a20c3eb970b169850218134e9fa769
-        commit-sha: 468db95a0f83449aa7c3cba9d5b6f6111a293085
+        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: progress-auto-tty
       claim:
         lines: 77
@@ -488,7 +488,7 @@ docs/src/content/docs/a11y/reference/cli.mdx:
         file: src/a11y/core/analyzer.ts
         lines: 330
         integrity: sha256-4fd5eaa6c76b6f86c34a2ec29c5d51c7f784d56e2cb0370d2951dd0fa6f8c490
-        commit-sha: 7c1e74de55b039326da5de3c739f1c2be86b2fdd
+        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: links-page-filter
       claim:
         lines: 148-153
@@ -593,7 +593,7 @@ docs/src/content/docs/a11y/reference/cli.mdx:
         file: src/a11y/core/analyzer.ts
         lines: 303-304
         integrity: sha256-d37153b288254bd4665b77138496d613feb30e0c93a5c59c95dc07c999a87230
-        commit-sha: 7c1e74de55b039326da5de3c739f1c2be86b2fdd
+        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: incomplete-not-failures
       claim:
         integrity: sha256-38b363c103d9c104781a457e4c0f20dcc45108518cbed98fc26895fce3569989
@@ -609,7 +609,7 @@ docs/src/content/docs/a11y/reference/cli.mdx:
         file: src/a11y/reporters/pretty.ts
         lines: 39-72
         integrity: sha256-d87673336b89e94256ba08a4fcb49c797961012da2939cc491971d0240f160a4
-        commit-sha: 468db95a0f83449aa7c3cba9d5b6f6111a293085
+        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: pretty-header-where
       claim:
         integrity: sha256-54b4561cc385418aaf7d2ef50391c0ff0f31d1ab6dddb04a1825e8ae2efa2202
@@ -617,7 +617,7 @@ docs/src/content/docs/a11y/reference/cli.mdx:
         file: src/a11y/reporters/pretty.ts
         lines: 82-87
         integrity: sha256-77791016044e071caf93f3d3a9c0c857611d695b5c62b9d62e90959abb68b567
-        commit-sha: 468db95a0f83449aa7c3cba9d5b6f6111a293085
+        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: pretty-violation-lines
       claim:
         lines: 312-328
@@ -626,7 +626,7 @@ docs/src/content/docs/a11y/reference/cli.mdx:
         file: src/a11y/reporters/pretty.ts
         lines: 117-128
         integrity: sha256-7d670906f44b4ab808fc973b2d577e39205a11ab0e375a75af745c467e06a6c2
-        commit-sha: 468db95a0f83449aa7c3cba9d5b6f6111a293085
+        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: pretty-max-nodes
       claim:
         lines: 312-328
@@ -635,7 +635,7 @@ docs/src/content/docs/a11y/reference/cli.mdx:
         file: src/a11y/reporters/nodes.ts
         lines: 8
         integrity: sha256-ae7a48b7076791968836300745283b32a70b92f9b6fc578e8f5ac676d042aafd
-        commit-sha: 468db95a0f83449aa7c3cba9d5b6f6111a293085
+        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: pretty-could-not-load
       claim:
         lines: 312-328
@@ -644,7 +644,7 @@ docs/src/content/docs/a11y/reference/cli.mdx:
         file: src/a11y/reporters/pretty.ts
         lines: 42-44
         integrity: sha256-52e541fc073fe75de60dd15283624cbc8f6a3dd7fe0a2cc4fda95b585d72c99a
-        commit-sha: 468db95a0f83449aa7c3cba9d5b6f6111a293085
+        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: pretty-footer-skipped-duplicates
       claim:
         lines: 312-328
@@ -653,7 +653,7 @@ docs/src/content/docs/a11y/reference/cli.mdx:
         file: src/a11y/reporters/pretty.ts
         lines: 63-68
         integrity: sha256-94eca06747a93c3a84c98855e53e698b46d539b63f8884e4e210f24adc63c577
-        commit-sha: 468db95a0f83449aa7c3cba9d5b6f6111a293085
+        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: pretty-quiet-hides-clean
       claim:
         lines: 312-328
@@ -662,7 +662,7 @@ docs/src/content/docs/a11y/reference/cli.mdx:
         file: src/a11y/reporters/pretty.ts
         lines: 46-47
         integrity: sha256-0ee1e351abd759093918bd6fd5aa79aa46a20c3eb970b169850218134e9fa769
-        commit-sha: 468db95a0f83449aa7c3cba9d5b6f6111a293085
+        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: json-whole-run
       claim:
         integrity: sha256-5d078b0fb0ae8525b4efe19ecd428c5460feb50622ab9279b5fac017aa2e3b75
@@ -697,7 +697,7 @@ docs/src/content/docs/a11y/reference/cli.mdx:
         file: src/a11y/core/analyzer.ts
         lines: 413-432
         integrity: sha256-9b49dbe5a0573e6dda8d73c2419e137bba3731f709f8ee010deb3e43f026becc
-        commit-sha: 7c1e74de55b039326da5de3c739f1c2be86b2fdd
+        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: json-severity-mapped
       claim:
         lines: 420
@@ -706,7 +706,7 @@ docs/src/content/docs/a11y/reference/cli.mdx:
         file: src/a11y/core/analyzer.ts
         lines: 392-402
         integrity: sha256-4bc7e15af6d93390f938ce8170dbc0095412d5b35d3aae1d1c4ca7bb5b4fdefe
-        commit-sha: 7c1e74de55b039326da5de3c739f1c2be86b2fdd
+        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: json-impact-default-minor
       claim:
         lines: 421
@@ -715,7 +715,7 @@ docs/src/content/docs/a11y/reference/cli.mdx:
         file: src/a11y/core/analyzer.ts
         lines: 405-407
         integrity: sha256-4ad5592b202d0584ad0acfc62e5a93b00edca8cb368b3b3794ebca23d33e8aa2
-        commit-sha: 7c1e74de55b039326da5de3c739f1c2be86b2fdd
+        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: json-passes
       claim:
         lines: 423
@@ -724,7 +724,7 @@ docs/src/content/docs/a11y/reference/cli.mdx:
         file: src/a11y/core/analyzer.ts
         lines: 303
         integrity: sha256-55daea798147accaba25c4006e27039c32d5856987ad6282276070430b3676b7
-        commit-sha: 7c1e74de55b039326da5de3c739f1c2be86b2fdd
+        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: json-incomplete
       claim:
         lines: 424
@@ -733,7 +733,7 @@ docs/src/content/docs/a11y/reference/cli.mdx:
         file: src/a11y/core/analyzer.ts
         lines: 304
         integrity: sha256-5eee226c2174e6c09fc3f5248ed2c6af9ab97415b92e66d9a4e1212fdde80588
-        commit-sha: 7c1e74de55b039326da5de3c739f1c2be86b2fdd
+        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: json-score-null
       claim:
         lines: 425
@@ -849,7 +849,7 @@ docs/src/content/docs/a11y/reference/cli.mdx:
         file: src/a11y/reporters/github.ts
         lines: 84-98
         integrity: sha256-39475b37ec703396aeb514f9091e8aad6f04534a66a0a7076b2ac690ffbff830
-        commit-sha: 207c8aae5057214366e51febb65d670cddeed9b3
+        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: github-silent-when-clean
       claim:
         lines: 457-460
@@ -866,7 +866,7 @@ docs/src/content/docs/a11y/reference/cli.mdx:
         file: src/a11y/reporters/github.ts
         lines: 38-40
         integrity: sha256-5b8d256678d84dc5acecd372a106c99e7c9f0d642835c5475cce3f6cdffdc7c9
-        commit-sha: 468db95a0f83449aa7c3cba9d5b6f6111a293085
+        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: github-load-always-error
       claim:
         lines: 477-482
@@ -875,7 +875,7 @@ docs/src/content/docs/a11y/reference/cli.mdx:
         file: src/a11y/reporters/github.ts
         lines: 55-61
         integrity: sha256-378f9f7ee3a10b81cf90682afbdd4d913435ebf1b2d0009089b0e2374feaa60b
-        commit-sha: 207c8aae5057214366e51febb65d670cddeed9b3
+        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: github-impact-map-table
       claim:
         lines: 486-489
@@ -884,7 +884,7 @@ docs/src/content/docs/a11y/reference/cli.mdx:
         file: src/a11y/core/analyzer.ts
         lines: 392-402
         integrity: sha256-4bc7e15af6d93390f938ce8170dbc0095412d5b35d3aae1d1c4ca7bb5b4fdefe
-        commit-sha: 7c1e74de55b039326da5de3c739f1c2be86b2fdd
+        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: progress-events-narrated
       claim:
         integrity: sha256-cdef95d7312c9bd3a51ed52b6b14e432cec53a6e9a6e4d2ba6560a019bc059a1
@@ -1053,7 +1053,7 @@ docs/src/content/docs/a11y/reference/cli.mdx:
         file: src/a11y/core/analyzer.ts
         lines: 75-76
         integrity: sha256-788b2a76c88ddbef9d8580e38c5d634e8629ff840368a418c11e3a94afeb40a7
-        commit-sha: 7c1e74de55b039326da5de3c739f1c2be86b2fdd
+        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: config-discovery
       claim:
         integrity: sha256-29d5bc17af955399250282a978488d3d9daa2c35b4904591cebebb63c6dd1525
@@ -1329,7 +1329,7 @@ docs/src/content/docs/a11y/reference/cli.mdx:
         file: src/a11y/types.ts
         lines: 101-108
         integrity: sha256-16f35004c6fde97df45ff39f5f894a51e0126a077fd4c2cfece07eebce4c181c
-        commit-sha: 468db95a0f83449aa7c3cba9d5b6f6111a293085
+        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: pretty-redirect-lines
       claim:
         integrity: sha256-6b7def95edb7aaa8d9d0e6f56cc6697de72997edc9c663054cad1fab5169534c
@@ -1337,7 +1337,7 @@ docs/src/content/docs/a11y/reference/cli.mdx:
         file: src/a11y/reporters/pretty.ts
         lines: 56-71
         integrity: sha256-8999321c10d8ad08d76175a4dece0f80421d3edd609cd2aa54d4e880688d08b9
-        commit-sha: 468db95a0f83449aa7c3cba9d5b6f6111a293085
+        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: seed-redirect-exit-2
       claim:
         integrity: sha256-2365e3a661e18685268231291c1de7d90dc753e0c95a98d5dceded0af069b911

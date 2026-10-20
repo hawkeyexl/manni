@@ -104,7 +104,7 @@ docs/src/content/docs/meta/reference/element-metadata.mdx:
         file: src/meta/core/resolve-schema.ts
         lines: 619-627
         integrity: sha256-83a34b6970a5db3985735ca2d0c158b31b9654dca2f5fc46f9eea9c221f00ec9
-        commit-sha: ffdbdab4b080ca781c685250214db34edc01ae3b
+        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: element-config-extends-the-convention
       claim:
         lines: 170-174

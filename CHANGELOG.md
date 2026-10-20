@@ -4,6 +4,13 @@
 4.13.1. Entries below that version are docmeta releases; the repository
 history is the same one.
 
+# [4.14.0](https://github.com/hawkeyexl/manni/compare/v4.13.0...v4.14.0) (2026-10-20)
+
+
+### Features
+
+* findings say what to do, across the family (0089) ([#206](https://github.com/hawkeyexl/manni/issues/206)) ([99ba4b5](https://github.com/hawkeyexl/manni/commit/99ba4b5a814756e6128e04857976d798ac6e3560)), closes [#207](https://github.com/hawkeyexl/manni/issues/207) [#208](https://github.com/hawkeyexl/manni/issues/208) [#209](https://github.com/hawkeyexl/manni/issues/209)
+
 # [4.13.0](https://github.com/hawkeyexl/manni/compare/v4.12.4...v4.13.0) (2026-10-20)
 
 

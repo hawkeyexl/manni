@@ -15,7 +15,7 @@ docs/src/content/docs/meta/get-started/index.mdx:
         file: src/meta/cli.ts
         lines: 889
         integrity: sha256-b900d16ea81ba54da695ee6ec4f8e9c3d17f1700d0b307ed74045692b603e056
-        commit-sha: ffdbdab4b080ca781c685250214db34edc01ae3b
+        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: summary-third-code-operational
       claim:
         integrity: sha256-369507c6dc33f81889b07da8b4d09a206daee4c6e5c97ba18ae13c81b7981e89
@@ -58,7 +58,7 @@ docs/src/content/docs/meta/get-started/index.mdx:
         file: src/meta/reporters/index.ts
         lines: 292
         integrity: sha256-484ab502761ab6f10654499678c217774f5ff4856ba6ceaba9a07a8f22a96d49
-        commit-sha: ffdbdab4b080ca781c685250214db34edc01ae3b
+        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: body-never-inspected
       claim:
         lines: 122-123
@@ -75,7 +75,7 @@ docs/src/content/docs/meta/get-started/index.mdx:
         file: src/meta/reporters/index.ts
         lines: 264-268
         integrity: sha256-eb895ec4689f56368fe1f44400daf0910c2e57dee536b369d0bbc192635b2403
-        commit-sha: ffdbdab4b080ca781c685250214db34edc01ae3b
+        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: root-means-whole-document
       claim:
         integrity: sha256-cf6f5ea2062c78d9deb2fbb4fb72a66993427ff0b87ff0e64efb2a369bf4c70d
