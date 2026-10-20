@@ -20,10 +20,12 @@ Record what the corpus reports now. That is the thing the move has to preserve:
 ```console
 $ npx @hawkeyexl/manni docevals run --deterministic-only
 docs/draft.md
-  FAIL no-todo-markers
-       error:9 [regex/found] Pattern /\b(TODO|TBD|FIXME)\b/ found in body, expected absent
+  FAIL no-todo-markers  docs/draft.md:4
+       error:9 [regex/found] Pattern /\b(TODO|TBD|FIXME)\b/ found in body, expected absent. Remove or reword the matching text.
+       docs/draft.md no-todo-markers: The page carries no TODO, TBD or FIXME markers.
+       Guide: https://hawkeyexl.github.io/manni/docevals/fix/
 docs/install.md
-  pass no-todo-markers
+  pass no-todo-markers  docs/install.md:5
 
 Suites
   default: 0/1 passed — 0% vs target 100% below target
@@ -115,18 +117,22 @@ nothing reads, and pages stripped of evals with no manifest to supply them resol
 ```console
 $ npx @hawkeyexl/manni docevals run --deterministic-only
 docs/draft.md
-  FAIL no-todo-markers
-       error:7 [regex/found] Pattern /\b(TODO|TBD|FIXME)\b/ found in body, expected absent
+  FAIL no-todo-markers  site.metadata.yaml:3
+       error:7 [regex/found] Pattern /\b(TODO|TBD|FIXME)\b/ found in body, expected absent. Remove or reword the matching text.
+       site.metadata.yaml no-todo-markers: The page carries no TODO, TBD or FIXME markers.
+       Guide: https://hawkeyexl.github.io/manni/docevals/fix/
 docs/install.md
-  pass no-todo-markers
+  pass no-todo-markers  site.metadata.yaml:7
 
 Suites
   default: 0/1 passed — 0% vs target 100% below target
   reference: 1/1 passed — 100% vs target 100% ok
 ```
 
-The same verdicts, down to the failing page. Only the finding's line moved, because the page's
-frontmatter is two lines shorter. Relocation changes where a value is stored, never what it means.
+The same verdicts, down to the failing page. Only the line numbers and the declaring file moved.
+The finding sits two lines higher, because the page's frontmatter is two lines shorter. Each eval
+line, and the guidance line under the failure, names the manifest entry that declares the eval.
+Relocation changes where a value is stored, never what it means.
 `manni docevals list` is the same comparison one step earlier, and it costs no grading.
 
 Findings still point at the page, because the page is what the grader read. A problem with a

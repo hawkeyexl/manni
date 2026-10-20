@@ -122,6 +122,7 @@ as though it sat on the page:
 $ npx @hawkeyexl/manni docevals list
 docs/install.md (suite: reference)
   - no-todo-markers [tool:regex, regression, config]
+      The page carries no TODO, TBD or FIXME markers.
 
 1 pages, 1 evals resolved
 ```
@@ -154,13 +155,16 @@ npx @hawkeyexl/manni docevals list docs/actions/goTo.mdx
 ```console
 docs/actions/goTo.mdx (suite: reference)
   - no-future-promises [ai, regression, config]
+      The page makes no claims about unreleased or future functionality.
   - names-an-action [tool:regex, regression, config]
+      The page documents at least one Doc Detective action.
   - no-todo-markers [tool:regex, regression, config]
+      The page carries no TODO, TBD or FIXME markers.
 
 1 pages, 3 evals resolved
 ```
 
-Each line is `name [grader, type, source]`. `source` tells you whether the definition came from the
+Each line is `name [grader, type, source]`, with the eval's assertion on the line under it. `source` tells you whether the definition came from the
 config or the page. That is exactly what you need when a page behaves differently from its
 neighbours.
 

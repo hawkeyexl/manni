@@ -24,11 +24,13 @@ should not need to follow any of them.
 ## What you are looking at
 
 ```
-  FAIL   fix-bug › forbidden-tool
-         [error] tool Bash was used 1 time(s) but must not be
+  FAIL   fix-bug › forbidden-tool  .claude/skills/fix-bug/SKILL.md:12
+         [error] tool Bash was used 1 time(s) but must not be. Redo the session work so it holds, or fix the eval if the artifact does not ask for this.
+         .claude/skills/fix-bug/SKILL.md forbidden-tool: The session never ran shell commands; this skill is edit-only.
+         Guide: https://hawkeyexl.github.io/manni/tracevals/triage/
 ```
 
-Three words, in order:
+Three words on the first line, in order:
 
 - **`FAIL`** is the **outcome**. One of `PASS`, `FAIL`, `ERROR`, `REVIEW`, or `SKIP`.
 - **`fix-bug`** is the **artifact**: an instruction file the agent session used, such as a skill, a
@@ -37,7 +39,11 @@ Three words, in order:
   frontmatter, saying something the session was supposed to do or avoid.
 
 So: *the session used the `fix-bug` skill, that skill declares a rule called `forbidden-tool`, and
-the session broke it.*
+the session broke it.* The path after the eval is the line that declares it.
+
+The guidance line under the finding names the artifact file and the eval, then quotes the eval's
+assertion. That is the rule as its author wrote it, so you can weigh the finding without opening
+the file. The last line links back to this page.
 
 If the eval is called `adheres-to-artifact (implicit)`, nothing specific was declared. The
 check was the general question *"did the session follow this file's instructions?"*
@@ -47,18 +53,27 @@ check was the general question *"did the session follow this file's instructions
     repository's committed fixtures. */}
 {/* test {"testId":"triage-fail-line","description":"A deterministic failure names the artifact, eval, and what the session did."} */}
 {/* step {"description":"The documented FAIL line appears verbatim.","runShell":{"command":"manni tracevals run test/tracevals/fixtures/traces/claude-session.jsonl --project test/tracevals/fixtures/project --deterministic-only","exitCodes":[1],"stdio":"tool Bash was used 1 time(s) but must not be"}} */}
+{/* step {"description":"The guidance line quotes the eval's assertion.","runShell":{"command":"manni tracevals run test/tracevals/fixtures/traces/claude-session.jsonl --project test/tracevals/fixtures/project --deterministic-only","exitCodes":[1],"stdio":"forbidden-tool: The session never ran shell commands; this skill is edit-only."}} */}
 {/* test end */}
 
 ## A check failed
 
-`FAIL` means an eval was violated. The line underneath tells you what the session actually did:
+`FAIL` means an eval was violated. The line underneath tells you what the session actually did, then
+what to do about it:
 
 ```
-         [error] tool Bash was used 1 time(s) but must not be
+         [error] tool Bash was used 1 time(s) but must not be. Redo the session work so it holds, or fix the eval if the artifact does not ask for this.
 ```
 
 Deterministic checks are specific like this: a tool name and a count, a file path, a turn count, a
 pattern. No interpretation is involved. The session either did it or it did not.
+
+A `command` eval runs a script, so its message names the exit code and quotes the script's output.
+It points at the command instead of the eval:
+
+```
+         [error] command exited 1 (expected 0). Redo the session work so the check passes, or fix the command if it is broken. Output: the session force-pushed
+```
 
 **`[error]` here is a severity, and severities are set by whoever wrote the eval.** Severity is
 `error`, `warning`, or `notice`, the same three values every manni tool uses. Only `error`-severity
@@ -70,13 +85,17 @@ someone decided this check matters.
 Some evals cannot be decided mechanically, so a model decides them. Those look like this:
 
 ```
-  REVIEW fix-bug › eval-5
-         votes pass:1 fail:2 partial:0 error:0 · confidence 0.87
-         The session edited src/app.ts at turn 2 without a preceding test run.
+  FAIL   fix-bug › eval-5  .claude/skills/fix-bug/SKILL.md:27
+         AI judge: fail (confidence 0.88). Redo the session work so it holds, or fix the eval if the artifact does not ask for this.
+         Observed: The session edited src/app.ts before any test file.
+         Reasoning: No failing test was written before the fix.
+         votes pass:0 fail:3 partial:0 error:0
+         .claude/skills/fix-bug/SKILL.md eval-5: Reproduce the bug with a failing test before applying the fix.
+         Guide: https://hawkeyexl.github.io/manni/tracevals/triage/
 ```
 
-Behind that verdict are several independent model runs, and you are shown how they split. That is
-your evidence. Weigh it:
+Behind that verdict are several independent model runs, and the `votes` line shows how they split.
+That is your evidence. Weigh it:
 
 - **Unanimous, high confidence** → take it seriously.
 - **Split votes** → the assertion is probably ambiguous, or the session genuinely is a borderline
@@ -84,21 +103,37 @@ your evidence. Weigh it:
 - **`error:` above zero** → one or more runs failed outright. Treat the result as unreliable, which
   is a weaker claim than treating it as wrong.
 
-The last line is what the judge claims it saw. **Check it.** If it cites a turn or a file, go look.
-A verdict that cites something that did not happen is a bad verdict, and you are the person best
-placed to notice.
+`Observed:` is what the judge claims it saw, and `Reasoning:` is why that broke the assertion. Both
+come from a run that voted against the session. **Check them.** If they cite a turn or a file, go
+look. A verdict that cites something that did not happen is a bad verdict, and you are the person
+best placed to notice.
 
 ## `REVIEW` is not a failure
 
 `REVIEW` means the judge did not reach confident agreement, so it declined to decide and handed the
-question to a human. Today that is you.
+question to a human. Today that is you. The first line under it says so:
+
+```
+         AI judge: no confident verdict (confidence 0.55). Read the session and decide. If this recurs, sharpen the assertion and run manni tracevals calibrate.
+```
+
+`Observed:`, `Reasoning:` and the vote split follow, as under a judged `FAIL`. An eval with
+`grader: human` lands here too, with no judge involved:
+
+```
+  REVIEW fix-bug › refactor-preserved-intent  .claude/skills/fix-bug/SKILL.md:23
+         Awaiting human review. Read the session against the assertion and decide.
+         .claude/skills/fix-bug/SKILL.md refactor-preserved-intent: The fix addressed the reported bug rather than working around it.
+         Guide: https://hawkeyexl.github.io/manni/tracevals/triage/
+```
 
 The routing is intentional. A verdict only auto-resolves when **every** run agreed and the
 confidence was high; anything else lands here. By default it counts as a failure for exit-code
 purposes, on the reasoning that an unreviewed ambiguous result should not merge quietly. It says
 nothing about whether the session did something wrong.
 
-Read the vote split and the cited observation, then make the call yourself.
+Read the vote split and the cited observation, or the session itself for a human-graded eval, then
+make the call yourself. The guidance line quotes the assertion you are deciding.
 
 ## `ERROR` means the check broke
 
@@ -111,16 +146,20 @@ The two common causes:
 as a loud error instead of slipping through as a pass:
 
 ```
-  ERROR  fix-bug › forbidden-tool
-         options.expect must be one of: used, not-used
+  ERROR  fix-bug › forbidden-tool  .claude/skills/fix-bug/SKILL.md:12
+         tool-usage: options.expect must be one of: used, not-used
+         .claude/skills/fix-bug/SKILL.md forbidden-tool: The session never ran shell commands; this skill is edit-only.
+         Guide: https://hawkeyexl.github.io/manni/tracevals/triage/
 ```
 
 **The evals block itself is malformed.** You get a check called `evals-block-valid` with a source
 line number:
 
 ```
-  ERROR  fix-bug › evals-block-valid
-         invalid metadata.evals block: /evals/1/grader (line 12): must be equal to one of the allowed values
+  ERROR  fix-bug › evals-block-valid  .claude/skills/fix-bug/SKILL.md:5
+         invalid metadata.evals block: /metadata/evals/3/severity (line 26): must be equal to one of the allowed values; /metadata/evals/3 (line 23): must match "else" schema
+         .claude/skills/fix-bug/SKILL.md evals-block-valid: The artifact's metadata.evals block matches the schema.
+         Guide: https://hawkeyexl.github.io/manni/tracevals/triage/
 ```
 
 Either way the bug lives in the artifact's frontmatter, and it belongs to whoever owns that file.
@@ -177,7 +216,8 @@ and whether each one was found.
 
 ## What to do next
 
-Three options, and the third is the one people forget:
+Every failure message ends with the first two options below, and the guidance line quotes the
+assertion to weigh them against. The third is the one people forget:
 
 1. **Fix the session's behavior.** The eval is right and the agent broke it. Change the
    instructions, the prompt, or the workflow so it stops happening.

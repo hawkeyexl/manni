@@ -41,17 +41,20 @@ a corpus that has never been checked, `no-todo-markers` alone usually finds some
 ```console
 $ npx @hawkeyexl/manni docevals run docs/actions/goTo.mdx --deterministic-only --no-generate
 docs/actions/goTo.mdx
-  skip no-future-promises
+  skip no-future-promises  docs/actions/goTo.mdx:5
        judge skipped (--deterministic-only)
-  pass names-an-action
-  FAIL no-todo-markers
-       error:14 [regex/found] Pattern /\b(TODO|TBD|FIXME)\b/ found in body, expected absent
+  pass names-an-action  docs/actions/goTo.mdx:5
+  FAIL no-todo-markers  docs/actions/goTo.mdx:7
+       error:14 [regex/found] Pattern /\b(TODO|TBD|FIXME)\b/ found in body, expected absent. Remove or reword the matching text.
+       docs/actions/goTo.mdx no-todo-markers: The page carries no TODO, TBD or FIXME markers.
+       Guide: https://hawkeyexl.github.io/manni/docevals/fix/
 
 Suites
   reference: 1/2 passed — 0% vs target 100% below target (1 skipped)
 ```
 
-Read the finding line as `severity:line [ruleId] message`. The exit code is `1`, a finding rather than an
+Read the finding line as `severity:line [ruleId] message`. The message ends with what to do, and
+the two lines under it say what the eval asks for and where to read more. The exit code is `1`, a finding rather than an
 error. [Exit codes](/manni/docevals/reference/output-and-exit-codes/) explains why that distinction
 matters.
 
@@ -82,13 +85,17 @@ Check what resolved before running anything:
 $ npx @hawkeyexl/manni docevals list docs/installation.mdx
 docs/installation.mdx (suite: default)
   - no-future-promises [ai, regression, config]
+      The page makes no claims about unreleased or future functionality.
   - no-todo-markers [tool:regex, regression, config]
+      The page carries no TODO, TBD or FIXME markers.
   - install-command-present [tool:regex, regression, page]
+      The page shows the command that installs Doc Detective.
 
 1 pages, 3 evals resolved
 ```
 
 The `default` suite added `no-todo-markers`, and the last column says where each eval came from.
+The line under each eval is its assertion.
 
 ## 4. Add the judge
 

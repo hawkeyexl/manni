@@ -181,10 +181,13 @@ npx @hawkeyexl/manni tracevals run <trace-file> --deterministic-only
 
 ```console
   FAIL   fix-bug › forbidden-tool
-         [error] tool Bash was used 1 time(s) but must not be
+         [error] tool Bash was used 1 time(s) but must not be. Redo the session work so it holds, or fix the eval if the artifact does not ask for this.
+         .claude/skills/fix-bug/SKILL.md forbidden-tool: The session never ran shell commands; this skill is edit-only.
+         Guide: https://hawkeyexl.github.io/manni/tracevals/triage/
 ```
 
-The finding names the artifact, the eval, and what the session actually did.
+The finding names the artifact, the eval, and what the session actually did. The line under it
+quotes your `assertion`, so write it for the person who reads the failure.
 
 If your new eval shows `ERROR` instead, the check itself is broken and the session is fine.
 Most often that is a grader given options it rejects. Grader options are validated **before**
@@ -192,7 +195,9 @@ grading so that a typo surfaces loudly:
 
 ```console
   ERROR  fix-bug › forbidden-tool
-         options.expect must be one of: used, not-used
+         tool-usage: options.expect must be one of: used, not-used
+         .claude/skills/fix-bug/SKILL.md forbidden-tool: The session never ran shell commands; this skill is edit-only.
+         Guide: https://hawkeyexl.github.io/manni/tracevals/triage/
 ```
 
 <Aside type="caution" title="A malformed block is never ignored">

@@ -172,7 +172,7 @@ map, shared with `manni meta fill` and `manni docevals`. See the
 | `ReportFormat` | |
 | `appendHistory`, `loadHistory`, `compareToLast`, `entryFor` | |
 | `HistoryEntry`, `HistoryEval`, `HistoryComparison` | |
-| `TracevalsError`, `RunReport`, `EvalResult`, `RunSummary`, `Outcome`, `BatchReport`, `AggregateRow`, `AggregateCounts`, `BatchTraceEntry`, `BatchSummary` | The report model. Each `EvalResult` carries the `location` that declares its eval. See [`location`](/manni/tracevals/reference/report-and-exit-codes/#location). |
+| `TracevalsError`, `RunReport`, `EvalResult`, `RunSummary`, `Outcome`, `BatchReport`, `AggregateRow`, `AggregateCounts`, `BatchTraceEntry`, `BatchSummary` | The report model. Each `EvalResult` carries the `location` that declares its eval. See [`location`](/manni/tracevals/reference/report-and-exit-codes/#location). It also carries `guidance`, a `Guidance` object of `id`, `rule`, `description` and `guide`, typed by the package root's `Guidance` export. See [`guidance`](/manni/tracevals/reference/report-and-exit-codes/#guidance). |
 | `CalibrationReport`, `CalibrationCounts`, `Disagreement`, `SweepCell`, `CalibrationGate`, `JudgeSetting`, `JoinKind`, `EvalLabel`, `LabelOutcome` | The calibration model. |
 | `loadLabels`, `parseLabels`, `labelKey`, `DEFAULT_LABELS_FILE` | The labels sidecar. `parseLabels` resolves trace paths against the file's own directory. |
 | `joinLabels`, `score`, `rescore`, `classify` | Pure calibration arithmetic. `rescore` re-applies zones and ensemble depth to a result's cached runs, with no provider involved. |

@@ -83,18 +83,23 @@ to say "this matters less" overstates the claim. It says the failure does not co
 ## What a finding carries
 
 ```console
-  FAIL no-todo-markers
-       error:14 [regex/found] Pattern /\b(TODO|TBD|FIXME)\b/ found in body, expected absent
+  FAIL no-todo-markers  docs/actions/goTo.mdx:7
+       error:14 [regex/found] Pattern /\b(TODO|TBD|FIXME)\b/ found in body, expected absent. Remove or reword the matching text.
+       docs/actions/goTo.mdx no-todo-markers: The page carries no TODO, TBD or FIXME markers.
+       Guide: https://hawkeyexl.github.io/manni/docevals/fix/
 ```
 
-`severity:line [ruleId] message`. In JSON:
+`severity:line [ruleId] message`, where the message ends with what to do. The two lines under it
+are the eval's
+[`guidance`](/manni/docevals/reference/output-and-exit-codes/#guidance): the declaring file, the
+eval and its assertion, then the fix page. In JSON the finding is:
 
 ```json
 {
   "evalName": "no-todo-markers",
   "file": "docs/actions/goTo.mdx",
   "ruleId": "regex/found",
-  "message": "Pattern /\\b(TODO|TBD|FIXME)\\b/ found in body, expected absent",
+  "message": "Pattern /\\b(TODO|TBD|FIXME)\\b/ found in body, expected absent. Remove or reword the matching text.",
   "severity": "error",
   "line": 14
 }

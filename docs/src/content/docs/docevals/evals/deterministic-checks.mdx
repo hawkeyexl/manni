@@ -63,14 +63,17 @@ A finding names its rule and the line in the file:
 
 ```
 docs/actions/goTo.mdx
-  skip no-future-promises
+  skip no-future-promises  docs/actions/goTo.mdx:5
        judge skipped (--deterministic-only)
-  pass names-an-action
-  FAIL no-todo-markers
-       error:14 [regex/found] Pattern /\b(TODO|TBD|FIXME)\b/ found in body, expected absent
+  pass names-an-action  docs/actions/goTo.mdx:5
+  FAIL no-todo-markers  docs/actions/goTo.mdx:7
+       error:14 [regex/found] Pattern /\b(TODO|TBD|FIXME)\b/ found in body, expected absent. Remove or reword the matching text.
+       docs/actions/goTo.mdx no-todo-markers: The page carries no TODO, TBD or FIXME markers.
+       Guide: https://hawkeyexl.github.io/manni/docevals/fix/
 ```
 
-The rule ids are `regex/not-found`, `regex/found` and `regex/count`. Full option tables are in
+The message ends with what to do, and the two lines under it repeat the eval's assertion and link
+the fix page. The rule ids are `regex/not-found`, `regex/found` and `regex/count`. Full option tables are in
 [Graders](/manni/docevals/reference/graders/#toolregex).
 
 ## Arbitrary `command` evals
@@ -85,8 +88,14 @@ Any executable. `{file}` expands to the page's absolute path.
   success-exit-codes: [0]
 ```
 
-Exit code decides. `0`, or anything in `success-exit-codes`, passes. Anything else fails with the
-output tail as the message. Timeouts are reported distinctly.
+Exit code decides. `0`, or anything in `success-exit-codes`, passes. Anything else fails, and the
+message ends with the output tail:
+
+```text
+Exit code 1. Edit the page until the command passes, or fix the command if it is broken. Output: <tail>
+```
+
+Timeouts are reported distinctly, as `Command timed out after <ms>ms`, followed by what to do.
 
 ### Commands declared in page frontmatter run by default
 

@@ -44,13 +44,16 @@ check is inconvenient", which is a conversation with whoever owns the eval.
 
 ## Why does the message have no line number?
 
-AI verdicts are about the page, not a character position. Read the rationale alongside the eval's
-`assertion` and `examples.fail`. See
+AI verdicts are about the page, not a character position. The `Observed:` line quotes the text the
+judge objected to, so search the page for it. Read it alongside the assertion on the guidance line
+and the eval's `examples.fail`. See
 [An AI verdict](/manni/docevals/fix/#an-ai-verdict).
 
 ## What does `needs-review` mean and how do I clear it?
 
-The judge was not confident enough either way. **You cannot clear it.** Someone with standing runs
+The judge was not confident enough either way, and the report says
+`AI judge: no confident verdict`. A `human` eval says `Awaiting human review` instead, since no
+judge sees it. **You cannot clear either one.** Someone with standing runs
 `manni docevals review <file> <eval> pass|fail`. Ask whoever owns docs quality in your repo.
 
 ## I ran it locally and got a different result
