@@ -316,6 +316,25 @@ export interface Finding {
   message: string;
   position: Position;
   severity: Severity;
+  /**
+   * The template that judged the page and the rule this finding is about, so
+   * an author reads what the section is for beside what is wrong with it.
+   * `null` when no template stands behind the finding: a parse failure, an
+   * unknown doctype, a broken template, or a tool other than manni.
+   */
+  template?: FindingTemplate | null;
+}
+
+/** What a template asks for, as a finding carries it. */
+export interface FindingTemplate {
+  /** The template's ref, as `manni lint templates` lists it and `--template` takes it. */
+  id: string;
+  /** The rule's `id`. `null` for a rule without one, the template itself, or no rule at all. */
+  rule: string | null;
+  /** The rule's `description`, or `null` when it has none. */
+  description: string | null;
+  /** The template's `guide`, after `extends`, or `null`. */
+  guide: string | null;
 }
 
 /**

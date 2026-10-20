@@ -45,7 +45,7 @@
       "pattern": "^[A-Za-z][A-Za-z0-9-_]*$"
     },
     "description": {
-      "description": "Prose description of what the rule is for. Never checked.",
+      "description": "What the rule's section is for, written for the page's author. Shown with every finding about the rule, and by `manni lint templates show`. Never checked.",
       "type": "string"
     },
     "heading": {
@@ -108,6 +108,11 @@
           "description": "Doctypes this template serves, matched against a page's `type` frontmatter.",
           "type": "array",
           "items": { "type": "string", "minLength": 1 }
+        },
+        "guide": {
+          "description": "Link to the author's guide for this doctype. Shown with every finding from the template and by `manni lint templates show`. A template that `extends` another inherits its `guide` unless it sets its own.",
+          "type": "string",
+          "pattern": "^https?://"
         },
         "extends": {
           "description": "Template reference (built-in id, path, or URL, optionally with a `#name` fragment) whose rules this template inherits.",

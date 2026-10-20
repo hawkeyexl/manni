@@ -12,9 +12,16 @@
  * things most likely to be wrong are the two things this module is most
  * careful about - rule descriptors, and URIs.
  */
-import type { Finding, Position, Severity, SkipReason } from "../types.js";
+import type {
+  Finding,
+  FindingTemplate,
+  Position,
+  Severity,
+  SkipReason,
+} from "../types.js";
 import type { LintFileResult, LintRun } from "../commands/lint.js";
 import { ruleId, ruleName } from "../core/rule-id.js";
+import { templateLines } from "./template-context.js";
 import pkg from "../../../package.json" with { type: "json" };
 import {
   artifactLocation,
@@ -70,7 +77,7 @@ interface SarifResult {
   level: SarifLevel;
   message: SarifMessage;
   locations: SarifLocation[];
-  properties?: { heading: string };
+  properties?: { heading?: string; template?: FindingTemplate };
 }
 
 interface SarifNotification {
@@ -191,9 +198,9 @@ function location(
  * line by definition; a SARIF message is a JSON string with no such limit.
  */
 function messageText(finding: Finding): string {
-  return finding.heading != null
-    ? `${finding.heading}: ${finding.message}`
-    : finding.message;
+  const text =
+    finding.heading != null ? `${finding.heading}: ${finding.message}` : finding.message;
+  return [text, ...templateLines(finding)].join("\n");
 }
 
 function words(id: string): string[] {
@@ -281,6 +288,13 @@ function buildRules(run: LintRun): RuleIndex {
   return { descriptors, indexOf };
 }
 
+function propertiesOf(finding: Finding): SarifResult["properties"] {
+  const properties: NonNullable<SarifResult["properties"]> = {};
+  if (finding.heading != null) properties.heading = finding.heading;
+  if (finding.template != null) properties.template = finding.template;
+  return Object.keys(properties).length > 0 ? properties : undefined;
+}
+
 function toResult(
   finding: Finding,
   file: string,
@@ -296,8 +310,7 @@ function toResult(
     level: LEVELS[finding.severity],
     message: { text: messageText(finding) },
     locations: [location(file, root, finding.position)],
-    properties:
-      finding.heading != null ? { heading: finding.heading } : undefined,
+    properties: propertiesOf(finding),
   };
 }
 

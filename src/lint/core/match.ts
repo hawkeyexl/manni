@@ -19,6 +19,9 @@
  *  5. Skipped rules become `missing_section` (or one `missing_group` for a
  *     `repeat` copy that is absent whole), skipped sections become
  *     `unexpected_section`, and every match is handed to the content rules.
+ *  6. A section a passed-over rule would have taken is out of order, not
+ *     extra: `section_order` replaces its `unexpected_section` and the rule's
+ *     `missing_section`. It only ever replaces; it never adds a finding.
  *
  * The predecessor of this file walked the rules left to right with no
  * backtracking, and each of its eight hand-written behaviours is now a
@@ -49,16 +52,25 @@ import type { Rule } from "./template.js";
  * `test/lint/unit/match.test.ts` pins them, and the templates reference prints
  * them.
  *
- * Skipping an occurrence at or above its rule's `min` is free; only a required
- * occurrence pays `skipRule`.
+ * Skipping an occurrence at or above its rule's `min` is free. Skipping a
+ * required occurrence costs `skipRule` when its section is *present*: a
+ * sibling carries a heading this rule alone accepts, among the named rules of
+ * the list. When the section is absent, skipping costs less than any wildcard
+ * match, so the report says the section is missing rather than coercing a
+ * section a wildcard could take. A wildcard's section is never present
+ * (issue #202).
  *
- * Coercion is open only to a *required* occurrence of a rule whose `max` is 1.
- * Both halves of that earn their place. Without the `max: 1` half a repeating
- * rule adopts any stray section for 1 rather than letting it report as
- * unexpected for 2. Without the "required" half an optional rule does the same
- * thing for the same reason, and there it is plainly wrong: standing aside
- * costs an optional rule nothing, so coercing trades a clean report for a
- * heading error about a section the template never insisted on.
+ * Coercion is open only to a *required* occurrence of a rule whose `max` is 1,
+ * and it is refused when the rule's section is present. Each condition earns
+ * its place. Without the `max: 1` half a repeating rule adopts any stray
+ * section for 1 rather than letting it report as unexpected for 2. Without the
+ * "required" half an optional rule does the same thing for the same reason,
+ * and there it is plainly wrong: standing aside costs an optional rule
+ * nothing, so coercing trades a clean report for a heading error about a
+ * section the template never insisted on. Without the presence condition a
+ * rule whose section is on the page but out of place claims the wrong
+ * section, and the report is a heading error about a section that was never
+ * misspelt.
  */
 export const ALIGNMENT_COSTS = {
   match: 0,
@@ -100,7 +112,9 @@ export interface Match {
   section: SectionNode;
   /**
    * True when the rule was paired with a section whose heading does not
-   * satisfy it, because nothing else could claim that section. Keeps the
+   * satisfy it, because nothing else could claim that section. Coercion is
+   * refused when the rule's section is present - a sibling carries a heading
+   * this rule alone accepts - since then its section is elsewhere. Keeps the
    * precise "Expected title X, but found Y" report for the common one-for-one
    * case instead of degrading it into missing + unexpected.
    */
@@ -119,6 +133,26 @@ export interface MatchOptions {
   source?: string;
   /** Template within that file. Used only to name the state-cap failure. */
   template?: string;
+  /**
+   * The template's ref, which every finding names beside the rule it is about.
+   * Without it findings carry no `template`.
+   */
+  ref?: string;
+  /** The template's `guide`, carried beside the ref. */
+  guide?: string;
+}
+
+/** The `template` a finding about `rule` carries; `null` is no rule at all. */
+export function aboutRule(rule: Rule | null, options: MatchOptions): Pick<Finding, "template"> {
+  if (options.ref === undefined) return {};
+  return {
+    template: {
+      id: options.ref,
+      rule: rule?.id ?? null,
+      description: rule?.description ?? null,
+      guide: options.guide ?? null,
+    },
+  };
 }
 
 /* -------------------------------------------------------------------------- *
@@ -143,7 +177,10 @@ interface Occurrence {
   rule: Rule;
   /** Below the rule's `min`, so skipping it costs rather than being free. */
   required: boolean;
-  /** Required and `max: 1`, so it may take a section its heading rejects. */
+  /**
+   * Required and `max: 1`, so it may take a section its heading rejects.
+   * Coercion is refused when the rule's section is present.
+   */
   coercible: boolean;
   /** Says nothing about its heading, so it loses ties to a rule that does. */
   wildcard: boolean;
@@ -154,6 +191,11 @@ interface Occurrence {
 interface Eps {
   from: number;
   to: number;
+  /**
+   * In `ALIGNMENT_COSTS` units. `align` scales a skip whose rule is present,
+   * because presence and the scale depend on the sections, and the automaton
+   * is cached without them.
+   */
   cost: number;
   rank: number;
   /** Set when this edge is a rule being skipped rather than structure. */
@@ -408,6 +450,11 @@ interface Step {
   kind: StepKind;
   /** Section consumed, or where the cursor stood when a rule was skipped. */
   index: number;
+  /**
+   * The occurrence consumed or passed. A `skip-rule` step is recorded for
+   * every occurrence the walk leaves without consuming, including a
+   * self-loop's copy left by its structural exit.
+   */
   occ: Occurrence | null;
 }
 
@@ -513,6 +560,35 @@ function align(sections: SectionNode[], nfa: Automaton): Step[] {
   const MATCH_WILDCARD = weigh(ALIGNMENT_COSTS.match, 1, 0);
   const COERCE = weigh(ALIGNMENT_COSTS.coerce, 0, 0);
 
+  // A named rule's section is present when a sibling carries a heading this
+  // rule alone accepts, among the list's named rules. Wildcards never are.
+  const named = new Set<Rule>();
+  for (const occ of nfa.consume) if (occ && !occ.wildcard) named.add(occ.rule);
+  const presence = new Map<Rule, boolean>();
+  const present = (rule: Rule): boolean => {
+    let hit = presence.get(rule);
+    if (hit === undefined) {
+      hit =
+        named.has(rule) &&
+        sections.some((section) => {
+          const title = titleOf(section);
+          if (!headingMatches(rule.heading, title)) return false;
+          for (const other of named) {
+            if (other !== rule && headingMatches(other.heading, title)) return false;
+          }
+          return true;
+        });
+      presence.set(rule, hit);
+    }
+    return hit;
+  };
+
+  // Skipping a present rule costs as much as any other edit. An absent one
+  // keeps the raw weight, the lowest tier, below any wildcard match, so the
+  // report names the missing section instead of coercing one.
+  const epsCost = (edge: Eps): number =>
+    edge.occ && edge.cost > 0 && present(edge.occ.rule) ? weigh(edge.cost, 0, 0) : edge.cost;
+
   /** What a state's consuming edge costs against one section, or null. */
   const consumeCost = (
     state: number,
@@ -526,7 +602,9 @@ function align(sections: SectionNode[], nfa: Automaton): Step[] {
       const cost = occ.wildcard ? MATCH_WILDCARD : MATCH;
       return { cost, rank: RANK.match, to, occ };
     }
-    if (occ.coercible) return { cost: COERCE, rank: RANK.coerce, to, occ };
+    if (occ.coercible && !present(occ.rule)) {
+      return { cost: COERCE, rank: RANK.coerce, to, occ };
+    }
     return null;
   };
 
@@ -565,7 +643,7 @@ function align(sections: SectionNode[], nfa: Automaton): Step[] {
       if (done[item] === 1 || cost > distAt(base + item)) continue;
       done[item] = 1;
       for (const edge of nfa.epsIn[item] ?? NO_EPS) {
-        const candidate = cost + edge.cost;
+        const candidate = cost + epsCost(edge);
         if (candidate < distAt(base + edge.from)) {
           dist[base + edge.from] = candidate;
           heap.push(candidate, edge.from);
@@ -618,7 +696,11 @@ function align(sections: SectionNode[], nfa: Automaton): Step[] {
     }
     for (const edge of nfa.epsOut[state] ?? NO_EPS) {
       if (seen.has(edge.to)) continue;
-      offer(edge.cost, edge.rank, edge.to, index, "skip-rule", edge.occ);
+      // Any edge out of a consuming state passes its occurrence, including a
+      // self-loop's structural exit, so the order pass can see every rule the
+      // walk left behind.
+      const passed = edge.occ ?? nfa.consume[state] ?? null;
+      offer(epsCost(edge), edge.rank, edge.to, index, "skip-rule", passed);
     }
 
     // Cheapest first; then the lowest-ranked edit, which is tie-break 3; then
@@ -728,7 +810,124 @@ function unexpectedMessage(section: SectionNode): string {
     section.titlePosition === null
       ? "Unexpected section without a heading"
       : `Unexpected section "${section.title}"`;
-  return `${what}. Add a trailing rule with min: 0 to allow sections the template does not describe.`;
+  // Addressed to the page's author, who usually cannot change the template.
+  // The template-side escape, a rule for the section or a trailing `min: 0`
+  // rule, is for the template's owner and lives in the docs.
+  return `${what}. The template describes no section here, so move its content into a section it does describe, or remove it.`;
+}
+
+function orderMessage(section: SectionNode, neighbour: SectionNode, after: boolean): string {
+  const subject =
+    section.titlePosition === null ? "Section without a heading" : `Section "${section.title}"`;
+  const other =
+    neighbour.titlePosition === null
+      ? `the section without a heading at line ${String(neighbour.position.start.line)}`
+      : `"${neighbour.title}"`;
+  return `${subject} must come ${after ? "after" : "before"} ${other}`;
+}
+
+/** Where an out-of-order section belongs, and the occurrence that wants it. */
+interface Placement {
+  /** The occurrence that accepts the section; its `rule` describes it. */
+  occ: Occurrence;
+  /** The section it must come after, or before. */
+  neighbour: SectionNode;
+  after: boolean;
+}
+
+/**
+ * Which sections are out of order rather than extra.
+ *
+ * A post-pass over the alignment, which stays the authority: it only ever
+ * swaps findings the alignment already produced for one `section_order`. A
+ * section M is out of order when an occurrence the walk passed without
+ * consuming, at cursor s, accepts M's heading and either
+ *
+ *  - is named, consumed nothing, and M was left unexpected - or M was taken
+ *    by a wildcard while the occurrence, being required, reports missing; or
+ *  - is a wildcard passed later in the walk (s > m) and M was left unexpected.
+ *    A wildcard earlier in the rule list is no place to move M to, unless it
+ *    is required and reported missing: then its slot is where M belongs, and
+ *    of the unexpected sections it accepts, the one nearest the slot moves.
+ *
+ * The nearest such occurrence names the neighbour. M's `unexpected_section`
+ * and the occurrence's `missing_section` give way to it. A section taken by a
+ * wildcard has no finding of its own, so it qualifies only by claiming a
+ * `missing_section` no other section has claimed.
+ */
+function placeOutOfOrder(
+  sections: SectionNode[],
+  steps: Step[],
+  taken: Set<Occurrence>,
+  absentGroup: (occ: Occurrence) => GroupCopy | null,
+): { placements: Map<number, Placement>; replacedMissing: Set<Occurrence> } {
+  const placements = new Map<number, Placement>();
+  const replacedMissing = new Set<Occurrence>();
+
+  const unexpected = new Set<number>();
+  const byWildcard = new Set<number>();
+  const passes: { occ: Occurrence; index: number }[] = [];
+  const missing = new Set<Occurrence>();
+  for (const step of steps) {
+    if (step.kind === "skip-section") unexpected.add(step.index);
+    if (!step.occ) continue;
+    if (step.kind === "match" && step.occ.wildcard) byWildcard.add(step.index);
+    if (step.kind !== "skip-rule") continue;
+    passes.push({ occ: step.occ, index: step.index });
+    if (step.occ.required && absentGroup(step.occ) === null) missing.add(step.occ);
+  }
+
+  /** Where section m goes relative to slot s, or null when that names m itself. */
+  const place = (m: number, s: number): { neighbour: SectionNode; after: boolean } | null => {
+    const after = m < s;
+    const neighbour = sections[after ? s - 1 : s];
+    if (!neighbour || neighbour === sections[m]) return null;
+    return { neighbour, after };
+  };
+
+  sections.forEach((section, m) => {
+    const isUnexpected = unexpected.has(m);
+    if (!isUnexpected && !byWildcard.has(m)) return;
+
+    let best: (Placement & { distance: number }) | null = null;
+    for (const { occ, index: s } of passes) {
+      if (s === m || !headingMatches(occ.rule.heading, titleOf(section))) continue;
+      const qualifies = occ.wildcard
+        ? isUnexpected && s > m
+        : !taken.has(occ) &&
+          (isUnexpected || (missing.has(occ) && !replacedMissing.has(occ)));
+      const where = qualifies ? place(m, s) : null;
+      if (!where) continue;
+      const distance = Math.abs(s - m);
+      if (best === null || distance < best.distance) best = { occ, ...where, distance };
+    }
+    if (best === null) return;
+
+    placements.set(m, { occ: best.occ, neighbour: best.neighbour, after: best.after });
+    if (missing.has(best.occ)) replacedMissing.add(best.occ);
+  });
+
+  // A required wildcard that reported missing claims the nearest unexpected
+  // section it accepts, one per occurrence: the section belongs in its slot.
+  for (const { occ, index: s } of passes) {
+    if (!occ.wildcard || !missing.has(occ) || replacedMissing.has(occ)) continue;
+    let best: (Placement & { m: number; distance: number }) | null = null;
+    for (const m of unexpected) {
+      const section = sections[m];
+      if (!section || placements.has(m) || m === s) continue;
+      if (!headingMatches(occ.rule.heading, titleOf(section))) continue;
+      const where = place(m, s);
+      const distance = Math.abs(s - m);
+      if (where && (best === null || distance < best.distance)) {
+        best = { occ, ...where, m, distance };
+      }
+    }
+    if (best === null) continue;
+    placements.set(best.m, { occ, neighbour: best.neighbour, after: best.after });
+    replacedMissing.add(occ);
+  }
+
+  return { placements, replacedMissing };
 }
 
 /* -------------------------------------------------------------------------- *
@@ -773,6 +972,21 @@ export function matchSections(
   };
 
   const reported = new Set<GroupCopy>();
+  const orders = placeOutOfOrder(sections, steps, taken, absentGroup);
+
+  /** One `section_order` on the section at `index`, naming where it belongs. */
+  const orderFinding = (index: number, section: SectionNode): Finding | null => {
+    const placement = orders.placements.get(index);
+    if (!placement) return null;
+    return {
+      type: "section_order",
+      heading: section.title || null,
+      message: orderMessage(section, placement.neighbour, placement.after),
+      position: section.position,
+      severity: "error",
+      ...aboutRule(placement.occ.rule, options),
+    };
+  };
 
   for (const step of steps) {
     const section = sections[step.index];
@@ -782,21 +996,27 @@ export function matchSections(
         section,
         coerced: step.kind === "coerce",
       });
+      const order = orderFinding(step.index, section);
+      if (order) findings.push(order);
       continue;
     }
 
     if (step.kind === "skip-section" && section) {
-      findings.push({
-        type: "unexpected_section",
-        heading: section.title || null,
-        message: unexpectedMessage(section),
-        position: section.position,
-        severity: "error",
-      });
+      findings.push(
+        orderFinding(step.index, section) ?? {
+          type: "unexpected_section",
+          heading: section.title || null,
+          message: unexpectedMessage(section),
+          position: section.position,
+          severity: "error",
+          ...aboutRule(null, options),
+        },
+      );
       continue;
     }
 
     if (step.kind !== "skip-rule" || !step.occ || !step.occ.required) continue;
+    if (orders.replacedMissing.has(step.occ)) continue;
 
     const where = anchor(step.index, sections, parent);
     const group = absentGroup(step.occ);
@@ -809,6 +1029,7 @@ export function matchSections(
         message: missingGroupMessage(group),
         position: where.position,
         severity: "error",
+        ...aboutRule(group.rule, options),
       });
       continue;
     }
@@ -819,6 +1040,7 @@ export function matchSections(
       message: missingMessage(step.occ.rule),
       position: where.position,
       severity: "error",
+      ...aboutRule(step.occ.rule, options),
     });
   }
 

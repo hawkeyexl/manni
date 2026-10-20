@@ -26,49 +26,65 @@ templates:
   tutorial:
     types:
       - tutorial
+    guide: https://gitlab.com/tgdp/templates/-/blob/v1.6.0/tutorial/guide_tutorial.md
+    description: >-
+      Teach the reader a new skill by walking them through a hands-on project
+      from start to finish.
     sections:
+      # What the reader will be able to do by the end, who the tutorial
+      # is for, and the background knowledge it assumes. The guide calls
+      # this the section that decides whether a reader starts at all, so
+      # it must say something in prose.
       - id: overview
         heading: Overview
         max: 1
         description: >-
-          What the reader will be able to do by the end, who the tutorial
-          is for, and the background knowledge it assumes. The guide calls
-          this the section that decides whether a reader starts at all, so
-          it must say something in prose.
+          Say what the reader will be able to do by the end, who the tutorial
+          is for, and what they should already know.
         contains:
           paragraphs:
             min: 1
+      # Context the reader needs before starting - what the feature is,
+      # or how a supplied starter project is laid out. Upstream marks
+      # this section optional in the template body ("{This section is
+      # optional.}").
       - id: background
         heading: Background
         min: 0
         max: 1
         description: >-
-          Context the reader needs before starting - what the feature is,
-          or how a supplied starter project is laid out. Upstream marks
-          this section optional in the template body ("{This section is
-          optional.}").
+          Give the context the reader needs before starting, such as how the
+          feature works or how the starter project is organized.
+      # Prerequisites: prior knowledge, software, environments, access.
+      # No content minimum - a prerequisites section that is nothing but
+      # a bulleted list is idiomatic.
       - id: before-you-start
         heading: Before you start
         max: 1
         description: >-
-          Prerequisites: prior knowledge, software, environments, access.
-          No content minimum - a prerequisites section that is nothing but
-          a bulleted list is idiomatic.
+          List what the reader needs before starting, such as software,
+          languages, accounts, or access.
+      # One task the tutorial walks the reader through. Upstream heads it
+      # with a placeholder (`## {Task name}`), so this rule constrains no
+      # heading text. Leaving `max` unbounded is what lets a tutorial be a
+      # sequence of these: the placeholder stands for however many the
+      # page needs.
       - id: task
         description: >-
-          One task the tutorial walks the reader through. Upstream heads it
-          with a placeholder (`## {Task name}`), so this rule constrains no
-          heading text. Leaving `max` unbounded is what lets a tutorial be a
-          sequence of these: the placeholder stands for however many the
-          page needs.
+          Name one task and walk the reader through its steps as a numbered
+          list. Add one section for each task.
+      # The skills and knowledge the reader has gained, stated as
+      # outcomes rather than as a repeat of the learning objectives.
       - id: summary
         heading: Summary
         max: 1
         description: >-
-          The skills and knowledge the reader has gained, stated as
-          outcomes rather than as a repeat of the learning objectives.
+          List the skills and knowledge the reader gained, without repeating
+          the learning objectives word for word.
+      # Links onward - related tutorials, articles, videos.
       - id: next-steps
         heading: Next steps
         max: 1
         description: >-
-          Links onward - related tutorials, articles, videos.
+          Link to related tutorials, articles, or videos the reader can try
+          next.

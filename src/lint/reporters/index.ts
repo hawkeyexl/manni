@@ -17,6 +17,7 @@ import { REPORT_FORMAT_LIST } from "../../meta/internal.js";
 import { ruleId, TOOL_NAME } from "../core/rule-id.js";
 import { renderJunit } from "./junit.js";
 import { renderSarif } from "./sarif.js";
+import { templateLines } from "./template-context.js";
 import { explainAlignment, formatAlignment, type ExplainSource } from "./alignment.js";
 
 export { renderJunit, toValidationResults } from "./junit.js";
@@ -119,6 +120,9 @@ export function renderPretty(run: LintRun, opts: ReportOptions = {}): string {
         `    ${c.dim(locate(finding))}  ${c.cyan(ruleId(finding.type))}  ` +
           `${levelPrefix(c, finding.severity)}${describeFinding(finding)}`,
       );
+      // What the template asks for, under the rule id it explains.
+      const indent = " ".repeat(6 + locate(finding).length);
+      for (const line of templateLines(finding)) lines.push(`${indent}${c.dim(line)}`);
     }
   }
 
@@ -164,6 +168,9 @@ export function renderJson(run: LintRun): string {
       // "no findings". Without this key a consumer has no way to tell that
       // apart from an error the JSON shape simply forgot to fail on.
       severity: finding.severity,
+      // Additive: the template that judged the page and the rule this finding
+      // is about, or null when no template stands behind it.
+      template: finding.template ?? null,
     })),
     // Additive, and the one thing this shape could not say. A skipped file is
     // `{success: false, errors: []}`, which is also what a failure whose
@@ -215,7 +222,9 @@ export function renderGithub(run: LintRun): string {
         `col=${finding.position.start.column}`,
         `title=${escapeWorkflowCommandProperty(ruleId(finding.type))}`,
       ];
-      const message = escapeWorkflowCommandMessage(describeFinding(finding));
+      const message = escapeWorkflowCommandMessage(
+        [describeFinding(finding), ...templateLines(finding)].join("\n"),
+      );
       lines.push(`::${finding.severity} ${params.join(",")}::${message}`);
     }
   }

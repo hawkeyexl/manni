@@ -18,6 +18,7 @@ import { describe, expect, it } from "vitest";
 import { markdownParser } from "../../../src/lint/parsers/markdown.js";
 import { validateDocument } from "../../../src/lint/core/validator.js";
 import { listBuiltins, loadTemplate } from "../../../src/lint/core/template-registry.js";
+import type { Rule } from "../../../src/lint/core/template.js";
 import manifest from "../../../templates/lint/tgdp/manifest.json" with { type: "json" };
 import { at } from "../helpers.js";
 
@@ -80,6 +81,29 @@ describe.each(manifest.templates)("$id", (entry) => {
   it("declares the doctypes the manifest says it serves", async () => {
     const template = await loadTemplate(entry.id);
     expect(template.types).toEqual(entry.types);
+  });
+
+  // Issue #202. The guide an author reads beside each finding is upstream's
+  // own, at the pinned release, for the doctype this template was derived from.
+  it("links upstream's guide for its doctype at the pinned release", async () => {
+    const doctype = entry.source.split("/")[0] ?? "";
+    expect((await loadTemplate(entry.id)).guide).toBe(
+      `${manifest.upstream}/-/blob/${manifest.pin}/${doctype}/guide_${doctype}.md`,
+    );
+  });
+
+  // Issue #202. An author reads these under each finding, so every rule says
+  // what its section is for, catch-alls and `repeat` members included.
+  it("describes the template and every rule in it", async () => {
+    const undescribed: string[] = [];
+    const walk = (rule: Rule, path: string) => {
+      if (!rule.description?.trim()) undescribed.push(path);
+      for (const [i, r] of (rule.repeat ?? []).entries()) walk(r, `${path} > repeat[${String(i)}]`);
+      for (const [i, r] of (rule.sections ?? []).entries())
+        walk(r, `${path} > ${r.id ?? `sections[${String(i)}]`}`);
+    };
+    walk(await loadTemplate(entry.id), entry.id);
+    expect(undescribed).toEqual([]);
   });
 });
 

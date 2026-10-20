@@ -116,7 +116,7 @@ describe("json reporter", () => {
 
   // `type` keeps its place and its spelling. `ruleId`, `tool` and `severity`
   // join it: additive keys are safe, a rename is not.
-  it("uses exactly the error keys { type, ruleId, tool, heading, message, position, severity }", () => {
+  it("uses exactly the error keys { type, ruleId, tool, heading, message, position, severity, template }", () => {
     const error: Record<string, unknown> = JSON.parse(renderJson(run))[1].errors[0];
     expect(Object.keys(error)).toEqual([
       "type",
@@ -126,6 +126,7 @@ describe("json reporter", () => {
       "message",
       "position",
       "severity",
+      "template",
     ]);
     expect(error.type).toBe("missing_section");
     expect(error.heading).toBe("Prerequisites");
@@ -938,5 +939,97 @@ describe("renderTools", () => {
     expect(JSON.parse(text)).toEqual([
       { ...entry, available: false, version: null },
     ]);
+  });
+});
+
+/* -------------------------------------------------------------------------- *
+ * What the template asks for, beside each finding (issue #202)
+ * -------------------------------------------------------------------------- */
+
+describe("a finding's template context", () => {
+  const TEMPLATE = {
+    id: "tgdp:how-to:1.6",
+    rule: "see-also",
+    description: "Link to related topics.",
+    guide: "https://example.com/guide_how-to.md",
+  };
+
+  function single(over: Partial<Finding>): LintRun {
+    return {
+      results: [
+        {
+          file: "rotate-key.md",
+          success: false,
+          findings: [
+            finding({
+              heading: "Rotate a key",
+              message: 'Missing section "See also"',
+              position: {
+                start: { line: 21, column: 1, offset: 300 },
+                end: { line: 21, column: 1, offset: 300 },
+              },
+              ...over,
+            }),
+          ],
+          template: "tgdp:how-to:1.6",
+        },
+      ],
+      summary: { checked: 1, passed: 0, failed: 1, skipped: 0 },
+    };
+  }
+
+  it("publishes the template object in JSON", () => {
+    const error = JSON.parse(renderJson(single({ template: TEMPLATE })))[0].errors[0];
+    expect(error.template).toEqual(TEMPLATE);
+  });
+
+  it("publishes template: null in JSON when no template stands behind a finding", () => {
+    expect(JSON.parse(renderJson(single({ template: null })))[0].errors[0].template).toBeNull();
+    expect(JSON.parse(renderJson(single({})))[0].errors[0].template).toBeNull();
+  });
+
+  it("prints the context lines under the finding, aligned with the rule id", () => {
+    const out = renderPretty(single({ template: TEMPLATE }), { color: false });
+    expect(out.split("\n").slice(1, 4)).toEqual([
+      '    21:1  manni:lint/structure/missing-section  Rotate a key: Missing section "See also"',
+      "          tgdp:how-to:1.6 see-also: Link to related topics.",
+      "          Guide: https://example.com/guide_how-to.md",
+    ]);
+  });
+
+  it("prints the template alone when the finding names no rule, description or guide", () => {
+    const out = renderPretty(
+      single({ template: { id: "house.yaml#how-to", rule: null, description: null, guide: null } }),
+      { color: false },
+    );
+    expect(out.split("\n").slice(2, 4)).toEqual(["          house.yaml#how-to", ""]);
+  });
+
+  it("joins the description to the template when there is no rule id", () => {
+    const out = renderPretty(
+      single({ template: { ...TEMPLATE, rule: null, guide: null } }),
+      { color: false },
+    );
+    expect(out).toContain("\n          tgdp:how-to:1.6: Link to related topics.\n");
+  });
+
+  it("dims the context lines when color is on", () => {
+    const out = renderPretty(single({ template: TEMPLATE }), { color: true });
+    const line = out.split("\n").find((l) => l.includes("Guide:")) ?? "";
+    expect(line.includes(ESC)).toBe(true);
+  });
+
+  it("prints nothing extra for a finding with no template", () => {
+    const out = renderPretty(single({ template: null }), { color: false });
+    expect(out.split("\n")[2]).toBe("");
+  });
+
+  it("appends the context lines to the GitHub annotation as escaped newlines", () => {
+    expect(renderGithub(single({ template: TEMPLATE }))).toBe(
+      "::error file=rotate-key.md,line=21,col=1,title=manni%3Alint/structure/missing-section::" +
+        'Rotate a key: Missing section "See also"' +
+        "%0Atgdp:how-to:1.6 see-also: Link to related topics." +
+        "%0AGuide: https://example.com/guide_how-to.md",
+    );
   });
 });

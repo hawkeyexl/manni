@@ -101,6 +101,22 @@ describe("manni lint (built bin)", () => {
       expect(bad.status).toBe(1);
     });
 
+    // Issue #202: a finding carries what the template asks for, from the
+    // built-in's YAML as the published package ships it.
+    it("names the template, the rule and its guide on each JSON finding", () => {
+      const r = run(["structure", BROKEN, "--no-config", "-f", "json"]);
+      expect(r.status).toBe(1);
+      const errors: { type: string; template: Record<string, unknown> | null }[] =
+        JSON.parse(r.stdout)[0].errors;
+      const missing = errors.find((e) => e.type === "missing_section");
+      expect(missing?.template).toMatchObject({
+        id: "tgdp:how-to:1.6",
+        rule: "see-also",
+        guide: "https://gitlab.com/tgdp/templates/-/blob/v1.6.0/how-to/guide_how-to.md",
+      });
+      expect(typeof missing?.template?.["description"]).toBe("string");
+    });
+
     it("explains how each page routed, and lints nothing", () => {
       const r = run(["structure", HOW_TO, "--explain"]);
       expect(r.status).toBe(0);
@@ -364,6 +380,16 @@ describe("manni lint (built bin)", () => {
       expect(r.stdout).toContain("tgdp:how-to:1.6");
     });
 
+    it("lists each template's guide as JSON", () => {
+      const r = run(["templates", "--no-config", "-f", "json"]);
+      expect(r.status).toBe(0);
+      const entries: { id: string; guide: string | null }[] = JSON.parse(r.stdout).templates;
+      expect(entries.find((e) => e.id === "tgdp:how-to:1.6")?.guide).toBe(
+        "https://gitlab.com/tgdp/templates/-/blob/v1.6.0/how-to/guide_how-to.md",
+      );
+      for (const entry of entries) expect(entry).toHaveProperty("guide");
+    });
+
     it("takes one --templates path per occurrence", () => {
       const help = run(["templates", "--help"]);
       expect(help.stdout).toContain("--templates <path>");
@@ -446,6 +472,55 @@ describe("manni lint (built bin)", () => {
           { cwd: dir },
         );
         expect(forced.status).toBe(0);
+      });
+    });
+
+    describe("show", () => {
+      it("prints what a built-in asks for", () => {
+        const r = run(["templates", "show", "tgdp:reference:1.6"]);
+        expect(r.status).toBe(0);
+        expect(r.stdout).toContain("structured-entry · optional, repeats");
+      });
+
+      it("prints the resolved template as JSON", () => {
+        const r = run(["templates", "show", "tgdp:reference:1.6", "-f", "json"]);
+        expect(r.status).toBe(0);
+        const parsed = JSON.parse(r.stdout) as { id: string; source: string };
+        expect(parsed.id).toBe("tgdp:reference:1.6");
+        expect(parsed.source).toBe("builtin");
+      });
+
+      it("prints a page skeleton as Markdown", () => {
+        const r = run(["templates", "show", "tgdp:how-to:1.6", "-f", "markdown"]);
+        expect(r.status).toBe(0);
+        expect(r.stdout.startsWith("---\ntype: how-to\n---\n")).toBe(true);
+        expect(r.stdout).toContain("## {task}");
+      });
+
+      it("refuses an unknown built-in", () => {
+        const r = run(["templates", "show", "tgdp:nope:1.6"]);
+        expect(r.status).toBe(2);
+        expect(r.stderr).toContain('manni: Unknown built-in template "tgdp:nope:1.6". Available: ');
+      });
+
+      it("refuses a missing ref", () => {
+        const r = run(["templates", "show"]);
+        expect(r.status).toBe(2);
+        expect(r.stderr).toContain("error: missing required argument 'ref'");
+      });
+
+      it("refuses an unknown format", () => {
+        const r = run(["templates", "show", "tgdp:how-to:1.6", "-f", "yaml"]);
+        expect(r.status).toBe(2);
+        expect(r.stderr).toContain(
+          'manni: Unknown --format "yaml". Use pretty, json or markdown.',
+        );
+      });
+
+      it("leaves the bare listing in place", () => {
+        const r = run(["templates", "--no-config"]);
+        expect(r.status).toBe(0);
+        expect(r.stdout).toContain("Templates:");
       });
     });
   });

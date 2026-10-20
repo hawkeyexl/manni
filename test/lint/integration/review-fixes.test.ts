@@ -66,9 +66,11 @@ describe("the matcher does not strand sections a later rule needs", () => {
       { heading: "See also", max: 1 },
     ]);
 
-    expect(findings.map((f) => f.type)).toEqual(["unexpected_section"]);
-    expect(at(findings, 0, "unexpected_section finding").message).toContain(
-      "Before you start",
+    // The optional rule passed over it, so it is out of order rather than
+    // extra, and the finding says where it goes.
+    expect(findings.map((f) => f.type)).toEqual(["section_order"]);
+    expect(at(findings, 0, "section_order finding").message).toBe(
+      'Section "Before you start" must come before "Install it"',
     );
   });
 

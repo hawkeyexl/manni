@@ -1,0 +1,7 @@
+# `guide` belongs to the template, not to a section rule.
+templates:
+  how-to:
+    types: [how-to]
+    sections:
+      - id: overview
+        guide: https://example.com/guide.md

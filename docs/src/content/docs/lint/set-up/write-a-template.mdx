@@ -6,7 +6,7 @@ id: lint-set-up-write-a-template
 language: en
 lifecycle: published
 action: develop
-last-updated: 2026-09-20
+last-updated: 2026-10-20
 ---
 
 import { Steps, Aside, CardGrid, LinkCard } from '@astrojs/starlight/components';
@@ -38,10 +38,11 @@ you have not written a rule for yet.
 That is the format working, and there are two escapes. Start from
 `manni lint templates infer`, which describes the whole page. Or end your rule
 list with a trailing rule that has `min: 0` and no heading, which absorbs
-anything you have not named. The message says so itself:
+anything you have not named. The message itself is written for the page's
+author, who usually cannot change the template:
 
 ```
-Unexpected section "Benchmarks". Add a trailing rule with min: 0 to allow sections the template does not describe.
+Unexpected section "Benchmarks". The template describes no section here, so move its content into a section it does describe, or remove it.
 ```
 </Aside>
 
@@ -309,6 +310,33 @@ A warning never changes the exit code, so a docset of mixed formats stays
 green. Run `manni lint tools` to see which kinds each format reports.
 </Aside>
 
+## Tell authors what each section is for
+
+A finding says what failed. The rule's `description` says what the section is
+for, and the author reads it on the line under every finding about that rule.
+Write it for the page's author, not for whoever maintains the template:
+
+```yaml title="templates.yaml"
+templates:
+  runbook:
+    types: [runbook]
+    guide: https://example.com/style/runbooks
+    sections:
+      # Required because on-call reads this first, before any step.
+      - id: impact
+        description: Say who is affected and how badly, in one or two sentences.
+        heading: Impact
+        max: 1
+```
+
+Keep the reasoning behind a rule in a YAML comment, as the `impact` rule does.
+The description is what an author acts on, so a sentence about the matcher only
+gets in the way.
+
+`guide` belongs to the template, not to a rule. Every finding from the template
+links it, and a template that `extends` another inherits it unless it sets its
+own. The built-in templates link The Good Docs Project's guide for each doctype.
+
 ## Route it
 
 A `-t` flag on every command is not a doctype policy. Declare the file once and
@@ -390,7 +418,17 @@ templates:
    applies them in. A later entry claiming the same doctype is the one that
    wins.
 
-2. **Run it over everything.**
+2. **Read the shape back.**
+
+   ```sh
+   manni lint templates show ./templates.yaml#how-to
+   ```
+
+   It prints each section in order, how often it may occur, what it must
+   contain and its description. That is the shape an author is held to, so
+   read it as they would.
+
+3. **Run it over everything.**
 
    ```sh
    manni lint structure docs/
@@ -399,7 +437,7 @@ templates:
    Read any finding against what you meant to assert. A rule firing on a page
    everyone agrees is correct means the template is wrong, not the page.
 
-3. **Read the pairing when a finding surprises you.**
+4. **Read the pairing when a finding surprises you.**
 
    ```sh
    manni lint structure docs/rotate-key.md --explain
@@ -444,6 +482,10 @@ unexpected. That is what turns one bad heading into one finding instead of two.
 It also means a required rule can adopt an unrelated section. When that
 happens, `min: 0` is the fix. An optional rule loses nothing by standing aside,
 so it never adopts anything.
+
+**A section in the wrong place reads as one move.** A required rule never
+adopts another section while its own is elsewhere on the page. The finding is
+`section-order` instead, and it names the section to move past.
 
 The full cost table and the three tie-breaks are in the
 [templates reference](/manni/lint/reference/templates/#how-sections-are-matched).

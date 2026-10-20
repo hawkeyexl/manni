@@ -1,6 +1,6 @@
 # 0061: The template format is a grammar over sections
 
-- **Status:** Implemented (#11)
+- **Status:** Implemented (#11); superseded in part by [0088](0088-findings-say-what-the-template-asks-for.md)
 - **Serves:** Three journeys.
   - Sara · S7, new: "Describe a doctype as a template". She owns what a how-to
     or a release note must contain. Today she writes that in a format which

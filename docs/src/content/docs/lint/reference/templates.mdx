@@ -6,7 +6,7 @@ id: lint-reference-templates
 language: en
 lifecycle: published
 action: remember
-last-updated: 2026-09-21
+last-updated: 2026-10-20
 ---
 
 import { Aside } from '@astrojs/starlight/components';
@@ -149,13 +149,14 @@ A template describes the page, so it takes **every rule key**. Its `heading`
 constrains the page's own title, its `sequence` or `contains` describes what
 sits before the first heading, and its `sections` are the headings under it.
 
-Three keys belong to a template alone.
+Four keys belong to a template alone.
 
 | Key | Type | Default | What it does |
 |---|---|---|---|
 | `title` | string | none | Human-readable name, shown by `manni lint templates`. |
 | `types` | string[] | none | Doctypes this template serves, matched against a page's `type` frontmatter. This is how routing happens without a flag. |
 | `extends` | ref | none | Inherit another template's rules. See [extends](#extends). |
+| `guide` | URL | the `extends` parent's | Link to the author's guide for this doctype. Shown with every finding from the template and by `manni lint templates show`. It must start with `http://` or `https://`. |
 
 Two keys are refused on a template. `min` and `max` describe how often a rule
 occurs, and a page occurs once.
@@ -180,7 +181,7 @@ entries in a list rather than two keys in a map.
 | `sequence` | block rule[] | none | What the section holds, **in order**. Each entry names exactly one content kind. |
 | `contains` | block rule | none | What the section holds, **in any order**, keyed by content kind. |
 | `sections` | rule[] | none | Rules for the subsections, one heading level down, in document order. |
-| `description` | string | none | Prose about what the rule is for. Never checked. |
+| `description` | string | none | What the section is for, written for the page's author. Shown with every finding about the rule, and by `manni lint templates show`. Never checked. |
 
 A rule carries `sequence` or `contains`, never both. A rule carries `heading`
 or `repeat`, never both.
@@ -287,10 +288,12 @@ composes, so putting it after the steps allows extras only there:
 - min: 0
 ```
 
-That is also what the `unexpected_section` message tells you to write:
+That is the template-side answer to an `unexpected_section` finding. The
+message itself speaks to the page's author, who usually cannot change the
+template:
 
 ```
-Unexpected section "Benchmarks". Add a trailing rule with min: 0 to allow sections the template does not describe.
+Unexpected section "Benchmarks". The template describes no section here, so move its content into a section it does describe, or remove it.
 ```
 
 <Aside type="note" title="Two adjacent wildcards are warned about">
@@ -439,17 +442,34 @@ you see.
 |---|---|
 | A rule matched a section its `heading` accepts | 0 |
 | A rule was pushed onto a section its `heading` rejects | 1 |
-| A required occurrence found no section | 2 |
+| A required occurrence found no section, though its section is on the page | 2 |
+| A required occurrence found no section, and the page has none | less than a wildcard match |
 | A section found no rule | 2 |
+
+A rule's section is **on the page** when a sibling carries a heading this rule
+accepts and no other named rule does. When the section is absent, the report
+says it is missing, and any wildcard keeps the section it took. That is why a
+how-to with no `See also` reads `Missing section "See also"` rather than a
+heading error on its last task.
 
 Coercion costing less than the alternative is why one wrong heading reads as
 one finding. Reporting it as a missing section plus an unexpected one would
 cost 4, so the pairing that says `Expected title "Overview", but found
 "Overvue"` wins.
 
-Coercion is open only to a **required** rule whose `max` is 1. An optional rule
-loses nothing by standing aside, so it never adopts a stray section and then
-complains about its heading.
+Coercion is open only to a **required** rule whose `max` is 1, and only while
+its own section is not on the page. An optional rule loses nothing by standing
+aside, so it never adopts a stray section and then complains about its
+heading. A rule whose section is on the page, but somewhere else, is out of
+order rather than misspelt.
+
+After the pairing is chosen, a section the template accepts somewhere else is
+reported where it stands, as `section-order`. A rule that took nothing may
+accept it. A required wildcard that took nothing may accept it. Or a wildcard
+later in the list accepts it. The finding replaces the missing and unexpected
+findings it explains, and names the section to move past:
+`Section "How it works" must come after "Use cases"`. A section after the
+template's last rule stays unexpected while every earlier slot is filled.
 
 When two pairings cost the same, three tie-breaks settle it, in order:
 
