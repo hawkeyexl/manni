@@ -72,9 +72,9 @@ docs/src/content/docs/meta/ci/recipes.mdx:
         integrity: sha256-d282f4cbf8469be18a1a73ed4ebe064be9a07d6caee82ecc9931dade000f1fd9
       source:
         file: src/meta/reporters/sarif.ts
-        lines: 156-159
+        lines: 158-161
         integrity: sha256-6679bb684dbe1ea06983c60d39b4ad0769236d43eb6368ade8022992682c2c51
-        commit-sha: ffdbdab4b080ca781c685250214db34edc01ae3b
+        commit-sha: 4d274aaab31e92bf39ddc11f636cecc69ea1cf34
     - id: no-git-root-warns-on-stderr
       claim:
         lines: 88-89
