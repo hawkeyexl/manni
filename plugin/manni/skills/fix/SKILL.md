@@ -17,7 +17,11 @@ Start from the report of `node "${CLAUDE_PLUGIN_ROOT}/hooks/manni.mjs" check`. E
 
 ## meta validate
 
-The finding names a field path, such as `/description`. Edit the page frontmatter so the field is present and valid.
+Each finding names a field path, such as `/description`, and its schema in brackets. A dim line under it names the schema and the property, and says what the property is for. A `Guide:` line links the schema's page when it has one. Read both lines before you edit.
+Run `manni meta schemas show <schema>` to see every property, which are required, and what each accepts.
+Edit the page frontmatter so the field is present and holds a value the message allows. `must be one of:` lists every value that passes.
+Never edit a schema or the config to make a finding pass. Never change a page's `$schema` to escape a finding about a field.
+A finding about `$schema` itself means the page names a schema this repository does not accept. Use an id `manni meta schemas` lists, or remove `$schema`.
 
 Some fields are managed. Stamp them from history with `node "${CLAUDE_PLUGIN_ROOT}/hooks/manni.mjs" meta derive <path>`. Add `--check` to see which are stale without writing.
 Do not hand-edit a managed field. `derive` writes it.

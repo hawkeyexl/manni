@@ -64,40 +64,40 @@ docs/src/content/docs/graph/fix/index.mdx:
       lines: 143-146
       integrity: sha256-f7ce7bcd21debfaff8c5fce9fb84085f2f86ca6962e1e67f57476d7d13ddd2dd
     - generated-by: Claude Opus 5
-      lines: 148-152
+      lines: 150-154
       integrity: sha256-298d0c408f353ee7448e06068e669eab1e831994982cf72c4a738e5d0ef59b50
     - generated-by: Claude Opus 5.5
-      lines: 153
+      lines: 155
       integrity: sha256-d37bed347ee9400de8852e424c7bfb9984bac078a308b1286a76c4f8a78403d4
     - generated-by: Claude Opus 5
-      lines: 155-157
+      lines: 157-159
       integrity: sha256-aee6a075513a78cb9e07c905aa109c387873b6833416170829596622a9a27ef8
     - generated-by: Claude Opus 5.5
-      lines: 158
+      lines: 160
       integrity: sha256-132ac1a5bd2ea5da76b16a0fc1071f41f1b5772cc1573f30f7b48a0472334255
     - generated-by: Claude Opus 5
-      lines: 159-170
+      lines: 161-172
       integrity: sha256-9f9b369955085a81d26ea258c40e7a0ba1af9ecc9f5782e848a894a5302161bb
     - generated-by: Claude Opus 5.5
-      lines: 171
+      lines: 173
       integrity: sha256-f9f1dd781b2748de46c6c5eabe7ddb114e18dd9279bfb77345de83aa1959589f
     - generated-by: Claude Opus 5
-      lines: 173-178
+      lines: 175-180
       integrity: sha256-0c60d1a41cdc572a984a574fd46dc8c4461ddec08276eb29cc29ccccb4217fe7
     - generated-by: Claude Opus 5.5
-      lines: 179
+      lines: 181
       integrity: sha256-b32be95c93571d52f67ebeb9ce3d0b152a1c6bf80a8659d9a4b1db3e67c6bbed
     - generated-by: Claude Opus 5
-      lines: 180
+      lines: 182
       integrity: sha256-86a1652f404410ea8c42246063291a4a1bb9dc3999219760b68d07686e4fbf35
     - generated-by: Claude Opus 5.5
-      lines: 181-187
+      lines: 183-189
       integrity: sha256-b43106717ef63d34e3d9f4a331048d626a21e16045ef375bfad9d9ff462813a0
     - generated-by: Claude Opus 5.5
-      lines: 191-195
+      lines: 193-197
       integrity: sha256-2948124a089f6d63c8f376a27f857507d269c7e94b733a9a764170738bb63714
     - generated-by: Claude Opus 5.5
-      lines: 199-201
+      lines: 201-203
       integrity: sha256-3f52aa5a2994c65f044bec0edf6047c5af16d1bde6442eb87280a7c1645364c7
   owner:
     - "@hawkeyexl"

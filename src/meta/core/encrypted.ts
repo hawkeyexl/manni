@@ -286,6 +286,16 @@ const VALUE_NAMING = new Map<string, string>([
   ["propertyNames", "property name must be valid"],
 ]);
 
+/**
+ * Keywords whose message lists the values the schema allows (proposal 0089).
+ * On an encrypted value that list is the set its plaintext is drawn from, so
+ * a finding there says only that the value is not one of them.
+ */
+const CANDIDATE_NAMING = new Map<string, string>([
+  ["enum", "must be one of the values the schema allows"],
+  ["const", "must be the value the schema allows"],
+]);
+
 interface Positions {
   lineFor(this: void, pointer: string): number | undefined;
   colFor?(this: void, pointer: string): number | undefined;
@@ -335,12 +345,15 @@ export function settleFindings(
   for (const e of errors) {
     if (hidden.some((p) => isAtOrUnder(e.instancePath, p))) continue;
     const inside = view.decrypted.find((p) => isAtOrUnder(e.instancePath, p));
-    const generic = VALUE_NAMING.get(e.keyword);
+    const generic =
+      VALUE_NAMING.get(e.keyword) ?? (inside === undefined ? undefined : CANDIDATE_NAMING.get(e.keyword));
     if (inside === undefined || (e.instancePath === inside && generic === undefined)) {
       out.push(e);
       continue;
     }
-    const { subject, file: _file, line: _line, col: _col, ...rest } = e;
+    // A moved finding loses its guidance: the rule names the property inside
+    // the encrypted value that failed, which says more than the page does.
+    const { subject, file: _file, line: _line, col: _col, guidance, ...rest } = e;
     void _file;
     void _line;
     void _col;
@@ -350,6 +363,7 @@ export function settleFindings(
       message: generic ?? e.message,
       ...(generic === undefined && subject !== undefined ? { subject } : {}),
       ...at(inside, pos, locate),
+      ...(e.instancePath === inside && guidance != null ? { guidance } : {}),
     });
   }
   return out;

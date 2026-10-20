@@ -19,7 +19,7 @@ sample-questions:
 graph:
   label: "manni citations vocabulary"
   type: reference
-last-updated: 2026-09-27
+last-updated: 2026-10-20
 resource: https://hawkeyexl.github.io/manni/schemas/citations/1.0.0.json
 tags:
   - citations
@@ -234,6 +234,8 @@ citations:
 $ manni meta validate page.md --no-config -s manni:core:1.0.0 -s manni:citations:1.0.0
 ✗ page.md
     /citations/0/source  must NOT have additional property 'line'  (line 6)  [manni:citations:1.0.0]
+      manni:citations:1.0.0 citations/source: The lines the claim rests on: a file, an optional line range, a pin, and the commit the pin was taken at.
+      Guide: https://hawkeyexl.github.io/manni/meta/reference/schemas/manni-citations/
     /citations  warning "citations" is stored in the page; manni:citations:1.0.0 prefers external metadata, and --no-config leaves it no manifest.  (line 4)  [location:external]
 
 1 file checked, 0 passed, 1 failed, 1 error, 1 warning
@@ -334,11 +336,14 @@ citations:
 $ manni meta validate limits.md --no-config -s manni:core:1.0.0 -s manni:citations:1.0.0 -s manni:citations-strict:1.0.0
 ✗ limits.md
     /citations/0/source/integrity  must match pattern "^sha256-"  (line 9)  [manni:citations-strict:1.0.0]
-    /citations/0/source  must match "else" schema  (line 6)  [manni:citations-strict:1.0.0]
+      manni:citations-strict:1.0.0 citations/source/integrity: An encrypted `file` is pinned `hmac-sha256-`.
+      Guide: https://hawkeyexl.github.io/manni/meta/reference/schemas/manni-citations/
     /citations/0/source/commit-sha  must match pattern "^(?:[0-9a-f]{40}|[0-9a-f]{64})$"  (line 10)  [manni:citations-strict:1.0.0]
+      manni:citations-strict:1.0.0 citations/source/commit-sha: A full commit hash, forty lowercase hex digits or sixty-four in a SHA-256 repository.
+      Guide: https://hawkeyexl.github.io/manni/meta/reference/schemas/manni-citations/
     /citations  warning "citations" is stored in the page; manni:citations:1.0.0 prefers external metadata, and --no-config leaves it no manifest.  (line 4)  [location:external]
 
-1 file checked, 0 passed, 1 failed, 3 errors, 1 warning
+1 file checked, 0 passed, 1 failed, 2 errors, 1 warning
 ```
 
 The exit code is 1. The open vocabulary accepts both values, so the overlay

@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "generatedWith": "4.13.0",
+  "entries": {
+    "test/fixtures/guidance/evals-bad-entry.md": [
+      "53a7822ecab670ea",
+      "53b8a6a5582e9063",
+      "71c8f51407895d13",
+      "aadce681dc59e0d1"
+    ],
+    "test/fixtures/vocabulary/dcmi-bad-date.md": [
+      "0f6890e66e55bf77",
+      "bfe534167fc2d483"
+    ]
+  }
+}

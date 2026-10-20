@@ -580,11 +580,12 @@ describe("the six house vocabularies", () => {
       "title: T\ndescription: D\nmeta-provenance:\n  - generated-by: claude-fable-5\n    confidence:\n      /intent: 0.9",
     );
     expect(empty.ok).toBe(false);
+    // Each branch's own error, without the `anyOf` wrapper (proposal 0089).
     expect(
-      empty.errors.some(
-        (e) => e.keyword === "anyOf" && e.instancePath === "/meta-provenance/0",
-      ),
-    ).toBe(true);
+      empty.errors
+        .filter((e) => e.instancePath === "/meta-provenance/0")
+        .map((e) => `${e.keyword} ${e.subject ?? ""}`),
+    ).toEqual(["required fields", "required evals"]);
 
     const outOfRange = await checkStdin(
       "title: T\ndescription: D\nmeta-provenance:\n  - generated-by: claude-fable-5\n    fields: [/intent]\n    confidence:\n      /intent: 1.5",

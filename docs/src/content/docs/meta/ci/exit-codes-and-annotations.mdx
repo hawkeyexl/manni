@@ -28,7 +28,7 @@ sample-questions:
 graph:
   label: Exit codes & PR annotations
   type: task
-last-updated: 2026-09-21
+last-updated: 2026-10-20
 tags:
   - exit-codes
   - annotations
@@ -139,6 +139,8 @@ $ manni meta validate bad-timestamp.md
 ```text
 ✗ bad-timestamp.md
     /timestamp  must match format "date-time"  (line 4)  [google:okf:0.1]
+      google:okf:0.1 timestamp: ISO 8601 datetime of last meaningful change.
+      Guide: https://hawkeyexl.github.io/manni/meta/reference/schemas/google-okf/
 
 1 file checked, 0 passed, 1 failed, 1 error
 ```
@@ -179,7 +181,13 @@ $ manni meta validate bad-timestamp.md --format json
           "message": "must match format \"date-time\"",
           "keyword": "format",
           "subject": "date-time",
-          "line": 4
+          "line": 4,
+          "guidance": {
+            "id": "google:okf:0.1",
+            "rule": "timestamp",
+            "description": "ISO 8601 datetime of last meaningful change.",
+            "guide": "https://hawkeyexl.github.io/manni/meta/reference/schemas/google-okf/"
+          }
         }
       ]
     }
@@ -225,6 +233,9 @@ The shape is stable:
     also omitted for a `required` violation, which reports the parent object
     rather than the property that is missing. There is no column for
     something absent. Treat it as optional.
+  - `guidance`: what the schema asks of the property, always the last key. It is
+    `null` on manni meta's own findings. See
+    [guidance](/manni/meta/reference/output-and-exit-codes/#guidance).
 
 <Aside type="note" title="line and col are best-effort">
 `line` and `col` appear only when manni meta can map the error back to a position
@@ -243,7 +254,7 @@ error lines, one per violation. A passing run prints nothing.
 The format of each line is:
 
 ```text
-::error file=<file>,line=<line>,col=<col>::[<schema>] <field> <message>
+::error file=<file>,line=<line>,col=<col>::[<schema>] <field> <message>%0A<guidance lines>
 ```
 
 - `file=` is always present.
@@ -257,27 +268,29 @@ The format of each line is:
 - `<field>` is the JSON Pointer to the offending field, or `(root)` when the
   error is at the document root.
 - `<message>` is the human-readable reason.
+- `<guidance lines>` are what the schema asks of the property. Each follows the
+  message after an escaped newline. See [guidance](/manni/meta/reference/output-and-exit-codes/#guidance).
 
 A concrete line, from a malformed `timestamp` field that fails the `date-time`
 format:
 
 ```text
-::error file=bad-timestamp.md,line=4::[google:okf:0.1] /timestamp must match format "date-time"
+::error file=bad-timestamp.md,line=4::[google:okf:0.1] /timestamp must match format "date-time"%0Agoogle:okf:0.1 timestamp: ISO 8601 datetime of last meaningful change.%0AGuide: https://hawkeyexl.github.io/manni/meta/reference/schemas/google-okf/
 ```
 
 The same violation in an HTML document also carries a column, pointing at the
 `content=` attribute of the `<meta>` tag that holds the bad value:
 
 ```text
-::error file=bad-timestamp.html,line=6,col=28::[google:okf:0.1] /timestamp must match format "date-time"
+::error file=bad-timestamp.html,line=6,col=28::[google:okf:0.1] /timestamp must match format "date-time"%0Agoogle:okf:0.1 timestamp: ISO 8601 datetime of last meaningful change.%0AGuide: https://hawkeyexl.github.io/manni/meta/reference/schemas/google-okf/
 ```
 
 When the line is unknown, `line=` is dropped and only `file=` remains. A
-required-property error at the document root reports the field as `(root)`, and
-carries no column even in a format that can supply one:
+required-property error at the document root reports `(root)` on line 1. It carries
+no column, even in a format that can supply one:
 
 ```text
-::error file=missing-type.md::[google:okf:0.1] (root) must have required property 'type'
+::error file=missing-type.md,line=1::[google:okf:0.1] (root) must have required property 'type'%0Agoogle:okf:0.1 type: A short string identifying the kind of concept.%0AGuide: https://hawkeyexl.github.io/manni/meta/reference/schemas/google-okf/
 ```
 
 {/* cite workflow-command-message-escaping */}

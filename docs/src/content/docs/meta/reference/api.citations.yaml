@@ -225,7 +225,7 @@ docs/src/content/docs/meta/reference/api.mdx:
     - id: api-validation-engine-exports
       claim:
         lines: 79-88
-        integrity: sha256-80e981c3a47880cd2ab34a53b8b25260b1e47a5f238a2200f055df9184de6084
+        integrity: sha256-3f3c1e875b7608e0c3c98d5dcc8afab9f7adb69ff0f332a866eb85461651d01c
       source:
         file: src/meta/index.ts
         lines: 35-52
@@ -287,6 +287,6 @@ docs/src/content/docs/meta/reference/api.mdx:
         integrity: sha256-56d798bce3c337402d8fe93ebf6272b66912b251298351030af5f8278d3cf80e
       source:
         file: src/meta/reporters/index.ts
-        lines: 298-303
-        integrity: sha256-91d8aff33c562f4dadabe0cdb3da037c24ed0f14c5c99f4f9847db313925ed38
-        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+        lines: 301-312
+        integrity: sha256-96ed1375b03b05a524d20e67fe16600c5dae6b6e7dba967dc7678a0ad2bdb641
+        commit-sha: ffdbdab4b080ca781c685250214db34edc01ae3b

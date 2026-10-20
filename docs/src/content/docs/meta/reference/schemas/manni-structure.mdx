@@ -19,7 +19,7 @@ sample-questions:
 graph:
   label: "manni structure vocabulary"
   type: reference
-last-updated: 2026-09-27
+last-updated: 2026-10-20
 resource: https://hawkeyexl.github.io/manni/schemas/structure/1.0.0.json
 tags:
   - schema
@@ -127,10 +127,11 @@ related-pages: []
 ```text
 $ manni meta validate page.md --no-config -s manni:core:1.0.0 -s manni:structure:1.0.0
 ✗ page.md
-    /related-pages  must NOT have fewer than 1 items  (line 4)  [manni:structure:1.0.0]
-    /related-pages  must match "then" schema  (line 4)  [manni:structure:1.0.0]
+    /related-pages  must not be empty  (line 4)  [manni:structure:1.0.0]
+      manni:structure:1.0.0 related-pages: Pages, ids, or URLs associatively related to this one.
+      Guide: https://hawkeyexl.github.io/manni/meta/reference/schemas/manni-structure/
 
-1 file checked, 0 passed, 1 failed, 2 errors
+1 file checked, 0 passed, 1 failed, 1 error
 ```
 
 The exit code is 1. Remove the key, or give it a value. A label listed twice
@@ -227,7 +228,11 @@ related-pages: " operator-architecture"
 $ manni meta validate page.md --no-config -s manni:core:1.0.0 -s manni:structure:1.0.0 -s manni:structure-strict:1.0.0
 ✗ page.md
     /applies-to/0  must match pattern "^(?:[a-z0-9-]+:)?[a-z0-9][a-z0-9.-]*$"  (line 4)  [manni:structure-strict:1.0.0]
+      manni:structure-strict:1.0.0 applies-to
+      Guide: https://hawkeyexl.github.io/manni/meta/reference/schemas/manni-structure/
     /related-pages  must match pattern "^\S(?:.*\S)?$"  (line 5)  [manni:structure-strict:1.0.0]
+      manni:structure-strict:1.0.0 related-pages: Strict holds each related page to one id, path or URL on one line with no surrounding space, in the string form and the list form alike.
+      Guide: https://hawkeyexl.github.io/manni/meta/reference/schemas/manni-structure/
 
 1 file checked, 0 passed, 1 failed, 2 errors
 ```
