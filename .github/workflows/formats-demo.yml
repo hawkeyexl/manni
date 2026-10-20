@@ -78,6 +78,10 @@
 # pages that name them, shaped for `manni term`, so the default set reads
 # most of them as missing a title or a description.
 #
+# `test/fixtures/guidance/` (0089) joins them. Its pages are each run against
+# one named schema, or against the house schema its own config registers, so
+# the default set reads them as missing a title, a type or a description.
+#
 # `test/fixtures/get-parse-error/` is deliberately NOT excluded. Its unparseable
 # file is a real parse failure, which is exactly the explainable alert this
 # workflow exists to demonstrate — the same standing as `dd/malformed-yaml.md`.
@@ -152,6 +156,7 @@ jobs:
             --exclude "test/fixtures/pinned-stewardship/**" \
             --exclude "test/fixtures/term-keyword/**" \
             --exclude "test/fixtures/term/**" \
+            --exclude "test/fixtures/guidance/**" \
             --allow-empty -f sarif > manni.sarif
           echo "results=$(jq '.runs[0].results | length' manni.sarif)" >> "$GITHUB_OUTPUT"
 

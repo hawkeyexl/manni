@@ -1038,9 +1038,9 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         integrity: sha256-44af1e5c86d0fbb7faa95cff1f5d6de1c71c1400c5793ab806f2bd61cac9c44a
       source:
         file: src/meta/reporters/sarif.ts
-        lines: 138-147
+        lines: 140-149
         integrity: sha256-be82a93fe352e3fffbc80d011182051bd69c5fb498fd3b8e9f833f797536f22b
-        commit-sha: ffdbdab4b080ca781c685250214db34edc01ae3b
+        commit-sha: 4d274aaab31e92bf39ddc11f636cecc69ea1cf34
     - id: a-path-above-the-config-is-a-member-of-nothing
       claim:
         integrity: sha256-13e0f6e97b634026a8e9d9edb9f5c1cf662a39d952a5b60f414010158208b3e7
