@@ -4,6 +4,13 @@
 4.13.1. Entries below that version are docmeta releases; the repository
 history is the same one.
 
+# [4.13.0](https://github.com/hawkeyexl/manni/compare/v4.12.4...v4.13.0) (2026-10-20)
+
+
+### Features
+
+* **lint:** show authors what a template asks for, and report misplaced sections ([#205](https://github.com/hawkeyexl/manni/issues/205)) ([6bb777e](https://github.com/hawkeyexl/manni/commit/6bb777e8b0815174c6914dc7c29e0308bf3d9674)), closes [#202](https://github.com/hawkeyexl/manni/issues/202)
+
 ## [4.12.4](https://github.com/hawkeyexl/manni/compare/v4.12.3...v4.12.4) (2026-10-19)
 
 
