@@ -1111,3 +1111,25 @@ function defined<T>(value: T | undefined | null): T {
   if (value === undefined || value === null) throw new Error("expected a value");
   return value;
 }
+
+describe("a merged finding's messages", () => {
+  const SHAPES_FILE = [
+    join(dirname(fileURLToPath(import.meta.url)), "..", "fixtures", "semicolon-message-shapes.ttl"),
+  ];
+  const THING = "https://example.com/semicolon#thing";
+  const EX = "https://example.com/semicolon#";
+
+  it("says a message holding \"; \" once, however many values break it", async () => {
+    const findings = await validateGraph(
+      build([
+        [THING, RDF_TYPE, `${EX}Thing`],
+        [THING, `${EX}code`, { lit: "abc" }],
+        [THING, `${EX}code`, { lit: "def" }],
+      ]),
+      SHAPES_FILE,
+    );
+    expect(findings.map((f) => f.message)).toEqual([
+      "Shorten the code; one character is the limit",
+    ]);
+  });
+});

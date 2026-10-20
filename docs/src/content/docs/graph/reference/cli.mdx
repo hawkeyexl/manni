@@ -631,6 +631,7 @@ Each of these exits 2.
 |---|---|
 | No shape named | `error: missing required argument 'shape'` |
 | A shape the files do not hold | `manni: Unknown shape "Document". Available: ActivityShape, AssociationShape, AttributionShape, ConceptShape, DocumentShape, FilledFieldEntryShape, OrganizationShape, PersonShape, ProductVariantShape, SchemeShape, SectionShape, SoftwareAgentShape.` |
+| A shape named when the files define no node shapes | `manni: Unknown shape "Document". The shapes in effect define no node shapes.` |
 | `-f markdown` on a shape with no frontmatter keys | `manni: ActivityShape has no frontmatter keys. manni writes every value it checks.` |
 | `-f markdown` on `graph shapes` | `manni: Unknown --format "markdown". Use pretty \| json.` |
 | An unknown `-f` on `graph shapes show` | `manni: Unknown --format "xml". Use pretty \| json \| markdown.` |
