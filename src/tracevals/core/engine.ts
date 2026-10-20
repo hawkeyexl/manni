@@ -7,7 +7,7 @@ import { NOT_GRANTED_REASON } from "../../shared/execution.js";
 import { parseTraceFile } from "../trace/claude.js";
 import { resolveArtifacts } from "../artifacts/resolve.js";
 import { findManifest, type FoundManifest } from "../capture/manifest.js";
-import { TracevalsError } from "../types.js";
+import { TRIAGE_GUIDE, TracevalsError } from "../types.js";
 import type { CoverageEntry, ResolvedArtifact } from "../artifacts/types.js";
 import { classifyRef } from "../../meta/index.js";
 import { normalizeRoot, toPosix, underRoot } from "../../shared/sarif-location.js";
@@ -28,7 +28,6 @@ import type { TracevalsConfig } from "./config.js";
 import type { EvalResult, RunReport, RunSummary } from "../types.js";
 
 /** Where a result's guidance sends the reader. */
-const TRIAGE_GUIDE = "https://hawkeyexl.github.io/manni/tracevals/triage/";
 
 /** The implicit eval has no assertion of its own; this is what it checks. */
 const IMPLICIT_DESCRIPTION = "The session follows every instruction in this artifact.";

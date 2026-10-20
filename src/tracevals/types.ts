@@ -21,6 +21,9 @@ export class TracevalsError extends ToolError {
   }
 }
 
+/** The page every tracevals finding links to. */
+export const TRIAGE_GUIDE = "https://hawkeyexl.github.io/manni/tracevals/triage/";
+
 export type Outcome = "pass" | "fail" | "error" | "needs-review" | "skipped";
 
 export interface EvalResult {
