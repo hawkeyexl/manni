@@ -264,9 +264,9 @@ docs/src/content/docs/meta/reference/output-and-exit-codes.mdx:
         integrity: sha256-d9647a8295c87c43319fc6937436bdaba69649aaa4932cab966c1fcab24a6e6c
       source:
         file: src/meta/reporters/sarif.ts
-        lines: 83-86
+        lines: 96-99
         integrity: sha256-ff8c181c6d1b8f4ae29962812daedd2e808ffdfe9d4e999cf025759c69f07401
-        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+        commit-sha: a13745cefe15407b4f1c5cb2ba70d5638605c04b
     - id: output-how-each-level-renders
       claim:
         lines: 444-453
@@ -375,9 +375,9 @@ docs/src/content/docs/meta/reference/output-and-exit-codes.mdx:
         integrity: sha256-0986ef1f91721f0225eb2fad9f19b92f02e41cc93ab952f26fc11d0766c3e121
       source:
         file: src/meta/reporters/sarif.ts
-        lines: 83-86
+        lines: 96-99
         integrity: sha256-ff8c181c6d1b8f4ae29962812daedd2e808ffdfe9d4e999cf025759c69f07401
-        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+        commit-sha: a13745cefe15407b4f1c5cb2ba70d5638605c04b
     - id: output-fingerprint-excludes-the-path
       claim:
         integrity: sha256-46f9d52c61da2a42c82b25b8c938ad8c11fc4a01025c479fe35d5a69f97039d6
@@ -399,9 +399,9 @@ docs/src/content/docs/meta/reference/output-and-exit-codes.mdx:
         integrity: sha256-fe8d1b1aa7731f237957073d21dc2972328a88bc63e7eb6d7a59ef124dc97ba1
       source:
         file: src/meta/reporters/sarif.ts
-        lines: 194-197
+        lines: 208-211
         integrity: sha256-6cf36e299ce76602e4cae8ecb6e1e90af5210fbd8999b4fabfeb11765a527a32
-        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+        commit-sha: a13745cefe15407b4f1c5cb2ba70d5638605c04b
     - id: output-derived-stale-rule-id
       claim:
         integrity: sha256-9da95926e04dd22ecaa68154912c1cfbecca01f31c75259a5ae18228fd68348d
@@ -431,18 +431,18 @@ docs/src/content/docs/meta/reference/output-and-exit-codes.mdx:
         integrity: sha256-fcd7d9b8e295191aea1aac0271b10f5f558de8cd678bc4d7492840b2a444b9f4
       source:
         file: src/meta/reporters/sarif.ts
-        lines: 123-132
+        lines: 137-146
         integrity: sha256-be82a93fe352e3fffbc80d011182051bd69c5fb498fd3b8e9f833f797536f22b
-        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+        commit-sha: a13745cefe15407b4f1c5cb2ba70d5638605c04b
     - id: output-sarif-field-table
       claim:
         lines: 237-245
         integrity: sha256-e68de4d982c28195d46a2b5df93e78641a51716ccae20a9d7776be8abd874110
       source:
         file: src/meta/reporters/sarif.ts
-        lines: 250-268
+        lines: 266-284
         integrity: sha256-64ba2ec95e0f7d6fb18b2d707b9548084d4a0a5d488bc95322717cdeec8e85f1
-        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+        commit-sha: a13745cefe15407b4f1c5cb2ba70d5638605c04b
     - id: output-sarif-findings-are-tracked-alerts
       claim:
         integrity: sha256-f14acad2ec419fa4341ec789c322d8dda56b0912a251bd69ca9f5e65b1c3d57b
@@ -489,9 +489,9 @@ docs/src/content/docs/meta/reference/output-and-exit-codes.mdx:
         integrity: sha256-748a688db6882027a6d75ed44d79270055b5d795edb8483ab7b980294abbb84e
       source:
         file: src/meta/types.ts
-        lines: 200-279
+        lines: 210-289
         integrity: sha256-2fdddd169bba0a4d201eec4d2b70474226ae550158bf61386c6cb6e15cf15100
-        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+        commit-sha: a13745cefe15407b4f1c5cb2ba70d5638605c04b
     - id: output-json-is-one-object
       claim:
         integrity: sha256-8065c79958a86b47ffa36e90d0b471af46722a12da68a9a9b07dc317c64eb41a
@@ -572,6 +572,6 @@ docs/src/content/docs/meta/reference/output-and-exit-codes.mdx:
         integrity: sha256-098463f3bda335778fc5faa84050b0a849993edc2fde4d88cb925a772bd6a0b0
       source:
         file: src/meta/types.ts
-        lines: 202-209
+        lines: 212-219
         integrity: sha256-ec6f03919802b48bc59209fb113fd7195495c5c8a17b3bdff2c390d67333887c
-        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+        commit-sha: a13745cefe15407b4f1c5cb2ba70d5638605c04b

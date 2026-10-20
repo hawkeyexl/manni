@@ -13,9 +13,9 @@ docs/src/content/docs/meta/ci/exit-codes-and-annotations.mdx:
         integrity: sha256-d2424ad8f5cac629814db5ea7ff1bc7e25144e8905883da225ce2de7ac4e042f
       source:
         file: src/meta/reporters/sarif.ts
-        lines: 249-252
+        lines: 265-268
         integrity: sha256-ca1138845cd82d43c3acac2f8539f2e8026e9df490245571d013fc3ca37541ff
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: a13745cefe15407b4f1c5cb2ba70d5638605c04b
     - id: fill-github-one-error-per-unfilled-required
       claim:
         integrity: sha256-11e4d3a87cac02c1ecccfc93d4ff753d1022c97472c243a8462cba51daeea243
@@ -37,9 +37,9 @@ docs/src/content/docs/meta/ci/exit-codes-and-annotations.mdx:
         integrity: sha256-3da7d4807ccc77f4da3a1a0b461e76ef061e636ddbff5dd777763a41d227a175
       source:
         file: src/meta/reporters/junit.ts
-        lines: 65-90
+        lines: 66-91
         integrity: sha256-e6925ff3917828e85cbd57d2d4e0f5546e6ace89fad4b4a6e38f0cc2793e3b97
-        commit-sha: 922dea44962f188cfa8119a67aa5c744ce824710
+        commit-sha: a13745cefe15407b4f1c5cb2ba70d5638605c04b
     - id: github-clean-run-prints-nothing
       claim:
         integrity: sha256-388655c63f783ba7c1cd880d94476131f8adc760bd3238136b24da672c97d141
@@ -266,9 +266,9 @@ docs/src/content/docs/meta/ci/exit-codes-and-annotations.mdx:
         integrity: sha256-aec6f5b5a72d606ff22a93111e87b01dac1bcfd0bcd8947ac965f86ba50a092d
       source:
         file: src/meta/reporters/sarif.ts
-        lines: 141-144
+        lines: 155-158
         integrity: sha256-6679bb684dbe1ea06983c60d39b4ad0769236d43eb6368ade8022992682c2c51
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: a13745cefe15407b4f1c5cb2ba70d5638605c04b
     - id: color-precedence-flag-env-tty
       claim:
         lines: 342-346

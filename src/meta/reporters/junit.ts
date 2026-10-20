@@ -20,13 +20,14 @@
  *
  * Escaping is the one thing a hand-rolled writer gets wrong. Messages carry
  * schema-authored text — a `pattern` regex may hold `<`, `&`, and quotes — and
- * paths can hold `&`. Every attribute value goes through `xmlEscape`; nothing
- * is interpolated raw.
+ * paths can hold `&`. Every attribute value and failure body goes through
+ * `xmlEscape`; nothing is interpolated raw.
  */
 import type { FingerprintContext } from "../core/baseline.js";
 import { isErrorSeverity, type ValidationResult } from "../types.js";
 import { fieldLabel, ruleIdFor } from "./rule-id.js";
 import { xmlEscape } from "../../shared/xml.js";
+import { guidanceLines } from "../../shared/guidance.js";
 
 export { xmlEscape };
 
@@ -98,12 +99,15 @@ export function renderJunit(
           : e.line != null
             ? ` (line ${e.line})`
             : "";
-      lines.push(
-        `      <failure${attr("type", ruleIdFor(e, opts.frame))}${attr(
-          "message",
-          `${fieldLabel(e.instancePath)} ${e.message}${where}`,
-        )}/>`,
-      );
+      const open = `      <failure${attr("type", ruleIdFor(e, opts.frame))}${attr(
+        "message",
+        `${fieldLabel(e.instancePath)} ${e.message}${where}`,
+      )}`;
+      // What the rule asks for goes in the body, which every consumer shows
+      // as the failure's detail. Without guidance the element stays
+      // self-closing, byte for byte as before.
+      const body = guidanceLines(e.guidance).join("\n");
+      lines.push(body === "" ? `${open}/>` : `${open}>${xmlEscape(body)}</failure>`);
     }
     lines.push("    </testcase>");
   }

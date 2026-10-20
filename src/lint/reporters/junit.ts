@@ -12,7 +12,8 @@
  *
  * What is lint's is the two strings that identify the findings as lint's:
  * the `classname` on every `<testcase>`, and the `<failure type>`, which is
- * the namespaced rule id.
+ * the namespaced rule id. A finding's template rides along as meta's
+ * `guidance`, so each `<failure>` body says what the template asks for.
  */
 import {
   isErrorSeverity,
@@ -57,6 +58,9 @@ function toFieldError(
     severity: finding.severity,
     line: finding.position.start.line,
     col: finding.position.start.column,
+    // What the template asks for, which meta's writer prints in the
+    // `<failure>` body, as pretty, GitHub and SARIF print it under the finding.
+    guidance: finding.template ?? null,
   };
 }
 

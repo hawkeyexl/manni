@@ -1032,4 +1032,19 @@ describe("a finding's template context", () => {
         "%0AGuide: https://example.com/guide_how-to.md",
     );
   });
+
+  it("puts the context lines in the JUnit failure body", () => {
+    expect(renderJunit(single({ template: TEMPLATE }))).toContain(
+      '<failure type="manni:lint/structure/missing-section" ' +
+        'message="(root) Rotate a key: Missing section &quot;See also&quot; (line 21)">' +
+        "tgdp:how-to:1.6 see-also: Link to related topics.\n" +
+        "Guide: https://example.com/guide_how-to.md</failure>",
+    );
+  });
+
+  it("keeps the JUnit failure self-closing for a finding with no template", () => {
+    expect(renderJunit(single({ template: null }))).toContain(
+      'message="(root) Rotate a key: Missing section &quot;See also&quot; (line 21)"/>',
+    );
+  });
 });

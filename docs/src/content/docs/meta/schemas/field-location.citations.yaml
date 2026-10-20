@@ -65,9 +65,9 @@ docs/src/content/docs/meta/schemas/field-location.mdx:
         integrity: sha256-ddffda1bbf124689ff96c54a72aeffa573db2565b9d6aa12f608cf3be56dfb0d
       source:
         file: src/meta/reporters/junit.ts
-        lines: 86-90
+        lines: 87-91
         integrity: sha256-982e94e1401e5a4ea5ff5d75a5151fd83d93258edeac10112ce9685f91a2a0a2
-        commit-sha: 922dea44962f188cfa8119a67aa5c744ce824710
+        commit-sha: a13745cefe15407b4f1c5cb2ba70d5638605c04b
     - id: location-external-points-at-the-page-line
       claim:
         lines: 111

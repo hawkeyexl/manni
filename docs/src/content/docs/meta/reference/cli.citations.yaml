@@ -2142,9 +2142,9 @@ docs/src/content/docs/meta/reference/cli.mdx:
         integrity: sha256-e7ae049893ce9fb87bb732e4aa3eb04eae9101ae4751b4f3bbea38a772a92be6
       source:
         file: src/meta/types.ts
-        lines: 207-209
+        lines: 217-219
         integrity: sha256-77c298e1512b56d5ec2ada2912903d7d182c6f5de51068cac870ef9265497f0a
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: a13745cefe15407b4f1c5cb2ba70d5638605c04b
     - id: location-external-sits-at-the-page-line
       claim:
         integrity: sha256-e7ae049893ce9fb87bb732e4aa3eb04eae9101ae4751b4f3bbea38a772a92be6

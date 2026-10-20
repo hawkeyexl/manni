@@ -17,7 +17,7 @@ import { REPORT_FORMAT_LIST } from "../../meta/internal.js";
 import { ruleId, TOOL_NAME } from "../core/rule-id.js";
 import { renderJunit } from "./junit.js";
 import { renderSarif } from "./sarif.js";
-import { templateLines } from "./template-context.js";
+import { guidanceLines } from "../../shared/guidance.js";
 import { explainAlignment, formatAlignment, type ExplainSource } from "./alignment.js";
 
 export { renderJunit, toValidationResults } from "./junit.js";
@@ -122,7 +122,7 @@ export function renderPretty(run: LintRun, opts: ReportOptions = {}): string {
       );
       // What the template asks for, under the rule id it explains.
       const indent = " ".repeat(6 + locate(finding).length);
-      for (const line of templateLines(finding)) lines.push(`${indent}${c.dim(line)}`);
+      for (const line of guidanceLines(finding.template)) lines.push(`${indent}${c.dim(line)}`);
     }
   }
 
@@ -223,7 +223,7 @@ export function renderGithub(run: LintRun): string {
         `title=${escapeWorkflowCommandProperty(ruleId(finding.type))}`,
       ];
       const message = escapeWorkflowCommandMessage(
-        [describeFinding(finding), ...templateLines(finding)].join("\n"),
+        [describeFinding(finding), ...guidanceLines(finding.template)].join("\n"),
       );
       lines.push(`::${finding.severity} ${params.join(",")}::${message}`);
     }

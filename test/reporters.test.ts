@@ -455,6 +455,28 @@ describe("reporters: sarif", () => {
     ]);
   });
 
+  /**
+   * cite and term wrap this writer and attach guidance per finding. The hook
+   * is handed the error itself, so a wrapper pairs by identity and never by
+   * position, which a dropped result would shift.
+   */
+  it("adds the properties a resultProperties hook returns, per error", () => {
+    const guidance = { id: "manni:cite", rule: "source-changed", description: null, guide: null };
+    const missingType = results[1]?.errors[0];
+    const log = expectValidSarif(
+      renderSarif(results, {
+        resultProperties: (error, result) =>
+          error === missingType ? { guidance, file: result.file } : undefined,
+      }),
+    );
+    const out = log.runs[0]?.results as unknown as { properties?: unknown }[];
+    expect(out.map((r) => r.properties)).toEqual([{ guidance, file: "bad.md" }, undefined]);
+  });
+
+  it("emits no properties without a hook", () => {
+    expect(renderSarif(results)).not.toContain('"properties"');
+  });
+
   it("gives docmeta's own failures reserved rule ids instead of a garbage one", () => {
     const run = sarifRun(renderSarif(parseErrorResults));
     expect(run.results.map((r) => r.ruleId)).toEqual([
@@ -687,6 +709,48 @@ describe("reporters: junit", () => {
   it("is never colored, even when the run asked for color", () => {
     const out = render("junit", results, summary, { color: true });
     expect(out.includes(ESC)).toBe(false);
+  });
+
+  it("puts a finding's guidance lines in the failure body, escaped", () => {
+    const withGuidance: ValidationResult[] = [
+      {
+        file: "bad.md",
+        format: "markdown",
+        ok: false,
+        schemas: ["dcmi:elements:1.1"],
+        errors: [
+          {
+            schema: "dcmi:elements:1.1",
+            instancePath: "/date",
+            message: "must be string",
+            keyword: "type",
+            subject: "string",
+            line: 3,
+            guidance: {
+              id: "dcmi:elements:1.1",
+              rule: "date",
+              description: "A point <or> period & more.",
+              guide: "https://example.com/dcmi/",
+            },
+          },
+        ],
+      },
+    ];
+    const xml = renderJunit(withGuidance);
+    expect(xml).toContain(
+      '<failure type="dcmi:elements:1.1/type" message="/date must be string (line 3)">' +
+        "dcmi:elements:1.1 date: A point &lt;or&gt; period &amp; more.\n" +
+        "Guide: https://example.com/dcmi/</failure>",
+    );
+    const failure = parseXml(xml).getElementsByTagName("failure")[0];
+    expect(failure?.textContent).toBe(
+      "dcmi:elements:1.1 date: A point <or> period & more.\nGuide: https://example.com/dcmi/",
+    );
+  });
+
+  it("keeps the failure self-closing when guidance is null", () => {
+    const nulled = results.map((r) => ({ ...r, errors: r.errors.map((e) => ({ ...e, guidance: null })) }));
+    expect(renderJunit(nulled)).toBe(renderJunit(results));
   });
 });
 

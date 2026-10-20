@@ -1,5 +1,7 @@
 /** Programmatic API. The metadata tool lives under `src/meta/`. */
 export * from "./meta/index.js";
+// The rule behind a finding, the one shape every domain carries (proposal 0089).
+export type { Guidance } from "./shared/guidance.js";
 // Each sibling tool is a namespace, so its names cannot collide with the
 // metadata tool's flat export or with each other's:
 // `import { cite } from "@hawkeyexl/manni"`.

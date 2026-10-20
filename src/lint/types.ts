@@ -11,6 +11,7 @@
 
 import { ToolError } from "../shared/errors.js";
 import type { Severity } from "../shared/severity.js";
+import type { Guidance } from "../shared/guidance.js";
 
 /**
  * Operational/usage failure. Exits 2; never used for lint findings.
@@ -325,17 +326,18 @@ export interface Finding {
   template?: FindingTemplate | null;
 }
 
-/** What a template asks for, as a finding carries it. */
-export interface FindingTemplate {
-  /** The template's ref, as `manni lint templates` lists it and `--template` takes it. */
-  id: string;
-  /** The rule's `id`. `null` for a rule without one, the template itself, or no rule at all. */
-  rule: string | null;
-  /** The rule's `description`, or `null` when it has none. */
-  description: string | null;
-  /** The template's `guide`, after `extends`, or `null`. */
-  guide: string | null;
-}
+/**
+ * What a template asks for, as a finding carries it: the family's guidance
+ * shape (`src/shared/guidance.ts`) under lint's released name.
+ *
+ * - `id` is the template's ref, as `manni lint templates` lists it and
+ *   `--template` takes it.
+ * - `rule` is the rule's `id`. `null` for a rule without one, the template
+ *   itself, or no rule at all.
+ * - `description` is the rule's `description`, or `null` when it has none.
+ * - `guide` is the template's `guide`, after `extends`, or `null`.
+ */
+export type FindingTemplate = Guidance;
 
 /**
  * Why a file was not linted.

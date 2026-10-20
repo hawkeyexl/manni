@@ -21,6 +21,6 @@ docs/src/content/docs/meta/reference/glossary/frontmatter.mdx:
         integrity: sha256-a2d50b3a1767050b4396998299cf9489d66cf0f1b1b7c51e1553809f6807203c
       source:
         file: src/meta/types.ts
-        lines: 20-22
+        lines: 21-23
         integrity: sha256-4226b5b636978c568b9ec0c32d21d480a1aab95aec50ab1d95446d1fe99cee92
-        commit-sha: 7a6eb280efa865bbed56a3b498f4361c1fc35dfe
+        commit-sha: a13745cefe15407b4f1c5cb2ba70d5638605c04b

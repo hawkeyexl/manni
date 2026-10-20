@@ -71,6 +71,19 @@ export interface SarifOptions {
   frame?: FingerprintContext;
   /** Diagnostics for the user; the CLI writes these to stderr. */
   onNotice?: (message: string) => void;
+  /**
+   * Extra `result.properties` for one finding, or `undefined` for none.
+   *
+   * A tool that wraps this writer, as cite and term do, attaches what meta
+   * cannot know, such as a finding's guidance. The hook is handed the very
+   * `FieldError` object the caller passed in, so the caller pairs by
+   * identity. Pairing by position would shift whenever a result is skipped
+   * or dropped, and both happen here. It is not called for a dropped one.
+   */
+  resultProperties?: (
+    error: FieldError,
+    result: ValidationResult,
+  ) => Record<string, unknown> | undefined;
 }
 
 type SarifLevel = "error" | "warning" | "note";
@@ -102,6 +115,7 @@ interface SarifResult {
     };
   }[];
   partialFingerprints: Record<string, string>;
+  properties?: Record<string, unknown>;
 }
 
 /**
@@ -168,7 +182,7 @@ export function renderSarif(
   results: ValidationResult[],
   opts: SarifOptions = {},
 ): string {
-  const { frame, onNotice } = opts;
+  const { frame, onNotice, resultProperties } = opts;
 
   // Two frames, deliberately: fingerprints stay measured against the config's
   // directory (so a baseline recorded from anywhere matches), while uris are
@@ -207,6 +221,7 @@ export function renderSarif(
         continue;
       }
       const ruleId = ruleIdFor(e, frame);
+      const properties = resultProperties?.(e, r);
       if (!rules.has(ruleId)) {
         rules.set(ruleId, {
           id: ruleId,
@@ -240,6 +255,7 @@ export function renderSarif(
           },
         ],
         partialFingerprints: { [FINGERPRINT_KEY]: fingerprint(e, frame) },
+        ...(properties === undefined ? {} : { properties }),
       });
     }
   }
