@@ -112,7 +112,10 @@ English and German, with `unused-term` turned off:
 ```console
 $ manni term check docs/terms
 docs/terms/en/kubernetes.md:5
-  error  manni:term/label-collision      "Kubernetes" is claimed by docs/terms/de/kubernetes.md:1 as "kubernetes"
+  error  manni:term/label-collision      "Kubernetes" is claimed by docs/terms/de/kubernetes.md:1 as "kubernetes".
+                                         Rename one label, or merge the two entries.
+                                         manni:term label-collision: Two entries claim the same preferred label, ignoring case. Across languages, only when the spellings differ.
+                                         Guide: https://hawkeyexl.github.io/manni/term/reference/rules/#label-collision
 
 1 error in 6 terms
 ```
@@ -126,52 +129,115 @@ of the field that caused it, or on the entry's first line when no field did:
 ```console
 $ manni term check
 docs/glossary/varifocals.md:1
-  error  manni:term/duplicate-id                id: "varifocal" is also used by docs/terms/varifocal.md:1
+  error  manni:term/duplicate-id                id: "varifocal" is also used by docs/terms/varifocal.md:1.
+                                                Give one entry its own id, or merge the two.
+                                                manni:term duplicate-id: Two entries in one language share an id, ignoring case.
+                                                Guide: https://hawkeyexl.github.io/manni/term/reference/rules/#duplicate-id
 docs/guides/care.md:3
   notice manni:term/keyword-candidate           keywords: "coatings" is on 2 pages and names no term, so add it to concepts: or run manni term fill --crawl.
+                                                manni:term keyword-candidate: A free keywords: value is on enough pages and names no term.
+                                                Guide: https://hawkeyexl.github.io/manni/term/reference/rules/#keyword-candidate
 docs/guides/fitting.md:4
   warning manni:term/alt-label-reference         concepts: "PAL" is an alt-label of "progressive lens", so name the label.
+                                                manni:term alt-label-reference: A page's concepts: names an entry by one of its alt-labels.
+                                                Guide: https://hawkeyexl.github.io/manni/term/reference/rules/#alt-label-reference
   error  manni:term/undefined-term              concepts: "monofocal" names no entry.
+                                                Correct the value, or run manni term fill to add the term.
+                                                manni:term undefined-term: A page's concepts: names no entry, by label, id or alt-label.
+                                                Guide: https://hawkeyexl.github.io/manni/term/reference/rules/#undefined-term
 docs/guides/fitting.md:7
-  error  manni:term/broader-cycle               broader: corrective lens > lens > corrective lens
+  error  manni:term/broader-cycle               broader: corrective lens > lens > corrective lens.
+                                                Remove the broader value that closes the loop.
+                                                manni:term broader-cycle: A chain of broader returns to where it started, across the terms and every page's graph: block.
+                                                Guide: https://hawkeyexl.github.io/manni/term/reference/rules/#broader-cycle
   notice manni:term/hierarchy-outside-termbase  graph: broader "corrective lens" on "lens" is not on its term page (docs/terms/lens.md), so add it there.
+                                                manni:term hierarchy-outside-termbase: A page's graph: block gives a term a broader, narrower or related-concepts value that the term's own entry does not list.
+                                                Guide: https://hawkeyexl.github.io/manni/term/reference/rules/#hierarchy-outside-termbase
 docs/terms/bifocal.md:5
   notice manni:term/abstract-too-long           abstract: 81 characters is over the limit of 60, so shorten it
+                                                manni:term abstract-too-long: An abstract is longer than abstractMaxLength, 60 by default.
+                                                Guide: https://hawkeyexl.github.io/manni/term/reference/rules/#abstract-too-long
 docs/terms/bifocal.md:7
   notice manni:term/related-siblings            related-terms: "trifocal" shares the broader term "lens", which already relates them.
+                                                Drop the link unless it says more than the shared parent.
+                                                manni:term related-siblings: Two related terms share a broader term.
+                                                Guide: https://hawkeyexl.github.io/manni/term/reference/rules/#related-siblings
 docs/terms/bifocal.md:8
   error  manni:term/label-overlap               hidden-labels: "multifocal" is an alt-label of docs/terms/progressive-lens.md:1.
+                                                Remove it here, or from that entry's alt-labels.
+                                                manni:term label-overlap: An alt-label repeats the entry's own label, or a hidden-label repeats any name the entry or another entry goes by.
+                                                Guide: https://hawkeyexl.github.io/manni/term/reference/rules/#label-overlap
 docs/terms/corrective-lens.md:3
   warning manni:term/deprecated-label            label: "corrective lens" is deprecated in designations, so promote another label or redirect with see:.
+                                                manni:term deprecated-label: The entry's own label is deprecated or superseded in its designations, and the entry has no see.
+                                                Guide: https://hawkeyexl.github.io/manni/term/reference/rules/#deprecated-label
 docs/terms/lens.md:1
   warning manni:term/asymmetric-related          related-terms: omits "optics", which lists this entry as related.
+                                                Add it to related-terms, or remove this entry from its related-terms.
+                                                manni:term asymmetric-related: A names B in related-terms, and B omits A.
+                                                Guide: https://hawkeyexl.github.io/manni/term/reference/rules/#asymmetric-related
 docs/terms/lens.md:6
-  warning manni:term/asymmetric-hierarchy        narrower: omits "corrective lens", which lists this entry as broader
+  warning manni:term/asymmetric-hierarchy        narrower: omits "corrective lens", which lists this entry as broader.
+                                                Add it to narrower, or remove this entry from its broader.
+                                                manni:term asymmetric-hierarchy: A names B as broader, and B omits A from narrower, or the reverse.
+                                                Guide: https://hawkeyexl.github.io/manni/term/reference/rules/#asymmetric-hierarchy
 docs/terms/monocle.md:1
   error  manni:term/missing-definition          definition: missing, so write one or run manni term fill.
+                                                manni:term missing-definition: An entry has neither a definition nor a see.
+                                                Guide: https://hawkeyexl.github.io/manni/term/reference/rules/#missing-definition
 docs/terms/optics.md:6
   warning manni:term/related-in-hierarchy        related-terms: "lens" is also narrower than this entry, so keep one of the two.
+                                                manni:term related-in-hierarchy: A related-terms value is also above or below the entry in the hierarchy, at any depth.
+                                                Guide: https://hawkeyexl.github.io/manni/term/reference/rules/#related-in-hierarchy
 docs/terms/optics.md:7
   error  manni:term/conflicting-matches         exact-matches: "https://vocab.example.com/optics" is also in broad-matches, and a mapping has one kind.
+                                                Keep the IRI under the one kind that holds.
+                                                manni:term conflicting-matches: One IRI is listed under two of an entry's match fields.
+                                                Guide: https://hawkeyexl.github.io/manni/term/reference/rules/#conflicting-matches
 docs/terms/progressive-lens.md:1
   notice manni:term/orphan-term                 no broader, narrower or related term, so place it in the hierarchy.
+                                                manni:term orphan-term: An entry has no broader, narrower or related term, in a termbase that has a hierarchy.
+                                                Guide: https://hawkeyexl.github.io/manni/term/reference/rules/#orphan-term
 docs/terms/trifocal.md:1
-  notice manni:term/unused-term                 no page's concepts: names this term
+  notice manni:term/unused-term                 no page's concepts: names this term.
+                                                Name it in the concepts: of a page that uses it.
+                                                manni:term unused-term: No page's concepts: names the entry, or an entry in another language with its id.
+                                                Guide: https://hawkeyexl.github.io/manni/term/reference/rules/#unused-term
 docs/terms/trifocal.md:5
   warning manni:term/ambiguous-alt-label         alt-labels: "Multifocal" is also an alt-label of docs/terms/progressive-lens.md:1, so a reader can't tell which term it means.
+                                                Keep it on the entry it belongs to.
+                                                manni:term ambiguous-alt-label: Two entries share an alt-label, ignoring case.
+                                                Guide: https://hawkeyexl.github.io/manni/term/reference/rules/#ambiguous-alt-label
 docs/terms/trifocal.md:7
-  error  manni:term/dangling-reference          related-terms: "tetrafocal" names no entry
+  error  manni:term/dangling-reference          related-terms: "tetrafocal" names no entry.
+                                                Did you mean "trifocal"? Correct the value, or add the term it names.
+                                                manni:term dangling-reference: A value of broader, narrower, related-terms or see names no entry, by label or by id.
+                                                Guide: https://hawkeyexl.github.io/manni/term/reference/rules/#dangling-reference
 docs/terms/varifocal.md:1
-  error  manni:term/duplicate-id                id: "varifocal" is also used by docs/glossary/varifocals.md:1
+  error  manni:term/duplicate-id                id: "varifocal" is also used by docs/glossary/varifocals.md:1.
+                                                Give one entry its own id, or merge the two.
+                                                manni:term duplicate-id: Two entries in one language share an id, ignoring case.
+                                                Guide: https://hawkeyexl.github.io/manni/term/reference/rules/#duplicate-id
 docs/terms/varifocal.md:3
-  error  manni:term/label-collision             "varifocal" is claimed by docs/glossary/varifocals.md:1 as "Varifocal"
+  error  manni:term/label-collision             "varifocal" is claimed by docs/glossary/varifocals.md:1 as "Varifocal".
+                                                Rename one label, or merge the two entries.
+                                                manni:term label-collision: Two entries claim the same preferred label, ignoring case. Across languages, only when the spellings differ.
+                                                Guide: https://hawkeyexl.github.io/manni/term/reference/rules/#label-collision
 docs/terms/varifocal.md:4
-  error  manni:term/alt-label-collision         alt-labels: "Lens" is the label of docs/terms/lens.md:1
+  error  manni:term/alt-label-collision         alt-labels: "Lens" is the label of docs/terms/lens.md:1.
+                                                Remove the alt-label, or merge the two entries.
+                                                manni:term alt-label-collision: An entry's alt-label is another entry's preferred label, ignoring case. Across languages, only when the spellings differ.
+                                                Guide: https://hawkeyexl.github.io/manni/term/reference/rules/#alt-label-collision
 docs/terms/varifocal.md:5
   error  manni:term/see-not-empty               see: "progressive lens" redirects this entry, so remove its definition
+                                                manni:term see-not-empty: An entry with see also carries a definition.
+                                                Guide: https://hawkeyexl.github.io/manni/term/reference/rules/#see-not-empty
 
 11 errors, 6 warnings, 6 notices in 9 terms
 ```
+
+Each message ends with what to do. Two dim lines follow it: the rule with
+when it fires, and a Guide link to the rule's section below.
 
 ## What each rule means
 
@@ -217,10 +283,10 @@ label says nothing new. A hidden-label marks a name not to use, so it cannot
 also be a name the termbase uses. The message names what the value repeats:
 
 ```
-alt-labels: "Lens" repeats this entry's label.
-hidden-labels: "lens" repeats this entry's alt-label.
-hidden-labels: "multifocal" is the label of docs/terms/multifocal.md:1.
-hidden-labels: "multifocal" is an alt-label of docs/terms/progressive-lens.md:1.
+alt-labels: "Lens" repeats this entry's label. Remove it from alt-labels.
+hidden-labels: "lens" repeats this entry's alt-label. Keep it in alt-labels or hidden-labels, not both.
+hidden-labels: "multifocal" is the label of docs/terms/multifocal.md:1. Remove it from hidden-labels.
+hidden-labels: "multifocal" is an alt-label of docs/terms/progressive-lens.md:1. Remove it here, or from that entry's alt-labels.
 ```
 
 The finding sits on the entry holding the repeated value, on that field's
@@ -272,7 +338,7 @@ under two of them says two different things. The rule reports each such IRI
 once, on the line of the first field that lists it:
 
 ```
-exact-matches: "https://www.wikidata.org/wiki/Q1424588" is also in broad-matches, and a mapping has one kind.
+exact-matches: "https://www.wikidata.org/wiki/Q1424588" is also in broad-matches, and a mapping has one kind. Keep the IRI under the one kind that holds.
 ```
 
 The message names the first field in the order exact, close, broad, narrow,
@@ -373,7 +439,7 @@ link between them may still help a reader, so this is a notice. It is reported
 once per pair, on the first entry that lists the other:
 
 ```
-related-terms: "trifocal" shares the broader term "lens", which already relates them.
+related-terms: "trifocal" shares the broader term "lens", which already relates them. Drop the link unless it says more than the shared parent.
 ```
 
 Keep the link when it says something the shared parent does not. Otherwise

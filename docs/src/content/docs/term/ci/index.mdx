@@ -85,9 +85,12 @@ finding, on the file and line, titled with the rule id:
 
 ```console
 $ manni term check -f github
-::warning file=docs/guides/fitting.md,line=3,title=manni%3Aterm/alt-label-reference::concepts: "PAL" is an alt-label of "progressive lens", so name the label.
-::error file=docs/guides/fitting.md,line=3,title=manni%3Aterm/undefined-term::concepts: "trifocal" names no entry.
+::warning file=docs/guides/fitting.md,line=3,title=manni%3Aterm/alt-label-reference::concepts: "PAL" is an alt-label of "progressive lens", so name the label.%0Amanni:term alt-label-reference: A page's concepts: names an entry by one of its alt-labels.%0AGuide: https://hawkeyexl.github.io/manni/term/reference/rules/#alt-label-reference
+::error file=docs/guides/fitting.md,line=3,title=manni%3Aterm/undefined-term::concepts: "trifocal" names no entry. Correct the value, or run manni term fill to add the term.%0Amanni:term undefined-term: A page's concepts: names no entry, by label, id or alt-label.%0AGuide: https://hawkeyexl.github.io/manni/term/reference/rules/#undefined-term
 ```
+
+Each annotation ends with what to do, then the rule's line and a link to its
+section of the rules reference.
 
 {/* cite lint-github-same-renderer */}
 {/* cite lint-prose-rule-id */}
@@ -95,9 +98,9 @@ $ manni term check -f github
 
 ```console
 $ manni term lint -f github
-::warning file=docs/terms/kubernetes.md,line=7,title=manni%3Aterm/prose/House.Simply::Drop 'Simply'.
-::warning file=docs/terms/kubernetes.md,line=11,title=manni%3Aterm/prose/House.Simply::Drop 'just'.
-::error file=docs/terms/progressive-lens.md,line=9,title=manni%3Aterm/prose/House.Length::Keep a sentence under 20 words.
+::warning file=docs/terms/kubernetes.md,line=7,title=manni%3Aterm/prose/House.Simply::Drop 'Simply'.%0Avale House.Simply
+::warning file=docs/terms/kubernetes.md,line=11,title=manni%3Aterm/prose/House.Simply::Drop 'just'.%0Avale House.Simply
+::error file=docs/terms/progressive-lens.md,line=9,title=manni%3Aterm/prose/House.Length::Keep a sentence under 20 words.%0Avale House.Length
 ```
 
 {/* cite finding-formats */}

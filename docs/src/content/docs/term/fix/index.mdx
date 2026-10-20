@@ -71,8 +71,8 @@ The example repository has three term pages under `docs/terms/` and one guide,
 This is what `manni term check -f github` leaves on a pull request:
 
 ```
-::error file=docs/guides/fitting.md,line=3,title=manni%3Aterm/undefined-term::concepts: "corective lens" names no entry.
-::notice file=docs/terms/corrective-lens.md,line=1,title=manni%3Aterm/unused-term::no page's concepts: names this term
+::error file=docs/guides/fitting.md,line=3,title=manni%3Aterm/undefined-term::concepts: "corective lens" names no entry. Did you mean "corrective lens"? Correct the value, or run manni term fill to add the term.%0Amanni:term undefined-term: A page's concepts: names no entry, by label, id or alt-label.%0AGuide: https://hawkeyexl.github.io/manni/term/reference/rules/#undefined-term
+::notice file=docs/terms/corrective-lens.md,line=1,title=manni%3Aterm/unused-term::no page's concepts: names this term. Name it in the concepts: of a page that uses it.%0Amanni:term unused-term: No page's concepts: names the entry, or an entry in another language with its id.%0AGuide: https://hawkeyexl.github.io/manni/term/reference/rules/#unused-term
 ```
 
 {/* cite github-title-escaped */}
@@ -85,7 +85,8 @@ which is why the raw line reads `%3A`.
 | Level | `error` | An error fails the job. A `warning` or a `notice` never does. |
 | File and line | `docs/guides/fitting.md`, line `3` | The field that caused the finding. For a finding about a whole entry, the entry's first line. |
 | Rule | `undefined-term` | The row to read in the [table](#every-rule-at-a-glance). |
-| Message | `concepts: "corective lens" names no entry.` | The field, and the value it could not resolve. Where a message ends in a clause starting `so`, that clause names the fix. |
+| Message | `concepts: "corective lens" names no entry. Did you mean "corrective lens"? Correct the value, or run manni term fill to add the term.` | The field and the value it could not resolve. The message ends with what to do, after `Did you mean` when a label is close. |
+| Guidance | `manni:term undefined-term: A page's concepts: names no entry, by label, id or alt-label.` and `Guide: https://hawkeyexl.github.io/manni/term/reference/rules/#undefined-term` | The two lines after `%0A`. The rule and when it fires, then a link to its section of the rules reference. |
 
 {/* cite two-rule-families */}
 {/* cite lint-rule-from-vale-check */}
@@ -136,8 +137,14 @@ meaning, and a repository can move any level under `term.severity`.
 ```
 docs/guides/fitting.md:3
   error  manni:term/undefined-term       concepts: "corective lens" names no entry.
+                                         Did you mean "corrective lens"? Correct the value, or run manni term fill to add the term.
+                                         manni:term undefined-term: A page's concepts: names no entry, by label, id or alt-label.
+                                         Guide: https://hawkeyexl.github.io/manni/term/reference/rules/#undefined-term
 docs/terms/corrective-lens.md:1
-  notice manni:term/unused-term          no page's concepts: names this term
+  notice manni:term/unused-term          no page's concepts: names this term.
+                                         Name it in the concepts: of a page that uses it.
+                                         manni:term unused-term: No page's concepts: names the entry, or an entry in another language with its id.
+                                         Guide: https://hawkeyexl.github.io/manni/term/reference/rules/#unused-term
 
 1 error, 1 notice in 3 terms
 ```
@@ -168,6 +175,8 @@ If the value is right and the term is new, add a term page for it. See
 ```
 docs/guides/fitting.md:3
   warning manni:term/alt-label-reference  concepts: "PAL" is an alt-label of "progressive lens", so name the label.
+                                         manni:term alt-label-reference: A page's concepts: names an entry by one of its alt-labels.
+                                         Guide: https://hawkeyexl.github.io/manni/term/reference/rules/#alt-label-reference
 
 1 warning in 3 terms
 ```
@@ -190,7 +199,10 @@ See [`alt-label-reference`](/manni/term/reference/rules/#alt-label-reference).
 
 ```
 docs/terms/progressive-lens.md:8
-  error  manni:term/dangling-reference   related-terms: "bifocals" names no entry
+  error  manni:term/dangling-reference   related-terms: "bifocals" names no entry.
+                                         Did you mean "bifocal"? Correct the value, or add the term it names.
+                                         manni:term dangling-reference: A value of broader, narrower, related-terms or see names no entry, by label or by id.
+                                         Guide: https://hawkeyexl.github.io/manni/term/reference/rules/#dangling-reference
 
 1 error in 3 terms
 ```
@@ -219,7 +231,10 @@ A second glossary page, `docs/glossary/bifocals.md`, defines `Bifocal` again:
 
 ```
 docs/terms/bifocal.md:4
-  error  manni:term/label-collision      "bifocal" is claimed by docs/glossary/bifocals.md:1 as "Bifocal"
+  error  manni:term/label-collision      "bifocal" is claimed by docs/glossary/bifocals.md:1 as "Bifocal".
+                                         Rename one label, or merge the two entries.
+                                         manni:term label-collision: Two entries claim the same preferred label, ignoring case. Across languages, only when the spellings differ.
+                                         Guide: https://hawkeyexl.github.io/manni/term/reference/rules/#label-collision
 
 1 error in 4 terms
 ```
@@ -232,11 +247,20 @@ each:
 
 ```
 docs/glossary/bifocals.md:1
-  error  manni:term/duplicate-id         id: "bifocal" is also used by docs/terms/bifocal.md:1
+  error  manni:term/duplicate-id         id: "bifocal" is also used by docs/terms/bifocal.md:1.
+                                         Give one entry its own id, or merge the two.
+                                         manni:term duplicate-id: Two entries in one language share an id, ignoring case.
+                                         Guide: https://hawkeyexl.github.io/manni/term/reference/rules/#duplicate-id
 docs/terms/bifocal.md:1
-  error  manni:term/duplicate-id         id: "bifocal" is also used by docs/glossary/bifocals.md:1
+  error  manni:term/duplicate-id         id: "bifocal" is also used by docs/glossary/bifocals.md:1.
+                                         Give one entry its own id, or merge the two.
+                                         manni:term duplicate-id: Two entries in one language share an id, ignoring case.
+                                         Guide: https://hawkeyexl.github.io/manni/term/reference/rules/#duplicate-id
 docs/terms/bifocal.md:4
-  error  manni:term/label-collision      "bifocal" is claimed by docs/glossary/bifocals.md:1 as "Bifocal"
+  error  manni:term/label-collision      "bifocal" is claimed by docs/glossary/bifocals.md:1 as "Bifocal".
+                                         Rename one label, or merge the two entries.
+                                         manni:term label-collision: Two entries claim the same preferred label, ignoring case. Across languages, only when the spellings differ.
+                                         Guide: https://hawkeyexl.github.io/manni/term/reference/rules/#label-collision
 
 3 errors in 4 terms
 ```
@@ -256,7 +280,10 @@ Decide whether the two pages define one thing or two.
 
   ```
   docs/glossary/bifocals.md:1
-    notice manni:term/unused-term          no page's concepts: names this term
+    notice manni:term/unused-term          no page's concepts: names this term.
+                                           Name it in the concepts: of a page that uses it.
+                                           manni:term unused-term: No page's concepts: names the entry, or an entry in another language with its id.
+                                           Guide: https://hawkeyexl.github.io/manni/term/reference/rules/#unused-term
 
   1 notice in 4 terms
   ```
@@ -277,9 +304,15 @@ See [`label-collision`](/manni/term/reference/rules/#label-collision),
 
 ```
 docs/terms/corrective-lens.md:6
-  error  manni:term/broader-cycle         broader: corrective lens > progressive lens > corrective lens
+  error  manni:term/broader-cycle         broader: corrective lens > progressive lens > corrective lens.
+                                          Remove the broader value that closes the loop.
+                                          manni:term broader-cycle: A chain of broader returns to where it started, across the terms and every page's graph: block.
+                                          Guide: https://hawkeyexl.github.io/manni/term/reference/rules/#broader-cycle
 docs/terms/progressive-lens.md:1
-  warning manni:term/asymmetric-hierarchy  narrower: omits "corrective lens", which lists this entry as broader
+  warning manni:term/asymmetric-hierarchy  narrower: omits "corrective lens", which lists this entry as broader.
+                                          Add it to narrower, or remove this entry from its broader.
+                                          manni:term asymmetric-hierarchy: A names B as broader, and B omits A from narrower, or the reverse.
+                                          Guide: https://hawkeyexl.github.io/manni/term/reference/rules/#asymmetric-hierarchy
 
 1 error, 1 warning in 3 terms
 ```
@@ -312,9 +345,14 @@ The warning goes with it, because it came from the same line. See
 
 ```
 docs/terms/varifocal.md:1
-  notice manni:term/unused-term          no page's concepts: names this term
+  notice manni:term/unused-term          no page's concepts: names this term.
+                                         Name it in the concepts: of a page that uses it.
+                                         manni:term unused-term: No page's concepts: names the entry, or an entry in another language with its id.
+                                         Guide: https://hawkeyexl.github.io/manni/term/reference/rules/#unused-term
 docs/terms/varifocal.md:5
   error  manni:term/see-not-empty        see: "progressive lens" redirects this entry, so remove its definition
+                                         manni:term see-not-empty: An entry with see also carries a definition.
+                                         Guide: https://hawkeyexl.github.io/manni/term/reference/rules/#see-not-empty
 
 1 error, 1 notice in 4 terms
 ```
@@ -335,7 +373,10 @@ definition: Another name for a progressive lens.
 
 ```
 docs/terms/varifocal.md:1
-  notice manni:term/unused-term          no page's concepts: names this term
+  notice manni:term/unused-term          no page's concepts: names this term.
+                                         Name it in the concepts: of a page that uses it.
+                                         manni:term unused-term: No page's concepts: names the entry, or an entry in another language with its id.
+                                         Guide: https://hawkeyexl.github.io/manni/term/reference/rules/#unused-term
 
 1 notice in 4 terms
 ```
@@ -353,9 +394,12 @@ A `manni:term/prose/…` annotation comes from `manni term lint`. The part after
 `prose/` is a Vale rule from your repository's own styles:
 
 ```
-::error file=docs/terms/corrective-lens.md,line=6,title=manni%3Aterm/prose/House.Length::Keep a sentence under 20 words.
-::warning file=docs/terms/corrective-lens.md,line=6,title=manni%3Aterm/prose/House.Simply::Drop 'simply'.
+::error file=docs/terms/corrective-lens.md,line=6,title=manni%3Aterm/prose/House.Length::Keep a sentence under 20 words.%0Avale House.Length
+::warning file=docs/terms/corrective-lens.md,line=6,title=manni%3Aterm/prose/House.Simply::Drop 'simply'.%0Avale House.Simply
 ```
+
+The line after `%0A` names the Vale rule. When the rule's style gives a
+`description` or a `link`, the annotation carries them too.
 
 Line 6 is the `definition`:
 

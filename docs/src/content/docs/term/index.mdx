@@ -126,7 +126,12 @@ npx @hawkeyexl/manni term check
 ```
 docs/guides/fitting.md:3
   warning manni:term/alt-label-reference  concepts: "PAL" is an alt-label of "progressive lens", so name the label.
+                                         manni:term alt-label-reference: A page's concepts: names an entry by one of its alt-labels.
+                                         Guide: https://hawkeyexl.github.io/manni/term/reference/rules/#alt-label-reference
   error  manni:term/undefined-term       concepts: "trifocal" names no entry.
+                                         Correct the value, or run manni term fill to add the term.
+                                         manni:term undefined-term: A page's concepts: names no entry, by label, id or alt-label.
+                                         Guide: https://hawkeyexl.github.io/manni/term/reference/rules/#undefined-term
 
 1 error, 1 warning in 2 terms
 ```

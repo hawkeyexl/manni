@@ -264,13 +264,20 @@ manni term lint
 ```
 docs/terms/kubernetes.md:7
   warning manni:term/prose/House.Simply   Drop 'Simply'.
+                                         vale House.Simply
 docs/terms/kubernetes.md:11
   warning manni:term/prose/House.Simply   Drop 'just'.
+                                         vale House.Simply
 docs/terms/progressive-lens.md:9
   error  manni:term/prose/House.Length   Keep a sentence under 20 words.
+                                         vale House.Length
 
 1 error, 2 warnings in 3 terms
 ```
+
+Under each finding, a dim line names Vale's rule. When the rule's style gives
+a description or a link, the line carries the description and a `Guide:` line
+follows with the link.
 
 {/* cite lint-finding-source-line */}
 Each finding sits on the source line of its field. Line 7 is the `abstract`.
@@ -299,8 +306,10 @@ House.Length = NO
 ```
 docs/terms/kubernetes.md:7
   warning manni:term/prose/House.Simply   Drop 'Simply'.
+                                         vale House.Simply
 docs/terms/kubernetes.md:11
   warning manni:term/prose/House.Simply   Drop 'just'.
+                                         vale House.Simply
 
 2 warnings in 3 terms
 ```

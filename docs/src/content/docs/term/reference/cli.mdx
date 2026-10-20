@@ -346,14 +346,29 @@ id and the message. The summary counts each severity:
 ```
 docs/guides/fitting.md:3
   warning manni:term/alt-label-reference   concepts: "PAL" is an alt-label of "progressive lens", so name the label.
+                                          manni:term alt-label-reference: A page's concepts: names an entry by one of its alt-labels.
+                                          Guide: https://hawkeyexl.github.io/manni/term/reference/rules/#alt-label-reference
   error  manni:term/undefined-term        concepts: "trifocal" names no entry.
+                                          Did you mean "bifocal"? Correct the value, or run manni term fill to add the term.
+                                          manni:term undefined-term: A page's concepts: names no entry, by label, id or alt-label.
+                                          Guide: https://hawkeyexl.github.io/manni/term/reference/rules/#undefined-term
 docs/terms/bifocal.md:1
-  notice manni:term/unused-term           no page's concepts: names this term
+  notice manni:term/unused-term           no page's concepts: names this term.
+                                          Name it in the concepts: of a page that uses it.
+                                          manni:term unused-term: No page's concepts: names the entry, or an entry in another language with its id.
+                                          Guide: https://hawkeyexl.github.io/manni/term/reference/rules/#unused-term
 docs/terms/corrective-lens.md:5
-  warning manni:term/asymmetric-hierarchy  narrower: omits "bifocal", which lists this entry as broader
+  warning manni:term/asymmetric-hierarchy  narrower: omits "bifocal", which lists this entry as broader.
+                                          Add it to narrower, or remove this entry from its broader.
+                                          manni:term asymmetric-hierarchy: A names B as broader, and B omits A from narrower, or the reverse.
+                                          Guide: https://hawkeyexl.github.io/manni/term/reference/rules/#asymmetric-hierarchy
 
 1 error, 2 warnings, 1 notice in 3 terms
 ```
+
+Each message ends with what to do. Two dim lines follow it: the rule with
+when it fires, and a Guide link to its section of the
+[rules reference](/manni/term/reference/rules/).
 
 {/* cite check-clean-line */}
 A clean run prints one line:
@@ -376,7 +391,13 @@ finding sits on an entry, and the `field` that breaks the rule when one does.
       "rule": "unused-term",
       "ruleId": "manni:term/unused-term",
       "severity": "notice",
-      "message": "no page's concepts: names this term",
+      "message": "no page's concepts: names this term. Name it in the concepts: of a page that uses it.",
+      "guidance": {
+        "id": "manni:term",
+        "rule": "unused-term",
+        "description": "No page's concepts: names the entry, or an entry in another language with its id.",
+        "guide": "https://hawkeyexl.github.io/manni/term/reference/rules/#unused-term"
+      },
       "file": "docs/terms/bifocal.md",
       "line": 1,
       "id": "bifocal"
@@ -392,13 +413,17 @@ finding sits on an entry, and the `field` that breaks the rule when one does.
 }
 ```
 
+Each finding also carries `guidance`, the rule behind it: its `id`, `rule`,
+`description` and `guide` link. A `lint` finding's `id` is `vale`, and its
+`description` and `guide` are the Vale rule's own, or `null`.
+
 {/* cite github-escape-rule-id */}
 `github` prints one workflow command per finding. The colon in the rule id is
 escaped, because a workflow command reads `:` as a separator:
 
 ```
-::warning file=docs/guides/fitting.md,line=3,title=manni%3Aterm/alt-label-reference::concepts: "PAL" is an alt-label of "progressive lens", so name the label.
-::error file=docs/guides/fitting.md,line=3,title=manni%3Aterm/undefined-term::concepts: "trifocal" names no entry.
+::warning file=docs/guides/fitting.md,line=3,title=manni%3Aterm/alt-label-reference::concepts: "PAL" is an alt-label of "progressive lens", so name the label.%0Amanni:term alt-label-reference: A page's concepts: names an entry by one of its alt-labels.%0AGuide: https://hawkeyexl.github.io/manni/term/reference/rules/#alt-label-reference
+::error file=docs/guides/fitting.md,line=3,title=manni%3Aterm/undefined-term::concepts: "trifocal" names no entry. Did you mean "bifocal"? Correct the value, or run manni term fill to add the term.%0Amanni:term undefined-term: A page's concepts: names no entry, by label, id or alt-label.%0AGuide: https://hawkeyexl.github.io/manni/term/reference/rules/#undefined-term
 ```
 
 {/* cite sarif-rule-description */}
@@ -415,13 +440,20 @@ rule's section of that page:
   "shortDescription": {
     "text": "A page's concepts: names no entry, by label, id or alt-label."
   },
+  "fullDescription": {
+    "text": "A page's concepts: names no entry, by label, id or alt-label."
+  },
   "helpUri": "https://hawkeyexl.github.io/manni/term/reference/rules/#undefined-term"
 }
 ```
 
+A SARIF result's message is the `github` annotation's, with the guidance lines
+joined by a line break, and the same guidance is in `properties.guidance`. A
+JUnit failure's message leaves the guidance lines out.
+
 ```xml
 <testcase name="docs/guides/fitting.md" classname="manni.term">
-  <failure type="manni:term/undefined-term" message="concepts: &quot;trifocal&quot; names no entry. (line 3)"/>
+  <failure type="manni:term/undefined-term" message="concepts: &quot;trifocal&quot; names no entry. Did you mean &quot;bifocal&quot;? Correct the value, or run manni term fill to add the term. (line 3)"/>
 </testcase>
 ```
 
@@ -503,10 +535,13 @@ A finding sits on the source line of the field it came from. The rule id is
 ```
 docs/terms/kubernetes.md:7
   warning manni:term/prose/House.Simply   Drop 'Simply'.
+                                         vale House.Simply
 docs/terms/kubernetes.md:11
   warning manni:term/prose/House.Simply   Drop 'just'.
+                                         vale House.Simply
 docs/terms/progressive-lens.md:9
   error  manni:term/prose/House.Length   Keep a sentence under 20 words.
+                                         vale House.Length
 
 1 error, 2 warnings in 3 terms
 ```
