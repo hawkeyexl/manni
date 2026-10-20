@@ -61,8 +61,6 @@ interface SarifRule {
   defaultConfiguration: { level: SarifLevel };
 }
 
-/** Where a built-in grader's rule sends the reader. */
-
 /** What each built-in grader checks. A plugin grader's rule carries none. */
 const GRADER_DESCRIPTIONS = new Map<string, string>([
   ["tool-usage", "Checks whether the session used a tool, and how often."],
