@@ -22,13 +22,15 @@ export interface Guidance {
 /**
  * The id, the rule and its description, then the guide. Empty when nothing
  * stands behind the finding, so a caller can treat `[]` as "print nothing".
- * A head with no text is left out rather than printed as a blank line.
+ * A head with no text is left out rather than printed as a blank line, and
+ * an empty rule, description or guide reads as none, so no caller has to
+ * map `""` to `null` first.
  */
 export function guidanceLines(g: Guidance | null | undefined): string[] {
   if (g == null) return [];
-  const rule = g.rule === null ? "" : ` ${g.rule}`;
-  const description = g.description === null ? "" : `: ${g.description}`;
+  const rule = g.rule ? ` ${g.rule}` : "";
+  const description = g.description ? `: ${g.description}` : "";
   const head = `${g.id}${rule}${description}`;
   const lines = head === "" ? [] : [head];
-  return g.guide === null ? lines : [...lines, `Guide: ${g.guide}`];
+  return g.guide ? [...lines, `Guide: ${g.guide}`] : lines;
 }

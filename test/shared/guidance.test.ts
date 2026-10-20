@@ -12,6 +12,13 @@ describe("guidanceLines", () => {
     expect(guidanceLines(undefined)).toEqual([]);
   });
 
+  it("treats an empty rule, description or guide as none", () => {
+    expect(guidanceLines({ id: "Doc Detective", rule: "", description: "", guide: "" })).toEqual(["Doc Detective"]);
+    expect(guidanceLines({ id: "manni:cite", rule: "source-changed", description: "", guide: null })).toEqual([
+      "manni:cite source-changed",
+    ]);
+  });
+
   it("prints no blank head line when the id, rule and description are all empty", () => {
     expect(guidanceLines({ id: "", rule: null, description: null, guide: null })).toEqual([]);
     expect(guidanceLines({ id: "", rule: null, description: null, guide: "https://example.com/g" })).toEqual([
