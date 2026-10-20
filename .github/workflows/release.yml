@@ -66,6 +66,9 @@ jobs:
     permissions:
       contents: read
     strategy:
+      # Unlike ci.yml, where each platform's result is worth seeing. Here any
+      # red shard blocks the release, so the others have nothing left to say.
+      fail-fast: true
       matrix:
         shard: [1, 2, 3]
     steps:
@@ -81,7 +84,7 @@ jobs:
 
       - run: npm ci
       # Once is enough: the types do not differ by shard.
-      - if: matrix.shard == 1
+      - if: ${{ matrix.shard == 1 }}
         run: npm run typecheck
       # Before the tests: the CLI integration suites run the built dist/cli.js.
       - run: npm run build
