@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { mkdtempSync } from "node:fs";
+import { mkdtempSync, realpathSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
@@ -241,8 +241,10 @@ describe("manni graph check", () => {
       corpus,
     );
     expect(status).toBe(2);
+    // The bin resolves the path from its real working directory. On macOS the
+    // temp dir is a symlink (/var to /private/var), so expect the real path.
     expect(stderr).toContain(
-      `manni: Shapes file not found: ${join(corpus, "no-such-shapes.ttl")}. Fix the path in --shapes or graph.check.shapes. Leave both unset to use the bundled shapes.`,
+      `manni: Shapes file not found: ${join(realpathSync(corpus), "no-such-shapes.ttl")}. Fix the path in --shapes or graph.check.shapes. Leave both unset to use the bundled shapes.`,
     );
   });
 
