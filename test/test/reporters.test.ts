@@ -117,6 +117,17 @@ describe("renderPretty", () => {
     expect(renderPretty(run, { color: false }).split("\n")[2]).toBe("              Doc Detective click");
   });
 
+  it("links a compound action to its lowercased page, as Doc Detective names them", () => {
+    const text = readFileSync(join(FIXTURES, "results-fail-described.json"), "utf8")
+      .replaceAll("__CWD__", CWD.replace(/\\/g, "/"))
+      .replace('"click": "Settings"', '"dragAndDrop": { "source": "#a", "target": "#b" }');
+    const parsed = parseResults(text);
+    if (parsed === undefined || parsed === null) throw new Error("not a results object");
+    const [finding] = collectFindings(parsed, CWD);
+    expect(finding?.guidance?.rule).toBe("dragAndDrop");
+    expect(finding?.guidance?.guide).toBe("https://docs.doc-detective.com/docs/actions/draganddrop");
+  });
+
   it("prints only the summary when nothing failed or warned", () => {
     expect(renderPretty(passing, { color: false })).toBe(
       "14 tests: 14 passed, 0 failed, 0 warnings, 0 skipped",
