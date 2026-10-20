@@ -28,7 +28,7 @@ import {
   type ArtifactLocation,
 } from "../../shared/sarif-location.js";
 import { classifyRef } from "../../meta/index.js";
-import type { EvalResult, RunReport } from "../types.js";
+import { TRIAGE_GUIDE, type EvalResult, type RunReport } from "../types.js";
 import {
   displayPath,
   errorText,
@@ -62,7 +62,6 @@ interface SarifRule {
 }
 
 /** Where a built-in grader's rule sends the reader. */
-const TRIAGE_GUIDE = "https://hawkeyexl.github.io/manni/tracevals/triage/";
 
 /** What each built-in grader checks. A plugin grader's rule carries none. */
 const GRADER_DESCRIPTIONS = new Map<string, string>([
@@ -161,7 +160,7 @@ export function renderSarif(input: CiInput): string {
         push(run, r, LEVELS[f.severity], [f.message]);
       }
       const judged = judgedLines(r);
-      if (judged !== undefined) {
+      if (judged.length > 0) {
         // A review queue is a warning: nobody has decided yet.
         push(run, r, r.outcome === "fail" ? "error" : "warning", judged);
       }

@@ -29,13 +29,19 @@ function attr(name: string, value: string | number): string {
 
 const seconds = (ms: number): string => (ms / 1000).toFixed(3);
 
+/** The judged block, or a plain line when there is none. */
+function judgedOr(result: EvalResult): string[] {
+  const judged = judgedLines(result);
+  return judged.length > 0 ? judged : [`${result.evalName} failed`];
+}
+
 /** The body for a failing eval: findings or the judged block, then guidance. */
 function failureText(result: EvalResult): string {
   const findings = (result.findings ?? []).map((f) => f.message);
   const head =
     findings.length > 0
       ? findings
-      : (judgedLines(result) ?? [`${result.evalName} failed`]);
+      : judgedOr(result);
   return [...head, ...guidanceLines(result.guidance)].join("\n");
 }
 
