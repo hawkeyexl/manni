@@ -53,6 +53,7 @@ import {
 import { GRAPH_OUTPUT_KEYWORD } from "./graph-output.js";
 import { TERM_KEYWORD, TERM_MARK_META_SCHEMA, isTermMark } from "./term-keyword.js";
 import { errorMessage } from "../../shared/errors.js";
+import { guidanceFor } from "./guidance.js";
 
 type Dialect = "2020" | "2019" | "draft7" | "draft4";
 
@@ -894,10 +895,52 @@ export class Validator {
       const ok = fn(subject);
       if (ok) continue;
       for (const e of fn.errors ?? []) {
-        errors.push(toFieldError(ref, e, lineFor, colFor, locate));
+        if (isWrapper(e)) continue;
+        errors.push({
+          ...toFieldError(ref, e, lineFor, colFor, locate),
+          guidance: guidanceFor(fn.schema, ref, e),
+        });
       }
     }
     return errors;
+  }
+}
+
+/**
+ * An error that only ever reports beside the error that caused it, so it is
+ * dropped as a second report of one root cause (proposal 0089).
+ *
+ * Under `allErrors`, a failed `if` branch, an `anyOf` no branch passed and a
+ * `oneOf` no branch passed each come after the branch's own errors. A `oneOf`
+ * that more than one branch passed has no other error, so it stays.
+ */
+function isWrapper(e: ErrorObject): boolean {
+  if (e.keyword === "if" || e.keyword === "anyOf") return true;
+  return e.keyword === "oneOf" && (e.params as { passingSchemas?: unknown }).passingSchemas === null;
+}
+
+/**
+ * Ajv's message, reworded where it does not say what to write: the values an
+ * enum or a const allows, an empty value, a union of types, and a key a
+ * schema forbids outright. Every other message is Ajv's own, because a
+ * pattern or a format is its own exact statement of the rule.
+ */
+function messageFor(e: DefinedError, fallback: string): string {
+  // Ajv raises this for a `false` subschema, and it is not in `DefinedError`.
+  if ((e as ErrorObject).keyword === "false schema") return "must not be present";
+  switch (e.keyword) {
+    case "enum":
+      return `must be one of: ${e.params.allowedValues.map((v) => JSON.stringify(v)).join(", ")}`;
+    case "const":
+      return `must be ${JSON.stringify(e.params.allowedValue)}`;
+    case "minLength":
+    case "minItems":
+      return e.params.limit === 1 ? "must not be empty" : fallback;
+    case "type":
+      // A union arrives as an array, whatever `DefinedError` says.
+      return `must be ${[e.params.type as unknown].flat().join(" or ")}`;
+    default:
+      return fallback;
   }
 }
 
@@ -957,7 +1000,7 @@ function toFieldError(
   //
   // A `line` on the parent is a useful "look around here". A caret is a claim
   // about one character, and for these two keywords it would be the wrong one.
-  let message = e.message ?? "is invalid";
+  let message = messageFor(defined, e.message ?? "is invalid");
   let wantsColumn = true;
   if (defined.keyword === "required") {
     message = `must have required property '${defined.params.missingProperty}'`;

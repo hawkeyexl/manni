@@ -80,7 +80,7 @@ import {
   FILE_SCHEMA_KEY,
   resolveElements,
 } from "../core/resolve-schema.js";
-import { classifyRef, loadSchema, schemaLoadOptions } from "../core/schema-registry.js";
+import { classifyRef, documentSchemaMessage, loadSchema, schemaLoadOptions } from "../core/schema-registry.js";
 import type { CollectionConfig } from "../../shared/collections.js";
 import { Validator, compileWithFormats } from "../core/validator.js";
 import type { ValidateFunction } from "ajv/dist/2020.js";
@@ -846,7 +846,7 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
       if (!(err instanceof DocmetaError) || resolved.source !== "document") {
         throw err;
       }
-      return errorResult(label, extractor.name, err.message);
+      return errorResult(label, extractor.name, documentSchemaMessage(err));
     }
     const proposed = collectCandidates(
       schemas,

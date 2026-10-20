@@ -51,7 +51,7 @@ import {
   resolveSchemaSetWithSource,
   type ResolvedSchemaSet,
 } from "../core/resolve-schema.js";
-import { schemaLoadOptions } from "../core/schema-registry.js";
+import { documentSchemaMessage, schemaLoadOptions } from "../core/schema-registry.js";
 import { Validator } from "../core/validator.js";
 import {
   ENCRYPTED_PLACEHOLDER,
@@ -800,7 +800,7 @@ export async function runDerive(opts: DeriveOptions): Promise<DeriveRun> {
       // load is that document's failure; one the operator configured is the
       // run's.
       if (!(err instanceof DocmetaError) || resolved.source !== "document") throw err;
-      return { error: err.message };
+      return { error: documentSchemaMessage(err) };
     }
   };
   /**
