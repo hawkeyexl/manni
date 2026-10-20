@@ -161,8 +161,23 @@ describe("unexpected sections", () => {
     const { findings } = matchSections(doc, [one("Overview")]);
     expect(findings.map((f) => f.type)).toEqual(["unexpected_section"]);
     expect(at(findings, 0, "finding").message).toBe(
-      'Unexpected section "Surprise". Add a trailing rule with min: 0 to allow sections the template does not describe.',
+      'Unexpected section "Surprise". The template describes no section here, so move its content into a section it does describe, or remove it.',
     );
+  });
+
+  it("names an unexpected section without a heading as such", () => {
+    const [intro, overview] = subsectionsOf("# T\n\n## Intro\n\n## Overview\n");
+    const sections = [
+      { ...defined(intro), title: "", titlePosition: null },
+      defined(overview),
+    ];
+    const { findings } = matchSections(sections, [one("Overview")]);
+    expect(findings.map((f) => [f.type, f.message])).toEqual([
+      [
+        "unexpected_section",
+        "Unexpected section without a heading. The template describes no section here, so move its content into a section it does describe, or remove it.",
+      ],
+    ]);
   });
 
   it("allows them when a trailing rule with min 0 is there to take them", () => {

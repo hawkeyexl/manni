@@ -810,7 +810,10 @@ function unexpectedMessage(section: SectionNode): string {
     section.titlePosition === null
       ? "Unexpected section without a heading"
       : `Unexpected section "${section.title}"`;
-  return `${what}. Add a trailing rule with min: 0 to allow sections the template does not describe.`;
+  // Addressed to the page's author, who usually cannot change the template.
+  // The template-side escape, a rule for the section or a trailing `min: 0`
+  // rule, is for the template's owner and lives in the docs.
+  return `${what}. The template describes no section here, so move its content into a section it does describe, or remove it.`;
 }
 
 function orderMessage(section: SectionNode, neighbour: SectionNode, after: boolean): string {

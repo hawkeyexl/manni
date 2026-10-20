@@ -35,7 +35,7 @@ describe("section order on the built-in templates", () => {
     expect(await lint("how-to-trailing-extra.md")).toEqual([
       [
         "unexpected_section",
-        'Unexpected section "Troubleshooting". Add a trailing rule with min: 0 to allow sections the template does not describe.',
+        'Unexpected section "Troubleshooting". The template describes no section here, so move its content into a section it does describe, or remove it.',
         19,
       ],
     ]);

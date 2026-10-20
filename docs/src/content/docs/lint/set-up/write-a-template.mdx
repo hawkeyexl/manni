@@ -38,10 +38,11 @@ you have not written a rule for yet.
 That is the format working, and there are two escapes. Start from
 `manni lint templates infer`, which describes the whole page. Or end your rule
 list with a trailing rule that has `min: 0` and no heading, which absorbs
-anything you have not named. The message says so itself:
+anything you have not named. The message itself is written for the page's
+author, who usually cannot change the template:
 
 ```
-Unexpected section "Benchmarks". Add a trailing rule with min: 0 to allow sections the template does not describe.
+Unexpected section "Benchmarks". The template describes no section here, so move its content into a section it does describe, or remove it.
 ```
 </Aside>
 

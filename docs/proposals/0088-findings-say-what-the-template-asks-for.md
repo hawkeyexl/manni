@@ -138,6 +138,20 @@ occur, its heading, its content minimums and its description. `-f json`
 prints the resolved template in the format's own keys. `-f markdown` prints a
 page skeleton for an author starting from scratch.
 
+### 8. An unexpected section tells the page's author what to do
+
+The `unexpected-section` message used to end with advice to add a trailing
+rule with `min: 0`. That is advice for whoever owns the template. The page's
+author usually cannot edit a built-in or a house template. After decision 3
+the advice was often wrong as well. A section that survives as unexpected
+usually follows a template that already ends with a `min: 0` rule.
+
+The message now tells the author to move the section's content into a section
+the template describes, or to remove it. The finding's second line names the
+template, and `templates show` prints its shape. The template-side escape is a
+rule for the section, or a trailing `min: 0` rule. The fix page and the guide
+to writing a template state it.
+
 ## What was rejected
 
 - **The full skip weight everywhere.** It is what 0061 wrote down, and it

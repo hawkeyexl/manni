@@ -288,10 +288,12 @@ composes, so putting it after the steps allows extras only there:
 - min: 0
 ```
 
-That is also what the `unexpected_section` message tells you to write:
+That is the template-side answer to an `unexpected_section` finding. The
+message itself speaks to the page's author, who usually cannot change the
+template:
 
 ```
-Unexpected section "Benchmarks". Add a trailing rule with min: 0 to allow sections the template does not describe.
+Unexpected section "Benchmarks". The template describes no section here, so move its content into a section it does describe, or remove it.
 ```
 
 <Aside type="note" title="Two adjacent wildcards are warned about">
