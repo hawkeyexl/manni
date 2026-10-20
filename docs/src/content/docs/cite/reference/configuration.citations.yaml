@@ -604,9 +604,9 @@ docs/src/content/docs/cite/reference/configuration.mdx:
         integrity: sha256-b106b076e141f208eef8d8bc229bb773f3b5a03316755de2a01b86779d286f84
       source:
         file: src/meta/reporters/sarif.ts
-        lines: 96-99
+        lines: 98-101
         integrity: sha256-ff8c181c6d1b8f4ae29962812daedd2e808ffdfe9d4e999cf025759c69f07401
-        commit-sha: a13745cefe15407b4f1c5cb2ba70d5638605c04b
+        commit-sha: f020157b111d0748afbf4ca4eaa3e3ed02153d9c
     - id: render-junit-errors-only
       claim:
         integrity: sha256-b106b076e141f208eef8d8bc229bb773f3b5a03316755de2a01b86779d286f84

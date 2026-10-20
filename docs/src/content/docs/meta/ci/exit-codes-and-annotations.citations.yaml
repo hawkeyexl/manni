@@ -13,9 +13,9 @@ docs/src/content/docs/meta/ci/exit-codes-and-annotations.mdx:
         integrity: sha256-d2424ad8f5cac629814db5ea7ff1bc7e25144e8905883da225ce2de7ac4e042f
       source:
         file: src/meta/reporters/sarif.ts
-        lines: 265-268
+        lines: 267-270
         integrity: sha256-ca1138845cd82d43c3acac2f8539f2e8026e9df490245571d013fc3ca37541ff
-        commit-sha: a13745cefe15407b4f1c5cb2ba70d5638605c04b
+        commit-sha: f020157b111d0748afbf4ca4eaa3e3ed02153d9c
     - id: fill-github-one-error-per-unfilled-required
       claim:
         integrity: sha256-11e4d3a87cac02c1ecccfc93d4ff753d1022c97472c243a8462cba51daeea243
@@ -266,9 +266,9 @@ docs/src/content/docs/meta/ci/exit-codes-and-annotations.mdx:
         integrity: sha256-aec6f5b5a72d606ff22a93111e87b01dac1bcfd0bcd8947ac965f86ba50a092d
       source:
         file: src/meta/reporters/sarif.ts
-        lines: 155-158
+        lines: 157-160
         integrity: sha256-6679bb684dbe1ea06983c60d39b4ad0769236d43eb6368ade8022992682c2c51
-        commit-sha: a13745cefe15407b4f1c5cb2ba70d5638605c04b
+        commit-sha: f020157b111d0748afbf4ca4eaa3e3ed02153d9c
     - id: color-precedence-flag-env-tty
       claim:
         lines: 342-346

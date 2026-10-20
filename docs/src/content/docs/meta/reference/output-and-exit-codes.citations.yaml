@@ -264,9 +264,9 @@ docs/src/content/docs/meta/reference/output-and-exit-codes.mdx:
         integrity: sha256-d9647a8295c87c43319fc6937436bdaba69649aaa4932cab966c1fcab24a6e6c
       source:
         file: src/meta/reporters/sarif.ts
-        lines: 96-99
+        lines: 98-101
         integrity: sha256-ff8c181c6d1b8f4ae29962812daedd2e808ffdfe9d4e999cf025759c69f07401
-        commit-sha: a13745cefe15407b4f1c5cb2ba70d5638605c04b
+        commit-sha: f020157b111d0748afbf4ca4eaa3e3ed02153d9c
     - id: output-how-each-level-renders
       claim:
         lines: 444-453
@@ -375,9 +375,9 @@ docs/src/content/docs/meta/reference/output-and-exit-codes.mdx:
         integrity: sha256-0986ef1f91721f0225eb2fad9f19b92f02e41cc93ab952f26fc11d0766c3e121
       source:
         file: src/meta/reporters/sarif.ts
-        lines: 96-99
+        lines: 98-101
         integrity: sha256-ff8c181c6d1b8f4ae29962812daedd2e808ffdfe9d4e999cf025759c69f07401
-        commit-sha: a13745cefe15407b4f1c5cb2ba70d5638605c04b
+        commit-sha: f020157b111d0748afbf4ca4eaa3e3ed02153d9c
     - id: output-fingerprint-excludes-the-path
       claim:
         integrity: sha256-46f9d52c61da2a42c82b25b8c938ad8c11fc4a01025c479fe35d5a69f97039d6
@@ -399,9 +399,9 @@ docs/src/content/docs/meta/reference/output-and-exit-codes.mdx:
         integrity: sha256-fe8d1b1aa7731f237957073d21dc2972328a88bc63e7eb6d7a59ef124dc97ba1
       source:
         file: src/meta/reporters/sarif.ts
-        lines: 208-211
+        lines: 210-213
         integrity: sha256-6cf36e299ce76602e4cae8ecb6e1e90af5210fbd8999b4fabfeb11765a527a32
-        commit-sha: a13745cefe15407b4f1c5cb2ba70d5638605c04b
+        commit-sha: f020157b111d0748afbf4ca4eaa3e3ed02153d9c
     - id: output-derived-stale-rule-id
       claim:
         integrity: sha256-9da95926e04dd22ecaa68154912c1cfbecca01f31c75259a5ae18228fd68348d
@@ -431,18 +431,18 @@ docs/src/content/docs/meta/reference/output-and-exit-codes.mdx:
         integrity: sha256-fcd7d9b8e295191aea1aac0271b10f5f558de8cd678bc4d7492840b2a444b9f4
       source:
         file: src/meta/reporters/sarif.ts
-        lines: 137-146
+        lines: 139-148
         integrity: sha256-be82a93fe352e3fffbc80d011182051bd69c5fb498fd3b8e9f833f797536f22b
-        commit-sha: a13745cefe15407b4f1c5cb2ba70d5638605c04b
+        commit-sha: f020157b111d0748afbf4ca4eaa3e3ed02153d9c
     - id: output-sarif-field-table
       claim:
         lines: 237-245
         integrity: sha256-e68de4d982c28195d46a2b5df93e78641a51716ccae20a9d7776be8abd874110
       source:
         file: src/meta/reporters/sarif.ts
-        lines: 266-284
+        lines: 268-286
         integrity: sha256-64ba2ec95e0f7d6fb18b2d707b9548084d4a0a5d488bc95322717cdeec8e85f1
-        commit-sha: a13745cefe15407b4f1c5cb2ba70d5638605c04b
+        commit-sha: f020157b111d0748afbf4ca4eaa3e3ed02153d9c
     - id: output-sarif-findings-are-tracked-alerts
       claim:
         integrity: sha256-f14acad2ec419fa4341ec789c322d8dda56b0912a251bd69ca9f5e65b1c3d57b

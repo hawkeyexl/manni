@@ -387,17 +387,17 @@ docs/src/content/docs/meta/set-up/external-metadata.mdx:
         integrity: sha256-9e19159c1eaf38a979fa89546a7ce79ad37a05ad08be3ca54f171daa2aa3a3e5
       source:
         file: src/meta/reporters/sarif.ts
-        lines: 173-178
+        lines: 175-180
         integrity: sha256-ebb9ed7f08e9b8a08041500e0d4ba2ccb6008a040d119519a07130862eea03d7
-        commit-sha: a13745cefe15407b4f1c5cb2ba70d5638605c04b
+        commit-sha: f020157b111d0748afbf4ca4eaa3e3ed02153d9c
     - id: sarif-uri-relative-to-repository-root
       claim:
         integrity: sha256-9e19159c1eaf38a979fa89546a7ce79ad37a05ad08be3ca54f171daa2aa3a3e5
       source:
         file: src/meta/reporters/sarif.ts
-        lines: 164-167
+        lines: 166-169
         integrity: sha256-a04729eaafdf11eef2d13bd1898bdf4205652de8a747a43c54b625e9ada049c5
-        commit-sha: a13745cefe15407b4f1c5cb2ba70d5638605c04b
+        commit-sha: f020157b111d0748afbf4ca4eaa3e3ed02153d9c
     - id: membership-decided-per-file
       claim:
         lines: 201

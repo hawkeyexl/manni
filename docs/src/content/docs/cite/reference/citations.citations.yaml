@@ -661,9 +661,9 @@ docs/src/content/docs/cite/reference/citations.mdx:
         integrity: sha256-f22e2698ff2b1ce1637e633c8362bf48c1d268ca8faf5777d47f121df79d049e
       source:
         file: src/meta/reporters/sarif.ts
-        lines: 96-99
+        lines: 98-101
         integrity: sha256-ff8c181c6d1b8f4ae29962812daedd2e808ffdfe9d4e999cf025759c69f07401
-        commit-sha: a13745cefe15407b4f1c5cb2ba70d5638605c04b
+        commit-sha: f020157b111d0748afbf4ca4eaa3e3ed02153d9c
     - id: severity-off-dropped
       claim:
         lines: 524
