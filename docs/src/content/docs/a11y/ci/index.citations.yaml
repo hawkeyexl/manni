@@ -31,8 +31,8 @@ docs/src/content/docs/a11y/ci/index.mdx:
       source:
         file: src/a11y/reporters/github.ts
         lines: 48-74
-        integrity: sha256-b52e6fc0ea49b56c425cf7d4d9712214dc9ca9c454e64712bca7173b8fa37375
-        commit-sha: 468db95a0f83449aa7c3cba9d5b6f6111a293085
+        integrity: sha256-1b3ec5d364bcb4571596795b9d12ab1b837045ad7941fc51f02e98993144b11f
+        commit-sha: 207c8aae5057214366e51febb65d670cddeed9b3
     - id: github-clean-prints-nothing
       claim:
         lines: 102-103
@@ -92,18 +92,18 @@ docs/src/content/docs/a11y/ci/index.mdx:
         integrity: sha256-4879327235fa4b7a828d9d7171a8ce390ab3b775ebe04944539d3d937bb38b73
       source:
         file: src/a11y/reporters/github.ts
-        lines: 82-96
+        lines: 84-98
         integrity: sha256-39475b37ec703396aeb514f9091e8aad6f04534a66a0a7076b2ac690ffbff830
-        commit-sha: 468db95a0f83449aa7c3cba9d5b6f6111a293085
+        commit-sha: 207c8aae5057214366e51febb65d670cddeed9b3
     - id: annotation-line-shape
       claim:
         lines: 129
         integrity: sha256-6c39d4e242f44d3c3fa00afa9a7f67ed54f357f04364a1a10ec54957a7137f3e
       source:
         file: src/a11y/reporters/github.ts
-        lines: 85-94
+        lines: 87-96
         integrity: sha256-73215ebd82b75299e5b26e2593e5d4bb68145cc3bf27dc01dc58fcf07db49638
-        commit-sha: 468db95a0f83449aa7c3cba9d5b6f6111a293085
+        commit-sha: 207c8aae5057214366e51febb65d670cddeed9b3
     - id: clean-run-silent-exit-0
       claim:
         integrity: sha256-3840248b229200702418d1bfbcf25143355547e842ffcd6b7108d805e8e177be
@@ -117,9 +117,9 @@ docs/src/content/docs/a11y/ci/index.mdx:
         integrity: sha256-eef303ad3987b1cbba51f3ebe9e580bbafcc19c455fa3f6965a8b0df0fc02677
       source:
         file: src/a11y/reporters/github.ts
-        lines: 95-96
+        lines: 97-98
         integrity: sha256-88f3c0c06cb0ad225ec0c7597b4e49ac7bd45690455c985b80719dc12bf41332
-        commit-sha: 468db95a0f83449aa7c3cba9d5b6f6111a293085
+        commit-sha: 207c8aae5057214366e51febb65d670cddeed9b3
     - id: annotation-level-is-severity
       claim:
         integrity: sha256-eef303ad3987b1cbba51f3ebe9e580bbafcc19c455fa3f6965a8b0df0fc02677
@@ -420,9 +420,9 @@ docs/src/content/docs/a11y/ci/index.mdx:
         integrity: sha256-3840248b229200702418d1bfbcf25143355547e842ffcd6b7108d805e8e177be
       source:
         file: src/a11y/reporters/github.ts
-        lines: 53-59
+        lines: 55-61
         integrity: sha256-378f9f7ee3a10b81cf90682afbdd4d913435ebf1b2d0009089b0e2374feaa60b
-        commit-sha: 468db95a0f83449aa7c3cba9d5b6f6111a293085
+        commit-sha: 207c8aae5057214366e51febb65d670cddeed9b3
     - id: config-keys-exclude-format-progress-collection
       claim:
         integrity: sha256-535478c70e111620af2c8be2af3c26dc45676a518062a69c8a6f4941ec41b47c
@@ -436,6 +436,6 @@ docs/src/content/docs/a11y/ci/index.mdx:
         integrity: sha256-f9514627bc868d8889b61e14283effd2fa2ce8721c8b36bf1a2cb97037e1774a
       source:
         file: src/a11y/reporters/github.ts
-        lines: 77-80
+        lines: 79-82
         integrity: sha256-2956233186c714f432d729ccff497be04f022189a97316b46f9bd304cccd7558
-        commit-sha: 468db95a0f83449aa7c3cba9d5b6f6111a293085
+        commit-sha: 207c8aae5057214366e51febb65d670cddeed9b3
