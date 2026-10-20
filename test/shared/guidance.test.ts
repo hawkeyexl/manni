@@ -12,6 +12,13 @@ describe("guidanceLines", () => {
     expect(guidanceLines(undefined)).toEqual([]);
   });
 
+  it("prints no blank head line when the id, rule and description are all empty", () => {
+    expect(guidanceLines({ id: "", rule: null, description: null, guide: null })).toEqual([]);
+    expect(guidanceLines({ id: "", rule: null, description: null, guide: "https://example.com/g" })).toEqual([
+      "Guide: https://example.com/g",
+    ]);
+  });
+
   it("prints the id alone when there is no rule, description or guide", () => {
     expect(guidanceLines({ id: "house.yaml#how-to", rule: null, description: null, guide: null })).toEqual([
       "house.yaml#how-to",
