@@ -29,9 +29,9 @@ docs/src/content/docs/meta/reference/action.mdx:
         integrity: sha256-a1c9dd3025fa934247484e36661db95fc22c9e2dcd94db218ac31939ce09d1b8
       source:
         file: .github/workflows/release.yml
-        lines: 272-277
+        lines: 367-372
         integrity: sha256-f2845979a3c00e5548d128022fc6b68cacc02e6991447670bc1fc1b382d5868f
-        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+        commit-sha: d8a6f2534d5ef39ab96ea24da66aa8c17107613e
     - id: action-stops-at-seven-inputs
       claim:
         lines: 116-120
