@@ -13,6 +13,7 @@ import { fileURLToPath } from "node:url";
 import { checkCitations } from "../../src/cite/core/check-page.js";
 import { noGit } from "../../src/cite/core/git.js";
 import { hashLines, hashRange } from "../../src/cite/core/hash.js";
+import { guidanceFor } from "../../src/cite/core/severity.js";
 import { encryptSourcePath } from "../../src/cite/core/sources.js";
 import { shortSrc } from "../../src/cite/core/spell.js";
 import type {
@@ -132,21 +133,25 @@ describe("checkCitations", () => {
         rule: "claim-changed",
         ruleId: "manni:cite/claim-changed",
         severity: "warning",
-        message: "fetch-timeout: the claim at line 14 has changed since it was pinned.",
+        message:
+          "fetch-timeout: the claim at line 14 has changed since it was pinned. Check it still matches the source, then run manni cite update --accept --only fetch-timeout.",
         src: "src/changed.ts:2",
         index: 0,
         line: 14,
         id: "fetch-timeout",
+        guidance: guidanceFor("claim-changed"),
       },
       {
         rule: "source-changed",
         ruleId: "manni:cite/source-changed",
         severity: "error",
-        message: "changed",
+        message:
+          "changed. Check the sentence against the source, then run manni cite update --accept --only fetch-timeout.",
         src: "src/changed.ts:2",
         index: 0,
         line: 14,
         id: "fetch-timeout",
+        guidance: guidanceFor("source-changed"),
       },
     ]);
     expect(report.notices).toEqual([]);
@@ -182,11 +187,12 @@ describe("checkCitations", () => {
         rule: "claim-moved",
         ruleId: "manni:cite/claim-moved",
         severity: "notice",
-        message: "fetch-timeout: the claim moved from line 15 to line 17.",
+        message: "fetch-timeout: the claim moved from line 15 to line 17. Run manni cite update.",
         src: "src/limits.ts:2",
         index: 0,
         line: 15,
         id: "fetch-timeout",
+        guidance: guidanceFor("claim-moved"),
       },
     ]);
   });
@@ -203,7 +209,7 @@ describe("checkCitations", () => {
         "claim-moved-ambiguous",
         "warning",
         15,
-        "retries: the claim at line 15 now appears at lines 17 and 21.",
+        "retries: the claim at line 15 now appears at lines 17 and 21. Pin a range that occurs once, or anchor the claim with a marker.",
       ],
     ]);
   });
@@ -217,7 +223,7 @@ describe("checkCitations", () => {
         "claim-changed",
         "warning",
         15,
-        "fetch-timeout: the claim at line 15 has changed since it was pinned.",
+        "fetch-timeout: the claim at line 15 has changed since it was pinned. Check it still matches the source, then run manni cite update --accept --only fetch-timeout.",
       ],
     ]);
   });
@@ -235,7 +241,11 @@ describe("checkCitations", () => {
     expect(changed.citations[0]).toMatchObject({ anchor: "marker", markerLine: 14, anchorLine: 15 });
     expect(changed.citations[0]?.claim).toMatchObject({ fileLines: "15", status: "changed" });
     expect(changed.findings.map((f) => [f.rule, f.line, f.message])).toEqual([
-      ["claim-changed", 15, "retries: the claim at line 15 has changed since it was pinned."],
+      [
+        "claim-changed",
+        15,
+        "retries: the claim at line 15 has changed since it was pinned. Check it still matches the source, then run manni cite update --accept --only retries.",
+      ],
     ]);
   });
 
@@ -260,7 +270,7 @@ describe("checkCitations", () => {
       [
         "claim-changed",
         3,
-        "fetch-timeout: the claim has no lines and no marker names the entry, so its pin anchors nothing.",
+        "fetch-timeout: the claim has no lines and no marker names the entry, so its pin anchors nothing. Add claim.lines, or a marker that names fetch-timeout.",
       ],
     ]);
   });
@@ -271,7 +281,11 @@ describe("checkCitations", () => {
     expect(sourceStatuses(changed)).toEqual(["skipped"]);
     expect(claimStatuses(changed)).toEqual(["changed"]);
     expect(changed.findings.map((f) => [f.rule, f.line, f.message])).toEqual([
-      ["claim-changed", 15, "fetch-timeout: the claim at line 15 has changed since it was pinned."],
+      [
+        "claim-changed",
+        15,
+        "fetch-timeout: the claim at line 15 has changed since it was pinned. Check it still matches the source, then run manni cite update --accept --only fetch-timeout.",
+      ],
     ]);
     const moved = await check("claim-moved.md", { checkSources: false });
     expect(rules(moved)).toEqual(["claim-moved"]);
@@ -306,16 +320,26 @@ describe("checkCitations", () => {
   });
 
   it("spells each source status the way the plan's table does", async () => {
-    expect(messages(await check("moved.md"))).toEqual(["moved -> src/moved.ts:4"]);
-    expect(messages(await check("source-changed.md"))).toEqual(["changed"]);
-    expect(messages(await check("missing.md"))).toEqual(["missing"]);
+    expect(messages(await check("moved.md"))).toEqual([
+      "moved -> src/moved.ts:4. Run manni cite update.",
+    ]);
+    expect(messages(await check("source-changed.md"))).toEqual([
+      "changed. Check the sentence against the source, then run manni cite update --accept --only fetch-timeout.",
+    ]);
+    expect(messages(await check("missing.md"))).toEqual([
+      "missing. Run manni cite remove --only fetch-timeout, then manni cite add against the file's new path.",
+    ]);
     const neverTrue = await page(inline(SHALLOW_ENTRY, ["Body."]), {
       // git can show the commit, and the pinned bytes are nowhere in it.
       gitClient: shallowGit(FIXTURE_FILES, true, { text: "a\nb\nc\n" }),
     });
     expect(sourceStatuses(neverTrue)).toEqual(["never-true"]);
     expect(neverTrue.findings.map((f) => [f.rule, f.severity, f.message])).toEqual([
-      ["source-never-true", "error", "never true: the pin does not match at 0123456"],
+      [
+        "source-never-true",
+        "error",
+        "never true: the pin does not match at 0123456. Check the sentence against the source, then run manni cite update --accept --only fetch-timeout.",
+      ],
     ]);
   });
 
@@ -323,7 +347,7 @@ describe("checkCitations", () => {
     const report = await page(inline(SHALLOW_ENTRY, ["Body."]));
     expect(report.citations[0]?.source.historyAvailable).toBe(false);
     expect(messages(report)).toEqual([
-      "changed (history unavailable: commit 0123456 not found; fetch-depth: 0)",
+      "changed (history unavailable: commit 0123456 not found; fetch-depth: 0). Check the sentence against the source, then run manni cite update --accept --only fetch-timeout.",
     ]);
     expect(report.notices).toEqual([SHALLOW]);
   });
@@ -335,7 +359,9 @@ describe("checkCitations", () => {
     });
     expect(sourceStatuses(report)).toEqual(["changed"]);
     expect(report.citations[0]?.source.historyAvailable).toBeUndefined();
-    expect(messages(report)).toEqual(["changed since 0123456"]);
+    expect(messages(report)).toEqual([
+      "changed since 0123456. Check the sentence against the source, then run manni cite update --accept --only fetch-timeout.",
+    ]);
     expect(report.notices).toEqual([NO_HISTORY]);
   });
 
@@ -420,9 +446,10 @@ describe("checkCitations: citations a manifest owns", () => {
         rule: "marker-orphan",
         ruleId: "manni:cite/marker-orphan",
         severity: "error",
-        message: 'no entry has id "fetch-timeout"',
+        message: `no entry has id "fetch-timeout". Fix the marker's id, or add the entry with manni cite add.`,
         line: 5,
         id: "fetch-timeout",
+        guidance: guidanceFor("marker-orphan"),
       },
       {
         rule: "entry-invalid",
@@ -434,6 +461,7 @@ describe("checkCitations: citations a manifest owns", () => {
         id: "fetch-timeout",
         src: "src/limits.ts",
         index: 0,
+        guidance: guidanceFor("entry-invalid"),
       },
     ]);
   });
@@ -512,7 +540,7 @@ describe("checkCitations: quote", () => {
         "anchor-invalid",
         "error",
         16,
-        "header: the quote's claim lines 16-18 are no longer a fenced block.",
+        "header: the quote's claim lines 16-18 are no longer a fenced block. Restore the fences, or re-add the citation over the block.",
       ],
     ]);
   });
@@ -548,7 +576,7 @@ describe("checkCitations: quote", () => {
         "quote-drift",
         "error",
         15,
-        "quote: true, but the fenced block does not reproduce the cited lines",
+        "quote: true, but the fenced block does not reproduce the cited lines. Copy the cited lines into the block again.",
       ],
     ]);
   });
@@ -573,7 +601,7 @@ describe("checkCitations: quote", () => {
       rule: "quote-drift",
       severity: "error",
       line: 14,
-      message: "quote: true, but no fenced block follows the marker",
+      message: "quote: true, but no fenced block follows the marker. Put the quoted block right after the marker.",
       id: "timeout",
       index: 0,
     });
@@ -648,7 +676,11 @@ describe("checkCitations: encrypted sources and the leak sentinel", () => {
     expect(claimStatuses(report)).toEqual(["current"]);
     expect(report.citations[0]?.source.missingReason).toBe("no-key");
     expect(report.findings.map((f) => [f.rule, f.severity, f.message])).toEqual([
-      ["source-missing", "error", "missing (no encryption key is available to decrypt it)"],
+      [
+        "source-missing",
+        "error",
+        "missing (no encryption key is available to decrypt it). Set MANNI_ENCRYPTION_KEY, or encryptionKey: at the top of manni.config.yaml.",
+      ],
     ]);
   });
 
@@ -661,7 +693,11 @@ describe("checkCitations: encrypted sources and the leak sentinel", () => {
     expect(sourceStatuses(report)).toEqual(["missing"]);
     expect(report.citations[0]?.source.resolvedPath).toBeUndefined();
     expect(report.findings.map((f) => [f.rule, f.severity, f.message])).toEqual([
-      ["source-missing", "error", "missing (does not decrypt under the current key)"],
+      [
+        "source-missing",
+        "error",
+        "missing (does not decrypt under the current key). Use the key the source was encrypted with. After a key rotation, update the secret too.",
+      ],
     ]);
     expect(JSON.stringify(report)).not.toContain("SECRET");
   });
@@ -700,8 +736,8 @@ describe("checkCitations: encrypted sources and the leak sentinel", () => {
     expect(sourceStatuses(report)).toEqual(["current", "moved", "missing"]);
     expect(report.citations[0]?.source.resolvedPath).toBe(SECRET);
     expect(messages(report)).toEqual([
-      `moved -> ${shortSrc(`${token}:2`)}`,
-      "missing (no tracked file matches; wrong --root?)",
+      `moved -> ${shortSrc(`${token}:2`)}. Run manni cite update.`,
+      "missing (no tracked file matches; wrong --root?). Point --root at the code checkout, or re-add the citation against the new path.",
     ]);
     const text = JSON.stringify({ findings: report.findings, notices: report.notices });
     expect(text).not.toContain("SECRET");

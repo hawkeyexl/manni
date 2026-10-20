@@ -21,7 +21,7 @@ import type {
 } from "../types.js";
 import type { LintFileResult, LintRun } from "../commands/lint.js";
 import { ruleId, ruleName } from "../core/rule-id.js";
-import { templateLines } from "./template-context.js";
+import { guidanceLines } from "../../shared/guidance.js";
 import pkg from "../../../package.json" with { type: "json" };
 import {
   artifactLocation,
@@ -200,7 +200,7 @@ function location(
 function messageText(finding: Finding): string {
   const text =
     finding.heading != null ? `${finding.heading}: ${finding.message}` : finding.message;
-  return [text, ...templateLines(finding)].join("\n");
+  return [text, ...guidanceLines(finding.template)].join("\n");
 }
 
 function words(id: string): string[] {

@@ -5,17 +5,17 @@ docs/src/content/docs/meta/ci/exit-codes-and-annotations.mdx:
         integrity: sha256-5cad962df9168dc9fd462262d341d84f39954318271e88a68cca14399f5cdd05
       source:
         file: src/meta/reporters/index.ts
-        lines: 172-177
+        lines: 173-178
         integrity: sha256-05cbb75c9fd3921b3c4972ff2daa946c929ec272f6b709b615695af24f067ba8
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: ffdbdab4b080ca781c685250214db34edc01ae3b
     - id: sarif-log-is-version-2-1-0
       claim:
         integrity: sha256-d2424ad8f5cac629814db5ea7ff1bc7e25144e8905883da225ce2de7ac4e042f
       source:
         file: src/meta/reporters/sarif.ts
-        lines: 249-252
+        lines: 278-281
         integrity: sha256-ca1138845cd82d43c3acac2f8539f2e8026e9df490245571d013fc3ca37541ff
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: 4d274aaab31e92bf39ddc11f636cecc69ea1cf34
     - id: fill-github-one-error-per-unfilled-required
       claim:
         integrity: sha256-11e4d3a87cac02c1ecccfc93d4ff753d1022c97472c243a8462cba51daeea243
@@ -37,33 +37,33 @@ docs/src/content/docs/meta/ci/exit-codes-and-annotations.mdx:
         integrity: sha256-3da7d4807ccc77f4da3a1a0b461e76ef061e636ddbff5dd777763a41d227a175
       source:
         file: src/meta/reporters/junit.ts
-        lines: 65-90
+        lines: 66-91
         integrity: sha256-e6925ff3917828e85cbd57d2d4e0f5546e6ace89fad4b4a6e38f0cc2793e3b97
-        commit-sha: 922dea44962f188cfa8119a67aa5c744ce824710
+        commit-sha: a13745cefe15407b4f1c5cb2ba70d5638605c04b
     - id: github-clean-run-prints-nothing
       claim:
         integrity: sha256-388655c63f783ba7c1cd880d94476131f8adc760bd3238136b24da672c97d141
       source:
         file: src/meta/reporters/index.ts
-        lines: 189-190
+        lines: 190-191
         integrity: sha256-f535711c747c80051512ee9421e9281189e95153a061d808daf3d2ad769ed213
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: ffdbdab4b080ca781c685250214db34edc01ae3b
     - id: pretty-summary-line-shape
       claim:
         integrity: sha256-b4f0072a5bff7b9ce9449c99245e0204c43f7ad71a57d9a9ae1e68e86cc98d78
       source:
         file: src/meta/reporters/index.ts
-        lines: 289
+        lines: 292
         integrity: sha256-484ab502761ab6f10654499678c217774f5ff4856ba6ceaba9a07a8f22a96d49
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: ffdbdab4b080ca781c685250214db34edc01ae3b
     - id: validate-has-five-report-formats
       claim:
         integrity: sha256-016f9994f9c9d63d98214d6e7052ad0c3b8714f15abea15e60a04dec71e56cce
       source:
         file: src/meta/reporters/index.ts
-        lines: 46-52
+        lines: 47-53
         integrity: sha256-59aef2c26554fe71a4e199ddc519c3d87b57273e1f8d618220351417bb66ce6a
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: ffdbdab4b080ca781c685250214db34edc01ae3b
     - id: unknown-flag-is-a-usage-error
       claim:
         integrity: sha256-318dee987ac9b3e2f870a7cd1dd83c1059e6f0974b11c70538211e843ad30e45
@@ -77,27 +77,27 @@ docs/src/content/docs/meta/ci/exit-codes-and-annotations.mdx:
         integrity: sha256-50b9379d0cc20436c7d0a13b00a56a71a7be2860652e8b4e11564ec55ead1b8a
       source:
         file: src/meta/reporters/index.ts
-        lines: 298-303
-        integrity: sha256-91d8aff33c562f4dadabe0cdb3da037c24ed0f14c5c99f4f9847db313925ed38
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        lines: 301-312
+        integrity: sha256-96ed1375b03b05a524d20e67fe16600c5dae6b6e7dba967dc7678a0ad2bdb641
+        commit-sha: ffdbdab4b080ca781c685250214db34edc01ae3b
     - id: quiet-hides-passing-files
       claim:
-        lines: 97-98
+        lines: 99-100
         integrity: sha256-7da1d1da60d2e9ad4d880981fd708f2142aefd5adaa5f1b7b6df6461365dddb7
       source:
         file: src/meta/cli.ts
-        lines: 740
+        lines: 754
         integrity: sha256-58a708f05f13aa4fe06d41bdf01be4d7402ebb2827cf9a45d2f8e9db9e9872bc
-        commit-sha: a589e08250dee7efaee7ed0f58df01986fad8d1d
+        commit-sha: ffdbdab4b080ca781c685250214db34edc01ae3b
     - id: exit-0-and-1-are-the-verdict
       claim:
         lines: 16-17
         integrity: sha256-bdbf0504fc868ed04889c376f1f8b25faff39f997decdc225c9097ad7da07ff4
       source:
         file: src/meta/cli.ts
-        lines: 875
+        lines: 889
         integrity: sha256-b900d16ea81ba54da695ee6ec4f8e9c3d17f1700d0b307ed74045692b603e056
-        commit-sha: a589e08250dee7efaee7ed0f58df01986fad8d1d
+        commit-sha: ffdbdab4b080ca781c685250214db34edc01ae3b
     - id: usage-error-is-exit-2
       claim:
         lines: 18
@@ -113,34 +113,34 @@ docs/src/content/docs/meta/ci/exit-codes-and-annotations.mdx:
         integrity: sha256-5d0dfdd93d01bc7800995b96fbb2822969811c4c147195e13d208a798f790316
       source:
         file: src/meta/core/load-files.ts
-        lines: 405-433
+        lines: 407-435
         integrity: sha256-011d13a49a42154a8e693b2708344e590f729c468c2b2d2699fab187a98aaeed
-        commit-sha: 1f74e683fc25a937666751b9d8887f49afa0ce97
+        commit-sha: 7c1e74de55b039326da5de3c739f1c2be86b2fdd
     - id: validate-is-the-default-subcommand
       claim:
         lines: 33-34
         integrity: sha256-b7ad3cdaf9b02f9a3d2e186d9c242e9c355c150daf7123442f774142f7715e8e
       source:
         file: src/meta/cli.ts
-        lines: 712
+        lines: 726
         integrity: sha256-acfbcd05b68a38e547947c6a99174315f5424335fc8a4675c3575c08448d2f90
-        commit-sha: a589e08250dee7efaee7ed0f58df01986fad8d1d
+        commit-sha: ffdbdab4b080ca781c685250214db34edc01ae3b
     - id: empty-input-set-exits-2
       claim:
         lines: 38-39
         integrity: sha256-606848da54163ce72e1aa9615f1b8a8468f7a7c10b7e75bdd372c5c0c4feedd2
       source:
         file: src/meta/core/load-files.ts
-        lines: 405-433
+        lines: 407-435
         integrity: sha256-011d13a49a42154a8e693b2708344e590f729c468c2b2d2699fab187a98aaeed
-        commit-sha: 1f74e683fc25a937666751b9d8887f49afa0ce97
+        commit-sha: 7c1e74de55b039326da5de3c739f1c2be86b2fdd
     - id: allow-empty-treats-zero-as-success
       claim:
         lines: 42-43
         integrity: sha256-7fc8179ad73998d363f2667d2b4022caf0875556f83e2fbeeab8ba3ed0bdf13c
       source:
         file: src/meta/cli.ts
-        lines: 741
+        lines: 755
         integrity: sha256-d3193ea73c651302f9efdcdc00ad7740a4e53ace5348aead05f004c333832cdc
         commit-sha: a589e08250dee7efaee7ed0f58df01986fad8d1d
     - id: get-and-schemas-take-pretty-and-json
@@ -149,9 +149,9 @@ docs/src/content/docs/meta/ci/exit-codes-and-annotations.mdx:
         integrity: sha256-40dee3c3df1bf95a11c3ec07e6adf7ba2582d185b545140afb5ae836682aee43
       source:
         file: src/meta/reporters/index.ts
-        lines: 99
+        lines: 100
         integrity: sha256-7fb0488ed6d18699d301702efbf8e31f7890cfbbc7032a3478a5a3ba56478858
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: ffdbdab4b080ca781c685250214db34edc01ae3b
     - id: fill-formats-add-github
       claim:
         lines: 57
@@ -167,21 +167,21 @@ docs/src/content/docs/meta/ci/exit-codes-and-annotations.mdx:
         integrity: sha256-87f348e4ede54408a8b523a7f851ede4125fef9b97777f340cebe4b17d6cc11e
       source:
         file: src/meta/reporters/index.ts
-        lines: 46-52
+        lines: 47-53
         integrity: sha256-59aef2c26554fe71a4e199ddc519c3d87b57273e1f8d618220351417bb66ce6a
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: ffdbdab4b080ca781c685250214db34edc01ae3b
     - id: unsupported-format-exits-2
       claim:
         lines: 67-68
         integrity: sha256-45c9718c520c3131e93bef8dd35637a51c206fc7bd78f52ec698c655e80fd3c5
       source:
         file: src/meta/cli.ts
-        lines: 808-813
+        lines: 822-827
         integrity: sha256-46599de1ce1425457120418eae4827dbc71a81c288714d0481a6003c7f6613b7
-        commit-sha: a589e08250dee7efaee7ed0f58df01986fad8d1d
+        commit-sha: ffdbdab4b080ca781c685250214db34edc01ae3b
     - id: parse-and-schema-keywords
       claim:
-        lines: 161-163
+        lines: 169-171
         integrity: sha256-a3d4906a4e226141027f7c1e814e614f2ad10a0983a256117694e7111d43e738
       source:
         file: src/meta/reporters/rule-id.ts
@@ -190,43 +190,43 @@ docs/src/content/docs/meta/ci/exit-codes-and-annotations.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: no-column-for-required
       claim:
-        lines: 175-177
+        lines: 183-185
         integrity: sha256-c82bb03d21e4ade3765e2c740d20e63dc8c5d9008ed46ce83512d43699828311
       source:
         file: src/meta/core/validator.ts
-        lines: 960-968
-        integrity: sha256-b520a312dafe5a0bbdb25b6de5df4ceffe64f816a6e9201ec180e2a901f3fb1e
-        commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
+        lines: 1007-1015
+        integrity: sha256-7d405e798226afa451d2c0ff05a3e1807cb0fb448f8d8d295f1a329a45beaf2e
+        commit-sha: fbf4e054ebe577b327e52862c03e40c902467914
     - id: github-file-param-always-present
       claim:
-        lines: 199
+        lines: 210
         integrity: sha256-0cbc156f88264131bf0d1295f23c8976191565df28a2a66141db1af2455f7fbb
       source:
         file: src/meta/reporters/index.ts
-        lines: 309
+        lines: 318
         integrity: sha256-f01660f4f66c7042ecb427cc0f978499afc45edb6a3f6b302f96eafc6967b325
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: ffdbdab4b080ca781c685250214db34edc01ae3b
     - id: github-line-param-only-when-known
       claim:
-        lines: 200
+        lines: 211
         integrity: sha256-edb2384117b89857036f29ae14cc627519af8bafa8c0eb38b032dc2ad463fc46
       source:
         file: src/meta/reporters/index.ts
-        lines: 310
+        lines: 319
         integrity: sha256-6f7fddba54807036fe6792397e2805fdfc0d05e15ac3f8e2939b1705636c6d54
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: ffdbdab4b080ca781c685250214db34edc01ae3b
     - id: github-col-omitted-for-required
       claim:
-        lines: 201-203
+        lines: 212-214
         integrity: sha256-e5833376821caa374c3d698d6eee36bb13eb5f53aaeaf156277b33aae30d44b1
       source:
         file: src/meta/core/validator.ts
-        lines: 960-968
-        integrity: sha256-b520a312dafe5a0bbdb25b6de5df4ceffe64f816a6e9201ec180e2a901f3fb1e
-        commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
+        lines: 1007-1015
+        integrity: sha256-7d405e798226afa451d2c0ff05a3e1807cb0fb448f8d8d295f1a329a45beaf2e
+        commit-sha: fbf4e054ebe577b327e52862c03e40c902467914
     - id: root-field-label-is-root
       claim:
-        lines: 207-208
+        lines: 218-219
         integrity: sha256-9c583529e2038b66fd68bf17ad8ed257c07012ca68db662784c5030d02f4ca11
       source:
         file: src/meta/reporters/rule-id.ts
@@ -235,7 +235,7 @@ docs/src/content/docs/meta/ci/exit-codes-and-annotations.mdx:
         commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
     - id: fill-annotation-has-no-line
       claim:
-        lines: 263-266
+        lines: 276-279
         integrity: sha256-6ea75f0d99d956e3866fe5cde43dbc9360fab927936b40083d319c0faac9da84
       source:
         file: src/meta/reporters/fill.ts
@@ -244,7 +244,7 @@ docs/src/content/docs/meta/ci/exit-codes-and-annotations.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: fill-annotation-labels-fill
       claim:
-        lines: 267-268
+        lines: 280-281
         integrity: sha256-7175f858c6b209bc2f8bf4b96a60c260b43a66d498cb60728016b36ebc3e86a3
       source:
         file: src/meta/reporters/fill.ts
@@ -253,25 +253,25 @@ docs/src/content/docs/meta/ci/exit-codes-and-annotations.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: fill-github-with-stdin-is-refused
       claim:
-        lines: 274-275
+        lines: 287-288
         integrity: sha256-fb4d8ae9af9635cf411ed92827182bf2d0d7895822e3bf5cd9b051a7ad0792ce
       source:
         file: src/meta/cli.ts
-        lines: 1407-1410
+        lines: 1421-1424
         integrity: sha256-5b35adb6e1ccb372d54eea232330ed547eec1eadaf66be511b1dfcfffa0f8dd7
-        commit-sha: a589e08250dee7efaee7ed0f58df01986fad8d1d
+        commit-sha: ffdbdab4b080ca781c685250214db34edc01ae3b
     - id: sarif-paths-rebased-on-git-root
       claim:
-        lines: 301-303
+        lines: 314-316
         integrity: sha256-aec6f5b5a72d606ff22a93111e87b01dac1bcfd0bcd8947ac965f86ba50a092d
       source:
         file: src/meta/reporters/sarif.ts
-        lines: 141-144
+        lines: 158-161
         integrity: sha256-6679bb684dbe1ea06983c60d39b4ad0769236d43eb6368ade8022992682c2c51
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: 4d274aaab31e92bf39ddc11f636cecc69ea1cf34
     - id: color-precedence-flag-env-tty
       claim:
-        lines: 342-346
+        lines: 355-359
         integrity: sha256-11cdb6991f5ac7899fe678a95545b2a35d348a364b8062403401f82f7cb07f79
       source:
         file: src/shared/color.ts
@@ -280,10 +280,10 @@ docs/src/content/docs/meta/ci/exit-codes-and-annotations.mdx:
         commit-sha: 922dea44962f188cfa8119a67aa5c744ce824710
     - id: no-color-is-a-top-level-option
       claim:
-        lines: 354-355
+        lines: 367-368
         integrity: sha256-2fd9b26432c15fc16750c4434c31d4675d42fd54e4543d76041913911ac6e803
       source:
         file: src/meta/cli.ts
-        lines: 699
+        lines: 713
         integrity: sha256-9643d77dbe68988c0b2f6cab13ce7427419c75ae34ba4fdc70b42a0e2a0f699b
-        commit-sha: a589e08250dee7efaee7ed0f58df01986fad8d1d
+        commit-sha: ffdbdab4b080ca781c685250214db34edc01ae3b

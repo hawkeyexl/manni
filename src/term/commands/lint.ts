@@ -24,6 +24,7 @@ export async function runLint(opts: LintOptions): Promise<TermReport> {
   return {
     findings: reportedFindings(results, origin),
     results,
+    origin,
     summary: summarize(results),
     frame: { cwd, base: run.configDir ?? cwd, runBase: run.base },
     terms: set.terms.length,

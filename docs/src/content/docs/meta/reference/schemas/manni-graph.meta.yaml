@@ -28,11 +28,26 @@ docs/src/content/docs/meta/reference/schemas/manni-graph.mdx:
       lines: 30-32
       integrity: sha256-293b1ede49d0f2a8a9525ed7ddca20f4be6896c1e0bead5d75826fb09248f73e
     - generated-by: Claude Opus 5.5
-      lines: 37-213
-      integrity: sha256-5801d94829660af1034dbc8c859700dec879c0a4ec49f7eb93f7abdf30e8f82f
+      lines: 37-149
+      integrity: sha256-772263d76817feb0c44af6ad597d6b30557214dfd940bfbf27723516da43f171
     - generated-by: Claude Opus 5.5
-      lines: 226-260
-      integrity: sha256-2c6299bad720433d8a63dd7186bf93aab91520ab53df04ee4908fcca90f9bffc
+      lines: 152
+      integrity: sha256-95bd3f633c7eaef0d684e5d209bb131b005b486bfde1afc95bf188e78de403af
+    - generated-by: Claude Opus 5.5
+      lines: 156-217
+      integrity: sha256-cfd6e045bf0d92f9cb2da4a72b23f558c5bb8907366d9248322e336b51b33f57
+    - generated-by: Claude Opus 5.5
+      lines: 230-255
+      integrity: sha256-f465b72867cb1110274dd6688fec1ffa7feb535d75c3321a3637af3d71463d9c
+    - generated-by: Claude Opus 5.5
+      lines: 258
+      integrity: sha256-05313c7e942813d953d57c0045e2a2febc3ab2c7f397210c5d1761810dbd24de
+    - generated-by: Claude Opus 5.5
+      lines: 261
+      integrity: sha256-e058dea2632ed5f47288aeee67559ab5bf4daa4d88a4d76e3640ad5c3aa17697
+    - generated-by: Claude Opus 5.5
+      lines: 265-270
+      integrity: sha256-3be1d4e43a866577bf6437732712388d6e363eb1c74f65af4200f4bde3e535a8
   owner:
     - "@hawkeyexl"
   created: 2026-09-26

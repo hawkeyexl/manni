@@ -31,7 +31,7 @@ sample-questions:
 graph:
   label: CLI reference
   type: reference
-last-updated: 2026-09-24
+last-updated: 2026-10-20
 tags:
   - cli
   - reference
@@ -182,16 +182,39 @@ exactly as the entry spelled it:
 ```
 ✗ docs/limits.md
     ↕ fetch-timeout   :9 changed since 3f9c2a1, 2 commits      lib/limits.ts:2 current            docs-citations.yaml:6
+      Check it still matches the source, then run manni cite update --accept --only fetch-timeout.
+      manni:cite claim-changed: The sentence was edited since it was pinned.
+      Guide: https://hawkeyexl.github.io/manni/cite/fix/#claim-changed
     ✓ max-files       :12 current                              lib/limits.ts:1 current
     ℹ retries         :14 moved -> :16                         lib/limits.ts:3 current
+      Run manni cite update.
+      manni:cite claim-moved: The pinned page text sits at a different line.
+      Guide: https://hawkeyexl.github.io/manni/cite/fix/#claim-moved
     ✗ page-size       :21 current                              lib/limits.ts:5 changed since 3f9c2a1, 1 commit
+      Check the sentence against the source, then run manni cite update --accept --only page-size.
+      manni:cite source-changed: The cited lines are not what they were.
+      Guide: https://hawkeyexl.github.io/manni/cite/fix/#source-changed
     ℹ page-order      :26 reanchored since 5d1e0b7 -> :26-28   lib/limits.ts:7 current
+      Run manni cite update.
+      manni:cite claim-reanchored: The pinned words are unchanged, and only the layout around them moved.
+      Guide: https://hawkeyexl.github.io/manni/cite/fix/#claim-reanchored
     ✓ timeouts        marker :30 current                       ~AQm4…:8-12 current
     ↕ host-scope      marker :44 -> :41 moved                  lib/scope.ts:9 current
+      Run manni cite update to move it.
+      manni:cite marker-misplaced: A marker line sits inside a paragraph and splits it.
+      Guide: https://hawkeyexl.github.io/manni/cite/fix/#marker-misplaced
+      Run manni cite update.
+      manni:cite claim-moved: The pinned page text sits at a different line.
+      Guide: https://hawkeyexl.github.io/manni/cite/fix/#claim-moved
     ✓                                                          lib/limits.ts current
 
 1 file checked, 0 passed, 1 failed, 6 findings (2 warnings) (3 notices)
 ```
+
+Under a row with a finding, the first line says what to do. Two dim lines
+follow: the rule with what it means, and a Guide link to its section of the
+[fix page](/manni/cite/fix/). A finding that is not about an end prints its
+message there instead, followed by the same two lines.
 
 {/* cite pretty-page-line-manifest */}
 When one manifest keeps every entry on a page, its path follows the page on
@@ -233,6 +256,9 @@ the page now, in file lines:
 
 ```
     ↕ fetch-timeout   :9 changed since 3f9c2a1, 2 commits      lib/limits.ts:2 current
+      Check it still matches the source, then run manni cite update --accept --only fetch-timeout.
+      manni:cite claim-changed: The sentence was edited since it was pinned.
+      Guide: https://hawkeyexl.github.io/manni/cite/fix/#claim-changed
         docs(limits): the timeout is thirty seconds
         docs: rewrap limits.md
         --- docs/limits.md@3f9c2a1:9
@@ -317,25 +343,42 @@ finding on a moved source adds `newSrc`, and one that sits on a manifest adds
 `file`. The resolved path
 of a ciphertext, the diff and the commit subjects are never in it.
 
+The last key of every finding is `guidance`, the rule behind it. It holds
+the `id` `manni:cite`, the `rule`, the rule's `description`, and `guide`,
+the link to the rule's section of the [fix page](/manni/cite/fix/):
+
+```json
+"guidance": {
+  "id": "manni:cite",
+  "rule": "source-changed",
+  "description": "The cited lines are not what they were.",
+  "guide": "https://hawkeyexl.github.io/manni/cite/fix/#source-changed"
+}
+```
+
 {/* cite github-one-per-finding */}
 `github` prints one annotation per finding, `::warning` for a warning and
 `::notice` for a notice:
 
 ```
-::error file=docs/limits.md,line=9,title=manni%3Acite/source-changed::fetch-timeout (lib/limits.ts:2): changed since 3f9c2a1, 1 commit
-::warning file=docs/limits.md,line=9,title=manni%3Acite/claim-changed::fetch-timeout: the claim at line 9 has changed since 3f9c2a1, 2 commits.
-::notice file=docs/limits.md,line=15,title=manni%3Acite/claim-reanchored::retries: the claim at lines 15-17 was reanchored since 3f9c2a1. Its words are unchanged.
-::warning file=docs/limits.md,line=44,title=manni%3Acite/marker-misplaced::host-scope: the marker at line 44 splits the paragraph at lines 41-47. Its place is above line 41.
+::error file=docs/limits.md,line=9,title=manni%3Acite/source-changed::fetch-timeout (lib/limits.ts:2): changed since 3f9c2a1, 1 commit. Check the sentence against the source, then run manni cite update --accept --only fetch-timeout.%0Amanni:cite source-changed: The cited lines are not what they were.%0AGuide: https://hawkeyexl.github.io/manni/cite/fix/#source-changed
+::warning file=docs/limits.md,line=9,title=manni%3Acite/claim-changed::fetch-timeout: the claim at line 9 has changed since 3f9c2a1, 2 commits. Check it still matches the source, then run manni cite update --accept --only fetch-timeout.%0Amanni:cite claim-changed: The sentence was edited since it was pinned.%0AGuide: https://hawkeyexl.github.io/manni/cite/fix/#claim-changed
+::notice file=docs/limits.md,line=15,title=manni%3Acite/claim-reanchored::retries: the claim at lines 15-17 was reanchored since 3f9c2a1. Its words are unchanged. Run manni cite update.%0Amanni:cite claim-reanchored: The pinned words are unchanged, and only the layout around them moved.%0AGuide: https://hawkeyexl.github.io/manni/cite/fix/#claim-reanchored
+::warning file=docs/limits.md,line=44,title=manni%3Acite/marker-misplaced::host-scope: the marker at line 44 splits the paragraph at lines 41-47. Its place is above line 41. Run manni cite update to move it.%0Amanni:cite marker-misplaced: A marker line sits inside a paragraph and splits it.%0AGuide: https://hawkeyexl.github.io/manni/cite/fix/#marker-misplaced
 ```
+
+The message ends with what to do. The rule line and the Guide link follow it
+after `%0A`, GitHub's escaped line break.
 
 {/* cite sarif-note-level */}
 `sarif` builds on the metadata tool's renderer, so the envelope, the rule id
 `manni:cite/<rule>` and the `partialFingerprints` the baseline matches are
-the same. Each rule is described in plain words, and its `helpUri` links the
-rule's row in the [citations reference](/manni/cite/reference/citations/#source-end-rules).
-A result's message is the one the `github` annotation carries. A warning is
-level `warning` and a notice is level `note`. An excerpt of the rules and one
-result:
+the same. Each rule is described in plain words, in `shortDescription` and
+`fullDescription`, and its `helpUri` links the rule's section of the
+[fix page](/manni/cite/fix/). A result's message is the one the `github`
+annotation carries, with the guidance lines joined by a line break. The same
+guidance is in `properties.guidance`. A warning is level `warning` and a
+notice is level `note`. An excerpt of the rules and one result:
 
 ```json
 "informationUri": "https://hawkeyexl.github.io/manni/cite/",
@@ -343,9 +386,12 @@ result:
   {
     "id": "manni:cite/source-changed",
     "shortDescription": {
-      "text": "The cited source lines changed since the citation pinned them."
+      "text": "The cited lines are not what they were."
     },
-    "helpUri": "https://hawkeyexl.github.io/manni/cite/reference/citations/#source-changed"
+    "fullDescription": {
+      "text": "The cited lines are not what they were."
+    },
+    "helpUri": "https://hawkeyexl.github.io/manni/cite/fix/#source-changed"
   }
 ]
 ```
@@ -355,7 +401,7 @@ result:
   "ruleId": "manni:cite/source-changed",
   "level": "error",
   "message": {
-    "text": "fetch-timeout (lib/limits.ts:2): changed since 3f9c2a1, 1 commit"
+    "text": "fetch-timeout (lib/limits.ts:2): changed since 3f9c2a1, 1 commit. Check the sentence against the source, then run manni cite update --accept --only fetch-timeout.\nmanni:cite source-changed: The cited lines are not what they were.\nGuide: https://hawkeyexl.github.io/manni/cite/fix/#source-changed"
   },
   "locations": [
     {
@@ -365,7 +411,15 @@ result:
       }
     }
   ],
-  "partialFingerprints": { "docmetaViolation/v1": "22c8ce68bee49224" }
+  "partialFingerprints": { "docmetaViolation/v1": "22c8ce68bee49224" },
+  "properties": {
+    "guidance": {
+      "id": "manni:cite",
+      "rule": "source-changed",
+      "description": "The cited lines are not what they were.",
+      "guide": "https://hawkeyexl.github.io/manni/cite/fix/#source-changed"
+    }
+  }
 }
 ```
 
@@ -380,11 +434,13 @@ names that file instead. Warnings and notices are never failures:
 <testsuites name="manni" tests="1" failures="1" errors="0">
   <testsuite name="manni" tests="1" failures="1" errors="0">
     <testcase name="docs/limits.md" classname="manni.cite">
-      <failure type="manni:cite/source-changed" message="fetch-timeout (lib/limits.ts:2): changed since 3f9c2a1, 1 commit (line 9)"/>
+      <failure type="manni:cite/source-changed" message="fetch-timeout (lib/limits.ts:2): changed since 3f9c2a1, 1 commit. Check the sentence against the source, then run manni cite update --accept --only fetch-timeout. (line 9)"/>
     </testcase>
   </testsuite>
 </testsuites>
 ```
+
+The failure's message leaves out the annotation's guidance lines.
 
 ### Exit codes
 

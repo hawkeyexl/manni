@@ -8,6 +8,7 @@ import type { ArtifactType } from "./artifacts/types.js";
 import type { ManifestReport } from "./capture/types.js";
 import type { Finding } from "./graders/types.js";
 import { ToolError } from "../shared/errors.js";
+import type { Guidance } from "../shared/guidance.js";
 
 /**
  * Operational error: bad usage, unreadable input, unknown format. Exits 2.
@@ -19,6 +20,9 @@ export class TracevalsError extends ToolError {
     this.name = "TracevalsError";
   }
 }
+
+/** The page every tracevals finding links to. */
+export const TRIAGE_GUIDE = "https://hawkeyexl.github.io/manni/tracevals/triage/";
 
 export type Outcome = "pass" | "fail" | "error" | "needs-review" | "skipped";
 
@@ -70,6 +74,12 @@ export interface EvalResult {
    * the binary verdict is what the reporters and exit code consume.
    */
   weight?: number;
+  /**
+   * The rule behind the result (proposal 0089): the artifact, the eval, its
+   * assertion and the triage guide. The engine stamps it on every result,
+   * passing ones included.
+   */
+  guidance?: Guidance | null;
   durationMs: number;
 }
 

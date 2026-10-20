@@ -4,11 +4,11 @@
  * `::error file=<first blamed doc>::<message> (<focus node>)`, with
  * `::warning` and `::notice` for the lower levels — the family scale is
  * GitHub's, so the level is the severity, exactly as a11y's and cite's
- * reporters have it.
+ * reporters have it. The guidance lines follow the message after `%0A`, so
+ * the annotation names the shape that judged the page (proposal 0089).
  *
- * A SHACL finding carries no line number (stress test 5 of proposal 0051 says
- * why SARIF and JUnit are not here), and a finding about a shared node — a
- * concept, an agent, the scheme — may trace back to no document at all. Then
+ * A SHACL finding carries no line number, and a finding about a shared node —
+ * a concept, an agent, the scheme — may trace back to no document at all. Then
  * there is nothing to anchor to and the annotation goes out without `file=`,
  * which GitHub shows against the workflow run rather than dropping.
  *
@@ -18,6 +18,7 @@ import {
   escapeWorkflowCommandMessage,
   escapeWorkflowCommandProperty,
 } from "../../shared/github.js";
+import { guidanceLines } from "../../shared/guidance.js";
 import type { CheckReport } from "../commands/check.js";
 import { compactIri } from "../core/load.js";
 
@@ -30,7 +31,7 @@ export function renderCheckGithub(report: CheckReport): string {
     const where =
       file === undefined ? "" : ` file=${escapeWorkflowCommandProperty(file)}`;
     const message = escapeWorkflowCommandMessage(
-      `${f.message} (${compactIri(f.focusNode)})`,
+      [`${f.message} (${compactIri(f.focusNode)})`, ...guidanceLines(f.guidance)].join("\n"),
     );
     lines.push(`::${f.severity}${where}::${message}`);
   }

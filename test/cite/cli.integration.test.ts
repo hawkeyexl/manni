@@ -320,7 +320,7 @@ describe("manni cite (usage errors)", () => {
   });
 
   it("add a page that is not there", () => {
-    usage(["add", "pages/nope.md:6", "src/limits.ts:2", "--root", "."], 'File not found: "pages/nope.md".');
+    usage(["add", "pages/nope.md:6", "src/limits.ts:2", "--root", "."], 'File not found: "pages/nope.md". Check the path. Named paths resolve from the working directory.');
   });
 
   it("add --marker over lines that run past one paragraph", () => {
@@ -654,18 +654,18 @@ describe("manni cite check (the ladder)", () => {
     const r = check(["pages/entry-invalid.md"]);
     expect(r.status).toBe(1);
     expect(r.stdout).toContain("/source must have required property 'integrity'");
-    expect(r.stdout).toContain('duplicate id "fetch-timeout"');
+    expect(r.stdout).toContain('duplicate id "fetch-timeout". Give each entry its own id.');
   });
 
   it("reports a marker that names no entry, and a repeated one", () => {
     const orphan = check(["pages/marker-orphan.md"]);
     expect(orphan.status).toBe(1);
-    expect(orphan.stdout).toContain('no entry has id "nope"');
+    expect(orphan.stdout).toContain(`no entry has id "nope". Fix the marker's id, or add the entry with manni cite add.`);
 
     const repeated = check(["pages/marker-repeated.md"]);
     expect(repeated.status).toBe(0);
     expect(repeated.stdout).toContain(
-      "retries is named by markers at lines 14 and 19; the first anchors it.",
+      "retries is named by markers at lines 14 and 19; the first anchors it. Remove retries from the marker at line 19.",
     );
     expect(repeated.stdout).toMatch(/^1 file checked, 1 passed, 0 failed, 1 finding \(1 warning\)$/m);
   });
@@ -696,11 +696,13 @@ describe("manni cite check (the ladder)", () => {
   it("-f github prints one annotation per finding, under the end's rule", () => {
     const r = check(["-f", "github", "pages/source-changed.md", "pages/claim-changed.md"]);
     expect(r.status).toBe(1);
-    expect(r.stdout).toMatch(
-      /^::error file=pages\/source-changed\.md,line=15,title=manni%3Acite\/source-changed::fetch-timeout \(src\/changed\.ts:2\): changed$/m,
+    // Each annotation is one line: the finding, then its guidance, joined by an escaped newline.
+    const annotations = r.stdout.split("\n");
+    expect(annotations).toContain(
+      "::error file=pages/source-changed.md,line=15,title=manni%3Acite/source-changed::fetch-timeout (src/changed.ts:2): changed. Check the sentence against the source, then run manni cite update --accept --only fetch-timeout.%0Amanni:cite source-changed: The cited lines are not what they were.%0AGuide: https://hawkeyexl.github.io/manni/cite/fix/#source-changed",
     );
-    expect(r.stdout).toMatch(
-      /^::warning file=pages\/claim-changed\.md,line=15,title=manni%3Acite\/claim-changed::fetch-timeout: the claim at line 15 has changed since it was pinned\.$/m,
+    expect(annotations).toContain(
+      "::warning file=pages/claim-changed.md,line=15,title=manni%3Acite/claim-changed::fetch-timeout: the claim at line 15 has changed since it was pinned. Check it still matches the source, then run manni cite update --accept --only fetch-timeout.%0Amanni:cite claim-changed: The sentence was edited since it was pinned.%0AGuide: https://hawkeyexl.github.io/manni/cite/fix/#claim-changed",
     );
     expect(check(["-f", "github", "pages/current.md"]).stdout).toBe("");
   });
@@ -718,7 +720,7 @@ describe("manni cite check (the ladder)", () => {
     expect(sarif.runs[0]?.results[0]?.message.text).toMatch(/^fetch-timeout \(src\/changed\.ts:2\): changed/);
     const rule = sarif.runs[0]?.tool.driver.rules[0];
     expect(rule?.shortDescription.text).not.toMatch(/schema|keyword/i);
-    expect(rule?.helpUri).toBe("https://hawkeyexl.github.io/manni/cite/reference/citations/#source-changed");
+    expect(rule?.helpUri).toBe("https://hawkeyexl.github.io/manni/cite/fix/#source-changed");
   });
 
   it("-f junit ships under the cite classname", () => {
@@ -1113,7 +1115,7 @@ describe("manni cite add", () => {
     expect(r.status).toBe(2);
     expect(r.stdout).toBe("");
     // On macOS the child's cwd is the temp dir's realpath (/private/var/...), not /var/....
-    expect(r.stderr.split(/\r?\n/)[0]).toBe(`manni: Root directory not found: ${join(realpathSync(work), "no-such-dir")}.`);
+    expect(r.stderr.split(/\r?\n/)[0]).toBe(`manni: Root directory not found: ${join(realpathSync(work), "no-such-dir")}. Fix --root, or cite.root in manni.config.yaml.`);
     expect(readFileSync(join(work, "pages", "no-citations.md"), "utf8")).toBe(before);
   });
 
@@ -1161,7 +1163,7 @@ describe("manni cite update", () => {
     expect(r.status).toBe(2);
     expect(r.stdout).toBe("");
     // On macOS the child's cwd is the temp dir's realpath (/private/var/...), not /var/....
-    expect(r.stderr.split(/\r?\n/)[0]).toBe(`manni: Root directory not found: ${join(realpathSync(work), "no-such-dir")}.`);
+    expect(r.stderr.split(/\r?\n/)[0]).toBe(`manni: Root directory not found: ${join(realpathSync(work), "no-such-dir")}. Fix --root, or cite.root in manni.config.yaml.`);
   });
 
   it("--collection still opens the collection with - beside it", () => {

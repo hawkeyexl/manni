@@ -8,6 +8,7 @@
  */
 import { ToolError } from "../shared/errors.js";
 import type { Severity } from "../shared/severity.js";
+import type { Guidance } from "../shared/guidance.js";
 
 /** Result of pulling a metadata block out of a single document. */
 export interface ExtractedMetadata {
@@ -197,6 +198,15 @@ export interface FieldError {
    * it rather than restating the absent-means-error rule.
    */
   severity?: Severity;
+  /**
+   * The rule behind the finding and what it asks for (proposal 0089). JUnit
+   * prints its lines in the `<failure>` body. Absent or `null` when nothing
+   * stands behind the finding, and then the output is as it was.
+   *
+   * Not part of the fingerprint, for the reason `severity` is not: rewording
+   * what a rule is for does not make it a different finding.
+   */
+  guidance?: Guidance | null;
 }
 
 /**

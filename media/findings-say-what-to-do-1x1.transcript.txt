@@ -1,0 +1,70 @@
+Findings say what to do (proposal 0089), demo video transcript (silent video; text describes what is on screen)
+
+Frame: 1080x1080, 30 fps, 41.9 s. Every terminal line is real output. Beat 1 runs the
+published 4.13.0 release through npx. Beats 2 to 4 run this branch's build,
+node dist/cli.js, typed as manni. Both run in media/scratch-findings/, which
+media/capture-findings/capture.sh stages from byte copies of
+test/fixtures/vocabulary/dcmi-bad-date.md and test/fixtures/cite/. Each command
+appears after its measured latency, at 1x.
+
+[0:00-0:13] Title: Before, in 4.13.0 (1 / 4)
+$ cat dcmi-bad-date.md
+---
+title: Undated report
+date: June 5th
+---
+$ npx -y @hawkeyexl/manni@4.13.0 meta validate dcmi-bad-date.md -s dcmi:elements:1.1 --no-config
+✗ dcmi-bad-date.md   (✗ in red)
+    /date  must match pattern "^[0-9]{4}(-[0-9]{2}(-[0-9]{2}(T[0-9]{2}:[0-9]{2}(:[0-9]{2}(\.[0-9]+)?)?(Z|[+-][0-9]{2}:[0-9]{2}))?)?)?$"  (line 3)  [dcmi:elements:1.1]
+    /date  must match "else" schema  (line 3)  [dcmi:elements:1.1]
+
+1 file checked, 0 passed, 1 failed, 2 errors   (red)
+Highlighted rows: lines containing "\"else\" schema"
+Caption: June 5th is not a date. 4.13.0 shows a pattern and a wrapper line.
+
+[0:13-0:25] Title: Now it says what to do (2 / 4)
+$ manni meta validate dcmi-bad-date.md -s dcmi:elements:1.1 --no-config
+✗ dcmi-bad-date.md   (✗ in red)
+    /date  must match pattern "^[0-9]{4}(-[0-9]{2}(-[0-9]{2}(T[0-9]{2}:[0-9]{2}(:[0-9]{2}(\.[0-9]+)?)?(Z|[+-][0-9]{2}:[0-9]{2}))?)?)?$"  (line 3)  [dcmi:elements:1.1]
+      dcmi:elements:1.1 date: A point or period of time associated with an event in the lifecycle of the resource.   (dim)
+      Guide: https://hawkeyexl.github.io/manni/meta/reference/schemas/dcmi-elements/   (dim)
+
+1 file checked, 0 passed, 1 failed, 1 error   (red)
+$ echo $?
+1
+Highlighted rows: lines containing "dcmi:elements:1.1 date:", "Guide:"
+Caption: One finding. It names the rule, says what date is for and links a guide.
+
+[0:25-0:33] Title: Start from a skeleton (3 / 4)
+$ manni meta schemas show manni:core:1.0.0 -f markdown
+---
+# manni:core:1.0.0, manni core vocabulary v1.0.0
+# Guide: https://hawkeyexl.github.io/manni/meta/reference/schemas/manni-core/
+# What the page is called, as one non-empty string.
+title:
+# One full non-empty sentence saying what the page is for.
+description:
+# Stable identifier for this page, independent of its path.
+# id:
+# The kind of content this page is, as one string.
+# type:
+# Search keywords.
+# keywords:
+# The natural language the page is written in, as one string.
+# language:
+---
+Highlighted rows: lines containing "# Guide:", "title:", "description:"
+Caption: schemas show -f markdown prints frontmatter to start from, every key explained.
+
+[0:33-0:42] Title: Across the family (4 / 4)
+$ manni cite check pages/source-changed.md
+✗ pages/source-changed.md   (✗ in red)
+    ✗ fetch-timeout   :15 current   src/changed.ts:2 changed   (✗ in red)
+      Check the sentence against the source, then run manni cite update --accept --only fetch-timeout.
+      manni:cite source-changed: The cited lines are not what they were.   (dim)
+      Guide: https://hawkeyexl.github.io/manni/cite/fix/#source-changed   (dim)
+
+1 file checked, 0 passed, 1 failed, 1 finding   (red)
+Highlighted rows: lines containing "Check the sentence", "source-changed:", "Guide:"
+Caption: cite names its rule too, and the command to run once you have checked.
+

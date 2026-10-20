@@ -12,7 +12,7 @@ lifecycle: published
 applies-to: ["domain:tracevals"]
 sample-questions: ["What do exit codes 0, 1 and 2 mean?", "How do I stop needs-review from failing the build?"]
 graph: { label: "Exit codes & reports", type: reference }
-last-updated: 2026-10-04
+last-updated: 2026-10-20
 ---
 
 import { Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';
@@ -162,7 +162,6 @@ npx @hawkeyexl/manni tracevals run <trace> --format markdown --output tracevals-
 | `github` | GitHub Actions annotations on the lines that declare each eval, then the markdown summary |
 | `sarif` | code scanning, with one rule per grader as `tracevals/<grader>` |
 | `junit` | a test-report viewer; `needs-review` lands as skipped, not failed |
-
 `calibrate` takes `pretty`, `json` and `markdown`. The CI recipes for `github` and `sarif` are in
 [Run it in CI](/manni/tracevals/ci/#annotate-the-pull-request).
 
@@ -181,10 +180,21 @@ The markdown format renders as tables:
 | Outcome | Artifact | Eval | Grader | Detail |
 |---|---|---|---|---|
 | pass | fix-bug | used-read `.claude/skills/fix-bug/SKILL.md:6` | tool-usage |  |
-| fail | fix-bug | forbidden-tool `.claude/skills/fix-bug/SKILL.md:12` | tool-usage | tool Bash was used 1 time(s) but must not be |
+| fail | fix-bug | forbidden-tool `.claude/skills/fix-bug/SKILL.md:12` | tool-usage | tool Bash was used 1 time(s) but must not be. Redo the session work so it holds, or fix the eval if the artifact does not ask for this. |
 | pass | fix-bug | no-force-push `.claude/skills/fix-bug/SKILL.md:18` | command |  |
 | needs-review | fix-bug | refactor-preserved-intent `.claude/skills/fix-bug/SKILL.md:23` | human | awaiting human review |
 | skipped | CLAUDE.md | adheres-to-artifact (implicit) `CLAUDE.md` | ai | ai evals skipped (deterministic-only run) |
+
+## Findings
+
+- **FAIL** fix-bug › forbidden-tool · `.claude/skills/fix-bug/SKILL.md:12`
+  - tool Bash was used 1 time(s) but must not be. Redo the session work so it holds, or fix the eval if the artifact does not ask for this.
+  - .claude/skills/fix-bug/SKILL.md forbidden-tool: The session never ran shell commands; this skill is edit-only.
+  - Guide: https://hawkeyexl.github.io/manni/tracevals/triage/
+- **REVIEW** fix-bug › refactor-preserved-intent · `.claude/skills/fix-bug/SKILL.md:23`
+  - Awaiting human review. Read the session against the assertion and decide.
+  - .claude/skills/fix-bug/SKILL.md refactor-preserved-intent: The fix addressed the reported bug rather than working around it.
+  - Guide: https://hawkeyexl.github.io/manni/tracevals/triage/
 
 ## Artifact coverage
 
@@ -215,8 +225,13 @@ Each eval names the file and line that declare it, after its name. That is the a
 manifest that holds a relocated block. The implicit eval has no declaring entry, so it names its
 artifact alone. The `github`, `sarif` and `junit` formats point at the same file and line.
 
+`## Findings` lists what to act on: each failed, errored or needs-review eval. Under the finding, a
+line quotes the eval's assertion, and a last line links to
+[reading a failing eval](/manni/tracevals/triage/). The other formats carry the same lines under
+each finding. The section is left out when nothing needs acting on.
+
 `--format json` emits the same run as a structured document. That document carries trace metadata,
-per-eval outcomes with findings, consensus and the declaring `location`, and the coverage list
+per-eval outcomes with findings, consensus, the declaring `location` and `guidance`, and the coverage list
 including every location that was tried. It also carries warnings, summary counts, turn telemetry, and duration. Every field is
 documented in [Reports & exit codes](/manni/tracevals/reference/report-and-exit-codes/).
 

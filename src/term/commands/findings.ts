@@ -10,7 +10,8 @@
  * `unused-term`). A check finding and a lint finding carry the field the same
  * way. The subject is the entry, the field, and what the finding says, with any
  * `file:line` taken out: a line moves when a page is edited above the entry,
- * and a moved finding is not a new one.
+ * and a moved finding is not a new one. What the finding says is its `key`
+ * when it has one, the message as 4.13 spelled it before any advice.
  */
 import {
   isErrorSeverity,
@@ -35,6 +36,8 @@ export interface TermReport {
   findings: TermFinding[];
   /** The same findings as meta's results, for SARIF and JUnit. One per file. */
   results: ValidationResult[];
+  /** Each error in `results` to the finding it came from, so SARIF can carry its guidance. */
+  origin: ReadonlyMap<FieldError, TermFinding>;
   summary: RunSummary;
   frame: FingerprintContext;
   /** Entries in the set. */
@@ -56,7 +59,9 @@ function toFieldError(finding: TermFinding): FieldError {
     ? finding.ruleId.slice(RULE_ID_PREFIX.length + 1)
     : finding.ruleId;
   const { field } = finding;
-  const subject = [finding.id ?? "", field ?? "", finding.message.replace(LINE_REFERENCE, "")].join("\u0000");
+  // The 4.13 text, never the advice after it, so a reworded fix moves no baseline.
+  const said = finding.key ?? finding.message;
+  const subject = [finding.id ?? "", field ?? "", said.replace(LINE_REFERENCE, "")].join("\u0000");
   const error: FieldError = {
     schema: RULE_ID_PREFIX,
     instancePath: field === undefined ? "" : `/${field}`,

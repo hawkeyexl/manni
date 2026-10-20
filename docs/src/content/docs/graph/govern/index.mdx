@@ -13,7 +13,7 @@ concepts:
   - severity
   - curated pointer
   - x-manni-graph-output
-last-updated: 2026-10-19
+last-updated: 2026-10-20
 ---
 
 Your standard about structure probably lives in review comments. A concept
@@ -40,7 +40,7 @@ and why it runs over the built graph rather than over the sources.
 
 ## The bundled shapes are the floor
 
-`manni graph check` ships with a shapes file, `shapes/graph/shapes-1.1.0.ttl`, which
+`manni graph check` ships with a shapes file, `shapes/graph/shapes-1.1.1.ttl`, which
 is what it uses when you name none. It declares a node shape per class the
 emitter mints: `graph:Document`, `graph:Section`, `skos:Concept`,
 `skos:ConceptScheme`, `iirds:ProductVariant`, and the PROV agents, activities,
@@ -67,7 +67,7 @@ Write a shapes file and point `graph.check.shapes` at it:
 graph:
   check:
     shapes:
-      - node_modules/@hawkeyexl/manni/shapes/graph/shapes-1.1.0.ttl
+      - node_modules/@hawkeyexl/manni/shapes/graph/shapes-1.1.1.ttl
       - shapes/house-rules.ttl
 ```
 
@@ -102,6 +102,30 @@ Two things to get right. Target a class the emitter actually mints, or the
 shape matches nothing and passes silently. And do not declare your own shape
 `sh:closed` over a class the bundled shapes already close. The two closures
 would each reject what the other allows.
+
+### Speak to the author
+
+A finding is read by whoever wrote the page, so a house rule can say what to
+change in their words. Four parts carry that:
+
+| Part | Where | What the finding shows |
+|---|---|---|
+| `sh:message` | A shape | The message. Name the frontmatter key and say what to change. |
+| `sh:description` | A shape | What the rule is for, on the line under the message. |
+| `sh:name` | A property shape | The frontmatter key that feeds the property. |
+| `owl:Ontology` header | The file | The id from `dcterms:identifier`, and the guide link from `rdfs:seeAlso`. |
+
+```turtle
+<https://example.com/house/shapes>
+  a owl:Ontology ;
+  dcterms:identifier "house:shapes:1.0.0" ;
+  rdfs:seeAlso <https://example.com/house/guide/> .
+```
+
+A file with no header is named by its path, as given, and its findings carry no
+guide link. `manni graph shapes` lists every shape in force with its file's id,
+and `manni graph shapes show <shape>` prints each property with its key and
+description. See [`graph shapes`](/manni/graph/reference/cli/#graph-shapes).
 
 ## Severity, in the family's words
 
@@ -229,10 +253,10 @@ presence without the graph publishing its content.
 
 {/* step {"description":"A corpus that violates the shapes builds fine; the graph is checked separately.","runShell":{"command":"manni graph build -c test/graph/fixtures/dd/violations.config.yaml","exitCodes":[0]}} */}
 
-{/* step {"description":"check catches the SKOS cycle core SHACL cannot express.","runShell":{"command":"manni graph check -c test/graph/fixtures/dd/violations.config.yaml","exitCodes":[1],"stdio":"a concept cannot be its own ancestor"}} */}
+{/* step {"description":"check catches the SKOS cycle core SHACL cannot express.","runShell":{"command":"manni graph check -c test/graph/fixtures/dd/violations.config.yaml","exitCodes":[1],"stdio":"form a broader cycle, so each is its own ancestor"}} */}
 
 {/* step {"description":"A variant a page is both about and excluded from is an error.","runShell":{"command":"manni graph check -c test/graph/fixtures/dd/violations.config.yaml","exitCodes":[1],"stdio":"graph:notApplicableToVariant"}} */}
 
 {/* step {"description":"A warning-level finding reports without failing the build.","runShell":{"command":"manni graph build -c test/graph/fixtures/dd/docs.config.yaml","exitCodes":[0]}} */}
 
-{/* step {"description":"Two spellings of one concept collide on a single node, at warning.","runShell":{"command":"manni graph check -c test/graph/fixtures/dd/docs.config.yaml","exitCodes":[0],"stdio":"concept carries multiple prefLabels"}} */}
+{/* step {"description":"Two spellings of one concept collide on a single node, at warning.","runShell":{"command":"manni graph check -c test/graph/fixtures/dd/docs.config.yaml","exitCodes":[0],"stdio":"Pages spell this concept two ways"}} */}

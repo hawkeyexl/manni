@@ -25,7 +25,7 @@ sample-questions:
 graph:
   label: Output formats & exit codes
   type: reference
-last-updated: 2026-10-05
+last-updated: 2026-10-20
 tags:
   - exit-codes
   - output-formats
@@ -72,6 +72,8 @@ summary. A passing file is marked `✓`; a failing file is marked `✗`.
 ✓ docs/intro.md
 ✗ docs/api.md
     type  must have required property 'type'  (line 2)  [google:okf:0.1]
+      google:okf:0.1 type: A short string identifying the kind of concept.
+      Guide: https://hawkeyexl.github.io/manni/meta/reference/schemas/google-okf/
 
 2 files checked, 1 passed, 1 failed, 1 error
 ```
@@ -80,12 +82,19 @@ Each error line has the form:
 
 ```
 <field>  <message>  (line N)  [schema-id]
+  <schema-id> <property>: <description>
+  Guide: <url>
 ```
 
 - `<field>` is the failing field's path, or `(root)` for a whole-document error
   such as a missing required field.
 - `(line N)` is omitted when no source line is known.
 - `[schema-id]` is the schema that produced the error.
+- The two dim lines under a schema finding are its [guidance](#guidance). The
+  first names the schema and the property, and says what the property is for.
+  The second links a built-in schema's reference page, and a house schema has
+  none. manni meta's own findings, such as a parse error, carry no guidance
+  lines.
 
 {/* cite output-a-manifest-value-is-located-in-the-manifest */}
 When the value at fault came from an [external-metadata
@@ -148,7 +157,13 @@ Machine-readable. Prints a single JSON object with a run `summary` and a
           "message": "must have required property 'type'",
           "keyword": "required",
           "subject": "type",
-          "line": 2
+          "line": 2,
+          "guidance": {
+            "id": "google:okf:0.1",
+            "rule": "type",
+            "description": "A short string identifying the kind of concept.",
+            "guide": "https://hawkeyexl.github.io/manni/meta/reference/schemas/google-okf/"
+          }
         }
       ]
     }
@@ -180,6 +195,11 @@ Machine-readable. Prints a single JSON object with a run `summary` and a
 | `results[].errors[].severity` | string | `error`, `warning` or `notice`. **Omitted** when `error`, which is every finding `manni meta validate` produces except the `location:external` and `location:page` warnings; sibling tools in the family report advisory findings as `warning` or `notice` through the same shape. A file is `ok` iff none of its errors has severity `error`, and a warning or a notice never moves the exit code. |
 | `results[].errors[].col` | number | 1-based column. Supplied by the `html` and `xml` extractors, from the `content=` attribute of a `<meta>` tag or the value of an XML attribute. Omitted for every other format, and for a `required` violation in any format. That error reports the parent object, and a missing property has no column. |
 | `results[].errors[].file` | string | The file `line` and `col` refer to, when it is not `results[].file`. Set only for a value an [external-metadata manifest](/manni/meta/reference/configuration/#external-metadata) supplied, spelled the way the run spells file labels (`docs-meta.yaml`). Omitted for every violation whose value is in the document, which is every violation a run with no `externalMetadata:` on any collection produces. The finding's subject file stays `results[].file`; this names where the value was written. |
+| `results[].errors[].guidance` | object \| null | What the schema asks of the property, always the error's last key. `null` on manni meta's own findings, such as `parse`, `schema`, `encrypted`, `location`, `term` and `derived`. See [guidance](#guidance). |
+| `results[].errors[].guidance.id` | string | The schema ref, spelled as `schema` spells it. |
+| `results[].errors[].guidance.rule` | string \| null | The property path, joined with `/`, with array indexes dropped: `date`, `evals/id`, `sidebar/badge/variant`. A `required` finding appends the missing key. `null` when the finding reaches no declared property. |
+| `results[].errors[].guidance.description` | string \| null | The first sentence of that property's `description`, or `null` when it has none. |
+| `results[].errors[].guidance.guide` | string \| null | The built-in schema's reference page, or `null` for any other schema. |
 
 {/* cite output-keyword-and-subject-are-machine-stable */}
 `keyword` and `subject` are the machine-stable half of a violation's identity.
@@ -197,14 +217,17 @@ finding, which GitHub renders inline on the pull request. A finding whose
 nothing. Files with no findings produce no output.
 
 ```
-::error file=docs/api.md,line=2::[google:okf:0.1] (root) must have required property 'type'
+::error file=docs/api.md,line=2::[google:okf:0.1] (root) must have required property 'type'%0Agoogle:okf:0.1 type: A short string identifying the kind of concept.%0AGuide: https://hawkeyexl.github.io/manni/meta/reference/schemas/google-okf/
 ```
 
 Each line has the form:
 
 ```
-::error file=<file>,line=<N>,col=<N>::[<schema-id>] <field> <message>
+::error file=<file>,line=<N>,col=<N>::[<schema-id>] <field> <message>%0A<guidance lines>
 ```
+
+The [guidance](#guidance) lines follow the message, each after an escaped
+newline, so GitHub shows them under it in the annotation.
 
 {/* cite output-github-line-form */}
 `line` and `col` are included only when known. `col` today means an `html` or
@@ -257,7 +280,7 @@ which `upload-sarif` rejects.
               "shortDescription": {
                 "text": "Schema \"google:okf:0.1\" rejected the document on its \"format\" keyword."
               },
-              "helpUri": "https://hawkeyexl.github.io/manni/meta/fix/"
+              "helpUri": "https://hawkeyexl.github.io/manni/meta/reference/schemas/google-okf/"
             }
           ]
         }
@@ -266,7 +289,9 @@ which `upload-sarif` rejects.
         {
           "ruleId": "google:okf:0.1/format",
           "level": "error",
-          "message": { "text": "/timestamp must match format \"date-time\"" },
+          "message": {
+            "text": "/timestamp must match format \"date-time\"\ngoogle:okf:0.1 timestamp: ISO 8601 datetime of last meaningful change.\nGuide: https://hawkeyexl.github.io/manni/meta/reference/schemas/google-okf/"
+          },
           "locations": [
             {
               "physicalLocation": {
@@ -277,6 +302,14 @@ which `upload-sarif` rejects.
           ],
           "partialFingerprints": {
             "docmetaViolation/v1": "a0e67da36246d5d9"
+          },
+          "properties": {
+            "guidance": {
+              "id": "google:okf:0.1",
+              "rule": "timestamp",
+              "description": "ISO 8601 datetime of last meaningful change.",
+              "guide": "https://hawkeyexl.github.io/manni/meta/reference/schemas/google-okf/"
+            }
           }
         }
       ]
@@ -292,7 +325,9 @@ which `upload-sarif` rejects.
 | `runs[].tool.driver.rules` | object[] | Only the rules this run actually **hit**, deduplicated. manni meta does not enumerate every keyword of every schema. |
 | `results[].ruleId` | string | `<schema-ref>/<keyword>`, for example `google:okf:0.1/required`. Built from `keyword`, never from the message, so an Ajv rewording cannot close and reopen every historical alert. |
 | `results[].level` | string | `error`; `warning` for a finding whose `severity` is `warning`; `note` for one whose `severity` is `notice`. See [severity](#severity) below. |
-| `results[].message.text` | string | The field path (or `(root)`) followed by the violation message. |
+| `runs[].tool.driver.rules[].helpUri` | string | The schema's reference page for a built-in schema. Otherwise, and for manni meta's own rules, the [fix page](/manni/meta/fix/). A rule spans every property of its schema, so it carries no `fullDescription`. |
+| `results[].message.text` | string | The field path (or `(root)`) followed by the violation message, then the [guidance](#guidance) lines, one per line. |
+| `results[].properties.guidance` | object | The finding's [guidance](#guidance) object, as JSON carries it. Omitted when the finding has none. |
 | `results[].locations[].physicalLocation.artifactLocation.uri` | string | The file, **relative to the repository root**. See [paths](#sarif-paths-are-repository-root-relative). For a value an [external-metadata manifest](/manni/meta/reference/configuration/#external-metadata) supplied, this is the manifest. Each finding resolves its own URI, so a manifest inside the repository is kept even when the document is not, and the reverse. |
 | `results[].locations[].physicalLocation.region.startLine` | number | 1-based source line. The whole `region` is **omitted** when no line is known. SARIF requires `startLine >= 1`. A `0` would be invalid, and a `1` would silently mislocate the finding at the top of the file. A location with only an `artifactLocation` renders as a file-level alert, which is true. No `startColumn` is ever emitted, even for a finding whose JSON `col` is set. The SARIF region is line-only. |
 | `results[].partialFingerprints` | object | `{"docmetaViolation/v1": "<fingerprint>"}`, the same fingerprint the [baseline](/manni/meta/reference/cli/#baselines) records. |
@@ -411,7 +446,8 @@ JUnit XML, which Jenkins, GitLab, CircleCI, and Azure render natively in their
 <testsuites name="manni" tests="2" failures="1" errors="0">
   <testsuite name="manni" tests="2" failures="1" errors="0">
     <testcase name="docs/api.md" classname="manni.validate">
-      <failure type="google:okf:0.1/format" message="/timestamp must match format &quot;date-time&quot; (line 4)"/>
+      <failure type="google:okf:0.1/format" message="/timestamp must match format &quot;date-time&quot; (line 4)">google:okf:0.1 timestamp: ISO 8601 datetime of last meaningful change.
+Guide: https://hawkeyexl.github.io/manni/meta/reference/schemas/google-okf/</failure>
     </testcase>
     <testcase name="docs/intro.md" classname="manni.validate"/>
   </testsuite>
@@ -428,6 +464,7 @@ JUnit XML, which Jenkins, GitLab, CircleCI, and Azure render natively in their
 | `classname` | `testcase` | Always `manni.validate`. |
 | `type` | `failure` | The same rule id SARIF uses: `<schema-ref>/<keyword>`. |
 | `message` | `failure` | The field path (or `(root)`), the violation message, and `(line N)` when the line is known. For a value an [external-metadata manifest](/manni/meta/reference/configuration/#external-metadata) supplied, the location is `(docs-meta.yaml:6)`, as in the pretty format. |
+| body | `failure` | The [guidance](#guidance) lines, XML-escaped. A finding with no guidance keeps a self-closing `<failure/>`. |
 
 {/* cite output-one-junit-test-per-file */}
 One test per **file** is deliberate. The tab then reads "2 tests, 1 failed" and
@@ -451,6 +488,39 @@ TOML, or JSON frontmatter all qualify. The rest of the run continues. Its
 `keyword` is `parse`; a file whose *schema set* could not be resolved uses the
 same `(parse)` label with `keyword` set to `schema`.
 </Aside>
+
+### Guidance
+
+Each finding a schema produced carries guidance: the schema, the property it
+judged, what the property is for, and where to read more. The property is
+found by walking the field path through the schema's `properties`, local
+`$ref`, `allOf`, `anyOf`, `oneOf`, `then`, `else` and `items`. The description
+is the first sentence of the property's own `description`. Run
+[`manni meta schemas show`](/manni/meta/reference/cli/#meta-schemas-show) to
+read the whole text.
+
+A finding is reported once, at the error that caused it. Ajv also reports a
+summary error for a failed `if` branch, and for an `anyOf` or `oneOf` no branch
+passed. Those are left out, because each only ever sits beside that error. A
+`oneOf` that more than one branch passed has no other error, so it is reported.
+A [baseline](/manni/meta/reference/cli/#baselines) recorded with those summary
+errors lists them as entries that no longer occur, and the exit code does not
+change.
+
+Messages name what to write where Ajv's do not:
+
+| Keyword | Message |
+|---|---|
+| `enum` | `must be one of: 1, 2, "deep", false`, every value that passes. |
+| `const` | `must be "command"`, the one value that passes. |
+| `minLength` or `minItems` of 1 | `must not be empty` |
+| `type` with several types | `must be string or array` |
+| A key the schema forbids outright | `must not be present` |
+
+On a value the schema marks
+[`x-manni-encrypt`](/manni/meta/reference/schema-resolution/#encrypted-values),
+an `enum` or `const` finding lists no values, because they are the set the
+plaintext comes from.
 
 ### Baseline fields
 
@@ -653,7 +723,7 @@ both covered by `--allow-empty` (or config `allowEmpty: true`):
 
 | Situation | Message |
 |---|---|
-| A named path that does not exist, even if other inputs matched. | `File not found: "docs/typo.md".` |
+| A named path that does not exist, even if other inputs matched. | `File not found: "docs/typo.md". Check the path. Named paths resolve from the working directory.` |
 | Nothing matched, whether a glob with no hits, a missing directory, or an `--ext`/`--exclude` filter that removed everything. | `No files matched. Patterns tried: …` |
 
 {/* cite output-nothing-checked-is-exit-2-not-1 */}

@@ -250,7 +250,7 @@ describe("runTest: refusals", () => {
     [
       "a missing path, in meta's words",
       { paths: ["docs/nope.md"] },
-      'File not found: "docs/nope.md".',
+      'File not found: "docs/nope.md". Check the path. Named paths resolve from the working directory.',
     ],
     [
       "a glob that matches nothing",

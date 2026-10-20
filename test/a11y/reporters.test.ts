@@ -92,6 +92,12 @@ const imageAlt: Violation = {
     },
     { target: "img:nth-child(2)", html: "<img>", summary: "Fix any of the following:\n  Element does not have an alt attribute" },
   ],
+  guidance: {
+    id: "axe-core 4.13.0",
+    rule: "image-alt",
+    description: "Ensure <img> elements have alternative text or a role of none or presentation",
+    guide: "https://dequeuniversity.com/rules/axe/4.13/image-alt",
+  },
 };
 
 const off = { color: false, quiet: false };
@@ -206,22 +212,23 @@ describe("render pretty", () => {
     expect(lines).toContain(`✗ ${S}/about  score 70  2 errors, 1 notice`);
     // The family level leads; axe's own word follows the rule id, so a
     // finding can still be looked up on its Deque page.
-    expect(lines).toContain(
-      "    error  image-alt (axe: critical)  2 nodes  Images must have alternate text  https://dequeuniversity.com/rules/axe/4.13/image-alt",
-    );
-    expect(lines).toContain(
+    // The violation line no longer ends in the helpUrl: it moves to Guide:,
+    // under the guidance line, and each node shows its html.
+    const start = lines.indexOf("    error  image-alt (axe: critical)  2 nodes  Images must have alternate text");
+    expect(start).toBeGreaterThan(0);
+    expect(lines.slice(start, start + 7)).toEqual([
+      "    error  image-alt (axe: critical)  2 nodes  Images must have alternate text",
+      "      axe-core 4.13.0 image-alt: Ensure <img> elements have alternative text or a role of none or presentation",
+      "      Guide: https://dequeuniversity.com/rules/axe/4.13/image-alt",
       "      img.hero  → Fix any of the following: Element does not have an alt attribute; aria-label attribute does not exist or is empty",
-    );
-    expect(lines).toContain(
+      '        <img class="hero" src="x.png">',
       "      img:nth-child(2)  → Fix any of the following: Element does not have an alt attribute",
-    );
-    expect(lines).toContain(
-      "    error  button-name (axe: serious)  1 node  Rule button-name  https://dequeuniversity.com/rules/axe/4.13/button-name",
-    );
+      "        <img>",
+    ]);
+    expect(lines).toContain("    error  button-name (axe: serious)  1 node  Rule button-name");
     expect(lines).toContain("      html  → Fix button-name");
-    expect(lines).toContain(
-      "    notice  region (axe: minor)  1 node  Rule region  https://dequeuniversity.com/rules/axe/4.13/region",
-    );
+    expect(lines).toContain("    notice  region (axe: minor)  1 node  Rule region");
+    expect(text).not.toContain("  https://dequeuniversity.com/rules/axe/4.13/region");
   });
 
   it("uses the singular for one finding at a level and lists warnings between", () => {
@@ -252,6 +259,18 @@ describe("render pretty", () => {
     expect(text).toContain("      a:nth-child(3)  → Fix link 3");
     expect(text).not.toContain("a:nth-child(4)");
     expect(text).toContain("      (+2 more)");
+  });
+
+  it("prints each node's html on one line, cut at 200 characters", () => {
+    const long: Violation = {
+      ...violation("link-name", "error"),
+      nodes: [{ target: "a", html: `<a\n  href="/x">${"y".repeat(300)}</a>`, summary: "Fix it" }],
+    };
+    const lines = render("pretty", checkRun([page({ url: `${S}/`, violations: [long], score: 91 })]), off).split("\n");
+    const html = lines[lines.indexOf("      a  → Fix it") + 1] ?? "";
+    expect(html.startsWith('        <a href="/x">yyy')).toBe(true);
+    expect(html.trimStart()).toHaveLength(201);
+    expect(html.endsWith("…")).toBe(true);
   });
 
   it("reports a page that did not load on one line", () => {
@@ -376,6 +395,7 @@ describe("render json", () => {
     );
     const text = render("json", run, off);
     expect(JSON.parse(text)).toEqual(run);
+    expect(text).toContain('"guidance": {\n');
     expect(text).toBe(JSON.stringify(run, null, 2));
   });
 });
@@ -389,10 +409,17 @@ describe("render github", () => {
     ]);
     const lines = render("github", run, off).split("\n");
     expect(lines).toEqual([
-      `::error title=a11y/image-alt::Images must have alternate text — 2 nodes on ${S}/about (https://dequeuniversity.com/rules/axe/4.13/image-alt)`,
-      `::error title=a11y/button-name::Rule button-name — 1 node on ${S}/about (https://dequeuniversity.com/rules/axe/4.13/button-name)`,
+      `::error title=a11y/image-alt::Images must have alternate text: 2 nodes on ${S}/about.` +
+        "%0Aimg.hero  → Fix any of the following: Element does not have an alt attribute; aria-label attribute does not exist or is empty" +
+        '%0A  <img class="hero" src="x.png">' +
+        "%0Aimg:nth-child(2)  → Fix any of the following: Element does not have an alt attribute" +
+        "%0A  <img>" +
+        "%0Aaxe-core 4.13.0 image-alt: Ensure <img> elements have alternative text or a role of none or presentation%0AGuide: https://dequeuniversity.com/rules/axe/4.13/image-alt",
+      `::error title=a11y/button-name::Rule button-name: 1 node on ${S}/about.%0Ahtml  → Fix button-name%0A  <html>` +
+        "%0Aaxe-core 4.13.0 button-name: Rule button-name checks%0AGuide: https://dequeuniversity.com/rules/axe/4.13/button-name",
       `::error title=a11y/load::${S}/broken: net::ERR_CONNECTION_REFUSED`,
     ]);
+    expect(lines.join("\n")).not.toContain("—");
   });
 
   it("carries the family severity through as the annotation level", () => {
@@ -416,12 +443,13 @@ describe("render github", () => {
       }),
     ]);
     const lines = render("github", run, off).split("\n");
-    expect(lines).toEqual([
-      `::error title=a11y/label::Rule label — 1 node on ${S}/mixed (https://dequeuniversity.com/rules/axe/4.13/label)`,
-      `::error title=a11y/color-contrast::Rule color-contrast — 1 node on ${S}/mixed (https://dequeuniversity.com/rules/axe/4.13/color-contrast)`,
-      `::warning title=a11y/landmark-unique::Rule landmark-unique — 1 node on ${S}/mixed (https://dequeuniversity.com/rules/axe/4.13/landmark-unique)`,
-      `::notice title=a11y/region::Rule region — 1 node on ${S}/mixed (https://dequeuniversity.com/rules/axe/4.13/region)`,
+    expect(lines.map((l) => l.split("::").slice(0, 2).join("::"))).toEqual([
+      "::error title=a11y/label",
+      "::error title=a11y/color-contrast",
+      "::warning title=a11y/landmark-unique",
+      "::notice title=a11y/region",
     ]);
+    expect(lines[3]).toContain(`::Rule region: 1 node on ${S}/mixed.%0A`);
   });
 
   it("keeps a failed load at error whatever the floor", () => {
@@ -447,6 +475,65 @@ describe("render github", () => {
   it("says nothing when the run is clean", () => {
     const run = checkRun([page({ url: `${S}/` })], { sitemap: SITEMAP });
     expect(render("github", run, off)).toBe("");
+  });
+
+  it("lists at most three nodes", () => {
+    const many: Violation = {
+      ...violation("link-name", "error"),
+      nodes: [1, 2, 3, 4].map((n) => ({ target: `a:nth-child(${n})`, html: "<a>", summary: `Fix link ${n}` })),
+    };
+    const text = render("github", checkRun([page({ url: `${S}/`, violations: [many], score: 91 })]), off);
+    expect(text).toContain("4 nodes on");
+    expect(text).toContain("a:nth-child(3)");
+    expect(text).not.toContain("a:nth-child(4)");
+  });
+
+  it("gives one annotation, naming the page count, when the same element fails on several pages", () => {
+    const run = checkRun([
+      page({ url: `${S}/a`, violations: [imageAlt], score: 90 }),
+      page({ url: `${S}/b`, violations: [imageAlt, violation("region", "notice")], score: 80 }),
+      page({ url: `${S}/c`, violations: [imageAlt], score: 90 }),
+    ]);
+    const lines = render("github", run, off).split("\n");
+    expect(lines).toHaveLength(2);
+    expect(lines[0]).toBe(
+      `::error title=a11y/image-alt::Images must have alternate text: 2 nodes on 3 pages, first ${S}/a. ` +
+        "The same element fails on each page, so the fix likely belongs in a shared template." +
+        "%0Aimg.hero  → Fix any of the following: Element does not have an alt attribute; aria-label attribute does not exist or is empty" +
+        '%0A  <img class="hero" src="x.png">' +
+        "%0Aimg:nth-child(2)  → Fix any of the following: Element does not have an alt attribute" +
+        "%0A  <img>" +
+        "%0Aaxe-core 4.13.0 image-alt: Ensure <img> elements have alternative text or a role of none or presentation%0AGuide: https://dequeuniversity.com/rules/axe/4.13/image-alt",
+    );
+    expect(lines[1]).toContain(`::notice title=a11y/region::Rule region: 1 node on ${S}/b.`);
+  });
+
+  it("keeps one annotation per page when the elements differ", () => {
+    const other: Violation = {
+      ...imageAlt,
+      nodes: imageAlt.nodes.map((n) => ({ ...n, html: `${n.html.slice(0, -1)} data-page="b">` })),
+    };
+    const run = checkRun([
+      page({ url: `${S}/a`, violations: [imageAlt], score: 90 }),
+      page({ url: `${S}/b`, violations: [other], score: 90 }),
+    ]);
+    const lines = render("github", run, off).split("\n");
+    expect(lines).toHaveLength(2);
+    expect(lines[0]).toContain(`2 nodes on ${S}/a.`);
+    expect(lines[1]).toContain(`2 nodes on ${S}/b.`);
+    expect(lines.join("\n")).not.toContain("pages, first");
+  });
+
+  it("leaves a failed load's annotation as it was, beside a collapsed one", () => {
+    const run = checkRun([
+      page({ url: `${S}/a`, violations: [imageAlt], score: 90 }),
+      page({ url: `${S}/broken`, source: "link", passes: 0, score: null, error: "net::ERR_CONNECTION_REFUSED" }),
+      page({ url: `${S}/b`, violations: [imageAlt], score: 90 }),
+    ]);
+    const lines = render("github", run, off).split("\n");
+    expect(lines).toHaveLength(2);
+    expect(lines[0]).toContain(`2 nodes on 2 pages, first ${S}/a.`);
+    expect(lines[1]).toBe(`::error title=a11y/load::${S}/broken: net::ERR_CONNECTION_REFUSED`);
   });
 });
 

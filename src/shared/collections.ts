@@ -109,7 +109,7 @@ export function externalMetadataUrlProblem(url: string): string | null {
   return `has the unsupported scheme "${parsed.protocol}"`;
 }
 
-function isLoopback(host: string): boolean {
+export function isLoopback(host: string): boolean {
   return (
     host === "localhost" ||
     host === "127.0.0.1" ||

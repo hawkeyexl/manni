@@ -15,7 +15,7 @@ prerequisites: ["family-check"]
 next-steps: ["family-check", "family-reference-cli", "meta-set-up-machine-authorship"]
 sample-questions: ["How do I install the manni plugin for Claude Code?", "What happens when an agent edits a page and the check fails?", "How do I turn the manni plugin off?"]
 graph: { label: "Keep an agent's docs green", type: task }
-last-updated: 2026-10-18
+last-updated: 2026-10-20
 tags:
   - claude-code
   - agents
@@ -113,17 +113,19 @@ lint       not set up    no lint: section
 docevals   not set up    no page resolves any evals
 term       not set up    no terms in any collection
 graph      not set up    no graph: section
-a11y       not checked   run manni site preview, then manni a11y check
-test       not checked   run manni test run with Doc Detective installed
-tracevals  not checked   run manni tracevals run over sessions
+a11y       not checked   needs a running site and a browser
+test       not checked   runs the shell steps the pages carry
+tracevals  not checked   judges recorded sessions with a model
 
 After you edit a file in site, manni check runs on it, and errors come back to you at once.
 Before you finish, manni check runs on every file you changed. You get one repair pass.
 The manni:fix skill says how to repair each finding.
 ```
 
-The same table is what you see when you run `manni status` yourself, so you and
-the agent read one answer.
+You see the same table when you run `manni status` yourself, so you and the
+agent read one answer. Yours also has a line under each domain that is not in
+play, naming what would set it up. That choice is yours, so the agent never
+sees those lines.
 
 The status hook also exports `MANNI_GENERATED_BY` for the session. It appends
 `export MANNI_GENERATED_BY=<model>` to the file Claude Code names in
@@ -146,27 +148,29 @@ When the check finds an error, the hook exits `2`. Claude Code treats that as a
 block and shows the agent what was written to stderr.
 
 ```text
-manni found errors in docs/limits.md. Fix them before you continue.
+manni found errors in docs/limits.md. Fix them before you continue. The manni:fix skill says how to repair each finding.
 
 meta validate
 ✗ docs/limits.md
     (root)  must have required property 'description'  (line 1)  [./schemas/page.schema.json]
 
 1 file checked, 0 passed, 1 failed, 1 error
-
-skipped  cite check     no page carries citations
-skipped  lint check     no lint: section
-skipped  docevals run   no page resolves any evals
-
-4 checks over 1 file: 1 failed, 3 skipped
 ```
 
-The agent fixes the file before it moves on. Warnings and notices never block.
+The reply carries only the reports of the checks that failed. The agent fixes
+the file before it moves on, and the `manni:fix` skill says how. Warnings and
+notices never block.
 
 If a check cannot run, the hook does not block, because exit `2` would blame the
-agent for manni's own fault. The agent gets one line of context instead, such as
-`manni lint check could not check docs/limits.md`, with the first line of the
-error.
+agent for manni's own fault. The agent gets context instead. It names the check
+and the file, says the cause is in manni's setup, and carries the whole error.
+It also tells the agent to report the error to you and leave `manni.config.yaml`
+as it is.
+
+```text
+manni lint check could not check docs/limits.md. The cause is in manni's setup, not in the file. Tell the user what it says, and leave manni.config.yaml as it is.
+Unknown key "bogus" under lint: in manni.config.yaml. Supported keys: allowEmpty, overrides, structure, template, templates, types.
+```
 
 ## What happens before the agent stops
 
@@ -189,7 +193,7 @@ If errors remain, the stop is blocked once. The agent gets the report and one
 repair pass.
 
 ```json
-{"decision":"block","reason":"manni found errors in the files you changed. Fix them, then finish.\n\nmeta validate\n✗ docs/limits.md\n …"}
+{"decision":"block","reason":"manni found errors in the files you changed. Fix them, then finish. The manni:fix skill says how to repair each finding.\n\nmeta validate\n✗ docs/limits.md\n …"}
 ```
 
 If errors remain after that pass, the agent stops, and you see a message.

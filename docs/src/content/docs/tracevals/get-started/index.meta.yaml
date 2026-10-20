@@ -38,13 +38,22 @@ docs/src/content/docs/tracevals/get-started/index.mdx:
       lines: 116
       integrity: sha256-12aa59cc82733222171558e0a34c917431abc9abf83a6b307959bd23cc56dd36
     - generated-by: Claude Opus 5
-      lines: 118-178
-      integrity: sha256-79a84f22326a183aa4ca07a809863eaae32dd0b7a6acb8193e9cfb91066665c9
+      lines: 118-128
+      integrity: sha256-47b205419851e53497a934e91067fd2b0cb2ea39f5ff85ee44ceea42fd4d8634
+    - generated-by: Claude Opus 5
+      lines: 132-133
+      integrity: sha256-eecb2b01faffa730b03c58da9d41baf3dd3ba938c32d408c0d763ca4bc8900f6
+    - generated-by: Claude Opus 5
+      lines: 137-176
+      integrity: sha256-c35baad163dbfd4a5c64e4a40b8116c3ac82b0f60952013fd327f22f043cdb54
+    - generated-by: Claude Opus 5
+      lines: 180-183
+      integrity: sha256-62336e8db3d79066a80d08f71297b22c193c93b5654d86db781d6350559496c7
     - generated-by: Claude Opus 5.5
-      lines: 180
+      lines: 185
       integrity: sha256-9e9fcaf2d944b935588501c97b6815218e4564a5593c7d35712ee682d3ec54b7
     - generated-by: Claude Opus 5
-      lines: 182-209
+      lines: 187-214
       integrity: sha256-e9d9f416cfe6e7560558d6c02f58b0caaadd4caee7747a5f760e64fce793bc2e
   owner:
     - "@hawkeyexl"

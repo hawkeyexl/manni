@@ -407,6 +407,14 @@ describe("runKeyRotate: a whole run", () => {
     );
   });
 
+  it("refuses a --root that does not exist, naming where to fix it, as cite does", async () => {
+    family();
+    const missing = join(tree(), "no-such-dir");
+    expect(await refusal(rotate({ root: missing, to: NEW }))).toBe(
+      `Root directory not found: ${missing}. Fix --root, or cite.root in manni.config.yaml.`,
+    );
+  });
+
   it("dry run re-encrypts in memory and writes nothing at all", async () => {
     family({ extra: { ".manni-cite-baseline.json": "{}\n" } });
     const before = snapshot();

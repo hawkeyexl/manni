@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { checkTermSet } from "../../src/term/core/check.js";
+import { guidanceFor } from "../../src/term/core/severity.js";
 import type {
   Term,
   TermBlock,
@@ -84,6 +85,24 @@ describe("checkTermSet", () => {
   });
 
   describe("undefined-term", () => {
+    it("suggests the label a typo was meant to be, never an id or an alt-label", () => {
+      const terms = [term({ id: "pl", label: "progressive lens", definition: "d", "alt-labels": ["varilux lens"] })];
+      const [typo, far, alt] = only(
+        checkTermSet(used(terms, [ref("progresive lens"), ref("trifocal"), ref("varilux lense")])),
+        "undefined-term",
+      );
+      expect(typo?.message).toBe(
+        'concepts: "progresive lens" names no entry. Did you mean "progressive lens"? Correct the value, or run manni term fill to add the term.',
+      );
+      expect(typo?.key).toBe('concepts: "progresive lens" names no entry.');
+      expect(far?.message).toBe(
+        'concepts: "trifocal" names no entry. Correct the value, or run manni term fill to add the term.',
+      );
+      expect(alt?.message).toBe(
+        'concepts: "varilux lense" names no entry. Correct the value, or run manni term fill to add the term.',
+      );
+    });
+
     it("fires on a reference no label claims, at the reference", () => {
       const findings = checkTermSet(
         used([term({ label: "lens", definition: "d" })], [ref("PAL", "docs/guides/fitting.md", 6)]),
@@ -93,7 +112,9 @@ describe("checkTermSet", () => {
           rule: "undefined-term",
           ruleId: "manni:term/undefined-term",
           severity: "error",
-          message: 'concepts: "PAL" names no entry.',
+          message: 'concepts: "PAL" names no entry. Correct the value, or run manni term fill to add the term.',
+          key: 'concepts: "PAL" names no entry.',
+          guidance: guidanceFor("undefined-term"),
           file: "docs/guides/fitting.md",
           line: 6,
         },
@@ -119,7 +140,9 @@ describe("checkTermSet", () => {
 
     it("names graph.concepts when the reference came from it", () => {
       const findings = checkTermSet(set([], [{ file: "a.md", label: "PAL", field: "graph.concepts" }]));
-      expect(findings.map((f) => f.message)).toEqual(['graph.concepts: "PAL" names no entry.']);
+      expect(findings.map((f) => f.message)).toEqual([
+        'graph.concepts: "PAL" names no entry. Correct the value, or run manni term fill to add the term.',
+      ]);
     });
 
     it("matches a label ignoring case", () => {
@@ -153,7 +176,9 @@ describe("checkTermSet", () => {
           rule: "duplicate-id",
           ruleId: "manni:term/duplicate-id",
           severity: "error",
-          message: 'id: "bifocal" is also used by terms.yaml:3',
+          message: 'id: "bifocal" is also used by terms.yaml:3. Give one entry its own id, or merge the two.',
+          key: 'id: "bifocal" is also used by terms.yaml:3',
+          guidance: guidanceFor("duplicate-id"),
           file: "docs/terms/bifocal.md",
           line: 5,
           id: "bifocal",
@@ -162,7 +187,9 @@ describe("checkTermSet", () => {
           rule: "duplicate-id",
           ruleId: "manni:term/duplicate-id",
           severity: "error",
-          message: 'id: "bifocal" is also used by docs/terms/bifocal.md:5',
+          message: 'id: "bifocal" is also used by docs/terms/bifocal.md:5. Give one entry its own id, or merge the two.',
+          key: 'id: "bifocal" is also used by docs/terms/bifocal.md:5',
+          guidance: guidanceFor("duplicate-id"),
           file: "terms.yaml",
           line: 3,
           id: "bifocal",
@@ -177,9 +204,9 @@ describe("checkTermSet", () => {
         term({ id: "lens", label: "three", definition: "d", file: "c.md", line: 3 }),
       ];
       expect(only(checkTermSet(used(terms)), "duplicate-id").map((f) => f.message)).toEqual([
-        'id: "lens" is also used by b.md:2, c.md:3',
-        'id: "lens" is also used by a.md:1, c.md:3',
-        'id: "lens" is also used by a.md:1, b.md:2',
+        'id: "lens" is also used by b.md:2, c.md:3. Give one entry its own id, or merge the two.',
+        'id: "lens" is also used by a.md:1, c.md:3. Give one entry its own id, or merge the two.',
+        'id: "lens" is also used by a.md:1, b.md:2. Give one entry its own id, or merge the two.',
       ]);
     });
 
@@ -189,8 +216,8 @@ describe("checkTermSet", () => {
         term({ id: "bifocal", label: "two", definition: "d", file: "b.md", line: 2 }),
       ];
       expect(only(checkTermSet(used(terms)), "duplicate-id").map((f) => [f.id, f.message])).toEqual([
-        ["Bifocal", 'id: "Bifocal" is also used by b.md:2'],
-        ["bifocal", 'id: "bifocal" is also used by a.md:1'],
+        ["Bifocal", 'id: "Bifocal" is also used by b.md:2. Give one entry its own id, or merge the two.'],
+        ["bifocal", 'id: "bifocal" is also used by a.md:1. Give one entry its own id, or merge the two.'],
       ]);
     });
   });
@@ -207,7 +234,10 @@ describe("checkTermSet", () => {
           rule: "label-collision",
           ruleId: "manni:term/label-collision",
           severity: "error",
-          message: '"Bifocal" is claimed by docs/terms/bifocal.md:5 as "bifocal"',
+          message:
+            '"Bifocal" is claimed by docs/terms/bifocal.md:5 as "bifocal". Rename one label, or merge the two entries.',
+          key: '"Bifocal" is claimed by docs/terms/bifocal.md:5 as "bifocal"',
+          guidance: guidanceFor("label-collision"),
           file: "docs/terms/glossary.md",
           line: 14,
           id: "b",
@@ -241,7 +271,10 @@ describe("checkTermSet", () => {
           rule: "alt-label-collision",
           ruleId: "manni:term/alt-label-collision",
           severity: "error",
-          message: 'alt-labels: "BIFOCAL" is the label of docs/terms/bifocal.md:5',
+          message:
+            'alt-labels: "BIFOCAL" is the label of docs/terms/bifocal.md:5. Remove the alt-label, or merge the two entries.',
+          key: 'alt-labels: "BIFOCAL" is the label of docs/terms/bifocal.md:5',
+          guidance: guidanceFor("alt-label-collision"),
           file: "docs/terms/multifocal.md",
           line: 4,
           id: "multifocal",
@@ -283,9 +316,13 @@ describe("checkTermSet", () => {
       ];
       const findings = only(checkTermSet(used(terms)), "dangling-reference");
       expect(findings.map((f) => [f.file, f.line, f.message])).toEqual([
-        ["docs/terms/lens.md", 3, 'broader: "optics" names no entry'],
-        ["docs/terms/lens.md", 4, 'related-terms: "prism" names no entry'],
-        ["docs/terms/pal.md", 9, 'see: "progressive" names no entry'],
+        ["docs/terms/lens.md", 3, 'broader: "optics" names no entry. Correct the value, or add the term it names.'],
+        [
+          "docs/terms/lens.md",
+          4,
+          'related-terms: "prism" names no entry. Correct the value, or add the term it names.',
+        ],
+        ["docs/terms/pal.md", 9, 'see: "progressive" names no entry. Correct the value, or add the term it names.'],
       ]);
       expect(findings[0]?.id).toBe("lens");
     });
@@ -313,7 +350,10 @@ describe("checkTermSet", () => {
           rule: "broader-cycle",
           ruleId: "manni:term/broader-cycle",
           severity: "error",
-          message: "broader: corrective-lens > optic > lens > corrective-lens",
+          message:
+            "broader: corrective-lens > optic > lens > corrective-lens. Remove the broader value that closes the loop.",
+          key: "broader: corrective-lens > optic > lens > corrective-lens",
+          guidance: guidanceFor("broader-cycle"),
           file: "docs/terms/corrective-lens.md",
           line: 2,
           id: "corrective-lens",
@@ -329,14 +369,18 @@ describe("checkTermSet", () => {
       ];
       const findings = only(checkTermSet(used(terms)), "broader-cycle");
       expect(findings.map((f) => [f.file, f.line, f.message])).toEqual([
-        ["docs/terms/lens.md", 4, "broader: lens > corrective-lens > lens"],
+        [
+          "docs/terms/lens.md",
+          4,
+          "broader: lens > corrective-lens > lens. Remove the broader value that closes the loop.",
+        ],
       ]);
     });
 
     it("reports a self-cycle", () => {
       const terms = [term({ label: "lens", definition: "d", broader: ["LENS"] })];
       expect(only(checkTermSet(used(terms)), "broader-cycle").map((f) => f.message)).toEqual([
-        "broader: lens > lens",
+        "broader: lens > lens. Remove the broader value that closes the loop.",
       ]);
     });
 
@@ -347,8 +391,8 @@ describe("checkTermSet", () => {
         term({ label: "c", definition: "d", broader: ["a"] }),
       ];
       expect(only(checkTermSet(used(terms)), "broader-cycle").map((f) => f.message)).toEqual([
-        "broader: a > b > a",
-        "broader: a > c > a",
+        "broader: a > b > a. Remove the broader value that closes the loop.",
+        "broader: a > c > a. Remove the broader value that closes the loop.",
       ]);
     });
 
@@ -369,7 +413,7 @@ describe("checkTermSet", () => {
         term({ label: "optic", definition: "d", narrower: ["lens"] }),
       ];
       expect(only(checkTermSet(used(terms)), "broader-cycle").map((f) => [f.file, f.message])).toEqual([
-        ["docs/terms/lens.md", "broader: lens > optic > lens"],
+        ["docs/terms/lens.md", "broader: lens > optic > lens. Remove the broader value that closes the loop."],
       ]);
     });
 
@@ -386,7 +430,9 @@ describe("checkTermSet", () => {
           rule: "broader-cycle",
           ruleId: "manni:term/broader-cycle",
           severity: "error",
-          message: "broader: lens > optic > lens",
+          message: "broader: lens > optic > lens. Remove the broader value that closes the loop.",
+          key: "broader: lens > optic > lens",
+          guidance: guidanceFor("broader-cycle"),
           file: "docs/guides/optics.md",
           line: 6,
         },
@@ -398,7 +444,7 @@ describe("checkTermSet", () => {
       const blocks = [block("Lens", { broader: ["optic"] }, "docs/guides/lenses.md")];
       const findings = checkTermSet(set(terms, terms.map((t) => ref(t.record.label)), blocks));
       expect(only(findings, "broader-cycle").map((f) => [f.file, f.line, f.message])).toEqual([
-        ["docs/guides/lenses.md", 6, "broader: lens > optic > lens"],
+        ["docs/guides/lenses.md", 6, "broader: lens > optic > lens. Remove the broader value that closes the loop."],
       ]);
     });
 
@@ -423,7 +469,10 @@ describe("checkTermSet", () => {
         severity: { "hierarchy-outside-termbase": "off", "alt-label-reference": "off" },
       });
       expect(findings.map((f) => [f.file, f.message])).toEqual([
-        ["docs/b.md", "broader: progressive lens > Eyewear > optics > progressive lens"],
+        [
+          "docs/b.md",
+          "broader: progressive lens > Eyewear > optics > progressive lens. Remove the broader value that closes the loop.",
+        ],
       ]);
     });
 
@@ -448,6 +497,7 @@ describe("checkTermSet", () => {
           ruleId: "manni:term/alt-label-reference",
           severity: "warning",
           message: 'concepts: "PAL" is an alt-label of "Pluggable auth layer", so name the label.',
+          guidance: guidanceFor("alt-label-reference"),
           file: "docs/guides/auth.md",
           line: 4,
         },
@@ -530,6 +580,7 @@ describe("checkTermSet", () => {
           severity: "notice",
           message:
             'graph: broader "Networking" on "Retry" is not on its term page (docs/glossary/retry.md), so add it there.',
+          guidance: guidanceFor("hierarchy-outside-termbase"),
           file: "docs/guides/net.md",
           line: 6,
         },
@@ -629,7 +680,7 @@ describe("checkTermSet", () => {
           7,
           "error",
           "exact-matches",
-          `exact-matches: "${wikidata}" is also in broad-matches, and a mapping has one kind.`,
+          `exact-matches: "${wikidata}" is also in broad-matches, and a mapping has one kind. Keep the IRI under the one kind that holds.`,
         ],
       ]);
     });
@@ -647,7 +698,7 @@ describe("checkTermSet", () => {
       ];
       const findings = only(checkTermSet(used(terms)), "conflicting-matches");
       expect(findings.map((f) => f.message)).toEqual([
-        `close-matches: "${iri}" is also in narrow-matches, and a mapping has one kind.`,
+        `close-matches: "${iri}" is also in narrow-matches, and a mapping has one kind. Keep the IRI under the one kind that holds.`,
       ]);
     });
 
@@ -668,7 +719,12 @@ describe("checkTermSet", () => {
       ];
       const findings = only(checkTermSet(used(terms)), "asymmetric-hierarchy");
       expect(findings.map((f) => [f.id, f.line, f.severity, f.message])).toEqual([
-        ["lens", 5, "warning", 'narrower: omits "bifocal", which lists this entry as broader'],
+        [
+          "lens",
+          5,
+          "warning",
+          'narrower: omits "bifocal", which lists this entry as broader. Add it to narrower, or remove this entry from its broader.',
+        ],
       ]);
     });
 
@@ -679,7 +735,11 @@ describe("checkTermSet", () => {
       ];
       const findings = only(checkTermSet(used(terms)), "asymmetric-hierarchy");
       expect(findings.map((f) => [f.id, f.line, f.message])).toEqual([
-        ["bifocal", 6, 'broader: omits "lens", which lists this entry as narrower'],
+        [
+          "bifocal",
+          6,
+          'broader: omits "lens", which lists this entry as narrower. Add it to broader, or remove this entry from its narrower.',
+        ],
       ]);
     });
 
@@ -735,7 +795,9 @@ describe("checkTermSet", () => {
           rule: "unused-term",
           ruleId: "manni:term/unused-term",
           severity: "notice",
-          message: "no page's concepts: names this term",
+          message: "no page's concepts: names this term. Name it in the concepts: of a page that uses it.",
+          key: "no page's concepts: names this term",
+          guidance: guidanceFor("unused-term"),
           file: "docs/terms/trifocal.md",
           line: 1,
           id: "trifocal",
@@ -781,10 +843,10 @@ describe("checkTermSet", () => {
       ];
       const findings = only(checkTermSet(used(terms)), "duplicate-id");
       expect(findings.map((f) => [f.file, f.message])).toEqual([
-        ["de/other.md", 'id: "PAL" is also used by de/pal.md:1'],
-        ["de/pal.md", 'id: "pal" is also used by de/other.md:1'],
-        ["en/pal.md", 'id: "pal" is also used by en/varifocal.md:1'],
-        ["en/varifocal.md", 'id: "pal" is also used by en/pal.md:1'],
+        ["de/other.md", 'id: "PAL" is also used by de/pal.md:1. Give one entry its own id, or merge the two.'],
+        ["de/pal.md", 'id: "pal" is also used by de/other.md:1. Give one entry its own id, or merge the two.'],
+        ["en/pal.md", 'id: "pal" is also used by en/varifocal.md:1. Give one entry its own id, or merge the two.'],
+        ["en/varifocal.md", 'id: "pal" is also used by en/pal.md:1. Give one entry its own id, or merge the two.'],
       ]);
     });
 
@@ -805,7 +867,10 @@ describe("checkTermSet", () => {
       ];
       const findings = only(checkTermSet(used(terms)), "label-collision");
       expect(findings.map((f) => [f.file, f.message])).toEqual([
-        ["de/kubernetes.md", '"kubernetes" is claimed by en/kubernetes.md:2 as "Kubernetes"'],
+        [
+          "de/kubernetes.md",
+          '"kubernetes" is claimed by en/kubernetes.md:2 as "Kubernetes". Rename one label, or merge the two entries.',
+        ],
       ]);
     });
 
@@ -827,7 +892,10 @@ describe("checkTermSet", () => {
       ];
       const findings = only(checkTermSet(used(terms)), "alt-label-collision");
       expect(findings.map((f) => [f.id, f.message])).toEqual([
-        ["k8s", 'alt-labels: "kubernetes" is the label of en/kubernetes.md:1'],
+        [
+          "k8s",
+          'alt-labels: "kubernetes" is the label of en/kubernetes.md:1. Remove the alt-label, or merge the two entries.',
+        ],
       ]);
     });
 
@@ -842,7 +910,7 @@ describe("checkTermSet", () => {
       const findings = checkTermSet(used(terms));
       expect(only(findings, "asymmetric-hierarchy")).toEqual([]);
       expect(only(findings, "dangling-reference").map((f) => f.message)).toEqual([
-        'related-terms: "prism" names no entry',
+        'related-terms: "prism" names no entry. Correct the value, or add the term it names.',
       ]);
     });
 
@@ -854,7 +922,9 @@ describe("checkTermSet", () => {
         de({ id: "b", label: "y", definition: "d", broader: ["a"] }),
       ];
       const findings = checkTermSet(used(terms));
-      expect(only(findings, "broader-cycle").map((f) => f.message)).toEqual(["broader: x > y > x"]);
+      expect(only(findings, "broader-cycle").map((f) => f.message)).toEqual([
+        "broader: x > y > x. Remove the broader value that closes the loop.",
+      ]);
       expect(only(findings, "asymmetric-hierarchy").map((f) => [f.file, f.field])).toEqual([
         ["de/a.md", "narrower"],
         ["de/b.md", "narrower"],
@@ -926,12 +996,37 @@ describe("checkTermSet", () => {
     ];
     const findings = checkTermSet(set(terms, [ref("nope", "a.md", 3), ref("b")]));
     expect(findings.map((f) => [f.file, f.line, f.ruleId, f.message])).toEqual([
-      ["a.md", 2, "manni:term/dangling-reference", 'broader: "x" names no entry'],
-      ["a.md", 2, "manni:term/dangling-reference", 'broader: "y" names no entry'],
-      ["a.md", 2, "manni:term/dangling-reference", 'see: "q" names no entry'],
+      [
+        "a.md",
+        2,
+        "manni:term/dangling-reference",
+        'broader: "x" names no entry. Did you mean "b"? Correct the value, or add the term it names.',
+      ],
+      [
+        "a.md",
+        2,
+        "manni:term/dangling-reference",
+        'broader: "y" names no entry. Did you mean "b"? Correct the value, or add the term it names.',
+      ],
+      [
+        "a.md",
+        2,
+        "manni:term/dangling-reference",
+        'see: "q" names no entry. Did you mean "b"? Correct the value, or add the term it names.',
+      ],
       ["a.md", 2, "manni:term/see-not-empty", 'see: "q" redirects this entry, so remove its definition'],
-      ["a.md", 3, "manni:term/undefined-term", 'concepts: "nope" names no entry.'],
-      ["a.md", 5, "manni:term/unused-term", "no page's concepts: names this term"],
+      [
+        "a.md",
+        3,
+        "manni:term/undefined-term",
+        'concepts: "nope" names no entry. Correct the value, or run manni term fill to add the term.',
+      ],
+      [
+        "a.md",
+        5,
+        "manni:term/unused-term",
+        "no page's concepts: names this term. Name it in the concepts: of a page that uses it.",
+      ],
     ]);
   });
 });
@@ -948,7 +1043,13 @@ describe("checkTermSet: the thesaurus rules (proposal 0086 § 4)", () => {
       ];
       const findings = only(checkTermSet(used(terms)), "asymmetric-related");
       expect(findings.map((f) => [f.id, f.line, f.severity, f.field, f.message])).toEqual([
-        ["prism", 7, "warning", "related-terms", 'related-terms: omits "lens", which lists this entry as related.'],
+        [
+          "prism",
+          7,
+          "warning",
+          "related-terms",
+          'related-terms: omits "lens", which lists this entry as related. Add it to related-terms, or remove this entry from its related-terms.',
+        ],
       ]);
     });
 
@@ -1006,7 +1107,11 @@ describe("checkTermSet: the thesaurus rules (proposal 0086 § 4)", () => {
     it("notes a related pair under one broader term once, on the first that lists the other", () => {
       const findings = checkTermSet(used(family({ bifocal: ["trifocal"], trifocal: ["bifocal"] })));
       expect(only(findings, "related-siblings").map((f) => [f.id, f.severity, f.message])).toEqual([
-        ["bifocal", "notice", 'related-terms: "trifocal" shares the broader term "lens", which already relates them.'],
+        [
+          "bifocal",
+          "notice",
+          'related-terms: "trifocal" shares the broader term "lens", which already relates them. Drop the link unless it says more than the shared parent.',
+        ],
       ]);
     });
 
@@ -1023,7 +1128,11 @@ describe("checkTermSet: the thesaurus rules (proposal 0086 § 4)", () => {
     it("sits on the only entry that lists the other", () => {
       const findings = checkTermSet(used(family({ trifocal: ["Bifocal"] })));
       expect(messages(findings, "related-siblings")).toEqual([
-        ["trifocal", 1, 'related-terms: "Bifocal" shares the broader term "lens", which already relates them.'],
+        [
+          "trifocal",
+          1,
+          'related-terms: "Bifocal" shares the broader term "lens", which already relates them. Drop the link unless it says more than the shared parent.',
+        ],
       ]);
     });
   });
@@ -1041,9 +1150,14 @@ describe("checkTermSet: the thesaurus rules (proposal 0086 § 4)", () => {
       ];
       const findings = only(checkTermSet(used(terms)), "label-overlap");
       expect(findings.map((f) => [f.line, f.severity, f.field, f.message])).toEqual([
-        [4, "error", "alt-labels", 'alt-labels: "Lens" repeats this entry\'s label.'],
-        [5, "error", "hidden-labels", 'hidden-labels: "LENS" repeats this entry\'s label.'],
-        [5, "error", "hidden-labels", 'hidden-labels: "Optic" repeats this entry\'s alt-label.'],
+        [4, "error", "alt-labels", 'alt-labels: "Lens" repeats this entry\'s label. Remove it from alt-labels.'],
+        [5, "error", "hidden-labels", 'hidden-labels: "LENS" repeats this entry\'s label. Remove it from hidden-labels.'],
+        [
+          5,
+          "error",
+          "hidden-labels",
+          'hidden-labels: "Optic" repeats this entry\'s alt-label. Keep it in alt-labels or hidden-labels, not both.',
+        ],
       ]);
     });
 
@@ -1054,8 +1168,16 @@ describe("checkTermSet: the thesaurus rules (proposal 0086 § 4)", () => {
         term({ label: "varifocal", definition: "d", "hidden-labels": ["pal", "Bifocal"] }),
       ];
       expect(messages(checkTermSet(used(terms)), "label-overlap")).toEqual([
-        ["varifocal", 1, 'hidden-labels: "Bifocal" is the label of docs/terms/bifocal.md:3.'],
-        ["varifocal", 1, 'hidden-labels: "pal" is an alt-label of docs/terms/progressive-lens.md:2.'],
+        [
+          "varifocal",
+          1,
+          'hidden-labels: "Bifocal" is the label of docs/terms/bifocal.md:3. Remove it from hidden-labels.',
+        ],
+        [
+          "varifocal",
+          1,
+          'hidden-labels: "pal" is an alt-label of docs/terms/progressive-lens.md:2. Remove it here, or from that entry\'s alt-labels.',
+        ],
       ]);
     });
 
@@ -1080,7 +1202,7 @@ describe("checkTermSet: the thesaurus rules (proposal 0086 § 4)", () => {
           "pluggable-auth-layer",
           4,
           "warning",
-          'alt-labels: "pal" is also an alt-label of docs/terms/progressive-lens.md:1, so a reader can\'t tell which term it means.',
+          'alt-labels: "pal" is also an alt-label of docs/terms/progressive-lens.md:1, so a reader can\'t tell which term it means. Keep it on the entry it belongs to.',
         ],
       ]);
     });

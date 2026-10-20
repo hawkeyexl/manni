@@ -10,6 +10,8 @@
 import type { BatchReport, EvalResult, RunReport } from "../types.js";
 import { classifyRef } from "../../meta/index.js";
 import { normalizeRoot, toPosix, underRoot } from "../../shared/sarif-location.js";
+import { verdictLines } from "../../shared/verdict-lines.js";
+import { REDO_OR_FIX } from "../graders/util.js";
 
 export interface CiOptions {
   /**
@@ -101,12 +103,22 @@ export function traceErrorText(error: string): string {
   return `trace could not be evaluated: ${error}`;
 }
 
-/** A judged failure, in the words docevals' reporters use. */
-export function judgeFailText(result: EvalResult): string | undefined {
-  if (result.outcome !== "fail" || !result.consensus) return undefined;
-  const reasoning =
-    result.consensus.runs.find((run) => run.verdict)?.verdict?.reasoning ?? "";
-  return `AI judge: fail (confidence ${result.consensus.meanConfidence.toFixed(2)}). ${reasoning}`.trim();
+/**
+ * The judged block under a judged fail or a review queue (proposal 0089): the
+ * verdict and what to do, then what the judge observed and why. A human-graded
+ * eval has no verdict, so its block says who decides. Empty when there is no
+ * judged block, as docevals' `judgedLines` is.
+ */
+export function judgedLines(result: EvalResult): string[] {
+  const c = result.consensus;
+  if (result.outcome === "fail" && c) return verdictLines(c, "fail", REDO_OR_FIX);
+  if (result.outcome !== "needs-review") return [];
+  if (!c) return ["Awaiting human review. Read the session against the assertion and decide."];
+  return verdictLines(
+    c,
+    "no confident verdict",
+    "Read the session and decide. If this recurs, sharpen the assertion and run manni tracevals calibrate.",
+  );
 }
 
 /** Why an errored eval errored. */

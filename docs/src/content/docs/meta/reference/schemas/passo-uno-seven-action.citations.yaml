@@ -26,16 +26,16 @@ docs/src/content/docs/meta/reference/schemas/passo-uno-seven-action.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: taxonomy-config-schemas-replace-the-default-set
       claim:
-        lines: 90-92
+        lines: 92-94
         integrity: sha256-2fd82390cabe03949264c38c51c5f7ff1d3900e0ab72763956e520d450328fe5
       source:
         file: src/meta/core/resolve-schema.ts
-        lines: 590-600
+        lines: 592-602
         integrity: sha256-b01c18f9e05654a4cfb97c7817650fdabd59e2014546ec6925b09f2c4fd4d0d7
-        commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
+        commit-sha: ffdbdab4b080ca781c685250214db34edc01ae3b
     - id: taxonomy-a-foreign-action-value-fails
       claim:
-        lines: 83-84
+        lines: 85-86
         integrity: sha256-e6b29afabc5d2f1b8711e5edaf0aca27ccddecc3595c171f3ebb5c53cb06ac28
       source:
         file: src/meta/schemas/seven-action/1.0.json

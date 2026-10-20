@@ -18,8 +18,13 @@ export function finding(plan: EvalPlan, message: string): Finding {
   };
 }
 
+/** What to do about a failed deterministic eval (proposal 0089). */
+export const REDO_OR_FIX =
+  "Redo the session work so it holds, or fix the eval if the artifact does not ask for this.";
+
+/** A failing finding: what the session did, then what to do about it. */
 export function fail(plan: EvalPlan, message: string): GradeResult {
-  return { findings: [finding(plan, message)] };
+  return { findings: [finding(plan, `${message}. ${REDO_OR_FIX}`)] };
 }
 
 export const pass: GradeResult = { findings: [] };

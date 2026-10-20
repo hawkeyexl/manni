@@ -93,7 +93,7 @@ async function readPageFile(path: string, label: string): Promise<string> {
   try {
     return await readFile(path, "utf8");
   } catch (error) {
-    if (isEnoent(error)) throw new CiteError(`File not found: "${label}".`);
+    if (isEnoent(error)) throw new CiteError(`File not found: "${label}". Check the path. Named paths resolve from the working directory.`);
     throw error;
   }
 }

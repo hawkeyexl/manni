@@ -78,6 +78,10 @@
 # pages that name them, shaped for `manni term`, so the default set reads
 # most of them as missing a title or a description.
 #
+# `test/fixtures/guidance/` (0089) joins them. Its pages are each run against
+# one named schema, or against the house schema its own config registers, so
+# the default set reads them as missing a title, a type or a description.
+#
 # `test/fixtures/get-parse-error/` is deliberately NOT excluded. Its unparseable
 # file is a real parse failure, which is exactly the explainable alert this
 # workflow exists to demonstrate — the same standing as `dd/malformed-yaml.md`.
@@ -98,6 +102,7 @@ on:
     paths:
       - "src/meta/reporters/**"
       - "src/meta/core/baseline.ts"
+      - "src/family/commands/check.ts"
       - ".github/workflows/formats-demo.yml"
   workflow_dispatch:
 
@@ -151,6 +156,7 @@ jobs:
             --exclude "test/fixtures/pinned-stewardship/**" \
             --exclude "test/fixtures/term-keyword/**" \
             --exclude "test/fixtures/term/**" \
+            --exclude "test/fixtures/guidance/**" \
             --allow-empty -f sarif > manni.sarif
           echo "results=$(jq '.runs[0].results | length' manni.sarif)" >> "$GITHUB_OUTPUT"
 
@@ -172,6 +178,31 @@ jobs:
           # Namespaces these alerts so they are plainly a fixture demonstration
           # and cannot be mistaken for a scan of the shipped source.
           category: manni-fixtures
+
+      # `manni check -f sarif` writes one log for every domain it ran, each run
+      # under its own category (`manni/meta/`, `manni/lint/`, `manni/check/`).
+      # So the upload takes no `category`: one would override all of them, and
+      # meta's and lint's runs would collide. The fixture sets up meta and
+      # lint, and `docs/limits.md` fails both.
+      - name: Check a fixture repository as one SARIF log
+        continue-on-error: true
+        run: |
+          node dist/cli.js check -c test/family/fixtures/meta-and-lint/manni.config.yaml -f sarif < /dev/null > manni-check.sarif
+
+      - name: Check the combined SARIF holds every run
+        run: |
+          jq -e '.version == "2.1.0"' manni-check.sarif > /dev/null
+          jq -r '.runs[].automationDetails.id' manni-check.sarif
+          for id in manni/meta/ manni/lint/ manni/check/; do
+            jq -e --arg id "$id" 'any(.runs[]; .automationDetails.id == $id)' manni-check.sarif > /dev/null \
+              || { echo "missing run $id"; exit 1; }
+          done
+
+      - name: Upload the combined SARIF to code scanning
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: manni-check.sarif
 
       - name: Validate fixtures as JUnit
         continue-on-error: true
@@ -238,4 +269,5 @@ jobs:
           name: manni-formats
           path: |
             manni.sarif
+            manni-check.sarif
             manni-junit.xml

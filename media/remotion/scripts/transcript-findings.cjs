@@ -1,0 +1,46 @@
+// Plain-text transcript: titles, every typed command, the real output (ANSI stripped), captions.
+const b = require("./out-findings/findings/beats.js");
+const fs = require("node:fs");
+const fps = b.FPS;
+const mmss = (f) => {
+  const s = Math.round(f / fps);
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+};
+const strip = (s) => s.replace(/\x1b\[[0-9;]*m/g, "");
+const total = (b.totalFrames / fps).toFixed(1);
+let out = `Findings say what to do (proposal 0089), demo video transcript (silent video; text describes what is on screen)
+
+Frame: 1080x1080, 30 fps, ${total} s. Every terminal line is real output. Beat 1 runs the
+published 4.13.0 release through npx. Beats 2 to 4 run this branch's build,
+node dist/cli.js, typed as manni. Both run in media/scratch-findings/, which
+media/capture-findings/capture.sh stages from byte copies of
+test/fixtures/vocabulary/dcmi-bad-date.md and test/fixtures/cite/. Each command
+appears after its measured latency, at 1x.
+
+`;
+let t = 0;
+b.beats.forEach((beat, i) => {
+  const d = b.beatDurations[i];
+  out += `[${mmss(t)}-${mmss(t + d)}] Title: ${beat.title} (${i + 1} / ${b.beats.length})\n`;
+  for (const c of beat.commands) {
+    out += `$ ${c.typed}\n`;
+    if (c.output !== "")
+      out +=
+        strip(c.output)
+          .replace(/\n$/, "")
+          .split("\n")
+          .map((l) => {
+            if (/^\s*✗/.test(l)) return `${l}   (✗ in red)`;
+            if (/^1 file checked/.test(l)) return `${l}   (red)`;
+            if (/^\s+(dcmi:elements:1\.1 date:|manni:cite |Guide: )/.test(l)) return `${l}   (dim)`;
+            return l;
+          })
+          .join("\n") + "\n";
+  }
+  if (beat.highlight)
+    out += `Highlighted rows: lines containing ${beat.highlight.map((h) => JSON.stringify(h)).join(", ")}\n`;
+  out += `Caption: ${beat.caption}\n\n`;
+  t += d;
+});
+fs.writeFileSync("../../findings-say-what-to-do-1x1.transcript.txt", out);
+console.log(out);

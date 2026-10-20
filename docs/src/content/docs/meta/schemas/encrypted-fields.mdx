@@ -36,7 +36,7 @@ sample-questions:
 graph:
   label: Require a field and keep its value private
   type: task
-last-updated: 2026-09-21
+last-updated: 2026-10-20
 tags:
   - encryption
   - schema-keywords
@@ -113,7 +113,8 @@ $ manni meta validate
 Using manni.config.yaml (.)
 ✓ docs/auth.md
 ✗ docs/bad-value.md
-    /owner  must be equal to one of the allowed values  (line 3)  [./schemas/page.json]
+    /owner  must be one of the values the schema allows  (line 3)  [./schemas/page.json]
+      ./schemas/page.json owner
 ✗ docs/plain.md
     /owner  /owner holds a plain value; its schema marks it x-manni-encrypt.  (line 3)  [encrypted:plain]
 ✗ docs/wrong-key.md
@@ -234,7 +235,7 @@ schema name is the rule that fired:
 ```console
 $ manni meta validate -f github
 Using manni.config.yaml (.)
-::error file=docs/bad-value.md,line=3::[./schemas/page.json] /owner must be equal to one of the allowed values
+::error file=docs/bad-value.md,line=3::[./schemas/page.json] /owner must be one of the values the schema allows%0A./schemas/page.json owner
 ::error file=docs/plain.md,line=3::[encrypted:plain] /owner /owner holds a plain value; its schema marks it x-manni-encrypt.
 ::error file=docs/wrong-key.md,line=3::[encrypted:unreadable] /owner /owner does not decrypt under the current key: encrypted under another key, or edited by hand.
 ```
@@ -273,7 +274,8 @@ Using manni.config.yaml (.)
 ✗ docs/stale.md
     /owner  /owner does not decrypt under the current key: encrypted under another key, or edited by hand.  (owners.yaml:9)  [encrypted:unreadable]
 ✗ docs/wrong.md
-    /owner  must be equal to one of the allowed values  (owners.yaml:7)  [../encrypted.schema.json]
+    /owner  must be one of the values the schema allows  (owners.yaml:7)  [../encrypted.schema.json]
+      ../encrypted.schema.json owner
 
 3 files checked, 1 passed, 2 failed, 2 errors
 # exit 1

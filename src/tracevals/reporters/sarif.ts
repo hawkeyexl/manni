@@ -3,7 +3,8 @@
  *
  * docevals' shape: one run, every reported rule declared in
  * `tool.driver.rules`, findings at error/warning/note, a judged failure and an
- * errored eval reported rather than left to read as "all clear".
+ * errored eval reported rather than left to read as "all clear", and a review
+ * queue as a warning.
  *
  * Two things are tracevals' own:
  *
@@ -19,6 +20,7 @@
  *     graded is `properties.trace`.
  */
 import type { Severity } from "../../shared/severity.js";
+import { guidanceLines } from "../../shared/guidance.js";
 import {
   artifactLocation,
   fileUri,
@@ -26,11 +28,11 @@ import {
   type ArtifactLocation,
 } from "../../shared/sarif-location.js";
 import { classifyRef } from "../../meta/index.js";
-import type { EvalResult, RunReport } from "../types.js";
+import { TRIAGE_GUIDE, type EvalResult, type RunReport } from "../types.js";
 import {
   displayPath,
   errorText,
-  judgeFailText,
+  judgedLines,
   locationPath,
   ruleIdFor,
   TRACE_RULE_ID,
@@ -54,8 +56,25 @@ interface SarifRule {
   id: string;
   name: string;
   shortDescription: { text: string };
+  fullDescription?: { text: string };
+  helpUri?: string;
   defaultConfiguration: { level: SarifLevel };
 }
+
+/** What each built-in grader checks. A plugin grader's rule carries none. */
+const GRADER_DESCRIPTIONS = new Map<string, string>([
+  ["tool-usage", "Checks whether the session used a tool, and how often."],
+  ["tool-order", "Checks that the session used one tool before another."],
+  ["skill-invoked", "Checks whether the session invoked a skill."],
+  ["file-access", "Checks whether the session read, wrote or edited a file."],
+  ["turn-count", "Checks that the session's turn count stays within its bounds."],
+  ["cost", "Checks that the session's recorded cost and tokens stay within their limits."],
+  ["regex", "Checks whether a pattern matches the session's text."],
+  ["json-output", "Checks that the session's final output is JSON that matches a schema."],
+  ["command", "Runs a command over the session and checks its exit code."],
+  ["ai", "The AI judge reads the session against the eval's assertion."],
+  ["human", "A person reads the session against the eval's assertion and decides."],
+]);
 
 /** The declaring file as a SARIF artifact location. A hosted manifest is its URL. */
 function declaringLocation(r: EvalResult, root: string): ArtifactLocation {
@@ -67,12 +86,22 @@ export function renderSarif(input: CiInput): string {
   const rules = new Map<string, SarifRule>();
   const results: unknown[] = [];
 
-  const declare = (id: string, name: string, text: string, level: SarifLevel) => {
+  // The first result filed under a rule sets its default level.
+  const declare = (
+    id: string,
+    name: string,
+    text: string,
+    level: SarifLevel,
+    full?: string,
+  ) => {
     if (!rules.has(id)) {
       rules.set(id, {
         id,
         name,
         shortDescription: { text },
+        ...(full === undefined
+          ? {}
+          : { fullDescription: { text: full }, helpUri: TRIAGE_GUIDE }),
         defaultConfiguration: { level },
       });
     }
@@ -82,7 +111,7 @@ export function renderSarif(input: CiInput): string {
     run: RunReport,
     r: EvalResult,
     level: SarifLevel,
-    text: string,
+    lines: string[],
   ) => {
     const id = ruleIdFor(r.grader);
     declare(
@@ -92,11 +121,12 @@ export function renderSarif(input: CiInput): string {
         ? "manni tracevals AI judge"
         : `manni tracevals ${r.grader} grader`,
       level,
+      GRADER_DESCRIPTIONS.get(r.grader),
     );
     results.push({
       ruleId: id,
       level,
-      message: { text },
+      message: { text: [...lines, ...guidanceLines(r.guidance)].join("\n") },
       locations: [
         {
           physicalLocation: {
@@ -117,6 +147,7 @@ export function renderSarif(input: CiInput): string {
         ...(run.trace.sessionId !== undefined
           ? { sessionId: run.trace.sessionId }
           : {}),
+        ...(r.guidance == null ? {} : { guidance: r.guidance }),
       },
     });
   };
@@ -124,11 +155,14 @@ export function renderSarif(input: CiInput): string {
   for (const run of input.runs) {
     for (const r of run.evalResults) {
       for (const f of r.findings ?? []) {
-        push(run, r, LEVELS[f.severity], f.message);
+        push(run, r, LEVELS[f.severity], [f.message]);
       }
-      const judged = judgeFailText(r);
-      if (judged !== undefined) push(run, r, "error", judged);
-      if (r.outcome === "error") push(run, r, "error", errorText(r));
+      const judged = judgedLines(r);
+      if (judged.length > 0) {
+        // A review queue is a warning: nobody has decided yet.
+        push(run, r, r.outcome === "fail" ? "error" : "warning", judged);
+      }
+      if (r.outcome === "error") push(run, r, "error", [errorText(r)]);
     }
   }
 

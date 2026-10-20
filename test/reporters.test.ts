@@ -321,7 +321,7 @@ interface SarifLog {
         name: string;
         version: string;
         informationUri: string;
-        rules: { id: string; shortDescription: { text: string } }[];
+        rules: { id: string; shortDescription: { text: string }; helpUri: string }[];
       };
     };
     results: {
@@ -453,6 +453,28 @@ describe("reporters: sarif", () => {
       "google:okf:0.1/required",
       "google:okf:0.1/format",
     ]);
+  });
+
+  /**
+   * cite and term wrap this writer and attach guidance per finding. The hook
+   * is handed the error itself, so a wrapper pairs by identity and never by
+   * position, which a dropped result would shift.
+   */
+  it("adds the properties a resultProperties hook returns, per error", () => {
+    const guidance = { id: "manni:cite", rule: "source-changed", description: null, guide: null };
+    const missingType = results[1]?.errors[0];
+    const log = expectValidSarif(
+      renderSarif(results, {
+        resultProperties: (error, result) =>
+          error === missingType ? { guidance, file: result.file } : undefined,
+      }),
+    );
+    const out = log.runs[0]?.results as unknown as { properties?: unknown }[];
+    expect(out.map((r) => r.properties)).toEqual([{ guidance, file: "bad.md" }, undefined]);
+  });
+
+  it("emits no properties without a hook", () => {
+    expect(renderSarif(results)).not.toContain('"properties"');
   });
 
   it("gives docmeta's own failures reserved rule ids instead of a garbage one", () => {
@@ -687,6 +709,48 @@ describe("reporters: junit", () => {
   it("is never colored, even when the run asked for color", () => {
     const out = render("junit", results, summary, { color: true });
     expect(out.includes(ESC)).toBe(false);
+  });
+
+  it("puts a finding's guidance lines in the failure body, escaped", () => {
+    const withGuidance: ValidationResult[] = [
+      {
+        file: "bad.md",
+        format: "markdown",
+        ok: false,
+        schemas: ["dcmi:elements:1.1"],
+        errors: [
+          {
+            schema: "dcmi:elements:1.1",
+            instancePath: "/date",
+            message: "must be string",
+            keyword: "type",
+            subject: "string",
+            line: 3,
+            guidance: {
+              id: "dcmi:elements:1.1",
+              rule: "date",
+              description: "A point <or> period & more.",
+              guide: "https://example.com/dcmi/",
+            },
+          },
+        ],
+      },
+    ];
+    const xml = renderJunit(withGuidance);
+    expect(xml).toContain(
+      '<failure type="dcmi:elements:1.1/type" message="/date must be string (line 3)">' +
+        "dcmi:elements:1.1 date: A point &lt;or&gt; period &amp; more.\n" +
+        "Guide: https://example.com/dcmi/</failure>",
+    );
+    const failure = parseXml(xml).getElementsByTagName("failure")[0];
+    expect(failure?.textContent).toBe(
+      "dcmi:elements:1.1 date: A point <or> period & more.\nGuide: https://example.com/dcmi/",
+    );
+  });
+
+  it("keeps the failure self-closing when guidance is null", () => {
+    const nulled = results.map((r) => ({ ...r, errors: r.errors.map((e) => ({ ...e, guidance: null })) }));
+    expect(renderJunit(nulled)).toBe(renderJunit(results));
   });
 });
 
@@ -1609,5 +1673,89 @@ describe("reporters: a finding located in an external manifest", () => {
     };
     expect(parsed.results[0]?.errors[0]?.file).toBe("docs-meta.yaml");
     expect(parsed.results[0]?.errors[1]?.file).toBeUndefined();
+  });
+});
+
+/**
+ * Proposal 0089: a finding says what the schema asks for, in every format.
+ * The same two lines print under the finding in pretty output, follow it
+ * after `%0A` in GitHub's, and close SARIF's `message.text`.
+ */
+describe("reporters: guidance", () => {
+  const D = "A point or period of time associated with an event in the lifecycle of the resource.";
+  const G = "https://hawkeyexl.github.io/manni/meta/reference/schemas/dcmi-elements/";
+  const guided: ValidationResult[] = [
+    {
+      file: "bad-date.md",
+      format: "markdown",
+      ok: false,
+      schemas: ["dcmi:elements:1.1"],
+      errors: [
+        {
+          schema: "dcmi:elements:1.1",
+          instancePath: "/date",
+          message: 'must match pattern "P"',
+          keyword: "pattern",
+          line: 3,
+          guidance: { id: "dcmi:elements:1.1", rule: "date", description: D, guide: G },
+        },
+        {
+          schema: "(parse)",
+          instancePath: "",
+          message: "Invalid YAML frontmatter",
+          keyword: "parse",
+        },
+      ],
+    },
+  ];
+  const guidedSummary: RunSummary = { files: 1, passed: 0, failed: 1, errors: 2 };
+
+  it("pretty prints the lines indented under the finding", () => {
+    const out = renderPretty(guided, guidedSummary, { color: false }).split("\n");
+    expect(out.slice(0, 4)).toEqual([
+      "✗ bad-date.md",
+      '    /date  must match pattern "P"  (line 3)  [dcmi:elements:1.1]',
+      `      dcmi:elements:1.1 date: ${D}`,
+      `      Guide: ${G}`,
+    ]);
+  });
+
+  it("json puts guidance last on every error, null where nothing judged it", () => {
+    const parsed = JSON.parse(renderJson(guided, guidedSummary)) as {
+      results: { errors: Record<string, unknown>[] }[];
+    };
+    const [first, second] = parsed.results[0]?.errors ?? [];
+    expect(Object.keys(first ?? {}).at(-1)).toBe("guidance");
+    expect(first?.guidance).toEqual({ id: "dcmi:elements:1.1", rule: "date", description: D, guide: G });
+    expect(Object.keys(second ?? {}).at(-1)).toBe("guidance");
+    expect(second?.guidance).toBeNull();
+  });
+
+  it("github appends the lines after %0A", () => {
+    const [first] = renderGithub(guided).split("\n");
+    expect(first).toBe(
+      `::error file=bad-date.md,line=3::[dcmi:elements:1.1] /date must match pattern "P"%0Adcmi:elements:1.1 date: ${D}%0AGuide: ${G}`,
+    );
+  });
+
+  it("sarif carries the lines, the guidance object and the schema's page", () => {
+    const log = expectValidSarif(renderSarif(guided));
+    const run = log.runs[0];
+    const result = run?.results[0] as unknown as { message: { text: string }; properties?: unknown };
+    expect(result.message.text).toBe(`/date must match pattern "P"\ndcmi:elements:1.1 date: ${D}\nGuide: ${G}`);
+    expect(result.properties).toEqual({
+      guidance: { id: "dcmi:elements:1.1", rule: "date", description: D, guide: G },
+    });
+    const rules = run?.tool.driver.rules ?? [];
+    expect(rules.find((r) => r.id === "dcmi:elements:1.1/pattern")?.helpUri).toBe(G);
+    expect(rules.find((r) => r.id === "manni/parse-error")?.helpUri).toBe(
+      "https://hawkeyexl.github.io/manni/meta/fix/",
+    );
+  });
+
+  it("sarif merges a hook's properties with the guidance", () => {
+    const log = expectValidSarif(renderSarif(guided, { resultProperties: () => ({ extra: 1 }) }));
+    const result = log.runs[0]?.results[0] as unknown as { properties?: Record<string, unknown> };
+    expect(Object.keys(result.properties ?? {})).toEqual(["guidance", "extra"]);
   });
 });

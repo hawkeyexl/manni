@@ -11,11 +11,12 @@
  * the CI test tab counts it rather than showing a corpus one trace short.
  */
 import { xmlEscape as esc } from "../../shared/xml.js";
+import { guidanceLines } from "../../shared/guidance.js";
 import type { EvalResult, RunReport } from "../types.js";
 import {
   displayPath,
   errorText,
-  judgeFailText,
+  judgedLines,
   locationPath,
   ruleIdFor,
   TRACE_RULE_ID,
@@ -28,11 +29,20 @@ function attr(name: string, value: string | number): string {
 
 const seconds = (ms: number): string => (ms / 1000).toFixed(3);
 
-/** The message body for a failing eval: findings, or the judge's reasoning. */
+/** The judged block, or a plain line when there is none. */
+function judgedOr(result: EvalResult): string[] {
+  const judged = judgedLines(result);
+  return judged.length > 0 ? judged : [`${result.evalName} failed`];
+}
+
+/** The body for a failing eval: findings or the judged block, then guidance. */
 function failureText(result: EvalResult): string {
   const findings = (result.findings ?? []).map((f) => f.message);
-  if (findings.length > 0) return findings.join("\n");
-  return judgeFailText(result) ?? `${result.evalName} failed`;
+  const head =
+    findings.length > 0
+      ? findings
+      : judgedOr(result);
+  return [...head, ...guidanceLines(result.guidance)].join("\n");
 }
 
 function testcase(result: EvalResult, root: string): string {
@@ -58,7 +68,9 @@ function testcase(result: EvalResult, root: string): string {
       return `${open}>\n      <error ${attr(
         "message",
         `${result.evalName} errored`,
-      )} ${type}>${esc(errorText(result))}</error>\n    </testcase>`;
+      )} ${type}>${esc(
+        [errorText(result), ...guidanceLines(result.guidance)].join("\n"),
+      )}</error>\n    </testcase>`;
     case "needs-review":
       // Not a failure and not a pass. JUnit has no third state, and calling it
       // a failure would make a human-review queue look like a broken build.

@@ -1,0 +1,5 @@
+# Names the house shapes in place of the bundled set, so `manni graph shapes`
+# lists what graph.check.shapes says (proposal 0089).
+graph:
+  check:
+    shapes: [house-shapes.ttl]

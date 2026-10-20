@@ -26,7 +26,7 @@ sample-questions:
 graph:
   label: TypeScript API reference
   type: reference
-last-updated: 2026-10-19
+last-updated: 2026-10-20
 tags:
   - api
   - typescript
@@ -135,7 +135,8 @@ caller and a subprocess caller are reading the same data model.
 | `FieldLocation` (type) | `"page" \| "external"`. |
 | `LocationPreference` (type) | One key's preferred `location`, and the `schema` ref whose mark decided it. |
 | `ValidationResult` (type) | One file's outcome: the file label, `ok`, the schemas applied, the `errors`, and how many findings a baseline suppressed. |
-| `FieldError` (type) | One violation. The JSON Pointer, the message, the failing keyword, and the schema that produced it. An optional `file` names the file `line` and `col` refer to when it is not the result's own. It is set only for a value an external-metadata manifest supplied. An optional `severity`, on the family scale, is set by producers whose findings are advisory. |
+| `FieldError` (type) | One violation. The JSON Pointer, the message, the failing keyword, and the schema that produced it. An optional `file` names the file `line` and `col` refer to when it is not the result's own. It is set only for a value an external-metadata manifest supplied. An optional `severity`, on the family scale, is set by producers whose findings are advisory. An optional `guidance` names the schema and property behind the finding and what the property is for. Every reporter prints its lines, and JSON carries it as `guidance`. |
+| `Guidance` (type) | The rule behind a finding: `id` names what judged it, `rule` the rule within it, `description` what the rule is for, and `guide` a URL. Each of the last three may be `null`. |
 | `isErrorSeverity` | Whether a `FieldError` counts against `ok`: true for `error` and for an absent severity, false for `warning` and `notice`. The one reading of the severity invariant; derive `ok` through it. |
 | `RunSummary` (type) | Aggregate counts for a run. Files, passed, failed, errors, plus optional `warnings`, `gitignoreSkipped` and `baseline` blocks. |
 | `BaselineSummary` (type) | How a baseline shaped the run. Its path, whether it was written, and the recorded, suppressed, and stale counts. |
@@ -415,7 +416,7 @@ Pure formatting. A reporter turns a core's result into text and never writes it 
 | `ReportFormat` (type) | The union of those names. |
 | `isReportFormat` | Type guard for a user-supplied format string. |
 | `ReportOptions` (type) | Options passed to `render`: color, and everything `SarifOptions` and `JunitOptions` carry. |
-| `SarifOptions` (type) | SARIF-specific options, notably the `frame` used to build repository-relative URIs. |
+| `SarifOptions` (type) | SARIF-specific options, notably the `frame` used to build repository-relative URIs. An optional `resultProperties` callback takes each `FieldError` and its result, and returns extra `properties` for that SARIF result. |
 | `JunitOptions` (type) | JUnit-specific options: the `frame`, and the `classname` each testcase carries. That is `manni.validate` by default; `query --check` findings ship as `manni.query`. |
 | `QUERY_FORMATS` | The formats `query` accepts: `pretty`, `json`, `csv`, plus the findings formats `github`, `sarif`, `junit` (legal only with `--check`). |
 | `QueryFormat` (type) | The union of those names. |
