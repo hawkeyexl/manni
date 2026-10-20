@@ -2,7 +2,7 @@ import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { discoverFiles } from "../../../src/graph/core/discover.js";
+import { discoverFiles, noInputMessage } from "../../../src/graph/core/discover.js";
 
 function corpus(): string {
   const dir = mkdtempSync(join(tmpdir(), "manni-graph-discover-"));
@@ -38,5 +38,13 @@ describe("discoverFiles", () => {
     const a = discoverFiles(["docs/sub/**/*.md", "docs/*.md"], [], dir);
     const b = discoverFiles(["docs/*.md", "docs/sub/**/*.md"], [], dir);
     expect(a).toEqual(b);
+  });
+});
+
+describe("noInputMessage", () => {
+  it("names the patterns, the working directory and the next step", () => {
+    expect(noInputMessage(["docs/**/*.md", "*.mdx"], "/work")).toBe(
+      "No input files matched: docs/**/*.md, *.mdx (cwd: /work). Fix the globs, or pass --allow-empty if matching nothing is expected.",
+    );
   });
 });

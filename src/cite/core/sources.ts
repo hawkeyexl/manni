@@ -114,7 +114,7 @@ export async function sourceIndexFor(root: string, client: GitClient): Promise<S
   try {
     return await buildSourceIndex(root, { gitClient: client });
   } catch (error) {
-    if (isEnoent(error)) throw new CiteError(`Root directory not found: ${root}.`);
+    if (isEnoent(error)) throw new CiteError(`Root directory not found: ${root}. Fix --root, or cite.root in manni.config.yaml.`);
     throw error;
   }
 }

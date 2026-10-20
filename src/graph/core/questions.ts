@@ -96,7 +96,9 @@ let validateFile: ReturnType<Ajv2020["compile"]> | undefined;
  */
 export function readQuestionFile(abs: string, label: string, text?: string): FileQuestion[] {
   if (text === undefined && !existsSync(abs)) {
-    throw new GraphError(`graph.questionFiles names ${label}, which does not exist.`);
+    throw new GraphError(
+      `graph.questionFiles names ${label}, which does not exist. Fix the path, or remove it from graph.questionFiles.`,
+    );
   }
   const counter = new LineCounter();
   const doc = parseDocument(text ?? readFileSync(abs, "utf8"), { lineCounter: counter });

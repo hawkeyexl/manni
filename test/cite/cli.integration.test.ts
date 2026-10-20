@@ -320,7 +320,7 @@ describe("manni cite (usage errors)", () => {
   });
 
   it("add a page that is not there", () => {
-    usage(["add", "pages/nope.md:6", "src/limits.ts:2", "--root", "."], 'File not found: "pages/nope.md".');
+    usage(["add", "pages/nope.md:6", "src/limits.ts:2", "--root", "."], 'File not found: "pages/nope.md". Check the path. Named paths resolve from the working directory.');
   });
 
   it("add --marker over lines that run past one paragraph", () => {
@@ -1113,7 +1113,7 @@ describe("manni cite add", () => {
     expect(r.status).toBe(2);
     expect(r.stdout).toBe("");
     // On macOS the child's cwd is the temp dir's realpath (/private/var/...), not /var/....
-    expect(r.stderr.split(/\r?\n/)[0]).toBe(`manni: Root directory not found: ${join(realpathSync(work), "no-such-dir")}.`);
+    expect(r.stderr.split(/\r?\n/)[0]).toBe(`manni: Root directory not found: ${join(realpathSync(work), "no-such-dir")}. Fix --root, or cite.root in manni.config.yaml.`);
     expect(readFileSync(join(work, "pages", "no-citations.md"), "utf8")).toBe(before);
   });
 
@@ -1161,7 +1161,7 @@ describe("manni cite update", () => {
     expect(r.status).toBe(2);
     expect(r.stdout).toBe("");
     // On macOS the child's cwd is the temp dir's realpath (/private/var/...), not /var/....
-    expect(r.stderr.split(/\r?\n/)[0]).toBe(`manni: Root directory not found: ${join(realpathSync(work), "no-such-dir")}.`);
+    expect(r.stderr.split(/\r?\n/)[0]).toBe(`manni: Root directory not found: ${join(realpathSync(work), "no-such-dir")}. Fix --root, or cite.root in manni.config.yaml.`);
   });
 
   it("--collection still opens the collection with - beside it", () => {

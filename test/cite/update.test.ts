@@ -1247,7 +1247,7 @@ describe("runUpdate: both ends, and what is left", () => {
     workspace("moved.md");
     const missing = join(cwd, "no-such-dir");
     expect(await refusal(update({ inputs: ["pages/moved.md"], root: missing }))).toBe(
-      `Root directory not found: ${missing}.`,
+      `Root directory not found: ${missing}. Fix --root, or cite.root in manni.config.yaml.`,
     );
   });
 
