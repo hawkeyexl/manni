@@ -13,8 +13,10 @@ import { resolveElements } from "../core/resolve-schema.js";
 import { memberOf, retainMembers } from "../core/collections.js";
 import { DocmetaError } from "../types.js";
 import {
+  builtinGuide,
   fetchSchemaBytes,
   listBuiltins,
+  loadSchema,
   type BuiltinInfo,
   type RegisteredSchemas,
 } from "../core/schema-registry.js";
@@ -73,6 +75,134 @@ export function getSchemasInfo(registered?: RegisteredSchemas): SchemasInfo {
     builtins: listBuiltins(),
     registered: [...(registered?.values() ?? [])].map(({ id, file }) => ({ id, file })),
     formats: listFormats(),
+  };
+}
+
+/** One root property of a shown schema: what it accepts and what it is for. */
+export interface ShownProperty {
+  key: string;
+  required: boolean;
+  /** `type`, as a list; empty when the schema states none. */
+  types: string[];
+  /** The `enum` values, or the `const` as one value; absent when neither. */
+  values?: unknown[];
+  format?: string;
+  pattern?: string;
+  /** Each bound keyword the property states, with its number. */
+  bounds: [string, number][];
+  description: string | null;
+  /** `x-manni-location: external`: the key belongs in a manifest. */
+  external: boolean;
+}
+
+/** What `manni meta schemas show` prints, in every format (proposal 0089). */
+export interface ShownSchema {
+  /** The schema's `$id`, else the ref as given. */
+  id: string;
+  title: string | null;
+  description: string | null;
+  /** The built-in's reference page, or `null`. */
+  guide: string | null;
+  properties: ShownProperty[];
+  /** The schema as loaded, for `-f json`. */
+  schema: Record<string, unknown>;
+}
+
+export interface ShowSchemaOptions {
+  /** Any ref `--schema` takes. */
+  ref: string;
+  cwd?: string;
+  configPath?: string;
+  noConfig?: boolean;
+}
+
+const BOUNDS = [
+  "minLength",
+  "maxLength",
+  "minItems",
+  "maxItems",
+  "minimum",
+  "maximum",
+  "exclusiveMinimum",
+  "exclusiveMaximum",
+] as const;
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+/**
+ * A property's own keywords, with a local `$ref` and `allOf` folded in, the
+ * property's own keyword first.
+ *
+ * ponytail: `if`/`then`/`else`, `anyOf` and `oneOf` are not folded, so a
+ * branched property shows its description with no type. A `$ref` to another
+ * schema is not followed.
+ */
+function flatten(root: Record<string, unknown>, node: unknown, seen = new Set<unknown>()): Record<string, unknown> {
+  if (!isRecord(node) || seen.has(node)) return {};
+  seen.add(node);
+  const parts: Record<string, unknown>[] = [];
+  if (typeof node.$ref === "string" && node.$ref.startsWith("#/")) {
+    let at: unknown = root;
+    for (const raw of node.$ref.slice(2).split("/")) {
+      at = isRecord(at) ? at[raw.replace(/~1/g, "/").replace(/~0/g, "~")] : undefined;
+    }
+    parts.push(flatten(root, at, seen));
+  }
+  if (Array.isArray(node.allOf)) for (const entry of node.allOf) parts.push(flatten(root, entry, seen));
+  return Object.assign({}, ...parts.reverse(), node) as Record<string, unknown>;
+}
+
+function showProperty(
+  root: Record<string, unknown>,
+  key: string,
+  sub: unknown,
+  required: ReadonlySet<string>,
+): ShownProperty {
+  const p = flatten(root, sub);
+  const type = p.type;
+  const types = typeof type === "string" ? [type] : Array.isArray(type) ? type.filter((t) => typeof t === "string") : [];
+  const values = Array.isArray(p.enum) ? p.enum : "const" in p ? [p.const] : undefined;
+  return {
+    key,
+    required: required.has(key),
+    types,
+    ...(values === undefined ? {} : { values }),
+    ...(typeof p.format === "string" ? { format: p.format } : {}),
+    ...(typeof p.pattern === "string" ? { pattern: p.pattern } : {}),
+    bounds: BOUNDS.flatMap((b): [string, number][] => (typeof p[b] === "number" ? [[b, p[b]]] : [])),
+    description: typeof p.description === "string" ? p.description : null,
+    external: p["x-manni-location"] === "external",
+  };
+}
+
+/**
+ * Load the schema `ref` names, through the config's registered ids unless
+ * `noConfig`, and read its root properties in schema order.
+ */
+export async function runShowSchema(opts: ShowSchemaOptions): Promise<ShownSchema> {
+  const cwd = opts.cwd ?? process.cwd();
+  const loaded = opts.noConfig === true ? null : await loadConfig(opts.configPath, cwd);
+  const registered = loaded?.config.registered;
+  const schema = await loadSchema(opts.ref, {
+    fileBase: cwd,
+    ...(registered !== undefined && registered.size > 0 ? { registered } : {}),
+  });
+  const allOf: unknown[] = Array.isArray(schema.allOf) ? (schema.allOf as unknown[]) : [];
+  const required = new Set(
+    [schema, ...allOf].flatMap((s) =>
+      isRecord(s) && Array.isArray(s.required) ? s.required.filter((r): r is string => typeof r === "string") : [],
+    ),
+  );
+  const properties = isRecord(schema.properties) ? schema.properties : {};
+  return {
+    id: typeof schema.$id === "string" ? schema.$id : opts.ref,
+    title: typeof schema.title === "string" ? schema.title : null,
+    description: typeof schema.description === "string" ? schema.description : null,
+    guide: builtinGuide(opts.ref),
+    properties: Object.entries(properties).map(([key, sub]) => showProperty(schema, key, sub, required)),
+    schema,
   };
 }
 

@@ -18,8 +18,8 @@ docs/src/content/docs/meta/reference/schemas/hugo-page.mdx:
       grader: ai
   provenance:
     - generated-by: Claude Opus 5.5
-      lines: 2-147
-      integrity: sha256-d5374c988956bb510b936b6cc220ab6017f46637d1ab75802ad76f0a97f1ce85
+      lines: 2-149
+      integrity: sha256-160af59ee86b1f0afb721a6848653f9221d826b1b6f8adb6486bedc88fe88d39
   owner:
     - "@hawkeyexl"
   created: 2026-09-26

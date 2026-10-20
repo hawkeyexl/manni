@@ -50,34 +50,37 @@ docs/src/content/docs/meta/reference/schemas/oasis-dita-metadata.mdx:
       lines: 68-88
       integrity: sha256-aad8ee27235f2d96025753e2f9d15f9dd6c7944c5c71df11ad88d84f127bb648
     - generated-by: Claude Opus 5.5
-      lines: 90-120
-      integrity: sha256-50803cd02d1d0a510536b2a530c75c053629385b1114a0b6a0637ec672b2f9e3
+      lines: 90-119
+      integrity: sha256-e9a093bb3716a6994b4dd7acc86e08ec4b524d271bd53d7298d7320427744130
+    - generated-by: Claude Opus 5.5
+      lines: 122
+      integrity: sha256-f1b901847390b0ed7e374e7c1e464ec17b46a427c487a5ad6cbd2906405083d5
     - generated-by: Claude Opus 5
-      lines: 122-144
+      lines: 124-146
       integrity: sha256-4203f0a971440df44837e3c374d258cac122bc5a9d816c157ead6bcfa23930b9
     - generated-by: Claude Fable 5.1
-      lines: 145
+      lines: 147
       integrity: sha256-784bdd8f8668e7aa3411d42e89581b8127f4c42208bf9ac326a78cb66340683f
     - generated-by: Claude Opus 5
-      lines: 146-156
+      lines: 148-158
       integrity: sha256-d3f1f33869b21141c80baa17b49c4896d7d85f64e8c3ee068b686a520a5747b1
     - generated-by: Claude Fable 5.1
-      lines: 157
+      lines: 159
       integrity: sha256-d24bf73b5558ad5509be56abda0e54ba366d0e35e280ec68456608fa14fd6ea7
     - generated-by: Claude Opus 5
-      lines: 158-177
+      lines: 160-179
       integrity: sha256-a1ad94b2f0014db0fe3d7a2d74b8212db0067c7e35fe40f07edbd31e34082a5e
     - generated-by: Claude Fable 5.1
-      lines: 178
+      lines: 180
       integrity: sha256-9f500d9478fda27bc80bef579db74faca696fdcd623ac27978caebbe115195c9
     - generated-by: Claude Opus 5
-      lines: 179-184
+      lines: 181-186
       integrity: sha256-cbe5cb446e1f00772991f137848c7c7d0902b6ac92327429e5e8bcacf5f5d336
     - generated-by: Claude Opus 5.5
-      lines: 186-188
+      lines: 188-190
       integrity: sha256-697a84de8911813f767e84f77753d573e365b9c31c8321da3ff56fa5143d6de4
     - generated-by: Claude Opus 5
-      lines: 189-199
+      lines: 191-201
       integrity: sha256-9dbcc66e3ee647967c05ea6aeac27de8681b44779be69c3f06435e293a541a88
   owner:
     - "@hawkeyexl"

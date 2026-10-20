@@ -44,12 +44,23 @@ function built(config?: (yaml: string) => string): string {
   return cwd;
 }
 
-const RANKED =
-  'warning: https://example.com/graph/doc/docs/limits.md graph:sampleQuestion — "How do I retry a failed upload?" does not find this page in the top 1 (it ranks 2; first is docs/retry.md) [docs/limits.md]';
-const LOST =
-  'warning: https://example.com/graph/doc/docs/ledger.md graph:sampleQuestion — "Retry uploads?" does not find this page in the top 1 (it is not found; first is docs/retry.md) [docs/ledger.md]';
-const HIDDEN =
-  'warning: https://example.com/graph/doc/docs/hidden.md graph:sampleQuestion — "Retry uploads?" does not find this page in the top 1 (it is not found; first is docs/retry.md) [docs/hidden.md]';
+const DOC = "https://example.com/graph/doc";
+/** A finding as pretty prints it: the first line, then its `at` line. */
+const finding = (first: string, page: string) =>
+  `${first}\n  at ${DOC}/${page} graph:sampleQuestion`;
+
+const RANKED = finding(
+  'warning: docs/limits.md: "How do I retry a failed upload?" does not find this page in the top 1 (it ranks 2; first is docs/retry.md)',
+  "docs/limits.md",
+);
+const LOST = finding(
+  'warning: docs/ledger.md: "Retry uploads?" does not find this page in the top 1 (it is not found; first is docs/retry.md)',
+  "docs/ledger.md",
+);
+const HIDDEN = finding(
+  'warning: docs/hidden.md: "Retry uploads?" does not find this page in the top 1 (it is not found; first is docs/retry.md)',
+  "docs/hidden.md",
+);
 
 describe("sample questions", () => {
   let cwd: string;
@@ -73,21 +84,30 @@ describe("sample questions", () => {
     const r = run(["check"], cwd);
     expect(r.status, r.stdout + r.stderr).toBe(0);
     const lines = r.stdout.split("\n");
-    expect(lines).toContain(RANKED);
-    expect(lines).toContain(LOST);
+    expect(r.stdout).toContain(RANKED);
+    expect(r.stdout).toContain(LOST);
     // Found for its own question, in its own language.
-    expect(lines.filter((l) => l.includes("docs/retry.md graph:sampleQuestion") && l.includes("does not find"))).toEqual([]);
+    expect(
+      lines.filter((l) => l.startsWith("warning: docs/retry.md: ") && l.includes("does not find")),
+    ).toEqual([]);
+    expect(r.stdout).not.toContain("warning: docs/proxy.md: ");
     expect(r.stdout).not.toContain("proxy.md graph:sampleQuestion");
     // hidden.md's question stays out of the graph and is still asked, because
     // check reads questions from the page sources (proposal 0087).
-    expect(lines).toContain(HIDDEN);
+    expect(r.stdout).toContain(HIDDEN);
     // Two pages ask each question, so the second copy of each is reported
     // (proposal 0087 § 7b).
-    expect(lines).toContain(
-      'warning: https://example.com/graph/doc/docs/ledger.md graph:sampleQuestion — "Retry uploads?" is also asked on docs/hidden.md, so keep it where it is answered. [docs/ledger.md]',
+    expect(r.stdout).toContain(
+      finding(
+        'warning: docs/ledger.md: "Retry uploads?" is also asked on docs/hidden.md, so keep it where it is answered.',
+        "docs/ledger.md",
+      ),
     );
-    expect(lines).toContain(
-      'warning: https://example.com/graph/doc/docs/retry.md graph:sampleQuestion — "How do I retry a failed upload?" is also asked on docs/limits.md, so keep it where it is answered. [docs/retry.md]',
+    expect(r.stdout).toContain(
+      finding(
+        'warning: docs/retry.md: "How do I retry a failed upload?" is also asked on docs/limits.md, so keep it where it is answered.',
+        "docs/retry.md",
+      ),
     );
     expect(r.stdout).toContain("0 errors, 5 warnings, 0 notices");
   });
@@ -110,6 +130,7 @@ describe("sample questions", () => {
         focusNode: "https://example.com/graph/doc/docs/hidden.md",
         path: "https://hawkeyexl.github.io/manni/graph/ns#sampleQuestion",
         docs: ["docs/hidden.md"],
+        guidance: null,
       },
       {
         severity: "warning",
@@ -118,6 +139,7 @@ describe("sample questions", () => {
         focusNode: "https://example.com/graph/doc/docs/ledger.md",
         path: "https://hawkeyexl.github.io/manni/graph/ns#sampleQuestion",
         docs: ["docs/ledger.md"],
+        guidance: null,
       },
       {
         severity: "warning",
@@ -126,6 +148,7 @@ describe("sample questions", () => {
         focusNode: "https://example.com/graph/doc/docs/limits.md",
         path: "https://hawkeyexl.github.io/manni/graph/ns#sampleQuestion",
         docs: ["docs/limits.md"],
+        guidance: null,
       },
     ]);
   });

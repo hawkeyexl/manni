@@ -32,7 +32,7 @@ sample-questions:
 graph:
   label: Fix a failing check
   type: troubleshooting
-last-updated: 2026-10-04
+last-updated: 2026-10-20
 tags:
   - validation
   - error-messages
@@ -70,6 +70,8 @@ A failing file in `pretty` output (the default) looks like this:
 ```
 ✗ docs/guide.md
     (root)  must have required property 'type'  [google:okf:0.1]
+      google:okf:0.1 type: A short string identifying the kind of concept.
+      Guide: https://hawkeyexl.github.io/manni/meta/reference/schemas/google-okf/
 ```
 
 The first line is the file that failed. Each indented line below it is one
@@ -77,6 +79,8 @@ problem, in this shape:
 
 ```
 <field>  <severity> <message>  (line N)  [schema-id]
+  <schema-id> <property>: <what the property is for>
+  Guide: <url>
 ```
 
 | Part | What it tells you |
@@ -86,6 +90,16 @@ problem, in this shape:
 | `<message>` | What's wrong, e.g. `must have required property 'type'` or `must match format "date-time"`. |
 | `(line N)` | The source line of the offending field, when manni meta can locate it. A missing required field has no line, so this part is absent. A value an [external-metadata manifest](/manni/meta/set-up/external-metadata/) supplied reads `(file:line)` instead, naming the manifest. |
 | `[schema-id]` | The schema that flagged it, e.g. `google:okf:0.1`. Useful when more than one schema applies. |
+| `<property>: <what…>` | The property the schema judged, and the first sentence of the schema's own description of it. Read it before you edit. A finding with no property names the schema alone. |
+| `Guide: <url>` | The schema's reference page, for a built-in schema. A house schema has none. |
+
+To see every property a schema asks for, which are required, and what each
+accepts, run [`manni meta schemas show`](/manni/meta/reference/cli/#meta-schemas-show)
+with the id in brackets:
+
+```sh
+npx @hawkeyexl/manni meta schemas show google:okf:0.1
+```
 
 <Aside type="note" title="Machine-readable output">
   Need machine-readable output instead? `--format json` gives you the same
@@ -96,7 +110,7 @@ problem, in this shape:
 
 ## Common failures
 
-These cover the overwhelming majority of red checks. The first five are problems
+These cover the overwhelming majority of red checks. The first six are problems
 in your document; the last, [Schema not found](#schema-not-found), is a setup
 problem rather than something in your file. Each shows the error, the cause, and
 a fix.
@@ -106,6 +120,8 @@ a fix.
 ```
 ✗ docs/guide.md
     (root)  must have required property 'type'  [google:okf:0.1]
+      google:okf:0.1 type: A short string identifying the kind of concept.
+      Guide: https://hawkeyexl.github.io/manni/meta/reference/schemas/google-okf/
 ```
 
 {/* cite absent-field-reported-at-root */}
@@ -128,8 +144,8 @@ so there's no line to point at.
   Not sure what value `type` should be? The built-in OKF schema accepts any
   non-empty string. Pick the kind of doc this is, such as `concept`, `guide`,
   or `reference`. If your repo uses a custom schema, it may restrict `type` to a
-  specific list; the error message will say so (for example, `must be equal to
-  one of the allowed values`).
+  specific list. The error message then lists every value that passes, as in
+  `must be one of: "concept", "guide", "reference"`.
 </Aside>
 
 ### A value in the wrong format
@@ -137,6 +153,8 @@ so there's no line to point at.
 ```
 ✗ docs/guide.md
     /timestamp  must match format "date-time"  (line 5)  [google:okf:0.1]
+      google:okf:0.1 timestamp: ISO 8601 datetime of last meaningful change.
+      Guide: https://hawkeyexl.github.io/manni/meta/reference/schemas/google-okf/
 ```
 
 The field is present, but its value doesn't match the format the schema expects.
@@ -168,16 +186,23 @@ The `/timestamp` pointer and `(line 5)` take you straight to the offending line.
 ```
 
 The same pattern applies to other formats. A `uri` field needs a full URL
-(`https://example.com/...`), and an enum field needs one of its allowed values.
-The message names the format or constraint that failed.
+(`https://example.com/...`), and an enum field needs a value from its list.
+The message names the format or constraint that failed, and `must be one of:`
+lists every value that passes.
 
 ### No frontmatter at all
 
 ```
 ✗ docs/guide.md
     (root)  must have required property 'type'  [google:okf:0.1]
+      google:okf:0.1 type: A short string identifying the kind of concept.
+      Guide: https://hawkeyexl.github.io/manni/meta/reference/schemas/google-okf/
     (root)  must have required property 'title'  [manni:core:1.0.0]
+      manni:core:1.0.0 title: What the page is called, as one non-empty string.
+      Guide: https://hawkeyexl.github.io/manni/meta/reference/schemas/manni-core/
     (root)  must have required property 'description'  [manni:core:1.0.0]
+      manni:core:1.0.0 description: One full non-empty sentence saying what the page is for.
+      Guide: https://hawkeyexl.github.io/manni/meta/reference/schemas/manni-core/
 ```
 
 {/* cite no-frontmatter-reads-as-empty-metadata */}
@@ -294,6 +319,42 @@ the `provenance` entries by hand. The hash has to match the text, and `derive`
 is the tool that computes it. Text that only moved, because a paragraph was
 added above it, is never a finding.
 
+### Your page's `$schema` is refused
+
+```
+✗ docs/guide.md
+    (root)  $schema names "house:page:1.0.0", which this repository does not define. Use an id from manni meta schemas, or remove $schema.  [(parse)]
+```
+
+The page names its own schema in a `$schema` key, and this repository does not
+accept that schema. The file fails with exit `1`, and every other file is still
+checked. The message takes one of these forms:
+
+| Message | Cause |
+| --- | --- |
+| `$schema names "<id>", which this repository does not define.` | No built-in and no `meta.register` entry has that id. |
+| `$schema names the URL "<url>", and this repository accepts only built-in ids and schema files here.` | The config sets `schemaTrust.documentRefs: local`. |
+| `$schema names "<url>", which is not a valid URL.` | The value starts like a URL but does not parse as one. |
+| `$schema names a schema on "<host>", a host this repository does not trust.` | The host is not in `schemaTrust.hosts`. |
+| `$schema "<path>" points outside <dir>.` | A page may only name a schema file inside the repository. |
+
+**Fix, for the page's author.** Change `$schema` to an id
+`manni meta schemas` lists, or to a schema file inside the repository. Or remove
+`$schema`, and the configured schemas apply. Do not edit the config to let the
+page through.
+
+**Fix, for whoever owns the config.** When the page's schema should be
+accepted, change the config rather than the page:
+
+- Vendor a remote schema with
+  [`manni meta schemas vendor <url>`](/manni/meta/reference/cli/#meta-schemas-vendor),
+  and point the page at the local copy.
+- Add the host to [`schemaTrust.hosts`](/manni/meta/reference/configuration/#schema-trust),
+  or set `schemaTrust.documentRefs` to allow URLs.
+- Register a house schema with
+  [`meta.register`](/manni/meta/reference/configuration/#register), so its id
+  resolves.
+
 ### Schema not found
 
 {/* cite operational-error-one-stderr-line-prefixed */}
@@ -360,6 +421,33 @@ before CI does.
   no path validates the same fileset CI does, using the same schema. To match CI
   exactly, run it from the repo root.
 </Aside>
+
+## Start a page from its schema and template
+
+A new page passes on the first push when it starts from what the checks ask
+for. `meta schemas show -f markdown` prints the frontmatter a schema asks for,
+and `lint templates show -f markdown` prints the body a template asks for:
+
+```sh
+npx @hawkeyexl/manni meta schemas show manni:core:1.0.0 -f markdown > docs/rotate-key.md
+npx @hawkeyexl/manni lint templates show tgdp:how-to:1.6 -f markdown
+```
+
+<Steps>
+
+1. Keep the frontmatter block the first command wrote. Required keys are
+   written out, and optional ones are commented out.
+
+2. lint's output opens with its own block when the template is routed by
+   `type`. Copy its `type:` line into the page's block.
+
+3. Paste lint's output from its `# ` title onward below the closing `---`.
+
+4. Fill in each value and section, then run the checks.
+
+</Steps>
+
+No flag merges the two. Each command owns one half of the page.
 
 ## Let manni meta draft the fix
 

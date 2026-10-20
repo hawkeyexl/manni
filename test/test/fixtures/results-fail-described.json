@@ -1,0 +1,41 @@
+{
+  "runId": "2026-10-19T10-00-00-000Z",
+  "runDir": "__CWD__/.doc-detective/runs/2026-10-19T10-00-00-000Z",
+  "summary": {
+    "specs": { "pass": 0, "fail": 1, "warning": 0, "skipped": 0 },
+    "tests": { "pass": 0, "fail": 1, "warning": 0, "skipped": 0 },
+    "contexts": { "pass": 0, "fail": 1, "warning": 0, "skipped": 0 },
+    "steps": { "pass": 0, "fail": 1, "warning": 0, "skipped": 0 }
+  },
+  "specs": [
+    {
+      "specId": "settings.md",
+      "contentPath": "__CWD__/docs/settings.md",
+      "tests": [
+        {
+          "testId": "open-settings",
+          "contentPath": "__CWD__/docs/settings.md",
+          "contexts": [
+            {
+              "contextId": "chrome",
+              "platform": "linux",
+              "steps": [
+                {
+                  "description": "The Settings button opens the settings page.",
+                  "click": "Settings",
+                  "location": { "line": 9, "startIndex": 120, "endIndex": 190 },
+                  "stepId": "open-settings~s1",
+                  "result": "FAIL",
+                  "resultDescription": "Couldn't find element."
+                }
+              ],
+              "result": "FAIL"
+            }
+          ],
+          "result": "FAIL"
+        }
+      ],
+      "result": "FAIL"
+    }
+  ]
+}

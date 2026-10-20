@@ -3,9 +3,10 @@
  *
  * The object is kept as Doc Detective wrote it, because `-f json` prints it
  * verbatim. Only the parts the verdict and the reports need are checked: the
- * test-level counts, and each step's result, description and line.
+ * test-level counts, and each step's result, description, line and action.
  */
 import { relative } from "node:path";
+import type { Guidance } from "../../shared/guidance.js";
 
 /** One level's counts in Doc Detective's `summary`. */
 export interface ResultCounts {
@@ -25,8 +26,35 @@ export interface TestFinding {
   /** The step's line in the page, when Doc Detective located it. */
   line?: number;
   result: "FAIL" | "WARNING";
+  /** Doc Detective's `resultDescription`, as it wrote it. */
   description: string;
+  /** The Doc Detective action the step ran, such as `runShell`, when it is one Doc Detective documents. */
+  action?: string;
+  /** `Doc Detective`, the action, the step's own `description` and the action's guide. */
+  guidance?: Guidance | null;
 }
+
+/** The step actions Doc Detective documents, each on a page of its own under `ACTIONS_GUIDE`. */
+const ACTIONS = new Set([
+  "checkLink",
+  "click",
+  "dragAndDrop",
+  "find",
+  "goTo",
+  "httpRequest",
+  "loadCookie",
+  "loadVariables",
+  "record",
+  "runCode",
+  "runShell",
+  "saveCookie",
+  "screenshot",
+  "stopRecord",
+  "type",
+  "wait",
+]);
+
+const ACTIONS_GUIDE = "https://docs.doc-detective.com/docs/actions/";
 
 export const ZERO_COUNTS: ResultCounts = { pass: 0, fail: 0, warning: 0, skipped: 0 };
 
@@ -81,10 +109,15 @@ export function anyFailed(results: DocDetectiveResults | null): boolean {
   return Object.values(summary).some((level) => (counts(level)?.fail ?? 0) > 0);
 }
 
-/** Every FAIL and WARNING step, in the order Doc Detective ran them. */
+/**
+ * Every FAIL and WARNING step, in the order Doc Detective ran them. A step
+ * that fails the same way in several contexts, one per browser or platform,
+ * is one finding.
+ */
 export function collectFindings(results: DocDetectiveResults | null, cwd: string): TestFinding[] {
   if (results === null) return [];
   const out: TestFinding[] = [];
+  const seen = new Set<string>();
   for (const spec of records(results["specs"])) {
     for (const test of records(spec["tests"])) {
       const contentPath = test["contentPath"] ?? spec["contentPath"];
@@ -103,12 +136,25 @@ export function collectFindings(results: DocDetectiveResults | null, cwd: string
           if (result !== "FAIL" && result !== "WARNING") continue;
           const location = step["location"];
           const line = isRecord(location) ? location["line"] : undefined;
-          const description = step["resultDescription"];
+          const resultDescription = step["resultDescription"];
+          const description = typeof resultDescription === "string" ? resultDescription : "";
+          const action = Object.keys(step).find((key) => ACTIONS.has(key));
+          const key = JSON.stringify([file, line, action, result, description]);
+          if (seen.has(key)) continue;
+          seen.add(key);
+          const stated = step["description"];
           out.push({
             file,
             ...(typeof line === "number" ? { line } : {}),
             result,
-            description: typeof description === "string" ? description : "",
+            description,
+            ...(action === undefined ? {} : { action }),
+            guidance: {
+              id: "Doc Detective",
+              rule: action ?? null,
+              description: typeof stated === "string" ? stated : null,
+              guide: action === undefined ? null : `${ACTIONS_GUIDE}${action.toLowerCase()}`,
+            },
           });
         }
       }

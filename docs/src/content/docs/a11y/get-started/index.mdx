@@ -12,7 +12,7 @@ applies-to: ["domain:a11y"]
 next-steps: ["a11y-ci", "a11y-fix", "a11y", "a11y-reference-cli"]
 sample-questions: ["How do I run my first accessibility check on a local build?", "Which browser does manni a11y need, and how do I install it?", "How do I read the score and the findings?"]
 graph: { label: "Get started", type: learning }
-last-updated: 2026-10-05
+last-updated: 2026-10-20
 tags:
   - tutorial
   - getting-started
@@ -117,17 +117,32 @@ npx @hawkeyexl/manni a11y check http://127.0.0.1:4173/
 Checked 3 of 3 pages (sitemap: http://127.0.0.1:4173/sitemap.xml)
 ✓ http://127.0.0.1:4173/  score 100
 ✗ http://127.0.0.1:4173/about.html  score 78  4 errors
-    error  button-name (axe: critical)  1 node  Buttons must have discernible text  https://dequeuniversity.com/rules/axe/4.13/button-name?application=playwright
+    error  button-name (axe: critical)  1 node  Buttons must have discernible text
+      axe-core 4.13.0 button-name: Ensure buttons have discernible text
+      Guide: https://dequeuniversity.com/rules/axe/4.13/button-name?application=playwright
       button  → Fix any of the following: Element does not have inner text that is visible to screen readers; …
-    error  color-contrast (axe: serious)  1 node  Elements must meet minimum color contrast ratio thresholds  https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=playwright
+        <button></button>
+    error  color-contrast (axe: serious)  1 node  Elements must meet minimum color contrast ratio thresholds
+      axe-core 4.13.0 color-contrast: Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds
+      Guide: https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=playwright
       p  → Fix any of the following: Element has insufficient color contrast of 2.84 (foreground color: #999999, background color: #ffffff, font size: 12.0pt (16px), font weight: normal). Expected contrast ratio of 4.5:1
-    error  html-has-lang (axe: serious)  1 node  <html> element must have a lang attribute  https://dequeuniversity.com/rules/axe/4.13/html-has-lang?application=playwright
+        <p style="color:#999;background:#fff">Low contrast text.</p>
+    error  html-has-lang (axe: serious)  1 node  <html> element must have a lang attribute
+      axe-core 4.13.0 html-has-lang: Ensure every HTML document has a lang attribute
+      Guide: https://dequeuniversity.com/rules/axe/4.13/html-has-lang?application=playwright
       html  → Fix any of the following: The <html> element does not have a lang attribute
-    error  image-alt (axe: critical)  1 node  Images must have alternative text  https://dequeuniversity.com/rules/axe/4.13/image-alt?application=playwright
+        <html><head> <meta charset="utf-8"> …
+    error  image-alt (axe: critical)  1 node  Images must have alternative text
+      axe-core 4.13.0 image-alt: Ensure <img> elements have alternative text or a role of none or presentation
+      Guide: https://dequeuniversity.com/rules/axe/4.13/image-alt?application=playwright
       img  → Fix any of the following: Element does not have an alt attribute; …
+        <img src="x.png">
 ✗ http://127.0.0.1:4173/orphan.html  score 94  1 error
-    error  image-alt (axe: critical)  1 node  Images must have alternative text  https://dequeuniversity.com/rules/axe/4.13/image-alt?application=playwright
+    error  image-alt (axe: critical)  1 node  Images must have alternative text
+      axe-core 4.13.0 image-alt: Ensure <img> elements have alternative text or a role of none or presentation
+      Guide: https://dequeuniversity.com/rules/axe/4.13/image-alt?application=playwright
       img  → Fix any of the following: Element does not have an alt attribute; …
+        <img src="y.png">
 
 5 violations on 2 of 3 pages
 ```
@@ -140,14 +155,15 @@ still gets clean output.
 
 ## Read the report
 
-Four things are on screen, from the top down.
+Five things are on screen, from the top down.
 
 | Part | What it tells you |
 |---|---|
 | The header | How many pages were checked, and where they came from. A sitemap supplied them here. Without one it reads `(no sitemap; followed links)`. |
 | The page line | `✓` or `✗`, the URL, the [score](/manni/a11y/#what-the-score-means), and the remaining findings by severity. The glyph carries the meaning, so the line survives a greyscale screenshot. |
-| The violation line | The severity, the axe rule id, and axe's own impact. Then the number of failing elements, axe's one-line description, and the rule's page on Deque University. |
-| The node line | One failing element, as a CSS selector and axe's statement of what is wrong with it. The first three elements per rule print. |
+| The violation line | The severity, the axe rule id, and axe's own impact. Then the number of failing elements and axe's one-line description. |
+| The guidance lines | The axe version, the rule and what it checks. Then `Guide:` and the rule's page on Deque University. |
+| The node lines | One failing element, as a CSS selector and axe's statement of what is wrong with it. Its html follows on the next line. The first three elements per rule print. |
 
 {/* cite score-share-of-rules */}
 The score is the share of axe rules that applied to the page and passed.
@@ -176,12 +192,21 @@ Rebuild, then run the crawl again:
 Checked 3 of 3 pages (sitemap: http://127.0.0.1:4173/sitemap.xml)
 ✓ http://127.0.0.1:4173/  score 100
 ✗ http://127.0.0.1:4173/about.html  score 84  3 errors
-    error  button-name (axe: critical)  1 node  Buttons must have discernible text  https://dequeuniversity.com/rules/axe/4.13/button-name?application=playwright
+    error  button-name (axe: critical)  1 node  Buttons must have discernible text
+      axe-core 4.13.0 button-name: Ensure buttons have discernible text
+      Guide: https://dequeuniversity.com/rules/axe/4.13/button-name?application=playwright
       button  → Fix any of the following: Element does not have inner text that is visible to screen readers; …
-    error  color-contrast (axe: serious)  1 node  Elements must meet minimum color contrast ratio thresholds  https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=playwright
+        <button></button>
+    error  color-contrast (axe: serious)  1 node  Elements must meet minimum color contrast ratio thresholds
+      axe-core 4.13.0 color-contrast: Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds
+      Guide: https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=playwright
       p  → Fix any of the following: Element has insufficient color contrast of 2.84 (foreground color: #999999, background color: #ffffff, font size: 12.0pt (16px), font weight: normal). Expected contrast ratio of 4.5:1
-    error  image-alt (axe: critical)  1 node  Images must have alternative text  https://dequeuniversity.com/rules/axe/4.13/image-alt?application=playwright
+        <p style="color:#999;background:#fff">Low contrast text.</p>
+    error  image-alt (axe: critical)  1 node  Images must have alternative text
+      axe-core 4.13.0 image-alt: Ensure <img> elements have alternative text or a role of none or presentation
+      Guide: https://dequeuniversity.com/rules/axe/4.13/image-alt?application=playwright
       img  → Fix any of the following: Element does not have an alt attribute; …
+        <img src="x.png">
 
 4 violations on 2 of 3 pages
 ```

@@ -29,7 +29,7 @@ sample-questions:
 graph:
   label: CLI reference
   type: reference
-last-updated: 2026-10-19
+last-updated: 2026-10-20
 tags:
   - cli
   - command-reference
@@ -1434,6 +1434,8 @@ reads no documents. Its [`infer`](#meta-schemas-infer)
 subcommand reads your documents; its [`vendor`](#meta-schemas-vendor) subcommand is
 the one that reaches the network and writes to the repository.
 
+Its [`show`](#meta-schemas-show) subcommand prints what one schema asks for.
+
 ```sh
 manni meta schemas [options]
 ```
@@ -1574,6 +1576,103 @@ manni meta schemas infer docs/
 manni meta schemas infer docs/ --min-coverage 5
 manni meta schemas infer docs/ --out ./schemas/permissive.json
 manni meta schemas infer docs/ -f json
+```
+
+## `meta schemas show`
+
+Print what a schema asks for, before you write a page against it. Each
+property is listed in schema order with whether it is required, what it
+accepts, and what it is for.
+
+```sh
+manni meta schemas show <ref> [options]
+```
+
+### Arguments
+
+| Argument | Description |
+|---|---|
+| `<ref>` | The schema to show. Required. It takes every ref `--schema` takes: a built-in id, an id `meta.register` names, a published built-in URL, a local path or a URL. A published built-in URL resolves to the bundled copy with no request. |
+
+### Options
+
+| Option | Argument | Default | Description |
+|---|---|---|---|
+| `-f, --format` | `<pretty\|json\|markdown>` | `pretty` | `pretty` prints an outline. `json` prints the schema as loaded. `markdown` prints a frontmatter skeleton. Anything else is a usage error (exit `2`). |
+| `-c, --config` | `<path>` | discovered | Path to a [config file](/manni/meta/reference/configuration/), which supplies the ids `meta.register` names. |
+| `--no-config` | n/a | off | Ignore any discovered config file. `-c` and `--no-config` set the same option, so the one written later on the command line wins. |
+
+`pretty` opens with the schema's id and title, its description, and a `Guide:`
+line linking a built-in's reference page. Then each property gets one line of
+facts, with its full description indented beneath it:
+
+```
+$ manni meta schemas show house:page:1.0.0
+house:page:1.0.0  House page
+Every page names its team and its tier.
+
+  team  required, string, minLength 1
+    The team that answers for the page. Use the slug from the team directory.
+  tier  required, one of: "gold", "silver"
+    How quickly the team answers a report.
+  review  optional, object
+    When the page was last reviewed.
+```
+
+A property's facts are `required` or `optional`, then its types, the values it
+allows, its `format`, its `pattern` and each bound it states. A property the
+schema branches with `if`, `anyOf` or `oneOf` shows its description and no
+type.
+
+`markdown` prints a frontmatter block and no body. Each property gets a comment
+holding the first sentence of its description. A required key is written out,
+and an optional one is commented out. A key that allows set values starts with
+the first of them. Keys the schema marks `x-manni-location: external` are left
+out, because they belong in the collection's manifest.
+
+```
+$ manni meta schemas show house:page:1.0.0 -f markdown
+---
+# house:page:1.0.0, House page
+# The team that answers for the page.
+team:
+# How quickly the team answers a report.
+tier: "gold"
+# When the page was last reviewed.
+# review:
+# An email address or a chat handle.
+# contact:
+---
+```
+
+`lint templates show -f markdown` prints a body to go under it. The
+[fix page](/manni/meta/fix/#start-a-page-from-its-schema-and-template) shows how
+to combine the two.
+
+| Exit | When |
+|---|---|
+| `0` | The schema loaded and printed. |
+| `2` | No `<ref>`, an unknown `--format`, an id nothing defines, or a file that is not there. |
+
+```
+$ manni meta schemas show
+error: missing required argument 'ref'
+$ manni meta schemas show manni:core:1.0.0 -f yaml
+manni: Unknown --format "yaml". Use pretty, json, or markdown.
+$ manni meta schemas show manni:core:9.9.9
+manni: Unknown schema "manni:core:9.9.9". manni meta schemas lists the built-in ids. Registered by meta.register: none.
+$ manni meta schemas show ./schemas/nope.json
+manni: Schema file not found: "./schemas/nope.json".
+```
+
+### Examples
+
+```sh
+manni meta schemas show manni:core:1.0.0
+manni meta schemas show https://hawkeyexl.github.io/manni/schemas/dcmi/1.1.json
+manni meta schemas show ./schemas/page.json -f json
+manni meta schemas show manni:core:1.0.0 -f markdown > docs/new-page.md
+manni meta schemas show house:page:1.0.0 -c ./config/manni.config.yaml -f markdown
 ```
 
 ## `meta schemas vendor`

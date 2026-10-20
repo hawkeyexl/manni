@@ -2,6 +2,7 @@
 import { scopeLine } from "./scope.js";
 import type { EngineReport } from "../core/engine.js";
 import { declaringEntry, locationLabel } from "./location.js";
+import { judgedLines, resultGuidance } from "./judged.js";
 
 const OUTCOME_ICON: Record<string, string> = {
   pass: "✅",
@@ -79,20 +80,20 @@ export function renderMarkdown(report: EngineReport): string {
         entry.file === r.file
           ? `\`${locationLabel(entry)}\``
           : `\`${r.file}\` · \`${locationLabel(entry)}\``;
-      lines.push(`- ${icon} **${r.evalName}** — ${where}`);
+      lines.push(`- ${icon} **${r.evalName}** · ${where}`);
       for (const f of r.findings ?? []) {
         const loc = f.line != null ? `:${f.line}` : "";
         lines.push(`  - ${f.severity}${loc}: ${f.message}`);
       }
+      for (const line of judgedLines(r)) lines.push(`  - ${line}`);
       if (r.consensus) {
         const v = r.consensus;
-        const reasoning = v.runs.find((run) => run.verdict)?.verdict?.reasoning;
         lines.push(
           `  - votes pass:${v.votes.pass} fail:${v.votes.fail} partial:${v.votes.partial}, confidence ${v.meanConfidence.toFixed(2)} (${v.zone})`,
         );
-        if (reasoning) lines.push(`  - ${reasoning}`);
       }
       if (r.skipReason && r.outcome === "error") lines.push(`  - ${r.skipReason}`);
+      for (const line of resultGuidance(r)) lines.push(`  - ${line}`);
     }
   }
 

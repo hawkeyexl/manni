@@ -25,11 +25,20 @@ docs/src/content/docs/meta/reference/schemas/manni-structure.mdx:
       lines: 23-24
       integrity: sha256-e35de401b3128816c9416d0bbf980ca3a437ccbab4b8108139bbec2b40458165
     - generated-by: Claude Opus 5.5
-      lines: 30-156
-      integrity: sha256-9b00b7578983ebf6824a93bd68f74611ae7979f299b5c88d618e1823bc75ce93
+      lines: 30-90
+      integrity: sha256-8f06e243a2536461b056ca7f8f1a9823f5e1b8c3b72f39bce2e2848c6804548d
     - generated-by: Claude Opus 5.5
-      lines: 169-196
-      integrity: sha256-85bfd34096b5beeffe8b6511563256b19317ad6483cc8ffcb23e92c478b65fb3
+      lines: 96-157
+      integrity: sha256-8dd2e96a6ff973a81074fd1c6935974fda18571b8a0d9d361d67c81fd072b25c
+    - generated-by: Claude Opus 5.5
+      lines: 170-191
+      integrity: sha256-3ed4020c9bfb41ad638f982abdf7f4df01e4100887998cece70796381f4c6b96
+    - generated-by: Claude Opus 5.5
+      lines: 194
+      integrity: sha256-d81c16d65c3cb70e330c0f60b7fee11b5d02f36b41db9e7b560a25f0165f5e9d
+    - generated-by: Claude Opus 5.5
+      lines: 198-201
+      integrity: sha256-95baac637411f0ef5e1d876f1594f03e60d5c961669fcb1933ff91d61fd9e74f
   owner:
     - "@hawkeyexl"
   created: 2026-09-26

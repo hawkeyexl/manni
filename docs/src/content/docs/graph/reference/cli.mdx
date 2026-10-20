@@ -6,7 +6,7 @@ id: graph-reference-cli
 language: en
 lifecycle: published
 action: remember
-last-updated: 2026-10-19
+last-updated: 2026-10-20
 ---
 
 {/* The command, argument, and option tables on this page are drift-checked
@@ -14,7 +14,7 @@ last-updated: 2026-10-19
     docs:check-cli), enforced in CI. Keep flags, arguments, and defaults in
     sync with the code; descriptions are free-form. */}
 
-Ten commands under one domain. Every flag below is verified against
+Eleven commands under one domain, and one subcommand under `shapes`. Every flag below is verified against
 `src/graph/cli.ts`, and the exit codes are exercised by the inline tests at the
 foot of this page.
 
@@ -46,6 +46,7 @@ It belongs to no collection, so no external-metadata manifest supplies its field
 The other verbs read the **built graph** rather than the documents: `check`,
 `query`, `stats`, `search`, `traverse`, `embed` and `export` all load the
 Turtle file at `graph.out`, or the one `-g` names. Build first, then ask.
+`shapes` reads neither. It reads the shapes files `check` runs.
 
 | Flag | Commands | Meaning |
 |---|---|---|
@@ -57,7 +58,7 @@ Turtle file at `graph.out`, or the one `-g` names. Build first, then ask.
 | `--ext <list>` | same as above | Extensions a directory walk or a glob keeps, comma-separated and given once. A file named outright is kept whatever this says, when a parser reads its extension. A named file none reads is skipped with a warning. |
 | `--allow-empty` | same as above | Treat zero matched files as success. |
 | `-g, --graph <path>` | the graph readers | The built Turtle file. Defaults to the resolved `graph.out`. |
-| `-f, --format <format>` | every verb that reports | `pretty` or `json`; `check` adds `github`. An unknown value is refused while the options are parsed. A typo therefore costs a message rather than a graph load: **exit 2**, with the allowed set named. |
+| `-f, --format <format>` | every verb that reports | `pretty` or `json`. `check` adds `github` and `sarif`, and `shapes show` adds `markdown`. An unknown value is refused while the options are parsed. A typo therefore costs a message rather than a graph load: **exit 2**, with the allowed set named. |
 
 Flags override config; they do not bypass it. An unset flag falls through to
 the resolved `graph:` value, so a config file and the command line reach the same
@@ -185,13 +186,73 @@ manni graph check [options]
 
 ```console
 $ manni graph check -c test/graph/fixtures/dd/violations.config.yaml
-error: https://example.com/dd/concept/alpha skos:broader — skos:broader cycle through https://example.com/dd/concept/alpha, https://example.com/dd/concept/beta (https://example.com/dd/concept/alpha → https://example.com/dd/concept/beta) — a concept cannot be its own ancestor [violations/alpha.md, violations/beta.md, violations/gamma.md]
-error: https://example.com/dd/concept/alpha skos:related — Value node must not also be one of the values of <http://www.w3.org/2004/02/skos/core#broader> [violations/alpha.md, violations/beta.md, violations/gamma.md]
-error: https://example.com/dd/concept/gamma skos:related — skos:related conflicts with skos:broaderTransitive between https://example.com/dd/concept/gamma and https://example.com/dd/concept/alpha — a concept cannot be both related to and an ancestor/descendant of another [violations/alpha.md, violations/gamma.md]
-error: https://example.com/dd/doc/violations/alpha.md graph:notApplicableToVariant — Value node must not also be one of the values of <http://iirds.tekom.de/iirds#relates-to-product-variant> [violations/alpha.md]
+error: violations/alpha.md, violations/beta.md, violations/gamma.md: "Alpha" and "Beta" form a broader cycle, so each is its own ancestor. Remove one `broader` or `narrower` value on the cycle.
+  at https://example.com/dd/concept/alpha skos:broader
+  manni:graph-shapes:1.1.1 Concept-broader: A more general concept. A concept is never its own ancestor.
+  Guide: https://hawkeyexl.github.io/manni/graph/fix/
+error: violations/alpha.md, violations/beta.md, violations/gamma.md: A concept is related to a concept that is also broader than it. Remove one link: from `related-concepts` or `related-terms`, or from `broader` or `narrower`.
+  at https://example.com/dd/concept/alpha skos:related
+  manni:graph-shapes:1.1.1 Concept-related: A concept on the same level as this one. It is never also an ancestor or a descendant.
+  Guide: https://hawkeyexl.github.io/manni/graph/fix/
+error: violations/alpha.md: The page lists a variant in both `applies-to` and `not-applicable-to`. Keep it only in the one that is true.
+  at https://example.com/dd/doc/violations/alpha.md graph:notApplicableToVariant
+  manni:graph-shapes:1.1.1 Document-notApplicableToVariant: The product variants the page does not apply to. A variant cannot be in both lists.
+  Guide: https://hawkeyexl.github.io/manni/graph/fix/
 
-4 errors, 0 warnings, 0 notices
+3 errors, 0 warnings, 0 notices
 ```
+
+Each finding opens with its severity and the pages it came from, which are
+where an author edits. `(no page)` stands in when a finding names none. The
+message names the frontmatter key to change. The lines under it are dim.
+
+| Line | What it says |
+|---|---|
+| `at <focus> <path>` | The graph node that failed and the property, with known prefixes compacted. A finding with no property shows the node alone. |
+| `<id> <rule>: <description>` | The shapes file's id, the rule that judged the finding, and what the rule is for. |
+| `Guide: <url>` | The page that explains how to fix it. |
+
+The last two print only when a shape judged the finding. A sample-question
+finding has no shape, so only its `at` line follows it.
+
+`-f json` prints the same findings. Each one ends with `guidance`, the last two
+lines as an object, or `null` when no shape judged it.
+
+```json
+{
+  "severity": "error",
+  "shaclSeverity": "violation",
+  "message": "The page lists a variant in both `applies-to` and `not-applicable-to`. Keep it only in the one that is true.",
+  "focusNode": "https://example.com/dd/doc/violations/alpha.md",
+  "path": "https://hawkeyexl.github.io/manni/graph/ns#notApplicableToVariant",
+  "docs": ["violations/alpha.md"],
+  "guidance": {
+    "id": "manni:graph-shapes:1.1.1",
+    "rule": "Document-notApplicableToVariant",
+    "description": "The product variants the page does not apply to. A variant cannot be in both lists.",
+    "guide": "https://hawkeyexl.github.io/manni/graph/fix/"
+  }
+}
+```
+
+`-f github` writes one workflow annotation per finding, on the first page it
+names. The guidance lines follow the message, each after `%0A`.
+
+`-f sarif` writes one SARIF 2.1.0 run whose driver is `manni-graph`. A result's
+`ruleId` is `manni:graph/<rule>`, or `manni:graph/shacl` when no shape judged
+it. Its `locations` are the pages it names, each at `startLine` 1. Its
+`message.text` is the message and the guidance lines, and
+`properties.guidance` holds the object. A rule carries the shape's description
+and guide as `fullDescription` and `helpUri`. A finding that names no page is
+left out of the results. `invocations[0].toolExecutionNotifications` counts
+them instead, as `1 finding names no page. Run manni graph check to see them.`
+The exit code is the same in every format.
+
+A shapes file named by `--shapes` speaks to authors the same way when it
+declares the parts. Its `owl:Ontology` header gives the id through
+`dcterms:identifier` and the guide through `rdfs:seeAlso`. A file with no header
+is named by its path, as given. See [Govern the graph](/manni/graph/govern/)
+for writing one, and [`graph shapes`](#graph-shapes) for reading one.
 
 The bundled shapes are **closed**, so a predicate the shapes have not learned
 fails here. That is deliberate: a change to what the graph contains is not done
@@ -204,7 +265,8 @@ default. It names the question, the page's rank, and the page found first.
 
 ```console
 $ manni graph check
-warning: https://example.com/graph/doc/docs/limits.md graph:sampleQuestion — "How do I retry a failed upload?" does not find this page in the top 1 (it ranks 2; first is docs/retry.md) [docs/limits.md]
+warning: docs/limits.md: "How do I retry a failed upload?" does not find this page in the top 1 (it ranks 2; first is docs/retry.md)
+  at https://example.com/graph/doc/docs/limits.md graph:sampleQuestion
 ```
 
 A question that finds the page nowhere says `it is not found` in place of the
@@ -225,7 +287,8 @@ itself. A hit on another section of the same page does not count.
 
 ```console
 $ manni graph check
-warning: https://example.com/graph/doc/docs/retry.md graph:sampleQuestion — "How many times does an upload retry by default?" does not find the section that answers it, § Retry limits, in the top 1 (it ranks 2; first is docs/retry.md § Retry a failed upload) [docs/retry.md]
+warning: docs/retry.md: "How many times does an upload retry by default?" does not find the section that answers it, § Retry limits, in the top 1 (it ranks 2; first is docs/retry.md § Retry a failed upload)
+  at https://example.com/graph/doc/docs/retry.md graph:sampleQuestion
 ```
 
 A pin with an `integrity` is compared with the page as it reads now, under the
@@ -239,13 +302,15 @@ hashing rule citations use. A pin with none is checked where it points.
 
 ```console
 $ manni graph check
-notice: https://example.com/graph/doc/docs/upload.md graph:sampleQuestion — the answer to "How large may an upload be?" moved from lines 4-5 to 7-8, so manni graph fill --fields sample-questions re-pins it. [docs/upload.md]
+notice: docs/upload.md: the answer to "How large may an upload be?" moved from lines 4-5 to 7-8, so manni graph fill --fields sample-questions re-pins it.
+  at https://example.com/graph/doc/docs/upload.md graph:sampleQuestion
 ```
 
 After a rewrite that drops the answer, the same pin reads:
 
 ```console
-warning: https://example.com/graph/doc/docs/upload.md graph:sampleQuestion — lines 4-5 no longer hold the answer to "How large may an upload be?" as pinned, so re-pair it with manni graph fill --fields sample-questions and review it. [docs/upload.md]
+warning: docs/upload.md: lines 4-5 no longer hold the answer to "How large may an upload be?" as pinned, so re-pair it with manni graph fill --fields sample-questions and review it.
+  at https://example.com/graph/doc/docs/upload.md graph:sampleQuestion
 ```
 
 A question marked `reviewed: false` is a draft. Its findings report at
@@ -280,11 +345,12 @@ names the page that holds each answer, and `language` is optional.
 Each answer must be found, as a page's pin must. An empty `answers` list marks
 a known gap. A gap is counted and never asked, because search has no score
 floor to test "finds nothing" against. A finding on a file question points at
-the file and the line its item starts on, with no path.
+the file, and its `at` line names the line its item starts on.
 
 ```console
 $ manni graph check
-warning: questions.yaml:3 — "After rotating the key, how do I check nothing broke?" does not find docs/rotate.md § Rotate in the top 1 (it ranks 4; first is docs/validate.md § Check the result) [questions.yaml]
+warning: questions.yaml: "After rotating the key, how do I check nothing broke?" does not find docs/rotate.md § Rotate in the top 1 (it ranks 4; first is docs/validate.md § Check the result)
+  at questions.yaml:3
 ```
 
 Across pages and files, `check` also reports these.
@@ -297,10 +363,14 @@ Across pages and files, `check` also reports these.
 | The found rate is low | `error` | Fewer reviewed questions are found than `check.questions.foundThreshold` asks for. `check.questions.severity` does not touch it. |
 
 ```console
-warning: questions.yaml:1 — docs/old.md, which holds the answer to "How large may an upload be?", does not exist, so re-pin or remove the question. [questions.yaml]
-warning: https://example.com/graph/doc/docs/retry.md graph:sampleQuestion — "how do I retry a  failed upload" is also asked on docs/limits.md, so keep it where it is answered. [docs/retry.md]
-notice: https://example.com/graph/doc/docs/retry.md graph:sampleQuestion — "Do uploads retry three times by default?" repeats 5 of its 6 word pairs from its answer, so it tests matching words more than finding. (drafted, not reviewed) [docs/retry.md]
-error: questions — 0 of 1 reviewed questions are found in the top 1 (0%), under the 98% that graph.check.questions.foundThreshold asks for.
+warning: questions.yaml: docs/old.md, which holds the answer to "How large may an upload be?", does not exist, so re-pin or remove the question.
+  at questions.yaml:1
+warning: docs/retry.md: "how do I retry a  failed upload" is also asked on docs/limits.md, so keep it where it is answered.
+  at https://example.com/graph/doc/docs/retry.md graph:sampleQuestion
+notice: docs/retry.md: "Do uploads retry three times by default?" repeats 5 of its 6 word pairs from its answer, so it tests matching words more than finding. (drafted, not reviewed)
+  at https://example.com/graph/doc/docs/retry.md graph:sampleQuestion
+error: (no page): 0 of 1 reviewed questions are found in the top 1 (0%), under the 98% that graph.check.questions.foundThreshold asks for.
+  at questions
 ```
 
 A golden-set file that cannot be read stops the run with exit 2.
@@ -360,7 +430,7 @@ its own.
 | `--no-config` | n/a | off | Ignore any discovered config file. |
 | `-g, --graph` | `<path>` | config `out` | The built Turtle file to validate. |
 | `--shapes` | `<path>` | config `check.shapes`, else bundled | A shapes `.ttl` file. Repeatable, one path per occurrence, never comma-separated. Given here or in config, these replace the bundled shapes rather than adding to them. Include the bundled file when you mean to extend it. |
-| `-f, --format` | `<pretty\|json\|github>` | `pretty` | Output format. `github` writes one workflow annotation per finding. |
+| `-f, --format` | `<pretty\|json\|github\|sarif>` | `pretty` | Output format. `github` writes one workflow annotation per finding, and `sarif` writes one SARIF 2.1.0 log. |
 
 ## Checking a `graph:` block
 
@@ -384,6 +454,8 @@ meta:
 $ manni meta validate
 ✗ docs/install.md
     /graph  must NOT have additional property 'bogus'  (line 3)  [manni:graph:1.0.0]
+      manni:graph:1.0.0 graph
+      Guide: https://hawkeyexl.github.io/manni/meta/reference/schemas/manni-graph/
 
 1 file checked, 0 passed, 1 failed, 1 error
 ```
@@ -392,6 +464,177 @@ A typo inside the block is a schema error with a line number, because the block
 is closed. `manni graph build` reads `x-manni-graph-output` from the set
 `manni meta validate` resolves for each page, to decide what a published graph
 may carry.
+
+## `graph shapes`
+
+Lists the SHACL node shapes `graph check` runs, grouped by the file they come
+from, with what each one targets. It reads the same shapes `check` does: the
+`--shapes` files, else `graph.check.shapes`, else the bundled file. It reads no
+documents and no graph, and it exits 0.
+
+```sh
+manni graph shapes [options]
+```
+
+```console
+$ manni graph shapes
+manni:graph-shapes:1.1.1  (bundled)
+  Guide: https://hawkeyexl.github.io/manni/graph/fix/
+  ActivityShape          prov:Activity                      A generation, fill or build run that manni records. manni writes it.
+  AssociationShape       prov:Association                   The role an agent played in an activity. manni writes it.
+  AttributionShape       prov:Attribution                   The role an author played on a page. manni writes it.
+  ConceptShape           skos:Concept                       A concept of the glossary, named by a term page, a graph label, a tag or a concepts entry.
+  DocumentShape          graph:Document                     A page of the docset, as its frontmatter, links, headings and history describe it.
+  FilledFieldEntryShape  objects of graph:filledFieldEntry  One field a graph fill run filled, with the model's confidence. manni writes it from meta-provenance.
+  OrganizationShape      prov:Organization                  An organization credited on a page.
+  PersonShape            prov:Person                        A person credited as an author of a page.
+  ProductVariantShape    iirds:ProductVariant               A product variant that pages name in applies-to or not-applicable-to.
+  SchemeShape            skos:ConceptScheme                 The glossary that holds every concept of the docset. manni writes it.
+  SectionShape           graph:Section                      A heading of a page, typed through graph.sections.
+  SoftwareAgentShape     prov:SoftwareAgent                 A model or tool that wrote or filled part of a page, or built the graph.
+```
+
+Each file opens with its id and where it came from: `(bundled)`, or the path as
+given. A file with no `owl:Ontology` header is named by that path. The
+`Guide:` line prints when the header names one.
+
+`-f json` prints `{ shapes }`, one object per node shape:
+
+```json
+{
+  "shapes": [
+    {
+      "name": "DescribedShape",
+      "id": "house:shapes:1.0.0",
+      "source": "house-shapes.ttl",
+      "target": "https://hawkeyexl.github.io/manni/graph/ns#Document",
+      "closed": false,
+      "description": "A page the house style describes.",
+      "guide": "https://example.com/house/guide/"
+    }
+  ]
+}
+```
+
+### Options
+
+| Option | Argument | Default | Description |
+|---|---|---|---|
+| `-c, --config` | `<path>` | discovered | Path to `manni.config.yaml`. |
+| `--no-config` | n/a | off | Ignore any discovered config file. |
+| `--shapes` | `<path>` | config `check.shapes`, else bundled | A shapes `.ttl` file. Repeatable, one path per occurrence, never comma-separated. |
+| `-f, --format` | `<pretty\|json>` | `pretty` | Output format. |
+
+## `graph shapes show`
+
+Prints every property one node shape checks, and the frontmatter key that
+feeds it. The shape is named by its local name, as `graph shapes` lists it.
+
+```sh
+manni graph shapes show <shape> [options]
+```
+
+```console
+$ manni graph shapes show ConceptShape
+ConceptShape  manni:graph-shapes:1.1.1  skos:Concept, closed
+  A concept of the glossary, named by a term page, a graph label, a tag or a concepts entry.
+  Guide: https://hawkeyexl.github.io/manni/graph/fix/
+
+  Concept-altLabel             skos:altLabel      graph.alt-labels · optional, repeats
+     Other names readers use for the concept. Search matches them too.
+  Concept-broadMatch           skos:broadMatch    optional, repeats
+     A broader concept in another vocabulary, from the term page. It never points into this glossary.
+  Concept-broader              skos:broader       graph.broader · optional, repeats
+     A more general concept. A concept is never its own ancestor.
+  Concept-closeMatch           skos:closeMatch    optional, repeats
+     A near-equivalent concept in another vocabulary, from the term page. It never points into this glossary.
+  Concept-definition           skos:definition    optional, repeats
+     What the concept means, from its term page.
+  Concept-exactMatch           skos:exactMatch    optional, repeats
+     The same concept in another vocabulary, from the term page. It never points into this glossary.
+  Concept-hiddenLabel          skos:hiddenLabel   optional, repeats
+     Misspellings and old names that search matches but never shows, from the term page.
+  Concept-inScheme             skos:inScheme      required, repeats
+     The glossary the concept belongs to. manni writes it.
+  Concept-narrowMatch          skos:narrowMatch   optional, repeats
+     A narrower concept in another vocabulary, from the term page. It never points into this glossary.
+  Concept-narrower             skos:narrower      graph.narrower · optional, repeats
+     A more specific concept. manni also writes it as the inverse of broader.
+  Concept-notation             skos:notation      optional, repeats
+     A code that names the concept, from its term page.
+  Concept-prefLabel            skos:prefLabel     graph.label · required, repeats
+     The concept's name. Every concept has one.
+  Concept-prefLabel-collision  skos:prefLabel     optional, repeats, warning
+     One name per language, so search and the glossary agree on a spelling.
+  Concept-related              skos:related       graph.related-concepts · optional, repeats
+     A concept on the same level as this one. It is never also an ancestor or a descendant.
+  Concept-relatedMatch         skos:relatedMatch  optional, repeats
+     A related concept in another vocabulary, from the term page. It never points into this glossary.
+  Concept-scopeNote            skos:scopeNote     optional, repeats
+     When to use the concept, and when not to, from its term page.
+  Concept-topConceptOf         skos:topConceptOf  optional, repeats
+     Marks a concept with no broader concept. manni writes it.
+```
+
+Each row is a rule, the property it checks, and the frontmatter key that feeds
+it when an author writes one. A row with no key is a value manni writes. A
+severity other than `error` closes the row. The indented line under it is the
+rule's description, from `sh:description`.
+
+`-f markdown` prints a frontmatter skeleton of the keys an author writes. Each
+key follows its description as a comment. An optional key is commented out,
+and `graph.*` keys nest under `graph:`.
+
+```console
+$ manni graph shapes show ConceptShape -f markdown
+---
+# ConceptShape, manni:graph-shapes:1.1.1
+# Guide: https://hawkeyexl.github.io/manni/graph/fix/
+graph:
+  # Other names readers use for the concept. Search matches them too.
+  # alt-labels: []
+  # A more general concept. A concept is never its own ancestor.
+  # broader: []
+  # The concept's name. Every concept has one.
+  label: []
+  # A more specific concept. manni also writes it as the inverse of broader.
+  # narrower: []
+  # A concept on the same level as this one. It is never also an ancestor or a descendant.
+  # related-concepts: []
+---
+```
+
+`-f json` prints `{ shapes }` with the one shape, which gains `properties`. Each
+property is `{ rule, path, key, min, max, severity, description }`. `key` is
+`null` for a value manni writes, and `max` is `null` when the property repeats.
+
+### Arguments
+
+| Argument | Description |
+|---|---|
+| `<shape>` | The node shape to show, by local name, such as `DocumentShape`. |
+
+### Options
+
+| Option | Argument | Default | Description |
+|---|---|---|---|
+| `-c, --config` | `<path>` | discovered | Path to `manni.config.yaml`. |
+| `--no-config` | n/a | off | Ignore any discovered config file. |
+| `--shapes` | `<path>` | config `check.shapes`, else bundled | A shapes `.ttl` file. Repeatable, one path per occurrence, never comma-separated. |
+| `-f, --format` | `<pretty\|json\|markdown>` | `pretty` | Output format. |
+
+### Usage errors
+
+Each of these exits 2.
+
+| Case | stderr |
+|---|---|
+| No shape named | `error: missing required argument 'shape'` |
+| A shape the files do not hold | `manni: Unknown shape "Document". Available: ActivityShape, AssociationShape, AttributionShape, ConceptShape, DocumentShape, FilledFieldEntryShape, OrganizationShape, PersonShape, ProductVariantShape, SchemeShape, SectionShape, SoftwareAgentShape.` |
+| `-f markdown` on a shape with no frontmatter keys | `manni: ActivityShape has no frontmatter keys. manni writes every value it checks.` |
+| `-f markdown` on `graph shapes` | `manni: Unknown --format "markdown". Use pretty \| json.` |
+| An unknown `-f` on `graph shapes show` | `manni: Unknown --format "xml". Use pretty \| json \| markdown.` |
+| A `--shapes` file that does not exist | `manni: Shapes file not found: <resolved path>. Fix the path in --shapes or graph.check.shapes. Leave both unset to use the bundled shapes.` |
 
 ## `graph fill`
 
@@ -870,7 +1113,7 @@ jq -c 'select(.reviewed) | {vars: {question: .question}, metadata: {id: .id}}' g
     against the committed fixture corpus under test/graph/fixtures/dd/.
     Config: .doc-detective.json. */}
 
-{/* step {"description":"The CLI lists all ten commands.","runShell":{"command":"manni graph --help","exitCodes":[0],"stdio":"/init[\\s\\S]*build[\\s\\S]*check[\\s\\S]*fill[\\s\\S]*query[\\s\\S]*stats[\\s\\S]*search[\\s\\S]*traverse[\\s\\S]*embed[\\s\\S]*export/"}} */}
+{/* step {"description":"The CLI lists all eleven commands.","runShell":{"command":"manni graph --help","exitCodes":[0],"stdio":"/init[\\s\\S]*build[\\s\\S]*check[\\s\\S]*shapes[\\s\\S]*fill[\\s\\S]*query[\\s\\S]*stats[\\s\\S]*search[\\s\\S]*traverse[\\s\\S]*embed[\\s\\S]*export/"}} */}
 
 {/* step {"description":"There is no default subcommand: the domain owns verbs.","runShell":{"command":"manni graph test/graph/fixtures/dd/docs","exitCodes":[2]}} */}
 
@@ -890,11 +1133,11 @@ jq -c 'select(.reviewed) | {vars: {question: .question}, metadata: {id: .id}}' g
 
 {/* step {"description":"A SHACL error exits 1.","runShell":{"command":"manni graph build -c test/graph/fixtures/dd/violations.config.yaml","exitCodes":[0]}} */}
 
-{/* step {"description":"check names the focus node and the documents it came from.","runShell":{"command":"manni graph check -c test/graph/fixtures/dd/violations.config.yaml","exitCodes":[1],"stdio":"4 errors, 0 warnings, 0 notices"}} */}
+{/* step {"description":"check names the focus node and the documents it came from.","runShell":{"command":"manni graph check -c test/graph/fixtures/dd/violations.config.yaml","exitCodes":[1],"stdio":"3 errors, 0 warnings, 0 notices"}} */}
 
 {/* step {"description":"-f github annotates the documents behind the finding.","runShell":{"command":"manni graph check -c test/graph/fixtures/dd/violations.config.yaml -f github","exitCodes":[1],"stdio":"::error file=violations/alpha.md::"}} */}
 
-{/* step {"description":"An unknown --format is refused while the options are parsed.","runShell":{"command":"manni graph check -c test/graph/fixtures/dd/docs.config.yaml -f xml","exitCodes":[2],"stdio":"/Unknown --format \"xml\". Use pretty \\| json \\| github./"}} */}
+{/* step {"description":"An unknown --format is refused while the options are parsed.","runShell":{"command":"manni graph check -c test/graph/fixtures/dd/docs.config.yaml -f xml","exitCodes":[2],"stdio":"/Unknown --format \"xml\". Use pretty \\| json \\| github \\| sarif./"}} */}
 
 {/* step {"description":"manni meta validate passes a corpus whose graph blocks are legal.","runShell":{"command":"manni meta validate -c test/graph/fixtures/dd/docs.config.yaml -s manni:graph:1.0.0","exitCodes":[0],"stdio":"3 files checked, 3 passed"}} */}
 
@@ -923,3 +1166,9 @@ jq -c 'select(.reviewed) | {vars: {question: .question}, metadata: {id: .id}}' g
 {/* step {"description":"search ranks nodes from that index.","runShell":{"command":"manni graph search installation -c test/graph/fixtures/dd/docs.config.yaml","exitCodes":[0],"stdio":"1 result (lexical)"}} */}
 
 {/* step {"description":"--collection cannot be combined with positional paths.","runShell":{"command":"manni graph build -c test/graph/fixtures/dd/docs.config.yaml --collection dd test/graph/fixtures/dd/docs","exitCodes":[2],"stdio":"cannot be combined with paths"}} */}
+
+{/* step {"description":"shapes lists the node shapes check runs, by file.","runShell":{"command":"manni graph shapes -c test/graph/fixtures/dd/docs.config.yaml","exitCodes":[0],"stdio":"manni:graph-shapes:1.1.1  (bundled)"}} */}
+
+{/* step {"description":"shapes show prints every property a shape checks.","runShell":{"command":"manni graph shapes show DocumentShape -c test/graph/fixtures/dd/docs.config.yaml","exitCodes":[0],"stdio":"Document-language"}} */}
+
+{/* step {"description":"An unknown shape is a usage error naming the shapes there are.","runShell":{"command":"manni graph shapes show Document -c test/graph/fixtures/dd/docs.config.yaml","exitCodes":[2],"stdio":"Unknown shape \"Document\". Available:"}} */}

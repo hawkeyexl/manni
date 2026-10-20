@@ -298,7 +298,7 @@ async function analyzePage(
   return {
     result: {
       url,
-      violations: results.violations.map(toViolation),
+      violations: results.violations.map((v) => toViolation(v, results.testEngine)),
       passes: results.passes.length,
       incomplete: results.incomplete.length,
     },
@@ -405,7 +405,14 @@ function impactOf(impact: ImpactValue | null | undefined): AxeImpact {
   return impact != null && isAxeImpact(impact) ? impact : "minor";
 }
 
-function toViolation(result: AxeResult): Violation {
+/**
+ * axe's result as the reporters read it. The guidance names the axe version
+ * that judged the page, the rule, axe's description of it and its guide.
+ */
+export function toViolation(
+  result: AxeResult,
+  testEngine: Pick<AxeResults["testEngine"], "version">,
+): Violation {
   return {
     id: result.id,
     severity: severityOf(result.impact),
@@ -414,6 +421,12 @@ function toViolation(result: AxeResult): Violation {
     helpUrl: result.helpUrl,
     tags: result.tags,
     nodes: result.nodes.map(toNode),
+    guidance: {
+      id: `axe-core ${testEngine.version}`,
+      rule: result.id,
+      description: result.description,
+      guide: result.helpUrl,
+    },
   };
 }
 

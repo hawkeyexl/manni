@@ -89,11 +89,8 @@ docs/src/content/docs/meta/reference/docusaurus-schemas.mdx:
       lines: 78
       integrity: sha256-2bc6314e3503591c351e88460af09fa8e1e65f41a79e3d23a736543b3ac1c767
     - generated-by: Claude Opus 5
-      lines: 82
-      integrity: sha256-74567968589da9ff99b6594ba819d80226c87c33e396b0f6d904d6a2b26281be
-    - generated-by: Claude Opus 5
-      lines: 90-93
-      integrity: sha256-edad1c9399c42a9909e2e37eef5958643fa2a5e5963638f55ca95010972a5c30
+      lines: 92-93
+      integrity: sha256-384ee1b241c48424a7d7e2b02a2764f0a6cad9f66ed1502082bc601ea2bab378
     - generated-by: Claude Opus 5
       lines: 97
       integrity: sha256-0d801cd23cda202e6a87a5f196d842906412bf68c0e49652237b819d8cff96b7

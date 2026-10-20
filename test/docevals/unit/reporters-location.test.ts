@@ -132,7 +132,8 @@ describe("github", () => {
   it("annotates a judged failure at the declaring entry", () => {
     expect(lines).toContain(
       "::error file=site.metadata.yaml,line=12,title=manni docevals%3A waits-are-named::" +
-        "AI judge: fail (confidence 0.90). No wait condition is named.",
+        "AI judge: fail (confidence 0.90). Edit the page so the assertion holds." +
+        "%0AObserved: it does not%0AReasoning: No wait condition is named.",
     );
   });
 });
@@ -207,9 +208,9 @@ describe("pretty, markdown and html", () => {
 
   it("markdown names the declaring entry beside the page", () => {
     const out = render(REPORT, "markdown");
-    expect(out).toContain("**waits-are-named** — `docs/goTo.mdx` · `site.metadata.yaml:12`");
+    expect(out).toContain("**waits-are-named** · `docs/goTo.mdx` · `site.metadata.yaml:12`");
     // When the page declares the eval, one label says both.
-    expect(out).toContain("**no-todo-markers** — `docs/goTo.mdx:7`");
+    expect(out).toContain("**no-todo-markers** · `docs/goTo.mdx:7`");
   });
 
   it("html shows the declaring entry beside the eval name", () => {

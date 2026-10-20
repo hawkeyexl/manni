@@ -77,9 +77,9 @@ docs/src/content/docs/meta/set-up/machine-authorship.mdx:
         integrity: sha256-7039fb1532232cd20ca72b17f50d4499b0e7e596e3ec78392f9cf28affb9a202
       source:
         file: src/meta/cli.ts
-        lines: 1605-1606
+        lines: 1619-1620
         integrity: sha256-dcaeddb2c779f1f13b38700375d49f5ca9e5dbe781dac67ef7f3c2c42548d9c5
-        commit-sha: a589e08250dee7efaee7ed0f58df01986fad8d1d
+        commit-sha: ffdbdab4b080ca781c685250214db34edc01ae3b
     - id: url-manifest-cannot-own-provenance
       claim:
         integrity: sha256-847eace2a8ba9d5ee66ef790ce1713c14bd6006d6f46065ab33a041d0956e99b

@@ -13,8 +13,11 @@ docs/src/content/docs/tracevals/triage/faq.mdx:
       grader: ai
   provenance:
     - generated-by: Claude Opus 5
-      lines: 2-101
-      integrity: sha256-b2692e055fcf8d705442d8e83746ebde887e06d04bf33353c87a6ebf3cd8e8a3
+      lines: 2-40
+      integrity: sha256-328c63de7701efe16fcab0db36068b00e103e4b05874b0f68d1be7abeb7f5132
+    - generated-by: Claude Opus 5
+      lines: 42-101
+      integrity: sha256-d60421959b7ca3037eb3265082b24a824ee186a38024f6a22c3783faa2507e87
     - generated-by: Claude Opus 5.5
       lines: 102
       integrity: sha256-65abad057a6ade817cb3a213e37f4f0dd9895107c51834a7ad28bd956df0c7ba

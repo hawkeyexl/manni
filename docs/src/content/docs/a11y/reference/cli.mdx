@@ -11,7 +11,7 @@ lifecycle: published
 applies-to: ["domain:a11y"]
 sample-questions: ["What flags does manni a11y check accept?", "Where do the seed URLs come from?", "Which a11y config keys can I set?"]
 graph: { label: "CLI reference", type: reference }
-last-updated: 2026-10-05
+last-updated: 2026-10-20
 tags:
   - cli
   - accessibility
@@ -311,17 +311,32 @@ the violations under each failing page, and a footer:
 Checked 3 of 3 pages (sitemap: http://127.0.0.1:4173/sitemap.xml)
 ✓ http://127.0.0.1:4173/index.html  score 100
 ✗ http://127.0.0.1:4173/about.html  score 78  4 errors
-    error  button-name (axe: critical)  1 node  Buttons must have discernible text  https://dequeuniversity.com/rules/axe/4.13/button-name?application=playwright
+    error  button-name (axe: critical)  1 node  Buttons must have discernible text
+      axe-core 4.13.0 button-name: Ensure buttons have discernible text
+      Guide: https://dequeuniversity.com/rules/axe/4.13/button-name?application=playwright
       button  → Fix any of the following: Element does not have inner text that is visible to screen readers; aria-label attribute does not exist or is empty; aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty; Element has no title attribute; Element does not have an implicit (wrapped) <label>; Element does not have an explicit <label>; Element's default semantics were not overridden with role="none" or role="presentation"
-    error  color-contrast (axe: serious)  1 node  Elements must meet minimum color contrast ratio thresholds  https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=playwright
+        <button></button>
+    error  color-contrast (axe: serious)  1 node  Elements must meet minimum color contrast ratio thresholds
+      axe-core 4.13.0 color-contrast: Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds
+      Guide: https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=playwright
       p  → Fix any of the following: Element has insufficient color contrast of 2.84 (foreground color: #999999, background color: #ffffff, font size: 12.0pt (16px), font weight: normal). Expected contrast ratio of 4.5:1
-    error  html-has-lang (axe: serious)  1 node  <html> element must have a lang attribute  https://dequeuniversity.com/rules/axe/4.13/html-has-lang?application=playwright
+        <p style="color:#999;background:#fff">Low contrast text.</p>
+    error  html-has-lang (axe: serious)  1 node  <html> element must have a lang attribute
+      axe-core 4.13.0 html-has-lang: Ensure every HTML document has a lang attribute
+      Guide: https://dequeuniversity.com/rules/axe/4.13/html-has-lang?application=playwright
       html  → Fix any of the following: The <html> element does not have a lang attribute
-    error  image-alt (axe: critical)  1 node  Images must have alternative text  https://dequeuniversity.com/rules/axe/4.13/image-alt?application=playwright
+        <html><head> <meta charset="utf-8"> …
+    error  image-alt (axe: critical)  1 node  Images must have alternative text
+      axe-core 4.13.0 image-alt: Ensure <img> elements have alternative text or a role of none or presentation
+      Guide: https://dequeuniversity.com/rules/axe/4.13/image-alt?application=playwright
       img  → Fix any of the following: Element does not have an alt attribute; aria-label attribute does not exist or is empty; aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty; Element has no title attribute; Element's default semantics were not overridden with role="none" or role="presentation"
+        <img src="x.png">
 ✗ http://127.0.0.1:4173/orphan.html  score 94  1 error
-    error  image-alt (axe: critical)  1 node  Images must have alternative text  https://dequeuniversity.com/rules/axe/4.13/image-alt?application=playwright
+    error  image-alt (axe: critical)  1 node  Images must have alternative text
+      axe-core 4.13.0 image-alt: Ensure <img> elements have alternative text or a role of none or presentation
+      Guide: https://dequeuniversity.com/rules/axe/4.13/image-alt?application=playwright
       img  → Fix any of the following: Element does not have an alt attribute; aria-label attribute does not exist or is empty; aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty; Element has no title attribute; Element's default semantics were not overridden with role="none" or role="presentation"
+        <img src="y.png">
 
 5 violations on 2 of 3 pages
 ```
@@ -333,11 +348,13 @@ is not the same as using one. When it supplied some of the discovered pages,
 the header adds its count and `followed links for the rest`. When it supplied
 none, the header adds `0 pages; followed links`. Each violation line
 carries the severity, the rule id, and axe's own impact in parentheses. Then
-come the node count, axe's short help text, and the rule's Deque University
-URL. The severity is what the floor and the exit code use. The impact is there
-for lookup, since the Deque page and the axe DevTools report both name it.
-Under it, the first three failing elements print as
-a selector and axe's failure summary, then `(+N more)` past three. A page that
+come the node count and axe's short help text. The severity is what the floor
+and the exit code use. The impact is there for lookup, since the Deque page and
+the axe DevTools report both name it. Two dim lines follow. The first names the
+axe version and the rule, and says what the rule checks. The second reads
+`Guide:` and the rule's Deque University URL. Then the first three failing
+elements print as a selector and axe's failure summary. Each has the element's
+html dim beneath it, cut at 200 characters. `(+N more)` follows past three. A page that
 could not load prints `could not load: <reason>`. The footer adds
 `; K skipped (--max-pages)` when the cap was hit, and `; K duplicates dropped`
 when a redirect landed on a page that was also queued under another spelling.
@@ -386,7 +403,13 @@ adds `; N redirects` after the duplicates clause.
               "html": "<img src=\"y.png\">",
               "summary": "Fix any of the following:\n  Element does not have an alt attribute\n  aria-label attribute does not exist or is empty\n  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty\n  Element has no title attribute\n  Element's default semantics were not overridden with role=\"none\" or role=\"presentation\""
             }
-          ]
+          ],
+          "guidance": {
+            "id": "axe-core 4.13.0",
+            "rule": "image-alt",
+            "description": "Ensure <img> elements have alternative text or a role of none or presentation",
+            "guide": "https://dequeuniversity.com/rules/axe/4.13/image-alt?application=playwright"
+          }
         }
       ],
       "passes": 15,
@@ -426,9 +449,10 @@ Each entry of `results[]`:
 |---|---|---|
 | `url` | string | The normalized URL that was checked. |
 | `source` | `"seed"` \| `"sitemap"` \| `"link"` | How the URL entered the run. |
-| `violations` | array | Rules that failed at or above the severity floor. Each has `id`, `severity`, `impact`, `help`, `helpUrl`, `tags`, and `nodes[]` with `target` (axe's CSS selector path), `html` (the element's outer HTML), and `summary` (axe's failure summary). Empty when `error` is set. |
+| `violations` | array | Rules that failed at or above the severity floor. Each has `id`, `severity`, `impact`, `help`, `helpUrl`, `tags`, `nodes[]` with `target` (axe's CSS selector path), `html` (the element's outer HTML), and `summary` (axe's failure summary), and `guidance`. Empty when `error` is set. |
 | `violations[].severity` | `"notice"` \| `"warning"` \| `"error"` | The family level, mapped from `impact`. What the floor, the exit code, and the `github` format use. |
 | `violations[].impact` | `"minor"` \| `"moderate"` \| `"serious"` \| `"critical"` | axe's own value, kept for lookup against its rule pages. A rule axe reports with no impact is recorded as `"minor"`. |
+| `violations[].guidance` | object | What judged the finding. `id` is `axe-core` and its version, `rule` is the rule id, `description` is axe's description of the rule, and `guide` is its `helpUrl`. |
 | `passes` | integer | Rules that passed on this page. |
 | `incomplete` | integer | Rules axe could not decide. Reported, never counted as failures. |
 | `score` | integer \| `null` | See [the score](#the-score). `null` when the page did not load or no rule applied. |
@@ -464,15 +488,23 @@ And `summary`:
 
 {/* cite github-one-per-finding */}
 **`github`** prints one workflow command per finding, and nothing when the run
-is clean:
+is clean. The message reads `<help>: N node(s) on <url>.` Up to three failing
+elements follow `%0A`. Each is a selector with axe's failure summary, then its
+html, cut at 200 characters. The guidance and `Guide:` lines come last:
 
 ```
-::error title=a11y/button-name::Buttons must have discernible text — 1 node on http://127.0.0.1:4173/about.html (https://dequeuniversity.com/rules/axe/4.13/button-name?application=playwright)
-::error title=a11y/color-contrast::Elements must meet minimum color contrast ratio thresholds — 1 node on http://127.0.0.1:4173/about.html (https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=playwright)
-::error title=a11y/html-has-lang::<html> element must have a lang attribute — 1 node on http://127.0.0.1:4173/about.html (https://dequeuniversity.com/rules/axe/4.13/html-has-lang?application=playwright)
-::error title=a11y/image-alt::Images must have alternative text — 1 node on http://127.0.0.1:4173/about.html (https://dequeuniversity.com/rules/axe/4.13/image-alt?application=playwright)
-::error title=a11y/image-alt::Images must have alternative text — 1 node on http://127.0.0.1:4173/orphan.html (https://dequeuniversity.com/rules/axe/4.13/image-alt?application=playwright)
+::error title=a11y/button-name::Buttons must have discernible text: 1 node on http://127.0.0.1:4173/about.html.%0Abutton  → Fix any of the following: Element does not have inner text that is visible to screen readers; …%0A  <button></button>%0Aaxe-core 4.13.0 button-name: Ensure buttons have discernible text%0AGuide: https://dequeuniversity.com/rules/axe/4.13/button-name?application=playwright
+::error title=a11y/color-contrast::Elements must meet minimum color contrast ratio thresholds: 1 node on http://127.0.0.1:4173/about.html.%0Ap  → Fix any of the following: Element has insufficient color contrast of 2.84 …%0A  <p style="color:#999;background:#fff">Low contrast text.</p>%0Aaxe-core 4.13.0 color-contrast: Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds%0AGuide: https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=playwright
+::error title=a11y/html-has-lang::<html> element must have a lang attribute: 1 node on http://127.0.0.1:4173/about.html.%0Ahtml  → Fix any of the following: The <html> element does not have a lang attribute%0A  <html><head> <meta charset="utf-8"> …%0Aaxe-core 4.13.0 html-has-lang: Ensure every HTML document has a lang attribute%0AGuide: https://dequeuniversity.com/rules/axe/4.13/html-has-lang?application=playwright
+::error title=a11y/image-alt::Images must have alternative text: 1 node on http://127.0.0.1:4173/about.html.%0Aimg  → Fix any of the following: Element does not have an alt attribute; …%0A  <img src="x.png">%0Aaxe-core 4.13.0 image-alt: Ensure <img> elements have alternative text or a role of none or presentation%0AGuide: https://dequeuniversity.com/rules/axe/4.13/image-alt?application=playwright
+::error title=a11y/image-alt::Images must have alternative text: 1 node on http://127.0.0.1:4173/orphan.html.%0Aimg  → Fix any of the following: Element does not have an alt attribute; …%0A  <img src="y.png">%0Aaxe-core 4.13.0 image-alt: Ensure <img> elements have alternative text or a role of none or presentation%0AGuide: https://dequeuniversity.com/rules/axe/4.13/image-alt?application=playwright
 ```
+
+A violation whose rule and elements, html included, are the same on several
+pages is one command. Its first line reads `<help>: N node(s) on K pages, first
+<url>.` and adds `The same element fails on each page, so the fix likely belongs
+in a shared template.` The `pretty` and `json` formats still list it under each
+page.
 
 {/* cite github-level-is-severity */}
 GitHub renders each as an annotation on the workflow run. There is no file or

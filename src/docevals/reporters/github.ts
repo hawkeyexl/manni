@@ -10,6 +10,7 @@ import {
 } from "../../shared/github.js";
 import { renderMarkdown } from "./markdown.js";
 import { declaringEntry } from "./location.js";
+import { judgedLines, resultGuidance } from "./judged.js";
 
 export function renderGithub(report: EngineReport): string {
   const lines: string[] = [];
@@ -19,6 +20,7 @@ export function renderGithub(report: EngineReport): string {
       `file=${escapeProperty(entry.file)}`,
       entry.line !== undefined ? `line=${String(entry.line)}` : undefined,
     ];
+    const guidance = resultGuidance(r);
     for (const f of r.findings ?? []) {
       // The family scale is GitHub's annotation levels, word for word.
       const level = f.severity;
@@ -33,28 +35,26 @@ export function renderGithub(report: EngineReport): string {
       ]
         .filter(Boolean)
         .join(",");
-      lines.push(`::${level} ${props}::${escapeData(f.message)}`);
+      lines.push(`::${level} ${props}::${escapeData([f.message, ...guidance].join("\n"))}`);
     }
-    if (r.outcome === "fail" && r.consensus) {
-      const reasoning =
-        r.consensus.runs.find((run) => run.verdict)?.verdict?.reasoning ?? "";
+    const entryAnnotation = (level: string, text: string[]): void => {
       const props = [...entryProps, `title=${escapeProperty(`manni docevals: ${r.evalName}`)}`]
         .filter(Boolean)
         .join(",");
-      lines.push(
-        `::error ${props}::${escapeData(
-          `AI judge: fail (confidence ${r.consensus.meanConfidence.toFixed(2)}). ${reasoning}`,
-        )}`,
-      );
+      lines.push(`::${level} ${props}::${escapeData([...text, ...guidance].join("\n"))}`);
+    };
+    // A judged failure, or an eval awaiting review. A review is a warning:
+    // it fails the run only under --fail-on-review, and without this line
+    // nothing in the log says why it did.
+    const judged = judgedLines(r);
+    if (judged.length > 0) {
+      entryAnnotation(r.outcome === "fail" ? "error" : "warning", judged);
     }
     // An errored eval with no findings has nothing above to say it ran.
     // Left out, it shows only in the summary table, which a collapsed step
     // hides. SARIF reports it the same way; one with findings already did.
     if (r.outcome === "error" && (r.findings ?? []).length === 0) {
-      const props = [...entryProps, `title=${escapeProperty(`manni docevals: ${r.evalName}`)}`]
-        .filter(Boolean)
-        .join(",");
-      lines.push(`::error ${props}::${escapeData(r.skipReason ?? "eval errored")}`);
+      entryAnnotation("error", [r.skipReason ?? "eval errored"]);
     }
   }
   for (const p of report.problems) {

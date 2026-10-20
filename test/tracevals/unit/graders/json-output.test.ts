@@ -46,6 +46,29 @@ describe("json-output grader", () => {
     expect(result.findings[0]?.message).toContain("JSON");
   });
 
+  it("reports every schema error as one finding that says what to do", async () => {
+    const result = await grader.grade({
+      trace: makeTrace({ assistantTexts: ['{"a":1}'] }),
+      plan: makePlan({
+        grader: "json-output",
+        options: {
+          schema: {
+            type: "object",
+            required: ["b"],
+            properties: { a: { type: "string" } },
+          },
+        },
+      }),
+    });
+    expect(result.findings).toHaveLength(1);
+    expect(result.findings[0]?.message).toBe(
+      "final assistant output does not match the schema: " +
+        // Ajv's own order: it checks `required` before `properties`.
+        "/ must have required property 'b'; /a must be string. " +
+        "Redo the session work so it holds, or fix the eval if the artifact does not ask for this.",
+    );
+  });
+
   it("grades the same $id-bearing schema across a batch of traces", async () => {
     // The module-level Ajv kept every schema it compiled, so a schema
     // declaring `$id` compiled on trace 1 and threw

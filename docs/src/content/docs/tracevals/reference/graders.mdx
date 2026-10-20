@@ -12,7 +12,7 @@ lifecycle: published
 applies-to: ["domain:tracevals"]
 sample-questions: ["What options does tool-order take?", "How do I stop command evals from running?"]
 graph: { label: "Grader reference", type: reference }
-last-updated: 2026-10-11
+last-updated: 2026-10-20
 ---
 
 import { Aside } from '@astrojs/starlight/components';
@@ -207,6 +207,11 @@ evidence outranks "the trigger did not fire".
 **Only `error` severity fails an eval.** A finding at `warning` or `notice` is reported and the eval
 passes. Severity is set per eval; see the
 [evals schema](/manni/tracevals/reference/evals-schema/).
+
+**Every deterministic failure says what to do.** The failure messages in the tables below each end
+with `. Redo the session work so it holds, or fix the eval if the artifact does not ask for this.`
+The tables leave that sentence out. A `command` failure carries its own direction, given under
+[`command`](#command).
 
 ### Shared validation messages
 
@@ -525,7 +530,9 @@ Whether the session's final assistant message is JSON matching a schema.
 |---|
 | `session produced no assistant text to validate` |
 | `final assistant output is not valid JSON` |
-| one finding per schema violation, from the validator |
+| `final assistant output does not match the schema: <violation>; <violation>` |
+
+Every schema violation goes into the one message, joined by `; `, so the eval reports one finding.
 
 **Validation.** The option is shape-checked up front
 (`options.schema is required and must be a JSON Schema object`), and the schema is compiled at grade
@@ -587,6 +594,13 @@ alongside `grader: command`.
 
 The command runs with its working directory set to the project root artifact resolution walked from.
 A repo-relative script path therefore resolves the way you wrote it.
+
+An exit code outside `success-exit-codes` fails the eval. The message names the code, says what to
+do, and quotes the command's stderr:
+
+```
+command exited 1 (expected 0). Redo the session work so the check passes, or fix the command if it is broken. Output: the session force-pushed
+```
 
 <Aside type="caution" title="This runs code from the artifact">
 A command eval executes a program named in an artifact's frontmatter, and artifacts are resolved

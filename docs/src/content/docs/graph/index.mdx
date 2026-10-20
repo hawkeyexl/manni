@@ -43,7 +43,7 @@ related-pages:
   - meta
   - cite
   - term
-last-updated: 2026-10-18
+last-updated: 2026-10-20
 ---
 
 import { Aside } from '@astrojs/starlight/components';
@@ -88,7 +88,10 @@ Check it as a whole:
 
 ```console
 $ npx @hawkeyexl/manni graph check
-warning: https://example.com/dd/concept/installation skos:prefLabel — concept carries multiple prefLabels (same slug, different spellings) — settle on one spelling [docs/configuration.md, docs/getting-started.md]
+warning: docs/configuration.md, docs/getting-started.md: Pages spell this concept two ways: "Installation" and "installation". Use one spelling on every page that names it.
+  at https://example.com/dd/concept/installation skos:prefLabel
+  manni:graph-shapes:1.1.1 Concept-prefLabel-collision: One name per language, so search and the glossary agree on a spelling.
+  Guide: https://hawkeyexl.github.io/manni/graph/fix/
 
 0 errors, 1 warning, 0 notices
 ```

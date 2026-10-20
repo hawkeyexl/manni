@@ -212,7 +212,7 @@ export class FillGuard {
     if (finding.path === `${NS.skos}prefLabel`) {
       return pick("label");
     }
-    if (finding.message.includes("cycle")) return hierarchy;
+    // A cycle finding sits on skos:broader, so this covers it too.
     if (finding.path === `${NS.skos}broader`) return hierarchy;
     if (finding.path === `${NS.skos}narrower`) return hierarchy;
     if (finding.path === `${NS.skos}related`) {

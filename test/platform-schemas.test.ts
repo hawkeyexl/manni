@@ -120,9 +120,8 @@ describe("astro:starlight:0.41", () => {
     // Under `anyOf` this document produced five errors for two mistakes, and
     // the extra one was `/sidebar/badge must be string` — a complaint about the
     // string branch, aimed at a value that was plainly meant to be the object
-    // branch. Branching on the type drops it. Ajv still appends one summary
-    // line per failed branch, but it comes *after* the specific errors rather
-    // than between them.
+    // branch. Branching on the type drops it. Ajv's summary line per failed
+    // branch is dropped too (proposal 0089), so three mistakes are three lines.
     const { results } = await runValidate({
       inputs: ["-"],
       as: "markdown",
@@ -135,8 +134,7 @@ describe("astro:starlight:0.41", () => {
     expect(errors.map((e) => `${e.instancePath} ${e.message}`)).toEqual([
       "/sidebar/order must be number",
       "/sidebar/badge must have required property 'text'",
-      "/sidebar/badge/variant must be equal to one of the allowed values",
-      '/sidebar/badge must match "then" schema',
+      '/sidebar/badge/variant must be one of: "note", "tip", "caution", "danger", "success", "default"',
     ]);
   });
 

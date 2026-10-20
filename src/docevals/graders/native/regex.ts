@@ -108,7 +108,7 @@ export const regexGrader: Grader = {
             evalName: ev.name,
             file: plan.page.file,
             ruleId: "regex/unreadable-target",
-            message: selected.reason,
+            message: `${selected.reason}. The eval's target is wrong. Fix the eval, or tell its owner.`,
             severity: ev.severity,
             line: 1,
           });
@@ -127,7 +127,7 @@ export const regexGrader: Grader = {
             evalName: ev.name,
             file: plan.page.file,
             ruleId: "regex/not-found",
-            message: `Pattern /${pattern}/${flags} not found in ${selected.label}`,
+            message: `Pattern /${pattern}/${flags} not found in ${selected.label}. Add the text the eval asks for.`,
             severity: ev.severity,
             line: 1,
           });
@@ -136,7 +136,7 @@ export const regexGrader: Grader = {
             evalName: ev.name,
             file: plan.page.file,
             ruleId: "regex/found",
-            message: `Pattern /${pattern}/${flags} found in ${selected.label}, expected absent`,
+            message: `Pattern /${pattern}/${flags} found in ${selected.label}, expected absent. Remove or reword the matching text.`,
             severity: ev.severity,
             line: offset + lineAt(text, first.index),
           });
@@ -147,7 +147,7 @@ export const regexGrader: Grader = {
               evalName: ev.name,
               file: plan.page.file,
               ruleId: "regex/count",
-              message: `Pattern /${pattern}/${flags} matched ${String(all.length)} time(s) in ${selected.label}, expected ${String(want)}`,
+              message: `Pattern /${pattern}/${flags} matched ${String(all.length)} time(s) in ${selected.label}, expected ${String(want)}. Edit the page so it matches ${String(want)} time(s).`,
               severity: ev.severity,
               line: first === undefined ? 1 : offset + lineAt(text, first.index),
             });

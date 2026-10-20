@@ -1471,7 +1471,7 @@ describe("0015 · a document opting out of the repo's standard", () => {
     // pull request instead of in a stack trace.
     expect(refused?.errors[0]?.keyword).toBe("schema");
     expect(refused?.errors[0]?.message).toMatch(new RegExp(escapeRe(url)));
-    expect(refused?.errors[0]?.message).toMatch(/documentRefs/);
+    expect(refused?.errors[0]?.message).toMatch(/accepts only built-in ids and schema files/);
     // The honest file is untouched: still judged by the config's schema.
     const honest = results.find((r) => r.file.endsWith("honest.md"));
     // The config's OKF joins the defaults (0070), where it already is.
@@ -1515,7 +1515,7 @@ describe("0015 · a document opting out of the repo's standard", () => {
     const refused = results.find((r) => r.file.endsWith("elsewhere.md"));
     expect(refused?.errors[0]?.keyword).toBe("schema");
     expect(refused?.errors[0]?.message).toMatch(/schemas\.invalid/);
-    expect(refused?.errors[0]?.message).toMatch(/schemaTrust\.hosts/);
+    expect(refused?.errors[0]?.message).toMatch(/a host this repository does not trust/);
   });
 });
 

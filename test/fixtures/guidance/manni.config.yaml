@@ -1,0 +1,5 @@
+# Proposal 0089: a registered house schema, so manni meta schemas show
+# resolves house:page:1.0.0 through the config, with no Guide line.
+meta:
+  register:
+    - ./house.schema.json

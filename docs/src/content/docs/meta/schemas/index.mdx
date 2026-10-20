@@ -36,7 +36,7 @@ sample-questions:
 graph:
   label: Author a schema for your metadata standard
   type: task
-last-updated: 2026-10-18
+last-updated: 2026-10-20
 tags:
   - json-schema
   - metadata
@@ -170,6 +170,22 @@ Beyond formats, the everyday constraints carry most of the weight:
 - **`enum`**: restrict a field to a fixed set of values, ideal for a controlled `type` or `status`: `"enum": ["guide", "reference", "tutorial"]`.
 - **`minLength`**: reject empty strings (`"minLength": 1`).
 - **`array` + `items`**: validate every element of a list, as with the `tags` example above.
+
+## Write each description for the author who fixes it
+
+A failing finding prints the first sentence of the property's `description`
+under it:
+
+```
+✗ docs/guide.md
+    /timestamp  must match format "date-time"  (line 5)  [./schemas/page.json]
+      ./schemas/page.json timestamp: ISO 8601 datetime of last meaningful change.
+```
+
+So make that first sentence say what the author needs: what the field is for,
+and what a good value looks like. Put notes for whoever maintains the schema
+after it. `manni meta schemas show` prints the whole description, so nothing
+after the first sentence is lost.
 
 ## Decide whether unknown fields are allowed
 
@@ -510,7 +526,7 @@ through every command.
 {/* step {"description":"`schemas` lists the built-in OKF schema the page documents, the first of the eleven the default set falls back to.","runShell":{"command":"npx @hawkeyexl/manni meta schemas","exitCodes":[0],"stdio":"google:okf:0.1"}} */}
 {/* step {"description":"`schemas` also lists the Diataxis vocabulary this page points readers at.","runShell":{"command":"npx @hawkeyexl/manni meta schemas","exitCodes":[0],"stdio":"diataxis:diataxis:1.0"}} */}
 {/* step {"description":"Stacking OKF with a taxonomy schema passes a document carrying a canonical Diataxis type.","runShell":{"command":"npx @hawkeyexl/manni meta validate test/fixtures/taxonomy/diataxis-how-to.md -s google:okf:0.1 -s diataxis:diataxis:1.0","exitCodes":[0],"stdio":"1 passed"}} */}
-{/* step {"description":"The vocabulary is closed: a near-miss spelling fails against the Diataxis schema.","runShell":{"command":"npx @hawkeyexl/manni meta validate test/fixtures/taxonomy/diataxis-bad-type.md -s diataxis:diataxis:1.0","exitCodes":[1],"stdio":"allowed values"}} */}
+{/* step {"description":"The vocabulary is closed: a near-miss spelling fails against the Diataxis schema.","runShell":{"command":"npx @hawkeyexl/manni meta validate test/fixtures/taxonomy/diataxis-bad-type.md -s diataxis:diataxis:1.0","exitCodes":[1],"stdio":"must be one of:"}} */}
 {/* step {"description":"A registered id names the house schema in config, and a page every schema in the set accepts passes.","runShell":{"command":"npx @hawkeyexl/manni meta validate -c test/fixtures/register/manni.config.yaml test/fixtures/register/good.md","exitCodes":[0],"stdio":"1 passed"}} */}
 {/* step {"description":"strict: true stacks the registered strict version, which refuses a value the base accepts.","runShell":{"command":"npx @hawkeyexl/manni meta validate -c test/fixtures/register/manni.config.yaml test/fixtures/register/loose-team.md","exitCodes":[1],"stdio":"[house:page-strict:1.0.0]"}} */}
 {/* step {"description":"strict: true also stacks each manni default's overlay, so core-strict refuses a malformed language.","runShell":{"command":"npx @hawkeyexl/manni meta validate -c test/fixtures/register/manni.config.yaml test/fixtures/register/bad-language.md","exitCodes":[1],"stdio":"[manni:core-strict:1.0.0]"}} */}

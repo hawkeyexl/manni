@@ -2,7 +2,7 @@
 title: Output and exit codes
 description: The pretty, json, markdown, github, sarif, junit, and html report shapes, and what each exit code means.
 type: reference
-last-updated: 2026-10-04
+last-updated: 2026-10-20
 ---
 
 Verified against `src/docevals/reporters/` and `src/docevals/types.ts`, with samples captured from real runs against
@@ -161,15 +161,47 @@ docs/actions/goTo.mdx
        judge skipped (--deterministic-only)
   pass names-an-action  docs/actions/goTo.mdx:5
   FAIL no-todo-markers  docs/actions/goTo.mdx:7
-       error:14 [regex/found] Pattern /\b(TODO|TBD|FIXME)\b/ found in body, expected absent
+       error:14 [regex/found] Pattern /\b(TODO|TBD|FIXME)\b/ found in body, expected absent. Remove or reword the matching text.
+       docs/actions/goTo.mdx no-todo-markers: The page carries no TODO, TBD or FIXME markers.
+       Guide: https://hawkeyexl.github.io/manni/docevals/fix/
 
 Suites
   reference: 1/2 passed — 0% vs target 100% below target (1 skipped)
 ```
 
 Each eval line ends with its [`location`](#location), the file and line that declare the eval. The
-finding line is `severity:line [ruleId] message`. Colour is applied only on a TTY, and never
-under `NO_COLOR` or `--no-color`. The other formats carry no colour.
+finding line is `severity:line [ruleId] message`, and every message ends with what to do. The two
+dim lines under it are the eval's [`guidance`](#guidance). Colour is applied only on a TTY, and
+never under `NO_COLOR` or `--no-color`. The other formats carry no colour.
+
+The guidance lines follow every eval that failed, errored or awaits review. They also follow a
+finding on a passing eval, such as a `warning` the eval reports and passes.
+
+A judged eval that did not pass prints the judge's verdict, what it quoted and why, then the vote
+count. A failing verdict never quotes a run that passed. This sample is an example rather than a
+captured run:
+
+```text
+  FAIL no-future-promises [auto-fail]  docs/actions/goTo.mdx:5
+       AI judge: fail (confidence 0.91). Edit the page so the assertion holds.
+       Observed: Waiting for network idle is planned for a later release.
+       Reasoning: Line 16 promises a later release.
+       votes pass:0 fail:3 partial:0
+       docs/actions/goTo.mdx no-future-promises: The page makes no claims about unreleased or future functionality.
+       Guide: https://hawkeyexl.github.io/manni/docevals/fix/
+```
+
+| Outcome | First line under the eval |
+|---|---|
+| Judged `fail` | `AI judge: fail (confidence N). Edit the page so the assertion holds.` |
+| Judged `needs-review` | `AI judge: no confident verdict (confidence N). Record a verdict with manni docevals review, or sharpen the assertion and run manni docevals calibrate.` |
+| `human` eval awaiting review | `Awaiting human review. Record a verdict with manni docevals review.` |
+
+When any eval awaits review, the report ends with one more line:
+
+```text
+2 eval(s) need human review. Run `manni docevals review` to record verdicts.
+```
 
 A finding may also carry `"diagnostic": true`, which appears in `--format json` and `sarif`. It
 means a `command` eval could not reach a verdict. It had no command yet, its command failed to
@@ -199,7 +231,7 @@ One object, for programmatic consumers.
           "evalName": "no-todo-markers",
           "file": "docs/actions/goTo.mdx",
           "ruleId": "regex/found",
-          "message": "Pattern /\\b(TODO|TBD|FIXME)\\b/ found in body, expected absent",
+          "message": "Pattern /\\b(TODO|TBD|FIXME)\\b/ found in body, expected absent. Remove or reword the matching text.",
           "severity": "error",
           "line": 14
         }
@@ -207,7 +239,13 @@ One object, for programmatic consumers.
       "durationMs": 0,
       "suite": "reference",
       "weight": 1,
-      "location": { "file": "docs/actions/goTo.mdx", "line": 7 }
+      "location": { "file": "docs/actions/goTo.mdx", "line": 7 },
+      "guidance": {
+        "id": "docs/actions/goTo.mdx",
+        "rule": "no-todo-markers",
+        "description": "The page carries no TODO, TBD or FIXME markers.",
+        "guide": "https://hawkeyexl.github.io/manni/docevals/fix/"
+      }
     }
   ],
   "suites": [
@@ -247,6 +285,7 @@ passing `names-an-action`.
 | `selfPreference` | `{axis, model}` when the model that judged the eval also produced what it graded (`axis: "content"`) or proposed the eval (`axis: "criterion"`). Absent otherwise. See [Self-preference](/manni/docevals/judge/#self-preference). |
 | `suite`, `weight` | The suite the result reports under, and its weight in that suite's rate. |
 | `location` | `{ file, line? }`, where the page declares the eval. See [below](#location). |
+| `guidance` | `{ id, rule, description, guide }`, what the eval asks for. Present on every result, passing ones too. See [below](#guidance). |
 | `baselined` | Count of findings a [baseline](#baseline) suppressed on this eval. Present only when a baseline was in effect, so its absence means "no baseline", not "nothing was forgiven". |
 | `skipReason`, `durationMs` | |
 
@@ -264,6 +303,18 @@ The entry that declares the eval, so a fix starts on the right line:
 `file` is spelled the way `file` is, relative to the run's directory. In the sample above,
 `no-todo-markers` is declared by the `use:` item on line 7 of the page, and the finding it raised is
 on line 14.
+
+### `guidance`
+
+What the eval asks for, and where to read about fixing it. Every report prints it as two lines
+under a result that did not pass: `<id> <rule>: <description>`, then `Guide: <guide>`.
+
+| Field | Notes |
+|---|---|
+| `id` | The file that declares the eval, the same as `location.file`. |
+| `rule` | The eval's name. |
+| `description` | The eval's assertion, or `null` when it has none. With `null`, the first line drops the `: <description>` part. |
+| `guide` | `https://hawkeyexl.github.io/manni/docevals/fix/`, the page for fixing a failing eval. |
 
 ### `suites[]`
 
@@ -387,7 +438,10 @@ report is not a file you write; it is the runtime shape, so `targetPassRate` her
 
 ## `--format markdown`
 
-The suite table plus per-page findings, suitable for a PR comment or a job summary.
+The suite table plus per-page findings, suitable for a PR comment or a job summary. Each item
+names the eval in bold, a `·`, then the eval's location in backticks. Its sub-bullets carry the findings,
+the judge's lines, the votes, and the two guidance lines, in that order. The `github` sample below
+ends with this summary.
 
 ## `--format github`
 
@@ -395,7 +449,7 @@ Workflow commands for inline annotations, followed by the markdown summary. The 
 both annotates the diff and works as `$GITHUB_STEP_SUMMARY`.
 
 ```text
-::error file=docs/actions/goTo.mdx,line=14,title=manni docevals%3A no-todo-markers::Pattern /\b(TODO|TBD|FIXME)\b/ found in body, expected absent
+::error file=docs/actions/goTo.mdx,line=14,title=manni docevals%3A no-todo-markers::Pattern /\b(TODO|TBD|FIXME)\b/ found in body, expected absent. Remove or reword the matching text.%0Adocs/actions/goTo.mdx no-todo-markers: The page carries no TODO, TBD or FIXME markers.%0AGuide: https://hawkeyexl.github.io/manni/docevals/fix/
 
 ## manni docevals results
 
@@ -405,24 +459,30 @@ both annotates the diff and works as `$GITHUB_STEP_SUMMARY`.
 
 ### Findings
 
-- ❌ **no-todo-markers** — `docs/actions/goTo.mdx:7`
-  - error:14: Pattern /\b(TODO|TBD|FIXME)\b/ found in body, expected absent
+- ❌ **no-todo-markers** · `docs/actions/goTo.mdx:7`
+  - error:14: Pattern /\b(TODO|TBD|FIXME)\b/ found in body, expected absent. Remove or reword the matching text.
+  - docs/actions/goTo.mdx no-todo-markers: The page carries no TODO, TBD or FIXME markers.
+  - Guide: https://hawkeyexl.github.io/manni/docevals/fix/
 ```
 
 Severity maps to the annotation level: `error` → `::error`, `warning` → `::warning`, `notice` →
 `::notice`. Values are escaped per GitHub's rules. That covers `%`, CR, and LF in data, plus `:` and
-`,` in properties, which is why the title reads `manni docevals%3A`.
+`,` in properties, which is why the title reads `manni docevals%3A`. The guidance lines follow the
+message after an escaped newline, `%0A`, so the annotation shows them as lines of their own.
 
 A finding with a line of its own keeps it, as `no-todo-markers` does above. Anything else lands on
 the eval's [`location`](#location). A failing **ai** eval has no content line, so it annotates the
-entry that declares it, with the mean confidence and the judge's reasoning. So does a finding that
-carries no line:
+entry that declares it. The annotation carries the judge's lines, then the guidance. So does a
+finding that carries no line:
 
 ```text
-::error file=docs/actions/goTo.mdx,line=5,title=manni docevals%3A no-future-promises::AI judge: fail (confidence 0.93). <reasoning>
+::error file=docs/actions/goTo.mdx,line=5,title=manni docevals%3A no-future-promises::AI judge: fail (confidence 0.91). Edit the page so the assertion holds.%0AObserved: <quote>%0AReasoning: <reasoning>%0Adocs/actions/goTo.mdx no-future-promises: <assertion>%0AGuide: https://hawkeyexl.github.io/manni/docevals/fix/
 ```
 
-An errored eval with no findings annotates the same entry, with the reason it could not run.
+An eval awaiting review annotates the same entry as a `::warning`, with the review line in place of
+the verdict. It fails the run only under `--fail-on-review`, and the warning says why it did. An
+errored eval with no findings annotates the same entry as an `::error`, with the reason it could
+not run.
 
 When a manifest declares the eval, `file` is the manifest. The markdown summary names the page and
 then the manifest entry, as `` `docs/install.md` · `site.metadata.yaml:4` ``.
@@ -444,8 +504,9 @@ any of them would otherwise render it unstyled. It follows the reader's `prefers
 Each eval shows its [`location`](#location) beside its name. It carries the judge's `observed`
 quotation alongside each verdict, because a verdict without the
 text it rests on is not reviewable. It also carries findings grouped by page, the weighted suite
-summary including criteria, and baseline and review state. A self-preference marker appears when the
-judging model also produced what it graded.
+summary including criteria, and baseline and review state. Under a verdict that did not pass, the
+quotation comes from a run that did not pass either. The guidance lines close each eval that did not pass, in muted text. A
+self-preference marker appears when the judging model also produced what it graded.
 
 ## `--format sarif`
 
@@ -466,8 +527,51 @@ Two properties are load-bearing, and both are asserted in CI:
 - **Every reported rule is declared** in `tool.driver.rules`, so the dashboard can name it instead
   of showing a bare id.
 
-A failing ai-graded eval appears as a result too, with the judge's confidence and reasoning. It
-has no `Finding`, and omitting it would read as "the AI evals all passed".
+A failing ai-graded eval appears as a result too, at level `error`, with the judge's lines. It
+has no `Finding`, and omitting it would read as "the AI evals all passed". An eval awaiting review
+appears as a `warning` result, with the review line.
+
+Each result's `message.text` is the message, then the [`guidance`](#guidance) lines, joined by
+newlines. `result.properties.guidance` carries the same object as the JSON report:
+
+```json
+{
+  "ruleId": "regex/found",
+  "level": "error",
+  "message": {
+    "text": "Pattern /\\b(TODO|TBD|FIXME)\\b/ found in body, expected absent. Remove or reword the matching text.\ndocs/actions/goTo.mdx no-todo-markers: The page carries no TODO, TBD or FIXME markers.\nGuide: https://hawkeyexl.github.io/manni/docevals/fix/"
+  },
+  "locations": [
+    {
+      "physicalLocation": {
+        "artifactLocation": { "uri": "docs/actions/goTo.mdx" },
+        "region": { "startLine": 14 }
+      }
+    }
+  ],
+  "properties": {
+    "guidance": {
+      "id": "docs/actions/goTo.mdx",
+      "rule": "no-todo-markers",
+      "description": "The page carries no TODO, TBD or FIXME markers.",
+      "guide": "https://hawkeyexl.github.io/manni/docevals/fix/"
+    }
+  }
+}
+```
+
+Every rule in `tool.driver.rules` carries `helpUri`, the fix page. The `tool:regex` rules mean the
+same thing whichever eval reports them, so each is named for itself and described:
+
+| `id` and `name` | `shortDescription` | `fullDescription` |
+|---|---|---|
+| `regex/found` | Text the eval forbids is present | The page contains text an eval forbids. The line is the first match. |
+| `regex/not-found` | Text the eval asks for is missing | The page lacks text an eval asks for. |
+| `regex/count` | Text matches a different number of times | The page matches an eval's pattern a different number of times than the eval asks. The line is the first match. |
+| `regex/unreadable-target` | The eval's target cannot be read | The file an eval reads cannot be read. The eval is at fault, not the page. |
+
+Any other rule is an eval. Its `id` and `name` are the eval's name, and its `shortDescription`
+names the eval and its grader.
 
 A finding with a line keeps its own file and `region`. A judged failure, an errored eval and a
 finding with no line take the eval's [`location`](#location), with its line as `region.startLine`.
@@ -489,8 +593,8 @@ npx @hawkeyexl/manni docevals run --format junit > docevals.junit.xml
 | Outcome | Element |
 |---|---|
 | `pass` | (none) |
-| `fail` | `<failure>` with the findings, or the judge's reasoning |
-| `error` | `<error>` |
+| `fail` | `<failure>` with the findings or the judge's lines, then the guidance lines |
+| `error` | `<error>` with the reason, then the guidance lines |
 | `skipped` | `<skipped>` with the skip reason |
 | `needs-review` | `<skipped message="needs human review">` |
 

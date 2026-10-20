@@ -18,8 +18,8 @@ docs/src/content/docs/meta/reference/schemas/x-cards.mdx:
       grader: ai
   provenance:
     - generated-by: Claude Opus 5.5
-      lines: 2-106
-      integrity: sha256-b3d5b7f3a14223f6167f3e2e0ea2ebe7cc55168fc024cc23a8d3bbc163b04fc8
+      lines: 2-108
+      integrity: sha256-1602afa40f316c9c97f3b0b21c1cef7955ca0b6e44ec50bdfc237a372a47d15f
   owner:
     - "@hawkeyexl"
   created: 2026-09-26

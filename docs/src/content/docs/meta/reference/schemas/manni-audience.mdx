@@ -19,7 +19,7 @@ sample-questions:
 graph:
   label: "manni audience vocabulary"
   type: reference
-last-updated: 2026-09-27
+last-updated: 2026-10-20
 resource: https://hawkeyexl.github.io/manni/schemas/audience/1.0.0.json
 action: understand
 related-pages:
@@ -122,7 +122,9 @@ visibility: private
 ```text
 $ manni meta validate page.md --no-config -s manni:core:1.0.0 -s manni:audience:1.0.0
 ✗ page.md
-    /visibility  must be equal to one of the allowed values  (line 5)  [manni:audience:1.0.0]
+    /visibility  must be one of: "draft", "restricted", "confidential", "internal", "public"  (line 5)  [manni:audience:1.0.0]
+      manni:audience:1.0.0 visibility: Who can see the page, from no audience yet to everyone: `draft` (authors and preview builds only), then the widening ladder `restricted` → `confidential` → `internal` → `public`.
+      Guide: https://hawkeyexl.github.io/manni/meta/reference/schemas/manni-audience/
     /visibility  warning "visibility" is stored in the page; manni:audience:1.0.0 prefers external metadata, and --no-config leaves it no manifest.  (line 5)  [location:external]
 
 1 file checked, 0 passed, 1 failed, 1 error, 1 warning
@@ -210,7 +212,11 @@ intent: |
 $ manni meta validate page.md --no-config -s manni:audience:1.0.0 -s manni:audience-strict:1.0.0
 ✗ page.md
     /audiences/0  must match pattern "^[a-z0-9][a-z0-9-]*$"  (line 4)  [manni:audience-strict:1.0.0]
+      manni:audience-strict:1.0.0 audiences
+      Guide: https://hawkeyexl.github.io/manni/meta/reference/schemas/manni-audience/
     /intent  must match pattern "^[^\r\n]+$"  (line 5)  [manni:audience-strict:1.0.0]
+      manni:audience-strict:1.0.0 intent: Strict holds the intent to a single line.
+      Guide: https://hawkeyexl.github.io/manni/meta/reference/schemas/manni-audience/
 
 1 file checked, 0 passed, 1 failed, 2 errors
 ```

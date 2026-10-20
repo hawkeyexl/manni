@@ -33,11 +33,20 @@ import {
   CHECK_FORMAT_LIST,
   GRAPH_FORMATS,
   GRAPH_FORMAT_LIST,
+  SHAPES_SHOW_FORMATS,
+  SHAPES_SHOW_FORMAT_LIST,
   type CheckFormat,
   type GraphFormat,
 } from "./reporters/index.js";
 import { runBuild } from "./commands/build.js";
 import { renderCheck, runCheck } from "./commands/check.js";
+import {
+  renderShapes,
+  renderShapesShow,
+  runShapes,
+  runShapesShow,
+  type ShapesOptions,
+} from "./commands/shapes.js";
 import {
   EXPORT_TARGETS,
   runExport,
@@ -64,8 +73,8 @@ import { renderTraverse, runTraverse } from "./commands/traverse.js";
  * terminal".
  *
  * Exported because this is where the decision is testable — a spawned bin is
- * never a TTY. graph's reporters print no colour yet; when one does, it takes
- * the boolean from here rather than consulting the environment itself.
+ * never a TTY. `check`'s pretty output dims the lines under each finding, and
+ * takes the boolean from here rather than consulting the environment itself.
  */
 export function colorFor(
   command: Command,
@@ -178,8 +187,11 @@ function choiceOption<T extends string>(flag: string, allowed: readonly T[]) {
 /** `-f, --format`: every verb's list is `pretty | json` (0051 §2). */
 const formatOption = choiceOption("--format", GRAPH_FORMATS);
 
-/** `check`'s own, which adds `github` — the CI gate's annotation format. */
+/** `check`'s own, which adds the two CI formats, `github` and `sarif`. */
 const checkFormatOption = choiceOption("--format", CHECK_FORMATS);
+
+/** `shapes show`'s own, which adds the frontmatter skeleton. */
+const showFormatOption = choiceOption("--format", SHAPES_SHOW_FORMATS);
 
 /**
  * `--fields <list>`: comma-separated and given once, never repeatable — one
@@ -362,21 +374,101 @@ configInputs(
     "pretty",
   )
   .action(
-    async (opts: {
-      config?: string | boolean;
-      graph?: string;
-      shapes: string[];
-      format: CheckFormat;
-    }) => {
+    async (
+      opts: {
+        config?: string | boolean;
+        graph?: string;
+        shapes: string[];
+        format: CheckFormat;
+      },
+      command: Command,
+    ) => {
       try {
         const report = await runCheck({ ...rest(opts), ...documentOptions(opts) });
-        console.log(renderCheck(report, opts.format));
+        console.log(
+          renderCheck(report, opts.format, {
+            color: colorFor(command, process.stdout.isTTY),
+          }),
+        );
         process.exitCode = report.exitCode;
       } catch (e) {
         fail(e);
       }
     },
   );
+
+/**
+ * The value of a flag `shapes` and `shapes show` both declare. Commander keeps
+ * parsing a parent's options past a subcommand name, so `shapes show X -f
+ * markdown` sets `format` on `shapes`. The nearest command given the flag
+ * wins, and the subcommand's own default is the fallback, as lint reads its
+ * `templates` flags. So neither declaration checks its value as it parses,
+ * and the action checks the one that applies.
+ */
+function optionValue(command: Command, key: string): unknown {
+  for (let cmd: Command | null = command; cmd !== null; cmd = cmd.parent) {
+    if (cmd.getOptionValueSource(key) === "cli") return cmd.getOptionValue(key);
+  }
+  return command.getOptionValue(key);
+}
+
+/** The options `shapes` and `shapes show` share, as the cores take them. */
+function shapesOptions(command: Command): ShapesOptions {
+  const { configPath, noConfig } = configOption(optionValue(command, "config"));
+  const shapes = optionValue(command, "shapes");
+  return {
+    ...(configPath === undefined ? {} : { config: configPath }),
+    ...(noConfig === true ? { noConfig } : {}),
+    ...(Array.isArray(shapes) ? { shapes: shapes.map(String) } : {}),
+  };
+}
+
+/** `--shapes`, worded as `check` words it. */
+function shapesInput(command: Command): Command {
+  return command.option(
+    "--shapes <path>",
+    "Shapes .ttl file; repeatable (default: config check.shapes, then bundled)",
+    collect,
+    [],
+  );
+}
+
+const shapesCommand = shapesInput(
+  configInputs(
+    program
+      .command("shapes")
+      .description("List the SHACL node shapes `graph check` runs, and what each one targets"),
+  ),
+)
+  .option("-f, --format <format>", `Output: ${GRAPH_FORMAT_LIST}`, "pretty")
+  .action((_opts: unknown, command: Command) => {
+    try {
+      const format = formatOption(String(optionValue(command, "format")));
+      console.log(renderShapes(runShapes(shapesOptions(command)), format));
+    } catch (e) {
+      fail(e);
+    }
+  });
+
+shapesInput(
+  configInputs(
+    shapesCommand
+      .command("show")
+      .description(
+        "Print every property a shape checks and the frontmatter key that feeds it",
+      )
+      .argument("<shape>", "Node shape to show, by local name, such as DocumentShape"),
+  ),
+)
+  .option("-f, --format <format>", `Output: ${SHAPES_SHOW_FORMAT_LIST}`, "pretty")
+  .action((shape: string, _opts: unknown, command: Command) => {
+    try {
+      const format = showFormatOption(String(optionValue(command, "format")));
+      console.log(renderShapesShow(runShapesShow(shape, shapesOptions(command)), format));
+    } catch (e) {
+      fail(e);
+    }
+  });
 
 documentInputs(
   program

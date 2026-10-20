@@ -61,19 +61,22 @@ docs/src/content/docs/key/set-up/index.mdx:
       lines: 155
       integrity: sha256-745f42393dc39de86e71cbac0371d5fe5d0ea9459ea1f5a9e6451b458684ebec
     - generated-by: Claude Fable 5.1
-      lines: 156-217
-      integrity: sha256-4c4d0de1d66ce921b95942560f827dab0186e76964d575a124ee97f15e1f5555
+      lines: 156-176
+      integrity: sha256-0fdfa0ba3eec8f774593732fd5212248b285ff858c7bece275527a741cca3361
+    - generated-by: Claude Fable 5.1
+      lines: 180-218
+      integrity: sha256-f0a77b77888fd003eb32e3e76272b621031b9590d84aa47846aade0c1c00fad4
     - generated-by: Claude Opus 5
-      lines: 219-220
+      lines: 220-221
       integrity: sha256-d514a2369418e4729d83c80bfbf464211f79fe45bebbbd2cffce8a0018a742a6
     - generated-by: Claude Fable 5.1
-      lines: 221-233
+      lines: 222-234
       integrity: sha256-aa68a6f7f8ffe037f420263b3338201a5d28d0a0dcc4a7899654272cc8da28fa
     - generated-by: Claude Opus 5
-      lines: 235
+      lines: 236
       integrity: sha256-e5f15349cf334cffca03d282ce4d91d44ad751a3cdc619180c0f49882763f9b2
     - generated-by: Claude Fable 5.1
-      lines: 236-279
+      lines: 237-280
       integrity: sha256-72b337f380815787046b4dd0251592f6fc5e9ed6d54d7abbced50599c0f1b09c
   owner:
     - "@hawkeyexl"

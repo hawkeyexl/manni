@@ -19,7 +19,7 @@ Evals declare what a page or an agent artifact must satisfy. Propose them, show 
 ## Agent artifacts
 
 Run `manni tracevals fill <path>` over a skill, a subagent definition or a rules file. It proposes evals in the artifact's `metadata.evals` block.
-`manni tracevals list` shows what the evals cover.
+Run `manni tracevals run <trace> --deterministic-only` to see which evals a session meets.
 
 ## Review
 

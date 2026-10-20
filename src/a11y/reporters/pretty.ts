@@ -1,10 +1,12 @@
 /**
  * `--format pretty`: the report a person reads in a terminal.
  *
- * One line per page, and under a failing page one line per rule followed by
- * the first three elements that failed it, each with axe's own statement of
- * which condition was not met. That per-element line is the deterministic
- * remediation: which rule, which selector, what to change. After the pages,
+ * One line per page, and under a failing page one line per rule. Under it, dim,
+ * the axe version, the rule and what it checks, then `Guide:` and the rule's
+ * page. Then the first three elements that failed it, each with axe's own
+ * statement of which condition was not met and, dim, the element's html.
+ * That per-element line is the deterministic remediation: which rule, which
+ * selector, what to change. After the pages,
  * one `↪` line per page that redirected in the browser, hidden by `--quiet`
  * as a passing page is.
  *
@@ -18,6 +20,7 @@
  * against the Deque rule page and the axe DevTools report that use it.
  */
 import { palette, type Colors } from "../../shared/color.js";
+import { guidanceLines } from "../../shared/guidance.js";
 import {
   SEVERITIES,
   type CheckRun,
@@ -26,9 +29,7 @@ import {
   type Violation,
 } from "../types.js";
 import type { RenderOptions } from "./index.js";
-
-/** How many failing elements are listed under one rule before `(+N more)`. */
-const MAX_NODES = 3;
+import { MAX_NODES, htmlLine, nodeLine } from "./nodes.js";
 
 export function renderPretty(run: CheckRun, opts: RenderOptions): string {
   const c = palette(opts.color);
@@ -116,27 +117,14 @@ function severityCounts(violations: Violation[], c: Colors): string {
 function violationLines(v: Violation, c: Colors): string[] {
   const n = v.nodes.length;
   const lines = [
-    `    ${paintSeverity(v.severity, v.severity, c)}  ${v.id} ${c.dim(`(axe: ${v.impact})`)}  ${n} node${n === 1 ? "" : "s"}  ${v.help}  ${c.dim(v.helpUrl)}`,
+    `    ${paintSeverity(v.severity, v.severity, c)}  ${v.id} ${c.dim(`(axe: ${v.impact})`)}  ${n} node${n === 1 ? "" : "s"}  ${v.help}`,
+    ...guidanceLines(v.guidance).map((line) => c.dim(`      ${line}`)),
   ];
   for (const node of v.nodes.slice(0, MAX_NODES)) {
-    lines.push(`      ${node.target}  → ${oneLine(node.summary)}`);
+    lines.push(`      ${nodeLine(node)}`, c.dim(`        ${htmlLine(node)}`));
   }
   if (n > MAX_NODES) lines.push(c.dim(`      (+${n - MAX_NODES} more)`));
   return lines;
-}
-
-/**
- * axe's failureSummary is a heading line followed by one indented line per
- * unmet condition. On one line: the heading, then the conditions joined by
- * `; `.
- */
-function oneLine(summary: string): string {
-  const [head, ...rest] = summary
-    .split("\n")
-    .map((s) => s.trim())
-    .filter((s) => s.length > 0);
-  if (head === undefined) return "";
-  return rest.length === 0 ? head : `${head} ${rest.join("; ")}`;
 }
 
 function paintSeverity(text: string, severity: Severity, c: Colors): string {

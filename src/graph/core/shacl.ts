@@ -3,18 +3,25 @@
  * plus the SKOS integrity checks core SHACL cannot express (broader cycles,
  * related⨯broaderTransitive disjointness, two untagged prefLabels on one
  * concept, a mapping into the scheme itself). Every finding carries the
- * doc paths responsible, so writers get file names instead of bare IRIs.
+ * doc paths responsible, so writers get file names instead of bare IRIs, and
+ * the shape that judged it, so they learn what the rule is for (proposal 0089).
  */
 import { readFileSync } from "node:fs";
-import { DataFactory, Parser, Store } from "n3";
+import { DataFactory, Parser, Store, type Quad as N3Quad } from "n3";
 import SHACLValidator from "rdf-validate-shacl";
 import type { Term } from "@rdfjs/types";
 import { errorMessage } from "../../shared/errors.js";
+import type { Guidance } from "../../shared/guidance.js";
 import type { Severity } from "../../shared/severity.js";
 import { GraphError } from "../types.js";
 import { compactIri } from "./load.js";
+import { bundledShapesPath } from "./pkg.js";
 import { byCodeUnit } from "./sort.js";
 import { NS } from "./vocab.js";
+
+const SH = "http://www.w3.org/ns/shacl#";
+const OWL_ONTOLOGY = "http://www.w3.org/2002/07/owl#Ontology";
+const RDFS_SEE_ALSO = "http://www.w3.org/2000/01/rdf-schema#seeAlso";
 
 /** SHACL's own scale, as `sh:severity` spells it. */
 export type ShaclSeverity = "violation" | "warning" | "info";
@@ -40,6 +47,12 @@ export interface CheckFinding {
   path?: string;
   /** graph:path of the docs responsible, sorted (empty when untraceable). */
   docs: string[];
+  /**
+   * The shape that judged the finding (proposal 0089): the shapes file's id,
+   * the shape's local name, its `sh:description` and the file's guide. `null`
+   * when no shape stands behind it, as for a sample question that missed.
+   */
+  guidance: Guidance | null;
 }
 
 /**
@@ -82,25 +95,172 @@ export function compareFindings(a: CheckFinding, b: CheckFinding): number {
   );
 }
 
-/** Parse one or more shapes .ttl files into a single store. */
-export function loadShapes(paths: string[]): Store {
-  const store = new Store();
-  for (const path of paths) {
-    let text: string;
-    try {
-      text = readFileSync(path, "utf8");
-    } catch {
-      throw new GraphError(`Shapes file not found: ${path}`);
-    }
-    try {
-      store.addQuads(new Parser({ format: "text/turtle" }).parse(text));
-    } catch (e) {
+/**
+ * A shapes file to read: where it is, and how a finding names it when the file
+ * carries no header. A bare string is both.
+ */
+export type ShapesSource = string | { path: string; label: string };
+
+/** One parsed shapes file, and what names it. */
+export interface ShapesFile {
+  /** The path as given. */
+  label: string;
+  /**
+   * The `dcterms:identifier` of the file's `owl:Ontology` node, such as
+   * `manni:graph-shapes:1.1.1`, or the path as given when it has none.
+   */
+  id: string;
+  /** The ontology node's `rdfs:seeAlso`, when it is an http(s) URL. */
+  guide: string | null;
+  quads: N3Quad[];
+}
+
+/** The shapes in effect: one store, and the file each shape came from. */
+export interface LoadedShapes {
+  store: Store;
+  files: ShapesFile[];
+  /** A shape's term value (named or blank) to the file that defines it. */
+  fileOf: Map<string, ShapesFile>;
+}
+
+/** Read and parse one shapes file. */
+export function readShapesFile(source: ShapesSource): ShapesFile {
+  const { path, label } = typeof source === "string" ? { path: source, label: source } : source;
+  let text: string;
+  try {
+    text = readFileSync(path, "utf8");
+  } catch (e) {
+    // Only a missing file gets the recovery advice. Any other read error is
+    // the OS's to explain.
+    if ((e as NodeJS.ErrnoException).code === "ENOENT") {
       throw new GraphError(
-        `Failed to parse shapes ${path}: ${errorMessage(e)}`,
+        `Shapes file not found: ${path}. Fix the path in --shapes or graph.check.shapes. Leave both unset to use the bundled shapes.`,
       );
     }
+    throw new GraphError(`Failed to read shapes ${path}: ${errorMessage(e)}`);
   }
-  return store;
+  let quads: N3Quad[];
+  try {
+    quads = new Parser({ format: "text/turtle" }).parse(text);
+  } catch (e) {
+    throw new GraphError(`Failed to parse shapes ${path}: ${errorMessage(e)}`);
+  }
+  const header = new Store(quads);
+  const ontology = header
+    .getSubjects(DataFactory.namedNode(`${NS.rdf}type`), DataFactory.namedNode(OWL_ONTOLOGY), null)
+    .map((s) => s.value)
+    .sort(byCodeUnit)[0];
+  const first = (predicate: string): string | undefined =>
+    ontology === undefined
+      ? undefined
+      : header
+          .getObjects(DataFactory.namedNode(ontology), DataFactory.namedNode(predicate), null)
+          .map((o) => o.value)
+          .sort(byCodeUnit)[0];
+  const seeAlso = first(RDFS_SEE_ALSO);
+  return {
+    label,
+    id: first(`${NS.dcterms}identifier`) ?? label,
+    guide: seeAlso !== undefined && /^https?:\/\//.test(seeAlso) ? seeAlso : null,
+    quads,
+  };
+}
+
+/** Parse one or more shapes .ttl files into a single store. */
+export function loadShapes(sources: ShapesSource[]): LoadedShapes {
+  const store = new Store();
+  const files: ShapesFile[] = [];
+  const fileOf = new Map<string, ShapesFile>();
+  for (const source of sources) {
+    const file = readShapesFile(source);
+    files.push(file);
+    store.addQuads(file.quads);
+    // The first file to say anything about a shape owns it. n3 gives each
+    // parse its own blank-node prefix, so a blank shape cannot collide.
+    for (const q of file.quads) {
+      if (!fileOf.has(q.subject.value)) fileOf.set(q.subject.value, file);
+    }
+  }
+  return { store, files, fileOf };
+}
+
+/** `…/shapes/1.1.1#Document-language` → `Document-language`. */
+export function localName(iri: string): string {
+  const hash = iri.lastIndexOf("#");
+  return iri.slice((hash === -1 ? iri.lastIndexOf("/") : hash) + 1);
+}
+
+/**
+ * A literal of `shape` under `predicate`, untagged or English first, then by
+ * language. `null` when the shape has none.
+ */
+export function shapeText(store: Store, shape: Term, predicate: string): string | null {
+  const subject =
+    shape.termType === "BlankNode"
+      ? DataFactory.blankNode(shape.value)
+      : DataFactory.namedNode(shape.value);
+  return preferredLiteral(store.getObjects(subject, DataFactory.namedNode(predicate), null));
+}
+
+/** The untagged literal first, then English, then by language and value. */
+function preferredLiteral(terms: Term[]): string | null {
+  const literals = terms.flatMap((t) =>
+    t.termType === "Literal" ? [{ value: t.value, language: t.language }] : [],
+  );
+  const rank = (lang: string): number => (lang === "" ? 0 : lang.startsWith("en") ? 1 : 2);
+  literals.sort(
+    (a, b) =>
+      rank(a.language) - rank(b.language) ||
+      byCodeUnit(a.language, b.language) ||
+      byCodeUnit(a.value, b.value),
+  );
+  return literals[0]?.value ?? null;
+}
+
+/** How a message names a concept: its prefLabel, else its compact IRI. */
+function labelOf(store: Store, iri: string): string {
+  return (
+    preferredLiteral(
+      store.getObjects(DataFactory.namedNode(iri), DataFactory.namedNode(`${NS.skos}prefLabel`), null),
+    ) ?? compactIri(iri)
+  );
+}
+
+/** `"A"`, `"A" and "B"`, `"A", "B" and "C"`. */
+function quotedList(values: string[]): string {
+  const quoted = values.map((v) => `"${v}"`);
+  const last = quoted.pop();
+  if (last === undefined) return "";
+  return quoted.length === 0 ? last : `${quoted.join(", ")} and ${last}`;
+}
+
+/** What a finding a shape reported says about that shape. */
+function shapeGuidance(loaded: LoadedShapes, shape: Term | null): Guidance | null {
+  if (shape === null) return null;
+  const file = loaded.fileOf.get(shape.value) ?? loaded.files[0];
+  if (file === undefined) return null;
+  const named = shape.termType === "NamedNode";
+  return {
+    id: file.id,
+    rule: named ? localName(shape.value) : null,
+    description: named ? shapeText(loaded.store, shape, `${SH}description`) : null,
+    guide: file.guide,
+  };
+}
+
+let bundled: LoadedShapes | undefined;
+
+/**
+ * The guidance for a check-core finding: the bundled shape for its path,
+ * whatever shapes the run validated against. These checks are manni's own
+ * code, so the bundled contract is what speaks for them.
+ */
+function coreGuidance(rule: string): Guidance | null {
+  bundled ??= loadShapes([bundledShapesPath(import.meta.url)]);
+  const shape = bundled.store
+    .getSubjects(DataFactory.namedNode(`${NS.rdf}type`), DataFactory.namedNode(`${SH}PropertyShape`), null)
+    .find((s) => localName(s.value) === rule);
+  return shape === undefined ? null : shapeGuidance(bundled, shape);
 }
 
 /**
@@ -297,93 +457,139 @@ function broaderClosure(edges: Edge[], start: string): Set<string> {
 }
 
 /**
- * SKOS S27: skos:related is disjoint with skos:broaderTransitive. The
- * one-hop case is already a SHACL sh:disjoint violation — skip it here so
- * one mistake doesn't produce two findings.
+ * SKOS S27: skos:related is disjoint with skos:broaderTransitive. Reported
+ * once per unordered pair, because derive writes skos:related both ways
+ * round, and on the descendant. A pair where SHACL's one-hop sh:disjoint
+ * already fires is skipped, so one mistake doesn't produce two findings.
  */
 function relatedConflicts(store: Store): CheckFinding[] {
   const edges = broaderEdges(store);
-  // Direct edges indexed by subject — no composite string keys (a joined
-  // key would need a separator character, and IRIs make any choice fragile).
-  const direct = new Map<string, Set<string>>();
-  for (const e of edges) {
-    const targets = direct.get(e.s);
-    if (targets) targets.add(e.o);
-    else direct.set(e.s, new Set([e.o]));
-  }
+  const related = `${NS.skos}related`;
+  // Pairs as nested maps rather than joined keys: a joined key would need a
+  // separator character, and IRIs make any choice fragile.
+  const has = (index: Map<string, Set<string>>, a: string, b: string): boolean =>
+    index.get(a)?.has(b) ?? false;
+  const put = (index: Map<string, Set<string>>, a: string, b: string): void => {
+    const targets = index.get(a);
+    if (targets) targets.add(b);
+    else index.set(a, new Set([b]));
+  };
+  const index = (predicate: string): Map<string, Set<string>> => {
+    const out = new Map<string, Set<string>>();
+    for (const q of store.getQuads(null, DataFactory.namedNode(predicate), null, null)) {
+      if (q.object.termType === "NamedNode") put(out, q.subject.value, q.object.value);
+    }
+    return out;
+  };
+  const relatedIndex = index(related);
+  const broaderIndex = index(`${NS.skos}broader`);
+  // Where Concept-related's sh:disjoint fires: one node holds both links.
+  const disjointFires = (a: string, b: string): boolean =>
+    (has(relatedIndex, a, b) && has(broaderIndex, a, b)) ||
+    (has(relatedIndex, b, a) && has(broaderIndex, b, a));
+
+  const closures = new Map<string, Set<string>>();
+  const ancestors = (node: string): Set<string> => {
+    let found = closures.get(node);
+    if (found === undefined) {
+      found = broaderClosure(edges, node);
+      closures.set(node, found);
+    }
+    return found;
+  };
+
+  const seen = new Map<string, Set<string>>();
   const findings: CheckFinding[] = [];
-  for (const q of store.getQuads(
-    null,
-    DataFactory.namedNode(`${NS.skos}related`),
-    null,
-    null,
-  )) {
-    if (q.object.termType !== "NamedNode") continue;
-    const s = q.subject.value;
-    const o = q.object.value;
-    if (direct.get(s)?.has(o)) continue; // covered by sh:disjoint
-    const conflict =
-      broaderClosure(edges, s).has(o) || broaderClosure(edges, o).has(s);
-    if (!conflict) continue;
-    findings.push(
-      finding("violation", {
-        message: `skos:related conflicts with skos:broaderTransitive between ${compactIri(s)} and ${compactIri(o)} — a concept cannot be both related to and an ancestor/descendant of another`,
-        focusNode: s,
-        path: `${NS.skos}related`,
-        docs: blameDocs(store, s),
-      }),
-    );
+  for (const [s, targets] of [...relatedIndex].sort(([a], [b]) => byCodeUnit(a, b))) {
+    for (const o of [...targets].sort(byCodeUnit)) {
+      const [a, b] = byCodeUnit(s, o) <= 0 ? [s, o] : [o, s];
+      if (has(seen, a, b)) continue;
+      put(seen, a, b);
+      if (disjointFires(a, b)) continue;
+      const bAboveA = ancestors(a).has(b);
+      if (!bAboveA && !ancestors(b).has(a)) continue;
+      const [descendant, ancestor] = bAboveA ? [a, b] : [b, a];
+      findings.push(
+        finding("violation", {
+          message: `"${labelOf(store, ancestor)}" is both related to "${labelOf(store, descendant)}" and one of its ancestors. Remove one link: from \`related-concepts\` or \`related-terms\`, or from the \`broader\` chain between them.`,
+          focusNode: descendant,
+          path: related,
+          docs: [
+            ...new Set([...blameDocs(store, descendant), ...blameDocs(store, ancestor)]),
+          ].sort(byCodeUnit),
+          guidance: coreGuidance("Concept-related"),
+        }),
+      );
+    }
   }
   return findings;
 }
 
 function cycleFindings(store: Store): CheckFinding[] {
-  return broaderCycles(store).map((members) =>
-    finding("violation", {
-      message: `skos:broader cycle through ${members
-        .map((m) => compactIri(m))
-        .join(
-          ", ",
-        )} (${members.map((m) => m).join(" → ")}) — a concept cannot be its own ancestor`,
+  return broaderCycles(store).map((members) => {
+    const labels = members.map((m) => labelOf(store, m));
+    return finding("violation", {
+      message:
+        labels.length === 1
+          ? `${quotedList(labels)} forms a broader cycle with itself, so it is its own ancestor. Remove the \`broader\` or \`narrower\` value that names it.`
+          : `${quotedList(labels)} form a broader cycle, so each is its own ancestor. Remove one \`broader\` or \`narrower\` value on the cycle.`,
       // `broaderCycles` returns only components of at least one member, so
       // the first is there; `?? ""` says that without asserting it.
       focusNode: members[0] ?? "",
       path: `${NS.skos}broader`,
       docs: [...new Set(members.flatMap((m) => blameDocs(store, m)))].sort(),
-    }),
-  );
+      guidance: coreGuidance("Concept-broader"),
+    });
+  });
 }
+
+/**
+ * Shapes 1.0.0 reported the untagged collision itself, with this message. A
+ * run that pins 1.0.0 still carries it, and the check core's copy would only
+ * repeat it.
+ */
+const SHAPES_1_0_0_COLLISION =
+  "concept carries multiple prefLabels (same slug, different spellings) — settle on one spelling";
 
 /**
  * The prefLabel collision SHACL Core cannot express. Concept IRIs converge on
  * slugified labels, so "Configuration" and "configuration" land on one concept
- * with two untagged spellings. `sh:uniqueLang` (shapes 1.1.0) catches two
- * labels in one language and ignores untagged ones, so this catches those.
+ * with two untagged spellings. `sh:uniqueLang` catches two labels in one
+ * language and ignores untagged ones, so this catches those.
  */
-export const PREF_LABEL_COLLISION =
-  "concept carries multiple prefLabels (same slug, different spellings) — settle on one spelling";
-
 function untaggedPrefLabelFindings(store: Store): CheckFinding[] {
   const prefLabel = `${NS.skos}prefLabel`;
-  const untagged = new Map<string, number>();
+  const untagged = new Map<string, Set<string>>();
   for (const q of store.getQuads(null, DataFactory.namedNode(prefLabel), null, null)) {
     if (q.object.termType !== "Literal" || q.object.language !== "") continue;
-    untagged.set(q.subject.value, (untagged.get(q.subject.value) ?? 0) + 1);
+    const spellings = untagged.get(q.subject.value);
+    if (spellings) spellings.add(q.object.value);
+    else untagged.set(q.subject.value, new Set([q.object.value]));
   }
   return [...untagged]
-    .filter(([, count]) => count > 1)
-    .map(([focusNode]) =>
+    .filter(([, spellings]) => spellings.size > 1)
+    .map(([focusNode, spellings]) =>
       finding("warning", {
-        message: PREF_LABEL_COLLISION,
+        message: `Pages spell this concept ${spellings.size === 2 ? "two" : String(spellings.size)} ways: ${quotedList([...spellings].sort(byCodeUnit))}. Use one spelling on every page that names it.`,
         focusNode,
         path: prefLabel,
         docs: blameDocs(store, focusNode),
+        guidance: coreGuidance("Concept-prefLabel-collision"),
       }),
     );
 }
 
-/** The SKOS mapping properties: each links a concept to one in another scheme. */
-const MAPPINGS = ["exactMatch", "closeMatch", "broadMatch", "narrowMatch", "relatedMatch"] as const;
+/**
+ * The SKOS mapping properties, each beside the term-page key that writes it.
+ * Each links a concept to one in another scheme.
+ */
+const MAPPINGS = [
+  ["exactMatch", "exact-matches"],
+  ["closeMatch", "close-matches"],
+  ["broadMatch", "broad-matches"],
+  ["narrowMatch", "narrow-matches"],
+  ["relatedMatch", "related-matches"],
+] as const;
 
 /**
  * A mapping whose object is a concept in this graph's scheme. SKOS keeps the
@@ -393,7 +599,7 @@ const MAPPINGS = ["exactMatch", "closeMatch", "broadMatch", "narrowMatch", "rela
 function inSchemeMappingFindings(store: Store): CheckFinding[] {
   const inScheme = DataFactory.namedNode(`${NS.skos}inScheme`);
   const findings: CheckFinding[] = [];
-  for (const mapping of MAPPINGS) {
+  for (const [mapping, key] of MAPPINGS) {
     const path = `${NS.skos}${mapping}`;
     for (const q of store.getQuads(null, DataFactory.namedNode(path), null, null)) {
       if (q.object.termType !== "NamedNode") continue;
@@ -405,10 +611,11 @@ function inSchemeMappingFindings(store: Store): CheckFinding[] {
       if (!shared) continue;
       findings.push(
         finding("violation", {
-          message: `skos:${mapping} points into this scheme (${compactIri(q.object.value)}), so use broader, narrower or related instead.`,
+          message: `\`${key}\` names "${labelOf(store, q.object.value)}", a concept in this glossary. Use \`broader\`, \`narrower\` or \`related-terms\` for it instead.`,
           focusNode: q.subject.value,
           path,
           docs: blameDocs(store, q.subject.value),
+          guidance: coreGuidance(`Concept-${mapping}`),
         }),
       );
     }
@@ -457,10 +664,11 @@ function curatedFieldFindings(store: Store): CheckFinding[] {
       ?.object.value;
     findings.push(
       finding("violation", {
-        message: `meta-provenance attributes /graph/${field} to ${model} — ${field} is curated by hand, never filled by a machine`,
+        message: `\`meta-provenance\` credits ${model} with /graph/${field}, a field only a person writes. Check the value, then delete that entry.`,
         focusNode: activity,
         path: filledField,
         docs: path === undefined ? blameDocs(store, activity) : [path],
+        guidance: coreGuidance("FilledFieldEntry-name"),
       }),
     );
   }
@@ -483,6 +691,7 @@ interface ShaclResult {
   path: Term | null;
   focusNode: Term | null;
   severity: Term | null;
+  sourceShape: Term | null;
 }
 
 function severityOf(iri: string | undefined): ShaclSeverity {
@@ -497,10 +706,10 @@ function severityOf(iri: string | undefined): ShaclSeverity {
  */
 export async function validateGraph(
   store: Store,
-  shapesPaths: string[],
+  shapesPaths: ShapesSource[],
 ): Promise<CheckFinding[]> {
   const shapes = loadShapes(shapesPaths);
-  const validator = new SHACLValidator(shapes);
+  const validator = new SHACLValidator(shapes.store);
   let report;
   try {
     report = await validator.validate(store);
@@ -510,6 +719,10 @@ export async function validateGraph(
     );
   }
 
+  // One finding per (shape, focus node, path): a shape that fails on two
+  // values of one property is one mistake, so it reports once. Nested maps
+  // rather than a joined key, for the reason `relatedConflicts` gives.
+  const merged = new Map<string, Map<string, Map<string, CheckFinding>>>();
   const findings: CheckFinding[] = [];
   for (const result of report.results as ShaclResult[]) {
     const focus = result.focusNode?.value ?? "";
@@ -517,25 +730,45 @@ export async function validateGraph(
     const messages = result.message
       .map((m) => m.value)
       .filter((m) => m.length > 0);
+    // The shape's own sh:message wins, as SHACL says it does. The library
+    // lets a validator's text override it (sh:uniqueLang's does), so it is
+    // read back here. One with a {$this} or {?var} placeholder is left to
+    // the library, which substitutes it.
+    const declared =
+      result.sourceShape === null ? null : shapeText(shapes.store, result.sourceShape, `${SH}message`);
     const message =
-      messages.length > 0
-        ? messages.join("; ")
-        : `constraint violated${path ? ` on ${compactIri(path)}` : ""}`;
-    findings.push(
-      finding(severityOf(result.severity?.value), {
-        message,
-        focusNode: focus,
-        ...(path !== undefined ? { path } : {}),
-        docs: blameDocs(store, focus),
-      }),
-    );
+      declared !== null && !/\{[$?]/.test(declared)
+        ? declared
+        : messages.length > 0
+          ? messages.join("; ")
+          : `constraint violated${path ? ` on ${compactIri(path)}` : ""}`;
+    const byFocus = merged.get(result.sourceShape?.value ?? "") ?? new Map<string, Map<string, CheckFinding>>();
+    merged.set(result.sourceShape?.value ?? "", byFocus);
+    const byPath = byFocus.get(focus) ?? new Map<string, CheckFinding>();
+    byFocus.set(focus, byPath);
+    const earlier = byPath.get(path ?? "");
+    if (earlier !== undefined) {
+      if (!earlier.message.split("; ").includes(message)) {
+        earlier.message = `${earlier.message}; ${message}`;
+      }
+      continue;
+    }
+    const found = finding(severityOf(result.severity?.value), {
+      message,
+      focusNode: focus,
+      ...(path !== undefined ? { path } : {}),
+      docs: blameDocs(store, focus),
+      guidance: shapeGuidance(shapes, result.sourceShape),
+    });
+    byPath.set(path ?? "", found);
+    findings.push(found);
   }
 
   // Shapes 1.0.0 still says the untagged collision itself, with this message.
   // The check core's copy adds nothing beside it.
   const said = new Set(
     findings
-      .filter((f) => f.message === PREF_LABEL_COLLISION)
+      .filter((f) => f.message === SHAPES_1_0_0_COLLISION)
       .map((f) => f.focusNode),
   );
   findings.push(

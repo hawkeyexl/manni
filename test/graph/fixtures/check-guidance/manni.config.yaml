@@ -1,0 +1,9 @@
+# One page per author-reachable shapes message in shapes 1.1.1 (proposal 0089).
+# Each finding names the frontmatter key to change.
+collections:
+  - name: guidance
+    paths: ["docs/**/*.md"]
+
+graph:
+  baseIri: https://example.com/graph/
+  out: .tmp/graph.ttl
