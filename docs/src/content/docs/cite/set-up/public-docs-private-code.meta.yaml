@@ -170,13 +170,16 @@ docs/src/content/docs/cite/set-up/public-docs-private-code.mdx:
       lines: 364
       integrity: sha256-3d6acbab9fc84ad0ad7143ccc5e016ac9af7fcf60da98255846888c5cb0cf3ce
     - generated-by: Claude Fable 5.1
-      lines: 365-381
-      integrity: sha256-328f38d174e5e80ec33262f2912a9689d7ef3ab6194eb0d19d9e0039661a5661
+      lines: 365-372
+      integrity: sha256-3cec1558b6bc259cf7679878234f020abff429f99e91d5b0f73b2c4742557df3
+    - generated-by: Claude Fable 5.1
+      lines: 377-384
+      integrity: sha256-25f9745d1e9b753ac4150aaa124ce7945b32051375c27aa26b5c5ddea1500886
     - generated-by: Claude Opus 5
-      lines: 383-384
+      lines: 386-387
       integrity: sha256-89710b5f26ad44290e012e9e107056d08c433f76ee19e06594879cac0c9d7bd9
     - generated-by: Claude Fable 5.1
-      lines: 385-421
+      lines: 388-424
       integrity: sha256-a97b8496585c3995621a3879ce28e3edf8aab2053dab3ac5a2234135392d1a61
   owner:
     - "@hawkeyexl"
