@@ -46,14 +46,14 @@ export class FamilyError extends ToolError {
 
 export function noConfigError(cwd: string): FamilyError {
   return new FamilyError(
-    `No manni.config.yaml found from ${cwd} up to the repository root. manni check runs the checks it sets up.`,
+    `No manni.config.yaml found from ${cwd} up to the repository root. Create one there with a collections: entry for your docs.`,
     true,
   );
 }
 
 export function nothingSetUpError(): FamilyError {
   return new FamilyError(
-    "Nothing is set up to check in manni.config.yaml. manni status says what each domain needs.",
+    "Nothing is set up to check in manni.config.yaml. Run manni status to see what each domain needs.",
     true,
   );
 }
@@ -82,18 +82,39 @@ export const NOT_SET_UP: Readonly<Record<Domain, string>> = {
   graph: "no graph: section",
 };
 
+/**
+ * What would put each domain in play, as `status` says it. It is advice for
+ * whoever owns the config, so the SessionStart briefing leaves it out.
+ */
+export const NEXT: Readonly<Record<Domain, string>> = {
+  meta: "Add a meta: section that names your schemas. manni meta schemas lists the built-in ones.",
+  cite: "Pin a sentence to its source with manni cite add.",
+  lint: "Add a lint: section. manni lint templates lists the templates it can apply.",
+  docevals: "Add a docevals: section, or declare evals in a page's frontmatter.",
+  term: "Add a page with type: term to a collection.",
+  graph: "Run manni graph init to add a starter graph: section.",
+};
+
+/** Why every domain is not set up when the config declares no collections, and what to do. */
+export const NO_COLLECTIONS = "no collections: in manni.config.yaml";
+export const NO_COLLECTIONS_NEXT = "Add a collections: entry that names your docs.";
+
 /** Why `meta` skips files when `meta:` exists but covers none of them. */
 export const META_DEFAULTS_ONLY = "only the built-in default schemas cover these files";
 
 /**
- * The domains `check` does not run here, and what to run instead. tracevals
- * leaves this list when `tracevals.runtime` exists (`Family.runtime`).
+ * The domains `check` does not run here: why, and what to run instead.
+ * tracevals leaves this list when `tracevals.runtime` exists (`Family.runtime`).
  */
-export const NOT_CHECKED: ReadonlyArray<readonly [string, string]> = [
-  ["a11y", "run manni site preview, then manni a11y check"],
+export const NOT_CHECKED: ReadonlyArray<readonly [name: string, reason: string, next: string]> = [
+  ["a11y", "needs a running site and a browser", "Run manni site preview, then manni a11y check."],
   // Doc Detective runs the shell steps pages carry, so a hook never starts it.
-  ["test", "run manni test run with Doc Detective installed"],
-  ["tracevals", "run manni tracevals run over sessions"],
+  ["test", "runs the shell steps the pages carry", "Run manni test run with Doc Detective installed."],
+  [
+    "tracevals",
+    "judges recorded sessions with a model",
+    "Run manni tracevals run over sessions, or add tracevals.runtime to judge each turn.",
+  ],
 ];
 
 /** `1 page`, `2 pages`. */

@@ -8,8 +8,10 @@ import { describe, expect, it } from "vitest";
 import {
   createPlaywrightAnalyzer,
   findBrowser,
+  loadFailureMessage,
   refreshUrl,
   severityOf,
+  toViolation,
 } from "../../src/a11y/core/analyzer.js";
 import { startSchemaServer, type SchemaServer } from "../helpers/schema-server.js";
 
@@ -26,6 +28,43 @@ describe("severityOf", () => {
   it("treats a missing impact as the lowest level", () => {
     expect(severityOf(null)).toBe("notice");
     expect(severityOf(undefined)).toBe("notice");
+  });
+});
+
+describe("toViolation", () => {
+  const result: Parameters<typeof toViolation>[0] = {
+    id: "image-alt",
+    impact: "critical",
+    tags: ["wcag2a"],
+    description: "Ensure <img> elements have alternative text or a role of none or presentation",
+    help: "Images must have alternative text",
+    helpUrl: "https://dequeuniversity.com/rules/axe/4.13/image-alt?application=playwright",
+    nodes: [
+      {
+        target: [["my-card", "img"]],
+        html: '<img src="x.png">',
+        failureSummary: "Fix any of the following:\n  Element does not have an alt attribute",
+        any: [],
+        all: [],
+        none: [],
+      },
+    ],
+  };
+
+  it("carries axe's description and guide as the violation's guidance", () => {
+    const v = toViolation(result, { version: "4.13.0" });
+    expect(v.guidance).toEqual({
+      id: "axe-core 4.13.0",
+      rule: "image-alt",
+      description: "Ensure <img> elements have alternative text or a role of none or presentation",
+      guide: "https://dequeuniversity.com/rules/axe/4.13/image-alt?application=playwright",
+    });
+    expect(v.helpUrl).toBe(result.helpUrl);
+  });
+
+  it("still flattens a shadow-DOM target", () => {
+    const v = toViolation(result, { version: "4.13.0" });
+    expect(v.nodes[0]?.target).toBe("my-card img");
   });
 });
 
@@ -123,4 +162,20 @@ describe.skipIf(browser === null)("one page's navigation and the next page (real
     }
     // Above twenty 10s guards, so a stall reports its own message first.
   }, 240_000);
+});
+
+describe("loadFailureMessage", () => {
+  it("on this machine, says to start the site", () => {
+    for (const url of ["http://localhost:4321/", "http://127.0.0.1:8080/a", "http://[::1]:3000/"]) {
+      expect(loadFailureMessage(url, "net::ERR_CONNECTION_REFUSED")).toBe(
+        `Could not load ${url}: net::ERR_CONNECTION_REFUSED. Start the site with manni site preview, then run the check again.`,
+      );
+    }
+  });
+
+  it("anywhere else, says to check the site is reachable", () => {
+    expect(loadFailureMessage("https://example.com/", "Timeout 30000ms exceeded.")).toBe(
+      "Could not load https://example.com/: Timeout 30000ms exceeded. Check that the site is up and reachable from this machine.",
+    );
+  });
 });

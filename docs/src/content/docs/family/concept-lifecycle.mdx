@@ -144,17 +144,36 @@ to them.
 $ manni term check
 docs/api/payments.md:6
   error  manni:term/undefined-term       concepts: "Retries" names no entry.
+                                         Correct the value, or run manni term fill to add the term.
+                                         manni:term undefined-term: A page's concepts: names no entry, by label, id or alt-label.
+                                         Guide: https://hawkeyexl.github.io/manni/term/reference/rules/#undefined-term
 docs/api/payments.md:7
   notice manni:term/keyword-candidate    keywords: "Idempotency key" is on 2 pages and names no term, so add it to concepts: or run manni term fill --crawl.
+                                         manni:term keyword-candidate: A free keywords: value is on enough pages and names no term.
+                                         Guide: https://hawkeyexl.github.io/manni/term/reference/rules/#keyword-candidate
 docs/api/retries.md:5
   warning manni:term/alt-label-reference  concepts: "Time-out" is an alt-label of "Timeout", so name the label.
+                                         manni:term alt-label-reference: A page's concepts: names an entry by one of its alt-labels.
+                                         Guide: https://hawkeyexl.github.io/manni/term/reference/rules/#alt-label-reference
   error  manni:term/undefined-term       concepts: "Retry" names no entry.
+                                         Correct the value, or run manni term fill to add the term.
+                                         manni:term undefined-term: A page's concepts: names no entry, by label, id or alt-label.
+                                         Guide: https://hawkeyexl.github.io/manni/term/reference/rules/#undefined-term
 docs/glossary/jitter.md:1
   error  manni:term/missing-definition   definition: missing, so write one or run manni term fill.
+                                         manni:term missing-definition: An entry has neither a definition nor a see.
+                                         Guide: https://hawkeyexl.github.io/manni/term/reference/rules/#missing-definition
   notice manni:term/orphan-term          no broader, narrower or related term, so place it in the hierarchy.
-  notice manni:term/unused-term          no page's concepts: names this term
+                                         manni:term orphan-term: An entry has no broader, narrower or related term, in a termbase that has a hierarchy.
+                                         Guide: https://hawkeyexl.github.io/manni/term/reference/rules/#orphan-term
+  notice manni:term/unused-term          no page's concepts: names this term.
+                                         Name it in the concepts: of a page that uses it.
+                                         manni:term unused-term: No page's concepts: names the entry, or an entry in another language with its id.
+                                         Guide: https://hawkeyexl.github.io/manni/term/reference/rules/#unused-term
 docs/glossary/timeout.md:1
   notice manni:term/orphan-term          no broader, narrower or related term, so place it in the hierarchy.
+                                         manni:term orphan-term: An entry has no broader, narrower or related term, in a termbase that has a hierarchy.
+                                         Guide: https://hawkeyexl.github.io/manni/term/reference/rules/#orphan-term
 
 3 errors, 1 warning, 4 notices in 2 terms
 ```
@@ -243,22 +262,50 @@ A draft is a proposal. Run the check over the filled termbase:
 $ manni term check
 docs/api/payments.md:6
   warning manni:term/alt-label-reference   concepts: "Retries" is an alt-label of "Retry", so name the label.
+                                          manni:term alt-label-reference: A page's concepts: names an entry by one of its alt-labels.
+                                          Guide: https://hawkeyexl.github.io/manni/term/reference/rules/#alt-label-reference
 docs/api/retries.md:5
   warning manni:term/alt-label-reference   concepts: "Time-out" is an alt-label of "Timeout", so name the label.
+                                          manni:term alt-label-reference: A page's concepts: names an entry by one of its alt-labels.
+                                          Guide: https://hawkeyexl.github.io/manni/term/reference/rules/#alt-label-reference
 docs/glossary/backoff.md:1
   warning manni:term/asymmetric-related    related-terms: omits "Retry", which lists this entry as related.
-  notice manni:term/unused-term           no page's concepts: names this term
+                                          Add it to related-terms, or remove this entry from its related-terms.
+                                          manni:term asymmetric-related: A names B in related-terms, and B omits A.
+                                          Guide: https://hawkeyexl.github.io/manni/term/reference/rules/#asymmetric-related
+  notice manni:term/unused-term           no page's concepts: names this term.
+                                          Name it in the concepts: of a page that uses it.
+                                          manni:term unused-term: No page's concepts: names the entry, or an entry in another language with its id.
+                                          Guide: https://hawkeyexl.github.io/manni/term/reference/rules/#unused-term
 docs/glossary/errors.md:1
-  warning manni:term/asymmetric-hierarchy  narrower: omits "Retry", which lists this entry as broader
-  notice manni:term/unused-term           no page's concepts: names this term
+  warning manni:term/asymmetric-hierarchy  narrower: omits "Retry", which lists this entry as broader.
+                                          Add it to narrower, or remove this entry from its broader.
+                                          manni:term asymmetric-hierarchy: A names B as broader, and B omits A from narrower, or the reverse.
+                                          Guide: https://hawkeyexl.github.io/manni/term/reference/rules/#asymmetric-hierarchy
+  notice manni:term/unused-term           no page's concepts: names this term.
+                                          Name it in the concepts: of a page that uses it.
+                                          manni:term unused-term: No page's concepts: names the entry, or an entry in another language with its id.
+                                          Guide: https://hawkeyexl.github.io/manni/term/reference/rules/#unused-term
 docs/glossary/idempotency-key.md:1
   notice manni:term/orphan-term           no broader, narrower or related term, so place it in the hierarchy.
-  notice manni:term/unused-term           no page's concepts: names this term
+                                          manni:term orphan-term: An entry has no broader, narrower or related term, in a termbase that has a hierarchy.
+                                          Guide: https://hawkeyexl.github.io/manni/term/reference/rules/#orphan-term
+  notice manni:term/unused-term           no page's concepts: names this term.
+                                          Name it in the concepts: of a page that uses it.
+                                          manni:term unused-term: No page's concepts: names the entry, or an entry in another language with its id.
+                                          Guide: https://hawkeyexl.github.io/manni/term/reference/rules/#unused-term
 docs/glossary/jitter.md:1
   notice manni:term/orphan-term           no broader, narrower or related term, so place it in the hierarchy.
-  notice manni:term/unused-term           no page's concepts: names this term
+                                          manni:term orphan-term: An entry has no broader, narrower or related term, in a termbase that has a hierarchy.
+                                          Guide: https://hawkeyexl.github.io/manni/term/reference/rules/#orphan-term
+  notice manni:term/unused-term           no page's concepts: names this term.
+                                          Name it in the concepts: of a page that uses it.
+                                          manni:term unused-term: No page's concepts: names the entry, or an entry in another language with its id.
+                                          Guide: https://hawkeyexl.github.io/manni/term/reference/rules/#unused-term
 docs/glossary/timeout.md:1
   notice manni:term/orphan-term           no broader, narrower or related term, so place it in the hierarchy.
+                                          manni:term orphan-term: An entry has no broader, narrower or related term, in a termbase that has a hierarchy.
+                                          Guide: https://hawkeyexl.github.io/manni/term/reference/rules/#orphan-term
 
 4 warnings, 7 notices in 6 terms
 ```
@@ -295,7 +342,10 @@ is about. The check comes back with one notice:
 ```console
 $ manni term check
 docs/glossary/errors.md:1
-  notice manni:term/unused-term          no page's concepts: names this term
+  notice manni:term/unused-term          no page's concepts: names this term.
+                                         Name it in the concepts: of a page that uses it.
+                                         manni:term unused-term: No page's concepts: names the entry, or an entry in another language with its id.
+                                         Guide: https://hawkeyexl.github.io/manni/term/reference/rules/#unused-term
 
 1 notice in 6 terms
 ```
@@ -620,16 +670,32 @@ tag `dead-letter queue`. The payments page's `graph:` block also relates
 $ manni term check
 docs/api/payments.md:7
   notice manni:term/keyword-candidate           keywords: "dead-letter queue" is on 2 pages and names no term, so add it to concepts: or run manni term fill --crawl.
+                                                manni:term keyword-candidate: A free keywords: value is on enough pages and names no term.
+                                                Guide: https://hawkeyexl.github.io/manni/term/reference/rules/#keyword-candidate
 docs/api/payments.md:16
   notice manni:term/hierarchy-outside-termbase  graph: related-concepts "Idempotency key" on "Backoff" is not on its term page (docs/glossary/backoff.md), so add it there.
+                                                manni:term hierarchy-outside-termbase: A page's graph: block gives a term a broader, narrower or related-concepts value that the term's own entry does not list.
+                                                Guide: https://hawkeyexl.github.io/manni/term/reference/rules/#hierarchy-outside-termbase
 docs/glossary/audience.md:1
-  notice manni:term/unused-term                 no page's concepts: names this term
+  notice manni:term/unused-term                 no page's concepts: names this term.
+                                                Name it in the concepts: of a page that uses it.
+                                                manni:term unused-term: No page's concepts: names the entry, or an entry in another language with its id.
+                                                Guide: https://hawkeyexl.github.io/manni/term/reference/rules/#unused-term
 docs/glossary/developer.md:1
-  notice manni:term/unused-term                 no page's concepts: names this term
+  notice manni:term/unused-term                 no page's concepts: names this term.
+                                                Name it in the concepts: of a page that uses it.
+                                                manni:term unused-term: No page's concepts: names the entry, or an entry in another language with its id.
+                                                Guide: https://hawkeyexl.github.io/manni/term/reference/rules/#unused-term
 docs/glossary/errors.md:1
-  notice manni:term/unused-term                 no page's concepts: names this term
+  notice manni:term/unused-term                 no page's concepts: names this term.
+                                                Name it in the concepts: of a page that uses it.
+                                                manni:term unused-term: No page's concepts: names the entry, or an entry in another language with its id.
+                                                Guide: https://hawkeyexl.github.io/manni/term/reference/rules/#unused-term
 docs/glossary/operator.md:1
-  notice manni:term/unused-term                 no page's concepts: names this term
+  notice manni:term/unused-term                 no page's concepts: names this term.
+                                                Name it in the concepts: of a page that uses it.
+                                                manni:term unused-term: No page's concepts: names the entry, or an entry in another language with its id.
+                                                Guide: https://hawkeyexl.github.io/manni/term/reference/rules/#unused-term
 
 6 notices in 9 terms
 ```

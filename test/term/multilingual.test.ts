@@ -77,7 +77,11 @@ describe("a multilingual set", () => {
     const report = await runCheck({ cwd: FIXTURE, inputs: ["en", "de"] });
     const findings = report.findings.filter((f) => f.rule !== "unused-term");
     expect(findings.map((f) => [f.rule, f.file, f.message])).toEqual([
-      ["label-collision", "en/kubernetes.md", '"Kubernetes" is claimed by de/kubernetes.md:1 as "kubernetes"'],
+      [
+        "label-collision",
+        "en/kubernetes.md",
+        '"Kubernetes" is claimed by de/kubernetes.md:1 as "kubernetes". Rename one label, or merge the two entries.',
+      ],
     ]);
   });
 

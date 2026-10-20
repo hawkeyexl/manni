@@ -162,10 +162,26 @@ describe("manni term (the ladder)", () => {
       [
         "docs/guides/fitting.md:3",
         '  warning manni:term/alt-label-reference  concepts: "PAL" is an alt-label of "progressive lens", so name the label.',
+        `${" ".repeat(41)}manni:term alt-label-reference: A page's concepts: names an entry by one of its alt-labels.`,
+        `${" ".repeat(41)}Guide: https://hawkeyexl.github.io/manni/term/reference/rules/#alt-label-reference`,
         '  error  manni:term/undefined-term       concepts: "trifocal" names no entry.',
+        `${" ".repeat(41)}Correct the value, or run manni term fill to add the term.`,
+        `${" ".repeat(41)}manni:term undefined-term: A page's concepts: names no entry, by label, id or alt-label.`,
+        `${" ".repeat(41)}Guide: https://hawkeyexl.github.io/manni/term/reference/rules/#undefined-term`,
         "",
         "1 error, 1 warning in 2 terms",
         "",
+      ].join("\n"),
+    );
+    expect(r.status).toBe(1);
+  });
+
+  it("suggests the label a misspelled concept meant, exit 1", () => {
+    const r = term(["check"], { cwd: resolve(root, "test", "fixtures", "term", "did-you-mean") });
+    expect(r.stdout).toContain(
+      [
+        '  error  manni:term/undefined-term       concepts: "progresive lens" names no entry.',
+        `${" ".repeat(41)}Did you mean "progressive lens"? Correct the value, or run manni term fill to add the term.`,
       ].join("\n"),
     );
     expect(r.status).toBe(1);
@@ -177,13 +193,24 @@ describe("manni term (the ladder)", () => {
       [
         "docs/glossary/pluggable-auth-layer.md:1",
         "  notice manni:term/orphan-term                 no broader, narrower or related term, so place it in the hierarchy.",
+        `${" ".repeat(48)}manni:term orphan-term: An entry has no broader, narrower or related term, in a termbase that has a hierarchy.`,
+        `${" ".repeat(48)}Guide: https://hawkeyexl.github.io/manni/term/reference/rules/#orphan-term`,
         "docs/guides/retrying.md:6",
-        "  error  manni:term/broader-cycle               broader: Resilience > Retry > Resilience",
+        "  error  manni:term/broader-cycle               broader: Resilience > Retry > Resilience.",
+        `${" ".repeat(48)}Remove the broader value that closes the loop.`,
+        `${" ".repeat(48)}manni:term broader-cycle: A chain of broader returns to where it started, across the terms and every page's graph: block.`,
+        `${" ".repeat(48)}Guide: https://hawkeyexl.github.io/manni/term/reference/rules/#broader-cycle`,
         '  notice manni:term/hierarchy-outside-termbase  graph: broader "Retry" on "Resilience" is not on its term page (docs/glossary/resilience.md), so add it there.',
+        `${" ".repeat(48)}manni:term hierarchy-outside-termbase: A page's graph: block gives a term a broader, narrower or related-concepts value that the term's own entry does not list.`,
+        `${" ".repeat(48)}Guide: https://hawkeyexl.github.io/manni/term/reference/rules/#hierarchy-outside-termbase`,
         "docs/guides/retrying.md:7",
         '  notice manni:term/hierarchy-outside-termbase  graph: related-concepts "Networking" on "Resilience" is not on its term page (docs/glossary/resilience.md), so add it there.',
+        `${" ".repeat(48)}manni:term hierarchy-outside-termbase: A page's graph: block gives a term a broader, narrower or related-concepts value that the term's own entry does not list.`,
+        `${" ".repeat(48)}Guide: https://hawkeyexl.github.io/manni/term/reference/rules/#hierarchy-outside-termbase`,
         "docs/guides/retrying.md:8",
         '  warning manni:term/alt-label-reference         graph.concepts: "PAL" is an alt-label of "Pluggable auth layer", so name the label.',
+        `${" ".repeat(48)}manni:term alt-label-reference: A page's concepts: names an entry by one of its alt-labels.`,
+        `${" ".repeat(48)}Guide: https://hawkeyexl.github.io/manni/term/reference/rules/#alt-label-reference`,
         "",
         "1 error, 1 warning, 3 notices in 3 terms",
         "",
@@ -210,8 +237,8 @@ describe("manni term (the ladder)", () => {
     const r = term(["check", "-f", "github"], { cwd: join(work, "failing") });
     expect(r.stdout).toBe(
       [
-        '::warning file=docs/guides/fitting.md,line=3,title=manni%3Aterm/alt-label-reference::concepts: "PAL" is an alt-label of "progressive lens", so name the label.',
-        '::error file=docs/guides/fitting.md,line=3,title=manni%3Aterm/undefined-term::concepts: "trifocal" names no entry.',
+        '::warning file=docs/guides/fitting.md,line=3,title=manni%3Aterm/alt-label-reference::concepts: "PAL" is an alt-label of "progressive lens", so name the label.%0Amanni:term alt-label-reference: A page\'s concepts: names an entry by one of its alt-labels.%0AGuide: https://hawkeyexl.github.io/manni/term/reference/rules/#alt-label-reference',
+        '::error file=docs/guides/fitting.md,line=3,title=manni%3Aterm/undefined-term::concepts: "trifocal" names no entry. Correct the value, or run manni term fill to add the term.%0Amanni:term undefined-term: A page\'s concepts: names no entry, by label, id or alt-label.%0AGuide: https://hawkeyexl.github.io/manni/term/reference/rules/#undefined-term',
         "",
       ].join("\n"),
     );
@@ -225,8 +252,21 @@ describe("manni term (the ladder)", () => {
     const cwd = join(work, "failing");
     const json = JSON.parse(term(["check", "-f", "json"], { cwd }).stdout) as {
       summary: { errors: number; warnings: number };
+      findings: Record<string, unknown>[];
     };
     expect(json.summary).toMatchObject({ errors: 1, warnings: 1 });
+    // Each finding carries its rule's guidance. Its baseline key is never printed.
+    const undefinedTerm = json.findings.find((f) => f["rule"] === "undefined-term");
+    expect(undefinedTerm).toMatchObject({
+      message: 'concepts: "trifocal" names no entry. Correct the value, or run manni term fill to add the term.',
+      guidance: {
+        id: "manni:term",
+        rule: "undefined-term",
+        description: "A page's concepts: names no entry, by label, id or alt-label.",
+        guide: "https://hawkeyexl.github.io/manni/term/reference/rules/#undefined-term",
+      },
+    });
+    for (const finding of json.findings) expect(finding).not.toHaveProperty("key");
     const sarif = JSON.parse(term(["check", "-f", "sarif"], { cwd }).stdout) as {
       runs: {
         tool: { driver: { rules: { id: string; shortDescription: { text: string }; helpUri?: string }[] } };
@@ -234,16 +274,39 @@ describe("manni term (the ladder)", () => {
       }[];
     };
     expect(sarif.runs[0]?.results.map((r) => [r.ruleId, r.message.text])).toEqual([
-      ["manni:term/alt-label-reference", 'concepts: "PAL" is an alt-label of "progressive lens", so name the label.'],
-      ["manni:term/undefined-term", 'concepts: "trifocal" names no entry.'],
+      [
+        "manni:term/alt-label-reference",
+        [
+          'concepts: "PAL" is an alt-label of "progressive lens", so name the label.',
+          "manni:term alt-label-reference: A page's concepts: names an entry by one of its alt-labels.",
+          "Guide: https://hawkeyexl.github.io/manni/term/reference/rules/#alt-label-reference",
+        ].join("\n"),
+      ],
+      [
+        "manni:term/undefined-term",
+        [
+          'concepts: "trifocal" names no entry. Correct the value, or run manni term fill to add the term.',
+          "manni:term undefined-term: A page's concepts: names no entry, by label, id or alt-label.",
+          "Guide: https://hawkeyexl.github.io/manni/term/reference/rules/#undefined-term",
+        ].join("\n"),
+      ],
     ]);
     expect(sarif.runs[0]?.tool.driver.rules.map((r) => r.helpUri).sort()).toEqual([
       "https://hawkeyexl.github.io/manni/term/reference/rules/#alt-label-reference",
       "https://hawkeyexl.github.io/manni/term/reference/rules/#undefined-term",
     ]);
+    const raw = JSON.parse(term(["check", "-f", "sarif"], { cwd }).stdout) as {
+      runs: { results: { properties?: { guidance?: { rule: string } } }[] }[];
+    };
+    expect(raw.runs[0]?.results.map((r) => r.properties?.guidance?.rule)).toEqual([
+      "alt-label-reference",
+      "undefined-term",
+    ]);
     const junit = term(["check", "-f", "junit"], { cwd }).stdout;
     expect(junit).toContain('classname="manni.term"');
-    expect(junit).toContain('message="concepts: &quot;trifocal&quot; names no entry.');
+    expect(junit).toContain(
+      'message="concepts: &quot;trifocal&quot; names no entry. Correct the value, or run manni term fill to add the term. (line 3)"',
+    );
   });
 
   it("7. ramps in with --baseline", () => {
@@ -564,7 +627,7 @@ describe("manni term (usage errors)", () => {
   // loader reports it through meta's target walk, in the family's own words.
   it("a path that matches nothing", () => {
     const r = term(["check", "nowhere/"]);
-    expect(r.stderr).toBe('manni: File not found: "nowhere/".\n');
+    expect(r.stderr).toBe('manni: File not found: "nowhere/". Check the path. Named paths resolve from the working directory.\n');
     expect(r.status).toBe(2);
   });
 

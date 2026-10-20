@@ -1,0 +1,13 @@
+A failing check should tell you what to do next, not only what went wrong.
+
+Every manni finding now names the rule that judged it, says what that rule is for, and links a guide. Where there is a next step, it says that too.
+
+Here a page's date is "June 5th". The 4.13.0 release reports a regex and a wrapper line about an "else" schema. Now it reports one finding. Under it sit what DCMI's date field is for and the guide to read.
+
+`manni meta schemas show -f markdown` prints the frontmatter an author starts from, every key explained.
+
+It holds across the family. When a cited source line changes, `manni cite check` says to check the sentence, then names the command that accepts the change.
+
+Real output from real test fixtures. Only the input is staged.
+
+npm i -g @hawkeyexl/manni · manni meta validate docs/

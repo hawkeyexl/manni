@@ -17,6 +17,10 @@ export interface ValeAlert {
   Line: number;
   Span: [number, number];
   Severity: ValeSeverity;
+  /** What the rule checks, as its style says it. Vale prints `""` for a rule with none. */
+  Description?: string;
+  /** Where the rule is documented. Vale prints `""` for a rule with none. */
+  Link?: string;
 }
 
 /** `vale --output=JSON`: the path Vale printed for each file, to its alerts. */
@@ -141,7 +145,7 @@ function parseAlert(raw: unknown, path: string): ValeAlert {
   const unreadable = (): TermError =>
     new TermError(`vale printed an alert for ${path} that manni cannot read: ${JSON.stringify(raw)}`);
   if (!isMapping(raw)) throw unreadable();
-  const { Check, Message, Line, Span, Severity } = raw;
+  const { Check, Message, Line, Span, Severity, Description, Link } = raw;
   if (typeof Check !== "string" || typeof Message !== "string" || typeof Line !== "number") throw unreadable();
   if (!Array.isArray(Span) || Span.length !== 2) throw unreadable();
   const span: unknown[] = Span;
@@ -149,7 +153,15 @@ function parseAlert(raw: unknown, path: string): ValeAlert {
   if (typeof from !== "number" || typeof to !== "number") throw unreadable();
   const severity = SEVERITIES.find((s) => s === Severity);
   if (severity === undefined) throw unreadable();
-  return { Check, Message, Line, Span: [from, to], Severity: severity };
+  return {
+    Check,
+    Message,
+    Line,
+    Span: [from, to],
+    Severity: severity,
+    ...(typeof Description === "string" ? { Description } : {}),
+    ...(typeof Link === "string" ? { Link } : {}),
+  };
 }
 
 function parseAlerts(stdout: string): ValeAlerts {

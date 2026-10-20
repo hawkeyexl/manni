@@ -4,7 +4,7 @@ import { execFileSync } from "node:child_process";
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join, relative } from "node:path";
-import { resolveTargetSet, resolveTargets } from "../src/meta/core/load-files.js";
+import { notFoundMessage, resolveTargetSet, resolveTargets } from "../src/meta/core/load-files.js";
 import { DocmetaError } from "../src/meta/types.js";
 import { DOC, makeTempRepo, removeTempRepo } from "./helpers/temp-repo.js";
 
@@ -639,5 +639,16 @@ describe("resolveTargetSet: what .gitignore removed", () => {
     const resolved = await resolveTargetSet({ inputs: ["**/*.md"], cwd: repo });
     expect(resolved.files).toEqual(["build/a.md", "docs/c.md"]);
     expect(resolved.gitignoreSkipped).toBe(0);
+  });
+});
+
+describe("notFoundMessage", () => {
+  it("names the path and the next step, in the singular and the plural", () => {
+    expect(notFoundMessage(["docs/nope.md"])).toBe(
+      'File not found: "docs/nope.md". Check the path. Named paths resolve from the working directory.',
+    );
+    expect(notFoundMessage(["a.md", "b.md"])).toBe(
+      'Files not found: "a.md", "b.md". Check the paths. Named paths resolve from the working directory.',
+    );
   });
 });

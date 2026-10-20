@@ -108,7 +108,7 @@ describe("a golden-set file that cannot be read", () => {
     const r = run(["check"], cwd);
     expect(r.status).toBe(2);
     expect(r.stderr.trim()).toBe(
-      "manni: graph.questionFiles names questions.yaml, which does not exist.",
+      "manni: graph.questionFiles names questions.yaml, which does not exist. Fix the path, or remove it from graph.questionFiles.",
     );
   });
 

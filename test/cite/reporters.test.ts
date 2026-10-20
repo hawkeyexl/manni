@@ -36,6 +36,7 @@ import type {
 } from "../../src/cite/types.js";
 import { CITE_RULES, type CiteRule } from "../../src/cite/types.js";
 import { toValidationResult } from "../../src/cite/core/adapt.js";
+import { RULE_DESCRIPTIONS } from "../../src/cite/core/severity.js";
 import { renderSarif, type RunSummary, type ValidationResult } from "../../src/meta/index.js";
 
 const PIN = "sha256-78af1d3321f9cbb177a7e4c958e39be56fd14cb93c1e441778bc4232e0fe4b1f";
@@ -160,6 +161,7 @@ describe("renderCheckPretty: one citation, one row", () => {
       [
         "ℹ docs/limits.md",
         "    ℹ fetch-timeout   :12 moved -> :14   lib/limits.ts:2 current",
+        "      Run manni cite update.",
         "",
         "1 file checked, 1 passed, 0 failed, 1 finding (1 notice)",
       ].join("\n"),
@@ -393,7 +395,7 @@ describe("renderCheckPretty: findings that are not an end", () => {
           finding({
             rule: "marker-repeated",
             severity: "warning",
-            message: "fetch-timeout is named by markers at lines 12 and 20; the first anchors it.",
+            message: "fetch-timeout is named by markers at lines 12 and 20; the first anchors it. Remove fetch-timeout from the marker at line 20.",
             line: 20,
           }),
         ],
@@ -403,7 +405,7 @@ describe("renderCheckPretty: findings that are not an end", () => {
       [
         "⚠ docs/limits.md",
         "    ↕ fetch-timeout   :12 current   lib/limits.ts:2 current",
-        "      ↕ fetch-timeout is named by markers at lines 12 and 20; the first anchors it.   (line 20)",
+        "      ↕ fetch-timeout is named by markers at lines 12 and 20; the first anchors it. Remove fetch-timeout from the marker at line 20.   (line 20)",
         "",
         "1 file checked, 1 passed, 0 failed, 1 finding (1 warning)",
       ].join("\n"),
@@ -418,7 +420,7 @@ describe("renderCheckPretty: findings that are not an end", () => {
           finding({ rule: "anchor-invalid", message: "fetch-timeout has claim lines and a marker. Keep one." }),
           finding({
             rule: "quote-drift",
-            message: "quote: true, but the fenced block does not reproduce the cited lines",
+            message: "quote: true, but the fenced block does not reproduce the cited lines. Copy the cited lines into the block again.",
           }),
         ],
       }),
@@ -426,7 +428,7 @@ describe("renderCheckPretty: findings that are not an end", () => {
     expect(renderCheckPretty(run, NO_COLOR).split("\n").slice(1, 4)).toEqual([
       "    ✗ fetch-timeout   :12 skipped   lib/limits.ts:2 current",
       "      ✗ fetch-timeout has claim lines and a marker. Keep one.   (line 12)",
-      "      ✗ quote: true, but the fenced block does not reproduce the cited lines   (line 12)",
+      "      ✗ quote: true, but the fenced block does not reproduce the cited lines. Copy the cited lines into the block again.   (line 12)",
     ]);
   });
 
@@ -435,10 +437,10 @@ describe("renderCheckPretty: findings that are not an end", () => {
       page({
         citations: [citation()],
         findings: [
-          finding({ rule: "marker-orphan", message: 'no entry has id "gone"', id: "gone", src: undefined, index: undefined, line: 21 }),
+          finding({ rule: "marker-orphan", message: `no entry has id "gone". Fix the marker's id, or add the entry with manni cite add.`, id: "gone", src: undefined, index: undefined, line: 21 }),
           finding({
             rule: "marker-invalid",
-            message: "A marker names an entry by id. Write the entry in frontmatter or the sidecar.",
+            message: "invalid marker: a marker names entry ids, not an entry. Move the entry to citations:, in frontmatter or the sidecar, and name its id.",
             id: undefined,
             src: undefined,
             index: undefined,
@@ -451,8 +453,8 @@ describe("renderCheckPretty: findings that are not an end", () => {
       [
         "✗ docs/limits.md",
         "    ✓ fetch-timeout   :12 current   lib/limits.ts:2 current",
-        '    ✗ gone   no entry has id "gone"   (line 21)',
-        "    ✗ page   A marker names an entry by id. Write the entry in frontmatter or the sidecar.   (line 25)",
+        `    ✗ gone   no entry has id "gone". Fix the marker's id, or add the entry with manni cite add.   (line 21)`,
+        "    ✗ page   invalid marker: a marker names entry ids, not an entry. Move the entry to citations:, in frontmatter or the sidecar, and name its id.   (line 25)",
         "",
         "1 file checked, 0 passed, 1 failed, 2 findings",
       ].join("\n"),
@@ -482,6 +484,7 @@ describe("renderCheckPretty: --show-diff and --reveal", () => {
       [
         "✗ docs/limits.md",
         "    ✗ fetch-timeout   :12 current   lib/limits.ts:2 changed since 3f9c2a1, 1 commit",
+        "      Check the sentence against the source, then run manni cite update --accept --only fetch-timeout.",
         "        raise fetch timeout to 30s",
         "        -export const FETCH_TIMEOUT_MS = 10_000;",
         "        +export const FETCH_TIMEOUT_MS = 30_000;",
@@ -506,8 +509,9 @@ describe("renderCheckPretty: --show-diff and --reveal", () => {
       }),
     ]);
     expect(renderCheckPretty(run, NO_COLOR)).not.toContain("30 seconds");
-    expect(renderCheckPretty(run, { ...NO_COLOR, showDiff: true }).split("\n").slice(1, 4)).toEqual([
+    expect(renderCheckPretty(run, { ...NO_COLOR, showDiff: true }).split("\n").slice(1, 5)).toEqual([
       "    ↕ fetch-timeout   :12 changed   lib/limits.ts:2 current",
+      "      Check it still matches the source, then run manni cite update --accept --only fetch-timeout.",
       "        The fetch timeout is 30 seconds. It is",
       "        not configurable.",
     ]);
@@ -585,6 +589,7 @@ describe("renderCheckPretty: quiet, baselines and colour", () => {
       [
         "✗ docs/limits.md",
         "    ✗ fetch-timeout   :12 current   lib/limits.ts:2 changed",
+        "      Check the sentence against the source, then run manni cite update --accept --only fetch-timeout.",
         "",
         "2 files checked, 1 passed, 1 failed, 1 finding",
       ].join("\n"),
@@ -837,7 +842,7 @@ describe("renderCheckGithub", () => {
           finding({
             rule: "marker-repeated",
             severity: "warning",
-            message: "fetch-timeout is named by markers at lines 12 and 20; the first anchors it.",
+            message: "fetch-timeout is named by markers at lines 12 and 20; the first anchors it. Remove fetch-timeout from the marker at line 20.",
             line: 20,
           }),
           finding({
@@ -849,7 +854,7 @@ describe("renderCheckGithub", () => {
     ]);
     expect(renderCheckGithub(run).split("\n")).toEqual([
       "::warning file=docs/limits.md,line=12,title=manni%3Acite/claim-changed::fetch-timeout: the claim at line 12 has changed since it was pinned.",
-      "::warning file=docs/limits.md,line=20,title=manni%3Acite/marker-repeated::fetch-timeout is named by markers at lines 12 and 20; the first anchors it.",
+      "::warning file=docs/limits.md,line=20,title=manni%3Acite/marker-repeated::fetch-timeout is named by markers at lines 12 and 20; the first anchors it. Remove fetch-timeout from the marker at line 20.",
       "::error file=docs/limits.md,line=12,title=manni%3Acite/anchor-invalid::fetch-timeout has claim lines and a marker. Keep one.",
     ]);
   });
@@ -858,12 +863,12 @@ describe("renderCheckGithub", () => {
     const run = runOf([
       page({
         findings: [
-          finding({ rule: "entry-invalid", message: "duplicate id \"fetch-timeout\"", file: "docs/citations.yaml", line: 7 }),
+          finding({ rule: "entry-invalid", message: "duplicate id \"fetch-timeout\". Give each entry its own id.", file: "docs/citations.yaml", line: 7 }),
         ],
       }),
     ]);
     expect(renderCheckGithub(run)).toBe(
-      '::error file=docs/citations.yaml,line=7,title=manni%3Acite/entry-invalid::fetch-timeout (lib/limits.ts:2): duplicate id "fetch-timeout"',
+      '::error file=docs/citations.yaml,line=7,title=manni%3Acite/entry-invalid::fetch-timeout (lib/limits.ts:2): duplicate id "fetch-timeout". Give each entry its own id.',
     );
   });
 
@@ -1201,16 +1206,18 @@ describe("sarif and junit describe cite rules, not schema keywords", () => {
     }),
   ]);
 
-  it("describes each rule in plain words and links its row of the citations reference", () => {
+  it("describes each rule in plain words and links its section of the fix page", () => {
     const sarif = JSON.parse(renderCheckSarif(run)) as SarifLog;
     const driver = sarif.runs[0]?.tool.driver;
     expect(driver?.informationUri).toBe("https://hawkeyexl.github.io/manni/cite/");
     expect(driver?.rules.map((r) => r.id)).toEqual(CITE_RULES.map((rule) => `manni:cite/${rule}`));
     for (const rule of driver?.rules ?? []) {
-      const name = rule.id.slice("manni:cite/".length);
+      const name = rule.id.slice("manni:cite/".length) as CiteRule;
       expect(rule.shortDescription.text).not.toMatch(/schema|keyword/i);
       expect(rule.shortDescription.text).toMatch(/^[A-Z].*\.$/);
-      expect(rule.helpUri).toBe(`https://hawkeyexl.github.io/manni/cite/reference/citations/#${name}`);
+      expect(rule.shortDescription.text).toBe(RULE_DESCRIPTIONS[name]);
+      expect(rule.fullDescription?.text).toBe(RULE_DESCRIPTIONS[name]);
+      expect(rule.helpUri).toBe(`https://hawkeyexl.github.io/manni/cite/fix/#${name}`);
     }
     const descriptions = new Set(driver?.rules.map((r) => r.shortDescription.text));
     expect(descriptions.size).toBe(CITE_RULES.length);

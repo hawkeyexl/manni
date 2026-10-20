@@ -73,6 +73,10 @@ describe.skipIf(!available)("manni test run, against the real Doc Detective", ()
       expect(r.stdout).toMatch(
         /^::error file=test\/test\/fixtures\/fail\.md,line=4,title=Doc Detective::/m,
       );
+      expect(r.stdout).toContain(
+        ". Fix the step, fix the procedure it documents, or report a product regression." +
+          "%0ADoc Detective runShell%0AGuide: https://docs.doc-detective.com/docs/actions/runshell",
+      );
     },
     TIMEOUT,
   );

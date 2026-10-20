@@ -28,7 +28,7 @@ sample-questions:
 graph:
   label: Get started
   type: learning
-last-updated: 2026-10-19
+last-updated: 2026-10-20
 tags:
   - tutorial
   - getting-started
@@ -176,10 +176,19 @@ concepts: [PAL, trifocal, corrective lens, progressive lens]
    ```
    docs/guides/fitting.md:3
      warning manni:term/alt-label-reference  concepts: "PAL" is an alt-label of "progressive lens", so name the label.
+                                            manni:term alt-label-reference: A page's concepts: names an entry by one of its alt-labels.
+                                            Guide: https://hawkeyexl.github.io/manni/term/reference/rules/#alt-label-reference
      error  manni:term/undefined-term       concepts: "trifocal" names no entry.
+                                            Correct the value, or run manni term fill to add the term.
+                                            manni:term undefined-term: A page's concepts: names no entry, by label, id or alt-label.
+                                            Guide: https://hawkeyexl.github.io/manni/term/reference/rules/#undefined-term
 
    1 error, 1 warning in 2 terms
    ```
+
+   Each finding ends with what to do. Under it, a dim line names the rule and
+   says what it means, and a `Guide:` line links its section of the rules
+   reference.
 
    The exit code is `1`, from the error. No entry claims `trifocal`. `PAL` is
    a name the set knows, but `concepts:` wants the label, so the warning says
@@ -223,9 +232,15 @@ definition: Lenses with two distinct optical powers, divided by a visible line.
 
 ```
 docs/terms/bifocal.md:1
-  notice manni:term/unused-term           no page's concepts: names this term
+  notice manni:term/unused-term           no page's concepts: names this term.
+                                          Name it in the concepts: of a page that uses it.
+                                          manni:term unused-term: No page's concepts: names the entry, or an entry in another language with its id.
+                                          Guide: https://hawkeyexl.github.io/manni/term/reference/rules/#unused-term
 docs/terms/corrective-lens.md:5
-  warning manni:term/asymmetric-hierarchy  narrower: omits "bifocal", which lists this entry as broader
+  warning manni:term/asymmetric-hierarchy  narrower: omits "bifocal", which lists this entry as broader.
+                                          Add it to narrower, or remove this entry from its broader.
+                                          manni:term asymmetric-hierarchy: A names B as broader, and B omits A from narrower, or the reverse.
+                                          Guide: https://hawkeyexl.github.io/manni/term/reference/rules/#asymmetric-hierarchy
 
 1 warning, 1 notice in 3 terms
 ```
@@ -240,7 +255,10 @@ the warning goes:
 
 ```
 docs/terms/bifocal.md:1
-  notice manni:term/unused-term          no page's concepts: names this term
+  notice manni:term/unused-term          no page's concepts: names this term.
+                                         Name it in the concepts: of a page that uses it.
+                                         manni:term unused-term: No page's concepts: names the entry, or an entry in another language with its id.
+                                         Guide: https://hawkeyexl.github.io/manni/term/reference/rules/#unused-term
 
 1 notice in 3 terms
 ```

@@ -31,7 +31,7 @@ sample-questions:
 graph:
   label: Keep citations out of the page
   type: task
-last-updated: 2026-09-24
+last-updated: 2026-10-20
 tags:
   - external-metadata
   - sidecar-pattern
@@ -257,6 +257,8 @@ reviewer reads the sentence. A finding about the entry itself sits on the
 ```
 ✗ docs/entry-invalid.md
     ✗ bad-pin   /source/integrity must match pattern "^(?:sha256|hmac-sha256)-[0-9a-f]{64}$"   (docs-citations.yaml:42)
+      manni:cite entry-invalid: An entry is malformed, or an id is repeated.
+      Guide: https://hawkeyexl.github.io/manni/cite/fix/#entry-invalid
 
 1 file checked, 0 passed, 1 failed, 1 finding
 ```
@@ -268,7 +270,7 @@ checkable. The location is the manifest, because that is the file to open.
 in the pull request:
 
 ```
-::error file=docs-citations.yaml,line=42,title=manni%3Acite/entry-invalid::bad-pin (lib/limits.ts): /source/integrity must match pattern "^(?:sha256|hmac-sha256)-[0-9a-f]{64}$"
+::error file=docs-citations.yaml,line=42,title=manni%3Acite/entry-invalid::bad-pin (lib/limits.ts): /source/integrity must match pattern "^(?:sha256|hmac-sha256)-[0-9a-f]{64}$"%0Amanni:cite entry-invalid: An entry is malformed, or an id is repeated.%0AGuide: https://hawkeyexl.github.io/manni/cite/fix/#entry-invalid
 ```
 
 {/* cite manifest-outside-repo-on-page */}
@@ -277,9 +279,10 @@ is reported on the page instead.
 
 <Aside type="note" title="Pretty prints one row per citation">
   The row carries a status word, and only the entry rules carry their message
-  into it. A `claim-changed` row reads `:9 changed` and nothing more. The
-  sentence that explains it, `the claim at line 9 has changed since it was
-  pinned`, is in `-f github` and `-f json`, which is what CI reads.
+  into it. A `claim-changed` row reads `:9 changed`, and the lines under it
+  say what to do and name the rule. The sentence that explains it, `the claim
+  at line 9 has changed since it was pinned`, is in `-f github` and `-f json`,
+  which is what CI reads.
 </Aside>
 
 ## Half-moved pages are caught
@@ -293,6 +296,8 @@ the message names the manifest and the collection:
 ✗ docs/own.md
     ✓ on-the-page      lib/limits.ts current
     ✗ page   "citations" is owned by manifest docs-citations.yaml (collection site); remove it from the document   (line 3)
+      manni:cite entry-invalid: An entry is malformed, or an id is repeated.
+      Guide: https://hawkeyexl.github.io/manni/cite/fix/#entry-invalid
 
 1 file checked, 0 passed, 1 failed, 1 finding
 ```

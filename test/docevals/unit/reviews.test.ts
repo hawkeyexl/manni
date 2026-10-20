@@ -12,6 +12,7 @@ import {
   saveReviews,
   type ReviewEntry,
 } from "../../../src/docevals/core/reviews.js";
+import { runReview } from "../../../src/docevals/commands/review.js";
 
 const root = () => mkdtempSync(join(tmpdir(), "manni-docevals-reviews-"));
 
@@ -131,5 +132,14 @@ describe("findReview", () => {
   it("returns undefined for an empty review set", () => {
     expect(findReview([], "docs/install.md", "no-future-promises", body))
       .toBeUndefined();
+  });
+});
+
+describe("runReview", () => {
+  it("refuses a page that is not there in meta's words, naming the next step", () => {
+    const cwd = root();
+    expect(() => runReview("docs/nope.md", "no-todo", "pass", { cwd })).toThrow(
+      'File not found: "docs/nope.md". Check the path. Named paths resolve from the working directory.',
+    );
   });
 });

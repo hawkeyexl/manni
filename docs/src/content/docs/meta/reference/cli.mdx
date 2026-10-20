@@ -1889,7 +1889,7 @@ Two cases, both exit 2:
 
 | Situation | Message |
 |---|---|
-| A named path that does not exist, as in `manni meta validate docs/typo.md` | `File not found: "docs/typo.md".` |
+| A named path that does not exist, as in `manni meta validate docs/typo.md` | `File not found: "docs/typo.md". Check the path. Named paths resolve from the working directory.` |
 | Everything resolved, but nothing matched, as in `manni meta validate "docs/**/*.nomatch"` | `No files matched. Patterns tried: …` |
 
 {/* cite named-path-reported-even-when-others-matched */}

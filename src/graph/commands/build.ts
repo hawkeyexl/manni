@@ -14,6 +14,7 @@ import {
   assertInputFormat,
   documentBase,
   documentSetPatterns,
+  noInputMessage,
   resolveDocumentSet,
   routesFrom,
   STDIN,
@@ -128,9 +129,7 @@ export async function buildGraph(opts: BuildOptions = {}): Promise<BuiltGraph> {
         turtle: emitTurtle([]),
       };
     }
-    throw new GraphError(
-      `No input files matched: ${documentSetPatterns(config, opts).join(", ")} (cwd: ${cwd})`,
-    );
+    throw new GraphError(noInputMessage(documentSetPatterns(config, opts), cwd));
   }
   if (usingStdin && opts.stdinContent === undefined) {
     throw new GraphError("graph build was given `-` but no stdin content.");
