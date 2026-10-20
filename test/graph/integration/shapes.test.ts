@@ -201,6 +201,10 @@ describe("manni graph shapes usage errors", () => {
       ["shapes", "show", "ActivityShape", "-f", "markdown"],
       "manni: ActivityShape has no frontmatter keys. manni writes every value it checks.",
     ],
+    [
+      ["shapes", "show", "Document", "--shapes", "no-node-shapes.ttl"],
+      'manni: Unknown shape "Document". The shapes in effect define no node shapes.',
+    ],
     [["shapes", "-f", "markdown"], 'manni: Unknown --format "markdown". Use pretty | json.'],
     [
       ["shapes", "show", "DocumentShape", "-f", "xml"],

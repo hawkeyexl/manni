@@ -1,0 +1,8 @@
+# A shapes file that defines no node shape, so `graph shapes show` has none
+# to name.
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix ex: <https://example.com/empty#> .
+
+ex:loose-property a sh:PropertyShape ;
+    sh:path ex:code ;
+    sh:maxCount 1 .

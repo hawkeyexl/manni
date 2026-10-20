@@ -199,6 +199,9 @@ export function runShapesShow(name: string, opts: ShapesOptions = {}): ShapesSho
   const all = nodeShapes(resolved.loaded.store);
   const matching = all.filter((iri) => localName(iri) === name);
   if (matching.length === 0) {
+    if (all.length === 0) {
+      throw new GraphError(`Unknown shape "${name}". The shapes in effect define no node shapes.`);
+    }
     const available = [...new Set(all.map(localName))].join(", ");
     throw new GraphError(`Unknown shape "${name}". Available: ${available}.`);
   }
