@@ -19,7 +19,7 @@ sample-questions:
 graph:
   label: "manni core vocabulary"
   type: reference
-last-updated: 2026-09-27
+last-updated: 2026-10-20
 resource: https://hawkeyexl.github.io/manni/schemas/core/1.0.0.json
 tags:
   - schema
@@ -139,12 +139,14 @@ title: Install the operator on Kubernetes
 $ manni meta validate install.md --no-config -s manni:core:1.0.0
 ✗ install.md
     (root)  must have required property 'description'  (line 1)  [manni:core:1.0.0]
+      manni:core:1.0.0 description: One full non-empty sentence saying what the page is for.
+      Guide: https://hawkeyexl.github.io/manni/meta/reference/schemas/manni-core/
 
 1 file checked, 0 passed, 1 failed, 1 error
 ```
 
 The exit code is 1. An empty `title: ""` fails the same way, with
-`must NOT have fewer than 1 characters`.
+`must not be empty`.
 
 ## Design decisions
 
@@ -220,7 +222,11 @@ keywords: helm, operator
 $ manni meta validate install.md --no-config -s manni:core:1.0.0 -s manni:core-strict:1.0.0
 ✗ install.md
     /id  must match pattern "^[a-z0-9][a-z0-9-]*$"  (line 4)  [manni:core-strict:1.0.0]
+      manni:core-strict:1.0.0 id: Strict holds the id to kebab case, lowercase letters, digits and hyphens.
+      Guide: https://hawkeyexl.github.io/manni/meta/reference/schemas/manni-core/
     /keywords  must be array  (line 5)  [manni:core-strict:1.0.0]
+      manni:core-strict:1.0.0 keywords: Strict takes keywords as a list only, so the comma-separated string form fails.
+      Guide: https://hawkeyexl.github.io/manni/meta/reference/schemas/manni-core/
 
 1 file checked, 0 passed, 1 failed, 2 errors
 ```

@@ -2,7 +2,7 @@
 title: CLI reference
 description: Every manni docevals command, argument, and flag, with the exit code each produces.
 type: reference
-last-updated: 2026-10-05
+last-updated: 2026-10-20
 ---
 
 {/* The command, argument, and option tables on this page are drift-checked
@@ -320,14 +320,17 @@ manni docevals list [paths...] [options]
 $ manni docevals list docs/actions/goTo.mdx
 docs/actions/goTo.mdx (suite: reference)
   - no-future-promises [ai, regression, config]
+      The page makes no claims about unreleased or future functionality.
   - names-an-action [tool:regex, regression, config]
+      The page documents at least one Doc Detective action.
   - no-todo-markers [tool:regex, regression, config]
+      The page carries no TODO, TBD or FIXME markers.
 
 1 pages, 3 evals resolved
 ```
 
 Each line is `name [grader, type, source]`, where source is `config` or
-`page`.
+`page`. The dim line under it is the eval's assertion.
 
 ### Arguments
 

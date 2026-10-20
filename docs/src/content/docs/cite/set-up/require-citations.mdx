@@ -32,7 +32,7 @@ sample-questions:
 graph:
   label: Require citations in the standard
   type: task
-last-updated: 2026-09-26
+last-updated: 2026-10-20
 tags:
   - citations
   - schema
@@ -164,11 +164,14 @@ manni meta validate docs/reference/
 ```
 ✗ docs/reference/entry-invalid.md
     /citations/0/source  must have required property 'integrity'  (line 5)  [manni:citations:1.0.0]
+      manni:citations:1.0.0 citations/source/integrity: The pin: an algorithm prefix and sixty-four lowercase hex digits over the cited lines under one rule.
+      Guide: https://hawkeyexl.github.io/manni/meta/reference/schemas/manni-citations/
     /citations  warning "citations" is stored in the page; manni:citations:1.0.0 prefers external metadata. Run manni meta relocate.  (line 3)  [location:external]
 ⚠ docs/reference/limits.md
     /citations  warning "citations" is stored in the page; manni:citations:1.0.0 prefers external metadata. Run manni meta relocate.  (line 3)  [location:external]
 ✗ docs/reference/retries.md
     (root)  must have required property 'citations'  (line 1)  [./schema/reference-page.schema.json]
+      ./schema/reference-page.schema.json
 
 3 files checked, 1 passed, 2 failed, 2 errors, 2 warnings
 ```

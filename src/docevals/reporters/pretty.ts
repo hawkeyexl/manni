@@ -4,6 +4,7 @@ import { palette, type Colors } from "../../shared/color.js";
 import type { EvalResult } from "../types.js";
 import type { EngineReport } from "../core/engine.js";
 import { declaringEntry, locationLabel } from "./location.js";
+import { judgedLines, resultGuidance } from "./judged.js";
 
 function outcomeTag(r: EvalResult, pc: Colors): string {
   switch (r.outcome) {
@@ -61,18 +62,17 @@ export function renderPretty(
               : pc.dim(f.severity);
         lines.push(`       ${sev}${loc}${rule} ${f.message}`);
       }
+      for (const line of judgedLines(r)) lines.push(`       ${line}`);
       if (r.consensus && r.outcome !== "pass") {
         const v = r.consensus;
         lines.push(
           pc.dim(
             `       votes pass:${v.votes.pass} fail:${v.votes.fail} partial:${v.votes.partial}` +
-              (v.votes.error ? ` error:${v.votes.error}` : "") +
-              ` — confidence ${v.meanConfidence.toFixed(2)}`,
+              (v.votes.error ? ` error:${v.votes.error}` : ""),
           ),
         );
-        const reasoning = v.runs.find((run) => run.verdict)?.verdict?.reasoning;
-        if (reasoning) lines.push(pc.dim(`       ${reasoning}`));
       }
+      for (const line of resultGuidance(r)) lines.push(pc.dim(`       ${line}`));
     }
   }
 
@@ -167,7 +167,7 @@ export function renderPretty(
     lines.push("");
     lines.push(
       pc.yellow(
-        `${reviews.length} eval(s) need human review — run \`manni docevals review\` to record verdicts.`,
+        `${reviews.length} eval(s) need human review. Run \`manni docevals review\` to record verdicts.`,
       ),
     );
   }

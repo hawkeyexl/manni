@@ -114,10 +114,13 @@ docs/src/content/docs/meta/reference/schemas/google-okf.mdx:
       lines: 113-117
       integrity: sha256-ce61e3dc7c627576f0567585841801aa4be4e5c5f5df53f9eddfb6d902b496c5
     - generated-by: Claude Opus 5.5
-      lines: 119-129
-      integrity: sha256-50b1d8ebe7ddc1d512f3d7529d6030f5a85198d245591d051d813d338552e706
+      lines: 119-125
+      integrity: sha256-278b4dcfcd19221da1f1aecd318167575ac937ca6fe1e98cdc8dbf45476fec67
+    - generated-by: Claude Opus 5.5
+      lines: 128-131
+      integrity: sha256-3384d30c48c9cfa6ae70878bc448bda81bae864a4b3be6b43b422c5f966100c6
     - generated-by: Claude Opus 4.8
-      lines: 131-136
+      lines: 133-138
       integrity: sha256-05cd246ca0eff738f587a450504a773276dec8a81429d6ac0553b646e0bd1bb0
   owner:
     - "@hawkeyexl"

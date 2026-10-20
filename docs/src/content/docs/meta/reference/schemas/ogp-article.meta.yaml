@@ -18,8 +18,8 @@ docs/src/content/docs/meta/reference/schemas/ogp-article.mdx:
       grader: ai
   provenance:
     - generated-by: Claude Opus 5.5
-      lines: 2-119
-      integrity: sha256-783cab20e1952ff3abae3c346c3967c39d37ee27a30e70c0ea74d684509c2bc6
+      lines: 2-121
+      integrity: sha256-f74bf4f3ccdc7ab089d6cdfaebe9f007ae73b478065a7dea5687aa36d109ccf6
   owner:
     - "@hawkeyexl"
   created: 2026-09-26

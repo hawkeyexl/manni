@@ -12,7 +12,7 @@ lifecycle: published
 applies-to: ["domain:tracevals"]
 sample-questions: ["What does the JSON report contain?", "How does SARIF name its rules?"]
 graph: { label: "Reports & exit codes", type: reference }
-last-updated: 2026-10-11
+last-updated: 2026-10-20
 ---
 
 import { Aside } from '@astrojs/starlight/components';
@@ -129,6 +129,7 @@ against the budget that produced it. tracevals counts turns and reports no spend
 | `error` | string? | Why the check broke, when `outcome` is `error`. |
 | `skipReason` | string? | Why it was skipped. |
 | `turns` | number? | Judged evals only. Uncached ensemble runs spent on this eval; `0` when the ensemble came from cache. |
+| `guidance` | object | The rule behind the result. Present on every result, passing ones included. See [below](#guidance). |
 | `durationMs` | number | Time for this eval. |
 
 ### `location`
@@ -148,6 +149,30 @@ no `line`. A schema failure (`evals-block-valid`) points at the block, and an `e
 ```json
 "location": { "file": ".claude/skills/fix-bug/SKILL.md", "line": 12 }
 ```
+
+### `guidance`
+
+What the result was judged against, and where to read about acting on it. Every report format
+prints it under a `fail`, `error` or `needs-review` result.
+
+| Field | Type | Notes |
+|---|---|---|
+| `id` | string | The artifact file, relative to the working directory, absolute outside it. |
+| `rule` | string | The eval's name, the same as `evalName`. |
+| `description` | string \| null | The eval's `assertion`, or `null` when it declares none. The implicit eval reads `The session follows every instruction in this artifact.`, and `evals-block-valid` reads `The artifact's metadata.evals block matches the schema.` |
+| `guide` | string | `https://hawkeyexl.github.io/manni/tracevals/triage/`, the page on reading a failing eval. |
+
+```json
+"guidance": {
+  "id": ".claude/skills/fix-bug/SKILL.md",
+  "rule": "forbidden-tool",
+  "description": "The session never ran shell commands; this skill is edit-only.",
+  "guide": "https://hawkeyexl.github.io/manni/tracevals/triage/"
+}
+```
+
+The text reporters print it as two lines, `<id> <rule>: <description>` and then
+`Guide: <guide>`. A `null` description drops the colon and what follows it.
 
 ### `consensus`
 
@@ -227,10 +252,14 @@ claude-code · claude-opus-4-8 · 2 turn(s) · /work/demo-project
 
   PASS   fix-bug › used-read  .claude/skills/fix-bug/SKILL.md:6
   FAIL   fix-bug › forbidden-tool  .claude/skills/fix-bug/SKILL.md:12
-         [error] tool Bash was used 1 time(s) but must not be
+         [error] tool Bash was used 1 time(s) but must not be. Redo the session work so it holds, or fix the eval if the artifact does not ask for this.
+         .claude/skills/fix-bug/SKILL.md forbidden-tool: The session never ran shell commands; this skill is edit-only.
+         Guide: https://hawkeyexl.github.io/manni/tracevals/triage/
   PASS   fix-bug › no-force-push  .claude/skills/fix-bug/SKILL.md:18
   REVIEW fix-bug › refactor-preserved-intent  .claude/skills/fix-bug/SKILL.md:23
-         awaiting human review
+         Awaiting human review. Read the session against the assertion and decide.
+         .claude/skills/fix-bug/SKILL.md refactor-preserved-intent: The fix addressed the reported bug rather than working around it.
+         Guide: https://hawkeyexl.github.io/manni/tracevals/triage/
   PASS   reviewer › reviewer-is-read-only  .claude/agents/reviewer.md:6
   SKIP   doc-writer › doc-writer-wrote-docs  .claude/agents/doc-writer.md:6
          agent "doc-writer" was spawned but recorded no subagent turns (no inline
@@ -260,14 +289,36 @@ recorded no turns, so its evals report `skipped` rather than a verdict about wor
 Both are [eval windowing](/manni/tracevals/reference/graders/).
 
 Outcome labels are `PASS`, `FAIL`, `ERROR`, `REVIEW`, `SKIP`. Each eval line ends with its
-[`location`](#location) as `<file>:<line>`, or the file alone when no line is recorded. For a
-**non-passing judged** eval, two extra lines appear: the vote split and the first `observed`.
+[`location`](#location) as `<file>:<line>`, or the file alone when no line is recorded. A `FAIL`,
+`ERROR` or `REVIEW` line ends with the result's [`guidance`](#guidance), dimmed.
+
+The message of every built-in deterministic failure ends with
+`Redo the session work so it holds, or fix the eval if the artifact does not ask for this.` A
+`command` failure reads
+`command exited <code> (expected <codes>). Redo the session work so the check passes, or fix the command if it is broken.`
+The command's stderr follows as `Output: <stderr>`.
+
+A **non-passing judged** eval gets a judged block above the vote split. It quotes the first run that
+voted against the session, or the first run with a verdict when none did.
 
 ```
-  REVIEW fix-bug › eval-5  .claude/skills/fix-bug/SKILL.md:27
-         votes pass:1 fail:2 partial:0 error:0 · confidence 0.87
-         The session edited src/app.ts at turn 2 without a preceding test run.
+  FAIL   fix-bug › eval-5  .claude/skills/fix-bug/SKILL.md:27
+         AI judge: fail (confidence 0.88). Redo the session work so it holds, or fix the eval if the artifact does not ask for this.
+         Observed: The session edited src/app.ts before any test file.
+         Reasoning: No failing test was written before the fix.
+         votes pass:0 fail:3 partial:0 error:0
+         .claude/skills/fix-bug/SKILL.md eval-5: Reproduce the bug with a failing test before applying the fix.
+         Guide: https://hawkeyexl.github.io/manni/tracevals/triage/
 ```
+
+| Outcome | First line of the judged block |
+|---|---|
+| judged `fail` | `AI judge: fail (confidence <n>). Redo the session work so it holds, or fix the eval if the artifact does not ask for this.` |
+| judged `needs-review` | `AI judge: no confident verdict (confidence <n>). Read the session and decide. If this recurs, sharpen the assertion and run manni tracevals calibrate.` |
+| `grader: human` | `Awaiting human review. Read the session against the assertion and decide.` |
+
+`Observed:` and `Reasoning:` follow the first line when the quoted run carries them. A human-graded
+eval has no judge, so its block is the one line.
 
 Coverage marks: `✓` resolved, `○` referenced but not found, `·` offered and never used. The location
 follows the rule [above](#the-location-shown-for-an-entry). A `·` row is the exception. It reports
@@ -279,10 +330,27 @@ that goes into the same **Where** cell, so the table keeps its column count.
 
 The same run as tables: `# manni tracevals report`, bullet metadata, then `## Evals`
 (`| Outcome | Artifact | Eval | Grader | Detail |`, with the eval's `<file>:<line>` in code after its
-name), `## Artifact coverage`
+name), `## Findings`, `## Artifact coverage`
 (`| Resolved | Kind | Ref | Availability | Where |`), `## Availability`, `## Warnings`, and a bold
 summary sentence. An offered-but-unused row reads `n/a` under **Resolved**, never `no`. Pipe
 characters in messages are escaped. Suited to a build summary or a PR comment.
+
+`## Findings` lists each `fail`, `error` and `needs-review` result, and is left out when there are
+none. Each item is labelled `FAIL`, `ERROR` or `REVIEW`. Under it come the findings, the error, or
+the judged block, then the [`guidance`](#guidance) lines.
+
+```markdown
+## Findings
+
+- **FAIL** fix-bug › forbidden-tool · `.claude/skills/fix-bug/SKILL.md:12`
+  - tool Bash was used 1 time(s) but must not be. Redo the session work so it holds, or fix the eval if the artifact does not ask for this.
+  - .claude/skills/fix-bug/SKILL.md forbidden-tool: The session never ran shell commands; this skill is edit-only.
+  - Guide: https://hawkeyexl.github.io/manni/tracevals/triage/
+- **REVIEW** fix-bug › refactor-preserved-intent · `.claude/skills/fix-bug/SKILL.md:23`
+  - Awaiting human review. Read the session against the assertion and decide.
+  - .claude/skills/fix-bug/SKILL.md refactor-preserved-intent: The fix addressed the reported bug rather than working around it.
+  - Guide: https://hawkeyexl.github.io/manni/tracevals/triage/
+```
 
 ## `--format github`
 
@@ -290,35 +358,68 @@ GitHub Actions workflow commands, then the markdown summary, so the step's log a
 `$GITHUB_STEP_SUMMARY` read the same run. Each annotation lands on the eval's
 [`location`](#location), meaning the file and line that declare it. That is the line someone edits to
 change the outcome, in the artifact or in its manifest. The annotation carries no `line` when the
-location has none. The trace it was graded against goes at the end of the message:
+location has none. The trace it was graded against ends the message's first line, and the
+[`guidance`](#guidance) lines follow it, joined by `%0A`:
 
 ```text
-::error file=test/tracevals/fixtures/project/.claude/skills/fix-bug/SKILL.md,line=12,title=manni tracevals%3A forbidden-tool::tool Bash was used 1 time(s) but must not be (trace: test/tracevals/fixtures/traces/claude-session.jsonl)
+::error file=test/tracevals/fixtures/project/.claude/skills/fix-bug/SKILL.md,line=12,title=manni tracevals%3A forbidden-tool::tool Bash was used 1 time(s) but must not be. Redo the session work so it holds, or fix the eval if the artifact does not ask for this. (trace: test/tracevals/fixtures/traces/claude-session.jsonl)%0Atest/tracevals/fixtures/project/.claude/skills/fix-bug/SKILL.md forbidden-tool: The session never ran shell commands; this skill is edit-only.%0AGuide: https://hawkeyexl.github.io/manni/tracevals/triage/
 ```
 
 A finding takes its own severity as the annotation level. A judged `fail` and an `error` outcome are
-annotated as errors. A `needs-review` outcome is not annotated, and the summary table carries it.
+annotated as errors. A `needs-review` outcome is one `::warning`, since nobody has decided it yet. Its
+message is the judged block, or the human-review line:
+
+```text
+::warning file=test/tracevals/fixtures/project/.claude/skills/fix-bug/SKILL.md,line=23,title=manni tracevals%3A refactor-preserved-intent::Awaiting human review. Read the session against the assertion and decide. (trace: test/tracevals/fixtures/traces/claude-session.jsonl)%0Atest/tracevals/fixtures/project/.claude/skills/fix-bug/SKILL.md refactor-preserved-intent: The fix addressed the reported bug rather than working around it.%0AGuide: https://hawkeyexl.github.io/manni/tracevals/triage/
+```
 
 ## `--format sarif`
 
 One SARIF 2.1.0 run from the driver `manni-tracevals`. Each rule is a grader, with the id
 `tracevals/<grader>`, such as `tracevals/tool-usage` or `tracevals/ai`. A trace that could not be read
 is filed under `tracevals/trace`. Levels map `error` to `error`, `warning` to `warning` and `notice`
-to `note`.
+to `note`. A judged `fail` and an `error` outcome are `error` results, and each `needs-review` eval
+is one `warning` result.
+
+A built-in grader's rule carries a `fullDescription` that says what the grader checks, and a
+`helpUri` of `https://hawkeyexl.github.io/manni/tracevals/triage/`. A plugin grader's rule carries
+neither.
+
+```json
+{
+  "id": "tracevals/tool-usage",
+  "name": "tool-usage",
+  "shortDescription": { "text": "manni tracevals tool-usage grader" },
+  "fullDescription": { "text": "Checks whether the session used a tool, and how often." },
+  "helpUri": "https://hawkeyexl.github.io/manni/tracevals/triage/",
+  "defaultConfiguration": { "level": "error" }
+}
+```
+
+A result's `message.text` is its lines joined by newlines: the finding, the error, or the judged
+block, then the [`guidance`](#guidance) lines.
 
 A location is the eval's [`location`](#location), with its line as `region.startLine`. A location
 with no line has no `region`. Under the working directory the file is relative to `SRCROOT`. A
 user-level skill in `~/.claude` gets an absolute `file:` URI, since no relative one reaches it, and a
 hosted manifest keeps its URL. Each
-result's `properties` carry `eval`, `artifactName`, `artifactType`, `trace` and `sessionId`.
+result's `properties` carry `eval`, `artifactName`, `artifactType`, `trace`, `sessionId` and
+`guidance`.
 
 ## `--format junit`
 
 One `<testsuite>` per trace and one `<testcase>` per artifact and eval. `classname` is the artifact
 file and `name` is the eval, so a JUnit viewer groups by the file someone edits. `file` and `line`
-are the eval's [`location`](#location), and `line` is left out when the location has none. `fail` and `error`
-are `<failure>` elements. `skipped` and `needs-review` are both `<skipped>`, because JUnit has no
-third state and a review queue is not a broken build.
+are the eval's [`location`](#location), and `line` is left out when the location has none. `fail` is a
+`<failure>` element and `error` an `<error>` element. Their body is the findings or the judged block, then the
+[`guidance`](#guidance) lines, one per line. `skipped` and `needs-review` are both `<skipped>`,
+because JUnit has no third state and a review queue is not a broken build.
+
+```xml
+<failure message="forbidden-tool failed" type="tracevals/tool-usage">tool Bash was used 1 time(s) but must not be. Redo the session work so it holds, or fix the eval if the artifact does not ask for this.
+test/tracevals/fixtures/project/.claude/skills/fix-bug/SKILL.md forbidden-tool: The session never ran shell commands; this skill is edit-only.
+Guide: https://hawkeyexl.github.io/manni/tracevals/triage/</failure>
+```
 
 ## Batch runs
 

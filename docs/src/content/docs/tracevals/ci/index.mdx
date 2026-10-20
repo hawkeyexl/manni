@@ -12,7 +12,7 @@ lifecycle: published
 applies-to: ["domain:tracevals"]
 sample-questions: ["How do I run manni tracevals in GitHub Actions?", "How do I evaluate an untrusted trace safely?"]
 graph: { label: "Run it in CI", type: task }
-last-updated: 2026-10-04
+last-updated: 2026-10-20
 ---
 
 import { Tabs, TabItem, Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';
@@ -226,8 +226,10 @@ the line that declares the eval, in the artifact or in the manifest that holds i
         shell: bash
 ```
 
-An annotation names the trace at the end of its message, because a workflow command has nowhere else
-to carry it. `shell: bash` runs the step with `pipefail`, so the step still fails on the exit code.
+An annotation names the trace at the end of its first line, because a workflow command has nowhere
+else to carry it. The lines after it quote the eval's assertion and link to
+[reading a failing eval](/manni/tracevals/triage/). An eval awaiting review is a warning annotation.
+`shell: bash` runs the step with `pipefail`, so the step still fails on the exit code.
 
 ### Upload SARIF to code scanning
 

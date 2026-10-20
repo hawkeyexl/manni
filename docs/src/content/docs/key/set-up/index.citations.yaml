@@ -252,7 +252,7 @@ docs/src/content/docs/key/set-up/index.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: cite-no-key-missing-message
       claim:
-        lines: 195
+        lines: 196
         integrity: sha256-6ec47af4d60676c67c0f0c15b1158d0190a3e084b43283d6de9bb319c10746c4
       source:
         file: src/cite/core/adapt.ts
@@ -261,7 +261,7 @@ docs/src/content/docs/key/set-up/index.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: query-refusal-message
       claim:
-        lines: 227
+        lines: 228
         integrity: sha256-e4ae30277bf7ae278060dc536ea89469741c0f1ae348c63e77713b678058fa30
       source:
         file: src/shared/prompt.ts
@@ -270,7 +270,7 @@ docs/src/content/docs/key/set-up/index.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: cite-add-refusal-message
       claim:
-        lines: 231
+        lines: 232
         integrity: sha256-9818f7fb87e2fc9af44a54e97b1f07514445a6fd72848624dc83250edf3ac433
       source:
         file: src/cite/core/mint.ts

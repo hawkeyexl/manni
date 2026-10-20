@@ -10,7 +10,7 @@ lifecycle: published
 applies-to: ["domain:tracevals"]
 sample-questions: ["How do I evaluate my first agent session?", "How do I find a session to evaluate?"]
 graph: { label: "Get started", type: learning }
-last-updated: 2026-10-04
+last-updated: 2026-10-20
 ---
 
 import { Steps, Tabs, TabItem, Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';
@@ -140,10 +140,14 @@ Everything on this page runs **offline**, with no API key.
             artifact skipped via metadata.eval-skip
      PASS   fix-bug › used-read
      FAIL   fix-bug › forbidden-tool
-            [error] tool Bash was used 1 time(s) but must not be
+            [error] tool Bash was used 1 time(s) but must not be. Redo the session work so it holds, or fix the eval if the artifact does not ask for this.
+            .claude/skills/fix-bug/SKILL.md forbidden-tool: The session never ran shell commands; this skill is edit-only.
+            Guide: https://hawkeyexl.github.io/manni/tracevals/triage/
      PASS   fix-bug › no-force-push
      REVIEW fix-bug › refactor-preserved-intent
-            awaiting human review
+            Awaiting human review. Read the session against the assertion and decide.
+            .claude/skills/fix-bug/SKILL.md refactor-preserved-intent: The fix addressed the reported bug rather than working around it.
+            Guide: https://hawkeyexl.github.io/manni/tracevals/triage/
      SKIP   fix-bug › eval-5
             ai evals skipped (deterministic-only run)
      SKIP   doc-writer › adheres-to-artifact (implicit)
@@ -184,7 +188,8 @@ Everything on this page runs **offline**, with no API key.
      is expected, and fine.
 
    The one failure is the point of the exercise. `fix-bug` declares that it is edit-only; the
-   session ran a shell command; the finding names the tool and the count.
+   session ran a shell command; the finding names the tool and the count. The line under it quotes
+   the eval's assertion, and the link leads to [reading a failing eval](/manni/tracevals/triage/).
 
    {/* test {"testId":"get-started-first-run","description":"A deterministic-only run produces the documented outcomes and exit code."} */}
    {/* step {"description":"The run exits 1 because the fixture session violates a declared eval.","runShell":{"command":"manni tracevals run test/tracevals/fixtures/traces/claude-session.jsonl --project test/tracevals/fixtures/project --deterministic-only","exitCodes":[1],"stdio":"tool Bash was used 1 time(s) but must not be"}} */}

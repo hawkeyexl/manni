@@ -105,8 +105,9 @@ export const commandGrader: TraceGrader = {
           severity: plan.severity,
           message:
             `command exited ${run.code ?? "on a signal"} ` +
-            `(expected ${successCodes.join(" or ")})` +
-            (detail ? `: ${detail.slice(0, STDERR_LIMIT)}` : ""),
+            `(expected ${successCodes.join(" or ")}). ` +
+            "Redo the session work so the check passes, or fix the command if it is broken." +
+            (detail ? ` Output: ${detail.slice(0, STDERR_LIMIT)}` : ""),
         },
       ],
     };

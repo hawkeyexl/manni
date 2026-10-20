@@ -18,7 +18,7 @@ sample-questions:
 graph:
   label: "VitePress page schema"
   type: reference
-last-updated: 2026-09-26
+last-updated: 2026-10-20
 resource: https://hawkeyexl.github.io/manni/schemas/vitepress/1.6.json
 tags:
   - schema
@@ -160,11 +160,11 @@ outline: 9
 
 ```text
 ✗ test/fixtures/platform/vitepress-bad-outline.md
-    /outline  must be equal to one of the allowed values  (line 3)  [vitepress:page:1.6]
-    /outline  must match "else" schema  (line 3)  [vitepress:page:1.6]
+    /outline  must be one of: 1, 2, 3, 4, 5, 6, "deep", false  (line 3)  [vitepress:page:1.6]
+      vitepress:page:1.6 outline: Which heading levels the on-page outline lists: one level, a `[from, to]` pair, `deep` for every level, or `false` to hide it.
+      Guide: https://hawkeyexl.github.io/manni/meta/reference/schemas/vitepress-page/
 
-1 file checked, 0 passed, 1 failed, 2 errors
+1 file checked, 0 passed, 1 failed, 1 error
 ```
 
-Both lines name the one field. Use a level from 1 to 6, a `[from, to]` pair,
-`deep`, or `false`.
+Use a level from 1 to 6, a `[from, to]` pair, `deep`, or `false`.

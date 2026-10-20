@@ -18,7 +18,7 @@ sample-questions:
 graph:
   label: "The Good Docs Project schema v1.0"
   type: reference
-last-updated: 2026-09-27
+last-updated: 2026-10-20
 resource: https://hawkeyexl.github.io/manni/schemas/tgdp/1.0.json
 tags:
   - schema
@@ -90,7 +90,9 @@ The enum carries no aliases, so a slug has to match exactly. `howto` is not
 ```text
 $ manni meta validate page.md --no-config -s tgdp:templates:1.0
 ✗ page.md
-    /type  must be equal to one of the allowed values  (line 2)  [tgdp:templates:1.0]
+    /type  must be one of: "api-getting-started", "api-reference", "bug-report", "changelog", "code-of-conduct", "code-of-conduct-incident-record", "code-of-conduct-remediation-record", "code-of-conduct-response-plan", "concept", "contact-support", "contributing-guide", "glossary", "how-to", "installation-guide", "our-team", "quickstart", "readme", "reference", "release-notes", "sdk-overview", "style-guide", "terminology-system", "troubleshooting", "tutorial", "user-personas"  (line 2)  [tgdp:templates:1.0]
+      tgdp:templates:1.0 type: Which Good Docs Project template this page follows, as the template's slug.
+      Guide: https://hawkeyexl.github.io/manni/meta/reference/schemas/tgdp-templates-1-0/
 
 1 file checked, 0 passed, 1 failed, 1 error
 ```

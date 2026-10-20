@@ -2909,7 +2909,7 @@ describe("docmeta CLI: schemaTrust (built bin)", () => {
       expect(after.status).toBe(1);
       expect(after.stdout).toContain("✗ contributed.md");
       expect(after.stdout).toContain("2 files checked, 0 passed, 2 failed");
-      expect(after.stdout).toContain("schemaTrust.documentRefs");
+      expect(after.stdout).toContain("this repository accepts only built-in ids and schema files here");
       // The honest document's verdict is unchanged: still the config's schema.
       expect(after.stdout).toContain("required property 'type'");
     } finally {

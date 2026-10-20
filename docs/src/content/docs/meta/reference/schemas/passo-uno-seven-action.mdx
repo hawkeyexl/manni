@@ -19,7 +19,7 @@ sample-questions:
 graph:
   label: "Seven-Action schema"
   type: reference
-last-updated: 2026-09-27
+last-updated: 2026-10-20
 resource: https://hawkeyexl.github.io/manni/schemas/seven-action/1.0.json
 tags:
   - built-in
@@ -112,7 +112,9 @@ Writing the alternate verb instead of the value is the usual failure:
 
 ```text
 ✗ docs/tutorial.md
-    /action  must be equal to one of the allowed values  (line 2)  [passo-uno:seven-action:1.0]
+    /action  must be one of: "appraise", "understand", "explore", "practice", "remember", "develop", "troubleshoot"  (line 2)  [passo-uno:seven-action:1.0]
+      passo-uno:seven-action:1.0 action: What the reader is trying to do on this page: `appraise` (discern whether something fits), `understand` (learn a concept), `explore` (discover what exists), `practice` (train a skill), `remember` (recall a detail), `develop` (integrate it into their own work), or `troubleshoot` (solve a problem).
+      Guide: https://hawkeyexl.github.io/manni/meta/reference/schemas/passo-uno-seven-action/
 ```
 
 <Aside type="caution" title="If you already use an `action` key">

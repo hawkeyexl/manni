@@ -2,7 +2,7 @@
 title: Exit codes and annotations
 description: What 0, 1, and 2 mean, who each routes to, and how failures land on the right line.
 type: how-to
-last-updated: 2026-10-04
+last-updated: 2026-10-20
 ---
 
 Three exit codes, and the distinction between two of them is the difference between a check people
@@ -111,8 +111,12 @@ converts a rotting queue into blocked contributors. See
 annotates the diff and produces a job summary.
 
 ```text
-::error file=docs/actions/goTo.mdx,line=14,title=manni docevals%3A no-todo-markers::Pattern /\b(TODO|TBD|FIXME)\b/ found in body, expected absent
+::error file=docs/actions/goTo.mdx,line=14,title=manni docevals%3A no-todo-markers::Pattern /\b(TODO|TBD|FIXME)\b/ found in body, expected absent. Remove or reword the matching text.%0Adocs/actions/goTo.mdx no-todo-markers: The page carries no TODO, TBD or FIXME markers.%0AGuide: https://hawkeyexl.github.io/manni/docevals/fix/
 ```
+
+The message ends with what to do. Two more lines follow it, after the escaped newline `%0A`. The
+first names the file that declares the eval, the eval, and its assertion. The second links the
+[fix page](/manni/docevals/fix/), written for the contributor who meets the annotation.
 
 Severity maps to the annotation level:
 
@@ -127,20 +131,25 @@ properties, which is why the title renders as `manni docevals%3A no-todo-markers
 
 ### Judged failures annotate the line that declares the eval
 
-An ai eval has no line in the content to point at. So it annotates the entry that declares the eval,
-with the mean confidence and the judge's reasoning. That entry is in the page's `evals` or
-`eval-suite` key, or in the manifest that supplies it:
+An ai eval has no line in the content to point at. So it annotates the entry that declares the eval.
+That entry is in the page's `evals` or `eval-suite` key, or in the manifest that supplies it. The
+annotation carries the verdict and its mean confidence, the text the judge quoted, and its
+reasoning, then the guidance lines:
 
 ```text
-::error file=docs/tutorial.mdx,line=6,title=manni docevals%3A no-future-promises::AI judge: fail (confidence 0.93). <reasoning>
+::error file=docs/tutorial.mdx,line=6,title=manni docevals%3A no-future-promises::AI judge: fail (confidence 0.91). Edit the page so the assertion holds.%0AObserved: <quote>%0AReasoning: <reasoning>%0Adocs/tutorial.mdx no-future-promises: <assertion>%0AGuide: https://hawkeyexl.github.io/manni/docevals/fix/
 ```
 
 A finding with no line of its own lands on the same entry. So does an eval that errored without a
 finding, with the reason it could not run. Every result carries the entry as
 [`location`](/manni/docevals/reference/output-and-exit-codes/#location).
 
-That reasoning is what a contributor acts on. It is only as good as the assertion behind it. See
-[Write good assertions](/manni/docevals/evals/write-good-assertions/).
+An eval awaiting review lands there too, as a `::warning` rather than an `::error`. A judged one
+reads `AI judge: no confident verdict`, and a `human` one reads `Awaiting human review`. Under
+`--fail-on-review` that warning is what says why the run failed.
+
+The quote and the reasoning are what a contributor acts on. They are only as good as the assertion
+behind them. See [Write good assertions](/manni/docevals/evals/write-good-assertions/).
 
 ## Suites below target fail the run
 

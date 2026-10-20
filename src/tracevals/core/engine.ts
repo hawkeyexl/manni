@@ -27,6 +27,12 @@ import type { TraceJudge } from "../judge/trace-judge.js";
 import type { TracevalsConfig } from "./config.js";
 import type { EvalResult, RunReport, RunSummary } from "../types.js";
 
+/** Where a result's guidance sends the reader. */
+const TRIAGE_GUIDE = "https://hawkeyexl.github.io/manni/tracevals/triage/";
+
+/** The implicit eval has no assertion of its own; this is what it checks. */
+const IMPLICIT_DESCRIPTION = "The session follows every instruction in this artifact.";
+
 export interface EngineOptions {
   tracePath: string;
   /** Artifact-lookup override; when set it is also the parent-walk ceiling. */
@@ -328,12 +334,27 @@ export async function runEvals(options: EngineOptions): Promise<RunReport> {
   // moved. Counts stay unweighted: "1 failed" answers how many evals failed,
   // the rate answers how much that mattered, and weighting both would make
   // each answer the other's question.
-  const weightOf = new Map<string, number>();
+  //
+  // Guidance is stamped here too, once, so every grader path carries it
+  // (proposal 0089).
+  const planOf = new Map<string, EvalPlan>();
   for (const plan of plans) {
-    weightOf.set(weightKey(plan.artifact.path, plan.evalName), plan.weight ?? 1);
+    planOf.set(weightKey(plan.artifact.path, plan.evalName), plan);
   }
   for (const r of results) {
-    r.weight = weightOf.get(weightKey(r.artifact, r.evalName)) ?? 1;
+    const plan = planOf.get(weightKey(r.artifact, r.evalName));
+    r.weight = plan?.weight ?? 1;
+    r.guidance = {
+      id: spelled({ file: r.artifact }, root).file,
+      rule: r.evalName,
+      description:
+        plan === undefined
+          ? null
+          : plan.implicit
+            ? IMPLICIT_DESCRIPTION
+            : (plan.assertion ?? null),
+      guide: TRIAGE_GUIDE,
+    };
   }
   const gradedRows = results.filter(
     (r) => r.outcome === "pass" || r.outcome === "fail" || r.outcome === "error",

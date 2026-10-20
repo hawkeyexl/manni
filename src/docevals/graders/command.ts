@@ -27,7 +27,8 @@ async function gradeOne(
         evalName: ev.name,
         file: plan.page.file,
         message:
-          "No command to run (script not yet generated — run `manni docevals generate` or `manni docevals run` with a provider configured)",
+          "No command to run, because the script is not generated. " +
+          "Run manni docevals generate, or manni docevals run with a provider configured.",
         severity: ev.severity,
         diagnostic: true,
       },
@@ -46,7 +47,7 @@ async function gradeOne(
       {
         evalName: ev.name,
         file: plan.page.file,
-        message: `Failed to run command "${ev.command[0] ?? "(empty)"}": ${result.spawnError}`,
+        message: `Failed to run command "${ev.command[0] ?? "(empty)"}": ${result.spawnError}. Fix the eval's command.`,
         severity: ev.severity,
         diagnostic: true,
       },
@@ -57,7 +58,9 @@ async function gradeOne(
       {
         evalName: ev.name,
         file: plan.page.file,
-        message: `Command timed out after ${ev.timeoutMs ?? ctx.config.scripts.timeoutMs}ms`,
+        message:
+          `Command timed out after ${ev.timeoutMs ?? ctx.config.scripts.timeoutMs}ms. ` +
+          "Fix the command, or raise the eval's timeout-ms if the check is slow by design.",
         severity: ev.severity,
         diagnostic: true,
       },
@@ -74,10 +77,11 @@ async function gradeOne(
       // "Exit code N" is the message users and docs already know; only the
       // null case — killed by a signal, which is what a timeout produces —
       // needs different words, because "Exit code null" describes nothing.
+      // The output comes last, so the direction is never cut off by it.
       message:
-        (result.code === null
-          ? "Killed before exiting"
-          : `Exit code ${result.code}`) + (tail ? `: ${tail}` : ""),
+        (result.code === null ? "Killed before exiting." : `Exit code ${result.code}.`) +
+        " Edit the page until the command passes, or fix the command if it is broken." +
+        (tail ? ` Output: ${tail}` : ""),
       severity: ev.severity,
     },
   ];

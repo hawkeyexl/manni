@@ -28,7 +28,7 @@ sample-questions:
 graph:
   label: Built-in Docusaurus schemas
   type: concept
-last-updated: 2026-09-26
+last-updated: 2026-10-20
 tags:
   - docusaurus
   - schemas
@@ -128,16 +128,16 @@ is on the [docs schema page](/manni/meta/reference/schemas/docusaurus-docs/#a-co
 {/* cite docusaurus-draft-and-unlisted-are-exclusive */}
 **`draft` and `unlisted` are mutually exclusive.** Setting both to `true` is the
 one cross-field rule Docusaurus enforces, and the schemas encode it. Either flag
-on its own is fine. Because JSON Schema expresses this as a conditional, it
-reports twice. Once on the field to change, and once on the rule as a whole:
+on its own is fine. The finding lands on the field to change:
 
 ```text
 ✗ docs/install.md
-    /unlisted  must be equal to constant     (line 4)  [docusaurus:docs:3.10]
-    (root)     must match "then" schema      (line 1)  [docusaurus:docs:3.10]
+    /unlisted  must be false  (line 4)  [docusaurus:docs:3.10]
+      docusaurus:docs:3.10 unlisted: An unlisted document is published but hidden from navigation, search, and sitemaps.
+      Guide: https://hawkeyexl.github.io/manni/meta/reference/schemas/docusaurus-docs/
 ```
 
-Read the first line, then drop `unlisted` (or `draft`) and both clear.
+Drop `unlisted` (or `draft`) and it clears.
 
 {/* cite docusaurus-last-update-forbids-unknown-keys */}
 **`last_update` takes `author`, `date`, or both, and nothing else.** It is the

@@ -17,7 +17,11 @@ Start from the report of `node "${CLAUDE_PLUGIN_ROOT}/hooks/manni.mjs" check`. E
 
 ## meta validate
 
-The finding names a field path, such as `/description`. Edit the page frontmatter so the field is present and valid.
+Each finding names a field path, such as `/description`, and its schema in brackets. A dim line under it names the schema and the property, and says what the property is for. A `Guide:` line links the schema's page when it has one. Read both lines before you edit.
+Run `manni meta schemas show <schema>` to see every property, which are required, and what each accepts.
+Edit the page frontmatter so the field is present and holds a value the message allows. `must be one of:` lists every value that passes.
+Never edit a schema or the config to make a finding pass. Never change a page's `$schema` to escape a finding about a field.
+A finding about `$schema` itself means the page names a schema this repository does not accept. Use an id `manni meta schemas` lists, or remove `$schema`.
 
 Some fields are managed. Stamp them from history with `node "${CLAUDE_PLUGIN_ROOT}/hooks/manni.mjs" meta derive <path>`. Add `--check` to see which are stale without writing.
 Do not hand-edit a managed field. `derive` writes it.
@@ -50,8 +54,30 @@ Run `manni lint structure <path> --explain` only when the template looks wrong f
 
 ## docevals run
 
-An eval failed. Read the eval assertion and the evidence it cites. Fix the page so the assertion holds.
-Do not edit the eval to pass. To change an eval on purpose, use the `evals` skill.
+Each failing eval prints its finding, then what the eval asks for, then a guide link. Read all three before you edit.
+
+- A finding with a line comes from a script check. Change that line as the message says.
+- `AI judge: fail` prints what the judge observed and why. Edit the page so the assertion holds.
+- `AI judge: no confident verdict` is not yours to settle. Tell the user. They run `manni docevals review` or `manni docevals calibrate`.
+- An eval that cannot run, or an assertion no page could meet, is a broken eval. Stop and tell the user which eval and why.
+
+Run `manni docevals list <path> --eval <name>` to see one eval in full.
+Never edit an eval to pass. To change one on purpose, use the `evals` skill.
+
+## tracevals
+
+The Stop hook reports the rules your last turn broke. Each entry names the source file, the rule and its text, then what the judge observed.
+
+- Redo the work so the rule holds. Or say in your reply why the rule does not apply to this turn.
+- Never edit `CLAUDE.md`, a skill or another rule source to make the check pass.
+- An entry marked `?` needs review and never blocks. Mention it to the user.
+- The hook blocks once. If rules stay broken, tell the user to run `manni tracevals check <trace>`.
+
+A `manni tracevals run` failure names the artifact, the eval and its assertion.
+
+- A finding or `AI judge: fail` means the session broke the eval. Redo the work, or report it to the user.
+- An eval no session could meet is a defect in the artifact. Tell its owner. Do not edit the eval.
+- ERROR means the eval itself broke. REVIEW and SKIP are not failures of the work.
 
 ## graph check
 

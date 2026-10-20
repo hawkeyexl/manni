@@ -5,7 +5,7 @@
  * The judge is injected (`options.judge`) so the deterministic pipeline and
  * tests run without any provider configured.
  */
-import { DocevalsError } from "../types.js";
+import { DocevalsError, FIX_GUIDE } from "../types.js";
 import type {
   EvalResult,
   Finding,
@@ -255,12 +255,14 @@ function stampSuites(
   const suiteOf = new Map<string, string>();
   const weightOf = new Map<string, number>();
   const locationOf = new Map<string, EvalLocation>();
+  const assertionOf = new Map<string, string>();
   for (const plan of plans) {
     for (const ev of plan.evals) {
       const key = resultKey(plan.page.file, ev.name);
       suiteOf.set(key, ev.suite);
       weightOf.set(key, ev.weight);
       locationOf.set(key, ev.location);
+      if (ev.assertion !== undefined) assertionOf.set(key, ev.assertion);
     }
   }
   for (const r of results) {
@@ -273,6 +275,14 @@ function stampSuites(
     // A result with no plan entry has no declaring entry to point at, so it
     // names its page alone, as every result did before locations.
     r.location = locationOf.get(key) ?? { file: r.file };
+    // What the eval asks for, on every result: a baseline can turn a fail
+    // into a pass after this point, and one stamp site stays simple.
+    r.guidance = {
+      id: r.location.file,
+      rule: r.evalName,
+      description: assertionOf.get(key) ?? null,
+      guide: FIX_GUIDE,
+    };
   }
 }
 

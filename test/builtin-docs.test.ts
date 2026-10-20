@@ -12,7 +12,9 @@ import { describe, it, expect } from "vitest";
 import { fileURLToPath } from "node:url";
 import { dirname, resolve, relative } from "node:path";
 import { readdirSync, readFileSync, statSync } from "node:fs";
-import { listBuiltins } from "../src/meta/core/schema-registry.js";
+import { builtinGuide, listBuiltins } from "../src/meta/core/schema-registry.js";
+
+const GUIDE_BASE = "https://hawkeyexl.github.io/manni/meta/reference/schemas/";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(here, "..");
@@ -65,6 +67,19 @@ describe("built-in schema reference pages", () => {
       }
     }
     expect(problems).toEqual([]);
+  });
+
+  it("links each finding's guide to the page that claims its id", () => {
+    // The slug table beside PUBLISHED_PATHS is what a finding's `Guide:`
+    // line links; it has to land on the page whose body claims the id.
+    const wrong: string[] = [];
+    for (const id of registered) {
+      const page = claimed.get(id)?.[0];
+      const slug = page?.split("/").pop()?.replace(/\.mdx?$/, "");
+      const want = slug === undefined ? null : `${GUIDE_BASE}${slug}/`;
+      if (builtinGuide(id) !== want) wrong.push(`${id}: ${String(builtinGuide(id))} != ${String(want)}`);
+    }
+    expect(wrong).toEqual([]);
   });
 
   it("names no id the registry does not ship", () => {

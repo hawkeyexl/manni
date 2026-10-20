@@ -115,6 +115,8 @@ export function renderList(
       if (e.grader === "command" && !e.command) bits.push(pc.yellow("needs generation"));
       if (e.skip) bits.push(pc.yellow("skip"));
       lines.push(`  - ${e.name} ${pc.dim(`[${bits.join(", ")}]`)}`);
+      // What the eval asks for, so an author reads it before a run fails.
+      if (e.assertion !== undefined) lines.push(pc.dim(`      ${e.assertion}`));
     }
     for (const pr of plan.problems) {
       const tag = pr.level === "error" ? pc.red("error") : pc.yellow("warn");
