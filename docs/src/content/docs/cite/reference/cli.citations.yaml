@@ -237,9 +237,9 @@ docs/src/content/docs/cite/reference/cli.mdx:
         integrity: sha256-cca9d917a5a6fe4387e8af63266f8f57d27299b74bc81e11a99f0bcaf283774a
       source:
         file: src/meta/reporters/sarif.ts
-        lines: 97-99
+        lines: 98-100
         integrity: sha256-211c179e6fdfe4ca4acf8b7c42e2b6e08715206f38e0aef79579afd394184674
-        commit-sha: a13745cefe15407b4f1c5cb2ba70d5638605c04b
+        commit-sha: ffdbdab4b080ca781c685250214db34edc01ae3b
     - id: junit-classname
       claim:
         integrity: sha256-8209fab0c9935cab332250ee88253278cb4c4267a9aa9efa862e1508ee3dfc2f

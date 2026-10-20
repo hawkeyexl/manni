@@ -30,27 +30,27 @@ docs/src/content/docs/cite/set-up/require-citations.mdx:
         integrity: sha256-74f6cdcdea5a4dfd14457d7dae8eca0fa59e4b12a1473a2cf98a1801934df4d2
       source:
         file: src/meta/core/validator.ts
-        lines: 426-428
+        lines: 427-429
         integrity: sha256-bad07eade37e83306f22f308a915e79b456a76502846871a2db805dcbd321760
-        commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
+        commit-sha: ffdbdab4b080ca781c685250214db34edc01ae3b
     - id: ref-fetches-nothing
       claim:
         lines: 32
         integrity: sha256-b6ec7d63baa84b64fe0a5d822d53be39a7e535699b0bdab94ea0884a49be651d
       source:
         file: src/meta/core/validator.ts
-        lines: 81-91
+        lines: 82-92
         integrity: sha256-685fa6c1c889916696ea8e1d51a90712b671710fe05fe9f759b92f4d263021d9
-        commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
+        commit-sha: ffdbdab4b080ca781c685250214db34edc01ae3b
     - id: ref-compile-failure
       claim:
         lines: 41-42
         integrity: sha256-1bfb76b91bd99d9f334fb8e843eb3bb87d75bf00aa2605f2bfa2ff14ac8d5dec
       source:
         file: src/meta/core/validator.ts
-        lines: 679-681
+        lines: 680-682
         integrity: sha256-6ab087f31ffcae856a06795623cad104b02b06980fe3a580200fff1f8f58ef43
-        commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
+        commit-sha: ffdbdab4b080ca781c685250214db34edc01ae3b
     - id: ref-compile-failure-exit-2
       claim:
         lines: 41-42
@@ -105,9 +105,9 @@ docs/src/content/docs/cite/set-up/require-citations.mdx:
         integrity: sha256-da83722de200fc7b4e3eb846c62aa0e4848cba9325b94c78985ea41ebd85fde9
       source:
         file: src/meta/core/validator.ts
-        lines: 891-900
-        integrity: sha256-75d948f29fe0df3ee8312fb246489c85b483e992468754f8ae4e725a8afbe748
-        commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
+        lines: 892-905
+        integrity: sha256-55e2666b1acc1fcfc5cae06523e347d9ccf098a4c81afbf3b60ba36479f93e27
+        commit-sha: ffdbdab4b080ca781c685250214db34edc01ae3b
     - id: override-one-of-collection-files
       claim:
         integrity: sha256-fd238d22d3a97070e5d72bf6b44b7f425110fabda3bd9b49e1866354c98ebe53
@@ -129,9 +129,9 @@ docs/src/content/docs/cite/set-up/require-citations.mdx:
         integrity: sha256-ea6e97c1c85caaa8ee524cbd0d393b225848d4f632a9028eb68da55df8415d8c
       source:
         file: src/meta/core/validator.ts
-        lines: 896-898
-        integrity: sha256-e89905f26b5d02994e8a5202d6e923c3c4d7ce91e155d6bf9ac391798e11bd70
-        commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
+        lines: 897-903
+        integrity: sha256-5ea931a788e20b68de2e41c91d4d1f96ad16e35f58e9fdb99ca14be479b5a209
+        commit-sha: ffdbdab4b080ca781c685250214db34edc01ae3b
     - id: location-finding-is-warning
       claim:
         integrity: sha256-ea6e97c1c85caaa8ee524cbd0d393b225848d4f632a9028eb68da55df8415d8c
@@ -359,6 +359,6 @@ docs/src/content/docs/cite/set-up/require-citations.mdx:
         integrity: sha256-1bfb76b91bd99d9f334fb8e843eb3bb87d75bf00aa2605f2bfa2ff14ac8d5dec
       source:
         file: src/meta/core/validator.ts
-        lines: 891-894
+        lines: 892-895
         integrity: sha256-5b98c76ade3d481f6fe3cc35a2034bb41178dea6614b7267250d6911833ee8d9
-        commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
+        commit-sha: ffdbdab4b080ca781c685250214db34edc01ae3b

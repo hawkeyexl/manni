@@ -234,7 +234,7 @@ docs/src/content/docs/term/reference/terminology.mdx:
         commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
     - id: status-label-tbx
       claim:
-        lines: 290
+        lines: 292
         integrity: sha256-4bc885cd1e6d2351c7c4a29e022b2e368e383995fd03034aa366db0af566d4c3
       source:
         file: src/term/core/readers/tbx-model.ts
@@ -243,7 +243,7 @@ docs/src/content/docs/term/reference/terminology.mdx:
         commit-sha: df75e58da9c2ffb383db63ef9e4f7aeb6c30d0ad
     - id: status-label-vale-casing
       claim:
-        lines: 290
+        lines: 292
         integrity: sha256-4bc885cd1e6d2351c7c4a29e022b2e368e383995fd03034aa366db0af566d4c3
       source:
         file: src/term/core/writers/vale.ts
@@ -252,7 +252,7 @@ docs/src/content/docs/term/reference/terminology.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: status-alt-tbx
       claim:
-        lines: 291
+        lines: 293
         integrity: sha256-83e0dd370509ce9e297cad028e78ee39b861b63c4571cebd8eec72bfd188c0b8
       source:
         file: src/term/core/readers/tbx-model.ts
@@ -261,7 +261,7 @@ docs/src/content/docs/term/reference/terminology.mdx:
         commit-sha: df75e58da9c2ffb383db63ef9e4f7aeb6c30d0ad
     - id: status-alt-vale-casing
       claim:
-        lines: 291
+        lines: 293
         integrity: sha256-83e0dd370509ce9e297cad028e78ee39b861b63c4571cebd8eec72bfd188c0b8
       source:
         file: src/term/core/writers/vale.ts
@@ -270,7 +270,7 @@ docs/src/content/docs/term/reference/terminology.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: status-alt-vale-acronym
       claim:
-        lines: 291
+        lines: 293
         integrity: sha256-83e0dd370509ce9e297cad028e78ee39b861b63c4571cebd8eec72bfd188c0b8
       source:
         file: src/term/core/writers/vale.ts
@@ -279,7 +279,7 @@ docs/src/content/docs/term/reference/terminology.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: status-hidden-tbx
       claim:
-        lines: 292
+        lines: 294
         integrity: sha256-f14088507cb7bbccb6e7575609d93879a55105e0e3a52e671404026c8792af7a
       source:
         file: src/term/core/readers/tbx-model.ts
@@ -288,7 +288,7 @@ docs/src/content/docs/term/reference/terminology.mdx:
         commit-sha: df75e58da9c2ffb383db63ef9e4f7aeb6c30d0ad
     - id: status-hidden-vale-deprecated
       claim:
-        lines: 292
+        lines: 294
         integrity: sha256-f14088507cb7bbccb6e7575609d93879a55105e0e3a52e671404026c8792af7a
       source:
         file: src/term/core/writers/vale.ts
@@ -297,7 +297,7 @@ docs/src/content/docs/term/reference/terminology.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: status-hidden-vale-deprecated-rule
       claim:
-        lines: 292
+        lines: 294
         integrity: sha256-f14088507cb7bbccb6e7575609d93879a55105e0e3a52e671404026c8792af7a
       source:
         file: src/term/core/writers/vale.ts
@@ -354,7 +354,7 @@ docs/src/content/docs/term/reference/terminology.mdx:
         commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
     - id: id-record-id-page
       claim:
-        lines: 372
+        lines: 374
         integrity: sha256-09c0f7f4e4f6ae0b4f0906c8bb961936930a5cc374c97373327d99a31453a64a
       source:
         file: src/term/core/readers/page.ts
@@ -363,7 +363,7 @@ docs/src/content/docs/term/reference/terminology.mdx:
         commit-sha: df75e58da9c2ffb383db63ef9e4f7aeb6c30d0ad
     - id: id-record-id-manifest
       claim:
-        lines: 372
+        lines: 374
         integrity: sha256-09c0f7f4e4f6ae0b4f0906c8bb961936930a5cc374c97373327d99a31453a64a
       source:
         file: src/term/core/readers/manifest.ts
@@ -372,7 +372,7 @@ docs/src/content/docs/term/reference/terminology.mdx:
         commit-sha: df75e58da9c2ffb383db63ef9e4f7aeb6c30d0ad
     - id: id-construct-html-dt
       claim:
-        lines: 373-376
+        lines: 375-378
         integrity: sha256-f62d1acd842137320e3cbb1b4858b40b5221ff36426a3d641c38edf23bc2a62b
       source:
         file: src/term/core/readers/html.ts
@@ -381,7 +381,7 @@ docs/src/content/docs/term/reference/terminology.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: id-construct-docbook
       claim:
-        lines: 373-376
+        lines: 375-378
         integrity: sha256-f62d1acd842137320e3cbb1b4858b40b5221ff36426a3d641c38edf23bc2a62b
       source:
         file: src/term/core/readers/docbook.ts
@@ -390,7 +390,7 @@ docs/src/content/docs/term/reference/terminology.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: id-construct-dita
       claim:
-        lines: 373-376
+        lines: 375-378
         integrity: sha256-f62d1acd842137320e3cbb1b4858b40b5221ff36426a3d641c38edf23bc2a62b
       source:
         file: src/term/core/readers/dita.ts
@@ -399,7 +399,7 @@ docs/src/content/docs/term/reference/terminology.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: id-label-slug
       claim:
-        lines: 375-376
+        lines: 377-378
         integrity: sha256-44bb1d825b55ce85f38dc29567078bb5320da854541dbc837b59ff7179f152b7
       source:
         file: src/term/core/id.ts
@@ -432,7 +432,7 @@ docs/src/content/docs/term/reference/terminology.mdx:
         commit-sha: df75e58da9c2ffb383db63ef9e4f7aeb6c30d0ad
     - id: id-construct-html-dfn
       claim:
-        lines: 373
+        lines: 375
         integrity: sha256-ae8aa0e30a3ac0c103cd8c860e3a982667852e1e42f0e2e0e00edcd04d945091
       source:
         file: src/term/core/readers/html.ts
@@ -449,7 +449,7 @@ docs/src/content/docs/term/reference/terminology.mdx:
         commit-sha: df75e58da9c2ffb383db63ef9e4f7aeb6c30d0ad
     - id: tbx-status-read-as
       claim:
-        lines: 294-296
+        lines: 296-298
         integrity: sha256-1b1f618f0498d3fa5e3e7b25a6408763bd1b26713df4b171107f322c6ed6853c
       source:
         file: src/term/core/readers/tbx.ts
