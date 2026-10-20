@@ -71,6 +71,25 @@ describe("manni meta validate: a bad dcmi date (built bin)", () => {
     expect(errors[0]?.guidance).toEqual(GUIDANCE);
   });
 
+  it("json carries guidance as null on a finding no schema property stands behind", () => {
+    const r = run([
+      "meta",
+      "validate",
+      "test/fixtures/guidance/unknown-schema-ref.md",
+      "--no-config",
+      "-f",
+      "json",
+    ]);
+    expect(r.status).toBe(1);
+    const report = JSON.parse(r.stdout) as { results: { errors: Record<string, unknown>[] }[] };
+    const errors = report.results[0]?.errors ?? [];
+    expect(errors.length).toBeGreaterThan(0);
+    for (const e of errors) {
+      expect(Object.keys(e).at(-1)).toBe("guidance");
+      expect(e.guidance).toBeNull();
+    }
+  });
+
   it("github appends the lines after %0A", () => {
     const r = run([...DCMI, "-f", "github"]);
     expect(r.status).toBe(1);
