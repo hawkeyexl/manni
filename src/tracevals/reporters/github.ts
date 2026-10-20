@@ -57,7 +57,7 @@ export function renderGithub(input: CiInput, summary: string): string {
         lines.push(say(f.severity, [f.message]));
       }
       const judged = judgedLines(r);
-      if (judged !== undefined) {
+      if (judged.length > 0) {
         // A review queue warns: nobody has decided yet, so nothing failed.
         lines.push(say(r.outcome === "fail" ? "error" : "warning", judged));
       }

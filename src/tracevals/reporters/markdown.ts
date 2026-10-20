@@ -3,18 +3,19 @@ import type { EvalResult, RunReport } from "../types.js";
 import { errorText, judgedLines, locationLabel } from "./ci.js";
 import { guidanceLines } from "../../shared/guidance.js";
 
-/** The outcomes the Findings section lists, by their label. */
-const FINDING_LABEL: Partial<Record<EvalResult["outcome"], string>> = {
-  fail: "FAIL",
-  error: "ERROR",
-  "needs-review": "REVIEW",
-};
 import {
   availabilityLines,
   coverageLocation,
   coverageStaleness,
   manifestLines,
 } from "./coverage.js";
+
+/** The outcomes the Findings section lists, by their label. */
+const FINDING_LABEL: Partial<Record<EvalResult["outcome"], string>> = {
+  fail: "FAIL",
+  error: "ERROR",
+  "needs-review": "REVIEW",
+};
 
 /**
  * Escapes a value for a markdown table cell. Every cell needs this, not just
@@ -71,7 +72,7 @@ export function renderMarkdown(report: RunReport): string {
           ? [errorText(r)]
           : r.findings !== undefined && r.findings.length > 0
             ? r.findings.map((f) => f.message)
-            : (judgedLines(r) ?? []);
+            : judgedLines(r);
       for (const line of [...body, ...guidanceLines(r.guidance)]) {
         // One line per item: a newline would end the list item early.
         lines.push(`  - ${line.replace(/\r?\n/g, " ")}`);

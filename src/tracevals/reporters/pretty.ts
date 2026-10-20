@@ -83,7 +83,7 @@ export function renderPretty(report: RunReport, opts: ColorOptions = {}): string
     if (result.skipReason && result.outcome !== "needs-review") {
       lines.push(`         ${pc.dim(result.skipReason)}`);
     }
-    for (const line of judgedLines(result) ?? []) lines.push(`         ${line}`);
+    for (const line of judgedLines(result)) lines.push(`         ${line}`);
     if (result.consensus && result.outcome !== "pass") {
       const v = result.consensus.votes;
       lines.push(
