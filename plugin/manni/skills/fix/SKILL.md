@@ -1,6 +1,6 @@
 ---
 name: fix
-description: Repair manni findings in docs. Use after manni check or a hook reports errors in metadata, citations, terms, structure, evals or the graph.
+description: Repair manni findings in docs. Use after manni check or a hook reports errors in metadata, citations, terms, structure, evals or the graph, or after manni a11y check or manni test run fails.
 allowed-tools: Bash(npx manni *), Bash(node "${CLAUDE_PLUGIN_ROOT}/hooks/manni.mjs" *)
 ---
 
@@ -56,3 +56,11 @@ Do not edit the eval to pass. To change an eval on purpose, use the `evals` skil
 ## graph check
 
 A shape failed. The finding names the node and the property. Fix the frontmatter, the link or the heading it points at.
+
+## a11y check
+
+`manni check` does not run this. Start from a report the user gives you, or run `manni a11y check <url>` against a site the user serves.
+Each finding names the axe rule, the element and what to change. Its last lines link the rule's guide. Read them before editing.
+Fix the element in the page or in the layout that renders it. When one element fails on several pages, fix the shared template.
+Never invent alt text, a label or a name the page does not justify. Ask the user for the words.
+Rebuild the site and run the same command again until it exits `0`.
