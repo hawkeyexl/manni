@@ -71,9 +71,11 @@ export function renderPretty(report: RunReport, opts: ColorOptions = {}): string
     lines.push(
       `  ${label} ${name}${result.implicit ? pc.dim(" (implicit)") : ""}  ${pc.dim(locationLabel(result.location))}`,
     );
+    let printed = false;
     for (const finding of result.findings ?? []) {
       if (result.outcome !== "pass" || finding.severity !== "error") {
         lines.push(`         ${pc.dim(`[${finding.severity}]`)} ${finding.message}`);
+        printed = true;
       }
     }
     if (result.error) lines.push(`         ${pc.red(result.error)}`);
@@ -88,7 +90,9 @@ export function renderPretty(report: RunReport, opts: ColorOptions = {}): string
         `         ${pc.dim(`votes pass:${v.pass} fail:${v.fail} partial:${v.partial} error:${v.error}`)}`,
       );
     }
-    if (result.outcome === "fail" || result.outcome === "error" || result.outcome === "needs-review") {
+    // Guidance goes under anything printed above it: a failure, an error, a
+    // review, or a passing eval that still carries a warning finding.
+    if (printed || result.outcome === "fail" || result.outcome === "error" || result.outcome === "needs-review") {
       for (const line of guidanceLines(result.guidance)) lines.push(`         ${pc.dim(line)}`);
     }
   }
