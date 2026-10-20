@@ -64,8 +64,8 @@ import { renderTraverse, runTraverse } from "./commands/traverse.js";
  * terminal".
  *
  * Exported because this is where the decision is testable — a spawned bin is
- * never a TTY. graph's reporters print no colour yet; when one does, it takes
- * the boolean from here rather than consulting the environment itself.
+ * never a TTY. `check`'s pretty output dims the lines under each finding, and
+ * takes the boolean from here rather than consulting the environment itself.
  */
 export function colorFor(
   command: Command,
@@ -178,7 +178,7 @@ function choiceOption<T extends string>(flag: string, allowed: readonly T[]) {
 /** `-f, --format`: every verb's list is `pretty | json` (0051 §2). */
 const formatOption = choiceOption("--format", GRAPH_FORMATS);
 
-/** `check`'s own, which adds `github` — the CI gate's annotation format. */
+/** `check`'s own, which adds the two CI formats, `github` and `sarif`. */
 const checkFormatOption = choiceOption("--format", CHECK_FORMATS);
 
 /**
@@ -362,15 +362,22 @@ configInputs(
     "pretty",
   )
   .action(
-    async (opts: {
-      config?: string | boolean;
-      graph?: string;
-      shapes: string[];
-      format: CheckFormat;
-    }) => {
+    async (
+      opts: {
+        config?: string | boolean;
+        graph?: string;
+        shapes: string[];
+        format: CheckFormat;
+      },
+      command: Command,
+    ) => {
       try {
         const report = await runCheck({ ...rest(opts), ...documentOptions(opts) });
-        console.log(renderCheck(report, opts.format));
+        console.log(
+          renderCheck(report, opts.format, {
+            color: colorFor(command, process.stdout.isTTY),
+          }),
+        );
         process.exitCode = report.exitCode;
       } catch (e) {
         fail(e);

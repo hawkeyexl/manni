@@ -55,4 +55,20 @@ Do not edit the eval to pass. To change an eval on purpose, use the `evals` skil
 
 ## graph check
 
-A shape failed. The finding names the node and the property. Fix the frontmatter, the link or the heading it points at.
+Each finding names the pages behind it first. Edit one of those pages, never the graph or the shapes.
+The lines under the finding name the shape that judged it, say what that property is for, and link the guide. Read them before editing.
+Run `manni graph shapes show <shape>` to see every property a shape checks and the frontmatter key that feeds it.
+
+| The finding says | Repair |
+|---|---|
+| set `lang` to a language tag | Write a tag such as `de` or `pt-BR`. |
+| lists a variant or an aspect in both lists | Decide which is true for that page or section. Delete the value from the other list. |
+| spell this concept or variant two ways | Use the glossary's spelling, or the most common one, on every page it names. |
+| form a broader cycle | Remove the one `broader` or `narrower` value that is wrong, usually the newest. |
+| related to a broader concept or an ancestor | Remove either the related link or the hierarchy link, not both. |
+| names a concept in this glossary | Move the value from the `*-matches` key to `broader`, `narrower` or `related-terms`. |
+| `meta-provenance` credits a model | Stop and tell the user. Deleting the entry signs off the value, and that is their call. |
+| a property this shape does not list | Stop. The page is not at fault. Tell the user the shapes need updating. |
+| a sample question does not find its page | Make the page answer the question in the words a reader uses. Never reword the question only to pass. |
+
+Run `manni check`. It rebuilds the graph before it checks.

@@ -40,7 +40,7 @@ and why it runs over the built graph rather than over the sources.
 
 ## The bundled shapes are the floor
 
-`manni graph check` ships with a shapes file, `shapes/graph/shapes-1.1.0.ttl`, which
+`manni graph check` ships with a shapes file, `shapes/graph/shapes-1.1.1.ttl`, which
 is what it uses when you name none. It declares a node shape per class the
 emitter mints: `graph:Document`, `graph:Section`, `skos:Concept`,
 `skos:ConceptScheme`, `iirds:ProductVariant`, and the PROV agents, activities,
@@ -67,7 +67,7 @@ Write a shapes file and point `graph.check.shapes` at it:
 graph:
   check:
     shapes:
-      - node_modules/@hawkeyexl/manni/shapes/graph/shapes-1.1.0.ttl
+      - node_modules/@hawkeyexl/manni/shapes/graph/shapes-1.1.1.ttl
       - shapes/house-rules.ttl
 ```
 

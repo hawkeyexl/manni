@@ -80,7 +80,7 @@ describe("graph build over a termbase", () => {
     const check = run(["check"], into);
     expect(check.status).toBe(1);
     expect(check.stdout).toContain(
-      "skos:exactMatch points into this scheme (https://example.com/graph/concept/token), so use broader, narrower or related instead.",
+      'error: docs/glossary/pal.md, docs/glossary/pluggable-auth-layer.md, docs/guides/login.md: `exact-matches` names "Access token", a concept in this glossary. Use `broader`, `narrower` or `related-terms` for it instead.\n  at https://example.com/graph/concept/pluggable-auth-layer skos:exactMatch\n  manni:graph-shapes:1.1.1 Concept-exactMatch: ',
     );
   });
 
