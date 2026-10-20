@@ -106,12 +106,13 @@ export function traceErrorText(error: string): string {
 /**
  * The judged block under a judged fail or a review queue (proposal 0089): the
  * verdict and what to do, then what the judge observed and why. A human-graded
- * eval has no verdict, so its block says who decides.
+ * eval has no verdict, so its block says who decides. Empty when there is no
+ * judged block, as docevals' `judgedLines` is.
  */
-export function judgedLines(result: EvalResult): string[] | undefined {
+export function judgedLines(result: EvalResult): string[] {
   const c = result.consensus;
   if (result.outcome === "fail" && c) return verdictLines(c, "fail", REDO_OR_FIX);
-  if (result.outcome !== "needs-review") return undefined;
+  if (result.outcome !== "needs-review") return [];
   if (!c) return ["Awaiting human review. Read the session against the assertion and decide."];
   return verdictLines(
     c,

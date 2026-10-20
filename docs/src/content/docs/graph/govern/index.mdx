@@ -253,7 +253,7 @@ presence without the graph publishing its content.
 
 {/* step {"description":"A corpus that violates the shapes builds fine; the graph is checked separately.","runShell":{"command":"manni graph build -c test/graph/fixtures/dd/violations.config.yaml","exitCodes":[0]}} */}
 
-{/* step {"description":"check catches the SKOS cycle core SHACL cannot express.","runShell":{"command":"manni graph check -c test/graph/fixtures/dd/violations.config.yaml","exitCodes":[1],"stdio":"a concept cannot be its own ancestor"}} */}
+{/* step {"description":"check catches the SKOS cycle core SHACL cannot express.","runShell":{"command":"manni graph check -c test/graph/fixtures/dd/violations.config.yaml","exitCodes":[1],"stdio":"form a broader cycle, so each is its own ancestor"}} */}
 
 {/* step {"description":"A variant a page is both about and excluded from is an error.","runShell":{"command":"manni graph check -c test/graph/fixtures/dd/violations.config.yaml","exitCodes":[1],"stdio":"graph:notApplicableToVariant"}} */}
 
