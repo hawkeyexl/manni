@@ -50,7 +50,7 @@ docs/src/content/docs/meta/reference/schemas/index.mdx:
         commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
     - id: registry-diataxis-and-tgdp-are-alternatives
       claim:
-        lines: 316-319
+        lines: 318-321
         integrity: sha256-4275f183a4f490f20bfa6d197b22dfddaaa318725209e156b2f5127fb97aec87
       source:
         file: src/meta/schemas/diataxis/1.0.json

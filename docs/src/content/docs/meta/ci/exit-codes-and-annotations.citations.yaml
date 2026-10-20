@@ -82,7 +82,7 @@ docs/src/content/docs/meta/ci/exit-codes-and-annotations.mdx:
         commit-sha: ffdbdab4b080ca781c685250214db34edc01ae3b
     - id: quiet-hides-passing-files
       claim:
-        lines: 97-98
+        lines: 99-100
         integrity: sha256-7da1d1da60d2e9ad4d880981fd708f2142aefd5adaa5f1b7b6df6461365dddb7
       source:
         file: src/meta/cli.ts
@@ -181,7 +181,7 @@ docs/src/content/docs/meta/ci/exit-codes-and-annotations.mdx:
         commit-sha: ffdbdab4b080ca781c685250214db34edc01ae3b
     - id: parse-and-schema-keywords
       claim:
-        lines: 161-163
+        lines: 169-171
         integrity: sha256-a3d4906a4e226141027f7c1e814e614f2ad10a0983a256117694e7111d43e738
       source:
         file: src/meta/reporters/rule-id.ts
@@ -190,7 +190,7 @@ docs/src/content/docs/meta/ci/exit-codes-and-annotations.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: no-column-for-required
       claim:
-        lines: 175-177
+        lines: 183-185
         integrity: sha256-c82bb03d21e4ade3765e2c740d20e63dc8c5d9008ed46ce83512d43699828311
       source:
         file: src/meta/core/validator.ts
@@ -199,7 +199,7 @@ docs/src/content/docs/meta/ci/exit-codes-and-annotations.mdx:
         commit-sha: ffdbdab4b080ca781c685250214db34edc01ae3b
     - id: github-file-param-always-present
       claim:
-        lines: 199
+        lines: 210
         integrity: sha256-0cbc156f88264131bf0d1295f23c8976191565df28a2a66141db1af2455f7fbb
       source:
         file: src/meta/reporters/index.ts
@@ -208,7 +208,7 @@ docs/src/content/docs/meta/ci/exit-codes-and-annotations.mdx:
         commit-sha: ffdbdab4b080ca781c685250214db34edc01ae3b
     - id: github-line-param-only-when-known
       claim:
-        lines: 200
+        lines: 211
         integrity: sha256-edb2384117b89857036f29ae14cc627519af8bafa8c0eb38b032dc2ad463fc46
       source:
         file: src/meta/reporters/index.ts
@@ -217,7 +217,7 @@ docs/src/content/docs/meta/ci/exit-codes-and-annotations.mdx:
         commit-sha: ffdbdab4b080ca781c685250214db34edc01ae3b
     - id: github-col-omitted-for-required
       claim:
-        lines: 201-203
+        lines: 212-214
         integrity: sha256-e5833376821caa374c3d698d6eee36bb13eb5f53aaeaf156277b33aae30d44b1
       source:
         file: src/meta/core/validator.ts
@@ -226,7 +226,7 @@ docs/src/content/docs/meta/ci/exit-codes-and-annotations.mdx:
         commit-sha: ffdbdab4b080ca781c685250214db34edc01ae3b
     - id: root-field-label-is-root
       claim:
-        lines: 207-208
+        lines: 218-219
         integrity: sha256-9c583529e2038b66fd68bf17ad8ed257c07012ca68db662784c5030d02f4ca11
       source:
         file: src/meta/reporters/rule-id.ts
@@ -235,7 +235,7 @@ docs/src/content/docs/meta/ci/exit-codes-and-annotations.mdx:
         commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
     - id: fill-annotation-has-no-line
       claim:
-        lines: 263-266
+        lines: 276-279
         integrity: sha256-6ea75f0d99d956e3866fe5cde43dbc9360fab927936b40083d319c0faac9da84
       source:
         file: src/meta/reporters/fill.ts
@@ -244,7 +244,7 @@ docs/src/content/docs/meta/ci/exit-codes-and-annotations.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: fill-annotation-labels-fill
       claim:
-        lines: 267-268
+        lines: 280-281
         integrity: sha256-7175f858c6b209bc2f8bf4b96a60c260b43a66d498cb60728016b36ebc3e86a3
       source:
         file: src/meta/reporters/fill.ts
@@ -253,7 +253,7 @@ docs/src/content/docs/meta/ci/exit-codes-and-annotations.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: fill-github-with-stdin-is-refused
       claim:
-        lines: 274-275
+        lines: 287-288
         integrity: sha256-fb4d8ae9af9635cf411ed92827182bf2d0d7895822e3bf5cd9b051a7ad0792ce
       source:
         file: src/meta/cli.ts
@@ -262,7 +262,7 @@ docs/src/content/docs/meta/ci/exit-codes-and-annotations.mdx:
         commit-sha: ffdbdab4b080ca781c685250214db34edc01ae3b
     - id: sarif-paths-rebased-on-git-root
       claim:
-        lines: 301-303
+        lines: 314-316
         integrity: sha256-aec6f5b5a72d606ff22a93111e87b01dac1bcfd0bcd8947ac965f86ba50a092d
       source:
         file: src/meta/reporters/sarif.ts
@@ -271,7 +271,7 @@ docs/src/content/docs/meta/ci/exit-codes-and-annotations.mdx:
         commit-sha: ffdbdab4b080ca781c685250214db34edc01ae3b
     - id: color-precedence-flag-env-tty
       claim:
-        lines: 342-346
+        lines: 355-359
         integrity: sha256-11cdb6991f5ac7899fe678a95545b2a35d348a364b8062403401f82f7cb07f79
       source:
         file: src/shared/color.ts
@@ -280,7 +280,7 @@ docs/src/content/docs/meta/ci/exit-codes-and-annotations.mdx:
         commit-sha: 922dea44962f188cfa8119a67aa5c744ce824710
     - id: no-color-is-a-top-level-option
       claim:
-        lines: 354-355
+        lines: 367-368
         integrity: sha256-2fd9b26432c15fc16750c4434c31d4675d42fd54e4543d76041913911ac6e803
       source:
         file: src/meta/cli.ts

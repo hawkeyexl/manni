@@ -156,7 +156,7 @@ docs/src/content/docs/meta/ci/govern-shared-schema.mdx:
         commit-sha: ffdbdab4b080ca781c685250214db34edc01ae3b
     - id: schema-trust-hosts-is-an-allowlist
       claim:
-        lines: 336-338
+        lines: 338-340
         integrity: sha256-ad36401737206ea1a0358cf56df5f203a6b47c8937bf2d70a02ecb7a542ba36d
       source:
         file: src/meta/core/resolve-schema.ts

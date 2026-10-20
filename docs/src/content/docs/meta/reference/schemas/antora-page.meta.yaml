@@ -18,8 +18,8 @@ docs/src/content/docs/meta/reference/schemas/antora-page.mdx:
       grader: ai
   provenance:
     - generated-by: Claude Opus 5.5
-      lines: 2-122
-      integrity: sha256-69475b0bc004459ba38fec986f8e7f93f0f3f992d4f14d8fbad43daeb70d994b
+      lines: 2-124
+      integrity: sha256-16838c75ad6851a81d11ef72d73c1aaeccec24caf7fb1f826efe8ae5ab503de4
   owner:
     - "@hawkeyexl"
   created: 2026-09-26

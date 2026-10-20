@@ -26,7 +26,7 @@ docs/src/content/docs/meta/get-started/index.mdx:
         commit-sha: 1f2128e838c0dbefac9878def5e544ab59058e13
     - id: summary-errors-total
       claim:
-        lines: 138
+        lines: 140
         integrity: sha256-d22c8a9368acdffcc63703e0573c7237392ee0273cc962117fabcaa15a284299
       source:
         file: src/meta/commands/validate.ts
@@ -35,7 +35,7 @@ docs/src/content/docs/meta/get-started/index.mdx:
         commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
     - id: summary-failed-is-files-with-errors
       claim:
-        lines: 137
+        lines: 139
         integrity: sha256-f8625c6402b96c857a37ca80f2e9dfd31049c6f8a6a793979758002996df5682
       source:
         file: src/meta/commands/validate.ts
@@ -44,7 +44,7 @@ docs/src/content/docs/meta/get-started/index.mdx:
         commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
     - id: summary-files-is-resolved-count
       claim:
-        lines: 135
+        lines: 137
         integrity: sha256-f49b1c3b26c1892324eb807d699467ba2b1932227ef03d4df53fac6d84ef6eca
       source:
         file: src/meta/commands/validate.ts
@@ -61,7 +61,7 @@ docs/src/content/docs/meta/get-started/index.mdx:
         commit-sha: ffdbdab4b080ca781c685250214db34edc01ae3b
     - id: body-never-inspected
       claim:
-        lines: 120-121
+        lines: 122-123
         integrity: sha256-f9de5160c76d144d93d5da1c20da3da277410b9bb67c7f765c09247bc5eaa112
       source:
         file: src/meta/commands/validate.ts
