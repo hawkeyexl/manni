@@ -28,6 +28,14 @@ describe("runShowSchema", () => {
     });
   });
 
+  it("counts a key required through an allOf $ref as required", async () => {
+    const shown = await runShowSchema({ ref: "./allof-ref.schema.json", cwd: GUIDANCE, noConfig: true });
+    expect(shown.properties.map((p) => [p.key, p.required])).toEqual([
+      ["title", true],
+      ["summary", false],
+    ]);
+  });
+
   it("answers a published URL with the built-in it names", async () => {
     const byUrl = await runShowSchema({
       ref: "https://hawkeyexl.github.io/manni/schemas/dcmi/1.1.json",
