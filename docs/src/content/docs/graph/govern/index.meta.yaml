@@ -85,8 +85,11 @@ docs/src/content/docs/graph/govern/index.mdx:
       lines: 233
       integrity: sha256-3316fe06dc640c6cffcb7facab4297e351ab62deca0a276165ca754b44b0e0b2
     - generated-by: Claude Opus 5.5
-      lines: 235-243
-      integrity: sha256-5558e41522722329327d5ef8fd8c8039a5750e7183ef5324510e7e7ebbefd622
+      lines: 235-237
+      integrity: sha256-6968dbfadf7e0c205cfdd5254b2591d8f62e449f7ed847bfc2b84cb278a4d9e8
+    - generated-by: Claude Opus 5.5
+      lines: 241-243
+      integrity: sha256-acff1b38e06d4038a3ab71c36917a52276b5d13e42a6d39246e2c48c8335d0fa
   owner:
     - "@hawkeyexl"
   created: 2026-09-16
