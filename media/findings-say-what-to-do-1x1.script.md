@@ -16,7 +16,7 @@
   112 px with `n / 4` counter, caption band 86 px, accent `#58a6ff` blue.
   Never red, green, yellow or cyan: the frame already holds a red `✗`, red
   summaries and cyan field names.
-- **Material:** two test fixtures, copied byte for byte into
+- **Material.** Two test fixtures are copied byte for byte into
   `media/scratch-findings/` (gitignored), which is its own git repository.
   They are `test/fixtures/vocabulary/dcmi-bad-date.md`, and
   `test/fixtures/cite/pages/source-changed.md` with `src/changed.ts`.
@@ -64,8 +64,8 @@ to run next. The page says the timeout is 10 seconds and the source now says
 - **Font size is derived, not chosen** (`node capture-findings/cols.mjs 22`).
   22 px gives 78 columns, the largest size that keeps every Guide URL on one
   row. The longest is the meta guide at 72 characters plus a 6-space indent.
-  One token cannot fit at any legible size: the DCMI date pattern, 110
-  characters with no space. It hard-breaks, as a terminal would, in both the
+  The DCMI date pattern is the one token that cannot fit at any legible
+  size, at 110 characters with no space. It hard-breaks, as a terminal would, in both the
   before and after beats. cols.mjs names it as the one exempt token.
 - **Ligatures off.** The skeleton's `---` fences would draw as one rule.
 
@@ -103,8 +103,8 @@ Guide lines marked and `1` below the prompt. That is the feature in one frame.
    named above.
 3. Captions on every beat, burned in and in the `.vtt`.
 4. `ffprobe`: 1080×1080, 30 fps, h264 yuv420p, AAC 48 kHz, 41.98 s.
-5. Audio measured on the finished file: a silent track at −91 dB. No
-   narration, so no loudness pass.
+5. The finished file's audio measures as a silent track at −91 dB. There
+   is no narration, so no loudness pass.
 6. Accent `#58a6ff`, blue.
 
 ## Suggested LinkedIn caption
