@@ -89,6 +89,12 @@ describe("the release commit guard", () => {
     ).toBe(true);
   });
 
+  it("skips the release commit's tests too", () => {
+    // `release` needs `test`, so a `test` job without the guard would run the
+    // whole suite on the release commit and then skip the release anyway.
+    expect(workflow.jobs["test"]?.if).toBe(workflow.jobs["release"]?.if);
+  });
+
   it("still runs when the event has no head commit", () => {
     // `workflow_dispatch` carries no `head_commit`, so a guard written only as
     // `!startsWith(...)` would evaluate against null and skip the job — which

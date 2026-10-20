@@ -18,6 +18,27 @@ commit types, and the workflow does the rest. The two pieces below are
 **one-time infrastructure setup** that's already configured. This page documents
 it so it can be recreated or audited.
 
+## The three jobs
+
+The workflow runs three jobs:
+
+| Job | What it does |
+|---|---|
+| `test` | runs the suite in three shards side by side, with `vitest --shard` |
+| `release` | builds and runs semantic-release, once every shard passes |
+| `major-tag` | moves the `vN` tag once npm serves the release, as [described below](#the-moving-major-tag) |
+
+The shards are the only run of the suite against the merged tree. The `main`
+ruleset requires no status checks, so a PR's CI result says nothing about what
+landed.
+
+They used to be one job. The 4.14.0 release finished it 34 seconds inside its
+20-minute timeout. Nine minutes went to tests and eight and a half to waiting
+for npm. Split up, neither wait sits between the merge and the publish.
+
+`release` has a concurrency group of its own, so a release waits only for the
+previous one to publish. `major-tag` has another, so tag moves land in order.
+
 ## npm publishing: OIDC trusted publishing
 
 The workflow publishes to npm with **no `NPM_TOKEN`**. It uses
@@ -40,31 +61,32 @@ and breaks the publish.
 
 ## The moving major tag
 
-`uses: hawkeyexl/manni@vN` works because the release job force-updates the `vN`
-tag on each stable release. semantic-release creates immutable `vX.Y.Z` tags and
-nothing else, so without that step the reference resolves to nothing.
+`uses: hawkeyexl/manni@vN` works because the `major-tag` job force-updates the
+`vN` tag on each stable release. semantic-release creates immutable `vX.Y.Z` tags
+and nothing else, so without that job the reference resolves to nothing.
 
-The step runs unless the job was cancelled, including after the Release step
+The job runs unless the run was cancelled, including after the `release` job
 fails. The 2.0.0 release published to npm, pushed `v2.0.0` and created the
 GitHub release, then failed in a post-publish step of `@semantic-release/github`.
 The tag step was gated on success, so it was skipped and `v2` was never created.
-Running after a failure means the step cannot assume a release happened. So it
+Running after a failure means the job cannot assume a release happened. So it
 checks, and each gate closes a distinct way of aiming the tag at something
 nobody can install:
 
 | Gate | Without it |
 |---|---|
 | `github.ref == 'refs/heads/main'` | a `next` or `feat/**` prerelease claims the major tag |
-| the `before` step recorded a version | a failure before that step reads as a changed version |
+| `release` recorded the version before and after | a failure before the `before` step reads as a changed version |
 | the version changed during the run | a push of only `chore:`/`docs:` commits releases nothing, and the tag moves to an unpublished tree |
 | the version has no `-` suffix | belt and braces on the first, since prerelease identifiers come from the branch name |
 | npm serves exactly that version | a publish that failed after `prepare` bumped `package.json` moves the tag to an unpublished tree |
 | the `vX.Y.Z` tag is on the remote | the major tag is aimed at a tag that was never pushed |
 
-The npm check waits about ten minutes, backing off from 5 to 60 seconds. The
-registry lags the publish, and that lag has no documented bound. It reads two
-ways, the exact-version document and the package's version list, and takes
-either one.
+The npm check waits about twenty minutes, backing off from 5 to 60 seconds. The
+registry lags the publish, and that lag has no documented bound. npm accepts a
+publish and processes it later, and it recorded 4.14.0 seven minutes after
+accepting it. The check reads two ways, the exact-version document and the
+package's version list, and takes either one.
 
 Failing either of the last two gates leaves the tag where it was, so the step
 exits non-zero with an `::error::` annotation. The two messages stay apart. npm
@@ -76,8 +98,8 @@ finishes the job by hand, version already substituted.
 It tags `v$version` rather than `HEAD`, because semantic-release commits the
 changelog and version bump itself, so `HEAD` is not necessarily what it tagged.
 
-It force-pushes with the GitHub App token explicitly, because the `checkout`
-step sets `persist-credentials: false`. The job holds `contents: write`, but no
+It force-pushes with the GitHub App token explicitly. The job's own token is
+read-only, and the `checkout` step sets `persist-credentials: false`, so no
 credential sits in git's config. The App is also the only actor allowed to
 bypass the `main` ruleset.
 

@@ -1,5 +1,5 @@
 /**
- * The release job's "Move the major tag" step.
+ * The release workflow's `major-tag` job and its "Move the major tag" step.
  *
  * `uses: hawkeyexl/manni@vN` resolves only because this step force-moves the
  * `vN` tag after each stable release. The 2.0.0 release published to npm,
@@ -8,7 +8,7 @@
  * succeeding, so it was skipped and `v2` was never created: a release that
  * reached every consumer, and an Action reference that resolved to nothing.
  *
- * So the step runs unless the job was cancelled, and proves for itself what the
+ * So the job runs unless the run was cancelled, and proves for itself what the
  * old gate assumed: that a release happened, that it is stable, that npm serves
  * the version, and that its tag is on the remote. These tests run the step's
  * own script, extracted from the workflow, with `node`, `npm`, `git` and
@@ -28,19 +28,38 @@ import { bash, hasBash } from "./helpers/bash.js";
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 
 interface Step {
+  id?: string;
   name?: string;
   if?: string;
   run?: string;
+  env?: Record<string, string>;
+}
+
+interface Job {
+  needs?: string | string[];
+  if?: string;
+  outputs?: Record<string, string>;
+  steps?: Step[];
+}
+
+/** Every job in the parsed workflow, by id. */
+function jobs(): Record<string, Job> {
+  const workflow = parseYaml(
+    readFileSync(join(repoRoot, ".github/workflows/release.yml"), "utf8"),
+  ) as { jobs: Record<string, Job> };
+  return workflow.jobs;
+}
+
+/** The `major-tag` job, which holds the step and its gate. */
+function tagJob(): Job {
+  const job = jobs()["major-tag"];
+  if (job === undefined) throw new Error("release.yml has no `major-tag` job");
+  return job;
 }
 
 /** The "Move the major tag" step, located by name in the parsed workflow. */
 function tagStep(): Step {
-  const workflow = parseYaml(
-    readFileSync(join(repoRoot, ".github/workflows/release.yml"), "utf8"),
-  ) as { jobs: Record<string, { steps?: Step[] }> };
-  const step = workflow.jobs["release"]?.steps?.find(
-    (s) => s.name === "Move the major tag",
-  );
+  const step = tagJob().steps?.find((s) => s.name === "Move the major tag");
   if (step?.run === undefined) {
     throw new Error('release.yml has no "Move the major tag" step with a `run:`');
   }
@@ -48,9 +67,9 @@ function tagStep(): Step {
 }
 
 interface Scenario {
-  /** `steps.before.outputs.version`; empty when that step never ran. */
+  /** `release`'s `version-before` output; empty when that step never ran. */
   before: string;
-  /** What package.json says after the Release step. */
+  /** `release`'s `version-after` output; empty when that step never ran. */
   after: string;
   /** The version `npm view` prints, or null when npm does not serve it. */
   npmServes: string | null;
@@ -84,11 +103,13 @@ function runStep(s: Scenario): Result {
     // the real one. The script under test is still the workflow's own.
     const prelude = [
       `__log() { printf '%s\\n' "$*" >> ${shellQuote(log.replace(/\\/g, "/"))}; }`,
+      // No `.version` answer: this job's checkout holds the version the run
+      // started from, so the script must take the released one from
+      // `VERSION_AFTER`, and reading package.json for it would get nothing.
       "node() {",
       '  __log "node $*"',
       '  case "$*" in',
       `    *.name*) echo ${shellQuote("@hawkeyexl/manni")} ;;`,
-      `    *.version*) echo ${shellQuote(s.after)} ;;`,
       "  esac",
       "}",
       // Each `npm view` runs in a command substitution, a subshell, so the
@@ -132,6 +153,7 @@ function runStep(s: Scenario): Result {
         env: {
           ...process.env,
           VERSION_BEFORE: s.before,
+          VERSION_AFTER: s.after,
           GH_TOKEN: "token",
           GITHUB_REPOSITORY: "hawkeyexl/manni",
         },
@@ -157,14 +179,34 @@ const docReads = (r: Result): string[] =>
 const moved = (r: Result): boolean =>
   r.calls.some((c) => c.startsWith("git tag") || c.startsWith("git push"));
 
-describe("the major tag step's gate", () => {
-  it("runs after a failed Release step, but not after a cancellation", () => {
+describe("the major tag job's gate", () => {
+  it("runs after a failed release, but not after a cancellation", () => {
     // `always()` would also run on cancel; `success()`, the default, is what
     // skipped the tag when a post-publish plugin step failed.
-    const gate = tagStep().if ?? "";
+    const job = tagJob();
+    expect(job.needs).toBe("release");
+    const gate = job.if ?? "";
     expect(gate).toContain("!cancelled()");
     expect(gate).not.toContain("always()");
     expect(gate).toContain("github.ref == 'refs/heads/main'");
+    // A skipped release is the release commit or a failed shard, and neither
+    // released anything.
+    expect(gate).toContain("needs.release.result != 'skipped'");
+  });
+
+  it("reads both versions from the release job's outputs", () => {
+    // Its own checkout holds the version the run started from, so the
+    // released one has to come from the job that released it.
+    const env = tagStep().env ?? {};
+    expect(env["VERSION_BEFORE"]).toBe("${{ needs.release.outputs.version-before }}");
+    expect(env["VERSION_AFTER"]).toBe("${{ needs.release.outputs.version-after }}");
+
+    const release = jobs()["release"];
+    expect(release?.outputs?.["version-before"]).toBe("${{ steps.before.outputs.version }}");
+    expect(release?.outputs?.["version-after"]).toBe("${{ steps.after.outputs.version }}");
+    // Recorded after a failed Release step too: 2.0.0 failed after publishing.
+    const after = release?.steps?.find((s) => s.id === "after");
+    expect(after?.if ?? "").toContain("!cancelled()");
   });
 });
 
@@ -183,6 +225,15 @@ describe.skipIf(!hasBash)("the major tag step's script", () => {
     const r = runStep({ before: "", after: "2.0.0", npmServes: "2.0.0", tagOnRemote: true });
     expect(r.status, r.stdout).toBe(0);
     expect(moved(r)).toBe(false);
+  });
+
+  it("leaves the tag alone, with a warning, when the release never recorded where it ended", () => {
+    // A release cancelled between `before` and `after` may have published, so
+    // this one is worth a warning rather than a notice.
+    const r = runStep({ before: "2.0.0", after: "", npmServes: "2.0.1", tagOnRemote: true });
+    expect(r.status, r.stdout).toBe(0);
+    expect(moved(r)).toBe(false);
+    expect(r.stdout).toContain("::warning::The release never recorded the version it ended on");
   });
 
   it("leaves the tag alone when nothing was released", () => {
@@ -208,7 +259,7 @@ describe.skipIf(!hasBash)("the major tag step's script", () => {
     // the release is half-published: 2.7.0 failed this step with that claim
     // while npm was serving it as `latest` and `v2.7.0` was on the remote.
     expect(r.stdout).toContain(
-      "npm did not serve @hawkeyexl/manni@2.0.1 within 10 minutes",
+      "npm did not serve @hawkeyexl/manni@2.0.1 within 20 minutes",
     );
     expect(r.stdout).toContain("usually npm lagging the publish");
     expect(r.stdout).toContain("the v2.0.1 tag is on the remote");
@@ -217,11 +268,11 @@ describe.skipIf(!hasBash)("the major tag step's script", () => {
     expect(r.stdout).toContain(
       "git fetch origin --tags && git tag -f v2 v2.0.1 && git push --force origin refs/tags/v2",
     );
-    // Fourteen attempts over about ten minutes, backing off 5s to 60s. Two
-    // reads an attempt, so 28 registry reads across ten minutes where the old
-    // flat budget spent 30 across five and then gave up on 2.7.0.
-    expect(r.calls.filter((c) => c.startsWith("npm view")).length).toBe(28);
-    expect(docReads(r)).toHaveLength(14);
+    // Twenty-four attempts over about twenty minutes, backing off 5s to 60s.
+    // Two reads an attempt, so 48 registry reads across twenty minutes where
+    // the first, flat budget spent 30 across five and then gave up on 2.7.0.
+    expect(r.calls.filter((c) => c.startsWith("npm view")).length).toBe(48);
+    expect(docReads(r)).toHaveLength(24);
     // The waits are all stubbed: a real `sleep` here is what timed these tests
     // out on the Windows runners.
     const waits = r.calls.filter((c) => c.startsWith("sleep"));
@@ -230,7 +281,7 @@ describe.skipIf(!hasBash)("the major tag step's script", () => {
       "sleep 10",
       "sleep 20",
       "sleep 40",
-      ...Array<string>(9).fill("sleep 60"),
+      ...Array<string>(19).fill("sleep 60"),
     ]);
   });
 

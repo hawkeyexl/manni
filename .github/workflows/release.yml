@@ -25,6 +25,14 @@
 # Requires npm CLI >= 11.5.1 and @semantic-release/npm >= 13 (Node 24 bundles a
 # new enough npm). Do NOT set setup-node's registry-url or any NPM_TOKEN /
 # NODE_AUTH_TOKEN: a written-out auth token in .npmrc shadows OIDC and breaks it.
+#
+# Three jobs. `test` runs the suite in three shards, `release` publishes once
+# every shard passes, and `major-tag` moves `vN` once npm serves the release.
+# They used to be one job, and 4.14.0 finished it 34 seconds inside its
+# 20-minute timeout: nine minutes of `npm test`, then eight and a half of
+# waiting for npm, which now processes a publish asynchronously and recorded
+# 4.14.0 seven minutes after accepting it. Neither wait belongs on the path to
+# the publish, and a cancelled job reports nothing at all.
 name: Release
 
 on:
@@ -35,10 +43,6 @@ on:
       - "feat/**"
   workflow_dispatch:
 
-concurrency:
-  group: release-${{ github.ref }}
-  cancel-in-progress: false
-
 permissions:
   contents: write
   issues: write
@@ -46,7 +50,48 @@ permissions:
   id-token: write # OIDC trusted publishing to npm + provenance (public package)
 
 jobs:
+  # The suite, in three shards that run side by side. This is the only run of
+  # it against the merged tree: the `main` ruleset requires no status checks,
+  # so a PR's CI result says nothing about what landed. vitest splits by file,
+  # so the shards are even by count rather than by time.
+  test:
+    # The same guard as `release`, which explains it. `release` needs this
+    # job, so without it the release commit would run the suite for nothing.
+    # `test/release-config.test.ts` holds the two equal.
+    if: >-
+      github.event_name != 'push' ||
+      !startsWith(github.event.head_commit.message, 'chore(release):')
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    strategy:
+      # Unlike ci.yml, where each platform's result is worth seeing. Here any
+      # red shard blocks the release, so the others have nothing left to say.
+      fail-fast: true
+      matrix:
+        shard: [1, 2, 3]
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - run: npm ci
+      # Once is enough: the types do not differ by shard.
+      - if: ${{ matrix.shard == 1 }}
+        run: npm run typecheck
+      # Before the tests: the CLI integration suites run the built dist/cli.js.
+      - run: npm run build
+      - run: npm test -- --shard=${{ matrix.shard }}/3
+
   release:
+    needs: test
     # Don't re-release semantic-release's own release commit.
     #
     # This used to be `[skip ci]` in the commit message (`.releaserc.json`),
@@ -68,6 +113,16 @@ jobs:
       !startsWith(github.event.head_commit.message, 'chore(release):')
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    # On this job, not the workflow, so a release waits only for the one before
+    # it to publish. The next run's shards start at once, and its release need
+    # not queue behind the previous run's npm wait in `major-tag`.
+    concurrency:
+      group: release-${{ github.ref }}
+      cancel-in-progress: false
+    # What `major-tag` reads to tell a release from a run that released nothing.
+    outputs:
+      version-before: ${{ steps.before.outputs.version }}
+      version-after: ${{ steps.after.outputs.version }}
     # The husky commit-msg hook isn't useful in CI, and semantic-release's
     # release commit embeds the full changelog (long lines). Disable husky.
     env:
@@ -93,11 +148,9 @@ jobs:
           cache-dependency-path: package-lock.json
 
       - run: npm ci
-      - run: npm run typecheck
       - run: npm run build
-      - run: npm test
 
-      # Captured before the release so the tag-move below can tell "released"
+      # Captured before the release so `major-tag` can tell "released"
       # from "ran and found nothing to release" — a push to `main` with only
       # `chore:`/`docs:` commits does the latter, and moving the major tag then
       # would aim it at a tree that was never published.
@@ -113,65 +166,106 @@ jobs:
           GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
         run: npx semantic-release
 
-      # Action consumers write `uses: hawkeyexl/manni@vN` and expect it to
-      # track the newest release of that major. That only works because someone
-      # force-updates the `vN` tag; semantic-release creates immutable `vN.N.N`
-      # tags and nothing else, so without this step the reference resolves to
-      # nothing.
-      #
-      # It runs unless the job was cancelled, not only when Release succeeded.
-      # The 2.0.0 release published to npm, pushed `v2.0.0` and created the
-      # GitHub release, then failed in a post-publish plugin step; gated on
-      # success, this step was skipped and `v2` was never created. Running after
-      # a failure means the step can no longer assume a release happened, so it
-      # proves it, and each gate below closes one way of aiming the tag at a
-      # tree nobody can install:
-      #
-      # - `before` recorded a version. A failure before that step leaves it
-      #   empty, which would otherwise read as "the version changed".
-      # - The version changed. A push with only `chore:`/`docs:` commits runs
-      #   this job and releases nothing.
-      # - It is not a prerelease. `.releaserc.json` gives `next` and `feat/**`
-      #   prerelease identifiers, which must never claim the major tag.
-      # - npm serves exactly that version. semantic-release bumps package.json
-      #   in `prepare`, before `publish`, so a failed publish still changes the
-      #   version. The printed version is compared rather than the exit status
-      #   trusted, because older npm exits 0 with no output for a missing
-      #   version. Retried, because the registry lags the publish: 2.0.1 was
-      #   still not served forty seconds after npm reported it published.
-      # - The `v$version` tag is on the remote. The major tag is moved to that
-      #   tag, so a release that failed before pushing it has nothing to aim at.
-      #
-      # Failing either of the last two gates leaves the major tag where it was,
-      # so the step exits non-zero either way. They are different problems and
-      # say so. npm not serving the version inside the budget is nearly always
-      # propagation, and that message names which tag does exist rather than
-      # guessing; npm serving it while the remote has no version tag is a
-      # genuinely half-published release. Both print the command that finishes
-      # the job by hand, version already substituted.
-      #
-      # The token is passed explicitly because `checkout` above sets
-      # `persist-credentials: false`: the job holds `contents: write`, but no
-      # credential is in git's config, and this App is also the only actor
-      # allowed to bypass the `main` ruleset.
+      # Read after the release, for `major-tag`, whose own checkout still holds
+      # the version this run started from. It runs after a failed Release step
+      # too, because a release can fail after it has published.
+      - id: after
+        if: ${{ !cancelled() }}
+        run: echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
+
+  # Action consumers write `uses: hawkeyexl/manni@vN` and expect it to track
+  # the newest release of that major. That only works because someone
+  # force-updates the `vN` tag; semantic-release creates immutable `vN.N.N`
+  # tags and nothing else, so without this job the reference resolves to
+  # nothing.
+  #
+  # It runs unless the run was cancelled, not only when `release` succeeded.
+  # The 2.0.0 release published to npm, pushed `v2.0.0` and created the GitHub
+  # release, then failed in a post-publish plugin step; gated on success, the
+  # tag step was skipped and `v2` was never created. Running after a failure
+  # means this job can no longer assume a release happened, so it proves it,
+  # and each gate below closes one way of aiming the tag at a tree nobody can
+  # install:
+  #
+  # - `release` recorded both versions. A failure before `before` leaves the
+  #   first empty, which would otherwise read as "the version changed", and a
+  #   cancelled release leaves the second empty.
+  # - The version changed. A push with only `chore:`/`docs:` commits runs the
+  #   release and releases nothing.
+  # - It is not a prerelease. `.releaserc.json` gives `next` and `feat/**`
+  #   prerelease identifiers, which must never claim the major tag.
+  # - npm serves exactly that version. semantic-release bumps package.json in
+  #   `prepare`, before `publish`, so a failed publish still changes the
+  #   version. The printed version is compared rather than the exit status
+  #   trusted, because older npm exits 0 with no output for a missing version.
+  #   Retried, because the registry lags the publish: 2.0.1 was still not
+  #   served forty seconds after npm reported it published.
+  # - The `v$version` tag is on the remote. The major tag is moved to that tag,
+  #   so a release that failed before pushing it has nothing to aim at.
+  #
+  # Failing either of the last two gates leaves the major tag where it was, so
+  # the job exits non-zero either way. They are different problems and say so.
+  # npm not serving the version inside the budget is nearly always
+  # propagation, and that message names which tag does exist rather than
+  # guessing; npm serving it while the remote has no version tag is a
+  # genuinely half-published release. Both print the command that finishes the
+  # job by hand, version already substituted.
+  major-tag:
+    needs: release
+    # `release` is skipped when the guard declined the release commit or a
+    # shard failed. Either way nothing was released, so there is nothing to do.
+    if: ${{ !cancelled() && github.ref == 'refs/heads/main' && needs.release.result != 'skipped' }}
+    runs-on: ubuntu-latest
+    # The npm wait below, plus a minute for the token and the checkout.
+    timeout-minutes: 25
+    # One at a time and in order, so an older run's wait cannot finish after a
+    # newer run's and move the tag backwards. A newer pending run replaces an
+    # older pending one, which is right: the newest release is the one the tag
+    # wants.
+    concurrency:
+      group: major-tag-${{ github.ref }}
+      cancel-in-progress: false
+    # Read-only. The push goes through the App token below, because this App
+    # is the only actor allowed to bypass the `main` ruleset.
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        id: app-token
+        with:
+          app-id: ${{ secrets.RELEASE_APP_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+
+      # Full history and every tag, so the `v$version` tag `release` just
+      # pushed is here to move the major tag onto. The token is passed to the
+      # step explicitly, because no credential is left in git's config.
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
       - name: Move the major tag
-        if: ${{ !cancelled() && github.ref == 'refs/heads/main' }}
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
           # Through the environment, not `${{ }}`. `action.yml` documents why:
           # `${{ }}` is substituted textually before bash parses the line, so
           # the value is code rather than data. It reaches `main` only through
-          # a merge, which makes this narrow — but this is the job holding the
-          # App token, npm publish rights, and a ruleset bypass, so it is the
-          # last place to make an exception.
-          VERSION_BEFORE: ${{ steps.before.outputs.version }}
+          # a merge, which makes this narrow — but this job holds the App token
+          # and its ruleset bypass, so it is the last place to make an
+          # exception.
+          VERSION_BEFORE: ${{ needs.release.outputs.version-before }}
+          VERSION_AFTER: ${{ needs.release.outputs.version-after }}
         run: |
           set -euo pipefail
           if [ -z "$VERSION_BEFORE" ]; then
             echo "::notice::The release never recorded a starting version; leaving the major tag alone."
             exit 0
           fi
-          version="$(node -p "require('./package.json').version")"
+          if [ -z "$VERSION_AFTER" ]; then
+            echo "::warning::The release never recorded the version it ended on; leaving the major tag alone."
+            exit 0
+          fi
+          version="$VERSION_AFTER"
           if [ "$version" = "$VERSION_BEFORE" ]; then
             echo "::notice::No release was produced; leaving the major tag alone."
             exit 0
@@ -203,28 +297,29 @@ jobs:
             return 1
           }
 
-          # About ten minutes of waiting, backing off 5s, 10s, 20s, 40s, then
-          # 60s. Fourteen attempts and thirteen sleeps, and the last sleep
-          # overshoots, so the budget is spent at 615s rather than at exactly
-          # 600. The old poll was flat: thirty tries ten seconds apart, five
-          # minutes, and five minutes was not enough. The 2.7.0 release polled
-          # 03:16:55 to 03:21:54, failed this step, and npm was serving 2.7.0
-          # as `latest` soon after. Nothing was wrong with that release but
-          # this tag.
+          # About twenty minutes of waiting, backing off 5s, 10s, 20s, 40s,
+          # then 60s. Twenty-four attempts and twenty-three sleeps, and the
+          # last sleep overshoots, so the budget is spent at 1215s rather than
+          # at exactly 1200. The first poll was flat: thirty tries ten seconds
+          # apart, five minutes, and five minutes was not enough. The 2.7.0
+          # release polled 03:16:55 to 03:21:54, failed this step, and npm was
+          # serving 2.7.0 as `latest` soon after. Nothing was wrong with that
+          # release but this tag.
           #
-          # Registry lag after a publish has no documented bound, so the number
-          # comes from what the job can afford rather than from the registry.
-          # That run reached this step 5m10s in, install through
-          # semantic-release, and `timeout-minutes: 20` covers the lot, so ten
-          # minutes of waiting leaves about four minutes spare. Going higher
-          # trades a clear failure for a cancelled job, and a cancelled job
-          # skips this step's `if` and reports nothing at all.
+          # Ten minutes was not enough for long either. npm now accepts a
+          # publish and processes it later: it accepted 4.14.0 at 18:05:31 and
+          # recorded it at 18:12:46, and 4.13.0 was served about nine minutes
+          # into a ten-minute budget. Registry lag has no documented bound, so
+          # the number comes from what the job can afford. This job does
+          # nothing else, so `timeout-minutes: 25` covers the budget with
+          # about four minutes spare. That margin matters: a job cancelled at
+          # its timeout reports nothing at all.
           #
           # Backing off rather than polling flat is what keeps that budget
-          # affordable to the registry. Fourteen attempts at two reads each is
-          # 28 reads; a flat ten seconds across the same budget would be about
-          # sixty attempts, so about 120.
-          budget_minutes=10
+          # affordable to the registry. Twenty-four attempts at two reads each
+          # is 48 reads; a flat ten seconds across the same budget would be
+          # about 120 attempts, so about 240.
+          budget_minutes=20
           budget_seconds=$((budget_minutes * 60))
           waited=0
           delay=5
