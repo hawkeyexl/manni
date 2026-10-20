@@ -28,7 +28,7 @@ sample-questions:
 graph:
   label: Set up citations in one repository
   type: task
-last-updated: 2026-09-17
+last-updated: 2026-10-20
 tags:
   - setup
   - configuration
@@ -114,6 +114,9 @@ Every transcript below is real output from the built tool.
    ```
    ✗ docs/limits.md
        ✗ fetch-timeout   :16 current   lib/limits.ts:2 missing
+         Run manni cite remove --only fetch-timeout, then manni cite add against the file's new path.
+         manni:cite source-missing: The path names no tracked file, or an encrypted source cannot be decrypted.
+         Guide: https://hawkeyexl.github.io/manni/cite/fix/#source-missing
 
    1 file checked, 0 passed, 1 failed, 1 finding
    ```

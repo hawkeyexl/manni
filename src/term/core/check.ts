@@ -19,10 +19,11 @@
  * thesaurus rules (proposal 0086 § 4) read that union too, and
  * `keyword-candidate` reads the free `keywords:` of every page loaded.
  */
+import { closestName } from "../../shared/closest-name.js";
 import { TERM_RELATION_FIELDS } from "../../shared/reference-fields.js";
 import { DEFAULT_ABSTRACT_MAX_LENGTH, DEFAULT_CRAWL_MIN_PAGES } from "./config.js";
 import { languageKey as language } from "./writers/render-util.js";
-import { resolveSeverity, ruleId } from "./severity.js";
+import { guidanceFor, resolveSeverity, ruleId } from "./severity.js";
 import {
   TERM_MATCH_FIELDS,
   type Term,
@@ -49,13 +50,36 @@ const RETIRED_STATUSES: ReadonlySet<string> = new Set(["deprecated", "superseded
 const REFERENCE_FIELDS = TERM_RELATION_FIELDS;
 type ReferenceField = (typeof REFERENCE_FIELDS)[number];
 
+/**
+ * A finding before its level is known. `message` is the finding's 4.13 text,
+ * which stays its baseline identity, and `fix` is what to do about it. The
+ * two are kept apart so the advice can be reworded without moving a baseline.
+ */
 interface Draft {
   rule: TermRule;
   message: string;
+  fix?: string;
   file: string;
   line?: number;
   id?: string;
   field?: TermField;
+}
+
+/** A draft with what to do about it. */
+function fixed(draft: Draft, fix: string): Draft {
+  return { ...draft, fix };
+}
+
+/** The message, a stop if it lacks one, then the fix. */
+function withFix(message: string, fix: string | undefined): string {
+  if (fix === undefined) return message;
+  return `${message}${/[.?!]$/.test(message) ? "" : "."} ${fix}`;
+}
+
+/** `Did you mean "<label>"? ` when a label is a likely typo of `value`, else nothing. */
+function didYouMean(value: string, labels: readonly string[]): string {
+  const nearest = closestName(value, labels);
+  return nearest === undefined ? "" : `Did you mean "${nearest}"? `;
 }
 
 export function checkTermSet(set: TermSet, opts: CheckTermSetOptions = {}): TermFinding[] {
@@ -187,6 +211,9 @@ export function checkTermSet(set: TermSet, opts: CheckTermSetOptions = {}): Term
   const resolveName = (value: string, lang: string | undefined): number | undefined =>
     resolvePageName(value, lang)?.index;
 
+  // A suggestion is always a label, because a label is what a page should write.
+  const labels = terms.map((t) => t.record.label);
+
   // undefined-term and alt-label-reference, and the ids some page names, for unused-term.
   const usedIds = new Set<string>();
   for (const reference of set.references) {
@@ -198,7 +225,12 @@ export function checkTermSet(set: TermSet, opts: CheckTermSetOptions = {}): Term
     if (hit !== undefined && !hit.alt) continue;
     drafts.push(
       target === undefined
-        ? { rule: "undefined-term", message: `${field}: "${reference.label}" names no entry.`, ...at }
+        ? {
+            rule: "undefined-term",
+            message: `${field}: "${reference.label}" names no entry.`,
+            fix: `${didYouMean(reference.label, labels)}Correct the value, or run manni term fill to add the term.`,
+            ...at,
+          }
         : {
             rule: "alt-label-reference",
             message: `${field}: "${reference.label}" is an alt-label of "${target.record.label}", so name the label.`,
@@ -220,7 +252,12 @@ export function checkTermSet(set: TermSet, opts: CheckTermSetOptions = {}): Term
     if (group.length < 2) continue;
     for (const t of group) {
       const others = group.filter((other) => other !== t).map(where);
-      drafts.push(onEntry(t, "duplicate-id", `id: "${t.id}" is also used by ${others.join(", ")}`));
+      drafts.push(
+        fixed(
+          onEntry(t, "duplicate-id", `id: "${t.id}" is also used by ${others.join(", ")}`),
+          "Give one entry its own id, or merge the two.",
+        ),
+      );
     }
   }
 
@@ -229,11 +266,14 @@ export function checkTermSet(set: TermSet, opts: CheckTermSetOptions = {}): Term
     const firstTerm = collider(t, index, t.record.label, true);
     if (firstTerm !== undefined) {
       drafts.push(
-        onEntry(
-          t,
-          "label-collision",
-          `"${t.record.label}" is claimed by ${where(firstTerm)} as "${firstTerm.record.label}"`,
-          "label",
+        fixed(
+          onEntry(
+            t,
+            "label-collision",
+            `"${t.record.label}" is claimed by ${where(firstTerm)} as "${firstTerm.record.label}"`,
+            "label",
+          ),
+          "Rename one label, or merge the two entries.",
         ),
       );
     }
@@ -243,22 +283,33 @@ export function checkTermSet(set: TermSet, opts: CheckTermSetOptions = {}): Term
       const owner = collider(t, index, alt, false);
       if (owner !== undefined) {
         drafts.push(
-          onEntry(t, "alt-label-collision", `alt-labels: "${alt}" is the label of ${where(owner)}`, "alt-labels"),
+          fixed(
+            onEntry(t, "alt-label-collision", `alt-labels: "${alt}" is the label of ${where(owner)}`, "alt-labels"),
+            "Remove the alt-label, or merge the two entries.",
+          ),
         );
       }
       // label-overlap: an alt-label that repeats the entry's own label.
       if (fold(alt) === fold(t.record.label)) {
-        drafts.push(onEntry(t, "label-overlap", `alt-labels: "${alt}" repeats this entry's label.`, "alt-labels"));
+        drafts.push(
+          fixed(
+            onEntry(t, "label-overlap", `alt-labels: "${alt}" repeats this entry's label.`, "alt-labels"),
+            "Remove it from alt-labels.",
+          ),
+        );
       }
       // ambiguous-alt-label: on each later entry, naming the first.
       const sharer = altCollider(t, index, alt, true);
       if (sharer !== undefined) {
         drafts.push(
-          onEntry(
-            t,
-            "ambiguous-alt-label",
-            `alt-labels: "${alt}" is also an alt-label of ${where(sharer)}, so a reader can't tell which term it means.`,
-            "alt-labels",
+          fixed(
+            onEntry(
+              t,
+              "ambiguous-alt-label",
+              `alt-labels: "${alt}" is also an alt-label of ${where(sharer)}, so a reader can't tell which term it means.`,
+              "alt-labels",
+            ),
+            "Keep it on the entry it belongs to.",
           ),
         );
       }
@@ -269,18 +320,19 @@ export function checkTermSet(set: TermSet, opts: CheckTermSetOptions = {}): Term
     for (const hidden of t.record["hidden-labels"] ?? []) {
       const labelOf = collider(t, index, hidden, false);
       const altOf = labelOf === undefined ? altCollider(t, index, hidden, false) : undefined;
-      const overlap =
+      const overlap: [string, string] | undefined =
         fold(hidden) === fold(t.record.label)
-          ? "repeats this entry's label."
+          ? ["repeats this entry's label.", "Remove it from hidden-labels."]
           : ownAlts.has(fold(hidden))
-            ? "repeats this entry's alt-label."
+            ? ["repeats this entry's alt-label.", "Keep it in alt-labels or hidden-labels, not both."]
             : labelOf !== undefined
-              ? `is the label of ${where(labelOf)}.`
+              ? [`is the label of ${where(labelOf)}.`, "Remove it from hidden-labels."]
               : altOf !== undefined
-                ? `is an alt-label of ${where(altOf)}.`
+                ? [`is an alt-label of ${where(altOf)}.`, "Remove it here, or from that entry's alt-labels."]
                 : undefined;
       if (overlap !== undefined) {
-        drafts.push(onEntry(t, "label-overlap", `hidden-labels: "${hidden}" ${overlap}`, "hidden-labels"));
+        const [what, fix] = overlap;
+        drafts.push(fixed(onEntry(t, "label-overlap", `hidden-labels: "${hidden}" ${what}`, "hidden-labels"), fix));
       }
     }
 
@@ -301,7 +353,12 @@ export function checkTermSet(set: TermSet, opts: CheckTermSetOptions = {}): Term
     for (const field of REFERENCE_FIELDS) {
       for (const value of referenceValues(t, field)) {
         if (resolveReference(t, value) === undefined) {
-          drafts.push(onEntry(t, "dangling-reference", `${field}: "${value}" names no entry`, field));
+          drafts.push(
+            fixed(
+              onEntry(t, "dangling-reference", `${field}: "${value}" names no entry`, field),
+              `${didYouMean(value, labels)}Correct the value, or add the term it names.`,
+            ),
+          );
         }
       }
     }
@@ -330,7 +387,10 @@ export function checkTermSet(set: TermSet, opts: CheckTermSetOptions = {}): Term
         else if (first !== field && !conflicting.has(iri)) {
           conflicting.add(iri);
           drafts.push(
-            onEntry(t, "conflicting-matches", `${first}: "${iri}" is also in ${field}, and a mapping has one kind.`, first),
+            fixed(
+              onEntry(t, "conflicting-matches", `${first}: "${iri}" is also in ${field}, and a mapping has one kind.`, first),
+              "Keep the IRI under the one kind that holds.",
+            ),
           );
         }
       }
@@ -351,7 +411,12 @@ export function checkTermSet(set: TermSet, opts: CheckTermSetOptions = {}): Term
 
     // unused-term: no reference resolves to any term sharing the id.
     if (!usedIds.has(fold(t.id))) {
-      drafts.push(onEntry(t, "unused-term", "no page's concepts: names this term"));
+      drafts.push(
+        fixed(
+          onEntry(t, "unused-term", "no page's concepts: names this term"),
+          "Name it in the concepts: of a page that uses it.",
+        ),
+      );
     }
   });
 
@@ -375,11 +440,14 @@ export function checkTermSet(set: TermSet, opts: CheckTermSetOptions = {}): Term
       const otherTerm = terms[other];
       if (otherTerm !== undefined && !(related[other]?.has(index) ?? false)) {
         drafts.push(
-          onEntry(
-            otherTerm,
-            "asymmetric-related",
-            `related-terms: omits "${t.record.label}", which lists this entry as related.`,
-            "related-terms",
+          fixed(
+            onEntry(
+              otherTerm,
+              "asymmetric-related",
+              `related-terms: omits "${t.record.label}", which lists this entry as related.`,
+              "related-terms",
+            ),
+            "Add it to related-terms, or remove this entry from its related-terms.",
           ),
         );
       }
@@ -392,11 +460,14 @@ export function checkTermSet(set: TermSet, opts: CheckTermSetOptions = {}): Term
       const parentTerm = terms[parent];
       if (parentTerm !== undefined && !(narrower[parent]?.has(index) ?? false)) {
         drafts.push(
-          onEntry(
-            parentTerm,
-            "asymmetric-hierarchy",
-            `narrower: omits "${t.record.label}", which lists this entry as broader`,
-            "narrower",
+          fixed(
+            onEntry(
+              parentTerm,
+              "asymmetric-hierarchy",
+              `narrower: omits "${t.record.label}", which lists this entry as broader`,
+              "narrower",
+            ),
+            "Add it to narrower, or remove this entry from its broader.",
           ),
         );
       }
@@ -405,11 +476,14 @@ export function checkTermSet(set: TermSet, opts: CheckTermSetOptions = {}): Term
       const childTerm = terms[child];
       if (childTerm !== undefined && !(broader[child]?.has(index) ?? false)) {
         drafts.push(
-          onEntry(
-            childTerm,
-            "asymmetric-hierarchy",
-            `broader: omits "${t.record.label}", which lists this entry as narrower`,
-            "broader",
+          fixed(
+            onEntry(
+              childTerm,
+              "asymmetric-hierarchy",
+              `broader: omits "${t.record.label}", which lists this entry as narrower`,
+              "broader",
+            ),
+            "Add it to broader, or remove this entry from its narrower.",
           ),
         );
       }
@@ -461,11 +535,12 @@ export function checkTermSet(set: TermSet, opts: CheckTermSetOptions = {}): Term
     const hops = path.map((from, i) => `${String(from)}>${String(chain[i + 1])}`);
     const viaBlock = hops.find((hop) => !termEdges.has(hop));
     const startTerm = terms[start];
+    const fix = "Remove the broader value that closes the loop.";
     if (viaBlock === undefined && startTerm !== undefined) {
-      drafts.push(onEntry(startTerm, "broader-cycle", message, "broader"));
+      drafts.push(fixed(onEntry(startTerm, "broader-cycle", message, "broader"), fix));
     } else {
       const at = blockEdges.get(viaBlock ?? "");
-      if (at !== undefined) drafts.push({ rule: "broader-cycle", message, ...at });
+      if (at !== undefined) drafts.push({ rule: "broader-cycle", message, fix, ...at });
     }
   }
 
@@ -533,11 +608,14 @@ export function checkTermSet(set: TermSet, opts: CheckTermSetOptions = {}): Term
       if (parent === undefined || siblingPairs.has(pair)) continue;
       siblingPairs.add(pair);
       drafts.push(
-        onEntry(
-          t,
-          "related-siblings",
-          `related-terms: "${value}" shares the broader term "${names[parent] ?? ""}", which already relates them.`,
-          "related-terms",
+        fixed(
+          onEntry(
+            t,
+            "related-siblings",
+            `related-terms: "${value}" shares the broader term "${names[parent] ?? ""}", which already relates them.`,
+            "related-terms",
+          ),
+          "Drop the link unless it says more than the shared parent.",
         ),
       );
     }
@@ -606,7 +684,9 @@ export function checkTermSet(set: TermSet, opts: CheckTermSetOptions = {}): Term
       rule: draft.rule,
       ruleId: ruleId(draft.rule),
       severity: level,
-      message: draft.message,
+      message: withFix(draft.message, draft.fix),
+      ...(draft.fix === undefined ? {} : { key: draft.message }),
+      guidance: guidanceFor(draft.rule),
       file: draft.file,
       ...(draft.line === undefined ? {} : { line: draft.line }),
       ...(draft.id === undefined ? {} : { id: draft.id }),

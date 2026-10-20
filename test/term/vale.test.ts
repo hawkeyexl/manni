@@ -88,7 +88,15 @@ describe("runValeJson", () => {
     const alerts = await runValeJson(["x"], {}, spawn);
     expect(alerts).toEqual({
       "C:\\Users\\HAWKEY~1\\Temp\\x\\kubernetes.definition.md": [
-        { Check: "Tiny.Frob", Message: "Avoid 'frobnicate'.", Line: 1, Span: [4, 13], Severity: "error" },
+        {
+          Check: "Tiny.Frob",
+          Message: "Avoid 'frobnicate'.",
+          Line: 1,
+          Span: [4, 13],
+          Severity: "error",
+          Description: "",
+          Link: "",
+        },
       ],
     });
   });

@@ -166,9 +166,9 @@ docs/src/content/docs/term/reference/configuration.mdx:
         integrity: sha256-a2f7845ee39c9eef366455be08751280b44fd6d837956253a42e5f8c86f7a4ee
       source:
         file: src/term/core/severity.ts
-        lines: 49-54
+        lines: 94-99
         integrity: sha256-2c5a4030b11623bd661502aab5bee75d49079bba1ced2bbd57bc78d242f5af38
-        commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
+        commit-sha: f4f8bc8842fc5ab412a82024d685c1821e4153fa
     - id: respect-gitignore-flag-wins
       claim:
         lines: 70
@@ -216,25 +216,25 @@ docs/src/content/docs/term/reference/configuration.mdx:
         integrity: sha256-44ef57a62c574467369a2141e4e556b88bba96ee6875dd0337e0ae01896c92b1
       source:
         file: src/term/core/check.ts
-        lines: 69-76
+        lines: 93-100
         integrity: sha256-c15e664b5d469673982dfc26193ab31b6a727c1e62cb44e7763df296572df4a8
-        commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
+        commit-sha: f4f8bc8842fc5ab412a82024d685c1821e4153fa
     - id: ten-rules
       claim:
         integrity: sha256-0f9187f4c00efecce25491bdfd5db145ba849f863fa6b0b84823bcdbe6b8ff8a
       source:
         file: src/term/types.ts
-        lines: 433-446
+        lines: 434-447
         integrity: sha256-223481f41809d1c5a9485c4f3d5349143c76c1847da5e1a5a2a2eadfbb271a1a
-        commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
+        commit-sha: f4f8bc8842fc5ab412a82024d685c1821e4153fa
     - id: severity-off-drops-rule
       claim:
         integrity: sha256-0f9187f4c00efecce25491bdfd5db145ba849f863fa6b0b84823bcdbe6b8ff8a
       source:
         file: src/term/core/check.ts
-        lines: 603-604
+        lines: 681-682
         integrity: sha256-2f265af85f9d91efeb2ae0c4d46f04963f7dbc82990a636954e00086b5be55ab
-        commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
+        commit-sha: f4f8bc8842fc5ab412a82024d685c1821e4153fa
     - id: severity-family-levels-plus-off
       claim:
         integrity: sha256-19bf69bbaca754e83b9842320fc2402a33cccee5e1c8993bc24b9d73c3d3861e
@@ -248,9 +248,9 @@ docs/src/content/docs/term/reference/configuration.mdx:
         integrity: sha256-19bf69bbaca754e83b9842320fc2402a33cccee5e1c8993bc24b9d73c3d3861e
       source:
         file: src/term/commands/findings.ts
-        lines: 94
+        lines: 99
         integrity: sha256-aa96e5e4a89c13ae7255a517fdc1c210b848408bff13c40c90b82d628a2b24a0
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: f4f8bc8842fc5ab412a82024d685c1821e4153fa
     - id: exit-code-from-failed-files
       claim:
         integrity: sha256-19bf69bbaca754e83b9842320fc2402a33cccee5e1c8993bc24b9d73c3d3861e
@@ -264,9 +264,9 @@ docs/src/content/docs/term/reference/configuration.mdx:
         integrity: sha256-19bf69bbaca754e83b9842320fc2402a33cccee5e1c8993bc24b9d73c3d3861e
       source:
         file: src/term/core/lint.ts
-        lines: 109
+        lines: 126
         integrity: sha256-5b21693bbb8d35ffe5e571ee372c53d18ae0e04a8e550f065f57523af10e99f1
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: f4f8bc8842fc5ab412a82024d685c1821e4153fa
     - id: config-error-exit-2
       claim:
         integrity: sha256-1464b76e138882d9dcc9372af13371387edb934e96b1981dad621dc4d5deec5f
@@ -393,9 +393,9 @@ docs/src/content/docs/term/reference/configuration.mdx:
         integrity: sha256-39693505a29ceb78b2fd61ea4ce45f8979af2810504567876abb275f3ae6aecd
       source:
         file: src/term/core/check.ts
-        lines: 339-341
+        lines: 399-401
         integrity: sha256-1e7a0d9319bd8cce486fe3e632637e6981a768da9a86ad16ce2d0ebe22be1b0a
-        commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
+        commit-sha: f4f8bc8842fc5ab412a82024d685c1821e4153fa
     - id: allow-empty-flag-wins
       claim:
         lines: 69
@@ -437,9 +437,9 @@ docs/src/content/docs/term/reference/configuration.mdx:
         integrity: sha256-44ef57a62c574467369a2141e4e556b88bba96ee6875dd0337e0ae01896c92b1
       source:
         file: src/term/core/check.ts
-        lines: 210-225
-        integrity: sha256-5b9975bcff91556572a69cb35f04e8ef36b75002721d21d328774cb67e5b27e2
-        commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
+        lines: 242-262
+        integrity: sha256-cf1ac23b3840ec3176d15f55cfd60a35e593ea3869383ef0e9e1a4ba93f5409b
+        commit-sha: f4f8bc8842fc5ab412a82024d685c1821e4153fa
     - id: missing-vale-config-stops-lint
       claim:
         integrity: sha256-2e3ff5e0b533e4a07d1536c19f120adb52c52c6b279e168b872870206dcac29d
