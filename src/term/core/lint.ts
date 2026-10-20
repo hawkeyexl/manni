@@ -14,9 +14,10 @@
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import type { Guidance } from "../../shared/guidance.js";
 import type { Term, TermField, TermFinding, TermSet } from "../types.js";
 import { foldValeSeverity, proseRuleId } from "./severity.js";
-import { runValeJson } from "./vale.js";
+import { runValeJson, type ValeAlert } from "./vale.js";
 
 export interface LintTermSetOptions {
   /** Absolute; from `valeConfigPath(run.tools, run.configDir)`. */
@@ -67,6 +68,22 @@ function compareFindings(a: TermFinding, b: TermFinding): number {
   return 0;
 }
 
+/**
+ * The Vale rule behind an alert: its description and its link, as its style
+ * gives them. An empty description is none, and a link that is not http(s)
+ * goes nowhere a reader can follow.
+ */
+function valeGuidance(alert: ValeAlert): Guidance {
+  const description = alert.Description?.trim() ?? "";
+  const link = alert.Link?.trim() ?? "";
+  return {
+    id: "vale",
+    rule: alert.Check,
+    description: description === "" ? null : description,
+    guide: /^https?:\/\//i.test(link) ? link : null,
+  };
+}
+
 export async function lintTermSet(set: TermSet, opts: LintTermSetOptions = {}): Promise<TermFinding[]> {
   // Keyed by lowercased file name: Vale may print the path in another case, and
   // a case-insensitive file system would fold `API` and `api` onto one file.
@@ -108,6 +125,7 @@ export async function lintTermSet(set: TermSet, opts: LintTermSetOptions = {}): 
           ruleId: proseRuleId(alert.Check),
           severity: foldValeSeverity(alert.Severity),
           message: alert.Message,
+          guidance: valeGuidance(alert),
           file: written.term.location.file,
           line: sourceLine(written, alert.Line),
           id: written.term.id,

@@ -50,8 +50,11 @@ describe("a pinned answer", () => {
     const r = run(["check"], cwd);
     expect(r.status, r.stdout + r.stderr).toBe(0);
     expect(findings(r.stdout)).toEqual([
-      `warning: ${DOC}/docs/retry.md graph:sampleQuestion — "How many times does an upload retry by default?" does not find the section that answers it, § Retry limits, in the top 1 (it ranks 2; first is docs/retry.md § Retry a failed upload) [docs/retry.md]`,
+      `warning: docs/retry.md: "How many times does an upload retry by default?" does not find the section that answers it, § Retry limits, in the top 1 (it ranks 2; first is docs/retry.md § Retry a failed upload)`,
     ]);
+    expect(r.stdout).toContain(
+      `\n  at ${DOC}/docs/retry.md graph:sampleQuestion\n`,
+    );
     expect(r.stdout).toContain("0 errors, 1 warning, 0 notices");
   });
 
@@ -68,6 +71,7 @@ describe("a pinned answer", () => {
         focusNode: `${DOC}/docs/retry.md`,
         path: "https://hawkeyexl.github.io/manni/graph/ns#sampleQuestion",
         docs: ["docs/retry.md"],
+        guidance: null,
       },
     ]);
   });
@@ -93,8 +97,8 @@ describe("a pinned answer", () => {
     const r = run(["check"], cwd);
     expect(r.status, r.stdout + r.stderr).toBe(0);
     expect(findings(r.stdout)).toEqual([
-      `warning: ${DOC}/docs/guide.html graph:sampleQuestion — "How many times does an upload retry by default?" does not find the section that answers it, § Retry limits, in the top 1 (it ranks 2; first is docs/guide.html § Retry a failed upload) [docs/guide.html]`,
-      `notice: ${DOC}/docs/guide.html graph:sampleQuestion — the answer to "How do I resume a paused upload?" moved from lines 16 to 19, so manni graph fill --fields sample-questions re-pins it. [docs/guide.html]`,
+      `warning: docs/guide.html: "How many times does an upload retry by default?" does not find the section that answers it, § Retry limits, in the top 1 (it ranks 2; first is docs/guide.html § Retry a failed upload)`,
+      `notice: docs/guide.html: the answer to "How do I resume a paused upload?" moved from lines 16 to 19, so manni graph fill --fields sample-questions re-pins it.`,
     ]);
   });
 });
@@ -105,8 +109,11 @@ describe("an answer that moved or changed", () => {
     const r = run(["check"], cwd);
     expect(r.status).toBe(0);
     expect(findings(r.stdout)).toEqual([
-      `notice: ${DOC}/docs/upload.md graph:sampleQuestion — the answer to "How large may an upload be?" moved from lines 4-5 to 7-8, so manni graph fill --fields sample-questions re-pins it. [docs/upload.md]`,
+      `notice: docs/upload.md: the answer to "How large may an upload be?" moved from lines 4-5 to 7-8, so manni graph fill --fields sample-questions re-pins it.`,
     ]);
+    expect(r.stdout).toContain(
+      `re-pins it.\n  at ${DOC}/docs/upload.md graph:sampleQuestion\n`,
+    );
   });
 
   it("warns when two places match", () => {
@@ -114,7 +121,7 @@ describe("an answer that moved or changed", () => {
     const r = run(["check"], cwd);
     expect(r.status).toBe(0);
     expect(findings(r.stdout)).toEqual([
-      `warning: ${DOC}/docs/upload.md graph:sampleQuestion — the answer to "How large may an upload be?" moved, and lines 4 and 8 both match, so pin one of them by hand. [docs/upload.md]`,
+      `warning: docs/upload.md: the answer to "How large may an upload be?" moved, and lines 4 and 8 both match, so pin one of them by hand.`,
     ]);
   });
 
@@ -123,7 +130,7 @@ describe("an answer that moved or changed", () => {
     const r = run(["check"], cwd);
     expect(r.status).toBe(0);
     expect(findings(r.stdout)).toEqual([
-      `warning: ${DOC}/docs/upload.md graph:sampleQuestion — lines 4-5 no longer hold the answer to "How large may an upload be?" as pinned, so re-pair it with manni graph fill --fields sample-questions and review it. [docs/upload.md]`,
+      `warning: docs/upload.md: lines 4-5 no longer hold the answer to "How large may an upload be?" as pinned, so re-pair it with manni graph fill --fields sample-questions and review it.`,
     ]);
 
     const strict = run(["check"], built("changed-answer", severity("error")));
@@ -144,8 +151,8 @@ describe("an answer that moved or changed", () => {
 describe("review state", () => {
   it("reports a drafted question at notice, whatever the knob says", () => {
     const expected = [
-      `notice: ${DOC}/docs/upload.md graph:sampleQuestion — "Which archive formats can I upload?" does not find this page in the top 1 (it ranks 2; first is docs/archive.md) (drafted, not reviewed) [docs/upload.md]`,
-      `notice: ${DOC}/docs/upload.md graph:sampleQuestion — lines 4 no longer hold the answer to "How large may an upload be?" as pinned, so re-pair it with manni graph fill --fields sample-questions and review it. (drafted, not reviewed) [docs/upload.md]`,
+      `notice: docs/upload.md: "Which archive formats can I upload?" does not find this page in the top 1 (it ranks 2; first is docs/archive.md) (drafted, not reviewed)`,
+      `notice: docs/upload.md: lines 4 no longer hold the answer to "How large may an upload be?" as pinned, so re-pair it with manni graph fill --fields sample-questions and review it. (drafted, not reviewed)`,
     ];
     const r = run(["check"], built("drafted"));
     expect(r.status).toBe(0);
@@ -163,7 +170,7 @@ describe("review state", () => {
     const r = run(["check"], built("drafted-pin"));
     expect(r.status).toBe(0);
     expect(findings(r.stdout)).toEqual([
-      `notice: ${DOC}/docs/retry.md graph:sampleQuestion — "How many times does an upload retry by default?" does not find the section that answers it, § Retry limits, in the top 1 (it ranks 2; first is docs/retry.md § Retry a failed upload) (answer not reviewed) [docs/retry.md]`,
+      `notice: docs/retry.md: "How many times does an upload retry by default?" does not find the section that answers it, § Retry limits, in the top 1 (it ranks 2; first is docs/retry.md § Retry a failed upload) (answer not reviewed)`,
     ]);
   });
 });

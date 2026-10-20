@@ -2,7 +2,7 @@
 title: Graders reference
 description: Every grader kind, its options, and what it reports.
 type: reference
-last-updated: 2026-10-04
+last-updated: 2026-10-20
 ---
 
 A grader decides pass or fail for one eval on one page. Verified against `src/docevals/graders/registry.ts`
@@ -37,8 +37,19 @@ Deterministic evals fail only on **`error`**-severity findings. Warnings and not
 
 Runs any executable. `{file}` in an argument expands to the page's absolute path, and the command
 also receives that path in the `MANNI_DOCEVALS_FILE` environment variable. The exit code decides the
-verdict. Any code outside `success-exit-codes` fails the eval, and the finding message is
-`Exit code N` followed by the tail of the command's output.
+verdict. Any code outside `success-exit-codes` fails the eval. The finding message says what
+happened and what to do:
+
+| Case | Message |
+|---|---|
+| Exit code outside `success-exit-codes` | `Exit code N. Edit the page until the command passes, or fix the command if it is broken. Output: <tail>` |
+| Killed by a signal | `Killed before exiting. Edit the page until the command passes, or fix the command if it is broken. Output: <tail>` |
+| Timed out | `Command timed out after <ms>ms. Fix the command, or raise the eval's timeout-ms if the check is slow by design.` |
+| Failed to start | `Failed to run command "<cmd>": <error>. Fix the eval's command.` |
+| No command | `No command to run, because the script is not generated. Run manni docevals generate, or manni docevals run with a provider configured.` |
+
+`Output:` and the tail are left out when the command printed nothing. The last three are the
+`diagnostic` findings described below.
 
 | Option | Default | Notes |
 |---|---|---|
@@ -81,12 +92,16 @@ Any other option key is a configuration error.
     pattern: "npm i -D @hawkeyexl/manni"
 ```
 
-| Rule id | Meaning |
-|---|---|
-| `regex/not-found` | `match: contains`, and the pattern does not appear. |
-| `regex/found` | `match: not-contains`, and the pattern appears. Carries the first match's line. |
-| `regex/count` | `match: count:N`, and the pattern matched some other number of times. |
-| `regex/unreadable-target` | The `target` the eval names could not be read for this page. |
+| Rule id | Meaning | Message |
+|---|---|---|
+| `regex/not-found` | `match: contains`, and the pattern does not appear. | `Pattern /P/F not found in body. Add the text the eval asks for.` |
+| `regex/found` | `match: not-contains`, and the pattern appears. Carries the first match's line. | `Pattern /P/F found in body, expected absent. Remove or reword the matching text.` |
+| `regex/count` | `match: count:N`, and the pattern matched some other number of times. | `Pattern /P/F matched 3 time(s) in body, expected 1. Edit the page so it matches 1 time(s).` |
+| `regex/unreadable-target` | The `target` the eval names could not be read for this page. | `target file "x" could not be read (ENOENT). The eval's target is wrong. Fix the eval, or tell its owner.` |
+
+`/P/F` is the pattern and its flags. `body` names the
+[`target`](/manni/docevals/reference/frontmatter/), and reads `raw`, `frontmatter` or
+`file <path>` for the other targets.
 
 A pattern that does not compile is a **configuration** error, not a page failure. Blaming the page
 for the eval's own bug is how a corpus learns to ignore its findings.

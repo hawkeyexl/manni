@@ -53,6 +53,7 @@ export async function runCheck(opts: CheckOptions): Promise<TermReport> {
   return {
     findings: reportedFindings(reported, origin),
     results: reported,
+    origin,
     summary: summarize(reported, baseline),
     frame,
     terms: set.terms.length,

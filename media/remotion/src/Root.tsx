@@ -22,6 +22,7 @@ import { beats as siteBeats, totalFrames as siteTotalFrames, TYPING_MS as siteTy
 import { beats as tbxBeats, totalFrames as tbxTotalFrames, TYPING_MS as tbxTypingMs } from "./tbx/beats";
 import { beats as conceptsBeats, totalFrames as conceptsTotalFrames, TYPING_MS as conceptsTypingMs } from "./concepts/beats";
 import { beats as graphFormatsBeats, totalFrames as graphFormatsTotalFrames, TYPING_MS as graphFormatsTypingMs } from "./graph-formats/beats";
+import { beats as findingsBeats, totalFrames as findingsTotalFrames, TYPING_MS as findingsTypingMs } from "./findings/beats";
 
 /** sidecar-url-1x1: 23 px / 75 columns, derived in media/sidecar-url-1x1.script.md. */
 const DemoUrl: React.FC = () => <DemoView beats={urlBeats} fontPx={23} linePx={32} cols={75} />;
@@ -67,6 +68,13 @@ const DemoGraphImpact: React.FC = () => <DemoView beats={graphImpactBeats} fontP
  * (media/graph/graph-formats-cols.mjs). Ligatures off: a terminal prints `--` and `//` as two glyphs.
  */
 const DemoGraphFormats: React.FC = () => <DemoView beats={graphFormatsBeats} fontPx={27} linePx={38} cols={64} typingMs={graphFormatsTypingMs} ligatures={false} />;
+
+/**
+ * findings-say-what-to-do-1x1: 22 px / 78 columns, derived in media/findings-say-what-to-do-1x1.script.md
+ * (media/capture-findings/cols.mjs). 78 columns keeps every Guide URL on one row. Ligatures off:
+ * the skeleton's `---` fences would draw as one rule.
+ */
+const DemoFindings: React.FC = () => <DemoView beats={findingsBeats} fontPx={22} linePx={31} cols={78} typingMs={findingsTypingMs} ligatures={false} />;
 
 /**
  * test-run-1x1: 27 px / 64 columns, derived in media/test-run-1x1.script.md
@@ -221,6 +229,14 @@ export const Root: React.FC = () => (
       height={1080}
       fps={FPS}
       durationInFrames={siteTotalFrames}
+    />
+    <Composition
+      id="FindingsDemo"
+      component={DemoFindings}
+      width={1080}
+      height={1080}
+      fps={FPS}
+      durationInFrames={findingsTotalFrames}
     />
     <Composition
       id="GraphFormatsDemo"

@@ -6,44 +6,16 @@
  * message with the JSON Pointer of the field, `(root)` for a finding about a
  * whole entry. This renderer replaces those three with the term rule's own
  * description, a link to its section of the rules page, and the finding's own
- * message.
+ * message. Each result also carries the rule's guidance, in its message and
+ * in `properties.guidance`.
  */
 import { renderSarif } from "../../meta/index.js";
-import { RULE_ID_PREFIX, isTermRule } from "../core/severity.js";
+import { guidanceLines, type Guidance } from "../../shared/guidance.js";
+import { RULE_ID_PREFIX, guidanceFor, isTermRule } from "../core/severity.js";
 import type { TermReport } from "../commands/findings.js";
-import { TERM_FIELDS, type TermRule } from "../types.js";
+import { TERM_FIELDS } from "../types.js";
 
 const INFORMATION_URI = "https://hawkeyexl.github.io/manni/term/";
-
-/** The rules reference, whose sections are anchored by rule name. */
-const RULES_URI = "https://hawkeyexl.github.io/manni/term/reference/rules/";
-
-/** What each `check` rule is, as the rules reference's table says it. */
-const RULE_DESCRIPTIONS: Readonly<Record<TermRule, string>> = {
-  "undefined-term": "A page's concepts: names no entry, by label, id or alt-label.",
-  "duplicate-id": "Two entries share an id.",
-  "label-collision": "Two entries claim the same preferred label, ignoring case.",
-  "alt-label-collision": "An entry's alt-label is another entry's preferred label, ignoring case.",
-  "dangling-reference": "A value of broader, narrower, related-terms or see names no entry, by label or by id.",
-  "broader-cycle": "A chain of broader returns to where it started.",
-  "see-not-empty": "An entry with see also carries a definition.",
-  "missing-definition": "An entry has neither a definition nor see.",
-  "conflicting-matches": "One IRI is listed under two of an entry's match kinds.",
-  "asymmetric-hierarchy": "A names B as broader, and B omits A from narrower, or the reverse.",
-  "alt-label-reference": "A page's concepts: names an entry by one of its alt-labels.",
-  "abstract-too-long": "An abstract is longer than term.abstractMaxLength.",
-  "unused-term": "No page's concepts: names the entry.",
-  "hierarchy-outside-termbase":
-    "A page's graph: block gives a term a broader, narrower or related concept its own entry does not list.",
-  "label-overlap": "A hidden-label or alt-label repeats one of the entry's own names, or a hidden-label is another entry's label or alt-label.",
-  "asymmetric-related": "A names B in related-terms, and B omits A.",
-  "related-in-hierarchy": "A related term is also broader or narrower than the entry, at any depth.",
-  "ambiguous-alt-label": "Two entries share an alt-label, ignoring case.",
-  "deprecated-label": "The entry's label is deprecated or superseded in its designations.",
-  "related-siblings": "Two related terms share a broader term.",
-  "orphan-term": "An entry has no broader, narrower or related term, in a termbase with a hierarchy.",
-  "keyword-candidate": "A free keyword is on several pages and names no term.",
-};
 
 const PROSE_PREFIX = `${RULE_ID_PREFIX}/prose/`;
 
@@ -57,25 +29,43 @@ export const FIELD_LABEL = new RegExp(`^(?:\\(root\\)|/(?:${TERM_FIELDS.join("|"
 interface SarifRule {
   id: string;
   shortDescription: { text: string };
+  fullDescription?: { text: string };
   helpUri?: string;
 }
 
 interface SarifLog {
   runs: {
     tool: { driver: { informationUri: string; rules: SarifRule[] } };
-    results: { message: { text: string } }[];
+    results: { ruleId: string; message: { text: string }; properties?: { guidance?: Guidance } }[];
   }[];
 }
 
-/** A rule as the term tool describes it: a check rule links its section, a Vale rule links nothing manni documents. */
-function describe(rule: SarifRule): SarifRule {
+/**
+ * A rule as the term tool describes it. A check rule links its section of the
+ * rules page. A Vale rule takes its description and link from the first alert
+ * of that check, when Vale gave them.
+ */
+function describe(rule: SarifRule, vale: ReadonlyMap<string, Guidance>): SarifRule {
   if (rule.id.startsWith(PROSE_PREFIX)) {
     const check = rule.id.slice(PROSE_PREFIX.length);
-    return { id: rule.id, shortDescription: { text: `Vale's ${check} rule flagged the prose of an entry's field.` } };
+    const guidance = vale.get(rule.id);
+    return {
+      id: rule.id,
+      shortDescription: { text: `Vale's ${check} rule flagged the prose of an entry's field.` },
+      ...(guidance?.description == null ? {} : { fullDescription: { text: guidance.description } }),
+      ...(guidance?.guide == null ? {} : { helpUri: guidance.guide }),
+    };
   }
   const name = rule.id.slice(RULE_ID_PREFIX.length + 1);
   if (!isTermRule(name)) return rule;
-  return { id: rule.id, shortDescription: { text: RULE_DESCRIPTIONS[name] }, helpUri: `${RULES_URI}#${name}` };
+  const { description, guide } = guidanceFor(name);
+  const text = description ?? "";
+  return {
+    id: rule.id,
+    shortDescription: { text },
+    fullDescription: { text },
+    ...(guide === null ? {} : { helpUri: guide }),
+  };
 }
 
 export function renderFindingsSarif(report: TermReport, opts: { onNotice?: (message: string) => void } = {}): string {
@@ -83,12 +73,27 @@ export function renderFindingsSarif(report: TermReport, opts: { onNotice?: (mess
     renderSarif(report.results, {
       frame: report.frame,
       ...(opts.onNotice === undefined ? {} : { onNotice: opts.onNotice }),
+      resultProperties: (error) => {
+        const guidance = report.origin.get(error)?.guidance;
+        return guidance == null ? undefined : { guidance };
+      },
     }),
   ) as SarifLog;
   for (const run of log.runs) {
+    // The first alert of each Vale check speaks for its rule.
+    const vale = new Map<string, Guidance>();
+    for (const result of run.results) {
+      const guidance = result.properties?.guidance;
+      if (guidance !== undefined && result.ruleId.startsWith(PROSE_PREFIX) && !vale.has(result.ruleId)) {
+        vale.set(result.ruleId, guidance);
+      }
+    }
     run.tool.driver.informationUri = INFORMATION_URI;
-    run.tool.driver.rules = run.tool.driver.rules.map(describe);
-    for (const result of run.results) result.message.text = result.message.text.replace(FIELD_LABEL, "");
+    run.tool.driver.rules = run.tool.driver.rules.map((rule) => describe(rule, vale));
+    for (const result of run.results) {
+      const text = result.message.text.replace(FIELD_LABEL, "");
+      result.message.text = [text, ...guidanceLines(result.properties?.guidance)].join("\n");
+    }
   }
   return JSON.stringify(log, null, 2);
 }

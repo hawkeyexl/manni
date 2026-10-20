@@ -40,29 +40,69 @@ describe.skipIf(!gitAvailable())("runStatus", () => {
       { name: "docevals", status: "in-play", reason: "docevals: section" },
       { name: "term", status: "in-play", reason: "1 term" },
       { name: "graph", status: "in-play", reason: "graph: section" },
-      { name: "a11y", status: "not-checked", reason: "run manni site preview, then manni a11y check" },
-      { name: "test", status: "not-checked", reason: "run manni test run with Doc Detective installed" },
-      { name: "tracevals", status: "not-checked", reason: "run manni tracevals run over sessions" },
+      { name: "a11y", status: "not-checked", reason: "needs a running site and a browser", next: "Run manni site preview, then manni a11y check." },
+      { name: "test", status: "not-checked", reason: "runs the shell steps the pages carry", next: "Run manni test run with Doc Detective installed." },
+      { name: "tracevals", status: "not-checked", reason: "judges recorded sessions with a model", next: "Run manni tracevals run over sessions, or add tracevals.runtime to judge each turn." },
     ]);
   });
 
   it("never runs test: Doc Detective executes the pages' steps, so it says what to run instead", async () => {
     dir = fixtureRepo("only-graph");
     const report = await runStatus({ cwd: dir });
-    expect(report.domains.find((d) => d.name === "test")).toEqual({
-      name: "test",
-      status: "not-checked",
-      reason: "run manni test run with Doc Detective installed",
-    });
+    expect(report.domains.find((d) => d.name === "test")).toEqual({ name: "test", status: "not-checked", reason: "runs the shell steps the pages carry", next: "Run manni test run with Doc Detective installed." });
   });
 
-  it("names what is not set up, and why", async () => {
+  it("names what is not set up, why, and what would set it up", async () => {
     dir = fixtureRepo("only-graph");
     const report = await runStatus({ cwd: dir });
-    expect(statusOf(report, "graph")).toBe("in-play");
-    for (const name of ["meta", "cite", "lint", "docevals", "term"]) {
-      expect(statusOf(report, name)).toBe("not-set-up");
-    }
+    expect(report.domains.find((d) => d.name === "graph")).toEqual({
+      name: "graph",
+      status: "in-play",
+      reason: "graph: section",
+    });
+    expect(report.domains.filter((d) => d.status === "not-set-up")).toEqual([
+      {
+        name: "meta",
+        status: "not-set-up",
+        reason: "no meta: section",
+        next: "Add a meta: section that names your schemas. manni meta schemas lists the built-in ones.",
+      },
+      {
+        name: "cite",
+        status: "not-set-up",
+        reason: "no page carries citations",
+        next: "Pin a sentence to its source with manni cite add.",
+      },
+      {
+        name: "lint",
+        status: "not-set-up",
+        reason: "no lint: section",
+        next: "Add a lint: section. manni lint templates lists the templates it can apply.",
+      },
+      {
+        name: "docevals",
+        status: "not-set-up",
+        reason: "no page resolves any evals",
+        next: "Add a docevals: section, or declare evals in a page's frontmatter.",
+      },
+      {
+        name: "term",
+        status: "not-set-up",
+        reason: "no terms in any collection",
+        next: "Add a page with type: term to a collection.",
+      },
+    ]);
+  });
+
+  it("names graph init as the next step when graph: is absent", async () => {
+    dir = fixtureRepo("only-docevals");
+    const report = await runStatus({ cwd: dir });
+    expect(report.domains.find((d) => d.name === "graph")).toEqual({
+      name: "graph",
+      status: "not-set-up",
+      reason: "no graph: section",
+      next: "Run manni graph init to add a starter graph: section.",
+    });
   });
 
   it("sets nothing up when the config declares no collections", async () => {
@@ -72,7 +112,12 @@ describe.skipIf(!gitAvailable())("runStatus", () => {
     const report = await runStatus({ cwd: dir });
     expect(report.collections).toEqual([]);
     for (const d of report.domains.filter((x) => x.status !== "not-checked")) {
-      expect(d).toEqual({ name: d.name, status: "not-set-up", reason: "no collections: in manni.config.yaml" });
+      expect(d).toEqual({
+        name: d.name,
+        status: "not-set-up",
+        reason: "no collections: in manni.config.yaml",
+        next: "Add a collections: entry that names your docs.",
+      });
     }
   });
 
@@ -84,6 +129,7 @@ describe.skipIf(!gitAvailable())("runStatus", () => {
     const row = report.domains.find((d) => d.name === "docevals");
     expect(row?.status).toBe("unknown");
     expect(row?.reason).toMatch(/^manni docevals run could not run: /);
+    expect(row?.next).toBe("Run manni docevals run to see the whole error.");
   });
 
   it("puts tracevals in play when tracevals.runtime exists, naming both models", async () => {
@@ -126,6 +172,7 @@ tracevals:
     const row = report.domains.find((d) => d.name === "tracevals");
     expect(row?.status).toBe("unknown");
     expect(row?.reason).toMatch(/^manni tracevals check could not run: .*unknown key "conformance"; it is now "runtime"$/);
+    expect(row?.next).toBe("Fix what the reason names, then run manni status again.");
   });
 
   it("leaves tracevals not checked without tracevals.runtime", async () => {
@@ -133,11 +180,7 @@ tracevals:
     const config = join(dir, "manni.config.yaml");
     writeFileSync(config, `${readFileSync(config, "utf8")}\ntracevals:\n  provider: mock\n`);
     const report = await runStatus({ cwd: dir });
-    expect(report.domains.at(-1)).toEqual({
-      name: "tracevals",
-      status: "not-checked",
-      reason: "run manni tracevals run over sessions",
-    });
+    expect(report.domains.at(-1)).toEqual({ name: "tracevals", status: "not-checked", reason: "judges recorded sessions with a model", next: "Run manni tracevals run over sessions, or add tracevals.runtime to judge each turn." });
   });
 
   it("counts the pages whose entries a manifest keeps, and not a page with a marker alone", async () => {
@@ -179,21 +222,50 @@ describe("renderStatus", () => {
     collections: [{ name: "site", files: 142 }],
     domains: [
       { name: "meta", status: "in-play", reason: "meta: section" },
-      { name: "lint", status: "not-set-up", reason: "no lint: section" },
-      { name: "tracevals", status: "not-checked", reason: "run manni tracevals run over sessions" },
+      { name: "lint", status: "not-set-up", reason: "no lint: section", next: "Add a lint: section." },
+      { name: "tracevals", status: "not-checked", reason: "judges recorded sessions with a model", next: "Run manni tracevals run." },
     ],
   };
 
-  it("pretty: the header, then one row per domain", () => {
+  it("pretty: the header, then one row per domain, each next step under its row", () => {
     expect(renderStatus(report, "pretty")).toBe(
       [
         "manni 4.4.0   config manni.config.yaml   collection site (142 files)",
         "",
         "meta       in play       meta: section",
         "lint       not set up    no lint: section",
-        "tracevals  not checked   run manni tracevals run over sessions",
+        "                         Add a lint: section.",
+        "tracevals  not checked   judges recorded sessions with a model",
+        "                         Run manni tracevals run.",
       ].join("\n"),
     );
+  });
+
+  it("pretty: a next step shared by a run of rows prints once, under the last", () => {
+    const next = "Add a collections: entry that names your docs.";
+    const bare: StatusReport = {
+      ...report,
+      domains: [
+        { name: "meta", status: "not-set-up", reason: "no collections: in manni.config.yaml", next },
+        { name: "cite", status: "not-set-up", reason: "no collections: in manni.config.yaml", next },
+        { name: "a11y", status: "not-checked", reason: "needs a running site and a browser", next: "Run it." },
+      ],
+    };
+    expect(renderStatus(bare, "pretty").split("\n").slice(2)).toEqual([
+      "meta       not set up    no collections: in manni.config.yaml",
+      "cite       not set up    no collections: in manni.config.yaml",
+      `                         ${next}`,
+      "a11y       not checked   needs a running site and a browser",
+      "                         Run it.",
+    ]);
+  });
+
+  it("pretty without next steps, as the SessionStart briefing prints it", () => {
+    expect(renderStatus(report, "pretty", { next: false }).split("\n").slice(2)).toEqual([
+      "meta       in play       meta: section",
+      "lint       not set up    no lint: section",
+      "tracevals  not checked   judges recorded sessions with a model",
+    ]);
   });
 
   it("pretty: tracevals judging each turn, and the model host under it", () => {

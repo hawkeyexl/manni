@@ -13,7 +13,7 @@ next-steps: ["a11y-get-started", "a11y", "a11y-reference-cli"]
 related-pages: ["meta-fix"]
 sample-questions: ["How do I read a manni a11y annotation?", "How do I reproduce an accessibility failure locally?", "Why does manni a11y have no --fix?"]
 graph: { label: "Fix a failing check", type: troubleshooting }
-last-updated: 2026-09-17
+last-updated: 2026-10-20
 tags:
   - accessibility
   - troubleshooting
@@ -46,13 +46,15 @@ failure summaries are cut with `…`.
 This is what the job left on the run:
 
 ```
-::error title=a11y/image-alt::Images must have alternative text — 1 node on http://127.0.0.1:4173/orphan.html (https://dequeuniversity.com/rules/axe/4.13/image-alt?application=playwright)
+::error title=a11y/image-alt::Images must have alternative text: 1 node on http://127.0.0.1:4173/orphan.html.%0Aimg  → Fix any of the following: Element does not have an alt attribute; …%0A  <img src="y.png">%0Aaxe-core 4.13.0 image-alt: Ensure <img> elements have alternative text or a role of none or presentation%0AGuide: https://dequeuniversity.com/rules/axe/4.13/image-alt?application=playwright
 ```
 
 {/* cite annotation-title-message-helpurl */}
-Three things are in that line. `image-alt` is the axe rule. `orphan.html` is the
-published page it fired on. The URL at the end is the rule's page on Deque
-University, which explains the rule itself rather than your page.
+GitHub shows each `%0A` as a line break. `image-alt` is the axe rule, and
+`orphan.html` is the published page it fired on. The next two lines name the
+element, say what to change, and print its html. The last two say what the rule
+checks and link its page on Deque University, which explains the rule itself
+rather than your page.
 
 {/* cite annotation-no-file-line */}
 There is no file and no line number, because the check saw a rendered URL rather
@@ -72,8 +74,11 @@ npx @hawkeyexl/manni a11y check http://127.0.0.1:4173/orphan.html --no-crawl
 ```
 Checked 1 of 1 pages (no crawl)
 ✗ http://127.0.0.1:4173/orphan.html  score 94  1 error
-    error  image-alt (axe: critical)  1 node  Images must have alternative text  https://dequeuniversity.com/rules/axe/4.13/image-alt?application=playwright
+    error  image-alt (axe: critical)  1 node  Images must have alternative text
+      axe-core 4.13.0 image-alt: Ensure <img> elements have alternative text or a role of none or presentation
+      Guide: https://dequeuniversity.com/rules/axe/4.13/image-alt?application=playwright
       img  → Fix any of the following: Element does not have an alt attribute; …
+        <img src="y.png">
 
 1 violation on 1 of 1 pages
 ```
@@ -90,12 +95,12 @@ the detail, including how to serve a build.
 | Rule id | `image-alt` | Names the rule in one token. Search your templates for the pattern it describes, and use it when you talk about the finding. |
 | Selector | `img` | The element that failed, as a CSS selector. Match it against the rendered page to find the component or partial that emits it. |
 | Failure summary | `Element does not have an alt attribute; …` | axe's statement of what is wrong with this element. It lists every condition that would have satisfied the rule. |
-| Help URL | The Deque University link | Explains the rule, why it exists, and the accepted ways to satisfy it. Read it when the summary alone is not enough. |
+| Guide | The Deque University link | Explains the rule, why it exists, and the accepted ways to satisfy it. Read it when the summary alone is not enough. |
 
 {/* cite pretty-max-three-nodes */}
-The pretty output prints the first three failing elements per rule, and
-`(+N more)` past three. When you need every element, or the outer HTML of each
-one, use `--format json`:
+The pretty output prints the first three failing elements per rule, each with
+its html, and `(+N more)` past three. When you need every element, use
+`--format json`:
 
 ```json
 {
@@ -110,7 +115,13 @@ one, use `--format json`:
       "html": "<img src=\"y.png\">",
       "summary": "Fix any of the following:\n  Element does not have an alt attribute\n  …"
     }
-  ]
+  ],
+  "guidance": {
+    "id": "axe-core 4.13.0",
+    "rule": "image-alt",
+    "description": "Ensure <img> elements have alternative text or a role of none or presentation",
+    "guide": "https://dequeuniversity.com/rules/axe/4.13/image-alt?application=playwright"
+  }
 }
 ```
 

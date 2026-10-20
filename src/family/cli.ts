@@ -127,10 +127,11 @@ export function buildCheck(): Command {
       [
         "",
         "Examples:",
-        "  manni check                       # every in-play check, the CI gate",
-        "  manni check docs/limits.md        # per-file checks on one page",
-        "  manni check -f github             # in a GitHub workflow",
-        "  manni check docs/ -f json         # scripting form",
+        "  manni check                         # every in-play check, the CI gate",
+        "  manni check docs/limits.md          # per-file checks on one page",
+        "  manni check -f github               # in a GitHub workflow",
+        "  manni check -f sarif > manni.sarif  # one SARIF log for code scanning",
+        "  manni check docs/ -f json           # scripting form",
       ].join("\n"),
     )
     .action(async (paths: string[], options: CheckCliOptions) => {
@@ -177,7 +178,8 @@ export function buildStatus(): Command {
           const report = await runStatus({ cwd: resolve(envelope.cwd ?? process.cwd()), ...configOption });
           // The agent lines promise checks, so they need a domain in play to be true.
           const lines = report.domains.some((d) => d.status === "in-play") ? `\n\n${agentLines(report)}` : "";
-          process.stdout.write(`${renderStatus(report, "pretty")}${lines}\n`);
+          // The next steps are advice for whoever owns the config, not the agent.
+          process.stdout.write(`${renderStatus(report, "pretty", { next: false })}${lines}\n`);
           exportGeneratedBy(envelope);
         } catch {
           // No config, or one that cannot be read: the session starts without a word.

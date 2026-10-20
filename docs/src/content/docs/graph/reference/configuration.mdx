@@ -10,7 +10,7 @@ concepts:
   - base IRI
   - turn
   - confidence
-last-updated: 2026-10-19
+last-updated: 2026-10-20
 ---
 
 manni graph reads one file, `manni.config.yaml`, and one key in it, `graph:`. Two
@@ -130,7 +130,7 @@ Nothing matching is **exit 2**:
 
 ```console
 $ manni graph build
-manni: No input files matched: docs/**/*.rst (cwd: /repo)
+manni: No input files matched: docs/**/*.rst (cwd: /repo). Fix the globs, or pass --allow-empty if matching nothing is expected.
 ```
 
 ## Where the model comes from
@@ -188,7 +188,7 @@ Routes are corpus-defining, so they are config-only. There is no flag.
 
 | Key | Type | Default | What it does |
 |---|---|---|---|
-| `shapes` | list of paths | `[]` | The SHACL shapes `graph check` validates the built graph against. Empty means the shapes shipped in the package, `shapes/graph/shapes-1.1.0.ttl`. Naming shapes here **replaces** the bundled set rather than adding to it, so list the bundled file too when you mean to extend it. `--shapes` overrides this for one run. |
+| `shapes` | list of paths | `[]` | The SHACL shapes `graph check` validates the built graph against. Empty means the shapes shipped in the package, `shapes/graph/shapes-1.1.1.ttl`. Naming shapes here **replaces** the bundled set rather than adding to it, so list the bundled file too when you mean to extend it. `--shapes` overrides this for one run. |
 | `questions.top` | integer, 1 or more | `5` | How high a page must rank for each of its own `sample-questions`, or the section holding a pinned answer. `graph check` asks each question through the retrieval `graph search` uses, and reports one outside the top results. |
 | `questions.severity` | `notice`, `warning`, `error` or `off` | `warning` | The severity of a question that does not find its page or its answer, and of an answer whose lines changed. A question asked twice, and an answer whose page is gone, take it too. A drafted question or pin reports at `notice` instead. `error` fails the run. `off` reports none of these, and still reports a moved answer. |
 | `questions.foundThreshold` | number 0–100, or `null` | `null` | `graph check` exits 1 when the percentage of reviewed questions found falls below this. It is the same scale as `stats.coverageThreshold`. `questions.severity` does not touch it. `null` sets no rate gate. |

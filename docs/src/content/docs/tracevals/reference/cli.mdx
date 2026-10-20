@@ -10,7 +10,7 @@ lifecycle: published
 applies-to: ["domain:tracevals"]
 sample-questions: ["What flags does manni tracevals run take?", "What does --newer-than accept?"]
 graph: { label: "CLI reference", type: reference }
-last-updated: 2026-10-11
+last-updated: 2026-10-20
 ---
 
 {/* The command, argument, and option tables on this page are drift-checked
@@ -101,9 +101,13 @@ claude-code · claude-opus-4-8 · 4 turn(s) · C:\work\demo-project
 
   PASS   fix-bug › used-read
   FAIL   fix-bug › forbidden-tool
-         [error] tool Bash was used 1 time(s) but must not be
+         [error] tool Bash was used 1 time(s) but must not be. Redo the session work so it holds, or fix the eval if the artifact does not ask for this.
+         test/tracevals/fixtures/project/.claude/skills/fix-bug/SKILL.md forbidden-tool: The session never ran shell commands; this skill is edit-only.
+         Guide: https://hawkeyexl.github.io/manni/tracevals/triage/
   REVIEW fix-bug › refactor-preserved-intent
-         awaiting human review
+         Awaiting human review. Read the session against the assertion and decide.
+         test/tracevals/fixtures/project/.claude/skills/fix-bug/SKILL.md refactor-preserved-intent: The fix addressed the reported bug rather than working around it.
+         Guide: https://hawkeyexl.github.io/manni/tracevals/triage/
   SKIP   fix-bug › eval-5
          ai evals skipped (deterministic-only run)
 

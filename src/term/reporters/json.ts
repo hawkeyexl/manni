@@ -31,7 +31,11 @@ export function renderFindingsJson(report: TermReport): string {
   const count = (severity: string): number => report.findings.filter((f) => f.severity === severity).length;
   return JSON.stringify(
     {
-      findings: report.findings.map((finding) => ({ ...finding, file: displayPath(finding.file, report.cwd) })),
+      // `key` is the baseline's identity for a finding, not something it says.
+      findings: report.findings.map(({ key: _identity, ...finding }) => ({
+        ...finding,
+        file: displayPath(finding.file, report.cwd),
+      })),
       summary: {
         terms: report.terms,
         references: report.references,

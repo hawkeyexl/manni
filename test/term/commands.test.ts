@@ -11,7 +11,8 @@ import { dirname, join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { runCheck } from "../../src/term/commands/check.js";
 import { listFormats } from "../../src/term/commands/formats.js";
-import { closestName, findTerm, runGet } from "../../src/term/commands/get.js";
+import { closestName } from "../../src/shared/closest-name.js";
+import { findTerm, runGet } from "../../src/term/commands/get.js";
 import { runLint } from "../../src/term/commands/lint.js";
 import { runList } from "../../src/term/commands/list.js";
 import { formatChoice } from "../../src/term/commands/run.js";
@@ -247,15 +248,20 @@ describe("check", () => {
       [
         "docs/guides/fitting.md:3",
         '  warning manni:term/alt-label-reference  concepts: "PAL" is an alt-label of "progressive lens", so name the label.',
+        `${" ".repeat(41)}manni:term alt-label-reference: A page's concepts: names an entry by one of its alt-labels.`,
+        `${" ".repeat(41)}Guide: https://hawkeyexl.github.io/manni/term/reference/rules/#alt-label-reference`,
         '  error  manni:term/undefined-term       concepts: "trifocal" names no entry.',
+        `${" ".repeat(41)}Correct the value, or run manni term fill to add the term.`,
+        `${" ".repeat(41)}manni:term undefined-term: A page's concepts: names no entry, by label, id or alt-label.`,
+        `${" ".repeat(41)}Guide: https://hawkeyexl.github.io/manni/term/reference/rules/#undefined-term`,
         "",
         "1 error, 1 warning in 2 terms",
       ].join("\n"),
     );
     expect(renderFindingsGithub(report)).toBe(
       [
-        '::warning file=docs/guides/fitting.md,line=3,title=manni%3Aterm/alt-label-reference::concepts: "PAL" is an alt-label of "progressive lens", so name the label.',
-        '::error file=docs/guides/fitting.md,line=3,title=manni%3Aterm/undefined-term::concepts: "trifocal" names no entry.',
+        '::warning file=docs/guides/fitting.md,line=3,title=manni%3Aterm/alt-label-reference::concepts: "PAL" is an alt-label of "progressive lens", so name the label.%0Amanni:term alt-label-reference: A page\'s concepts: names an entry by one of its alt-labels.%0AGuide: https://hawkeyexl.github.io/manni/term/reference/rules/#alt-label-reference',
+        '::error file=docs/guides/fitting.md,line=3,title=manni%3Aterm/undefined-term::concepts: "trifocal" names no entry. Correct the value, or run manni term fill to add the term.%0Amanni:term undefined-term: A page\'s concepts: names no entry, by label, id or alt-label.%0AGuide: https://hawkeyexl.github.io/manni/term/reference/rules/#undefined-term',
       ].join("\n"),
     );
     const json = JSON.parse(renderFindingsJson(report)) as { findings: unknown[]; summary: Record<string, unknown> };
@@ -320,7 +326,13 @@ describe("lint", () => {
     });
     expect(report.summary.failed).toBe(1);
     expect(renderFindingsPretty(report, { color: false })).toBe(
-      ["docs/terms/corrective-lens.md:6", "  error  manni:term/prose/Direct.Length  Too long.", "", "1 error in 2 terms"].join("\n"),
+      [
+        "docs/terms/corrective-lens.md:6",
+        "  error  manni:term/prose/Direct.Length  Too long.",
+        `${" ".repeat(41)}vale Direct.Length`,
+        "",
+        "1 error in 2 terms",
+      ].join("\n"),
     );
   });
 
@@ -367,11 +379,19 @@ describe("sarif and junit", () => {
       {
         id: "manni:term/undefined-term",
         shortDescription: { text: "A page's concepts: names no entry, by label, id or alt-label." },
+        fullDescription: { text: "A page's concepts: names no entry, by label, id or alt-label." },
         helpUri: `${RULES_PAGE}#undefined-term`,
       },
     ]);
     expect(run?.results.map((r) => [r.ruleId, r.message.text])).toEqual([
-      ["manni:term/undefined-term", 'concepts: "trifocal" names no entry.'],
+      [
+        "manni:term/undefined-term",
+        [
+          'concepts: "trifocal" names no entry. Correct the value, or run manni term fill to add the term.',
+          "manni:term undefined-term: A page's concepts: names no entry, by label, id or alt-label.",
+          `Guide: ${RULES_PAGE}#undefined-term`,
+        ].join("\n"),
+      ],
     ]);
   });
 
@@ -384,7 +404,7 @@ describe("sarif and junit", () => {
         shortDescription: { text: "Vale's Direct.Length rule flagged the prose of an entry's field." },
       },
     ]);
-    expect(run?.results.map((r) => r.message.text)).toEqual(["Too long."]);
+    expect(run?.results.map((r) => r.message.text)).toEqual(["Too long.\nvale Direct.Length"]);
   });
 
   it("carries a finding's field into instancePath, for check and lint alike", async () => {
@@ -430,10 +450,16 @@ describe("sarif and junit", () => {
       runs: { results: { message: { text: string }; partialFingerprints: Record<string, string> }[] }[];
     };
     const results = sarif.runs[0]?.results ?? [];
-    expect(results.map((r) => r.message.text)).toEqual(['related-terms: "trifocal" names no entry']);
+    expect(results.map((r) => r.message.text)).toEqual([
+      [
+        'related-terms: "trifocal" names no entry. Did you mean "bifocal"? Correct the value, or add the term it names.',
+        "manni:term dangling-reference: A value of broader, narrower, related-terms or see names no entry, by label or by id.",
+        `Guide: ${RULES_PAGE}#dangling-reference`,
+      ].join("\n"),
+    ]);
     expect(results[0]?.partialFingerprints["docmetaViolation/v1"]).toMatch(/^[0-9a-f]{16}$/);
     expect(renderFindingsJunit(report)).toContain(
-      '<failure type="manni:term/dangling-reference" message="related-terms: &quot;trifocal&quot; names no entry (line 5)"/>',
+      '<failure type="manni:term/dangling-reference" message="related-terms: &quot;trifocal&quot; names no entry. Did you mean &quot;bifocal&quot;? Correct the value, or add the term it names. (line 5)"/>',
     );
   });
 
@@ -449,7 +475,7 @@ describe("sarif and junit", () => {
   it("gives a JUnit failure the rule id and the finding's own message", async () => {
     const check = renderFindingsJunit(await checkReport());
     expect(check).toContain(
-      '<failure type="manni:term/undefined-term" message="concepts: &quot;trifocal&quot; names no entry. (line 3)"/>',
+      '<failure type="manni:term/undefined-term" message="concepts: &quot;trifocal&quot; names no entry. Correct the value, or run manni term fill to add the term. (line 3)"/>',
     );
     expect(check).toContain('classname="manni.term"');
     const lint = renderFindingsJunit(await lintReport());

@@ -177,7 +177,12 @@ interface JsonRun {
   results: {
     url: string;
     source: string;
-    violations: { id: string; severity: string; impact: string }[];
+    violations: {
+      id: string;
+      severity: string;
+      impact: string;
+      guidance: { id: string; rule: string | null; description: string | null; guide: string | null };
+    }[];
     score: number | null;
     error?: string;
   }[];
@@ -772,6 +777,19 @@ describe.skipIf(browser === null)("manni a11y check (built bin, real browser)", 
       "html-has-lang": ["error", "serious"],
     });
     expect(json.summary.bySeverity).toEqual({ notice: 0, warning: 0, error: 4 });
+  }, 120_000);
+
+  it("-f json gives each violation axe's guidance: engine, rule, description and guide", async () => {
+    const r = await run(["check", `${server.url}/about.html`, "--no-crawl", "-f", "json"]);
+    expect(r.status).toBe(1);
+    const violations = parseJsonRun(r).results[0]?.violations ?? [];
+    expect(violations.length).toBeGreaterThan(0);
+    for (const v of violations) {
+      expect(v.guidance.id).toMatch(/^axe-core \d/);
+      expect(v.guidance.rule).toBe(v.id);
+      expect(v.guidance.description).toEqual(expect.any(String));
+      expect(v.guidance.guide).toMatch(/^https:\/\/dequeuniversity\.com\//);
+    }
   }, 120_000);
 
   it("the pretty report leads with the family level and keeps axe's word after the rule", async () => {

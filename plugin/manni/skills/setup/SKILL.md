@@ -35,7 +35,7 @@ collections:
 Run `manni docevals init` only when no config file exists. It refuses an existing one. With a config in place, write the `docevals:` section by hand.
 Citations and terms need no section. They are in play when the pages carry them.
 
-5. Run `node "${CLAUDE_PLUGIN_ROOT}/hooks/manni.mjs" status` and show the user the table.
+5. Run `node "${CLAUDE_PLUGIN_ROOT}/hooks/manni.mjs" status` and show the user the table. Each domain that is not set up names what would set it up. Offer those, and add only what the user accepts.
 6. Run `node "${CLAUDE_PLUGIN_ROOT}/hooks/manni.mjs" check`. Report the result and use the `fix` skill for any error.
 
 Do not add a section for a domain the user declined. A section that exists turns that domain's checks on.

@@ -15,11 +15,12 @@ import {
 import {
   displayPath,
   errorText,
-  judgeFailText,
+  judgedLines,
   locationPath,
   traceErrorText,
   type CiInput,
 } from "./ci.js";
+import { guidanceLines } from "../../shared/guidance.js";
 
 const TITLE = "manni tracevals";
 
@@ -48,19 +49,23 @@ export function renderGithub(input: CiInput, summary: string): string {
         ...(r.location.line === undefined ? {} : { line: r.location.line }),
         title: `${TITLE}: ${r.evalName}`,
       };
+      // The trace ends the first line, and the guidance lines follow it.
+      const say = (level: string, [first = "", ...rest]: string[]) =>
+        annotation(level, [first + trace, ...rest, ...guidanceLines(r.guidance)].join("\n"), at);
       for (const f of r.findings ?? []) {
         // The family scale is GitHub's annotation levels, word for word.
-        lines.push(annotation(f.severity, f.message + trace, at));
+        lines.push(say(f.severity, [f.message]));
       }
-      const judged = judgeFailText(r);
-      if (judged !== undefined) {
-        lines.push(annotation("error", judged + trace, at));
+      const judged = judgedLines(r);
+      if (judged.length > 0) {
+        // A review queue warns: nobody has decided yet, so nothing failed.
+        lines.push(say(r.outcome === "fail" ? "error" : "warning", judged));
       }
       // An errored eval has neither findings nor a verdict. Left out, it
       // shows in the log only inside the summary table, which a collapsed
       // step hides.
       if (r.outcome === "error") {
-        lines.push(annotation("error", errorText(r) + trace, at));
+        lines.push(say("error", [errorText(r)]));
       }
     }
     for (const w of run.warnings) {

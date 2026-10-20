@@ -8,6 +8,11 @@ import { bundledShapesPath } from "../../../src/graph/core/pkg.js";
 import { frontmatterSchema } from "../../../src/graph/schema.js";
 import { LANGUAGE_TAG } from "../../../src/graph/core/localizations.js";
 import { FIELD_SCHEMAS } from "../../../src/graph/llm/prompt.js";
+import { HARVESTED_KEYS } from "../../../src/graph/core/harvest.js";
+import { DataFactory, Parser, Store } from "n3";
+import coreSchema from "../../../src/meta/schemas/core/1.0.0.json" with { type: "json" };
+import stewardshipSchema from "../../../src/meta/schemas/stewardship/1.1.0.json" with { type: "json" };
+import aiContextSchema from "../../../src/meta/schemas/ai-context/1.1.0.json" with { type: "json" };
 import {
   COVERAGE_FIELDS,
   COVERAGE_FIELD_NAMES,
@@ -460,5 +465,47 @@ describe("BCP-47 pattern ↔ config schema ↔ shapes", () => {
       null,
     );
     expect(defined(match)[1]).toBe(source);
+  });
+});
+
+/**
+ * Drift guard (proposal 0089): every `sh:name` in the bundled shapes is a
+ * frontmatter key a page can write. `graph shapes show` prints it as the key
+ * that feeds the property, and `-f markdown` writes it into a skeleton, so a
+ * stale name sends an author to a key nothing reads.
+ */
+describe("sh:name in the bundled shapes ↔ the keys a page can write", () => {
+  const schema = frontmatterSchema as unknown as {
+    properties: { graph: { properties: Record<string, unknown> } };
+    $defs: { sectionMetadata: { properties: Record<string, unknown> } };
+  };
+  const block = new Set(Object.keys(schema.properties.graph.properties));
+  const section = new Set(Object.keys(schema.$defs.sectionMetadata.properties));
+  // The page-level keys derive reads: the harvest's own, and the core,
+  // stewardship and ai-context keys it maps onto dcterms, prov and graph terms.
+  const topLevel = new Set([
+    ...HARVESTED_KEYS,
+    ...[coreSchema, stewardshipSchema, aiContextSchema].flatMap((s) =>
+      Object.keys((s as { properties: Record<string, unknown> }).properties),
+    ),
+  ]);
+  const SECTION = "graph.sections.<heading-slug>.";
+
+  it("names a key the graph block, a section or the page carries", () => {
+    const store = new Store(
+      new Parser().parse(readFileSync(bundledShapesPath(import.meta.url), "utf8")),
+    );
+    const names = store
+      .getObjects(null, DataFactory.namedNode("http://www.w3.org/ns/shacl#name"), null)
+      .map((o) => o.value);
+    expect(names.length).toBeGreaterThan(0);
+    const unknown = names.filter((name) =>
+      name.startsWith(SECTION)
+        ? !section.has(name.slice(SECTION.length))
+        : name.startsWith("graph.")
+          ? !block.has(name.slice("graph.".length))
+          : !topLevel.has(name),
+    );
+    expect(unknown).toEqual([]);
   });
 });

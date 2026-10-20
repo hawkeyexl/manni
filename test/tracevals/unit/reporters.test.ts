@@ -116,6 +116,86 @@ describe("reporters", () => {
     expect(markdown).toContain("| adheres-to-artifact (implicit) `CLAUDE.md` |");
   });
 
+  it("pretty prints a failing finding, then its guidance, and no guidance under a pass", () => {
+    const S =
+      "Redo the session work so it holds, or fix the eval if the artifact does not ask for this.";
+    const GUIDE = "https://hawkeyexl.github.io/manni/tracevals/triage/";
+    const [failing, passing] = report.evalResults;
+    const guided: RunReport = {
+      ...report,
+      evalResults: [
+        {
+          ...must(failing, "the failing result"),
+          findings: [
+            {
+              evalName: "forbidden-tool",
+              artifact: "C:\\work\\demo\\SKILL.md",
+              message: `tool Bash was used 1 time(s) but must not be. ${S}`,
+              severity: "error",
+            },
+          ],
+          guidance: {
+            id: "skills/fix-bug/SKILL.md",
+            rule: "forbidden-tool",
+            description: "The session never ran shell commands; this skill is edit-only.",
+            guide: GUIDE,
+          },
+        },
+        {
+          ...must(passing, "the passing result"),
+          guidance: {
+            id: "CLAUDE.md",
+            rule: "adheres-to-artifact",
+            description: "The session follows every instruction in this artifact.",
+            guide: GUIDE,
+          },
+        },
+      ],
+    };
+    const lines = render(guided, "pretty").split("\n");
+    const at = lines.findIndex((l) => l.includes("fix-bug › forbidden-tool"));
+    expect(lines.slice(at, at + 4)).toEqual([
+      "  FAIL   fix-bug › forbidden-tool  skills/fix-bug/SKILL.md:12",
+      `         [error] tool Bash was used 1 time(s) but must not be. ${S}`,
+      "         skills/fix-bug/SKILL.md forbidden-tool: The session never ran shell commands; this skill is edit-only.",
+      `         Guide: ${GUIDE}`,
+    ]);
+    expect(lines.join("\n")).not.toContain("The session follows every instruction");
+  });
+
+  it("pretty prints guidance under a pass that still carries a warning finding", () => {
+    const GUIDE = "https://hawkeyexl.github.io/manni/tracevals/triage/";
+    const [, passing] = report.evalResults;
+    const warned: RunReport = {
+      ...report,
+      evalResults: [
+        {
+          ...must(passing, "the passing result"),
+          findings: [
+            {
+              evalName: "adheres-to-artifact",
+              artifact: "C:\\work\\demo\\CLAUDE.md",
+              message: "3 turn(s); at most 2 allowed.",
+              severity: "warning",
+            },
+          ],
+          guidance: {
+            id: "CLAUDE.md",
+            rule: "adheres-to-artifact",
+            description: "The session follows every instruction in this artifact.",
+            guide: GUIDE,
+          },
+        },
+      ],
+    };
+    const out = render(warned, "pretty");
+    expect(out).toContain("         [warning] 3 turn(s); at most 2 allowed.");
+    expect(out).toContain(
+      "         CLAUDE.md adheres-to-artifact: The session follows every instruction in this artifact.",
+    );
+    expect(out).toContain(`         Guide: ${GUIDE}`);
+  });
+
   it("markdown output includes eval and coverage tables", () => {
     const out = render(report, "markdown");
     expect(out).toContain("| Outcome | Artifact | Eval | Grader | Detail |");

@@ -19,6 +19,20 @@ import { must } from "../helpers.js";
 
 const ROOT = "C:\\work\\demo";
 
+/** What a failed eval tells the reader to do (proposal 0089). */
+const S =
+  "Redo the session work so it holds, or fix the eval if the artifact does not ask for this.";
+const GUIDE = "https://hawkeyexl.github.io/manni/tracevals/triage/";
+
+/** Guidance as the engine stamps it, with its two printed lines. */
+function g(id: string, rule: string, description: string | null) {
+  return { id, rule, description, guide: GUIDE };
+}
+const forbiddenGuidance = [
+  "skills/fix-bug/SKILL.md forbidden-tool: The session never ran shell commands; this skill is edit-only.",
+  `Guide: ${GUIDE}`,
+];
+
 const judgeFail: ConsensusResult = {
   runs: [
     {
@@ -56,10 +70,15 @@ const results: EvalResult[] = [
       {
         evalName: "forbidden-tool",
         artifact: "C:\\work\\demo\\skills\\fix-bug\\SKILL.md",
-        message: "tool Bash was used 1 time(s) but must not be",
+        message: `tool Bash was used 1 time(s) but must not be. ${S}`,
         severity: "error",
       },
     ],
+    guidance: g(
+      "skills/fix-bug/SKILL.md",
+      "forbidden-tool",
+      "The session never ran shell commands; this skill is edit-only.",
+    ),
     durationMs: 2,
   },
   {
@@ -72,6 +91,7 @@ const results: EvalResult[] = [
     location: { file: "C:/work/demo/CLAUDE.md", line: 5 },
     outcome: "fail",
     consensus: judgeFail,
+    guidance: g("CLAUDE.md", "tests-first", "Run the tests before committing."),
     durationMs: 5,
   },
   {
@@ -85,6 +105,7 @@ const results: EvalResult[] = [
     location: { file: "C:/Users/me/.claude/skills/lint/SKILL.md", line: 9 },
     outcome: "error",
     error: "command: spawn ENOENT",
+    guidance: g("C:/Users/me/.claude/skills/lint/SKILL.md", "lint-clean", "Lint passes."),
     durationMs: 1,
   },
   {
@@ -96,6 +117,8 @@ const results: EvalResult[] = [
     implicit: false,
     location: { file: "C:/work/demo/CLAUDE.md", line: 8 },
     outcome: "needs-review",
+    skipReason: "awaiting human review",
+    guidance: g("CLAUDE.md", "asked-first", "Ask before deleting files."),
     durationMs: 0,
   },
   {
@@ -107,6 +130,7 @@ const results: EvalResult[] = [
     implicit: false,
     location: { file: "C:/work/demo/CLAUDE.md", line: 11 },
     outcome: "pass",
+    guidance: g("CLAUDE.md", "turn-budget", null),
     durationMs: 1,
   },
 ];
@@ -140,24 +164,40 @@ describe("github", () => {
 
   it("annotates a finding at the entry that declares the eval, naming the trace", () => {
     // The eval lives in a manifest, so the annotation does too, not the skill.
+    // The trace ends the first line; the guidance lines follow it.
     expect(lines).toContain(
       "::error file=artifact-evals.yaml,line=12,title=manni tracevals%3A forbidden-tool::" +
-        "tool Bash was used 1 time(s) but must not be (trace: traces/session.jsonl)",
+        `tool Bash was used 1 time(s) but must not be. ${S} (trace: traces/session.jsonl)` +
+        `%0A${forbiddenGuidance.join("%0A")}`,
     );
   });
 
-  it("annotates a judged failure with its confidence and reasoning", () => {
+  it("annotates a judged failure with the judged block, then guidance", () => {
     expect(lines).toContain(
       "::error file=CLAUDE.md,line=5,title=manni tracevals%3A tests-first::" +
-        "AI judge: fail (confidence 0.80). No test command preceded the commit. (trace: traces/session.jsonl)",
+        `AI judge: fail (confidence 0.80). ${S} (trace: traces/session.jsonl)` +
+        "%0AObserved: committed without running tests" +
+        "%0AReasoning: No test command preceded the commit." +
+        "%0ACLAUDE.md tests-first: Run the tests before committing." +
+        `%0AGuide: ${GUIDE}`,
     );
   });
 
   it("annotates an errored eval rather than leaving it to the summary", () => {
     expect(lines).toContain(
       "::error file=C%3A/Users/me/.claude/skills/lint/SKILL.md,line=9,title=manni tracevals%3A lint-clean::" +
-        "command: spawn ENOENT (trace: traces/session.jsonl)",
+        "command: spawn ENOENT (trace: traces/session.jsonl)" +
+        `%0AC:/Users/me/.claude/skills/lint/SKILL.md lint-clean: Lint passes.%0AGuide: ${GUIDE}`,
     );
+  });
+
+  it("warns once for an eval awaiting review", () => {
+    const review = lines.filter((l) => l.includes("asked-first"));
+    expect(review).toEqual([
+      "::warning file=CLAUDE.md,line=8,title=manni tracevals%3A asked-first::" +
+        "Awaiting human review. Read the session against the assertion and decide. (trace: traces/session.jsonl)" +
+        `%0ACLAUDE.md asked-first: Ask before deleting files.%0AGuide: ${GUIDE}`,
+    ]);
   });
 
   it("annotates the file alone when no line declares the eval", () => {
@@ -181,9 +221,8 @@ describe("github", () => {
     );
   });
 
-  it("annotates nothing for a pass or a review queue", () => {
-    expect(out).not.toContain("turn-budget");
-    expect(out).not.toContain("asked-first");
+  it("annotates nothing for a pass", () => {
+    expect(lines.filter((l) => l.startsWith("::") && l.includes("turn-budget"))).toEqual([]);
   });
 
   it("ends with the markdown summary after a blank line", () => {
@@ -201,7 +240,19 @@ describe("sarif", () => {
   const log = JSON.parse(renderSarif(ciInputFromRun(report, { root: ROOT }))) as {
     version: string;
     runs: {
-      tool: { driver: { name: string; rules: { id: string; name: string; defaultConfiguration: { level: string } }[] } };
+      tool: {
+        driver: {
+          name: string;
+          rules: {
+            id: string;
+            name: string;
+            shortDescription: { text: string };
+            fullDescription?: { text: string };
+            helpUri?: string;
+            defaultConfiguration: { level: string };
+          }[];
+        };
+      };
       originalUriBaseIds: Record<string, { uri: string }>;
       results: {
         ruleId: string;
@@ -227,15 +278,50 @@ describe("sarif", () => {
 
   it("names rules tracevals/<grader> and declares every one it reports", () => {
     const ids = run.tool.driver.rules.map((r) => r.id).sort();
-    expect(ids).toEqual(["tracevals/ai", "tracevals/command", "tracevals/tool-usage"]);
+    expect(ids).toEqual([
+      "tracevals/ai",
+      "tracevals/command",
+      "tracevals/human",
+      "tracevals/tool-usage",
+    ]);
     for (const r of run.results) expect(ids).toContain(r.ruleId);
     expect(run.tool.driver.rules.find((r) => r.id === "tracevals/ai")?.name).toBe("ai");
+  });
+
+  it("describes a built-in grader's rule and links the triage guide", () => {
+    const rule = must(
+      run.tool.driver.rules.find((r) => r.id === "tracevals/tool-usage"),
+      "the tool-usage rule",
+    );
+    expect(rule.shortDescription.text).toBe("manni tracevals tool-usage grader");
+    expect(rule.fullDescription?.text).toBe(
+      "Checks whether the session used a tool, and how often.",
+    );
+    expect(rule.helpUri).toBe(GUIDE);
+    for (const r of run.tool.driver.rules) {
+      expect(r.fullDescription?.text, `${r.id} has no full description`).toBeDefined();
+      expect(r.helpUri).toBe(GUIDE);
+    }
+  });
+
+  it("gives a plugin grader's rule neither a full description nor a guide", () => {
+    const plugin: RunReport = {
+      ...report,
+      evalResults: [{ ...must(results[0], "the finding"), grader: "my-plugin" }],
+    };
+    const parsed = JSON.parse(render(plugin, "sarif")) as typeof log;
+    const rule = must(parsed.runs[0]?.tool.driver.rules[0], "the plugin rule");
+    expect(rule.id).toBe("tracevals/my-plugin");
+    expect(rule.fullDescription).toBeUndefined();
+    expect(rule.helpUri).toBeUndefined();
   });
 
   it("locates a finding at the entry that declares the eval, with the trace in its properties", () => {
     const finding = must(run.results.find((r) => r.ruleId === "tracevals/tool-usage"), "the finding");
     expect(finding.level).toBe("error");
-    expect(finding.message.text).toBe("tool Bash was used 1 time(s) but must not be");
+    expect(finding.message.text).toBe(
+      [`tool Bash was used 1 time(s) but must not be. ${S}`, ...forbiddenGuidance].join("\n"),
+    );
     expect(finding.locations[0]?.physicalLocation).toEqual({
       artifactLocation: { uri: "artifact-evals.yaml", uriBaseId: "SRCROOT" },
       region: { startLine: 12 },
@@ -246,25 +332,52 @@ describe("sarif", () => {
       artifactType: "skill",
       trace: "traces/session.jsonl",
       sessionId: "abc",
+      guidance: g(
+        "skills/fix-bug/SKILL.md",
+        "forbidden-tool",
+        "The session never ran shell commands; this skill is edit-only.",
+      ),
     });
+  });
+
+  it("reports an eval awaiting review as one warning under its grader's rule", () => {
+    const review = run.results.filter((r) => r.properties.eval === "asked-first");
+    expect(review).toHaveLength(1);
+    expect(review[0]?.ruleId).toBe("tracevals/human");
+    expect(review[0]?.level).toBe("warning");
+    expect(review[0]?.message.text).toBe(
+      [
+        "Awaiting human review. Read the session against the assertion and decide.",
+        "CLAUDE.md asked-first: Ask before deleting files.",
+        `Guide: ${GUIDE}`,
+      ].join("\n"),
+    );
   });
 
   it("gives an artifact outside the root an absolute file URI", () => {
     const errored = must(run.results.find((r) => r.ruleId === "tracevals/command"), "the errored eval");
     expect(errored.level).toBe("error");
-    expect(errored.message.text).toBe("command: spawn ENOENT");
+    expect(errored.message.text).toBe(
+      `command: spawn ENOENT\nC:/Users/me/.claude/skills/lint/SKILL.md lint-clean: Lint passes.\nGuide: ${GUIDE}`,
+    );
     expect(errored.locations[0]?.physicalLocation).toEqual({
       artifactLocation: { uri: "file:///C:/Users/me/.claude/skills/lint/SKILL.md" },
       region: { startLine: 9 },
     });
   });
 
-  it("reports a judged failure, and nothing for a pass or a review queue", () => {
+  it("reports a judged failure, and nothing for a pass", () => {
     const judged = must(run.results.find((r) => r.ruleId === "tracevals/ai"), "the judged failure");
     expect(judged.message.text).toBe(
-      "AI judge: fail (confidence 0.80). No test command preceded the commit.",
+      [
+        `AI judge: fail (confidence 0.80). ${S}`,
+        "Observed: committed without running tests",
+        "Reasoning: No test command preceded the commit.",
+        "CLAUDE.md tests-first: Run the tests before committing.",
+        `Guide: ${GUIDE}`,
+      ].join("\n"),
     );
-    expect(run.results).toHaveLength(3);
+    expect(run.results.filter((r) => r.properties.eval === "turn-budget")).toEqual([]);
   });
 
   it("locates an eval a hosted manifest declares at its URL, with no region", () => {
@@ -322,20 +435,27 @@ describe("junit", () => {
       '<testcase classname="skills/fix-bug/SKILL.md" name="forbidden-tool" ' +
         'file="artifact-evals.yaml" line="12" time="0.002">\n' +
         '      <failure message="forbidden-tool failed" type="tracevals/tool-usage">' +
-        "tool Bash was used 1 time(s) but must not be</failure>",
+        `tool Bash was used 1 time(s) but must not be. ${S}\n` +
+        "skills/fix-bug/SKILL.md forbidden-tool: The session never ran shell commands; this skill is edit-only.\n" +
+        `Guide: ${GUIDE}</failure>`,
     );
   });
 
-  it("fails a judged eval with the judge's reasoning", () => {
+  it("fails a judged eval with the judged block, then guidance", () => {
     expect(xml).toContain(
       '<failure message="tests-first failed" type="tracevals/ai">' +
-        "AI judge: fail (confidence 0.80). No test command preceded the commit.</failure>",
+        `AI judge: fail (confidence 0.80). ${S}\n` +
+        "Observed: committed without running tests\n" +
+        "Reasoning: No test command preceded the commit.\n" +
+        "CLAUDE.md tests-first: Run the tests before committing.\n" +
+        `Guide: ${GUIDE}</failure>`,
     );
   });
 
-  it("errors an errored eval with its reason", () => {
+  it("errors an errored eval with its reason, then guidance", () => {
     expect(xml).toContain(
-      '<error message="lint-clean errored" type="tracevals/command">command: spawn ENOENT</error>',
+      '<error message="lint-clean errored" type="tracevals/command">command: spawn ENOENT\n' +
+        `C:/Users/me/.claude/skills/lint/SKILL.md lint-clean: Lint passes.\nGuide: ${GUIDE}</error>`,
     );
   });
 
@@ -427,5 +547,152 @@ describe("batch CI formats", () => {
 
   it("renderBatch refuses a CI format without the per-trace reports", () => {
     expect(() => renderBatch(batch, "sarif")).toThrow(/per-trace reports/);
+  });
+});
+
+describe("judged evals in every reporter (proposal 0089)", () => {
+  const run = (match: "pass" | "fail" | "partial", observed: string, reasoning: string) => ({
+    verdict: { claim: "a failing test came first", observed, match, confidence: 0.88, reasoning },
+    provider: "mock",
+    model: "mock",
+    cached: false,
+    durationMs: 1,
+  });
+  // The passing run comes first. Quoting it would argue against the verdict.
+  const split: ConsensusResult = {
+    runs: [
+      run("pass", "A test file was touched early.", "Looks fine."),
+      run("fail", "The session edited src/app.ts before any test file.", "No failing test was written before the fix."),
+      run("fail", "Edited the source first.", "Second failing run."),
+    ],
+    votes: { pass: 1, fail: 2, partial: 0, error: 0 },
+    verdict: "fail",
+    agreement: 0.67,
+    meanConfidence: 0.88,
+    zone: "auto-fail",
+  };
+  const unsure: ConsensusResult = { ...split, verdict: "pass", zone: "human-review" };
+  const skill = ".claude/skills/fix-bug/SKILL.md";
+  const judged = (evalName: string, outcome: "fail" | "needs-review", consensus: ConsensusResult): EvalResult => ({
+    evalName,
+    artifact: `${ROOT}\\.claude\\skills\\fix-bug\\SKILL.md`,
+    artifactName: "fix-bug",
+    artifactType: "skill",
+    grader: "ai",
+    implicit: false,
+    location: { file: skill, line: 27 },
+    outcome,
+    consensus,
+    guidance: g(skill, evalName, "Reproduce the bug with a failing test before applying the fix."),
+    durationMs: 1,
+  });
+  const judgedReport: RunReport = {
+    ...report,
+    warnings: [],
+    evalResults: [judged("eval-5", "fail", split), judged("eval-6", "needs-review", unsure)],
+    summary: { total: 2, pass: 0, fail: 1, error: 0, needsReview: 1, skipped: 0, passRate: 0 },
+  };
+  const OBSERVED = "Observed: The session edited src/app.ts before any test file.";
+  const REASONING = "Reasoning: No failing test was written before the fix.";
+  const REVIEW =
+    "AI judge: no confident verdict (confidence 0.88). Read the session and decide. " +
+    "If this recurs, sharpen the assertion and run manni tracevals calibrate.";
+
+  it.each(["pretty", "github", "sarif", "junit", "markdown"] as const)(
+    "%s quotes the failing run, never the passing one",
+    (format) => {
+      const out = render(judgedReport, format);
+      expect(out).toContain(OBSERVED);
+      expect(out).toContain(REASONING);
+      expect(out).not.toContain("A test file was touched early.");
+      expect(out).not.toContain("Looks fine.");
+    },
+  );
+
+  it("pretty prints the judged block, the votes, then the guidance", () => {
+    const lines = render(judgedReport, "pretty").split("\n");
+    const at = lines.findIndex((l) => l.includes("fix-bug › eval-5"));
+    expect(lines.slice(at, at + 7)).toEqual([
+      `  FAIL   fix-bug › eval-5  ${skill}:27`,
+      `         AI judge: fail (confidence 0.88). ${S}`,
+      `         ${OBSERVED}`,
+      `         ${REASONING}`,
+      "         votes pass:1 fail:2 partial:0 error:0",
+      `         ${skill} eval-5: Reproduce the bug with a failing test before applying the fix.`,
+      `         Guide: ${GUIDE}`,
+    ]);
+  });
+
+  it("pretty prints a needs-review eval's judged block", () => {
+    const out = render(judgedReport, "pretty");
+    expect(out).toContain(`         ${REVIEW}`);
+  });
+
+  it("github warns once for an eval the judge could not settle", () => {
+    const lines = render(judgedReport, "github").split("\n");
+    const warnings = lines.filter((l) => l.startsWith("::warning") && l.includes("eval-6"));
+    expect(warnings).toHaveLength(1);
+    // render() roots paths at the working directory, so the trace is absolute here.
+    expect(warnings[0]).toMatch(/::AI judge: no confident verdict .* \(trace: [^)]+\)%0AObserved: /);
+    expect(warnings[0]).toContain(`::${REVIEW} (trace: `);
+  });
+
+  it("sarif reports an eval the judge could not settle as one ai warning", () => {
+    const log = JSON.parse(render(judgedReport, "sarif")) as {
+      runs: { results: { ruleId: string; level: string; message: { text: string }; properties: { eval: string } }[] }[];
+    };
+    const review = (log.runs[0]?.results ?? []).filter((r) => r.properties.eval === "eval-6");
+    expect(review).toHaveLength(1);
+    expect(review[0]?.ruleId).toBe("tracevals/ai");
+    expect(review[0]?.level).toBe("warning");
+    expect(review[0]?.message.text.startsWith(`${REVIEW}\n${OBSERVED}`)).toBe(true);
+  });
+
+  it("markdown lists every eval to act on under Findings", () => {
+    const out = render(judgedReport, "markdown");
+    expect(out).toContain(
+      [
+        "## Findings",
+        "",
+        `- **FAIL** fix-bug › eval-5 · \`${skill}:27\``,
+        `  - AI judge: fail (confidence 0.88). ${S}`,
+        `  - ${OBSERVED}`,
+        `  - ${REASONING}`,
+        `  - ${skill} eval-5: Reproduce the bug with a failing test before applying the fix.`,
+        `  - Guide: ${GUIDE}`,
+        `- **REVIEW** fix-bug › eval-6 · \`${skill}:27\``,
+        `  - ${REVIEW}`,
+      ].join("\n"),
+    );
+    // The Evals table stays where it was, ahead of the new section.
+    expect(out.indexOf("## Evals")).toBeLessThan(out.indexOf("## Findings"));
+  });
+
+  it("markdown lists a finding, an error and a human review, and leaves a pass out", () => {
+    const out = render(report, "markdown");
+    const findings = out.slice(out.indexOf("## Findings"), out.indexOf("## Artifact coverage"));
+    expect(findings).toContain(
+      [
+        "- **FAIL** fix-bug › forbidden-tool · `C:/work/demo/artifact-evals.yaml:12`",
+        `  - tool Bash was used 1 time(s) but must not be. ${S}`,
+        ...forbiddenGuidance.map((l) => `  - ${l}`),
+      ].join("\n"),
+    );
+    expect(findings).toContain(
+      "- **ERROR** lint › lint-clean · `C:/Users/me/.claude/skills/lint/SKILL.md:9`",
+    );
+    expect(findings).toContain("  - command: spawn ENOENT");
+    expect(findings).toContain(
+      "  - Awaiting human review. Read the session against the assertion and decide.",
+    );
+    expect(findings).not.toContain("turn-budget");
+  });
+
+  it("markdown has no Findings section when everything passed", () => {
+    const clean: RunReport = {
+      ...report,
+      evalResults: [must(results[4], "the passing result")],
+    };
+    expect(render(clean, "markdown")).not.toContain("## Findings");
   });
 });

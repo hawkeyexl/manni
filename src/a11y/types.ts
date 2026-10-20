@@ -6,6 +6,7 @@
  * knows axe's own result shape.
  */
 import { ToolError } from "../shared/errors.js";
+import type { Guidance } from "../shared/guidance.js";
 import type { Severity } from "../shared/severity.js";
 
 /**
@@ -43,7 +44,7 @@ export function isAxeImpact(value: string): value is AxeImpact {
 export interface ViolationNode {
   /** axe's CSS selector path to the element (joined `target`). */
   target: string;
-  /** The element's outer HTML, as axe reports it (truncated to 200 chars in pretty output only). */
+  /** The element's outer HTML, as axe reports it. The pretty and github reports cut it at 200 characters. */
   html: string;
   /** axe's failureSummary: what to fix, in prose. */
   summary: string;
@@ -67,6 +68,8 @@ export interface Violation {
   /** axe tags, e.g. ["cat.text-alternatives", "wcag2a", "wcag111"]. */
   tags: string[];
   nodes: ViolationNode[];
+  /** `axe-core <version>`, the rule id, axe's description of the rule and its guide (`helpUrl`). */
+  guidance: Guidance;
 }
 
 export interface PageResult {

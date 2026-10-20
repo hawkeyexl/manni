@@ -575,6 +575,8 @@ export async function askSampleQuestions(
         focusNode: target.focusNode,
         ...(target.path === undefined ? {} : { path: target.path }),
         docs: target.docs,
+        // A retrieval check judges a question, not a shape.
+        guidance: null,
       });
     };
 
@@ -801,6 +803,7 @@ export async function askSampleQuestions(
       message: `${String(inTop)} of ${String(of)} reviewed questions are found in the top ${String(top)} (${String(percent(inTop, of))}%), under the ${String(threshold)}% that graph.check.questions.foundThreshold asks for.`,
       focusNode: "questions",
       docs: [],
+      guidance: null,
     });
   }
   return { findings, summary };

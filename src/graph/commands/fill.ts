@@ -21,6 +21,7 @@ import {
   assertInputFormat,
   documentBase,
   documentSetPatterns,
+  noInputMessage,
   resolveDocumentSet,
   routesFrom,
   STDIN,
@@ -301,9 +302,7 @@ export async function runFill(opts: FillOptions = {}): Promise<FillReport> {
         exitCode: 0,
       };
     }
-    throw new GraphError(
-      `No input files matched: ${documentSetPatterns(config, opts).join(", ")} (cwd: ${cwd})`,
-    );
+    throw new GraphError(noInputMessage(documentSetPatterns(config, opts), cwd));
   }
   if (usingStdin && opts.stdinContent === undefined) {
     throw new GraphError("graph fill was given `-` but no stdin content.");

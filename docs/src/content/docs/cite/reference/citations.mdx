@@ -29,7 +29,7 @@ sample-questions:
 graph:
   label: Citations reference
   type: reference
-last-updated: 2026-10-19
+last-updated: 2026-10-20
 tags:
   - citations
   - hashing
@@ -322,12 +322,12 @@ first one found is the finding:
 
 | The payload | The message |
 |---|---|
-| is empty | `invalid marker: empty payload` |
+| is empty | `invalid marker: empty payload. Name an entry id, or remove the marker.` |
 | holds a line break | `invalid marker: a marker is one line; write two markers` |
-| holds a word opening with `{` | `A marker names an entry by id. Write the entry in frontmatter or the sidecar.` |
+| holds a word opening with `{` | `invalid marker: a marker names entry ids, not an entry. Move the entry to citations:, in frontmatter or the sidecar, and name its id.` |
 | holds more than 25 ids | `invalid marker: more than 25 ids in one marker (31); write a second marker` |
-| holds a word that is not an id | `invalid marker: "fetch-timeout,retries" is not an id` |
-| names one id twice | `invalid marker: "retries" is named twice in one marker` |
+| holds a word that is not an id | `invalid marker: "fetch-timeout,retries" is not an id. An id is lowercase letters, digits and hyphens. Separate ids with spaces.` |
+| names one id twice | `invalid marker: "retries" is named twice in one marker. Remove one.` |
 
 One marker raises one `marker-invalid`, so a marker with two bad words is
 reported once. An id with no entry is different: that is `marker-orphan`, one
@@ -388,11 +388,11 @@ would have shown. MDX and CommonMark both end a paragraph at a comment line,
 so such a page renders two paragraphs split mid-sentence:
 
 ```
-fresh-context: the marker at line 16 splits the paragraph at lines 14-18. Its place is above line 14.
+fresh-context: the marker at line 16 splits the paragraph at lines 14-18. Its place is above line 14. Run manni cite update to move it.
 ```
 
 Each misplaced marker is one finding, so a run of three is three. A marker
-that names no entry is reported too, with no id. `cite update` moves them,
+that names no entry is left to its `marker-orphan`. `cite update` moves them,
 with no flag.
 
 Three markers are never misplaced. One whose own line carries text after the
@@ -478,8 +478,8 @@ block. Under a marker, the block is the next fence after the marker. Neither
 is `anchor-invalid`:
 
 ```
-fetch-timeout: quote needs a claim or a marker.
-fetch-timeout: the quote's claim lines 14-18 are no longer a fenced block.
+fetch-timeout: quote needs a claim or a marker. Add claim.lines over the block, or a marker above it.
+fetch-timeout: the quote's claim lines 14-18 are no longer a fenced block. Restore the fences, or re-add the citation over the block.
 ```
 
 {/* cite quote-fence-per-format */}
@@ -592,13 +592,17 @@ named in `severity:`, which takes the sixteen rule names below.
 
 ### Source-end rules
 
+Every message ends with what to do. In `pretty` output that sentence prints
+under the row, then the rule line and a Guide link to the
+[fix page](/manni/cite/fix/).
+
 | Rule | Meaning | Message | Default |
 |---|---|---|---|
-| <span id="source-moved">`source-moved`</span> | The pin does not hold at its range, and exactly one window of the same length hashes to it. That window sits elsewhere in the file, or in another file a commit touched. `update` rewrites `source.lines`, and `source.file` too where the pin changed file. A whole-file citation never moves inside its file, and does follow a rename. | `moved -> lib/config/limits.ts:4` | `warning` |
-| <span id="source-moved-ambiguous">`source-moved-ambiguous`</span> | Two or more windows hash to the pin, in one file or across several; the tool will not guess which. Widen the range. | `moved, 2 candidates (lib/config/limits.ts:4, vendor/limits.ts:4); widen the range` | `error` |
-| <span id="source-changed">`source-changed`</span> | No window hashes to the pin. With a commit and history: since when, and how many commits touched the path. The message names the span the old first and last line now cover, when each sits exactly once and in order. With a commit git cannot show: `history unavailable`, plus one run notice about `fetch-depth: 0`. Where git is not available, a bare `changed`, plus one run notice. | `changed since 3f9c2a1, 2 commits; now at lines 200-215` | `error` |
-| <span id="source-never-true">`source-never-true`</span> | No window of the range's length anywhere in the file at the recorded commit hashes to the pin, or the path was absent there. Asserted only when git can show that commit. No span is offered, because the pinned lines had no home at that commit. | `never true: the pin does not match at 3f9c2a1` | `error` |
-| <span id="source-missing">`source-missing`</span> | The path is not a tracked file under the root (without git, not a file under it), or an encrypted source cannot be decrypted. It is reached only once no file a commit touched holds the pin. | `missing`, and for an encrypted source one of `missing (no encryption key is available to decrypt it)`, `missing (does not decrypt under the current key)` or `missing (no tracked file matches; wrong --root?)` | `error` |
+| <span id="source-moved">`source-moved`</span> | The pin does not hold at its range, and exactly one window of the same length hashes to it. That window sits elsewhere in the file, or in another file a commit touched. `update` rewrites `source.lines`, and `source.file` too where the pin changed file. A whole-file citation never moves inside its file, and does follow a rename. | `moved -> lib/config/limits.ts:4. Run manni cite update.` | `warning` |
+| <span id="source-moved-ambiguous">`source-moved-ambiguous`</span> | Two or more windows hash to the pin, in one file or across several; the tool will not guess which. Widen the range. | `moved, 2 candidates (lib/config/limits.ts:4, vendor/limits.ts:4). Widen source.lines until the range occurs once, then run manni cite update --accept --only fetch-timeout.` | `error` |
+| <span id="source-changed">`source-changed`</span> | No window hashes to the pin. With a commit and history: since when, and how many commits touched the path. The message names the span the old first and last line now cover, when each sits exactly once and in order. With a commit git cannot show: `history unavailable`, plus one run notice about `fetch-depth: 0`. Where git is not available, a bare `changed`, plus one run notice. | `changed since 3f9c2a1, 2 commits; now at lines 200-215. Check the sentence against the source, then run manni cite update --accept --only fetch-timeout.` | `error` |
+| <span id="source-never-true">`source-never-true`</span> | No window of the range's length anywhere in the file at the recorded commit hashes to the pin, or the path was absent there. Asserted only when git can show that commit. No span is offered, because the pinned lines had no home at that commit. | `never true: the pin does not match at 3f9c2a1. Check the sentence against the source, then run manni cite update --accept --only fetch-timeout.` | `error` |
+| <span id="source-missing">`source-missing`</span> | The path is not a tracked file under the root (without git, not a file under it), or an encrypted source cannot be decrypted. It is reached only once no file a commit touched holds the pin. | `missing. Run manni cite remove --only fetch-timeout, then manni cite add against the file's new path.` For an encrypted source the status is one of `missing (no encryption key is available to decrypt it)`, `missing (does not decrypt under the current key)` or `missing (no tracked file matches; wrong --root?)`, then what to do about that cause. | `error` |
 
 {/* cite move-search-order move-search-first-line move-window-2000 move-search-band move-budget-64mib move-budget-truncated range-limit-either-end */}
 The move search runs whenever the pin does not hold, and history decides only
@@ -626,10 +630,10 @@ commit git cannot show, are classified as they always were.
 
 | Rule | Meaning | Message | Default |
 |---|---|---|---|
-| <span id="claim-moved">`claim-moved`</span> | The pinned page text is found verbatim at other lines, so nothing drifted. `update` rewrites `claim.lines`. For a marker, the pinned text is intact but the marker now anchors a different span, and `update` re-pins it there. | `fetch-timeout: the claim moved from line 9 to line 11.` | `notice` |
-| <span id="claim-moved-ambiguous">`claim-moved-ambiguous`</span> | The pinned text is found verbatim at several places. `update` skips it. | `fetch-timeout: the claim at line 9 now appears at lines 11 and 30.` | `warning` |
-| <span id="claim-reanchored">`claim-reanchored`</span> | The words the pin covered are unchanged since the claim's [baseline](#the-claims-baseline), and only the layout moved. Three changes reach it. A rewrapped paragraph, a hoisted marker, and a marker line the anchor rule stopped counting. A plain `update` re-pins it, with no `--accept`. | `retries: the claim at lines 15-17 was reanchored since 3f9c2a1. Its words are unchanged.` | `notice` |
-| <span id="claim-changed">`claim-changed`</span> | The words the pin covered were edited. The message says since when, where the claim has a [baseline](#the-claims-baseline). `update --accept` re-pins it, and a blanket accept refuses a line that shares no sentence with the claim at its baseline. Naming the id with `--only` accepts that line too. | `fetch-timeout: the claim at line 9 has changed since 3f9c2a1, 2 commits.` | `warning` |
+| <span id="claim-moved">`claim-moved`</span> | The pinned page text is found verbatim at other lines, so nothing drifted. `update` rewrites `claim.lines`. For a marker, the pinned text is intact but the marker now anchors a different span, and `update` re-pins it there. | `fetch-timeout: the claim moved from line 9 to line 11. Run manni cite update.` | `notice` |
+| <span id="claim-moved-ambiguous">`claim-moved-ambiguous`</span> | The pinned text is found verbatim at several places. `update` skips it. | `fetch-timeout: the claim at line 9 now appears at lines 11 and 30. Pin a range that occurs once, or anchor the claim with a marker.` | `warning` |
+| <span id="claim-reanchored">`claim-reanchored`</span> | The words the pin covered are unchanged since the claim's [baseline](#the-claims-baseline), and only the layout moved. Three changes reach it. A rewrapped paragraph, a hoisted marker, and a marker line the anchor rule stopped counting. A plain `update` re-pins it, with no `--accept`. | `retries: the claim at lines 15-17 was reanchored since 3f9c2a1. Its words are unchanged. Run manni cite update.` | `notice` |
+| <span id="claim-changed">`claim-changed`</span> | The words the pin covered were edited. The message says since when, where the claim has a [baseline](#the-claims-baseline). `update --accept` re-pins it, and a blanket accept refuses a line that shares no sentence with the claim at its baseline. Naming the id with `--only` accepts that line too. | `fetch-timeout: the claim at line 9 has changed since 3f9c2a1, 2 commits. Check it still matches the source, then run manni cite update --accept --only fetch-timeout.` | `warning` |
 
 {/* cite claim-changed-warning */}
 {/* cite claim-changed-scope-lines */}

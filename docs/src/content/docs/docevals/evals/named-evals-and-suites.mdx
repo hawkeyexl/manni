@@ -2,7 +2,7 @@
 title: Named evals and suites
 description: Turn per-page assertions into a shared library, and measure page types against a target pass rate.
 type: how-to
-last-updated: 2026-10-02
+last-updated: 2026-10-20
 ---
 
 The gate worked on one page, so it got copied. Now the same assertion exists in twelve pages with
@@ -194,9 +194,13 @@ npx @hawkeyexl/manni docevals list docs/actions/find.mdx
 ```console
 docs/actions/find.mdx (suite: reference)
   - no-future-promises [ai, regression, config]
+      The page makes no claims about unreleased or future functionality.
   - names-an-action [tool:regex, regression, config]
+      The page documents at least one Doc Detective action.
   - no-todo-markers [tool:regex, regression, config]
+      The page carries no TODO, TBD or FIXME markers.
   - has-examples-heading [command, regression, page]
+      The page includes an Examples heading.
 
 1 pages, 4 evals resolved
 ```

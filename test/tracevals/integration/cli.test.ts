@@ -95,6 +95,27 @@ describe.skipIf(!built)("built CLI", () => {
         "(trace: test/tracevals/fixtures/traces/claude-session.jsonl)",
       );
       expect(stdout).toContain("| Outcome | Artifact | Eval | Grader | Detail |");
+      // What to do, then the rule behind it (proposal 0089).
+      expect(stdout).toContain(
+        "Redo the session work so it holds, or fix the eval if the artifact does not ask for this.",
+      );
+      expect(stdout).toContain(
+        "forbidden-tool: The session never ran shell commands; this skill is edit-only.",
+      );
+      expect(stdout).toContain("Guide: https://hawkeyexl.github.io/manni/tracevals/triage/");
+    });
+
+    it("-f json stamps guidance on every result", async () => {
+      const { code, stdout } = await ciRun("json");
+      expect(code).toBe(1);
+      const report = JSON.parse(stdout) as {
+        evalResults: { evalName: string; guidance?: { rule: string; guide: string } }[];
+      };
+      expect(report.evalResults.length).toBeGreaterThan(0);
+      for (const r of report.evalResults) {
+        expect(r.guidance?.rule).toBe(r.evalName);
+        expect(r.guidance?.guide).toBe("https://hawkeyexl.github.io/manni/tracevals/triage/");
+      }
     });
 
     it("-f sarif reports tracevals/<grader> rules at repo-relative URIs", async () => {
@@ -114,6 +135,12 @@ describe.skipIf(!built)("built CLI", () => {
       expect(result.properties.trace).toBe(
         "test/tracevals/fixtures/traces/claude-session.jsonl",
       );
+      expect(result.properties.guidance).toEqual({
+        id: skill,
+        rule: "forbidden-tool",
+        description: "The session never ran shell commands; this skill is edit-only.",
+        guide: "https://hawkeyexl.github.io/manni/tracevals/triage/",
+      });
     });
 
     it("-f junit writes one testsuite for the trace", async () => {

@@ -59,7 +59,7 @@ describe("a golden-set file question", () => {
     const r = run(["check"], built("cross-page"));
     expect(r.status, r.stdout + r.stderr).toBe(0);
     expect(findings(r.stdout)).toEqual([
-      'warning: questions.yaml:3 — "After rotating the key, how do I check nothing broke?" does not find docs/rotate.md § Rotate in the top 1 (it ranks 4; first is docs/validate.md § Check the result) [questions.yaml]',
+      'warning: questions.yaml: "After rotating the key, how do I check nothing broke?" does not find docs/rotate.md § Rotate in the top 1 (it ranks 4; first is docs/validate.md § Check the result)',
     ]);
   });
 
@@ -74,6 +74,7 @@ describe("a golden-set file question", () => {
           '"After rotating the key, how do I check nothing broke?" does not find docs/rotate.md § Rotate in the top 1 (it ranks 4; first is docs/validate.md § Check the result)',
         focusNode: "questions.yaml:3",
         docs: ["questions.yaml"],
+        guidance: null,
       },
     ]);
   });
@@ -82,7 +83,7 @@ describe("a golden-set file question", () => {
     const r = run(["check"], built("answer-gone"));
     expect(r.status).toBe(0);
     expect(findings(r.stdout)).toEqual([
-      'warning: questions.yaml:1 — docs/old.md, which holds the answer to "How large may an upload be?", does not exist, so re-pin or remove the question. [questions.yaml]',
+      'warning: questions.yaml: docs/old.md, which holds the answer to "How large may an upload be?", does not exist, so re-pin or remove the question.',
     ]);
     expect(summary(r.stdout)).toContain("  found    0 of 1 reviewed in the top 1 (0%), 0 first (0%)");
   });
@@ -107,7 +108,7 @@ describe("a golden-set file that cannot be read", () => {
     const r = run(["check"], cwd);
     expect(r.status).toBe(2);
     expect(r.stderr.trim()).toBe(
-      "manni: graph.questionFiles names questions.yaml, which does not exist.",
+      "manni: graph.questionFiles names questions.yaml, which does not exist. Fix the path, or remove it from graph.questionFiles.",
     );
   });
 
@@ -129,17 +130,24 @@ describe("set health", () => {
   it("reports a question asked twice on each copy after the first, in path order", () => {
     const r = run(["check"], built("duplicate"));
     expect(findings(r.stdout).filter((l) => l.includes("is also asked"))).toEqual([
-      `warning: ${DOC}/docs/retry.md graph:sampleQuestion — "how do I retry a  failed upload" is also asked on docs/limits.md, so keep it where it is answered. [docs/retry.md]`,
-      'warning: questions.yaml:1 — "How do I retry a failed upload?" is also asked on docs/limits.md, so keep it where it is answered. [questions.yaml]',
+      'warning: docs/retry.md: "how do I retry a  failed upload" is also asked on docs/limits.md, so keep it where it is answered.',
+      'warning: questions.yaml: "How do I retry a failed upload?" is also asked on docs/limits.md, so keep it where it is answered.',
     ]);
+    expect(r.stdout).toContain(
+      `answered.\n  at ${DOC}/docs/retry.md graph:sampleQuestion\n`,
+    );
+    expect(r.stdout).toMatch(/answered\.\n {2}at questions\.yaml:\d+\n/);
   });
 
   it("reports a question that copies its answer's word pairs, at notice", () => {
     const r = run(["check"], built("copied-wording"));
     expect(r.status).toBe(0);
     expect(findings(r.stdout)).toEqual([
-      `notice: ${DOC}/docs/retry.md graph:sampleQuestion — "Do uploads retry three times by default?" repeats 5 of its 6 word pairs from its answer, so it tests matching words more than finding. (drafted, not reviewed) [docs/retry.md]`,
+      'notice: docs/retry.md: "Do uploads retry three times by default?" repeats 5 of its 6 word pairs from its answer, so it tests matching words more than finding. (drafted, not reviewed)',
     ]);
+    expect(r.stdout).toContain(
+      `(drafted, not reviewed)\n  at ${DOC}/docs/retry.md graph:sampleQuestion\n`,
+    );
     expect(summary(r.stdout)).toEqual([
       "questions  3: 2 reviewed, 1 drafted, on 1 page",
       "  found    2 of 2 reviewed in the top 2 (100%), 1 first (50%)",
@@ -151,7 +159,8 @@ describe("set health", () => {
   it("prints the summary between the findings and the counts", () => {
     const r = run(["check"], built("cross-page"));
     expect(r.stdout.split("\n")).toEqual([
-      'warning: questions.yaml:3 — "After rotating the key, how do I check nothing broke?" does not find docs/rotate.md § Rotate in the top 1 (it ranks 4; first is docs/validate.md § Check the result) [questions.yaml]',
+      'warning: questions.yaml: "After rotating the key, how do I check nothing broke?" does not find docs/rotate.md § Rotate in the top 1 (it ranks 4; first is docs/validate.md § Check the result)',
+      "  at questions.yaml:3",
       "",
       "questions  1: 1 reviewed, 0 drafted, in questions.yaml",
       "  found    0 of 1 reviewed in the top 1 (0%), 0 first (0%)",
@@ -208,8 +217,9 @@ describe("graph.check.questions.foundThreshold", () => {
     const r = run(["check"], built("cross-page", threshold("98")));
     expect(r.status).toBe(1);
     expect(findings(r.stdout)).toContain(
-      "error: questions — 0 of 1 reviewed questions are found in the top 1 (0%), under the 98% that graph.check.questions.foundThreshold asks for.",
+      "error: (no page): 0 of 1 reviewed questions are found in the top 1 (0%), under the 98% that graph.check.questions.foundThreshold asks for.",
     );
+    expect(r.stdout).toContain("asks for.\n  at questions\n");
   });
 
   it("is not touched by questions.severity", () => {
@@ -221,7 +231,7 @@ describe("graph.check.questions.foundThreshold", () => {
     );
     expect(r.status).toBe(1);
     expect(findings(r.stdout)).toEqual([
-      "error: questions — 0 of 1 reviewed questions are found in the top 1 (0%), under the 98% that graph.check.questions.foundThreshold asks for.",
+      "error: (no page): 0 of 1 reviewed questions are found in the top 1 (0%), under the 98% that graph.check.questions.foundThreshold asks for.",
     ]);
   });
 

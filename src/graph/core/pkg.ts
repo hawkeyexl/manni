@@ -14,5 +14,5 @@ import { packageRoot } from "../../shared/package-root.js";
 
 /** Absolute path of the bundled SHACL shapes `manni graph check` defaults to. */
 export function bundledShapesPath(moduleUrl: string): string {
-  return join(packageRoot(moduleUrl), "shapes", "graph", "shapes-1.1.0.ttl");
+  return join(packageRoot(moduleUrl), "shapes", "graph", "shapes-1.1.1.ttl");
 }

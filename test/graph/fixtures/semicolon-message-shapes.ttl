@@ -1,0 +1,13 @@
+# One property shape whose own sh:message holds "; ", the separator a merged
+# finding joins its messages with. Two values break it, so the merge sees the
+# same message twice and must say it once.
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix ex: <https://example.com/semicolon#> .
+
+ex:ThingShape a sh:NodeShape ;
+    sh:targetClass ex:Thing ;
+    sh:property [
+        sh:path ex:code ;
+        sh:maxLength 1 ;
+        sh:message "Shorten the code; one character is the limit" ;
+    ] .

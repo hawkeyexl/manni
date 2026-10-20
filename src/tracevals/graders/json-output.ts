@@ -3,7 +3,7 @@ import { Ajv2020 } from "ajv/dist/2020.js";
 import type { ValidateFunction } from "ajv";
 import type { TraceGrader } from "./types.js";
 import { rejectWhen } from "./when.js";
-import { fail, finding, optionsError, pass } from "./util.js";
+import { fail, optionsError, pass } from "./util.js";
 
 /**
  * One Ajv instance per compile, keyed by the schema's own text.
@@ -75,10 +75,9 @@ export const jsonOutputGrader: TraceGrader = {
       );
     }
     if (validate(data)) return pass;
-    return {
-      findings: (validate.errors ?? []).map((e) =>
-        finding(plan, `${e.instancePath || "/"} ${e.message ?? "invalid"}`),
-      ),
-    };
+    const errors = (validate.errors ?? [])
+      .map((e) => `${e.instancePath || "/"} ${e.message ?? "invalid"}`)
+      .join("; ");
+    return fail(plan, `final assistant output does not match the schema: ${errors}`);
   },
 };
