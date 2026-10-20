@@ -19,25 +19,31 @@ docs/src/content/docs/lint/reference/templates.mdx:
       lines: 174
       integrity: sha256-8a65b8a4df02dd4f710e326c80cbd0429bd76bca633a9eadfd34d8b8bcf2ab21
     - generated-by: Claude Opus 5
-      lines: 176-432
-      integrity: sha256-c82e41c6af0c2370a1ec73b1e7f1870a8bf18dd329d50a6e8a6416b68b54d401
+      lines: 176-279
+      integrity: sha256-e356f9a956e9bd6d23ff3869753819b2510cf5ea0ba3d0850a69e386bea95b98
+    - generated-by: Claude Opus 5
+      lines: 285
+      integrity: sha256-f1b901847390b0ed7e374e7c1e464ec17b46a427c487a5ad6cbd2906405083d5
+    - generated-by: Claude Opus 5
+      lines: 287-434
+      integrity: sha256-4b31bb1f5a2b54d61f2f65e2076753659d90e9af180dc11e489d5400a24d9a8d
     - generated-by: Claude Opus 5.5
-      lines: 433-434
+      lines: 435-436
       integrity: sha256-49f0af10478e1f472c5d286c5d2e92ad7c15d052f27eb491ed691bd720b73e32
     - generated-by: Claude Opus 5
-      lines: 435
+      lines: 437
       integrity: sha256-a4f8a5728fc1cb02fcbbdfbd61255f5062f26f2dd8e7ca7067555a44299f850a
     - generated-by: Claude Opus 5.5
-      lines: 437-441
+      lines: 439-443
       integrity: sha256-878a380454712e31572b08b5a86d8265250f556bef5f61516ff3a2dc773a7a8d
     - generated-by: Claude Opus 5
-      lines: 443-446
+      lines: 445-448
       integrity: sha256-6378e79541580a1cee9c18581eb20a4d21ae8bd85a690dcd71f96d161125abc0
     - generated-by: Claude Opus 5.5
-      lines: 448-460
+      lines: 450-462
       integrity: sha256-0acd6a8aa1f931fb4a18e841b9c43c118b7784173e314c02d2fc5e873ad6b280
     - generated-by: Claude Opus 5
-      lines: 462-677
+      lines: 464-679
       integrity: sha256-6bfb423e1aa7c5d0e91f4c52f7501daae31cff89a3afa6077ebfb42f1bfc8773
   owner:
     - "@hawkeyexl"

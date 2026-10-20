@@ -13,8 +13,11 @@ docs/src/content/docs/lint/reference/cli.mdx:
       lines: 246-333
       integrity: sha256-56893b3526075f76d77ce689fdee8132870c2b6cffd8d12b1359e6c4a59b493d
     - generated-by: Claude Opus 5
-      lines: 335-461
-      integrity: sha256-145288c9c16b9c7af6799e1de8bc7dd27d9281351c7c8a12000b42f083fa84d8
+      lines: 335-409
+      integrity: sha256-930c91390d50c4eebcf8c8eb6e3ef66360286ce620348f68f3cc25d8af53323c
+    - generated-by: Claude Opus 5
+      lines: 411-461
+      integrity: sha256-dfd1b659eefc1c23eb308884b8624d0f934a637bf36dae7b63ec1e112342fa09
     - generated-by: Claude Opus 5.5
       lines: 462-463
       integrity: sha256-1a772927258117ee385a9d51d95b14481ef1a0f9e6a6ee89145b48de92ebd204

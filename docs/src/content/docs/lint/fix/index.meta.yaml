@@ -31,8 +31,11 @@ docs/src/content/docs/lint/fix/index.mdx:
       lines: 68-69
       integrity: sha256-bd2566dc6dfb9e756c1d787bc06718e69b1616cb1f1dc7c470472ec18a50d42b
     - generated-by: Claude Opus 5
-      lines: 70-200
-      integrity: sha256-b8ce9fadcf69aa6ba3408956430e776f43fb7c3a3c967e6fcc73da6d969827a2
+      lines: 70
+      integrity: sha256-24f408f1177be0cadc38939e30aedd8d57f3a9dd268f6bf55ee9c61b7e7b8ed1
+    - generated-by: Claude Opus 5
+      lines: 72-200
+      integrity: sha256-52126177803009c3eaa8735a5530eaf11aa7a7095f1d9ff3ac8bcfd6a46ecc47
     - generated-by: Claude Opus 5.5
       lines: 202-206
       integrity: sha256-b666501b5034e92fa436e98a950b78ff5b4f2c0590edfbe774af12a2c5a0b8f7
