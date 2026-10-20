@@ -64,3 +64,10 @@ Each finding names the axe rule, the element and what to change. Its last lines 
 Fix the element in the page or in the layout that renders it. When one element fails on several pages, fix the shared template.
 Never invent alt text, a label or a name the page does not justify. Ask the user for the words.
 Rebuild the site and run the same command again until it exits `0`.
+
+## test run
+
+`manni check` does not run this. Do not run `manni test run` unless the user asks, because it runs the shell steps in the pages.
+Each failure names the page, the step's line and what the step expected. Its last lines name the action and link its guide.
+Decide whether the step, the procedure it documents, or the product is wrong. Change the step and its prose together.
+If the product regressed, stop and tell the user. Never change an expectation only to match broken output.
