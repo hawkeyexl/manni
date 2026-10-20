@@ -915,6 +915,8 @@ export class Validator {
  * that more than one branch passed has no other error, so it stays.
  */
 function isWrapper(e: ErrorObject): boolean {
+  // Ajv raises `if` and `anyOf` only when every branch failed, so neither needs
+  // the `passingSchemas` guard `oneOf` does.
   if (e.keyword === "if" || e.keyword === "anyOf") return true;
   return e.keyword === "oneOf" && (e.params as { passingSchemas?: unknown }).passingSchemas === null;
 }
@@ -937,7 +939,9 @@ function messageFor(e: DefinedError, fallback: string): string {
     case "minItems":
       return e.params.limit === 1 ? "must not be empty" : fallback;
     case "type":
-      // A union arrives as an array, whatever `DefinedError` says.
+      // Ajv's `DefinedError` types this as a string, but Ajv emits a string
+      // array for a union such as `type: [string, array]`. Going through
+      // `unknown` handles both.
       return `must be ${[e.params.type as unknown].flat().join(" or ")}`;
     default:
       return fallback;
