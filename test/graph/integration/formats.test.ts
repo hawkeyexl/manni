@@ -243,5 +243,6 @@ describe("graph build: a named file no parser claims", () => {
       'manni: skipped notes.txt: no parser is registered for ".txt".',
     );
     expect(r.stderr).toContain("No input files matched: notes.txt");
+    expect(r.stderr).toMatch(/\(cwd: [^)]+\)\. Fix the globs, or pass --allow-empty if matching nothing is expected\.$/m);
   });
 });

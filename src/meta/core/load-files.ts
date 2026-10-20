@@ -374,7 +374,9 @@ async function walkTargetSet(opts: ResolveOptions): Promise<ResolvedTargets> {
  */
 export function notFoundMessage(missing: readonly string[]): string {
   const names = missing.map((m) => `"${m}"`).join(", ");
-  return missing.length === 1 ? `File not found: ${names}.` : `Files not found: ${names}.`;
+  return missing.length === 1
+    ? `File not found: ${names}. Check the path. Named paths resolve from the working directory.`
+    : `Files not found: ${names}. Check the paths. Named paths resolve from the working directory.`;
 }
 
 export interface NonEmptyParams {

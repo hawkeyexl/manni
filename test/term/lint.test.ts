@@ -161,6 +161,7 @@ describe("lintTermSet", () => {
         tool: "vale",
         check: "Direct.Voice",
         message: "Passive.",
+        guidance: { id: "vale", rule: "Direct.Voice", description: null, guide: null },
         file: "docs/terms/lens.md",
         line: 3,
         id: "lens",
@@ -173,6 +174,7 @@ describe("lintTermSet", () => {
         tool: "vale",
         check: "Moose.EmDash",
         message: "Em dash.",
+        guidance: { id: "vale", rule: "Moose.EmDash", description: null, guide: null },
         file: "docs/terms/lens.md",
         line: 3,
         id: "lens",
@@ -185,6 +187,7 @@ describe("lintTermSet", () => {
         tool: "vale",
         check: "Moose.Hedge",
         message: "Hedge.",
+        guidance: { id: "vale", rule: "Moose.Hedge", description: null, guide: null },
         file: "docs/terms/lens.md",
         line: 3,
         id: "lens",
@@ -201,6 +204,23 @@ describe("lintTermSet", () => {
     const findings = await lintTermSet(set(term("a", { definition: "x" })), { runVale });
     expect(findings).toHaveLength(1);
     expect(findings[0]?.id).toBe("a");
+  });
+
+  it("carries Vale's description and link as the finding's guidance, and drops a link that is not http(s)", async () => {
+    const { runVale } = fakeVale(() => [
+      { ...alert("Moose.Passive", 1), Description: "Prefer the active voice.", Link: "https://example.com/passive" },
+      { ...alert("Moose.Local", 1), Description: "  ", Link: "file:///styles/local.md" },
+    ]);
+    const findings = await lintTermSet(set(term("a", { definition: "x" })), { runVale });
+    expect(findings.map((f) => f.guidance)).toEqual([
+      { id: "vale", rule: "Moose.Local", description: null, guide: null },
+      {
+        id: "vale",
+        rule: "Moose.Passive",
+        description: "Prefer the active voice.",
+        guide: "https://example.com/passive",
+      },
+    ]);
   });
 
   it("does not let a second entry with the same id overwrite the first", async () => {
@@ -292,6 +312,7 @@ describe("lintTermSet against the real Vale", () => {
         tool: "vale",
         check: "Fixture.Frobnicate",
         message: "Avoid 'frobnicate'.",
+        guidance: { id: "vale", rule: "Fixture.Frobnicate", description: null, guide: null },
         file: "docs/terms/widget.md",
         line: 6,
         id: "widget",

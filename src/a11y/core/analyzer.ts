@@ -24,6 +24,7 @@ import {
   type Violation,
   type ViolationNode,
 } from "../types.js";
+import { isLoopback } from "../../shared/collections.js";
 import { dedupeKey } from "./url.js";
 
 export interface AnalyzeOptions {
@@ -217,7 +218,7 @@ async function analyzePage(
   try {
     response = await page.goto(url, { waitUntil: "load", timeout: opts.timeout });
   } catch (err) {
-    throw new A11yError(`Could not load ${url}: ${reason(err)}`);
+    throw new A11yError(loadFailureMessage(url, reason(err)));
   }
   // Where the load settled, HTTP redirects included. The browser being
   // anywhere else later means the page navigated on its own.
@@ -298,7 +299,7 @@ async function analyzePage(
   return {
     result: {
       url,
-      violations: results.violations.map(toViolation),
+      violations: results.violations.map((v) => toViolation(v, results.testEngine)),
       passes: results.passes.length,
       incomplete: results.incomplete.length,
     },
@@ -405,7 +406,14 @@ function impactOf(impact: ImpactValue | null | undefined): AxeImpact {
   return impact != null && isAxeImpact(impact) ? impact : "minor";
 }
 
-function toViolation(result: AxeResult): Violation {
+/**
+ * axe's result as the reporters read it. The guidance names the axe version
+ * that judged the page, the rule, axe's description of it and its guide.
+ */
+export function toViolation(
+  result: AxeResult,
+  testEngine: Pick<AxeResults["testEngine"], "version">,
+): Violation {
   return {
     id: result.id,
     severity: severityOf(result.impact),
@@ -414,6 +422,12 @@ function toViolation(result: AxeResult): Violation {
     helpUrl: result.helpUrl,
     tags: result.tags,
     nodes: result.nodes.map(toNode),
+    guidance: {
+      id: `axe-core ${testEngine.version}`,
+      rule: result.id,
+      description: result.description,
+      guide: result.helpUrl,
+    },
   };
 }
 
@@ -430,6 +444,17 @@ function toNode(node: AxeNode): ViolationNode {
  * The first line of a Playwright error. The rest is a call log that repeats
  * the URL and the timeout, which the caller's message already carries.
  */
+/**
+ * The refusal when a page will not load, with the step that fixes it. A
+ * site on this machine is most likely not started yet.
+ */
+export function loadFailureMessage(url: string, why: string): string {
+  const next = isLoopback(new URL(url).hostname)
+    ? "Start the site with manni site preview, then run the check again."
+    : "Check that the site is up and reachable from this machine.";
+  return `Could not load ${url}: ${why.replace(/\.$/, "")}. ${next}`;
+}
+
 function reason(err: unknown): string {
   const message = err instanceof Error ? err.message : String(err);
   return message.split("\n")[0]?.trim() ?? message;

@@ -401,8 +401,11 @@ docs/src/content/docs/meta/reference/output-and-exit-codes.mdx:
       lines: 616
       integrity: sha256-687f9c6bafa5c2660ffd5ad102d431a4244c29cf477fc02db188b2f9b10b3b66
     - generated-by: Claude Opus 5
-      lines: 618-686
-      integrity: sha256-015b65630f8868b61389a43f33fc8bc1c10b1c7f4bcd86062cca5e68cda65c41
+      lines: 618-672
+      integrity: sha256-394ce308af7434530b990a62e096b9ede9476ac6e385c0862b744b950f52ce37
+    - generated-by: Claude Opus 5
+      lines: 674-686
+      integrity: sha256-a8284e1552fa66c2d35dd07b38a6f31f9e3b86b30b3772e981ae9b0e3eab887d
     - generated-by: Claude Fable 5.1
       lines: 687
       integrity: sha256-515d97ae6f05420004a6ee8ad1dd7f02279b79b9495f60205639834c690833f4

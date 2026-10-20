@@ -38,7 +38,8 @@ const failing: FamilyCheckRun = {
   checks: [{ command: "meta validate", status: "fail", render: () => "docs/limits.md\n  ✖ /description" }],
 };
 
-const FILES = "manni found errors in the files you changed. Fix them, then finish.\n\nmeta validate\ndocs/limits.md\n  ✖ /description";
+const FILES =
+  "manni found errors in the files you changed. Fix them, then finish. The manni:fix skill says how to repair each finding.\n\nmeta validate\ndocs/limits.md\n  ✖ /description";
 const FILES_STILL = "manni still reports errors after one repair pass. Run manni check to see them.";
 const broken = (rules: number) => ({ broken: { rules, report: "CLAUDE.md\n  ✖ no-force-push", trace: "/t/s1.jsonl" } });
 

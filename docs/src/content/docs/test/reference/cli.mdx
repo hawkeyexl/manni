@@ -12,7 +12,7 @@ applies-to: ["domain:test"]
 risks: ["open-world"]
 sample-questions: ["What flags does manni test run accept?", "Which inputs does manni test run test when I give it no paths?", "Why did manni test run exit 2?"]
 graph: { label: "CLI reference", type: reference }
-last-updated: 2026-10-05
+last-updated: 2026-10-20
 tags:
   - cli
   - testing
@@ -146,10 +146,20 @@ error go to stderr.
 relative to the working directory, with the step's line when Doc Detective
 reports one. A summary line of test counts follows.
 
+Each step's message is Doc Detective's own. A `FAIL` adds one sentence, because
+Doc Detective compares only what the step expected with what happened. The fix
+can lie in the step, in the procedure it documents, or in the product. Two dim
+lines follow the message. The first names the step's action, and the step's
+own `description` when it has one. The second links the action's page in Doc
+Detective's docs. A step that fails the same way in several contexts, such as
+two browsers, is listed once.
+
 ```console
 $ manni test run test/test/fixtures/fail.md
 test/test/fixtures/fail.md
-  4  FAIL     Returned exit code 1. Expected one of [0]
+  4  FAIL     Returned exit code 1. Expected one of [0]. Fix the step, fix the procedure it documents, or report a product regression.
+              Doc Detective runShell
+              Guide: https://docs.doc-detective.com/docs/actions/runshell
 
 1 test: 0 passed, 1 failed, 0 warnings, 0 skipped
 ```
@@ -166,7 +176,8 @@ takes the singular, as in `1 test` and `1 warning`.
 
 **`github`** writes one workflow command per listed step, `::error` for a
 `FAIL` and `::warning` for a `WARNING`, then the summary line. GitHub turns
-each command into an annotation on the page and line.
+each command into an annotation on the page and line. The message carries the
+same text and lines as `pretty`, joined by `%0A`.
 
 {/* test {"testId":"test-reference-cli","description":"The reference's examples: the github format on fail.md exits 1, pass.md exits 0, and stdin is a usage error."} */}
 {/* step {"description":"The github format writes an error annotation on the failing line, exit 1.","runShell":{"command":"npx @hawkeyexl/manni test run test/test/fixtures/fail.md -f github --no-progress","exitCodes":[1],"stdio":"::error file=test/test/fixtures/fail.md,line=4"}} */}
@@ -176,7 +187,7 @@ each command into an annotation on the page and line.
 
 ```console
 $ manni test run test/test/fixtures/fail.md -f github
-::error file=test/test/fixtures/fail.md,line=4,title=Doc Detective::Returned exit code 1. Expected one of [0]
+::error file=test/test/fixtures/fail.md,line=4,title=Doc Detective::Returned exit code 1. Expected one of [0]. Fix the step, fix the procedure it documents, or report a product regression.%0ADoc Detective runShell%0AGuide: https://docs.doc-detective.com/docs/actions/runshell
 1 test: 0 passed, 1 failed, 0 warnings, 0 skipped
 ```
 
@@ -246,7 +257,7 @@ Every message below exits `2` and is printed on stderr, prefixed `manni: `.
 |---|---|
 | `doc-detective` is not on `PATH` | `doc-detective is not on PATH. Install Doc Detective (npm install -g doc-detective) to run doc tests.` |
 | No paths, no `--collection`, and no Doc Detective config | `test run needs paths or a Doc Detective config. Pass paths, or add .doc-detective.json.` |
-| A named path does not exist | `File not found: "<path>".`, or `Files not found: "<a>", "<b>".` for more than one |
+| A named path does not exist | `File not found: "<path>". Check the path. Named paths resolve from the working directory.`, or `Files not found: "<a>", "<b>". Check the paths. Named paths resolve from the working directory.` for more than one |
 | The paths match no files | `No files matched. Patterns tried: "<path>". Pass --allow-empty if that is expected.` |
 | `-` is given | `test run reads files; Doc Detective has no stdin. Pass a path.` |
 | `--collection` with paths | `--collection selects a configured collection; it cannot be combined with paths.` |

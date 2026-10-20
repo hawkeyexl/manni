@@ -99,9 +99,13 @@ pinned to the page and the line of the sentence, with the rule id as the
 title. An error and a warning look like this:
 
 ```
-::error file=docs/limits.md,line=13,title=manni%3Acite/source-changed::fetch-timeout (lib/limits.ts:2): changed since 9265563, 1 commit
-::warning file=docs/limits.md,line=13,title=manni%3Acite/claim-changed::fetch-timeout: the claim at line 13 has changed since it was pinned.
+::error file=docs/limits.md,line=13,title=manni%3Acite/source-changed::fetch-timeout (lib/limits.ts:2): changed since 9265563, 1 commit. Check the sentence against the source, then run manni cite update --accept --only fetch-timeout.%0Amanni:cite source-changed: The cited lines are not what they were.%0AGuide: https://hawkeyexl.github.io/manni/cite/fix/#source-changed
+::warning file=docs/limits.md,line=13,title=manni%3Acite/claim-changed::fetch-timeout: the claim at line 13 has changed since it was pinned. Check it still matches the source, then run manni cite update --accept --only fetch-timeout.%0Amanni:cite claim-changed: The sentence was edited since it was pinned.%0AGuide: https://hawkeyexl.github.io/manni/cite/fix/#claim-changed
 ```
+
+Each message ends with what to do. After `%0A`, GitHub's escaped line break,
+come the rule line and a Guide link to the rule's section of the
+[fix page](/manni/cite/fix/).
 
 {/* cite github-source-finding-message */}
 {/* cite github-claim-finding-as-is */}
@@ -119,8 +123,8 @@ annotated on the manifest.
 | --- | --- | --- |
 | `pretty` | People, and local runs. The default. | One line per citation under its page; a summary line. `-q` hides current citations and clean pages. |
 | `github` | GitHub Actions annotations. | `::error` / `::warning` / `::notice` workflow commands, one per finding, `title=manni:cite/<rule>`. |
-| `json` | Scripts and dashboards. | `summary` plus `pages[]`, each with every citation's `claim` and `source` ends, its `origin` and `anchor`, its `marker` where one anchors it, and every finding's `rule`, `ruleId`, `severity`, `message` and `line`. Under `--no-check-sources`, source statuses are `skipped` and appear here only. |
-| `sarif` | GitHub code scanning and any SARIF consumer. | One result per finding with `ruleId: manni:cite/<rule>`, `level`, the annotation's message, the page as `artifactLocation.uri`, `region.startLine`, and a fingerprint stable across a move. Each rule has a plain description and a `helpUri` to its row in the [citations reference](/manni/cite/reference/citations/#source-end-rules). Code scanning drops a location outside the repository, so a manifest that sits outside it is reported on the page. |
+| `json` | Scripts and dashboards. | `summary` plus `pages[]`, each with every citation's `claim` and `source` ends, its `origin` and `anchor`, its `marker` where one anchors it, and every finding's `rule`, `ruleId`, `severity`, `message`, `line` and `guidance`. Under `--no-check-sources`, source statuses are `skipped` and appear here only. |
+| `sarif` | GitHub code scanning and any SARIF consumer. | One result per finding with `ruleId: manni:cite/<rule>`, `level`, the annotation's message, the page as `artifactLocation.uri`, `region.startLine`, and a fingerprint stable across a move. Each rule has a plain description and a `helpUri` to its section of the [fix page](/manni/cite/fix/), and each result carries the guidance lines and `properties.guidance`. Code scanning drops a location outside the repository, so a manifest that sits outside it is reported on the page. |
 | `junit` | The CI "Tests" tab. | One `testcase` per page, classname `manni.cite`, a `failure` per error with `type` set to the rule id and the annotation's message. |
 
 {/* cite update-formats-pretty-json */}
@@ -154,6 +158,9 @@ than guessing:
 manni: commit 9265563 not found in history; use fetch-depth: 0 to enable never-true and diffs
 ✗ docs/limits.md
     ✗ fetch-timeout   :13 current   lib/limits.ts:2 changed (history unavailable: commit 9265563 not found; fetch-depth: 0)
+      Check the sentence against the source, then run manni cite update --accept --only fetch-timeout.
+      manni:cite source-changed: The cited lines are not what they were.
+      Guide: https://hawkeyexl.github.io/manni/cite/fix/#source-changed
 ```
 
 {/* cite shallow-still-source-changed */}

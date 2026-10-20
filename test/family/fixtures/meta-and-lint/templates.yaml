@@ -1,0 +1,7 @@
+# A how-to needs a Steps section.
+templates:
+  how-to:
+    types: [how-to]
+    sections:
+      - id: steps
+        heading: Steps

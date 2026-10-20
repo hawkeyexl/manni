@@ -44,8 +44,9 @@ import {
   type Family,
 } from "../core/in-play.js";
 import { withSharedWalks } from "../../meta/core/load-files.js";
+import { FIX_SENTENCE } from "./status.js";
 
-export const CHECK_FORMATS = ["pretty", "json", "github"] as const;
+export const CHECK_FORMATS = ["pretty", "json", "github", "sarif"] as const;
 export type CheckFormat = (typeof CHECK_FORMATS)[number];
 
 export type Scope =
@@ -128,25 +129,37 @@ async function runDomain(domain: Domain, ctx: Context): Promise<Outcome> {
       };
     }
     case "cite": {
-      const [{ runCheck: runCite }, { renderCheckPretty: citePretty }, { renderCheckJson: citeJson }, { renderCheckGithub: citeGithub }] =
-        await Promise.all([
-          import("../../cite/commands/check.js"),
-          import("../../cite/reporters/pretty.js"),
-          import("../../cite/reporters/json.js"),
-          import("../../cite/reporters/github.js"),
-        ]);
+      const [
+        { runCheck: runCite },
+        { renderCheckPretty: citePretty },
+        { renderCheckJson: citeJson },
+        { renderCheckGithub: citeGithub },
+        { renderCheckSarif: citeSarif },
+      ] = await Promise.all([
+        import("../../cite/commands/check.js"),
+        import("../../cite/reporters/pretty.js"),
+        import("../../cite/reporters/json.js"),
+        import("../../cite/reporters/github.js"),
+        import("../../cite/reporters/sarif.js"),
+      ]);
       const run = await runCite({ inputs, configPath, cwd, onNotice });
       if (!run.pages.some((p) => p.citations.length > 0 || p.findings.length > 0)) {
         return { skipped: NOT_SET_UP.cite };
       }
       return {
         failed: run.summary.failed > 0,
-        render: (format, color) =>
-          format === "json"
-            ? citeJson(run)
-            : format === "github"
-              ? citeGithub(run)
-              : citePretty(run, { color, quiet: true }),
+        render: (format, color) => {
+          switch (format) {
+            case "pretty":
+              return citePretty(run, { color, quiet: true });
+            case "json":
+              return citeJson(run);
+            case "github":
+              return citeGithub(run);
+            case "sarif":
+              return citeSarif(run, { onNotice });
+          }
+        },
       };
     }
     case "lint": {
@@ -158,7 +171,10 @@ async function runDomain(domain: Domain, ctx: Context): Promise<Outcome> {
       const run = await runLint({ inputs, configPath, cwd, onNotice });
       return {
         failed: run.summary.failed > 0,
-        render: (format, color) => renderLint(run, format, { color }),
+        // SARIF locations resolve from `root`, which is where the run's labels
+        // start: the config's directory for a bare run, else the working one.
+        render: (format, color) =>
+          renderLint(run, format, { color, root: inputs.length === 0 ? resolve(cwd, family.file.dir) : cwd }),
       };
     }
     case "docevals": {
@@ -189,23 +205,35 @@ async function runDomain(domain: Domain, ctx: Context): Promise<Outcome> {
       };
     }
     case "term": {
-      const [{ runCheck: runTerm }, { renderFindingsPretty: termPretty }, { renderFindingsJson: termJson }, { renderFindingsGithub: termGithub }] =
-        await Promise.all([
-          import("../../term/commands/check.js"),
-          import("../../term/reporters/pretty.js"),
-          import("../../term/reporters/json.js"),
-          import("../../term/reporters/github.js"),
-        ]);
+      const [
+        { runCheck: runTerm },
+        { renderFindingsPretty: termPretty },
+        { renderFindingsJson: termJson },
+        { renderFindingsGithub: termGithub },
+        { renderFindingsSarif: termSarif },
+      ] = await Promise.all([
+        import("../../term/commands/check.js"),
+        import("../../term/reporters/pretty.js"),
+        import("../../term/reporters/json.js"),
+        import("../../term/reporters/github.js"),
+        import("../../term/reporters/sarif.js"),
+      ]);
       const report = await runTerm({ inputs, configPath, cwd, allowEmpty: true, onNotice });
       if (report.terms === 0) return { skipped: NOT_SET_UP.term };
       return {
         failed: report.summary.failed > 0,
-        render: (format, color) =>
-          format === "json"
-            ? termJson(report)
-            : format === "github"
-              ? termGithub(report)
-              : termPretty(report, { color, references: true }),
+        render: (format, color) => {
+          switch (format) {
+            case "pretty":
+              return termPretty(report, { color, references: true });
+            case "json":
+              return termJson(report);
+            case "github":
+              return termGithub(report);
+            case "sarif":
+              return termSarif(report, { onNotice });
+          }
+        },
       };
     }
     case "graph": {
@@ -326,6 +354,17 @@ function firstLine(message: string): string {
   return message.split("\n", 1)[0] ?? "";
 }
 
+/**
+ * What an agent is told when a check could not run. The cause is the
+ * config owner's to fix, so the agent reports it rather than editing config.
+ */
+function couldNotCheck(command: string, files: string, message: string): string {
+  return (
+    `manni ${command} could not check ${files}. The cause is in manni's setup, not in the file. ` +
+    `Tell the user what it says, and leave manni.config.yaml as it is.\n${message}`
+  );
+}
+
 /** What an agent is handed when a hook blocks: the failing checks' reports, nothing else. */
 function renderFailures(run: FamilyCheckRun): string {
   return run.checks
@@ -393,8 +432,95 @@ export function renderGithub(run: FamilyCheckRun): string {
     .join("\n");
 }
 
+interface SarifRun {
+  automationDetails?: { id: string };
+  invocations?: unknown[];
+  [key: string]: unknown;
+}
+
+interface SarifNotification {
+  level: "note" | "error";
+  message: { text: string };
+}
+
+/**
+ * One SARIF 2.1.0 log for the whole run. Each check that ran contributes its
+ * domain's own runs, each under the category `manni/<domain>/`: meta, cite
+ * and term share the driver `manni`, so the category is what tells them apart.
+ * A last `manni-check` run, with no results, names the checks that were
+ * skipped or could not run. A check that could not run gets no run of its
+ * own: an empty run would tell code scanning every open alert in its
+ * category is fixed.
+ */
+export function renderSarif(run: FamilyCheckRun): string {
+  const runs: SarifRun[] = [];
+  const notifications: SarifNotification[] = [];
+  const say = (level: SarifNotification["level"], text: string): void => {
+    notifications.push({ level, message: { text } });
+  };
+  for (const c of run.checks) {
+    if (!isRan(c)) {
+      if (c.status === "skipped") say("note", `${c.command} skipped: ${c.message}.`);
+      else say("error", `${c.command} could not run: ${c.message}`);
+      continue;
+    }
+    const domain = c.command.split(" ", 1)[0] ?? c.command;
+    let own: SarifRun[];
+    try {
+      // Parsed output is untrusted: `runs` may be missing or not an array. An
+      // empty `runs` would drop the domain from the log without a word, so it
+      // counts as bad output too.
+      const runs = (JSON.parse(c.render("sarif", false)) as { runs?: unknown }).runs;
+      if (!Array.isArray(runs) || runs.length === 0) throw new TypeError("no runs");
+      own = runs as SarifRun[];
+    } catch {
+      // As in JSON: one reporter's bad output must not take the others with it.
+      say("error", `${c.command} -f sarif printed output that is not SARIF.`);
+      continue;
+    }
+    for (const r of own) {
+      runs.push({
+        ...r,
+        automationDetails: { id: `manni/${domain}/` },
+        invocations: r.invocations ?? [{ executionSuccessful: true }],
+      });
+    }
+  }
+  runs.push({
+    tool: {
+      driver: {
+        name: "manni-check",
+        version: pkg.version,
+        informationUri: "https://hawkeyexl.github.io/manni/family/reference/cli/",
+      },
+    },
+    automationDetails: { id: "manni/check/" },
+    invocations: [
+      {
+        executionSuccessful: !notifications.some((n) => n.level === "error"),
+        ...(notifications.length > 0 ? { toolExecutionNotifications: notifications } : {}),
+      },
+    ],
+    results: [],
+  });
+  return JSON.stringify(
+    { $schema: "https://json.schemastore.org/sarif-2.1.0.json", version: "2.1.0", runs },
+    null,
+    2,
+  );
+}
+
 export function render(run: FamilyCheckRun, format: CheckFormat, color: boolean): string {
-  return format === "json" ? renderJson(run) : format === "github" ? renderGithub(run) : renderPretty(run, color);
+  switch (format) {
+    case "pretty":
+      return renderPretty(run, color);
+    case "json":
+      return renderJson(run);
+    case "github":
+      return renderGithub(run);
+    case "sarif":
+      return renderSarif(run);
+  }
 }
 
 /** What a hook command ends with: its exit code, and what it prints where. */
@@ -419,14 +545,12 @@ export function hookReply(run: FamilyCheckRun, envelope: Envelope): HookReply {
     if (failed) {
       return {
         exitCode: 2,
-        stderr: `manni found errors in ${files}. Fix them before you continue.\n\n${renderFailures(run)}\n`,
+        stderr: `manni found errors in ${files}. Fix them before you continue. ${FIX_SENTENCE}\n\n${renderFailures(run)}\n`,
       };
     }
     const errors = run.checks.filter((c): c is NotRunCheck => c.status === "error");
     if (errors.length === 0) return { exitCode: 0 };
-    const additionalContext = errors
-      .map((c) => `manni ${c.command} could not check ${files}: ${firstLine(c.message)}`)
-      .join("\n");
+    const additionalContext = errors.map((c) => couldNotCheck(c.command, files, c.message)).join("\n");
     return {
       exitCode: 0,
       stdout: `${JSON.stringify({ hookSpecificOutput: { hookEventName: "PostToolUse", additionalContext } })}\n`,
@@ -460,7 +584,9 @@ export function turnReply(
     if (envelope.stopHookActive) {
       messages.push("manni still reports errors after one repair pass. Run manni check to see them.");
     } else {
-      reasons.push(`manni found errors in the files you changed. Fix them, then finish.\n\n${renderFailures(run)}`);
+      reasons.push(
+        `manni found errors in the files you changed. Fix them, then finish. ${FIX_SENTENCE}\n\n${renderFailures(run)}`,
+      );
     }
   }
   if (turn?.broken !== undefined) {
@@ -551,7 +677,7 @@ export async function runTurnCheck(
 /** The reply when the run itself could not happen, under a hook. */
 export function hookFailure(message: string, envelope: Envelope, file: string | undefined): HookReply {
   if (envelope.event !== "PostToolUse" || file === undefined) return { exitCode: 0 };
-  const additionalContext = `manni check could not check ${file}: ${firstLine(message)}`;
+  const additionalContext = couldNotCheck("check", file, message);
   return {
     exitCode: 0,
     stdout: `${JSON.stringify({ hookSpecificOutput: { hookEventName: "PostToolUse", additionalContext } })}\n`,

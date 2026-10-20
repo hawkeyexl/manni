@@ -14,7 +14,7 @@ next-steps: ["graph-reference-cli", "graph-reference-configuration", "graph-ci"]
 concepts: ["golden set", "sample question", "meta-provenance"]
 sample-questions: ["How do I draft sample questions for pages that have none?", "How do I gate CI on how many sample questions find their answers?", "What do I do when a pinned answer moves?"]
 graph: { label: "Keep a golden set of reader questions", type: task }
-last-updated: 2026-10-19
+last-updated: 2026-10-20
 tags:
   - knowledge-graph
   - retrieval
@@ -135,8 +135,10 @@ and their findings report at notice:
 
 ```console
 $ manni graph check
-notice: https://example.com/graph/doc/docs/retry.md graph:sampleQuestion — "How long does each retry wait before attempting again?" does not find the section that answers it, § Retry limits, in the top 2 (it ranks 3; first is docs/quotas.md) (drafted, not reviewed) [docs/retry.md]
-notice: https://example.com/graph/doc/docs/retry.md graph:sampleQuestion — "What is the maximum number of retries for a failed upload?" does not find the section that answers it, § Retry limits, in the top 2 (it ranks 6; first is docs/retry.md § Retry a failed upload) (drafted, not reviewed) [docs/retry.md]
+notice: docs/retry.md: "How long does each retry wait before attempting again?" does not find the section that answers it, § Retry limits, in the top 2 (it ranks 3; first is docs/quotas.md) (drafted, not reviewed)
+  at https://example.com/graph/doc/docs/retry.md graph:sampleQuestion
+notice: docs/retry.md: "What is the maximum number of retries for a failed upload?" does not find the section that answers it, § Retry limits, in the top 2 (it ranks 6; first is docs/retry.md § Retry a failed upload) (drafted, not reviewed)
+  at https://example.com/graph/doc/docs/retry.md graph:sampleQuestion
 
 questions  6: 0 reviewed, 6 drafted, on 3 pages
   found    0 of 0 reviewed in the top 2 (0%), 0 first (0%)
@@ -172,9 +174,12 @@ graph:
 
 ```console
 $ manni graph check
-error: questions — 4 of 6 reviewed questions are found in the top 2 (66%), under the 90% that graph.check.questions.foundThreshold asks for.
-warning: https://example.com/graph/doc/docs/retry.md graph:sampleQuestion — "How long does an upload wait between retries?" does not find the section that answers it, § Retry limits, in the top 2 (it ranks 3; first is docs/retry.md § Retry a failed upload) [docs/retry.md]
-warning: https://example.com/graph/doc/docs/retry.md graph:sampleQuestion — "How many times does a failed upload retry?" does not find the section that answers it, § Retry limits, in the top 2 (it ranks 3; first is docs/retry.md) [docs/retry.md]
+error: (no page): 4 of 6 reviewed questions are found in the top 2 (66%), under the 90% that graph.check.questions.foundThreshold asks for.
+  at questions
+warning: docs/retry.md: "How long does an upload wait between retries?" does not find the section that answers it, § Retry limits, in the top 2 (it ranks 3; first is docs/retry.md § Retry a failed upload)
+  at https://example.com/graph/doc/docs/retry.md graph:sampleQuestion
+warning: docs/retry.md: "How many times does a failed upload retry?" does not find the section that answers it, § Retry limits, in the top 2 (it ranks 3; first is docs/retry.md)
+  at https://example.com/graph/doc/docs/retry.md graph:sampleQuestion
 
 questions  6: 6 reviewed, 0 drafted, on 3 pages
   found    4 of 6 reviewed in the top 2 (66%), 3 first (50%)
@@ -274,9 +279,12 @@ new place, asks the question there, and reports the move as a notice:
 
 ```console
 $ manni graph check
-notice: https://example.com/graph/doc/docs/upload.md graph:sampleQuestion — the answer to "What is the maximum size allowed for each upload file?" moved from lines 4 to 5, so manni graph fill --fields sample-questions re-pins it. [docs/upload.md]
-notice: https://example.com/graph/doc/docs/upload.md graph:sampleQuestion — the answer to "Which archive formats are supported for upload?" moved from lines 8 to 9, so manni graph fill --fields sample-questions re-pins it. [docs/upload.md]
-notice: questions.yaml:1 — the answer to "Two gigabytes is the limit, but my storage is full. How do I free space?" in docs/upload.md moved from lines 4 to 5, so manni graph fill --fields sample-questions re-pins it. [questions.yaml]
+notice: docs/upload.md: the answer to "What is the maximum size allowed for each upload file?" moved from lines 4 to 5, so manni graph fill --fields sample-questions re-pins it.
+  at https://example.com/graph/doc/docs/upload.md graph:sampleQuestion
+notice: docs/upload.md: the answer to "Which archive formats are supported for upload?" moved from lines 8 to 9, so manni graph fill --fields sample-questions re-pins it.
+  at https://example.com/graph/doc/docs/upload.md graph:sampleQuestion
+notice: questions.yaml: the answer to "Two gigabytes is the limit, but my storage is full. How do I free space?" in docs/upload.md moved from lines 4 to 5, so manni graph fill --fields sample-questions re-pins it.
+  at questions.yaml:1
 
 questions  8: 8 reviewed, 0 drafted, on 3 pages and in questions.yaml
   found    7 of 7 reviewed in the top 2 (100%), 4 first (57%)

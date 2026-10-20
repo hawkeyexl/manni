@@ -1,0 +1,6 @@
+# One term and a guide that misspells it: `manni term check` exits 1 with one
+# undefined-term error that suggests the label the guide meant.
+collections:
+  - name: site
+    paths:
+      - "docs/**/*.md"

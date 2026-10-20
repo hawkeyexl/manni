@@ -1,0 +1,24 @@
+WEBVTT
+
+NOTE Captions are burned into findings-say-what-to-do-1x1.mp4 (LinkedIn autoplays muted). This sidecar carries the same text for players and for hosts that accept a caption track. Silent video: there is no narration and no sound, and the terminal text is in the transcript.
+
+1
+00:00:00.000 --> 00:00:12.967
+Before, in 4.13.0
+June 5th is not a date. 4.13.0 shows a pattern and a wrapper line.
+
+2
+00:00:12.967 --> 00:00:24.967
+Now it says what to do
+One finding. It names the rule, says what date is for and links a guide.
+
+3
+00:00:24.967 --> 00:00:33.133
+Start from a skeleton
+schemas show -f markdown prints frontmatter to start from, every key explained.
+
+4
+00:00:33.133 --> 00:00:41.933
+Across the family
+cite names its rule too, and the command to run once you have checked.
+

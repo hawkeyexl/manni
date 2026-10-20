@@ -22,17 +22,31 @@ will not have to open a Turtle file.
 ## Read the line
 
 ```console
-error: https://example.com/graph/concept/installation skos:prefLabel — concept carries multiple prefLabels (same slug, different spellings) — settle on one spelling [docs/install.md, docs/setup.md]
+warning: docs/configuration.md, docs/getting-started.md: Pages spell this concept two ways: "Installation" and "installation". Use one spelling on every page that names it.
+  at https://example.com/dd/concept/installation skos:prefLabel
+  manni:graph-shapes:1.1.1 Concept-prefLabel-collision: One name per language, so search and the glossary agree on a spelling.
+  Guide: https://hawkeyexl.github.io/manni/graph/fix/
 ```
 
-Four parts, in order:
+Read the first line first. It says everything you need to edit:
 
 | Part | What it is |
 |---|---|
-| `error` | The severity. `error` fails the build; `warning` and `notice` report and exit `0`. |
-| `https://example.com/graph/concept/installation` | The **focus node**, the graph's name for the thing that failed. |
-| `skos:prefLabel` | The property the rule is about. |
-| `[docs/install.md, docs/setup.md]` | The documents the node came from. **This is where you edit.** |
+| `warning` | The severity. `error` fails the build; `warning` and `notice` report and exit `0`. |
+| `docs/configuration.md, docs/getting-started.md` | The pages the finding came from. **This is where you edit.** `(no page)` means it came from none. |
+| The message | What is wrong, and what to change. It names the frontmatter key in backticks. |
+
+The lines under it are for when the message is not enough:
+
+| Line | What it is |
+|---|---|
+| `at https://example.com/dd/concept/installation skos:prefLabel` | The **focus node**, the graph's name for the thing that failed, and the property the rule is about. |
+| `manni:graph-shapes:1.1.1 Concept-prefLabel-collision: …` | The shapes file, the rule that judged it, and what the rule is for. |
+| `Guide:` | This page. |
+
+To see every key a shape asks for, run
+`npx @hawkeyexl/manni graph shapes show <shape>`, with the shape's name, such as
+`ConceptShape`. Add `-f markdown` for a frontmatter skeleton to copy.
 
 A graph finding is emergent by nature. Two pages spelling one concept
 differently collide on a single node, so the fix is usually in one of them and
@@ -56,30 +70,39 @@ If the CI job also ran `graph stats --check`, run that too.
 
 ## The common findings
 
-### Concept carries multiple prefLabels
+### Pages spell a concept two ways
 
 Two pages named one concept with different spellings, such as `Installation`
-and `installing`, or `CLI` and `command line`. They slug to the same node. It
-then has two preferred labels, and a reader of the graph cannot tell which is
-right.
+and `installation`, or `CLI` and `Cli`. They slug to the same node. It then has
+two preferred labels, and a reader of the graph cannot tell which is right.
 
 Pick one spelling and use it in both pages. The report names both files, so
 this is a two-line change once you have decided which spelling wins. If the two
 really are different concepts, give them names that do not slug to the same
 thing.
 
-### `skos:broader` cycle
+### A broader cycle
 
-Page A says its concept is narrower than B's, B says narrower than C's, and C
-says narrower than A's. A concept cannot be its own ancestor.
+```console
+error: violations/alpha.md, violations/beta.md, violations/gamma.md: "Alpha" and "Beta" form a broader cycle, so each is its own ancestor. Remove one `broader` or `narrower` value on the cycle.
+  at https://example.com/dd/concept/alpha skos:broader
+  manni:graph-shapes:1.1.1 Concept-broader: A more general concept. A concept is never its own ancestor.
+  Guide: https://hawkeyexl.github.io/manni/graph/fix/
+```
 
-The message lists the cycle in order. One of those three `broader` values is
-wrong; usually the one that was added last. Remove or repoint it.
+Page A says its concept is narrower than B's, and B says narrower than A's. A
+concept cannot be its own ancestor.
+
+The message names the concepts on the cycle. One of those `broader` or
+`narrower` values is wrong, usually the one added last. Remove or repoint it.
 
 ### A mapping that points into the scheme
 
 ```console
-error: https://example.com/graph/concept/pluggable-auth-layer skos:exactMatch — skos:exactMatch points into this scheme (https://example.com/graph/concept/token), so use broader, narrower or related instead. [docs/glossary/pal.md, docs/glossary/pluggable-auth-layer.md, docs/guides/login.md]
+error: docs/glossary/pal.md, docs/glossary/pluggable-auth-layer.md, docs/guides/login.md: `exact-matches` names "token", a concept in this glossary. Use `broader`, `narrower` or `related-terms` for it instead.
+  at https://example.com/graph/concept/pluggable-auth-layer skos:exactMatch
+  manni:graph-shapes:1.1.1 Concept-exactMatch: The same concept in another vocabulary, from the term page. It never points into this glossary.
+  Guide: https://hawkeyexl.github.io/manni/graph/fix/
 ```
 
 A term's match field names a concept of this graph's own scheme. The mapping
@@ -87,28 +110,62 @@ properties link to concepts in other vocabularies. Inside one scheme the
 relation is `broader`, `narrower` or `related-terms`, so move the value to the
 field that says how the two concepts relate.
 
-### A value that must not also be in another property
+### A variant or an aspect in both lists
 
 ```console
-error: <doc IRI> graph:notApplicableToVariant — Value node must not also be one of the values of <http://iirds.tekom.de/iirds#relates-to-product-variant>
+error: violations/alpha.md: The page lists a variant in both `applies-to` and `not-applicable-to`. Keep it only in the one that is true.
+  at https://example.com/dd/doc/violations/alpha.md graph:notApplicableToVariant
+  manni:graph-shapes:1.1.1 Document-notApplicableToVariant: The product variants the page does not apply to. A variant cannot be in both lists.
+  Guide: https://hawkeyexl.github.io/manni/graph/fix/
 ```
 
-The page says it is about a product variant and also that it does not apply to
-it. Decide which is true and delete the other. The finding names the document,
-and both lists are in its `graph:` block.
+The page says it applies to a product variant and also that it does not.
+Decide which is true and delete the other. Both lists are in the page's `graph:`
+block. The same finding names `about-product-aspect` and
+`not-about-product-aspect` when an aspect sits in both. When it opens with
+`A section in graph.sections`, the two lists are under that section's heading
+key instead.
+
+### A variant spelled two ways
+
+```console
+error: docs/variant-lower.md, docs/variant-upper.md: Pages spell this variant two ways in `applies-to` or `not-applicable-to`. Use one spelling on every page.
+  at https://example.com/graph/product/sp-x100 dcterms:title
+  manni:graph-shapes:1.1.1 ProductVariant-title: The variant's name, as pages spell it in applies-to and not-applicable-to.
+  Guide: https://hawkeyexl.github.io/manni/graph/fix/
+```
+
+One page writes `sp-x100` and another `SP-X100`. Both name one variant, which
+then has two names. Pick the spelling your product uses and write it on every
+page the finding names.
+
+### A language name where a tag belongs
+
+```console
+error: l10n-invalid/install.md: Set `lang` to a language tag such as `de` or `pt-BR`, not a language name.
+  at https://example.com/dd/doc/l10n-invalid/install.md dcterms:language
+  manni:graph-shapes:1.1.1 Document-language: The language the page is written in. Search, filters and per-language indexes group pages by it.
+  Guide: https://hawkeyexl.github.io/manni/graph/fix/
+
+1 error, 0 warnings, 0 notices
+```
+
+The page says `lang: German`. Write the tag instead, `lang: de`. A tag is a
+language code, with a region after a hyphen when it matters, as in `pt-BR`.
 
 ### A predicate the shapes do not know
 
-A finding naming a predicate you have never typed, on a node you did not write.
-The shapes are closed, so an unexpected predicate fails rather than passing
-unnoticed. This one is almost never a content problem: it means a derive source
-started producing something the shapes have not learned. Hand it to whoever
-owns the shapes; it is a code change, in the same commit as the shapes update.
+A finding that says `manni wrote a property this shape does not list`, on a node
+you did not write. The shapes are closed, so an unexpected property fails rather
+than passing unnoticed. The page is not at fault. A derive source started
+producing something the shapes have not learned. Hand it to whoever owns the
+shapes. It is a code change, in the same commit as the shapes update.
 
 ### A sample question misses its page
 
 ```console
-warning: https://example.com/graph/doc/docs/limits.md graph:sampleQuestion — "How do I retry a failed upload?" does not find this page in the top 1 (it ranks 2; first is docs/retry.md) [docs/limits.md]
+warning: docs/limits.md: "How do I retry a failed upload?" does not find this page in the top 1 (it ranks 2; first is docs/retry.md)
+  at https://example.com/graph/doc/docs/limits.md graph:sampleQuestion
 ```
 
 The page lists the question under `sample-questions`, and a search for it
@@ -208,7 +265,11 @@ unknown flag value. None of those is about your page.
 
 {/* step {"description":"Two spellings of one concept collide on a single node.","runShell":{"command":"manni graph build -c test/graph/fixtures/dd/docs.config.yaml","exitCodes":[0]}} */}
 
-{/* step {"description":"The prefLabel finding names both pages.","runShell":{"command":"manni graph check -c test/graph/fixtures/dd/docs.config.yaml","exitCodes":[0],"stdio":"settle on one spelling"}} */}
+{/* step {"description":"The prefLabel finding names both pages.","runShell":{"command":"manni graph check -c test/graph/fixtures/dd/docs.config.yaml","exitCodes":[0],"stdio":"Pages spell this concept two ways"}} */}
+
+{/* step {"description":"A language name in lang is an error that names the key.","runShell":{"command":"manni graph build -c test/graph/fixtures/dd/l10n-invalid.config.yaml","exitCodes":[0]}} */}
+
+{/* step {"description":"The lang finding asks for a language tag.","runShell":{"command":"manni graph check -c test/graph/fixtures/dd/l10n-invalid.config.yaml","exitCodes":[1],"stdio":"Set `lang` to a language tag"}} */}
 
 {/* step {"description":"A broken internal link and a broken section ref are stats findings.","runShell":{"command":"manni graph stats -c test/graph/fixtures/dd/docs.config.yaml --check","exitCodes":[1],"stdio":"Broken section refs (1):"}} */}
 
