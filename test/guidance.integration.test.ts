@@ -127,3 +127,84 @@ describe("manni meta validate: a bad dcmi date (built bin)", () => {
     expect(r.stdout).toContain("2 no longer occur — run --write-baseline to prune");
   });
 });
+
+describe("manni meta schemas show, the ladder (built bin)", () => {
+  const GUIDANCE = resolve(here, "fixtures", "guidance");
+
+  beforeAll(() => {
+    if (!existsSync(manni)) execSync("npm run build", { cwd: root, stdio: "ignore" });
+  }, 180000);
+
+  it("1. prints a built-in's outline", () => {
+    const r = run(["meta", "schemas", "show", "manni:core:1.0.0"]);
+    expect(r.status).toBe(0);
+    expect(r.stdout.split("\n")[0]).toBe("manni:core:1.0.0  manni core vocabulary v1.0.0");
+    expect(r.stdout).toContain("Guide: https://hawkeyexl.github.io/manni/meta/reference/schemas/manni-core/");
+    expect(r.stdout).toContain("  title  required, string, minLength 1");
+  });
+
+  it("2. answers a published URL as the id, with no request", () => {
+    const url = run(["meta", "schemas", "show", "https://hawkeyexl.github.io/manni/schemas/dcmi/1.1.json"]);
+    const id = run(["meta", "schemas", "show", "dcmi:elements:1.1"]);
+    expect(url.status).toBe(0);
+    expect(url.stdout).toBe(id.stdout);
+  });
+
+  it("3. resolves a registered id through the discovered config, with no Guide line", () => {
+    const r = run(["meta", "schemas", "show", "house:page:1.0.0"], GUIDANCE);
+    expect(r.status).toBe(0);
+    expect(r.stdout.split("\n")[0]).toBe("house:page:1.0.0  House page");
+    expect(r.stdout).not.toContain("Guide:");
+  });
+
+  it("4. prints a schema file as loaded with -f json", () => {
+    const r = run(["meta", "schemas", "show", "./house.schema.json", "-f", "json"], GUIDANCE);
+    expect(r.status).toBe(0);
+    expect((JSON.parse(r.stdout) as { $id: string }).$id).toBe("house:page:1.0.0");
+  });
+
+  it("5. writes a frontmatter skeleton with -f markdown", () => {
+    const r = run(["meta", "schemas", "show", "manni:core:1.0.0", "-f", "markdown"]);
+    expect(r.status).toBe(0);
+    const lines = r.stdout.split("\n");
+    expect(lines[0]).toBe("---");
+    expect(lines).toContain("title:");
+    expect(lines).toContain("description:");
+    expect(lines).toContain("# id:");
+    expect(lines.at(-2)).toBe("---");
+  });
+
+  it("6. takes every option at once", () => {
+    const r = run([
+      "meta",
+      "schemas",
+      "show",
+      "house:page:1.0.0",
+      "-c",
+      "test/fixtures/guidance/manni.config.yaml",
+      "-f",
+      "markdown",
+    ]);
+    expect(r.status).toBe(0);
+    expect(r.stdout.split("\n")[1]).toBe("# house:page:1.0.0, House page");
+  });
+
+  it.each([
+    [["meta", "schemas", "show"], "error: missing required argument 'ref'"],
+    [
+      ["meta", "schemas", "show", "manni:core:1.0.0", "-f", "yaml"],
+      'manni: Unknown --format "yaml". Use pretty, json, or markdown.',
+    ],
+    [
+      ["meta", "schemas", "show", "manni:core:9.9.9"],
+      'manni: Unknown schema "manni:core:9.9.9". manni meta schemas lists the built-in ids. Registered by meta.register: none.',
+    ],
+    [["meta", "schemas", "show", "./schemas/nope.json"], 'manni: Schema file not found: "./schemas/nope.json".'],
+  ])("usage error: %j", (args, stderr) => {
+    // From the repository root, whose config registers no schema.
+    const r = run(args);
+    expect(r.status).toBe(2);
+    // The first line; commander follows its own errors with a help hint.
+    expect(r.stderr.split("\n")[0]).toBe(stderr);
+  });
+});
