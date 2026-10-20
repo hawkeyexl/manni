@@ -16,7 +16,8 @@ import type { ReportFormat as FamilyFormat } from "../../meta/index.js";
 import { REPORT_FORMAT_LIST } from "../../meta/internal.js";
 import { ruleId, TOOL_NAME } from "../core/rule-id.js";
 import { renderJunit } from "./junit.js";
-import { renderSarif, templateLines } from "./sarif.js";
+import { renderSarif } from "./sarif.js";
+import { templateLines } from "./template-context.js";
 import { explainAlignment, formatAlignment, type ExplainSource } from "./alignment.js";
 
 export { renderJunit, toValidationResults } from "./junit.js";

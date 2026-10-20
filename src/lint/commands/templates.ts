@@ -334,6 +334,8 @@ export async function runTemplateShow(
   const fragment = hash === -1 ? "" : opts.ref.slice(hash + 1);
   const id =
     fragment ||
+    // The `?? ""` is unreachable: loadResolvedTemplate already refused a file
+    // with no templates, and one with several but no fragment.
     (Object.keys((await loadTemplateFile(source)).templates ?? {})[0] ?? "");
   return { id, source, ...body };
 }

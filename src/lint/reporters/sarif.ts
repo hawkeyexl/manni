@@ -21,6 +21,7 @@ import type {
 } from "../types.js";
 import type { LintFileResult, LintRun } from "../commands/lint.js";
 import { ruleId, ruleName } from "../core/rule-id.js";
+import { templateLines } from "./template-context.js";
 import pkg from "../../../package.json" with { type: "json" };
 import {
   artifactLocation,
@@ -200,20 +201,6 @@ function messageText(finding: Finding): string {
   const text =
     finding.heading != null ? `${finding.heading}: ${finding.message}` : finding.message;
   return [text, ...templateLines(finding)].join("\n");
-}
-
-/**
- * What the template asks for, as the lines printed under a finding: the
- * template, the rule and its description, then the template's guide. One
- * helper, so the pretty, GitHub and SARIF reports say it the same way.
- */
-export function templateLines(finding: Finding): string[] {
-  const t = finding.template;
-  if (t == null) return [];
-  const rule = t.rule === null ? "" : ` ${t.rule}`;
-  const description = t.description === null ? "" : `: ${t.description}`;
-  const head = `${t.id}${rule}${description}`;
-  return t.guide === null ? [head] : [head, `Guide: ${t.guide}`];
 }
 
 function words(id: string): string[] {
