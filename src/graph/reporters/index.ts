@@ -25,5 +25,11 @@ export const GRAPH_FORMAT_LIST: string = GRAPH_FORMATS.join(" | ");
 export const CHECK_FORMATS = [...GRAPH_FORMATS, "github", "sarif"] as const;
 export type CheckFormat = (typeof CHECK_FORMATS)[number];
 
+/** `shapes show`'s list: the shared two plus a frontmatter skeleton. */
+export const SHAPES_SHOW_FORMATS = [...GRAPH_FORMATS, "markdown"] as const;
+
+/** `"pretty | json | markdown"`, for help text and the refusal sentence. */
+export const SHAPES_SHOW_FORMAT_LIST: string = SHAPES_SHOW_FORMATS.join(" | ");
+
 /** `"pretty | json | github | sarif"`, for help text and the refusal sentence. */
 export const CHECK_FORMAT_LIST: string = CHECK_FORMATS.join(" | ");
