@@ -8,6 +8,7 @@
 import { describe, it, expect } from "vitest";
 import { resolve } from "node:path";
 import { runEvals } from "../../../src/docevals/core/engine.js";
+import { render } from "../../../src/docevals/reporters/index.js";
 
 const PAGES = resolve(import.meta.dirname, "../fixtures/pages");
 
@@ -63,6 +64,41 @@ describe("deterministic run over fixtures", () => {
     // Suite summaries exist for configured suites; failures produce exit 1.
     expect(report.suites.map((s) => s.suite)).toContain("reference");
     expect(report.exitCode).toBe(1);
+  }, 30000);
+
+  it("stamps every result with what its eval asks for, and prints it", async () => {
+    const report = await runEvals({
+      cwd: PAGES,
+      deterministicOnly: true,
+      generate: false,
+    });
+    for (const r of report.evalResults) {
+      expect(r.guidance).toMatchObject({
+        id: r.location?.file,
+        rule: r.evalName,
+        guide: "https://hawkeyexl.github.io/manni/docevals/fix/",
+      });
+    }
+    const goTo = report.evalResults.find(
+      (r) => r.file === "docs/actions/goTo.mdx" && r.evalName === "no-todo-markers",
+    );
+    expect(goTo?.guidance).toEqual({
+      id: "docs/actions/goTo.mdx",
+      rule: "no-todo-markers",
+      description: "The page carries no TODO, TBD or FIXME markers.",
+      guide: "https://hawkeyexl.github.io/manni/docevals/fix/",
+    });
+
+    const pretty = render(report, "pretty");
+    expect(pretty).toContain(
+      "found in body, expected absent. Remove or reword the matching text.\n" +
+        "       docs/actions/goTo.mdx no-todo-markers: The page carries no TODO, TBD or FIXME markers.\n" +
+        "       Guide: https://hawkeyexl.github.io/manni/docevals/fix/",
+    );
+    const github = render(report, "github");
+    expect(github).toMatch(
+      /::error file=docs\/actions\/goTo\.mdx,line=14,[^\n]*expected absent\. Remove or reword the matching text\.%0Adocs\/actions\/goTo\.mdx no-todo-markers: The page carries no TODO, TBD or FIXME markers\.%0AGuide: https:\/\/hawkeyexl\.github\.io\/manni\/docevals\/fix\//,
+    );
   }, 30000);
 
   it("skips frontmatter commands when disabled", async () => {

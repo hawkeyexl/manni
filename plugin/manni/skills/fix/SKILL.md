@@ -50,8 +50,15 @@ Run `manni lint structure <path> --explain` only when the template looks wrong f
 
 ## docevals run
 
-An eval failed. Read the eval assertion and the evidence it cites. Fix the page so the assertion holds.
-Do not edit the eval to pass. To change an eval on purpose, use the `evals` skill.
+Each failing eval prints its finding, then what the eval asks for, then a guide link. Read all three before you edit.
+
+- A finding with a line comes from a script check. Change that line as the message says.
+- `AI judge: fail` prints what the judge observed and why. Edit the page so the assertion holds.
+- `AI judge: no confident verdict` is not yours to settle. Tell the user. They run `manni docevals review` or `manni docevals calibrate`.
+- An eval that cannot run, or an assertion no page could meet, is a broken eval. Stop and tell the user which eval and why.
+
+Run `manni docevals list <path> --eval <name>` to see one eval in full.
+Never edit an eval to pass. To change one on purpose, use the `evals` skill.
 
 ## graph check
 

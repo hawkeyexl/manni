@@ -164,6 +164,38 @@ describe("tool:regex", () => {
     expect(outcome).toContain("not a valid regular expression");
   });
 
+  it("says what to do about each finding", async () => {
+    const messageOf = async (c: Case) => {
+      const report = await runEvals({ cwd: scaffold(c), generate: false });
+      return report.evalResults[0]?.findings?.[0]?.message;
+    };
+    expect(await messageOf({ evalLines: regexEval(['pattern: "yarn global add"']) })).toBe(
+      "Pattern /yarn global add/ not found in body. Add the text the eval asks for.",
+    );
+    expect(
+      await messageOf({ evalLines: regexEval(['pattern: "npm i -g"', "match: not-contains"]) }),
+    ).toBe(
+      "Pattern /npm i -g/ found in body, expected absent. Remove or reword the matching text.",
+    );
+    expect(
+      await messageOf({ evalLines: regexEval(['pattern: "Install"', "match: count:5"]) }),
+    ).toBe(
+      "Pattern /Install/ matched 2 time(s) in body, expected 5. Edit the page so it matches 5 time(s).",
+    );
+    expect(
+      await messageOf({
+        evalLines: [
+          ...regexEval(['pattern: "x"']),
+          "      target:",
+          "        source: file",
+          "        path: gone.txt",
+        ],
+      }),
+    ).toBe(
+      `target file "gone.txt" could not be read (ENOENT). The eval's target is wrong. Fix the eval, or tell its owner.`,
+    );
+  });
+
   it("rejects a missing pattern", async () => {
     expect(await outcomeOf({ evalLines: regexEval(["match: contains"]) })).toContain(
       "options.pattern is required",

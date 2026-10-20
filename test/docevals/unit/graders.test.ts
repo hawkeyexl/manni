@@ -78,7 +78,9 @@ describe("commandGrader", () => {
       exec,
     });
     expect(findings).toHaveLength(1);
-    expect(findings[0]?.message).toMatch(/Exit code 1: missing heading/);
+    expect(findings[0]?.message).toBe(
+      "Exit code 1. Edit the page until the command passes, or fix the command if it is broken. Output: missing heading",
+    );
     expect(findings[0]?.severity).toBe("error");
   });
 
@@ -104,7 +106,7 @@ describe("commandGrader", () => {
       root: "/fake",
       exec,
     });
-    expect(findings[0]?.message).toMatch(/Failed to run command "node": ENOENT/);
+    expect(findings[0]?.message).toBe(`Failed to run command "node": ENOENT. Fix the eval's command.`);
   });
 
   it("reports timeouts", async () => {
@@ -115,6 +117,34 @@ describe("commandGrader", () => {
       root: "/fake",
       exec,
     });
-    expect(findings[0]?.message).toMatch(/timed out/);
+    expect(findings[0]?.message).toMatch(
+      /^Command timed out after \d+ms\. Fix the command, or raise the eval's timeout-ms if the check is slow by design\.$/,
+    );
+  });
+
+  it("says a killed command was killed, and what to do", async () => {
+    const { exec } = fakeExec({ code: null, stderr: "half done" });
+    const findings = await commandGrader.grade({
+      targets: [makeTarget(fm)],
+      config: CONFIG,
+      root: "/fake",
+      exec,
+    });
+    expect(findings[0]?.message).toBe(
+      "Killed before exiting. Edit the page until the command passes, or fix the command if it is broken. Output: half done",
+    );
+  });
+
+  it("says how to get a command when there is none", async () => {
+    const { exec } = fakeExec({});
+    const findings = await commandGrader.grade({
+      targets: [makeTarget(fm.replace(/\n.*command: .*$/m, ""))],
+      config: CONFIG,
+      root: "/fake",
+      exec,
+    });
+    expect(findings[0]?.message).toBe(
+      "No command to run, because the script is not generated. Run manni docevals generate, or manni docevals run with a provider configured.",
+    );
   });
 });
