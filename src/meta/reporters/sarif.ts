@@ -78,7 +78,9 @@ export interface SarifOptions {
    * cannot know, such as a finding's guidance. The hook is handed the very
    * `FieldError` object the caller passed in, so the caller pairs by
    * identity. Pairing by position would shift whenever a result is skipped
-   * or dropped, and both happen here. It is not called for a dropped one.
+   * or dropped, and both happen here. It is not called for a dropped result,
+   * one whose path lies outside the repository, or for a `<stdin>` result,
+   * which is not an artifact.
    */
   resultProperties?: (
     error: FieldError,
