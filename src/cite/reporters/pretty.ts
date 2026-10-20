@@ -369,6 +369,9 @@ export function renderCheckPretty(run: CheckRun, opts: PrettyOptions): string {
         const isEnd = [...endRules].some((prefix) => finding.rule.startsWith(prefix));
         if (isEnd) {
           // The row says the status; what to do and the rule go under it.
+          // finding.message carries the remedy too, for the formats that print
+          // one line per finding, but the row prints the status alone, so the
+          // remedy is derived here rather than cut back out of the message.
           if (isBaselined.has(finding)) continue;
           const remedy = remedyFor(finding.rule, result);
           if (remedy !== undefined) under.push(`      ${remedy}`);
