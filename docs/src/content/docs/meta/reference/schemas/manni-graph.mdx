@@ -190,7 +190,11 @@ graph:
 $ manni meta validate page.md --no-config -s manni:core:1.0.0 -s manni:graph:1.0.0
 ✗ page.md
     /graph  must NOT have additional property 'lable'  (line 4)  [manni:graph:1.0.0]
+      manni:graph:1.0.0 graph
+      Guide: https://hawkeyexl.github.io/manni/meta/reference/schemas/manni-graph/
     /graph  must have property label when property broader is present  (line 4)  [manni:graph:1.0.0]
+      manni:graph:1.0.0 graph
+      Guide: https://hawkeyexl.github.io/manni/meta/reference/schemas/manni-graph/
 
 1 file checked, 0 passed, 1 failed, 2 errors
 ```
@@ -292,8 +296,14 @@ graph:
 $ manni meta validate install.md --no-config -s manni:core:1.0.0 -s manni:graph:1.0.0 -s manni:graph-strict:1.0.0
 ✗ install.md
     /graph/sections  must match pattern "^[\p{Ll}\p{Lm}\p{Lo}\p{M}\p{Nd}_-]+$"  (line 6)  [manni:graph-strict:1.0.0]
+      manni:graph-strict:1.0.0 graph/sections
+      Guide: https://hawkeyexl.github.io/manni/meta/reference/schemas/manni-graph/
     /graph/sections  property name must be valid  (line 6)  [manni:graph-strict:1.0.0]
+      manni:graph-strict:1.0.0 graph/sections
+      Guide: https://hawkeyexl.github.io/manni/meta/reference/schemas/manni-graph/
     /graph/derived-from  must match pattern "^\S(?:.*\S)?$"  (line 9)  [manni:graph-strict:1.0.0]
+      manni:graph-strict:1.0.0 graph/derived-from: A path or URL on one line with no surrounding space, alone or in each item of the list.
+      Guide: https://hawkeyexl.github.io/manni/meta/reference/schemas/manni-graph/
 
 1 file checked, 0 passed, 1 failed, 3 errors
 ```
