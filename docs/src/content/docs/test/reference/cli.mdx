@@ -257,7 +257,7 @@ Every message below exits `2` and is printed on stderr, prefixed `manni: `.
 |---|---|
 | `doc-detective` is not on `PATH` | `doc-detective is not on PATH. Install Doc Detective (npm install -g doc-detective) to run doc tests.` |
 | No paths, no `--collection`, and no Doc Detective config | `test run needs paths or a Doc Detective config. Pass paths, or add .doc-detective.json.` |
-| A named path does not exist | `File not found: "<path>".`, or `Files not found: "<a>", "<b>".` for more than one |
+| A named path does not exist | `File not found: "<path>". Check the path. Named paths resolve from the working directory.`, or `Files not found: "<a>", "<b>". Check the paths. Named paths resolve from the working directory.` for more than one |
 | The paths match no files | `No files matched. Patterns tried: "<path>". Pass --allow-empty if that is expected.` |
 | `-` is given | `test run reads files; Doc Detective has no stdin. Pass a path.` |
 | `--collection` with paths | `--collection selects a configured collection; it cannot be combined with paths.` |

@@ -50,21 +50,29 @@ manni 4.3.0   config manni.config.yaml   collection site (2 files)
 
 meta       in play       meta: section
 cite       not set up    no page carries citations
+                         Pin a sentence to its source with manni cite add.
 lint       not set up    no lint: section
+                         Add a lint: section. manni lint templates lists the templates it can apply.
 docevals   not set up    no page resolves any evals
+                         Add a docevals: section, or declare evals in a page's frontmatter.
 term       not set up    no terms in any collection
+                         Add a page with type: term to a collection.
 graph      not set up    no graph: section
-a11y       not checked   run manni site preview, then manni a11y check
-test       not checked   run manni test run with Doc Detective installed
-tracevals  not checked   run manni tracevals run over sessions
+                         Run manni graph init to add a starter graph: section.
+a11y       not checked   needs a running site and a browser
+                         Run manni site preview, then manni a11y check.
+test       not checked   runs the shell steps the pages carry
+                         Run manni test run with Doc Detective installed.
+tracevals  not checked   judges recorded sessions with a model
+                         Run manni tracevals run over sessions, or add tracevals.runtime to judge each turn.
 # exit 0
 ```
 
 Each row has one of three states.
 
 - **In play.** The domain is set up, and `manni check` runs it. For `tracevals`, a hook runs it.
-- **Not set up.** Nothing in the repository asks for the domain. The reason says what would.
-- **Not checked.** `manni check` never runs this domain from the command line, whatever the repository holds.
+- **Not set up.** Nothing in the repository asks for the domain. The reason says why, and the line under it says what would set it up.
+- **Not checked.** `manni check` never runs this domain from the command line, whatever the repository holds. The line under it names the command that does.
 
 ## What puts a domain in play
 
@@ -148,8 +156,9 @@ skipped  docevals run   no page resolves any evals
 # exit 2
 ```
 
-A repository with no `manni.config.yaml`, or one where nothing is set up, also
-exits `2`. The message says to run `manni status`.
+A repository with no `manni.config.yaml` also exits `2`, and the message says
+where to create one. So does a config where nothing is set up, and that message
+says to run `manni status`.
 
 ## Run it in CI
 
@@ -195,6 +204,29 @@ $ manni check docs/limits.md -f json
 
 A check's `status` is `pass`, `fail`, `error` or `skipped`. The last two carry a
 `message` in place of a `report`. The top-level `status` is `pass` or `fail`.
+
+### Send every finding to code scanning
+
+`-f sarif` prints one SARIF 2.1.0 log for every check that ran. Each domain's
+run carries its own category, such as `manni/meta/`, so upload the log once and
+leave `category` unset. A domain you set up later reaches code scanning with no
+change to the workflow.
+
+```yaml title=".github/workflows/docs.yml"
+      - name: Run every manni check
+        run: npx -y @hawkeyexl/manni check -f sarif > manni.sarif
+        continue-on-error: true
+
+      - name: Upload to code scanning
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: manni.sarif
+```
+
+The upload needs `permissions: security-events: write`. A last run in the log,
+`manni/check/`, names each check that was skipped or could not run. A check that
+could not run gets no run of its own, so its last analysis stays in place.
 
 ## Narrow the run to some files
 

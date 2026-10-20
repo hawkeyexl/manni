@@ -79,7 +79,7 @@ manni check [paths...] [options]
 | Option | Argument | Default | Description |
 |---|---|---|---|
 | `-c, --config` | `<path>` | discovered | Path to a manni config file, instead of discovery. |
-| `-f, --format` | `<format>` | `pretty` | `pretty`, `json` or `github`. Any other value is refused (exit 2). Not read under a [hook](#hook-protocol). |
+| `-f, --format` | `<format>` | `pretty` | `pretty`, `json`, `github` or `sarif`. Any other value is refused (exit 2). Not read under a [hook](#hook-protocol). |
 | `--no-color` | n/a | color on a TTY | Disable colored output. Color applies to the `pretty` output only, on a TTY, and never under `NO_COLOR`. The same [rules](/manni/meta/reference/output-and-exit-codes/#color-behavior) as every domain. |
 
 `check` reads no stdin as an input. Unlike `meta validate`, `-` does not name
@@ -109,19 +109,19 @@ There are no config keys for this. A domain is in play when its own config
 section exists, or when the content carries its declarations. Nothing manni
 would apply by default counts as set up. Each row also names the command `check`
 runs and the reason `status` and the skipped line print when the domain is not
-in play.
+in play. `status` prints the next step under the reason.
 
-| Domain | In play when | Check | Reason when not in play |
-|---|---|---|---|
-| `meta` | `meta:` exists, or a page names its own `$schema`. A file covered only by the built-in default schemas is skipped. | `meta validate` | `no meta: section`. With `meta:` present: `only the built-in default schemas cover these files`. |
-| `cite` | A page carries citations, as markers or in a `citations` manifest. | `cite check` | `no page carries citations` |
-| `lint` | `lint:` exists. | `lint check` | `no lint: section` |
-| `docevals` | `docevals:` exists, or a page declares evals. A run that resolves no evals counts as not in play. | `docevals run`, with `--deterministic-only`, no generation and no execution | `no page resolves any evals` |
-| `term` | The collections hold at least one term. | `term check` | `no terms in any collection` |
-| `graph` | `graph:` exists. | `graph build` in memory, writing no file, then `graph check` | `no graph: section` |
-| `a11y` | Never. `check` does not run it, since it needs a built site and a browser. | none | `run manni site preview, then manni a11y check` |
-| `test` | Never. `check` does not run it, since Doc Detective runs the shell steps the pages carry. | none | `run manni test run with Doc Detective installed` |
-| `tracevals` | Only under a Claude Code hook, and only when `tracevals:` holds a `runtime:` section. A bare `check` never runs it, since it needs recorded sessions and a model. | none on the command line | `run manni tracevals run over sessions` |
+| Domain | In play when | Check | Reason when not in play | Next step |
+|---|---|---|---|---|
+| `meta` | `meta:` exists, or a page names its own `$schema`. A file covered only by the built-in default schemas is skipped. | `meta validate` | `no meta: section`. With `meta:` present: `only the built-in default schemas cover these files`. | `Add a meta: section that names your schemas. manni meta schemas lists the built-in ones.` |
+| `cite` | A page carries citations, as markers or in a `citations` manifest. | `cite check` | `no page carries citations` | `Pin a sentence to its source with manni cite add.` |
+| `lint` | `lint:` exists. | `lint check` | `no lint: section` | `Add a lint: section. manni lint templates lists the templates it can apply.` |
+| `docevals` | `docevals:` exists, or a page declares evals. A run that resolves no evals counts as not in play. | `docevals run`, with `--deterministic-only`, no generation and no execution | `no page resolves any evals` | `Add a docevals: section, or declare evals in a page's frontmatter.` |
+| `term` | The collections hold at least one term. | `term check` | `no terms in any collection` | `Add a page with type: term to a collection.` |
+| `graph` | `graph:` exists. | `graph build` in memory, writing no file, then `graph check` | `no graph: section` | `Run manni graph init to add a starter graph: section.` |
+| `a11y` | Never. `check` does not run it, since it needs a built site and a browser. | none | `needs a running site and a browser` | `Run manni site preview, then manni a11y check.` |
+| `test` | Never. `check` does not run it, since Doc Detective runs the shell steps the pages carry. | none | `runs the shell steps the pages carry` | `Run manni test run with Doc Detective installed.` |
+| `tracevals` | Only under a Claude Code hook, and only when `tracevals:` holds a `runtime:` section. A bare `check` never runs it, since it needs recorded sessions and a model. | none on the command line | `judges recorded sessions with a model` | `Run manni tracevals run over sessions, or add tracevals.runtime to judge each turn.` |
 
 `check` reads only the files that belong to a collection declared under
 `collections:`. A file outside every collection passes silently, with one notice
@@ -222,6 +222,40 @@ One object. Each `report` is that domain's own `-f json` output, unchanged.
 | `checks[].report` | object | On `pass` and `fail`. The domain's own JSON report. |
 | `checks[].message` | string | On `error` and `skipped`. Why the check did not run. |
 
+### `sarif`
+
+One SARIF 2.1.0 log. Each check that ran adds its domain's own `-f sarif` run,
+unchanged except for two keys:
+
+- `automationDetails.id` is `manni/<domain>/`, such as `manni/meta/`. meta, cite
+  and term share the driver `manni`, so the category is what tells them apart.
+- A run with no `invocations` gains `[{ "executionSuccessful": true }]`.
+
+A last run, driver `manni-check` and category `manni/check/`, holds no results.
+Its invocation carries one notification for each check that did not run.
+
+| Situation | Level | Text |
+|---|---|---|
+| The check is skipped | `note` | `<check> skipped: <reason>.` |
+| The check could not run | `error` | `<check> could not run: <its error>` |
+| The check's own SARIF does not parse | `error` | `<check> -f sarif printed output that is not SARIF.` |
+
+`executionSuccessful` is `false` when any notification is an `error`. A check
+that could not run gets no run of its own. An empty run would tell code
+scanning that every open alert in its category is fixed. The exit code is the
+same as for every other format.
+
+```console
+$ manni check -f sarif > manni.sarif
+# exit 1
+$ jq -r '.runs[].automationDetails.id' manni.sarif
+manni/meta/
+manni/check/
+```
+
+Upload the log with no `category`. One would replace every run's own, and the
+runs that share a driver would collide.
+
 ### `status` output
 
 ```console
@@ -230,13 +264,21 @@ manni 4.3.0   config manni.config.yaml   collection site (2 files)
 
 meta       in play       meta: section
 cite       not set up    no page carries citations
+                         Pin a sentence to its source with manni cite add.
 lint       not set up    no lint: section
+                         Add a lint: section. manni lint templates lists the templates it can apply.
 docevals   not set up    no page resolves any evals
+                         Add a docevals: section, or declare evals in a page's frontmatter.
 term       not set up    no terms in any collection
+                         Add a page with type: term to a collection.
 graph      not set up    no graph: section
-a11y       not checked   run manni site preview, then manni a11y check
-test       not checked   run manni test run with Doc Detective installed
-tracevals  not checked   run manni tracevals run over sessions
+                         Run manni graph init to add a starter graph: section.
+a11y       not checked   needs a running site and a browser
+                         Run manni site preview, then manni a11y check.
+test       not checked   runs the shell steps the pages carry
+                         Run manni test run with Doc Detective installed.
+tracevals  not checked   judges recorded sessions with a model
+                         Run manni tracevals run over sessions, or add tracevals.runtime to judge each turn.
 # exit 0
 ```
 
@@ -248,16 +290,23 @@ its file count. `-f json` prints the same facts:
 | `version` | string | The manni version. |
 | `config` | string | The config file, as discovery found it or as `-c` named it. |
 | `collections[]` | `{ name, files }` | Each declared collection and the number of files it holds. |
-| `domains[]` | `{ name, status, reason }` | One row per domain. `status` is `in-play`, `not-set-up`, `not-checked` or `unknown`. A `tracevals` row in play also carries `models`, the hook and extraction `{ provider, model }` pairs, and `host` when a model host runs. |
+| `domains[]` | `{ name, status, reason, next }` | One row per domain. `status` is `in-play`, `not-set-up`, `not-checked` or `unknown`. `reason` says why, and `next` says what to do. `next` is absent on an `in-play` row. A `tracevals` row in play also carries `models`, the hook and extraction `{ provider, model }` pairs, and `host` when a model host runs. |
+
+In `pretty`, the next step prints on its own line under the reason. Rows that
+share a next step print it once, under the last of them.
 
 <Aside type="note" title="A domain that cannot read its setup">
 `status` runs no check, so a domain that cannot read its own setup stays in the
 table. Its row is `unknown`, and the reason reads `manni <check> could not run`
-followed by the cause. `check` still runs that domain and reports what it finds.
+followed by the first line of the cause. The next step reads
+`Run manni <check> to see the whole error.` For tracevals it reads
+`Fix what the reason names, then run manni status again.` `check` still runs
+that domain and reports what it finds.
 </Aside>
 
 A config with no `collections:` gives `check` no files to read. Every domain
-row is then `not set up`, with the reason `no collections: in manni.config.yaml`.
+row is then `not set up`, with the reason `no collections: in manni.config.yaml`
+and the next step `Add a collections: entry that names your docs.`
 
 ## Hook protocol
 
@@ -279,10 +328,10 @@ notices from the domains are dropped.
 
 | Hook event | Situation | Exit | Output |
 |---|---|---|---|
-| `PostToolUse` | Errors in the edited file | `2` | stderr: `manni found errors in <file>. Fix them before you continue.`, a blank line, then the failing checks' `pretty` reports with color off. |
-| `PostToolUse` | A check could not run | `0` | stdout: `{"hookSpecificOutput":{"hookEventName":"PostToolUse","additionalContext":"manni <check> could not check <file>: <first line of the cause>"}}`. One line per check. |
-| `PostToolUse` | The run itself failed, such as an unreadable config | `0` | stdout: the same `additionalContext`, as `manni check could not check <file>: <first line>`. |
-| `Stop` | Errors, `stop_hook_active` false | `0` | stdout: `{"decision":"block","reason":"manni found errors in the files you changed. Fix them, then finish.\n\n<report>"}` |
+| `PostToolUse` | Errors in the edited file | `2` | stderr: `manni found errors in <file>. Fix them before you continue. The manni:fix skill says how to repair each finding.`, a blank line, then the failing checks' `pretty` reports with color off. |
+| `PostToolUse` | A check could not run | `0` | stdout: `{"hookSpecificOutput":{"hookEventName":"PostToolUse","additionalContext":"manni <check> could not check <file>. The cause is in manni's setup, not in the file. Tell the user what it says, and leave manni.config.yaml as it is.\n<the whole cause>"}}`. One such paragraph per check. |
+| `PostToolUse` | The run itself failed, such as an unreadable config | `0` | stdout: the same `additionalContext`, naming `manni check` as the check. |
+| `Stop` | Errors, `stop_hook_active` false | `0` | stdout: `{"decision":"block","reason":"manni found errors in the files you changed. Fix them, then finish. The manni:fix skill says how to repair each finding.\n\n<report>"}` |
 | `Stop` | Errors, `stop_hook_active` true | `0` | stdout: `{"systemMessage":"manni still reports errors after one repair pass. Run manni check to see them."}`. The agent stops and you see the message. |
 | any | Clean, the file is not a collection member, no config, nothing set up, a tool other than the four, or any other event | `0` | nothing |
 
@@ -352,8 +401,11 @@ context.
 
 | Situation | Exit | Output |
 |---|---|---|
-| At least one domain in play | `0` | stdout: the `pretty` table, a blank line, then three lines that say when `check` runs and which skill repairs a finding. The stop line names only the whole-set checks in play, and says the glossary runs when a page changed. |
-| No domain in play, or no collection | `0` | stdout: the table alone, since there is no check to promise. |
+| At least one domain in play | `0` | stdout: the `pretty` table without its next-step lines, a blank line, then three lines that say when `check` runs and which skill repairs a finding. The stop line names only the whole-set checks in play, and says the glossary runs when a page changed. |
+| No domain in play, or no collection | `0` | stdout: the table alone, without its next-step lines, since there is no check to promise. |
+
+The next steps are advice for whoever owns the config, so the agent never sees
+them.
 | No config, or a config that cannot be read | `0` | nothing |
 
 After the table, `status` also appends `export MANNI_GENERATED_BY=<model>` to the
@@ -378,12 +430,12 @@ Each line goes to stderr and starts with `manni: ` unless it is a usage error.
 | Message | Exit |
 |---|---|
 | `Skipped 1 file outside every collection: README.md`, a notice naming each file you passed that is outside every collection. The run continues. | unchanged |
-| `No manni.config.yaml found from <cwd> up to the repository root. manni check runs the checks it sets up.` | `2` |
-| `Nothing is set up to check in manni.config.yaml. manni status says what each domain needs.` Printed when no collection is declared, and when a bare run finds every check skipped. | `2` |
+| `No manni.config.yaml found from <cwd> up to the repository root. Create one there with a collections: entry for your docs.` | `2` |
+| `Nothing is set up to check in manni.config.yaml. Run manni status to see what each domain needs.` Printed when no collection is declared, and when a bare run finds every check skipped. | `2` |
 | `manni <check> could not run: <its error>`. That check prints as `error`, and the other checks still run. | `2` |
 | `Config file not found: "<path>".` for a `-c` path that does not exist. | `2` |
-| `File not found: "<path>".` for a named path that does not exist. | `2` |
-| `error: option '-f, --format <format>' argument 'sarif' is invalid. Allowed choices are pretty, json, github.` Unlike the lines above, it has no `manni: ` prefix, and `(add --help for usage)` follows. `status` lists `pretty, json`. | `2` |
+| `File not found: "<path>". Check the path. Named paths resolve from the working directory.` for a named path that does not exist. | `2` |
+| `error: option '-f, --format <format>' argument 'sarf' is invalid. Allowed choices are pretty, json, github, sarif.` Unlike the lines above, it has no `manni: ` prefix, and `(add --help for usage)` follows. `status` lists `pretty, json`. | `2` |
 
 ## Examples
 
@@ -396,13 +448,21 @@ manni 4.3.0   config manni.config.yaml   collection site (2 files)
 
 meta       in play       meta: section
 cite       not set up    no page carries citations
+                         Pin a sentence to its source with manni cite add.
 lint       not set up    no lint: section
+                         Add a lint: section. manni lint templates lists the templates it can apply.
 docevals   not set up    no page resolves any evals
+                         Add a docevals: section, or declare evals in a page's frontmatter.
 term       not set up    no terms in any collection
+                         Add a page with type: term to a collection.
 graph      not set up    no graph: section
-a11y       not checked   run manni site preview, then manni a11y check
-test       not checked   run manni test run with Doc Detective installed
-tracevals  not checked   run manni tracevals run over sessions
+                         Run manni graph init to add a starter graph: section.
+a11y       not checked   needs a running site and a browser
+                         Run manni site preview, then manni a11y check.
+test       not checked   runs the shell steps the pages carry
+                         Run manni test run with Doc Detective installed.
+tracevals  not checked   judges recorded sessions with a model
+                         Run manni tracevals run over sessions, or add tracevals.runtime to judge each turn.
 # exit 0
 
 $ manni check
@@ -443,25 +503,46 @@ $ manni check docs/ -f json --no-color
 $ manni check "docs/**/*.md" -c ci/manni.config.yaml -f json --no-color
 { "status": "pass", "files": ["docs/index.md", "docs/limits.md"], "checks": [ … ] }
 # exit 0
+
+$ manni check -f sarif > manni.sarif
+# exit 1
+
+$ manni check docs/index.md -f sarif
+{ "version": "2.1.0", "runs": [ { … "automationDetails": { "id": "manni/meta/" }, "results": [] }, { … "automationDetails": { "id": "manni/check/" } } ] }
+# exit 0
+
+$ manni check README.md -f sarif
+manni: Skipped 1 file outside every collection: README.md
+{ "version": "2.1.0", "runs": [ { … "automationDetails": { "id": "manni/check/" }, "invocations": [ { "executionSuccessful": true } ], "results": [] } ] }
+# exit 0
+
+$ manni check "docs/**/*.md" -c ci/manni.config.yaml -f sarif --no-color > manni.sarif
+# exit 1
 ```
 
-What a `PostToolUse` hook runs, after an agent edits a page that now fails:
+In CI, upload the log once, with no `category`:
+
+```yaml
+- run: npx -y @hawkeyexl/manni check -f sarif > manni.sarif
+  continue-on-error: true
+- uses: github/codeql-action/upload-sarif@v3
+  if: always()
+  with:
+    sarif_file: manni.sarif
+```
+
+What a `PostToolUse` hook runs, after an agent edits a page that now fails.
+The reply carries only the failing checks' reports:
 
 ```console
 $ echo '{"hook_event_name":"PostToolUse","tool_name":"Edit","tool_input":{"file_path":"docs/limits.md"},"cwd":"."}' | manni check
-manni found errors in docs/limits.md. Fix them before you continue.
+manni found errors in docs/limits.md. Fix them before you continue. The manni:fix skill says how to repair each finding.
 
 meta validate
 ✗ docs/limits.md
     (root)  must have required property 'description'  (line 1)  [./schemas/page.schema.json]
 
 1 file checked, 0 passed, 1 failed, 1 error
-
-skipped  cite check     no page carries citations
-skipped  lint check     no lint: section
-skipped  docevals run   no page resolves any evals
-
-4 checks over 1 file: 1 failed, 3 skipped
 # exit 2
 ```
 
@@ -476,17 +557,22 @@ $ echo '{"hook_event_name":"Stop","stop_hook_active":true,"cwd":"."}' | manni ch
 Usage errors, each with its stderr line:
 
 ```console
-$ manni check -f sarif
-error: option '-f, --format <format>' argument 'sarif' is invalid. Allowed choices are pretty, json, github.
+$ manni check -f sarf
+error: option '-f, --format <format>' argument 'sarf' is invalid. Allowed choices are pretty, json, github, sarif.
+(add --help for usage)
+# exit 2
+
+$ manni status -f sarif
+error: option '-f, --format <format>' argument 'sarif' is invalid. Allowed choices are pretty, json.
 (add --help for usage)
 # exit 2
 
 $ manni check
-manni: No manni.config.yaml found from /work/demo up to the repository root. manni check runs the checks it sets up.
+manni: No manni.config.yaml found from /work/demo up to the repository root. Create one there with a collections: entry for your docs.
 # exit 2
 
 $ manni check docs/nope.md
-manni: File not found: "docs/nope.md".
+manni: File not found: "docs/nope.md". Check the path. Named paths resolve from the working directory.
 # exit 2
 
 $ manni check -c nope.yaml
