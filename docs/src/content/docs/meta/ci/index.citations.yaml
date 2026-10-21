@@ -13,9 +13,9 @@ docs/src/content/docs/meta/ci/index.mdx:
         integrity: sha256-0cd301c79f776f15eafb0ef08236fdf158c5107697a27f3a8cfc2b14fe1624c4
       source:
         file: src/meta/commands/validate.ts
-        lines: 1117-1128
+        lines: 1134-1145
         integrity: sha256-ecdb7f2b79f4cf95fbd52ff4b2b06deb9ab5d22218f6953b83e3af0726fd9bea
-        commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
+        commit-sha: 6f1ff2e33d9cc6b0a72c5acc22a0290a71d3b0fe
     - id: collection-flag-is-repeatable
       claim:
         integrity: sha256-2de948433473766b2903499c362d68fce2e45b42c7dc76650fb9f0e51302e824
@@ -38,9 +38,9 @@ docs/src/content/docs/meta/ci/index.mdx:
         integrity: sha256-80f76a421af32d1af0bb336c11692536b9bbe66569075ac07deb33ffd5d9283f
       source:
         file: src/meta/reporters/index.ts
-        lines: 314-335
+        lines: 316-337
         integrity: sha256-2f7b91cc687ca83e4e49b32ee16f32c1b693d3d283dce6c1cb75793823c255ac
-        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
+        commit-sha: 6f1ff2e33d9cc6b0a72c5acc22a0290a71d3b0fe
     - id: validate-exits-1-on-failures
       claim:
         lines: 51-52

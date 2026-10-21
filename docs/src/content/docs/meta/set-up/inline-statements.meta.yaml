@@ -33,5 +33,6 @@ docs/src/content/docs/meta/set-up/inline-statements.mdx:
     - "@hawkeyexl"
   provenance:
     - generated-by: Claude Opus 5.5
-      lines: 2-325
-      integrity: sha256-5625d01dbafe8ed7fb88c1b787b799b634aede3246c52476c06b68de1e6c2bce
+      lines: 2-345
+      integrity: sha256-1da709abb41c224d143869979d63d401b251ebedd79c9bcdb89ac7b843832d81
+  created: 2026-10-21

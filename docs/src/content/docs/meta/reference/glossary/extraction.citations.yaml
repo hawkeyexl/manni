@@ -5,6 +5,6 @@ docs/src/content/docs/meta/reference/glossary/extraction.mdx:
         integrity: sha256-28de3b08d7197f35210e5eb0fd99ef7f98b07b2e6818dac47b193d2b34e9de0b
       source:
         file: src/meta/commands/get.ts
-        lines: 91-93
+        lines: 92-94
         integrity: sha256-4585970c1b5e7a62f988c5858647ae05b2974e0d23e2bf5cdb7306c4573e9734
-        commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
+        commit-sha: 6f1ff2e33d9cc6b0a72c5acc22a0290a71d3b0fe

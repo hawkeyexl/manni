@@ -14,35 +14,35 @@ docs/src/content/docs/meta/reference/schema-resolution.mdx:
         integrity: sha256-c16580ff89552c73b4ba161960be0c4173261b9b70f1b166eae38f0c51864d79
       source:
         file: src/meta/commands/validate.ts
-        lines: 489-498
+        lines: 490-499
         integrity: sha256-4ab343fff50e971ddfb32c429f4bad9406c8a0d9fc51da53f2227b8a449347d4
-        commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
+        commit-sha: 6f1ff2e33d9cc6b0a72c5acc22a0290a71d3b0fe
     - id: resolution-owned-key-gets-no-location-finding
       claim:
         lines: 634
         integrity: sha256-413e776bc1cf35dfa432a3b95c44f2e5f8d783d50619bda4b7cc5203987f111b
       source:
         file: src/meta/commands/validate.ts
-        lines: 468-470
+        lines: 469-471
         integrity: sha256-2a711c152bf3769485a0585f0e0c8beaa0fe9362a964307209321704a850cd2b
-        commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
+        commit-sha: 6f1ff2e33d9cc6b0a72c5acc22a0290a71d3b0fe
     - id: resolution-location-external-finding-wording
       claim:
         lines: 630-633
         integrity: sha256-20f2ba67e2d54c5897ba87007cdad2d4b36f791314db124a03bfa525ea2431e7
       source:
         file: src/meta/commands/validate.ts
-        lines: 472-485
+        lines: 473-486
         integrity: sha256-763d6e1c09fa74afffd04cd0ed808f86a19e111e4cf1c38d84597bdfa32c4fb9
-        commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
+        commit-sha: 6f1ff2e33d9cc6b0a72c5acc22a0290a71d3b0fe
     - id: resolution-location-findings-are-warnings
       claim:
         integrity: sha256-838873612f239a30153c58513d17a117f3af29333f5b26a8e9807af2912456f5
       source:
         file: src/meta/commands/validate.ts
-        lines: 462-467
+        lines: 463-468
         integrity: sha256-322c785e2c90e19dccc0203214bfcfda36622ae1d2bf7b2715ee0fb9e978d19a
-        commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
+        commit-sha: 6f1ff2e33d9cc6b0a72c5acc22a0290a71d3b0fe
     - id: resolution-branch-marks-are-not-an-error
       claim:
         integrity: sha256-6e1c918e24485f5c60dd63f2be08749727f602b8c052a7652e12634709902092
@@ -74,9 +74,9 @@ docs/src/content/docs/meta/reference/schema-resolution.mdx:
         integrity: sha256-79591167b6de655d25bcdd43e18ffe0e180dd70948e9e73b366dc69bb1954e8e
       source:
         file: src/meta/commands/validate.ts
-        lines: 450-454
+        lines: 451-455
         integrity: sha256-4a4b867ef027ab5340898ee627527b9022f2c51c110a2df43c4715c5d7bb579b
-        commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
+        commit-sha: 6f1ff2e33d9cc6b0a72c5acc22a0290a71d3b0fe
     - id: resolution-later-schema-wins
       claim:
         lines: 596-598

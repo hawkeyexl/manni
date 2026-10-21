@@ -102,9 +102,9 @@ docs/src/content/docs/meta/set-up/retrofit.mdx:
         integrity: sha256-17cd8d4365ad9189035a0380e44bdf1612c7599414ff4120277b5998f9a62b47
       source:
         file: src/meta/reporters/index.ts
-        lines: 295-297
+        lines: 297-299
         integrity: sha256-613ff887c2f368bb7e79c0882524de376e7abf681d716f6437416d839beec4e6
-        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
+        commit-sha: 6f1ff2e33d9cc6b0a72c5acc22a0290a71d3b0fe
     - id: baseline-config-key-enables-comparison
       claim:
         integrity: sha256-1150f94a94622d52d4f66bd9f46476b437ac7a8ab281d22512f188d0d9c88e37
@@ -159,18 +159,18 @@ docs/src/content/docs/meta/set-up/retrofit.mdx:
         integrity: sha256-b434cb91645fc3c84066f41be4d26f16a21838ce807764daf2b443931b3738bd
       source:
         file: src/meta/commands/validate.ts
-        lines: 334-337
+        lines: 335-338
         integrity: sha256-7f1973d8b0245da7e1deff8552f047c5e989da046b9bd61a922b7a1d15eef004
-        commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
+        commit-sha: 6f1ff2e33d9cc6b0a72c5acc22a0290a71d3b0fe
     - id: collection-exclude-applies-on-a-collection-run
       claim:
         lines: 155
         integrity: sha256-b434cb91645fc3c84066f41be4d26f16a21838ce807764daf2b443931b3738bd
       source:
         file: src/meta/commands/validate.ts
-        lines: 350-354
+        lines: 351-355
         integrity: sha256-3e37842784cbe6627a93f287b54a47f31340c33daf9a4e3749468d20cf91d6a2
-        commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
+        commit-sha: 6f1ff2e33d9cc6b0a72c5acc22a0290a71d3b0fe
     - id: exclude-flag-filters-a-typed-path
       claim:
         lines: 155
@@ -238,9 +238,9 @@ docs/src/content/docs/meta/set-up/retrofit.mdx:
         integrity: sha256-1b191f0f554deba2bbab4959b821b4e2fa0752c14aba132edf90c01756d180a2
       source:
         file: src/meta/reporters/index.ts
-        lines: 314-320
+        lines: 316-322
         integrity: sha256-29841d6d46a22b4346598e720d722c56e6e318edbf596f1de26e136f86bdd85b
-        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
+        commit-sha: 6f1ff2e33d9cc6b0a72c5acc22a0290a71d3b0fe
     - id: validate-exit-zero-pass-one-fail
       claim:
         integrity: sha256-042a8ed49fb289b8d0e24b1f83aa6e5fbae536533976f7967e5c2c1009a8f7b0

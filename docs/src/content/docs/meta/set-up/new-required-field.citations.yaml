@@ -73,9 +73,9 @@ docs/src/content/docs/meta/set-up/new-required-field.mdx:
         integrity: sha256-c5a9faac7e4fc9ded6414c4885dbe6df7a4121d058fd24c298c06b2877483b7e
       source:
         file: src/meta/reporters/index.ts
-        lines: 295-297
+        lines: 297-299
         integrity: sha256-613ff887c2f368bb7e79c0882524de376e7abf681d716f6437416d839beec4e6
-        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
+        commit-sha: 6f1ff2e33d9cc6b0a72c5acc22a0290a71d3b0fe
     - id: rerecord-drops-entries-that-no-longer-occur
       claim:
         lines: 116
@@ -133,9 +133,9 @@ docs/src/content/docs/meta/set-up/new-required-field.mdx:
         integrity: sha256-be8733ecd60bb4542c3922a3ddf75192528034df3f92d5ad0edf762988c08ef3
       source:
         file: src/meta/reporters/index.ts
-        lines: 292-294
+        lines: 294-296
         integrity: sha256-7aa6d0c460018b932f918f7a590a376d89c4a592b7c383d2d71d1c4e9f2c8393
-        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
+        commit-sha: 6f1ff2e33d9cc6b0a72c5acc22a0290a71d3b0fe
     - id: summary-reports-baselined-finding-count
       claim:
         integrity: sha256-be8733ecd60bb4542c3922a3ddf75192528034df3f92d5ad0edf762988c08ef3

@@ -13,6 +13,6 @@ docs/src/content/docs/meta/reference/glossary/extractor.mdx:
         integrity: sha256-e7b3984def61178de35f79220219be3a2157c117bf72f20b0e319627a531dd4a
       source:
         file: src/meta/commands/validate.ts
-        lines: 1048-1054
+        lines: 1065-1071
         integrity: sha256-0c3b3d2a1bb415917787bfb33df3ea75db73cf65e5d1affa71105f10bd5faa9d
-        commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
+        commit-sha: 6f1ff2e33d9cc6b0a72c5acc22a0290a71d3b0fe
