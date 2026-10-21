@@ -283,7 +283,7 @@ command a person would type. It is where a missing default, an awkward pairing,
 or a parity break with `meta` gets caught before it ships.
 
 **Plans carry a worked example.** After the pain and before the interface, a
-plan walks one person through the change end to end. Name the persona from
+plan walks one persona through the change end to end. Name the persona from
 `docs/content-strategy/personas.md`, and start from a real state, this
 repository's own where it can be. Show each command or call they make, in
 order, and what each prints or returns. End at the outcome the pain section
