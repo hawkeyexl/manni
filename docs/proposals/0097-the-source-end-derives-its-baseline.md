@@ -171,6 +171,18 @@ the merge. A post-merge job could rewrite the manifests, but that needs a
 write token, a bot commit after every merge and a second CI run. The read side
 no longer needs it.
 
+### 7. The same bytes at other line numbers
+
+The first dogfood run of `--recommit` on this repo recorded `3b6f523`, from
+PR #32, not `26dad159`. The six pinned lines of `release.yml` have existed
+since #32, at other line numbers. Counting a commit as holding the pin
+anywhere in the file walked the run back past the squash.
+
+That commit cannot reach the entry's range, and `update` advances
+`commit-sha` with `lines` to prevent exactly that. So the arrival walk asks
+each commit for the pin at the entry's own lines. `check` keeps the wider
+reading, because a baseline only has to show the pinned bytes once held.
+
 ## What this supersedes
 
 - **0053, stress test 3, "Changed as a result".** Its last sentence says the

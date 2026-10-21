@@ -270,9 +270,9 @@ docs/src/content/docs/cite/ci/index.mdx:
         integrity: sha256-2b70442c0a3cc03750585384d224f3e16c8c4711cc398b155b738bd9d3d3377c
       source:
         file: src/cite/core/classify.ts
-        lines: 467-468
+        lines: 481-482
         integrity: sha256-e3548519f38f33970cf4e73eedce393ba2d649ae41eaa05b0784c7a91653a9cd
-        commit-sha: f2ecf49996504a135f3e37de5bac35c5a054b237
+        commit-sha: 84d629de826c9d375b3c83f23dc6ed9e962373d2
     - id: shallow-clone-notice
       claim:
         lines: 109
@@ -296,9 +296,9 @@ docs/src/content/docs/cite/ci/index.mdx:
         integrity: sha256-6cd781084d1cb253d0a0ba2b8903c211d687211658c2ed920049c084917fe13b
       source:
         file: src/cite/core/classify.ts
-        lines: 467-468
+        lines: 481-482
         integrity: sha256-e3548519f38f33970cf4e73eedce393ba2d649ae41eaa05b0784c7a91653a9cd
-        commit-sha: f2ecf49996504a135f3e37de5bac35c5a054b237
+        commit-sha: 84d629de826c9d375b3c83f23dc6ed9e962373d2
     - id: shallow-still-error
       claim:
         integrity: sha256-6cd781084d1cb253d0a0ba2b8903c211d687211658c2ed920049c084917fe13b
