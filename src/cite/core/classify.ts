@@ -237,8 +237,10 @@ export async function arrivalOf(
     if (!("text" in shown) || !holdsAt(shown.text, range, pin, key)) break;
     arrived = commit.sha;
   }
-  // A run the cap or a shallow boundary cut short ends at the oldest commit
-  // the clone holds, which still holds the pin.
+  // `truncated` and `shallow` are ignored on purpose. A run the cap or a
+  // shallow boundary cut short ends at the oldest reachable commit that holds
+  // the pin, which can be newer than the true arrival. A second `--recommit`
+  // finds that commit in history holding the pin, so it does not re-record.
   return arrived;
 }
 

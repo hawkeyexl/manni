@@ -1266,7 +1266,8 @@ describe("manni cite update", () => {
     expect(r.stdout).toContain("1 citation rewritten in 1 file, 0 skipped");
     // The page itself is not printed: `# Limits` is outside every hunk's context.
     expect(r.stdout).not.toContain("# Limits");
-    expect(r.stderr).toBe("");
+    // No git here, and a moved pin's history is read, commit or not (0097).
+    expect(r.stderr).toBe(`manni: ${NO_HISTORY}\n`);
   });
 
   it("--only limits the rewrite to the named id", () => {

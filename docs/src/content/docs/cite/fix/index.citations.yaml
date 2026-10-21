@@ -99,9 +99,9 @@ docs/src/content/docs/cite/fix/index.mdx:
         integrity: sha256-46fec0030000b3dc89fc67477a68641baf4a152e9f463b00c072c6c5d6c760f5
       source:
         file: src/cite/core/classify.ts
-        lines: 279-288
+        lines: 281-290
         integrity: sha256-3b6ef5df3fb90c08544db53132e85f0cc3c3cfaaadc04364abea67bdcccb4ec9
-        commit-sha: 10779bd0275d184cbf25f55e2762574229697996
+        commit-sha: 0e5cc8f58893bc02bc0add596f0b04829c421108
     - id: source-moved-warning
       claim:
         integrity: sha256-46fec0030000b3dc89fc67477a68641baf4a152e9f463b00c072c6c5d6c760f5
@@ -141,9 +141,9 @@ docs/src/content/docs/cite/fix/index.mdx:
         integrity: sha256-732c7c0b3f26491131e034085073c53fe5744cdb69d911afc83be08efe04ae46
       source:
         file: src/cite/core/classify.ts
-        lines: 431-435
+        lines: 433-437
         integrity: sha256-16ca03786a8e73885968456b8c78a35e61ae70b57d6ea7bc4fe106517b2f2922
-        commit-sha: 10779bd0275d184cbf25f55e2762574229697996
+        commit-sha: 0e5cc8f58893bc02bc0add596f0b04829c421108
     - id: update-skips-ambiguous-source
       claim:
         integrity: sha256-732c7c0b3f26491131e034085073c53fe5744cdb69d911afc83be08efe04ae46
@@ -157,9 +157,9 @@ docs/src/content/docs/cite/fix/index.mdx:
         integrity: sha256-89b79d4330b36cd3b9e077cd50667fc63792d49958b67811eecbd5d8f3cc4fd3
       source:
         file: src/cite/core/classify.ts
-        lines: 297-308
+        lines: 299-310
         integrity: sha256-e1f61e84a9a5885bd07e64f5d56f18eb79c6441ca3d3cae2c700edd1c623c34f
-        commit-sha: 10779bd0275d184cbf25f55e2762574229697996
+        commit-sha: 0e5cc8f58893bc02bc0add596f0b04829c421108
     - id: show-diff-subjects-diff
       claim:
         integrity: sha256-89b79d4330b36cd3b9e077cd50667fc63792d49958b67811eecbd5d8f3cc4fd3
@@ -181,9 +181,9 @@ docs/src/content/docs/cite/fix/index.mdx:
         integrity: sha256-b6e7ff4dba00dba01188f6ce08f99375dab728afb5bab6278c86d7bd8cb482ff
       source:
         file: src/cite/core/check-page.ts
-        lines: 349-356
-        integrity: sha256-4b7c8283012b463c3ae924c7cf0bed57b099f1587b1eae316410d997baa5ac2d
-        commit-sha: f2ecf49996504a135f3e37de5bac35c5a054b237
+        lines: 351-359
+        integrity: sha256-53d91c1cb1a1fa3062274ebdf0f5a4c803856f2de9d5a4933ec7d41e15c479f6
+        commit-sha: 5630e2210b8fdfa8e48ea4702a8a1567757e41ce
     - id: decode-sample-changed
       claim:
         lines: 21
