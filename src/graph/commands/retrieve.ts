@@ -28,6 +28,7 @@ import type { QueryEmbedder } from "../runtime/entry.js";
 import { GraphIndex } from "../runtime/graph.js";
 import {
   artifactContext,
+  IMPACT_DEPTH,
   lookup,
   ModelMismatchError,
   parseChunksManifest,
@@ -89,6 +90,7 @@ export interface TraverseContextOptions extends ArtifactOptions {
   limit?: number;
   maxChars?: number;
   withhold?: WithholdReason[];
+  where?: WhereCondition[];
 }
 
 interface Artifact {
@@ -222,6 +224,7 @@ export async function runTraverseContext(opts: TraverseContextOptions): Promise<
       ...(opts.limit === undefined ? {} : { limit: opts.limit }),
       ...(opts.maxChars === undefined ? {} : { maxChars: opts.maxChars }),
       ...(opts.withhold === undefined ? {} : { withhold: opts.withhold }),
+      ...(opts.where === undefined ? {} : { where: opts.where }),
     }),
   );
 }
@@ -331,7 +334,7 @@ export function renderLookup(
     const how = edge === undefined ? "" : `from ${nameOf(edge.from)} via ${edge.predicate}`;
     block(`   ${label(p).padEnd(width)}  ${how}`.trimEnd(), p);
   }
-  lines.push("Impact, depth 3");
+  lines.push(`Impact, depth ${String(IMPACT_DEPTH)}`);
   if (result.impact.passages.length === 0) lines.push("   (none)");
   for (const p of result.impact.passages) {
     const edge = firstEdge(result.impact.edges, (e) => e.from === p.iri);

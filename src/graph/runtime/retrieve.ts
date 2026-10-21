@@ -266,7 +266,7 @@ export interface LookupOptions {
 }
 
 /** The depth `graph traverse --impact` uses by default, and so `lookup`'s inward walk. */
-const IMPACT_DEPTH = 3;
+export const IMPACT_DEPTH = 3;
 
 // ponytail: one fixed candidate pool per leg; raise it when filters routinely
 // exhaust the pool before `seeds` matches are found.
@@ -859,7 +859,7 @@ export async function lookup(input: RetrieverContext & LookupOptions): Promise<L
 
 // ---- the shipped seams and parsers -------------------------------------------------
 
-/** Ranks rows by cosine in memory. Rows without a vector are never ranked. */
+/** Ranks rows by cosine in memory, among those meeting `where`. Rows without a vector are never ranked. */
 export function createStaticVectorStore(rows: readonly ChunkRow[]): VectorStore {
   return {
     query(q) {
@@ -869,6 +869,8 @@ export function createStaticVectorStore(rows: readonly ChunkRow[]): VectorStore 
       for (const row of rows) {
         if (row.vector === undefined || row.vector.length !== query.length) continue;
         if (q.language !== null && row.language !== q.language) continue;
+        // Before the `k` cut, as a server store does, so a strict filter cannot starve the pool.
+        if (failedField(row, q.where) !== undefined) continue;
         const stored = normalize(Float32Array.from(row.vector));
         let score = 0;
         for (const [i, value] of query.entries()) score += value * (stored[i] ?? 0);
@@ -912,22 +914,44 @@ export function parseChunkRows(text: string): ChunkRow[] {
   const rows: ChunkRow[] = [];
   for (const [i, line] of text.split(/\r?\n/).entries()) {
     if (line.trim() === "") continue;
-    const row = JSON.parse(line) as Partial<ChunkRow> | null;
-    if (row === null || typeof row.id !== "string" || typeof row.graph !== "string") {
-      throw new Error(`Line ${String(i + 1)} is not a chunk row.`);
-    }
-    rows.push(row as ChunkRow);
+    const row: unknown = JSON.parse(line);
+    if (!isChunkRow(row)) throw new Error(`Line ${String(i + 1)} is not a chunk row.`);
+    rows.push(row);
   }
   return rows;
 }
 
-/** `chunks.json`, checked to be one. */
+function isRecord(v: unknown): v is Record<string, unknown> {
+  return typeof v === "object" && v !== null && !Array.isArray(v);
+}
+
+/** The fields the cores read, so a damaged row fails here and not deep in a query. */
+function isChunkRow(v: unknown): v is ChunkRow {
+  return (
+    isRecord(v) &&
+    ["id", "graph", "page", "lines", "language", "title", "text"].every((k) => typeof v[k] === "string") &&
+    (v.vector === undefined || Array.isArray(v.vector)) &&
+    isRecord(v.metadata) &&
+    isRecord(v.provenance)
+  );
+}
+
+/** `chunks.json`, checked to be one, down to the fields the cores read. */
 export function parseChunksManifest(input: string | object): ChunksManifest {
-  const doc = (typeof input === "string" ? JSON.parse(input) : input) as Partial<ChunksManifest> | null;
-  if (doc?.format !== "manni-graph-chunks" || doc.version !== 1) {
-    throw new Error('Not a manni graph chunk manifest: expected format "manni-graph-chunks", version 1.');
-  }
-  return doc as ChunksManifest;
+  const doc: unknown = typeof input === "string" ? JSON.parse(input) : input;
+  const valid =
+    isRecord(doc) &&
+    doc.format === "manni-graph-chunks" &&
+    doc.version === 1 &&
+    ["graph", "graphFile", "searchIndex"].every((k) => typeof doc[k] === "string") &&
+    (doc.model === null || isRecord(doc.model)) &&
+    isRecord(doc.retrieve) &&
+    isRecord(doc.pages) &&
+    Array.isArray(doc.withheld) &&
+    isRecord(doc.languages) &&
+    Object.values(doc.languages).every((l) => isRecord(l) && typeof l.file === "string");
+  if (!valid) throw new Error('Not a manni graph chunk manifest: expected format "manni-graph-chunks", version 1.');
+  return doc as unknown as ChunksManifest;
 }
 
 /** Reads one `chunks.<tag>.jsonl`, given as its text or its URL. */
@@ -1029,23 +1053,35 @@ export interface CreateRetrieverOptions {
   fetch?: RetrieverFetch;
 }
 
+/**
+ * The cores over one artifact. `withhold` on `retrieve`, `traverse` and
+ * `impact` tightens the floor the artifact was exported with, per call, as
+ * the CLI's `--withhold` does. It never lowers it: exported rows stay out.
+ * `lookup` takes only a question and serves the exported floor.
+ */
 export interface Retriever {
   readonly manifest: ChunksManifest;
   lookup(question: string): Promise<LookupResult>;
   retrieve(
     question: string,
-    options?: Pick<RetrieveOptions, "lang" | "variant" | "softwareSubject" | "depth" | "maxChars" | "mode" | "where">,
+    options?: Pick<
+      RetrieveOptions,
+      "lang" | "variant" | "softwareSubject" | "depth" | "maxChars" | "mode" | "where" | "withhold"
+    >,
   ): Promise<PassageBundle>;
   traverse(
     node: string,
     options?: Pick<
       WalkOptions,
-      "depth" | "predicates" | "reverse" | "lang" | "variant" | "softwareSubject" | "limit" | "maxChars" | "where"
+      "depth" | "predicates" | "reverse" | "lang" | "variant" | "softwareSubject" | "limit" | "maxChars" | "where" | "withhold"
     >,
   ): Promise<PassageBundle>;
   impact(
     node: string,
-    options?: Pick<WalkOptions, "depth" | "lang" | "variant" | "softwareSubject" | "limit" | "maxChars" | "where">,
+    options?: Pick<
+      WalkOptions,
+      "depth" | "lang" | "variant" | "softwareSubject" | "limit" | "maxChars" | "where" | "withhold"
+    >,
   ): Promise<PassageBundle>;
 }
 
