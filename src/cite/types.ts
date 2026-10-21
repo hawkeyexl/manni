@@ -363,6 +363,12 @@ export interface SourceIndex {
   files(): readonly string[];
   /** Whether `path` is a tracked file under the root. An encrypted source is decrypted first, then asked here. */
   has(path: string): boolean;
+  /**
+   * The bytes of a file the index holds. Absent, a file is read from disk
+   * under the root. An index over a commit's tree reads them from git, so the
+   * classifier answers as of that commit (proposal 0092).
+   */
+  read?(path: string): Promise<string | undefined>;
 }
 
 /**
@@ -548,6 +554,78 @@ export interface CheckRun {
   pages: PageCitationReport[];
   warnings: number;
   notices: number;
+}
+
+/** `manni cite history` (proposal 0092): `check`'s input surface, and the walk's bound. */
+export interface HistoryOptions
+  extends Pick<
+    CheckOptions,
+    | "inputs"
+    | "collection"
+    | "exts"
+    | "exclude"
+    | "as"
+    | "configPath"
+    | "noConfig"
+    | "cwd"
+    | "allowEmpty"
+    | "respectGitignore"
+    | "onNotice"
+    | "onConfigLoaded"
+    | "root"
+    | "env"
+  > {
+  /** `--newer-than <duration>`: walk only the commits within that span of `HEAD`'s committer time. */
+  newerThan?: string;
+}
+
+/** A commit a window opened or closed at. */
+export interface WindowCommit {
+  commit: string;
+  /** Committer time, ISO 8601 in UTC, to the second. */
+  date: string;
+  subject: string;
+}
+
+/** One run of first-parent commits at which a citation's source pin did not hold. */
+export interface StaleWindow {
+  /** The entry's id, or its pointer (`/citations/N`) when it has none. */
+  id: string;
+  /** The entry's source as it stood when the window opened. */
+  source: string;
+  rule: "source-changed" | "source-missing" | "source-never-true";
+  severity: Severity;
+  opened: WindowCommit & { bounded: boolean };
+  closed: (WindowCommit & { by: "re-pinned" | "source-restored" | "removed" }) | null;
+  /** Committer time to committer time; an open window runs to `HEAD`'s. */
+  seconds: number;
+  /** Tags reachable from `HEAD` that contain the opening commit and not the closing one, oldest first. */
+  releases: string[];
+  /** The page's earlier paths while the window was open, oldest first. */
+  formerly: string[];
+}
+
+export interface HistoryPage {
+  file: string;
+  windows: StaleWindow[];
+}
+
+export interface HistorySummary {
+  head: string;
+  walked: { commits: number; from: string; to: string };
+  files: number;
+  citations: number;
+  windows: number;
+  open: number;
+  staleSeconds: number;
+  bySeverity: Record<Severity, number>;
+  releases: string[];
+  skipped: { encrypted: number };
+}
+
+export interface HistoryRun {
+  summary: HistorySummary;
+  pages: HistoryPage[];
 }
 
 
