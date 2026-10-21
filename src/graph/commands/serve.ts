@@ -18,10 +18,11 @@ import { Ajv2020 } from "ajv/dist/2020.js";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import type { CallToolRequestSchema, ListToolsRequestSchema } from "@modelcontextprotocol/sdk/types.js";
+import pkg from "../../../package.json" with { type: "json" };
 import { errorMessage } from "../../shared/errors.js";
 import { notice } from "../../shared/warn.js";
 import type { WithholdReason } from "../runtime/chunks.js";
-import type { PassageBundle, WhereCondition } from "../runtime/retrieve.js";
+import type { LookupResult, PassageBundle, WhereCondition } from "../runtime/retrieve.js";
 import { GraphError } from "../types.js";
 import { lookupIn, openArtifact, retrieveIn, traverseIn, type Artifact, type ArtifactOptions } from "./retrieve.js";
 
@@ -87,10 +88,10 @@ const WHERE: Schema = {
   },
 };
 
-const input = (properties: Record<string, Schema>, required: string): Schema => ({
+const input = (properties: Record<string, Schema>, requiredField: string): Schema => ({
   type: "object",
   properties,
-  required: [required],
+  required: [requiredField],
   additionalProperties: false,
 });
 
@@ -321,7 +322,7 @@ async function answer(
   name: ToolName,
   args: Args,
   withhold: WithholdReason[] | undefined,
-): Promise<object> {
+): Promise<LookupResult | PassageBundle> {
   const scope = defined({ lang: args.lang, variant: args.variant, subject: args.softwareSubject, withhold });
   const head = name === "retrieve" || name === "lookup" ? { question: args.question ?? "" } : { node: args.node ?? "" };
   try {
@@ -386,7 +387,7 @@ export async function runServe(opts: ServeOptions, seams: ServeSeams = {}): Prom
   const ajv = new Ajv2020({ allErrors: false, strict: false });
   const validators = new Map(TOOLS.map((t) => [t.name as string, ajv.compile(t.inputSchema)]));
   const server = new sdk.McpServer(
-    { name: "manni-graph", version: "1.0.0" },
+    { name: "manni-graph", version: pkg.version },
     { capabilities: { tools: {} } },
   );
   const pending = new Set<Promise<unknown>>();
@@ -416,7 +417,7 @@ export async function runServe(opts: ServeOptions, seams: ServeSeams = {}): Prom
     try {
       const result = await work;
       return {
-        structuredContent: result as Record<string, unknown>,
+        structuredContent: { ...result },
         content: [{ type: "text" as const, text: JSON.stringify(result) }],
       };
     } catch (e) {

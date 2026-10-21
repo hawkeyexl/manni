@@ -118,6 +118,11 @@ describe("graph serve: tools/list", () => {
       `manni: serving lookup, retrieve, traverse and impact over stdio from ${INDEX}/chunks.json.\n`,
     );
   });
+
+  it("reports the package's version as its own", () => {
+    const pkg = JSON.parse(readFileSync(join(root, "package.json"), "utf8")) as { version: string };
+    expect(client.getServerVersion()).toMatchObject({ name: "manni-graph", version: pkg.version });
+  });
 });
 
 describe("graph serve: tools/call", () => {
