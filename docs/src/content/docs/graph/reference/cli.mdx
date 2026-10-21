@@ -14,7 +14,7 @@ last-updated: 2026-10-21
     docs:check-cli), enforced in CI. Keep flags, arguments, and defaults in
     sync with the code; descriptions are free-form. */}
 
-Fourteen commands under one domain, and one subcommand under `shapes`. Every flag below is verified against
+Fifteen commands under one domain, and one subcommand under `shapes`. Every flag below is verified against
 `src/graph/cli.ts`, and the exit codes are exercised by the inline tests at the
 foot of this page.
 
@@ -421,6 +421,39 @@ annotations, as plain text. The JSON report gains a `questions` key beside
 
 Stored per CI run, that object is the time series. manni keeps no history of
 its own.
+
+### Cited by graph retrieve
+
+When a chunk artifact sits beside the graph, `check` also asks each reviewed
+question through [`graph retrieve`](#graph-retrieve), in the question's own
+language. A question is cited when the bundle cites a node that answers it.
+For a question with no pin, that is its page or any of its sections. For a
+pinned one, it is a node whose own text holds each answer.
+
+```console
+$ manni graph publish && manni graph check
+questions  4: 4 reviewed, 0 drafted, on 4 pages
+  found    3 of 4 reviewed in the top 5 (75%), 3 first (75%)
+  cited    2 of 4 reviewed by graph retrieve (50%), 1 withheld
+  answers  0 pinned, 0 not reviewed: 0 current, 0 moved, 0 changed; 4 not pinned
+```
+
+The JSON `questions` object gains `cited` and `withheld`, both counts of
+reviewed questions. The row's denominator is `found.reviewed.of`.
+
+| Finding | Severity | Message |
+|---|---|---|
+| Not cited | `questions.severity` | `"<question>" is not cited by graph retrieve, which cites <page> § <section> first.` |
+| Not cited, withheld | `questions.severity` | `"<question>" is not cited by graph retrieve, because graph.retrieve.withhold left out § <section> as drifted.` |
+| Cited outside its language | error | `"<question>" asks in de, and graph retrieve cites <page>, which is en.` |
+| Under `citedThreshold` | error | `2 of 4 reviewed questions are cited by graph retrieve (50%), under the 75% that graph.check.questions.citedThreshold asks for.` |
+| No chunk artifact | notice | `the cited row did not run: no chunk artifact; run manni graph publish.` |
+| An artifact from another graph | notice | `the cited row did not run: .manni/graph/chunks.json was built from another graph; run manni graph publish.` |
+
+A withheld answer that is a whole page is named by its path. When the bundle
+cites nothing, the first message ends `which cites nothing for it.` The row
+never runs without an artifact, so `citedThreshold` gates only a published
+graph.
 
 ### Options
 
@@ -1236,6 +1269,69 @@ Each is **exit 2**, on stderr, before anything is served.
 | An artifact from another graph | `manni: .manni/graph/chunks.json was built from another graph; run manni graph publish.` |
 | A bad `--withhold` value | `manni: --withhold takes drifted or failing, and got stale.` |
 
+## `graph publish`
+
+Builds the graph and writes everything serving needs into one directory. It
+runs each step's own command in-process, in the order each step's input
+exists.
+
+```sh
+manni graph publish [options]
+```
+
+```console
+$ manni graph publish --out docs/public/graph
+build     graph.ttl: 256 pages, 20577 triples
+export    search.en.json, localizations.json: 2920 entries
+skipped   embed: no graph.embed section
+export    graph.jsonld: 3003 nodes
+export    chunks.json, chunks.en.jsonl: 2359 chunks, 0 withheld
+export    llms.txt: 256 pages
+skipped   iirds: no graph.export.iirds section
+Published 7 files to docs/public/graph/.
+```
+
+| Step | Runs when | What it writes |
+|---|---|---|
+| `build` | always | The graph, under the file name config `out` gives it. |
+| `export:search` | always | The search index and its manifest. |
+| `embed` | a `graph.embed` section exists | One vector sidecar per language. |
+| `export:jsonld` | always | `graph.jsonld`, which `createRetriever` reads. |
+| `export:chunks` | always | `chunks.json` and its rows. See [Chunks](#chunks). |
+| `export:llms` | a `graph.export.llms` section exists | `llms.txt`. See [llms.txt](#llmstxt). |
+| `export:iirds` | a `graph.export.iirds` section exists | The iiRDS package. |
+
+A step that is not set up prints a `skipped` line and never fails the run.
+Each step's warnings and notices go to stderr as that step says them. The
+first step that fails stops the run with **exit 2**:
+
+```text
+manni: graph publish stopped at export:llms: graph export llms needs graph.export.llms.origin, the site's scheme and host.
+```
+
+`publish` does not gate. Run `graph check` first, as in
+`manni graph check && manni graph publish`.
+
+With `-f json` it prints the steps:
+
+```json
+{ "out": "docs/public/graph",
+  "steps": [ { "step": "build", "status": "ran", "detail": "graph.ttl: 256 pages, 20577 triples", "files": ["graph.ttl"] },
+             { "step": "embed", "status": "skipped", "detail": "no graph.embed section", "files": [] } ] }
+```
+
+`files` names each file relative to `out`.
+
+### Options
+
+| Option | Argument | Default | Description |
+|---|---|---|---|
+| `-c, --config` | `<path>` | discovered | Path to `manni.config.yaml`. |
+| `--no-config` | n/a | off | Ignore any discovered config file. |
+| `-o, --out` | `<dir>` | the directory of config `out` | The directory for every artifact. |
+| `--evals` | `<path>` | config `export.chunks.evals` | A docevals JSON report for the chunks step. |
+| `-f, --format` | `<pretty\|json>` | `pretty` | Output format. |
+
 ## `graph embed`
 
 Computes local embeddings for the search index, one sidecar per language. It
@@ -1282,6 +1378,7 @@ Wrote 32 nodes to .tmp/dd/graph.jsonld
 | `search` | The browser search index and its manifest, read client-side by `@hawkeyexl/manni/graph/runtime`. |
 | `questions` | The question set as JSON Lines, for an eval tool. See [The question set](#the-question-set). |
 | `chunks` | The passages a retrieval host serves, each with its provenance record. See [Chunks](#chunks). |
+| `llms` | `llms.txt`, one link and description per page. See [llms.txt](#llmstxt). |
 
 An unknown target is **exit 2**, with the allowed set named.
 
@@ -1289,7 +1386,7 @@ An unknown target is **exit 2**, with the allowed set named.
 
 | Argument | Description |
 |---|---|
-| `<target>` | What to write: `jsonld`, `iirds`, `search`, `questions`, or `chunks`. Required. |
+| `<target>` | What to write: `jsonld`, `iirds`, `search`, `questions`, `chunks`, or `llms`. Required. |
 
 ### Options
 
@@ -1298,7 +1395,7 @@ An unknown target is **exit 2**, with the allowed set named.
 | `-c, --config` | `<path>` | discovered | Path to `manni.config.yaml`. |
 | `--no-config` | n/a | off | Ignore any discovered config file. |
 | `-g, --graph` | `<path>` | config `out` | The built Turtle file to read. |
-| `-o, --out` | `<path>` | the graph path with the target's extension; `questions.jsonl` beside the graph for `questions`; the graph's directory for `search` and `chunks` | Where to write. For `search` and `chunks` it names a directory, because each writes more than one file. |
+| `-o, --out` | `<path>` | the graph path with the target's extension; `questions.jsonl` beside the graph for `questions`; `llms.txt` beside the graph for `llms`; the graph's directory for `search` and `chunks` | Where to write. For `search` and `chunks` it names a directory, because each writes more than one file. |
 | `--evals` | `<path>` | config `export.chunks.evals` | A docevals JSON report, as `manni docevals run -f json` writes it. It fills each chunk record's `evals`. Any target but `chunks` refuses it with **exit 2**. |
 
 ### The question set
@@ -1501,6 +1598,44 @@ the export. The rest leave the exit code at 0.
 Outside git the export still succeeds. Its records carry pins and evals, with
 no commit and no derived dates.
 
+### llms.txt
+
+`export llms` writes `llms.txt` beside the graph, or to the file `-o` names.
+It needs [`graph.export.llms`](/manni/graph/reference/configuration/#export)
+with a `title` and an `origin`.
+
+```text
+# manni
+
+> One CLI for docs-as-code.
+
+## Docs
+
+- [manni cite](https://hawkeyexl.github.io/manni/cite/): Pin a sentence to the source lines it rests on.
+```
+
+The H1 is `title`, and the blockquote is `summary` when it is set. A corpus in
+one language gets one `## Docs` section. A corpus in several gets one section
+per language tag. Within a section, pages are in path order.
+
+Each description is the page's own `description` as delivered, so a field
+marked `x-manni-graph-output: false` stays out. Each link is `origin` plus the
+page's route, from the nearest [route](/manni/graph/reference/configuration/)
+whose `root` holds it. An index file names its directory. The route takes the
+URL style of the framework `manni site` detects.
+
+| Framework | A page's route |
+|---|---|
+| Starlight, MkDocs, Zensical, Hugo, or none detected | `/guide/setup/` |
+| Docusaurus, Nextra, Fumadocs, Mintlify, Fern | `/guide/setup` |
+| VitePress, Rspress, Sphinx, Jekyll | `/guide/setup.html` |
+
+| Message | Kind |
+|---|---|
+| `graph export llms needs graph.export.llms.title.` | **exit 2** |
+| `graph export llms needs graph.export.llms.origin, the site's scheme and host.` | **exit 2** |
+| `2 pages are under no route, so llms.txt leaves them out.` | warning |
+
 ## Exit codes
 
 | Code | Meaning |
@@ -1513,7 +1648,7 @@ no commit and no derived dates.
     against the committed fixture corpus under test/graph/fixtures/dd/.
     Config: .doc-detective.json. */}
 
-{/* step {"description":"The CLI lists all fourteen commands.","runShell":{"command":"manni graph --help","exitCodes":[0],"stdio":"/init[\\s\\S]*build[\\s\\S]*check[\\s\\S]*shapes[\\s\\S]*fill[\\s\\S]*query[\\s\\S]*stats[\\s\\S]*search[\\s\\S]*traverse[\\s\\S]*lookup[\\s\\S]*retrieve[\\s\\S]*serve[\\s\\S]*embed[\\s\\S]*export/"}} */}
+{/* step {"description":"The CLI lists all fifteen commands.","runShell":{"command":"manni graph --help","exitCodes":[0],"stdio":"/init[\\s\\S]*build[\\s\\S]*check[\\s\\S]*shapes[\\s\\S]*fill[\\s\\S]*query[\\s\\S]*stats[\\s\\S]*search[\\s\\S]*traverse[\\s\\S]*lookup[\\s\\S]*retrieve[\\s\\S]*serve[\\s\\S]*embed[\\s\\S]*export[\\s\\S]*publish/"}} */}
 
 {/* step {"description":"There is no default subcommand: the domain owns verbs.","runShell":{"command":"manni graph test/graph/fixtures/dd/docs","exitCodes":[2]}} */}
 
@@ -1562,6 +1697,10 @@ no commit and no derived dates.
 {/* step {"description":"An unknown export target is exit 2, with the allowed set named.","runShell":{"command":"manni graph export turtle -c test/graph/fixtures/dd/docs.config.yaml","exitCodes":[2],"stdio":"Unknown export target \"turtle\""}} */}
 
 {/* step {"description":"export chunks writes the passages and their manifest.","runShell":{"command":"manni graph export chunks -c test/graph/fixtures/dd/docs.config.yaml","exitCodes":[0],"stdio":"/Wrote \\d+ chunks/"}} */}
+
+{/* step {"description":"export llms needs a title from graph.export.llms.","runShell":{"command":"manni graph export llms -c test/graph/fixtures/dd/docs.config.yaml","exitCodes":[2],"stdio":"graph export llms needs graph.export.llms.title."}} */}
+
+{/* step {"description":"publish runs what is set up and skips the rest.","runShell":{"command":"manni graph publish -c test/graph/fixtures/dd/docs.config.yaml","exitCodes":[0],"stdio":"/skipped   embed: no graph.embed section[\\s\\S]*Published \\d+ files to/"}} */}
 
 {/* step {"description":"--evals belongs to chunks alone.","runShell":{"command":"manni graph export jsonld --evals evals.json -c test/graph/fixtures/dd/docs.config.yaml","exitCodes":[2],"stdio":"--evals applies only to graph export chunks."}} */}
 
