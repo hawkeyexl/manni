@@ -25,3 +25,7 @@ docs/src/content/docs/cite/ci/stale-windows.mdx:
   owner:
     - "@hawkeyexl"
   created: 2026-10-21
+  provenance:
+    - generated-by: Claude Opus 5.5
+      lines: 2-151
+      integrity: sha256-7229ccc6d832da12ee10032c3e395b4394fed26fe608dbafe541be20d579f9dc
