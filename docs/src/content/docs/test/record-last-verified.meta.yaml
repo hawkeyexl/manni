@@ -22,3 +22,7 @@ docs/src/content/docs/test/record-last-verified.mdx:
   owner:
     - "@hawkeyexl"
   created: 2026-10-21
+  provenance:
+    - generated-by: Claude Opus 5.5
+      lines: 2-99
+      integrity: sha256-4c5e2d77bd8838eebd44c334e31df8c9aeaeddf0b9a36a077643f5aeb9f69a52

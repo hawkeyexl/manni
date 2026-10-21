@@ -49,8 +49,11 @@ docs/src/content/docs/graph/govern/index.mdx:
       lines: 146-153
       integrity: sha256-045d922e820f6a301055799ca3281f3ca2a85de004db7fecd86eb2ee73b0e1fa
     - generated-by: Claude Opus 5.5
-      lines: 155-159
-      integrity: sha256-6866cb49740076af22e60782825e503edb04ef858eca5aaa1c483161039aa3c5
+      lines: 155-156
+      integrity: sha256-3d5de24d54ce25aa763e4f0fe105d3ac28cdf01c6eeb776b2f5b2e0fd88225b1
+    - generated-by: Claude Opus 5.5
+      lines: 158-159
+      integrity: sha256-58ebb952ee3030296aab5f5560af66f676a7125fb4a0661f30e8c92030a4e6fa
     - generated-by: Claude Opus 5
       lines: 161-165
       integrity: sha256-0107ed2359c42fe6bb5c06b301d979d9630dbfba8b8115f99e4ce25766997a1b

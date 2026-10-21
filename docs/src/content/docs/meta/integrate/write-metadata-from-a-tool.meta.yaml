@@ -27,3 +27,7 @@ docs/src/content/docs/meta/integrate/write-metadata-from-a-tool.mdx:
   owner:
     - "@hawkeyexl"
   created: 2026-10-21
+  provenance:
+    - generated-by: Claude Opus 5.5
+      lines: 2-173
+      integrity: sha256-29d086a9cc9e610ee95458f5ebfc994405cf2dafda704ffbb4f4eb6a97acbf9f

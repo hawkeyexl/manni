@@ -102,14 +102,11 @@ docs/src/content/docs/cite/index.mdx:
       lines: 140-142
       integrity: sha256-b14c925d4b685806683e892e2b25a271cea8a1c935339379ed7383c91ab47668
     - generated-by: Claude Opus 5.5
-      lines: 143-148
-      integrity: sha256-e96aa481717ef656198fcbc98f3e1348cee4a3ee66f87c8340d00bec782ff418
+      lines: 144-148
+      integrity: sha256-8c4b3127d0a25520a15dd903d4920d8c340e3b4782535fd991dd1e03d0ae4240
     - generated-by: Claude Fable 5.1
       lines: 150-157
       integrity: sha256-8b2f21940b93b3fd7d974d17d5e3d0620ae47e9181bef57c8c45c347a2ab3ab6
-    - generated-by: Claude Opus 5.5
-      lines: 158
-      integrity: sha256-d18a300c69947f2294a54806a8f7cfa434bcf6a1a23c79ecc22a227445d91e11
     - generated-by: Claude Fable 5.1
       lines: 159
       integrity: sha256-93705946081ed34d379190b4b2daf68fb1693334ed0e1af78ff3d0d0a7a09a46

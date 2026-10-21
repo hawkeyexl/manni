@@ -166,8 +166,11 @@ docs/src/content/docs/graph/reference/configuration.mdx:
       lines: 293-295
       integrity: sha256-deb1d94edee14291f76bb6db53f1748377296ee4d4641f517f37fb83fd339d04
     - generated-by: Claude Opus 5.5
-      lines: 296-303
-      integrity: sha256-3df9e673d8326f356a357b99c211056490cc0841d3bd39cab4f09d170e83ade7
+      lines: 296-300
+      integrity: sha256-452d8ce2c963f98191cd74e2cbdbe87d69b7654197948ee1cda369f0f05807e8
+    - generated-by: Claude Opus 5.5
+      lines: 302-303
+      integrity: sha256-117a39ff3fe37b560ce6c51704df67e805fbdf50d8c764b9b1fb77f78b3cb789
     - generated-by: Claude Opus 5
       lines: 304
       integrity: sha256-d1fd2f2284193a516c879b2c3d784da40b6327271ce5f364472c26b108dd4eb6
