@@ -108,11 +108,10 @@ rules.
 
 - `manni meta schemas` lists four more built-ins. Each one's reference page
   documents it.
-- A baseline entry recorded under `manni:stewardship:1.1.0` or
-  `manni:citations:1.0.0` fingerprints under that id. The new versions add
-  keys, so they are not annotation-only, and such an entry does not carry
-  across the move. The same held when `manni:ai-context:1.1.0` became a
-  default.
+- A baseline carries across the move. The new versions only add optional
+  fields, so each fingerprints as its earliest predecessor, as stewardship
+  1.1.0 already did. A test holds each pair to identical findings on every
+  fixture that carries neither added field.
 - Doc Detective changes its #417 to read and write this shape, and drops
   `doc-detective.verified.*`. That work is tracked in Doc Detective.
 - The provenance record of a later proposal reads these fields, so an agent

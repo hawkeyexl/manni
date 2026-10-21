@@ -167,6 +167,35 @@ export const ANNOTATION_ONLY_PREDECESSORS: ReadonlyMap<string, string> = new Map
 ]);
 
 /**
+ * Built-in versions that only add optional fields, each mapped to the
+ * predecessor they extend (proposal 0098). A document that carries none of
+ * the added fields gets the same findings under both, so a finding hashes as
+ * its predecessor's and a recorded baseline carries across the move. A
+ * finding on an added field never existed under the predecessor, so sharing
+ * its identity suppresses nothing it should not. The test suite holds every
+ * entry to identical findings over the fixture corpus.
+ */
+export const OPTIONAL_FIELD_PREDECESSORS: ReadonlyMap<string, string> = new Map([
+  ["manni:stewardship:1.2.0", "manni:stewardship:1.1.0"],
+  ["manni:stewardship-strict:1.2.0", "manni:stewardship-strict:1.1.0"],
+  ["manni:citations:1.1.0", "manni:citations:1.0.0"],
+  ["manni:citations-strict:1.1.0", "manni:citations-strict:1.0.0"],
+]);
+
+/**
+ * The id a baseline fingerprint hashes for `ref`: its earliest predecessor,
+ * followed through both maps, so 1.2.0 and 1.1.0 both hash as 1.0.0.
+ */
+export function baselineIdentity(ref: string): string {
+  let id = ref;
+  for (;;) {
+    const next = ANNOTATION_ONLY_PREDECESSORS.get(id) ?? OPTIONAL_FIELD_PREDECESSORS.get(id);
+    if (next === undefined) return id;
+    id = next;
+  }
+}
+
+/**
  * Refuse a built-in id whose first segment is `check`.
  *
  * `check:<name>` is a corpus check's identity inside baseline fingerprints and

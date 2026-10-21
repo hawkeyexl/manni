@@ -98,26 +98,26 @@ docs/src/content/docs/meta/reference/output-and-exit-codes.mdx:
         integrity: sha256-77ca37121d97f960b2b53924554e66d9af01c4a72390252c48487d245663a3ac
       source:
         file: src/meta/core/schema-registry.ts
-        lines: 640-650
+        lines: 669-679
         integrity: sha256-5c1411cf27b7dad2f6a6ffd155522322bae5fa4c0c83f94d581627fa4b76ad8c
-        commit-sha: 77ca1cddd34b0dc3667d7b00c0ff08f4878680c3
+        commit-sha: 03518fa2c75bdbeb46f732bbac3f8b35c92c16f2
     - id: output-fetched-schema-errors
       claim:
         lines: 690-696
         integrity: sha256-2f4fbcd9d3b336526bfe67b503122d6d452e3e52147f97b0da94c2764b6036df
       source:
         file: src/meta/core/schema-registry.ts
-        lines: 626-638
+        lines: 655-667
         integrity: sha256-ecb2395c34f51e0d9080dc51b871516478899189e786c05c3e2496863fa50071
-        commit-sha: 77ca1cddd34b0dc3667d7b00c0ff08f4878680c3
+        commit-sha: 03518fa2c75bdbeb46f732bbac3f8b35c92c16f2
     - id: output-a-url-schema-is-checked-before-compiling
       claim:
         integrity: sha256-129e8d89816f2dbcb7e7a989fb776106e74586c42471ffee5d3eedd5aeeb1f59
       source:
         file: src/meta/core/schema-registry.ts
-        lines: 640-645
+        lines: 669-674
         integrity: sha256-7967855980d4be99b7755ea36303efb983d2ab010550abbadaaf5b40f23f3920
-        commit-sha: 77ca1cddd34b0dc3667d7b00c0ff08f4878680c3
+        commit-sha: 03518fa2c75bdbeb46f732bbac3f8b35c92c16f2
     - id: output-nothing-checked-is-exit-2-not-1
       claim:
         integrity: sha256-c360b83cfa44c47b59476c3bc86072b934de2e96349cc9b2975e28758c6daf5b
@@ -149,8 +149,8 @@ docs/src/content/docs/meta/reference/output-and-exit-codes.mdx:
       source:
         file: src/meta/core/baseline.ts
         lines: 122-159
-        integrity: sha256-5b6b550017b7c48ad4e563dcfdfbe5fd4b8ee48f4fb213c00b8096fc10734f33
-        commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
+        integrity: sha256-471cbf92a5cc47a1b8bb196c82b244eecb3b3fff79f7330ffffd441c757f494b
+        commit-sha: 03518fa2c75bdbeb46f732bbac3f8b35c92c16f2
     - id: output-baseline-exit-code-rules
       claim:
         lines: 624-634
@@ -158,8 +158,8 @@ docs/src/content/docs/meta/reference/output-and-exit-codes.mdx:
       source:
         file: src/meta/core/baseline.ts
         lines: 122-148
-        integrity: sha256-4b63de1655f93466b1d9062aec93e9b62ad5d1dea726cd8e88e0055d97e55b63
-        commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
+        integrity: sha256-140a7d4e74e9e108fd65c7c20e3fb082262bc7141eeeae11c664d1e8a090149c
+        commit-sha: 03518fa2c75bdbeb46f732bbac3f8b35c92c16f2
     - id: output-exit-1-vs-exit-2-meaning
       claim:
         integrity: sha256-829f3fadd47df05b311036b3cb56e41174964e924f06296ded1026e41a87222f
@@ -216,9 +216,9 @@ docs/src/content/docs/meta/reference/output-and-exit-codes.mdx:
         integrity: sha256-ce933b1d1a858c5ce9a0a418feda1c68c47c217c00cb0b7220db6455d87ddd1f
       source:
         file: src/meta/core/baseline.ts
-        lines: 329-336
+        lines: 330-337
         integrity: sha256-6aa3fb6536f7177fa7313545838165b424e7c3bbedf66fb27cb24f463bb47e97
-        commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
+        commit-sha: 03518fa2c75bdbeb46f732bbac3f8b35c92c16f2
     - id: output-cite-assigns-severity-per-rule
       claim:
         integrity: sha256-7b24fff5f28225e06f49699904ef7b70371754986dfe82834380b8bd1b14ebdd
@@ -307,17 +307,17 @@ docs/src/content/docs/meta/reference/output-and-exit-codes.mdx:
         integrity: sha256-12eae75d1976cb03ac51bcc6bbf632ffcfadb16e850da994226596cc9be3a537
       source:
         file: src/meta/core/baseline.ts
-        lines: 313-336
+        lines: 314-337
         integrity: sha256-35af3c2df37adcdbb7f995430e7a9f60c065420b9575b2ae9750604f8664799e
-        commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
+        commit-sha: 03518fa2c75bdbeb46f732bbac3f8b35c92c16f2
     - id: output-baseline-block-only-with-a-baseline
       claim:
         integrity: sha256-45d6bcc1fa59f87e11862c67a4237ef2dedb63f7283da4f4e3d657c044bbf22a
       source:
         file: src/meta/core/baseline.ts
-        lines: 329-336
+        lines: 330-337
         integrity: sha256-6aa3fb6536f7177fa7313545838165b424e7c3bbedf66fb27cb24f463bb47e97
-        commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
+        commit-sha: 03518fa2c75bdbeb46f732bbac3f8b35c92c16f2
     - id: output-a-parse-failure-is-a-failing-result
       claim:
         lines: 431-437
@@ -481,8 +481,8 @@ docs/src/content/docs/meta/reference/output-and-exit-codes.mdx:
       source:
         file: src/meta/core/baseline.ts
         lines: 122-146
-        integrity: sha256-cbcaf1dd98f7a50dde520a65f8a22e01b8eb397ec78f7712b096387f44bf0000
-        commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
+        integrity: sha256-dd5cf8f20a906dc6782ebdbaedd90724a61563008ff711e7c391cf0f865b56a2
+        commit-sha: 03518fa2c75bdbeb46f732bbac3f8b35c92c16f2
     - id: output-json-field-table
       claim:
         lines: 123-144

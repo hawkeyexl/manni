@@ -281,12 +281,12 @@ Three things do change a fingerprint, and each is recovered with one
   stable `subject`, so a violation of the edited rule keeps its fingerprint. A
   violation that moves to a *different* keyword does not.
 
-Moving to a built-in version that only adds annotations keeps every
-fingerprint. That version hashes as the one before it, so
-`manni:stewardship:1.1.0` and its strict overlay fingerprint as their 1.0.0
-counterparts. A version that adds fields fingerprints under its own id. So a
-finding recorded under `manni:stewardship:1.1.0` is new under
-`manni:stewardship:1.2.0` until the baseline is written again.
+Moving to a built-in version that only adds annotations or optional fields
+keeps every fingerprint. That version hashes as the earliest one before it.
+So `manni:stewardship:1.1.0` and `manni:stewardship:1.2.0` fingerprint as
+`manni:stewardship:1.0.0`, and `manni:citations:1.1.0` as
+`manni:citations:1.0.0`. Their strict overlays carry across the same way. A
+baseline recorded under the earlier version needs no rewrite.
 
 {/* cite schema-ref-measured-from-the-config-dir */}
 {/* cite baseline-path-measured-from-the-config-dir */}

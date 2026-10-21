@@ -100,18 +100,18 @@ docs/src/content/docs/cite/reference/cli.mdx:
         integrity: sha256-450a26f9b40af0e835ec56aa7468d81f83c4e3f5db1f0ef3dc28e002e51f3018
       source:
         file: src/meta/core/baseline.ts
-        lines: 514-519
+        lines: 515-520
         integrity: sha256-d51444730cbfd05aae313bf1afe5d1b74c2df7220249f04a11833464b3ace2e4
-        commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
+        commit-sha: 03518fa2c75bdbeb46f732bbac3f8b35c92c16f2
     - id: no-baseline-flag
       claim:
         lines: 111
         integrity: sha256-8c764be73bb2a60ca25efbcde7835368656101f6c257bc85cce4522fa6236c96
       source:
         file: src/meta/core/baseline.ts
-        lines: 520
+        lines: 521
         integrity: sha256-4e89e7a2415f4919271432872562af095245541e334c8c850e122238c6f4a685
-        commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
+        commit-sha: 03518fa2c75bdbeb46f732bbac3f8b35c92c16f2
     - id: no-check-sources-skipped
       claim:
         lines: 112

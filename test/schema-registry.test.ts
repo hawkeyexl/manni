@@ -22,6 +22,8 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import {
   ANNOTATION_ONLY_PREDECESSORS,
+  OPTIONAL_FIELD_PREDECESSORS,
+  baselineIdentity,
   listBuiltins,
   classifyRef,
   fetchSchemaBytes,
@@ -30,6 +32,7 @@ import {
   publishedBuiltins,
 } from "../src/meta/core/schema-registry.js";
 import { SchemaCache } from "../src/meta/core/schema-cache.js";
+import { runValidate } from "../src/meta/commands/validate.js";
 import { DocmetaError } from "../src/meta/types.js";
 import { startSchemaServer, type SchemaServer } from "./helpers/schema-server.js";
 
@@ -1273,5 +1276,63 @@ describe("ANNOTATION_ONLY_PREDECESSORS", () => {
       expect(predecessor).not.toBe(successor);
       expect(ANNOTATION_ONLY_PREDECESSORS.has(predecessor)).toBe(false);
     }
+  });
+});
+
+describe("OPTIONAL_FIELD_PREDECESSORS (proposal 0098)", () => {
+  // A successor here only adds optional fields. On any document that carries
+  // none of them it must report exactly what its predecessor reports, or the
+  // entry hides a real change from every recorded baseline. Every markdown
+  // fixture without the added keys is such a document.
+  const ADDED = /^\s*-?\s*(last-verified|verified-by)\s*:/m;
+  const fixtures = (dir: string): string[] =>
+    readdirSync(dir, { withFileTypes: true }).flatMap((e) => {
+      const p = join(dir, e.name);
+      if (e.isDirectory()) return fixtures(p);
+      return e.name.endsWith(".md") && !ADDED.test(readFileSync(p, "utf8")) ? [p] : [];
+    });
+  const documents = fixtures(join(here, "fixtures"));
+  const findings = async (schema: string, as = schema) => {
+    const { results } = await runValidate({
+      inputs: documents,
+      cliSchemas: [schema],
+      noConfig: true,
+      cwd: join(here, ".."),
+    });
+    return results.map((r) => ({
+      file: r.file,
+      errors: r.errors.map((e) => [e.instancePath, e.keyword, e.message.replaceAll(schema, as), e.subject ?? ""]),
+    }));
+  };
+
+  it("covers the 0098 versions, over a real corpus", () => {
+    expect([...OPTIONAL_FIELD_PREDECESSORS]).toEqual([
+      ["manni:stewardship:1.2.0", "manni:stewardship:1.1.0"],
+      ["manni:stewardship-strict:1.2.0", "manni:stewardship-strict:1.1.0"],
+      ["manni:citations:1.1.0", "manni:citations:1.0.0"],
+      ["manni:citations-strict:1.1.0", "manni:citations-strict:1.0.0"],
+    ]);
+    expect(documents.length).toBeGreaterThan(50);
+  });
+
+  it.each([...OPTIONAL_FIELD_PREDECESSORS])(
+    "%s reports what %s reports on every fixture without the added fields",
+    async (successor, predecessor) => {
+      expect(await findings(successor, predecessor)).toEqual(await findings(predecessor));
+    },
+    120_000,
+  );
+
+  it("chains to a built-in and never loops", () => {
+    const ids = new Set(listBuiltins().map((b) => b.id));
+    for (const [successor, predecessor] of OPTIONAL_FIELD_PREDECESSORS) {
+      expect(ids.has(successor)).toBe(true);
+      expect(ids.has(predecessor)).toBe(true);
+      expect(ANNOTATION_ONLY_PREDECESSORS.has(successor)).toBe(false);
+    }
+    expect(baselineIdentity("manni:stewardship:1.2.0")).toBe("manni:stewardship:1.0.0");
+    expect(baselineIdentity("manni:stewardship-strict:1.2.0")).toBe("manni:stewardship-strict:1.0.0");
+    expect(baselineIdentity("manni:citations:1.1.0")).toBe("manni:citations:1.0.0");
+    expect(baselineIdentity("manni:core:1.0.0")).toBe("manni:core:1.0.0");
   });
 });
