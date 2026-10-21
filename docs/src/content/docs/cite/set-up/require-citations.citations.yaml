@@ -229,27 +229,27 @@ docs/src/content/docs/cite/set-up/require-citations.mdx:
         integrity: sha256-94a93b6f4a18b735eaff11605f427eeedb9de248d34b7ba5261cbc5c4d2ab6ee
       source:
         file: src/cite/core/adapt.ts
-        lines: 336
+        lines: 348
         integrity: sha256-56ad03779fb150193dca286c00722f162ece887a7ca9c16970b1e7fbdcc7e43e
-        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
+        commit-sha: f2ecf49996504a135f3e37de5bac35c5a054b237
     - id: level-notice-passes
       claim:
         lines: 214
         integrity: sha256-36a40bc929282842c2ea93c24573695b786b0d5951f99a2c1d912690c6515fd8
       source:
         file: src/cite/core/adapt.ts
-        lines: 336
+        lines: 348
         integrity: sha256-56ad03779fb150193dca286c00722f162ece887a7ca9c16970b1e7fbdcc7e43e
-        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
+        commit-sha: f2ecf49996504a135f3e37de5bac35c5a054b237
     - id: level-off-not-reported
       claim:
         lines: 215
         integrity: sha256-df7348151afcd4ec74db51c7101fe02fe246035a83ba115abff461cf175df02d
       source:
         file: src/cite/core/check-page.ts
-        lines: 50-58
+        lines: 55-63
         integrity: sha256-5f104c9c5eb3348472b8cebd1b7f4909e81ff4ecd2c8d1f491b72e2dfbd59df0
-        commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e
+        commit-sha: f2ecf49996504a135f3e37de5bac35c5a054b237
     - id: fourteen-rules
       claim:
         integrity: sha256-97bafd550e8c93fc245ac265a44be4bbd26a217ab300df88da09ac18a38286fb

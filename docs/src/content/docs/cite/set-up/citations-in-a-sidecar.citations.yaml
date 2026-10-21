@@ -50,9 +50,9 @@ docs/src/content/docs/cite/set-up/citations-in-a-sidecar.mdx:
         integrity: sha256-ce3ca41f20885edc437fb252412f3526187520fcb91bed6f063594664bc80654
       source:
         file: src/cite/core/adapt.ts
-        lines: 210-215
+        lines: 222-227
         integrity: sha256-3a5cf6ccc13912714cbdc82ac361679283dafd985e7d9b6a0920e28b5199f1a7
-        commit-sha: f8b910c35c13ed40992cfd02cf545a2cdb1c9aa5
+        commit-sha: f2ecf49996504a135f3e37de5bac35c5a054b237
     - id: github-annotates-manifest
       claim:
         integrity: sha256-61a11c5018754b3f2d307d40b3fba67bf1fed5a1f69d6504c519485ee212ff81
@@ -66,9 +66,9 @@ docs/src/content/docs/cite/set-up/citations-in-a-sidecar.mdx:
         integrity: sha256-3b3c3c3d3cf616d332e2e2b1bd97e774320547d6f877706190813c91f3712b39
       source:
         file: src/cite/core/adapt.ts
-        lines: 310
+        lines: 322
         integrity: sha256-16c9304298a87e3fe04b2518f4a8d721fd1a1ef10bee2635b11c48c085a629da
-        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
+        commit-sha: f2ecf49996504a135f3e37de5bac35c5a054b237
     - id: pretty-row-ends-only
       claim:
         lines: 232-236
