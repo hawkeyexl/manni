@@ -11,6 +11,8 @@
   - Agent builders outside the repo, the reader of
     [issue #36](https://github.com/hawkeyexl/manni/issues/36). They ingest
     served docs, and every field costs them budget.
+  - Two new journeys: D19, "Serve the docs to an agent with their proof",
+    and M29, "Ground a site's Ask AI in the docs' proof".
 - **Depends on:** Six earlier records.
   - [ADR 01018](graph/01018-graphrag-runtime-architecture.md) is the runtime
     seam. Compile in Node, serve from a browser-safe bundle, and refuse
@@ -28,15 +30,17 @@
   proposal makes the decisions those phases list.
 - **Supersedes:** Nothing.
 - **Touches:** `src/graph/runtime/` (`assemble.ts`, `trace.ts`, `index.ts`,
-  `retrieve.ts` new, `provenance.ts` new), `src/graph/commands/`
+  `retrieve.ts` new, `chunks.ts` new), `src/graph/commands/`
   (`retrieve.ts` new, `serve.ts` new, `traverse.ts`, `export.ts`,
   `check.ts`, `questions.ts`), `src/graph/core/` (`config-schema.json`,
-  `config.ts`, `provenance.ts` new, `llms.ts` new), `src/graph/reporters/`,
+  `config.ts`, `llms.ts` new), `src/graph/commands/chunks.ts` new,
+  `src/docevals/core/engine.ts`, `src/meta/schemas/ai-context/1.2.0.json` new, `src/graph/reporters/`,
   `src/graph/cli.ts`, `package.json`, `docs/src/content/docs/graph/`,
   `docs/content-strategy/cujs.md`, `test/graph/`
 - **Verdict:** Every passage manni serves carries a provenance record. The
   record holds its pin status, its merge-safe dates and its page's eval
-  verdicts. `manni graph retrieve` and `manni graph serve` hand that to a
+  verdicts. `graph export chunks` writes every passage with its record, and
+  every host serves those rows. `manni graph retrieve` and `manni graph serve` hand that to a
   person or an agent. The golden set becomes the retrieval suite inside
   `graph check`. A field reaches agent-facing output unless one of its two
   existing marks keeps it out. `graph export llms` writes `llms.txt` from
@@ -82,16 +86,66 @@ An `llms.txt` entry repeats a page's `description`. One is in frontmatter,
 the other is typed by hand into a file at the site root. Each is edited on
 its own schedule, and they drift. 0047 named the problem and left it open.
 
+## Worked example
+
+This repo, end to end. Maya maintains the docs, and Devin owns CI.
+
+**One command in CI.** Maya runs the judged evals locally and commits the
+report. `manni.config.yaml` names it once under
+`graph.export.chunks.evals`. `docs.yml` then runs one line after the gate:
+
+```text
+$ manni graph check && manni graph publish --out docs/public/graph
+build     graph.ttl: 142 pages, 611 nodes
+embed     vectors.en.bin: 611 vectors, Xenova/bge-small-en-v1.5
+export    graph.jsonld, search.en.json, chunks.json + chunks.en.jsonl (611 chunks, 0 withheld), llms.txt (142 pages)
+skipped   iirds: no graph.export.iirds section
+Published 7 files to docs/public/graph/.
+```
+
+One row of `chunks.en.jsonl`, abridged:
+
+```json
+{ "id": "https://hawkeyexl.github.io/manni/cite/#how-a-pin-is-classified",
+  "page": "docs/src/content/docs/cite/index.mdx", "lines": "41-58", "language": "en",
+  "title": "How a pin is classified", "text": "## How a pin is classified\n\nA pin is current when…",
+  "vector": [0.0132, -0.0871, "…"],
+  "metadata": { "title": "Check citations", "applies-to": ["cite"] },
+  "provenance": { "commit": "26dad159…", "worktree": "clean",
+    "pins": { "total": 4, "current": 3, "error": 1 },
+    "dates": { "lastUpdated": { "day": "2026-10-17", "stamp": "current" }, "lastVerified": "2026-10-20" },
+    "evals": { "current": true, "pass": 3, "fail": 0 } } }
+```
+
+**Maya's agent, over MCP.** `.mcp.json` registers `npx manni graph serve`.
+The agent calls `lookup` with one argument, the reader's question. It gets
+three complete sections: the ranked matches, every passage reached outward
+from them, and every passage that depends on them. Each passage carries its
+text and its record, so the agent quotes the current sentences and flags the
+drifted one.
+
+**An Ask AI built on the functions.** A team running a doc site writes a
+worker around `createRetriever().lookup()`. manni retrieves, and their own
+model answers. A hosted vector DB ingests `chunks.en.jsonl` as it is.
+
+**Devin raises the floor.** He sets `graph.retrieve.withhold: [drifted]`.
+The next export leaves the drifted passage out of the rows and lists it
+under `withheld`, so no host holds that text.
+
 ## Design
 
-The work lands as four PRs, in this order.
+The work lands as five stacked PRs, in this order.
 
 | PR | What lands |
 |---|---|
-| 1 | The provenance record, `graph export provenance`, and the runtime's `retrieve()`. |
-| 2 | `graph retrieve`, `graph traverse --context`, and `graph.retrieve` config. |
+| 1 | The provenance record, `graph export chunks`, page `integrity` in `docevals run -f json`, the delivery rule, and the ai-context annotation-only version. |
+| 2 | `graph lookup`, `graph retrieve`, `graph traverse --context`, the runtime's `retrieve()` and `lookup()`, and `createRetriever()`. |
 | 3 | `graph serve`, the MCP server. |
-| 4 | The golden set through `retrieve` in `graph check`, and `graph export llms`. |
+| 4 | The golden set through `retrieve` in `graph check`, `graph export llms`, and `graph publish`. |
+| 5 | The docs pages for D19 and M29, and a labelled prototype search box on this repo's site. |
+
+manni ships no UI. The prototype is built from the public functions, is
+labelled, and is not exported.
 
 ### 1. The provenance record
 
@@ -119,30 +173,39 @@ document node it is the whole body.
         "claim": "41-43",
         "source": "src/upload.ts:88-90",
         "commit": "9f3a1c7e5b2d4086a1c3e5f7092b4d6e8a0c2e41",
-        "findings": []
+        "findings": [],
+        "lastVerified": "2026-10-19",
+        "verifiedBy": [{ "tool": "lychee", "passed": "2026-10-19" }]
       },
       {
         "id": null,
         "claim": "47",
         "source": "src/upload.ts:102-104",
         "commit": "4be07d19a3c5f8206b1d3e5a7c9f0b2d4e6a8c10",
-        "findings": [{ "rule": "source-changed", "severity": "error" }]
+        "findings": [{ "rule": "source-changed", "severity": "error" }],
+        "lastVerified": null,
+        "verifiedBy": []
       },
       {
         "id": "retry-backoff",
         "claim": "49-50",
         "source": "src/upload.ts:110-118",
         "commit": "9f3a1c7e5b2d4086a1c3e5f7092b4d6e8a0c2e41",
-        "findings": []
+        "findings": [],
+        "lastVerified": null,
+        "verifiedBy": []
       }
     ]
   },
   "dates": {
     "created": { "day": "2025-03-14", "stamp": "current" },
-    "lastUpdated": { "day": "2026-10-02", "stamp": "stale" }
+    "lastUpdated": { "day": "2026-10-02", "stamp": "stale" },
+    "lastVerified": "2026-10-20",
+    "verifiedBy": [{ "tool": "doc-detective", "check": "retry-limits", "passed": "2026-10-20" }]
   },
   "evals": {
     "report": "sha256-5c1e…",
+    "current": true,
     "pass": 4,
     "fail": 1,
     "needsReview": 0,
@@ -152,7 +215,10 @@ document node it is the whole body.
       { "name": "no-todo-markers", "suite": "graph", "grader": "command", "outcome": "pass" },
       { "name": "answers-the-question", "suite": "quality", "grader": "ai", "outcome": "fail", "confidence": 0.91 }
     ]
-  }
+  },
+  "statements": [
+    { "lines": "45-46", "status": "current", "data": { "last-verified": "2026-10-21" } }
+  ]
 }
 ```
 
@@ -162,23 +228,28 @@ document node it is the whole body.
 | `page` | path | The page source, labelled as `graph build` labels it. |
 | `lines` | `"N-M"` | The body lines the passage covers, counted as cite counts `claim.lines`. |
 | `commit` | 40 hex, or `null` | The commit the record describes. `null` outside git. |
-| `worktree` | `clean` or `modified` | `modified` when any page differed from that commit at export. |
-| `pins` | object, or `null` | The cite pins whose claim overlaps `lines`. `null` outside git, since cite reads sources through git. |
+| `worktree` | `clean`, `modified`, or `null` | `modified` when any page differed from that commit at export. `null` outside git. |
+| `pins` | object | The cite pins whose claim overlaps `lines`. Computed outside git too, as `cite check` classifies without history. |
 | `pins.total` | integer | How many pins the passage holds. |
 | `pins.current` | integer | Pins with no findings. |
 | `pins.notice`, `.warning`, `.error` | integer | Pins counted once, at their worst finding's severity. |
 | `pins.items[].id` | string, or `null` | The citation's `id`, when it has one. |
 | `pins.items[].claim` | `N` or `"N-M"` | The body lines the claim occupies now. |
 | `pins.items[].source` | string | `path:lines` as cite writes it. An encrypted path stays the ciphertext token. |
-| `pins.items[].commit` | 40 hex | The commit the citation's source end was recorded at, as cite recorded it. |
+| `pins.items[].commit` | 40 hex, or `null` | The commit the citation's source end was recorded at, as cite recorded it. `null` for a pin minted without one. |
 | `pins.items[].findings` | list | Each cite rule that fires, with the severity `cite.severity` resolves for it. Empty means current. |
-| `dates` | object, or `null` | The two merge-safe dates of 0069. `null` outside git. |
-| `dates.*.day` | `YYYY-MM-DD`, or `null` | The day meta's derive computes from git, as a UTC day under 0072. `null` when git holds no evidence. |
+| `pins.items[].lastVerified`, `.verifiedBy` | string or `null`, list | The entry's `last-verified` as written and its `verified-by` entries (0098), or `null` and `[]`. |
+| `dates` | object | The two merge-safe dates of 0069, and the page's verification. |
+| `dates.created`, `.lastUpdated` | object | Each holds a `day` and a `stamp`. |
+| `dates.*.day` | `YYYY-MM-DD`, or `null` | The day meta's derive computes from git, as a UTC day under 0072. `null` outside git, for an uncommitted body change, and when git holds no evidence. |
 | `dates.*.stamp` | `current`, `stale` or `absent` | Whether the page's own field names that day, another day, or none. |
+| `dates.lastVerified`, `.verifiedBy` | string or `null`, list | The page's `last-verified` as written and its `verified-by` entries (0098), or `null` and `[]`. Read outside git too. |
 | `evals` | object, or `null` | The page's verdicts from the docevals report. `null` when no report was given. |
 | `evals.report` | `sha256-<64 hex>` | The digest of the report the verdicts came from. |
+| `evals.current` | boolean | Whether the page still has the bytes the report's `integrity` names. A stale verdict never counts toward `failing`. |
 | `evals.pass` … `.error` | integer | Results per docevals outcome. |
 | `evals.items[]` | list | One entry per result: `name`, `suite`, `grader`, `outcome`, and `confidence` for an AI grader. Sorted by suite, then name. |
+| `statements` | list | The block `meta` statements (0099) anchored inside `lines`: `lines`, `status` and the delivered `data`. Empty when none are. |
 
 - **The record is self-contained.** `commit` and `worktree` repeat in every
   record, so a record copied out of a bundle still says what it describes.
@@ -198,53 +269,76 @@ document node it is the whole body.
   own.
 - **A failing eval does not hide a passage.** The record reports. Section 3
   is where a publisher chooses to withhold.
+- **Verdicts are tied to the text they judged.** Each result of
+  `docevals run -f json` gains `integrity`, the digest of the page as the run
+  read it. The record's `evals.current` says whether the page still has those
+  bytes. This resolves open question 1 without tying verdicts to a commit.
+- **Outside git the record still says what it can.** A repository without
+  git is a normal case. `commit`, `worktree` and every `day` are `null`, and
+  `pins` and the verification fields are computed as usual. One notice says
+  so, and the export succeeds.
 
-### 2. `graph export provenance`
+### 2. `graph export chunks`
 
 Provenance needs git, and the runtime cannot run git. So the record is built
 on the compile side, as the search index is, and the runtime reads it.
 
-`EXPORT_TARGETS` gains `provenance`. It writes `provenance.json` beside the
-graph, and `-o` overrides the path.
+`EXPORT_TARGETS` gains `chunks`. It writes two kinds of file into one
+directory, beside the graph unless `-o` names another.
+
+- **`chunks.json`, the manifest.** Its keys are `format`
+  (`manni-graph-chunks`), `version` (1), `graph`, `graphFile`, `searchIndex`,
+  `commit`, `worktree`, `model`, `retrieve`, `evals`, `languages`, `pages`
+  and `withheld`.
+- **One `chunks.<tag>.jsonl` per localization.** Each line is one passage:
+  `id` (the node IRI), `graph`, `page`, `lines`, `language`, `title`, `text`,
+  `vector` when a sidecar holds one, `metadata`, and `provenance`, the record
+  of section 1.
 
 ```json
 {
-  "format": "manni-graph-provenance",
+  "format": "manni-graph-chunks",
   "version": 1,
   "graph": "sha256-…",
+  "graphFile": "graph.jsonld",
+  "searchIndex": "localizations.json",
   "commit": "26dad159c0f1e4a8b7d2c3e5f6a7b8c9d0e1f2a3",
   "worktree": "clean",
+  "model": { "id": "Xenova/bge-small-en-v1.5", "dimensions": 384 },
+  "retrieve": { "seeds": 3, "depth": 1, "maxChars": 12000, "withhold": [] },
   "evals": { "report": ".manni/evals.json", "digest": "sha256-5c1e…" },
+  "languages": { "en": { "file": "chunks.en.jsonl", "rows": 611 } },
   "pages": {
     "docs/uploads/retry.md": {
-      "metadata": { "title": "Retry an upload", "description": "…", "type": "how-to" },
-      "dates": { "created": { "…": "…" }, "lastUpdated": { "…": "…" } },
-      "evals": { "…": "…" }
+      "metadata": { "title": "Retry an upload", "description": "…", "type": "how-to" }
     }
   },
-  "nodes": {
-    "https://example.com/docs/uploads/retry.md#retry-limits": {
-      "page": "docs/uploads/retry.md",
-      "lines": "38-52",
-      "pins": { "…": "…" }
-    }
-  }
+  "withheld": []
 }
 ```
 
-- **Normalized on disk, joined when served.** Page facts sit once under
-  `pages`, and passage facts under `nodes`. The runtime joins a node, its
-  page and the header into one record.
-- **`graph` is the digest of the graph file it was built from.** A rebuilt
-  graph makes the artifact stale. `retrieve` refuses a stale artifact, as
-  `search` refuses a stale vector sidecar.
-- **Byte-stable.** Keys are sorted, and nothing reads the wall clock. The
-  same commit, report and config give the same bytes.
+- **Every row is self-contained.** A vector DB ingests the rows as they are,
+  and every host reads the same rows, so none re-chunks the pages.
+- **A row's `metadata` is its section's view.** It holds the page's
+  delivered fields, overlaid by the delivered fields of every heading
+  statement from the page down to the section. The nearest wins, field by
+  field.
+- **`graph` is the digest of the graph's JSON-LD.** It is the bytes
+  `graph export jsonld` writes. Every row repeats it, and every host refuses
+  a mismatch.
+- **Vectors come from the sidecar.** A node `graph embed` embedded carries
+  its vector, and `model` names the model. With no sidecar, rows carry none,
+  and the export warns once.
+- **Byte-stable.** Keys are sorted, rows are in id order, and nothing reads
+  the wall clock. The same commit, report and config give the same bytes.
 - **Eval verdicts come from a report, never a run.** Export never runs an
   eval. It reads the JSON that `manni docevals run -f json` prints. Judged
   evals run on a person's machine, and an export in CI must not need a model.
 - **`metadata` is section 7's rule, applied once.** The runtime cannot
   resolve schemas, so export writes each page's delivered fields here.
+- **The trust floor applies at export.** A passage `graph.retrieve.withhold`
+  names is left out of the rows and listed under `withheld`, so no host
+  holds its text.
 
 ```yaml
 # before
@@ -258,16 +352,18 @@ graph:
   export:
     iirds:
       title: manni docs
-    provenance:                    # new
+    chunks:                        # new
       evals: .manni/evals.json     # new; path, or null
+  retrieve:                        # new; section 3
+    withhold: []
 ```
 
 | key | type | default | required | meaning |
 |---|---|---|---|---|
-| `graph.export.provenance.evals` | path, or null | `null` | no | A docevals JSON report, relative to the config file. Its verdicts fill each record's `evals`. `null` leaves every `evals` null. |
+| `graph.export.chunks.evals` | path, or null | `null` | no | A docevals JSON report, relative to the config file. Its verdicts fill each record's `evals`. `null` leaves every `evals` null. |
 
 `--evals <path>` on `graph export` overrides it. It is valid only with the
-`provenance` target.
+`chunks` target.
 
 ### 3. `retrieve`, in the runtime and on the CLI
 
@@ -286,7 +382,7 @@ manni graph retrieve <question> [options]
 | `-c, --config <path>` | Path to `manni.config.yaml`. |
 | `--no-config` | Ignore any discovered config file. |
 | `-g, --graph <path>` | Graph `.ttl` path. Default: config `out`. |
-| `-i, --index <dir>` | Directory holding the indexes, the manifest and `provenance.json`. Default: beside the graph. |
+| `-i, --index <dir>` | Directory holding the indexes, the manifest and `chunks.json`. Default: beside the graph. |
 | `--lang <tag>` | Which localization to search. Required when the corpus has more than one. |
 | `--variant <variant>` | A scope filter, by product variant IRI, title or slug. |
 | `--software-subject <subject>` | A scope filter, by software subject. |
@@ -318,16 +414,15 @@ graph:
 | `graph.retrieve.seeds` | integer ≥ 1 | `3` | no | How many fused entry matches seed traversal. |
 | `graph.retrieve.depth` | integer ≥ 0 | `1` | no | Hops from each seed. `0` serves the matches alone. |
 | `graph.retrieve.maxChars` | integer ≥ 1 | `12000` | no | Character budget across every passage in one bundle. |
-| `graph.retrieve.withhold` | list | `[]` | no | Passages to leave out. `drifted` is a passage with a pin at error severity. `failing` is a passage whose page has an eval that failed or errored. |
+| `graph.retrieve.withhold` | list | `[]` | no | Passages to leave out, at export and again at query. `drifted` is a passage with a pin at error severity. `failing` is a passage whose page has a current eval verdict that failed or errored. |
 
 - **The trust floor is the publisher's.** `withhold` is config and a CLI
   flag. An MCP caller cannot set it, so an agent cannot lower the floor a
   publisher set.
 - **A withheld passage is traced.** The trace gains `withheld`, one entry
   per passage with the node and its reasons. An agent sees what it lost.
-- **Withholding needs records.** A non-empty `withhold` with no
-  `provenance.json` is a usage error. An empty one with no file serves
-  passages with `"provenance": null`, and warns once.
+- **Withholding needs records.** Every host reads the chunk rows, and every
+  row carries its record. A host with no `chunks.json` is told to publish.
 
 The bundle, from `-f json` and from every MCP tool, extends ADR 01018's.
 
@@ -365,7 +460,7 @@ The bundle, from `-f json` and from every MCP tool, extends ADR 01018's.
 | `question` | New. The question asked. `traverse` and `impact` carry `node` instead. |
 | `language` | New. The localization searched, or `null` for a walk with no `--lang`. |
 | `context[].page` | New. The page the passage comes from. |
-| `context[].provenance` | New. The record of section 1, or `null` with no `provenance.json`. |
+| `context[].provenance` | New. The record of section 1. |
 | `pages` | New. Each cited page's delivered fields, by section 7's rule, once per page. |
 | `trace.withheld` | New. `[{ "node": "<iri>", "because": ["drifted"] }]`. |
 | `refusal.reason` | Gains four values, below. |
@@ -418,8 +513,11 @@ No passage is served: every match is withheld.
 | result | exit |
 |---|---|
 | A bundle with context | 0 |
-| A refusal | 1 |
+| A refusal | 0 |
 | A usage or operational error | 2 |
+
+A refusal is an answer, so it exits 0, and a script reads `refusal`. This
+resolves open question 2.
 
 ### 4. `graph traverse --context`
 
@@ -434,7 +532,7 @@ tool has a command a person can run.
 | `--withhold <list>` | New. The trust floor. Valid only with `--context`. |
 
 Without `--context`, `traverse` prints what it prints today. With it, a
-refusal exits 1, as `retrieve` does.
+refusal exits 0, as `retrieve` does.
 
 ### 5. `graph serve`, the MCP server
 
@@ -447,7 +545,7 @@ manni graph serve [options]
 | `-c, --config <path>` | Path to `manni.config.yaml`. |
 | `--no-config` | Ignore any discovered config file. |
 | `-g, --graph <path>` | Graph `.ttl` path. Default: config `out`. |
-| `-i, --index <dir>` | Directory holding the indexes, the manifest and `provenance.json`. |
+| `-i, --index <dir>` | Directory holding the indexes, the manifest and `chunks.json`. |
 | `--vectors <path>` | Vector sidecar path. Default: from the manifest. |
 | `--withhold <list>` | The trust floor for every call. Overrides `graph.retrieve.withhold`. |
 
@@ -457,7 +555,7 @@ manni graph serve [options]
 - **No auth.** A stdio server runs as the user who started it, over files
   that user can read. A network transport needs an auth decision, and is
   left to its own proposal.
-- **Read once, at start.** The graph, the indexes and `provenance.json` load
+- **Read once, at start.** The graph, the indexes and `chunks.json` load
   at start and stay fixed. A rebuild needs a restart. A stale artifact stops
   the start with exit 2, so a server never serves a mismatch.
 - **The SDK is an optional peer.** `@modelcontextprotocol/sdk` joins
@@ -653,6 +751,13 @@ combines the two marks that already exist, and adds none.
   the graph, and a delivered page still does not carry it.
 - **Unmarked means delivered.** Both marks read absent as yes, and so does
   the rule.
+- **Marks are read at every depth.** A mark on a nested property keeps that
+  property out, so a `sample-questions` item keeps its question and drops
+  its answer pins. `manni:ai-context:1.2.0` marks `answers` that way. It is
+  an annotation-only version, a non-breaking `feat`, and the default set
+  moves to it. This resolves open question 3. `graph check` and
+  `graph export questions` read answer pins from the pages, not from the
+  published graph, so the mark costs them nothing.
 
 Applied to the built-in vocabularies, as marked today:
 
@@ -663,12 +768,13 @@ Applied to the built-in vocabularies, as marked today:
 | `audience` | audiences, intent | personas, journeys, visibility |
 | `lifecycle` | lifecycle, replaced-by | supersedes, remove-by |
 | `structure` | applies-to, not-applicable-to, concepts, prerequisites, next-steps, related-pages | |
-| `ai-context` | risks, sample-questions | provenance, meta-provenance |
+| `ai-context` | risks, sample-questions (each without its `answers`) | provenance, meta-provenance |
 | `evals`, `artifact-evals`, `citations` | | every field |
 | `graph` | graph | |
 
-- **The rule covers what this proposal adds.** That means the bundle's
-  `pages[].metadata` and `graph export llms`. The jsonld, iiRDS and search
+- **The rule covers what this proposal adds.** That means the chunk
+  manifest's `pages[].metadata`, each row's `metadata`, each statement's
+  `data`, the bundle's `pages` and `graph export llms`. The jsonld, iiRDS and search
   targets keep 0051's rule unchanged, because they are linked data, not
   agent context.
 - **The record carries the proof the kept-out fields stood for.**
@@ -730,10 +836,10 @@ graph:
 Minimal to maximal. Each rung shows what it prints, then the usage errors.
 
 ```text
-# 1. Build what serving reads. Provenance is optional; search is not.
-$ manni graph build && manni graph export search && manni graph export provenance
+# 1. Build what serving reads.
+$ manni graph build && manni graph export search && manni graph export chunks
 manni: no docevals report is configured, so records carry no eval verdicts.
-Wrote .manni/graph/provenance.json (142 pages, 611 nodes).
+Wrote 611 chunks to .manni/graph/chunks.json
 
 # 2. The bare minimum that answers a question.
 $ manni graph retrieve "How do I resume an upload?"
@@ -746,8 +852,8 @@ $ manni graph retrieve "How do I resume an upload?"
 exit 0
 
 # 3. With eval verdicts, the CI form.
-$ manni docevals run -f json > .manni/evals.json; manni graph export provenance --evals .manni/evals.json
-Wrote .manni/graph/provenance.json (142 pages, 611 nodes, verdicts from .manni/evals.json).
+$ manni docevals run -f json > .manni/evals.json; manni graph export chunks --evals .manni/evals.json
+Wrote 611 chunks to .manni/graph/chunks.json
 
 # 4. The scripting form.
 $ manni graph retrieve "How do I resume an upload?" -f json | jq '.context[].provenance.pins.error'
@@ -765,7 +871,7 @@ $ manni graph traverse urn:manni:graph:docs/uploads/resume.md --impact --context
 $ manni graph retrieve "How many times does an upload retry by default?" --withhold drifted,failing
 No passage is served: every match is withheld.
   docs/uploads/retry.md § Retry limits   drifted, failing
-exit 1
+exit 0
 
 # 8. Every option at once.
 $ manni graph retrieve "Wie rotiere ich den Schlüssel?" -c manni.config.yaml \
@@ -795,16 +901,19 @@ Usage and operational errors, each on stderr:
 | several localizations, no `--lang` | `search`'s message today, unchanged | 2 |
 | unknown variant or software subject | `traverse`'s message today, unchanged | 2 |
 | `--withhold` names an unknown value | `manni: --withhold takes drifted or failing, and got stale.` | 2 |
-| `withhold` set, no `provenance.json` | `manni: graph.retrieve.withhold needs .manni/graph/provenance.json, which does not exist; run manni graph export provenance.` | 2 |
-| `provenance.json` from another graph | `manni: .manni/graph/provenance.json was built from another graph; run manni graph export provenance.` | 2 |
-| `provenance.json` absent, no `withhold` | `manni: .manni/graph/provenance.json does not exist, so passages carry no provenance; run manni graph export provenance.` | warning, exit unaffected |
+| no chunk artifact | `manni: .manni/graph/chunks.json does not exist; run manni graph publish.` | 2 |
+| `chunks.json` from another graph | `manni: .manni/graph/chunks.json was built from another graph; run manni graph publish.` | 2 |
+| no vector sidecar at export | `manni: no vector sidecar, so chunks carry no vectors and retrieval is lexical only; configure graph.embed to add them.` | warning, exit unaffected |
+| passages withheld at export | `manni: 6 chunks withheld by graph.retrieve.withhold (drifted); chunks.json lists them.` | notice, exit unaffected |
 | `--max-chars` or `--withhold` without `--context` on `traverse` | `manni: --max-chars needs --context.` | 2 |
-| `--evals` with a target other than `provenance` | `manni: --evals applies only to graph export provenance.` | 2 |
+| `--evals` with a target other than `chunks` | `manni: --evals applies only to graph export chunks.` | 2 |
 | no evals report is configured | `manni: no docevals report is configured, so records carry no eval verdicts.` | warning, exit unaffected |
-| the evals report is missing | `manni: graph.export.provenance.evals names .manni/evals.json, which does not exist.` | 2 |
+| the evals report is missing | `manni: graph.export.chunks.evals names .manni/evals.json, which does not exist.` | 2 |
 | the evals report is not one | `manni: .manni/evals.json is not a docevals JSON report; write one with manni docevals run -f json.` | 2 |
+| the report records no page integrity | `manni: .manni/evals.json records no page integrity, so every verdict reads stale; write it again with manni docevals run -f json.` | warning, exit unaffected |
+| pages changed since the report | `manni: 4 pages changed since .manni/evals.json was written, so their verdicts read stale.` | warning, exit unaffected |
 | the report names pages the graph lacks | `manni: 3 pages in .manni/evals.json are not in the graph, so their verdicts are left out.` | warning, exit unaffected |
-| git cannot run | `manni: git cannot read this directory (<git's reason>), so records carry no pins and no dates.` | warning, exit unaffected |
+| git cannot run | `manni: git cannot read this directory (<git's reason>), so records carry no commit and no derived dates.` | notice, said once, exit unaffected |
 | the working tree differs from the commit | `manni: 2 pages differ from 26dad159, so their records describe uncommitted text.` | warning, exit unaffected |
 | `serve` without the SDK | `manni: graph serve needs the optional @modelcontextprotocol/sdk package; run npm install @modelcontextprotocol/sdk.` | 2 |
 | `llms` with no title | `manni: graph export llms needs graph.export.llms.title.` | 2 |
@@ -820,9 +929,8 @@ nothing from `node:`.
 | addition | what it is |
 |---|---|
 | `retrieve(graph, lexical, options)` | Entry, traversal, resolution, records and assembly, in one call. |
-| `parseProvenance(text)` | Reads `provenance.json`, refusing an unknown `format` or `version`. |
-| `provenanceFor(doc, iri)` | Joins one node's record from the parsed artifact. |
-| `ProvenanceRecord`, `ProvenanceDoc` | The types of sections 1 and 2. |
+| `parseChunksManifest(text)`, `parseChunkRows(text)` | Read `chunks.json` and a `chunks.<tag>.jsonl`, refusing an unknown `format` or `version`. |
+| `ChunkRow`, `ChunksManifest`, `ProvenanceRecord` | The types of sections 1 and 2. |
 | `AssembleOptions.provenance`, `.withhold` | The artifact and the trust floor, for callers that assemble by hand. |
 | `ContextBlock.page`, `.provenance` | Additive fields. |
 | `RetrievalBundle.question`, `.language`, `.pages` | Additive fields. |
@@ -830,7 +938,7 @@ nothing from `node:`.
 | `RefusalReason` | Gains `withheld`, `lang-required`, `unknown-node` and `unknown-scope`. |
 
 The graph publish page gains the browser example DESIGN.md Phase 9 asks for.
-It loads `graph.jsonld`, the search index and `provenance.json`, and renders
+It loads `graph.jsonld`, the search index and `chunks.json`, and renders
 each passage with its pin and eval badges.
 
 ## What this does not do
@@ -871,8 +979,9 @@ each passage with its pin and eval badges.
    graph it loaded, and its artifacts stay consistent with it. A restart
    picks up the new one.
 9. **`sample-questions` with pins, delivered.** The field is `page`, so its
-   pins ship too, hashes included. They cost bytes and help no agent. See
-   open question 3.
+   pins would ship too, hashes included. ai-context 1.2.0 marks `answers`,
+   and the delivery rule reads marks at every depth, so the question ships
+   without them.
 10. **A corpus with no citations and no evals.** Every record has
     `pins.total: 0` and `evals: null`. The bundle still works. The record
     says what was not checked, rather than implying it passed.
@@ -882,46 +991,53 @@ each passage with its pin and eval badges.
 1. **Tie verdicts to a commit.** The docevals JSON report carries no commit,
    so a record cannot prove its verdicts describe the text it serves. Should
    `docevals run -f json` gain `commit` and `worktree`, and export refuse a
-   report from another commit?
+   report from another commit? *Resolved:* each result carries the page's
+   `integrity` instead, and `evals.current` compares it (section 1).
 2. **Exit 1 on refusal.** It follows grep, where no match is 1, and lets a
    script branch. The family reserves 1 for findings. Is a refusal close
-   enough?
+   enough? *Resolved:* no. A refusal is an answer and exits 0 (section 3).
 3. **Delivered `sample-questions`.** Should delivery reduce each item to its
    `question` text, or should ai-context mark the pins some other way?
+   *Resolved:* ai-context 1.2.0 marks `answers`, and delivery reads marks at
+   every depth (section 7).
 4. **The trailing slash in `llms.txt` links.** Starlight and most
    frameworks serve `/path/`. Is a fixed trailing slash right, or should a
-   route say?
+   route say? *Resolved:* links take the detected framework's URL style, and
+   with no framework a route ends in `/`.
 5. **The SDK as an optional peer.** It keeps installs small, and costs a
    second install step for anyone who serves. Would a plain dependency be
-   the better trade?
+   the better trade? *Resolved:* an optional peer, with stdio only and no
+   auth.
 
 ## Acceptance checklist
 
 ### PR 1, the record and the artifact
 
-- [ ] `src/graph/runtime/provenance.ts` exists, with `parseProvenance` and `provenanceFor`, and imports nothing from `node:`.
-- [ ] `src/graph/core/provenance.ts` builds the artifact on the Node side from cite's classifier, meta's derive and a docevals report.
-- [ ] `manni graph export provenance` writes `provenance.json` beside the graph, and exits 0.
-- [ ] The artifact's top-level keys are `format`, `version`, `graph`, `commit`, `worktree`, `evals`, `pages` and `nodes`.
+- [ ] `src/graph/commands/chunks.ts` builds the artifact on the Node side from cite's check, meta's derive and a docevals report.
+- [ ] `manni graph export chunks` writes `chunks.json` and one `chunks.<tag>.jsonl` per language, and exits 0.
+- [ ] The manifest's keys are `format`, `version`, `graph`, `graphFile`, `searchIndex`, `commit`, `worktree`, `model`, `retrieve`, `evals`, `languages`, `pages` and `withheld`.
 - [ ] Two exports over the same commit, report and config are byte-identical.
-- [ ] Each node's `lines` match what `sliceSection` returns for a section, and the whole body for a document.
-- [ ] A pin whose claim overlaps a node's lines appears in that node's `pins.items`, with cite's rule and resolved severity.
-- [ ] Each `pins.items[]` entry carries `commit`, equal to cite's recorded commit for that citation, reachable or not.
-- [ ] `dates.created` and `dates.lastUpdated` equal what `manni meta derive` would stamp, as UTC days.
-- [ ] `stamp` reads `current`, `stale` or `absent` against the page's own field.
-- [ ] `graph.export.provenance.evals` and `--evals` fill `evals`. Without either, every `evals` is `null`.
-- [ ] `--evals` with another target exits 2 with the message above.
-- [ ] A missing report, a non-report and unknown pages print the messages above, with the exit codes above.
-- [ ] Outside git, `pins`, `dates` and `commit` are `null`, with one warning.
-- [ ] `pages[].metadata` holds exactly the fields section 7 delivers, tested against each built-in vocabulary.
-- [ ] `test/graph/fixtures/provenance/` holds a minimal corpus with one drifted pin, one stale stamp and one evals report.
+- [ ] Each section's `lines` and `text` match what `sliceSection` returns, and a document's cover its whole body.
+- [ ] A pin whose claim overlaps a passage appears in its `pins.items`, with cite's rule, resolved severity, recorded `commit`, `lastVerified` and `verifiedBy`.
+- [ ] `dates.created` and `dates.lastUpdated` equal what `manni meta derive` would stamp, and `stamp` reads `current`, `stale` or `absent`.
+- [ ] `dates.lastVerified` and `dates.verifiedBy` hold the page's verification fields.
+- [ ] `docevals run -f json` carries `integrity` on each result, and `evals.current` compares it.
+- [ ] `graph.export.chunks.evals` and `--evals` fill `evals`. Without either, every `evals` is `null`, with one warning.
+- [ ] Each row carries `metadata`, overlaid by its heading statements, and its record carries `statements`.
+- [ ] `graph.retrieve.withhold` leaves matching passages out of the rows and lists them under `withheld`.
+- [ ] Rows carry vectors when a sidecar holds them, and the export warns when none does.
+- [ ] Page `metadata` holds exactly the delivered fields, tested against each built-in vocabulary, and a delivered `sample-questions` item carries no `answers`.
+- [ ] `manni:ai-context:1.2.0` is registered as annotation-only, the default set uses it, and `npm run schemas:check` passes.
+- [ ] Outside git, `commit` and `worktree` are `null`, `pins` is computed, every `day` is `null`, and one notice prints.
+- [ ] Every PR 1 message prints with its exit code.
+- [ ] `test/graph/fixtures/provenance/` holds the minimal corpus the tests commit, drift and edit.
 - [ ] `test/graph/integration/runtime-bundle.test.ts` still passes over the built bundle.
 
 ### PR 2, retrieve and traverse
 
 - [ ] `manni graph retrieve "<question>"` prints the pretty output above, and exits 0 with context.
 - [ ] `-f json` prints the bundle of section 3, with `question`, `language`, `context[].page`, `context[].provenance`, `pages` and `trace.withheld`.
-- [ ] A refusal exits 1, and its JSON carries `refusal.reason` and the extra key for that reason.
+- [ ] A refusal exits 0, and its JSON carries `refusal.reason` and the extra key for that reason.
 - [ ] `--withhold drifted,failing` withholds by the record, and traces each withheld node.
 - [ ] Every usage error in the ladder's table prints its message and exits 2.
 - [ ] `graph.retrieve.seeds`, `depth`, `maxChars` and `withhold` validate in `config-schema.json`, with a positive and a negative case each.
@@ -957,7 +1073,7 @@ each passage with its pin and eval badges.
 - [ ] A missing `title` or `origin` exits 2 with the messages above.
 - [ ] `docs/src/content/docs/graph/publish/index.mdx` covers `provenance` and `llms`, and carries the browser example.
 - [ ] A docs page states section 7's delivery rule, and issue #36 links to it.
-- [ ] `docs/content-strategy/cujs.md` gains D18, "Serve the docs to an agent with their proof".
+- [ ] `docs/content-strategy/cujs.md` gains D19, "Serve the docs to an agent with their proof", and M29, "Ground a site's Ask AI in the docs' proof".
 - [ ] `node dist/cli.js meta validate`, `cite check`, `term check` and Vale pass over the changed docs.
 - [ ] A demo video under `media/graph-serve/` shows an agent's bundle with a drifted pin, then the same call withheld.
 - [ ] This proposal's `Status:` line reads `Implemented` with the PR numbers.
