@@ -163,7 +163,8 @@ runs:
         # `$(…)` or `;` in the value reaches manni as a literal word, and
         # `set -f` above keeps a `*` from globbing. The CLI judges the words
         # with its own messages and exit 2, so nothing here second-guesses
-        # them. An empty value is the default, `check`.
+        # them. An unset input already arrives as `check`, from the input's
+        # `default:`. The fallback below covers an explicit `command: ""`.
         # shellcheck disable=SC2206
         words=($MANNI_COMMAND)
         [ ${#words[@]} -gt 0 ] || words=(check)

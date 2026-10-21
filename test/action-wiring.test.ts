@@ -416,12 +416,15 @@ describe.skipIf(!hasBash)("action.yml input wiring", () => {
     const res = await runAction({ MANNI_PATHS: "docs/" }, 1);
     expect(res.githubOutput).toContain("exit-code=1");
     expect(res.status).toBe(1);
+    expect(res.stdout + res.stderr).not.toContain("::error::");
   });
 
   it("reports a usage error as exit-code 2", async () => {
     const res = await runAction({ MANNI_COMMAND: "lint chek" }, 2);
     expect(res.githubOutput).toContain("exit-code=2");
     expect(res.status).toBe(2);
+    // The CLI owns the message; the Action adds no annotation of its own.
+    expect(res.stdout + res.stderr).not.toContain("::error::");
   });
 
   it("reports a clean run as exit-code 0", async () => {
