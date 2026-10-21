@@ -1,5 +1,8 @@
 import { defineConfig } from "astro/config";
 import starlight from "@astrojs/starlight";
+// `@hawkeyexl/manni/site/rehype` in a site that installs manni. This site is
+// manni's own, so it imports the plugin's source, which needs no build first.
+import manniLines from "../src/site/rehype.ts";
 
 /** Every element named `tagName` under `node`, depth first. */
 function elements(node, tagName, found = []) {
@@ -115,7 +118,7 @@ export default defineConfig({
   },
   // MDX inherits this list, so `.md` and `.mdx` pages both get it.
   markdown: {
-    rehypePlugins: [rehypeFocusableTables],
+    rehypePlugins: [rehypeFocusableTables, manniLines],
   },
   integrations: [
     starlight({

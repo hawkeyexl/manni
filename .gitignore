@@ -1,5 +1,7 @@
 node_modules/
 dist/
+# The annotate fixture's built site is the test's input, not build output.
+!test/site/fixtures/annotate/site/dist/
 .husky/_/
 *.log
 .DS_Store

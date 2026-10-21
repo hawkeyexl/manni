@@ -19,6 +19,10 @@ export interface SiteConfig {
   /** Absolute; `site.dir` resolved against the config file's directory. */
   dir?: string;
   commands: Partial<Record<Verb, string>>;
+  /** `site.out` as written: the built site, relative to the site directory. */
+  out?: string;
+  /** `site.annotate.after-build`: `build` and `preview` annotate after the build. */
+  afterBuild: boolean;
   /** The family file's `collections:`, for the local `url:` port and path. */
   collections: CollectionConfig[];
   /** Directory of the config file; `null` when none was found. */
@@ -26,7 +30,8 @@ export interface SiteConfig {
 }
 
 const SECTION = "site";
-const CONFIG_KEYS = ["dir", "commands"] as const;
+const CONFIG_KEYS = ["dir", "commands", "out", "annotate"] as const;
+const ANNOTATE_KEYS = ["after-build"] as const;
 const COMMAND_KEYS = ["start", "build", "preview"] as const;
 
 const CONFIG_FILE: ConfigFileOptions = {
@@ -41,7 +46,7 @@ export function loadSiteConfig(cwd: string, configPath?: string): SiteConfig {
     configPath === undefined
       ? findConfigFileSync(cwd, CONFIG_FILE)
       : readConfigFileSync(configPath, cwd, CONFIG_FILE);
-  if (file === null) return { commands: {}, collections: [], configDir: null };
+  if (file === null) return { commands: {}, afterBuild: false, collections: [], configDir: null };
   return {
     ...parseSiteConfig(file.value, file.source, file.dir),
     collections: file.collections,
@@ -49,16 +54,31 @@ export function loadSiteConfig(cwd: string, configPath?: string): SiteConfig {
   };
 }
 
+type ParsedSiteConfig = Pick<SiteConfig, "dir" | "commands" | "out" | "afterBuild">;
+
 /** Pure parser, exported for tests. */
 export function parseSiteConfig(
   value: unknown,
   source: string,
   configDir: string,
-): Pick<SiteConfig, "dir" | "commands"> {
+): ParsedSiteConfig {
   const obj = asMapping(value, SECTION, CONFIG_KEYS, source);
-  const config: Pick<SiteConfig, "dir" | "commands"> = { commands: {} };
+  const config: ParsedSiteConfig = { commands: {}, afterBuild: false };
   if (obj.dir !== undefined) {
     config.dir = resolve(configDir, asString(obj.dir, "dir", source));
+  }
+  if (obj.out !== undefined) {
+    const out = asString(obj.out, "out", source);
+    if (out.trim() === "") throw new SiteError(`${source}: ${SECTION}.out must not be empty.`);
+    config.out = out;
+  }
+  const annotate = asMapping(obj.annotate, `${SECTION}.annotate`, ANNOTATE_KEYS, source);
+  const afterBuild = annotate["after-build"];
+  if (afterBuild !== undefined) {
+    if (typeof afterBuild !== "boolean") {
+      throw new SiteError(`${source}: ${SECTION}.annotate.after-build must be a boolean.`);
+    }
+    config.afterBuild = afterBuild;
   }
   const commands = asMapping(obj.commands, `${SECTION}.commands`, COMMAND_KEYS, source);
   for (const verb of COMMAND_KEYS) {

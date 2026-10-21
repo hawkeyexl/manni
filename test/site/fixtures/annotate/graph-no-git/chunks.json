@@ -1,0 +1,41 @@
+{
+  "commit": null,
+  "evals": null,
+  "format": "manni-graph-chunks",
+  "graph": "sha256-b8cfadc9663948a7b0cbaca690e658811e4f4a4a3eefcc7d389c88bdcb384d4e",
+  "graphFile": "graph.jsonld",
+  "languages": {
+    "en": {
+      "file": "chunks.en.jsonl",
+      "model": null,
+      "rows": 4
+    }
+  },
+  "pages": {
+    "site/src/content/docs/guide.md": {
+      "metadata": {
+        "title": "Guide"
+      }
+    },
+    "site/src/content/docs/missing.md": {
+      "metadata": {
+        "title": "Missing"
+      }
+    },
+    "site/src/content/docs/plain.md": {
+      "metadata": {
+        "title": "Plain"
+      }
+    }
+  },
+  "retrieve": {
+    "depth": 1,
+    "maxChars": 4000,
+    "seeds": 5,
+    "withhold": []
+  },
+  "searchIndex": "localizations.json",
+  "version": 1,
+  "withheld": [],
+  "worktree": null
+}
