@@ -213,7 +213,7 @@ from position, because a position-derived name orphans every cached verdict as s
 | `runs` | integer 1–50 | `judge.ensembleRuns` | Ensemble runs for this eval alone. A CLI `--runs` still wins. Capped because it multiplies judge cost directly. |
 | `evidence` | string | none | Scopes what the judge looks at **within** what is graded. A hint, not a selector; see `target`. |
 | `target` | see below | `body` | Which bytes the grader receives. |
-| `examples.pass` / `examples.fail` | string or string[] | none | Pins the boundary; one anchor or several. An inline ai eval without them raises a warning. |
+| `examples.pass` / `examples.fail` | string or string[] | none | Pins the boundary; one anchor or several. An inline ai eval without them raises a notice. |
 | `command` | string[] | none | For `command` graders. `{file}` expands to the page's absolute path. |
 | `success-exit-codes` | integer[] | `[0]` | Exit codes treated as a pass. |
 | `timeout-ms` | integer ≥ 1 | `scripts.timeoutMs` | For `command` graders. |
@@ -249,7 +249,7 @@ These are reported per page rather than thrown, so one bad page does not stop th
 | Unrecognized `eval-*` page key, `eval-provenance` included | error |
 | A page key an owning manifest also holds | error |
 | String shorthand matching a config eval id | warning |
-| Inline ai eval with no `examples` | warning |
+| Inline ai eval with no `examples` | notice |
 
 An inline eval may carry `severity-map`, because the shared vocabulary allows it. No registered
 grader reads it, so manni docevals warns on stderr once per eval and grades as if it were absent:

@@ -77,7 +77,8 @@ export function renderPretty(
   }
 
   for (const p of report.problems) {
-    const tag = p.level === "error" ? pc.red("error") : pc.yellow("warn");
+    const tag =
+      p.level === "error" ? pc.red("error") : p.level === "warning" ? pc.yellow("warn") : pc.dim("notice");
     const loc = p.line != null ? `:${p.line}` : "";
     lines.push(`${tag} ${p.file}${loc} ${p.message}`);
   }

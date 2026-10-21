@@ -375,7 +375,18 @@ describe.skipIf(!gitAvailable())("classifyCitation against a real repository", (
     expect(changed.commitsSince).toEqual(["raise fetch timeout to 30s"]);
     expect(changed.diff).toContain("+export const FETCH_TIMEOUT_MS = 30_000;");
 
-    const neverTrue = await classifyCitation(entryFor(`${PATH}:2`, PIN_L2, second), opts);
+    // The recorded commit does not hold the pin, and an older one does: the
+    // baseline is derived from the history, not taken from the entry (0097).
+    const misdated = await classifyCitation(entryFor(`${PATH}:2`, PIN_L2, second), opts);
+    expect(misdated.status).toBe("changed");
+    expect(misdated.commitSha).toBe(second);
+    expect(misdated.baselineSha).toBe(first);
+    expect(misdated.commitsSince).toEqual(["raise fetch timeout to 30s"]);
+
+    const neverTrue = await classifyCitation(
+      entryFor(`${PATH}:2`, ladder.mint("export const NEVER = 1;\n", 1) ?? "", second),
+      opts,
+    );
     expect(neverTrue.status).toBe("never-true");
 
     const absent = await classifyCitation(
@@ -398,8 +409,10 @@ describe.skipIf(!gitAvailable())("classifyCitation against a real repository", (
       ),
       opts,
     );
-    expect(unknown.status).toBe("changed");
-    expect(unknown.historyAvailable).toBe(false);
+    // A commit the repository lacks is walked past: the source's own history
+    // reaches its first commit, and no commit held the pin.
+    expect(unknown.status).toBe("never-true");
+    expect(unknown.historyAvailable).toBeUndefined();
   });
 
   it("a pin moved by update and then changed is `changed`, not `never-true`", async () => {
