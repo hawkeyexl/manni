@@ -76,6 +76,10 @@ import manniTerminologyStrict110 from "../schemas/terminology-strict/1.1.0.json"
 import manniTerminology120 from "../schemas/terminology/1.2.0.json" with { type: "json" };
 import manniTerminologyStrict120 from "../schemas/terminology-strict/1.2.0.json" with { type: "json" };
 import manniAiContext110 from "../schemas/ai-context/1.1.0.json" with { type: "json" };
+import manniStewardship120 from "../schemas/stewardship/1.2.0.json" with { type: "json" };
+import manniStewardshipStrict120 from "../schemas/stewardship-strict/1.2.0.json" with { type: "json" };
+import manniCitations110 from "../schemas/citations/1.1.0.json" with { type: "json" };
+import manniCitationsStrict110 from "../schemas/citations-strict/1.1.0.json" with { type: "json" };
 import { errorMessage } from "../../shared/errors.js";
 
 export interface BuiltinInfo {
@@ -142,6 +146,10 @@ const BUILTINS = new Map<string, Record<string, unknown>>([
   ["manni:terminology:1.2.0", manniTerminology120],
   ["manni:terminology-strict:1.2.0", manniTerminologyStrict120],
   ["manni:ai-context:1.1.0", manniAiContext110],
+  ["manni:stewardship:1.2.0", manniStewardship120],
+  ["manni:stewardship-strict:1.2.0", manniStewardshipStrict120],
+  ["manni:citations:1.1.0", manniCitations110],
+  ["manni:citations-strict:1.1.0", manniCitationsStrict110],
 ]);
 
 /**
@@ -356,6 +364,10 @@ const PUBLISHED_PATHS: readonly (readonly [string, string])[] = [
   ["terminology/1.2.0.json", "manni:terminology:1.2.0"],
   ["terminology-strict/1.2.0.json", "manni:terminology-strict:1.2.0"],
   ["ai-context/1.1.0.json", "manni:ai-context:1.1.0"],
+  ["stewardship/1.2.0.json", "manni:stewardship:1.2.0"],
+  ["stewardship-strict/1.2.0.json", "manni:stewardship-strict:1.2.0"],
+  ["citations/1.1.0.json", "manni:citations:1.1.0"],
+  ["citations-strict/1.1.0.json", "manni:citations-strict:1.1.0"],
 ];
 
 /** Where each built-in's reference page lives on the docs site. */
@@ -395,7 +407,9 @@ const GUIDE_SLUGS: ReadonlyMap<string, string> = new Map([
   ["manni:audience:1.0.0", "manni-audience"],
   ["manni:audience-strict:1.0.0", "manni-audience"],
   ["manni:citations:1.0.0", "manni-citations"],
+  ["manni:citations:1.1.0", "manni-citations"],
   ["manni:citations-strict:1.0.0", "manni-citations"],
+  ["manni:citations-strict:1.1.0", "manni-citations"],
   ["manni:core:1.0.0", "manni-core"],
   ["manni:core-strict:1.0.0", "manni-core"],
   ["manni:evals:1.0.0", "manni-evals"],
@@ -406,8 +420,10 @@ const GUIDE_SLUGS: ReadonlyMap<string, string> = new Map([
   ["manni:lifecycle-strict:1.0.0", "manni-lifecycle"],
   ["manni:stewardship:1.0.0", "manni-stewardship"],
   ["manni:stewardship:1.1.0", "manni-stewardship"],
+  ["manni:stewardship:1.2.0", "manni-stewardship"],
   ["manni:stewardship-strict:1.0.0", "manni-stewardship"],
   ["manni:stewardship-strict:1.1.0", "manni-stewardship"],
+  ["manni:stewardship-strict:1.2.0", "manni-stewardship"],
   ["manni:structure:1.0.0", "manni-structure"],
   ["manni:structure-strict:1.0.0", "manni-structure"],
   ["manni:terminology:1.0.0", "manni-terminology"],

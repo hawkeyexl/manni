@@ -73,7 +73,7 @@ keeps its place.
 
 A listed version of a default vocabulary replaces the default's version. With
 the defaults on, listing `manni:stewardship:1.0.0` drops
-`manni:stewardship:1.1.0`, so each stewardship field is judged once.
+`manni:stewardship:1.2.0`, so each stewardship field is judged once.
 
 An override never inherits config `schemas`. `defaults: true` on an entry
 asks for the default set, and nothing else from the levels below it.
@@ -88,12 +88,12 @@ passo-uno:seven-action:1.0
 manni:core:1.0.0
 manni:audience:1.0.0
 manni:structure:1.0.0
-manni:stewardship:1.1.0
+manni:stewardship:1.2.0
 manni:lifecycle:1.0.0
 manni:ai-context:1.1.0
 manni:evals:1.0.0
 manni:graph:1.0.0
-manni:citations:1.0.0
+manni:citations:1.1.0
 ```
 
 `manni:core:1.0.0` requires `title` and `description`, so every file the
@@ -102,6 +102,7 @@ constrain a field only when the file carries it. A field a vocabulary
 prefers in [external metadata](#field-location) draws a `location:external`
 warning when it sits on the page. Warnings never fail a run.
 
+`manni:stewardship:1.0.0`, `manni:stewardship:1.1.0`, `manni:citations:1.0.0`,
 `manni:ai-context:1.0.0`, `manni:terminology:1.0.0`, `manni:terminology:1.1.0`,
 `manni:terminology:1.2.0`, `manni:artifact-evals:1.0.0`, `manni:artifact-evals:1.1.0` and every strict
 overlay stay out of the default set. A config lists them where they apply.

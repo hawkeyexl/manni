@@ -281,7 +281,9 @@ Three things do change a fingerprint, and each is recovered with one
 Moving to a built-in version that only adds annotations keeps every
 fingerprint. That version hashes as the one before it, so
 `manni:stewardship:1.1.0` and its strict overlay fingerprint as their 1.0.0
-counterparts.
+counterparts. A version that adds fields fingerprints under its own id. So a
+finding recorded under `manni:stewardship:1.1.0` is new under
+`manni:stewardship:1.2.0` until the baseline is written again.
 
 {/* cite schema-ref-measured-from-the-config-dir */}
 {/* cite baseline-path-measured-from-the-config-dir */}

@@ -394,6 +394,11 @@ export default defineConfig({
               items: [{ autogenerate: { directory: "meta/fix" } }],
             },
             {
+              label: "Integrate another tool",
+              collapsed: true,
+              items: [{ autogenerate: { directory: "meta/integrate" } }],
+            },
+            {
               label: "Reference",
               collapsed: true,
               items: [{ autogenerate: { directory: "meta/reference" } }],
@@ -499,13 +504,15 @@ export default defineConfig({
           ],
         },
         // `test` runs the docs' procedure tests with Doc Detective (proposal
-        // 0085). One verb, so an overview and a reference shelf of one.
+        // 0085). One verb, so an overview, one journey page (proposal 0098)
+        // and a reference shelf of one.
         {
           label: "test",
           collapsed: true,
           badge: BETA,
           items: [
             { label: "Overview", link: "/test/" },
+            { label: "Record when a page was last verified", link: "/test/record-last-verified/" },
             {
               label: "Reference",
               collapsed: true,

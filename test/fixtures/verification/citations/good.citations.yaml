@@ -1,0 +1,17 @@
+good.md:
+  citations:
+    - id: named-paths-win
+      claim:
+        lines: 1
+        integrity: sha256-0000000000000000000000000000000000000000000000000000000000000000
+      source:
+        file: src/cite/core/config.ts
+        lines: 311-313
+        integrity: sha256-1111111111111111111111111111111111111111111111111111111111111111
+        commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e
+      last-verified: 2026-10-21T14:02:11Z
+      verified-by:
+        - tool: sample-runner
+          check: config-paths
+          version: 2.1.0
+          passed: 2026-10-21T14:02:11Z

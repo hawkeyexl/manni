@@ -479,6 +479,20 @@ describe("validateEntry", () => {
     ).toBeUndefined();
   });
 
+  it("accepts the verification fields manni:citations:1.1.0 adds (proposal 0098)", () => {
+    const source = { file: "a.ts", integrity: PIN };
+    expect(
+      validateEntry({
+        source,
+        "last-verified": "2026-10-21T14:02:11Z",
+        "verified-by": [{ tool: "sample-runner", check: "config-paths", version: "2.1.0", passed: "2026-10-21" }],
+      }),
+    ).toBeUndefined();
+    expect(validateEntry({ source, "verified-by": [{ check: "x" }] })).toBe(
+      "/verified-by/0 must have required property 'tool'",
+    );
+  });
+
   it("reports the first error as a pointer and a message", () => {
     expect(validateEntry({})).toBe("must have required property 'source'");
     expect(validateEntry({ source: { file: "a.ts" } })).toBe(

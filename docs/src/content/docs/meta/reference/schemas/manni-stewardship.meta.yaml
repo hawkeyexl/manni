@@ -1,6 +1,6 @@
 docs/src/content/docs/meta/reference/schemas/manni-stewardship.mdx:
   personas: ["sara"]
-  journeys: ["s1"]
+  journeys: ["s1", "s16"]
   visibility: public
   review-interval: P180D
   source-of-truth:
@@ -8,6 +8,8 @@ docs/src/content/docs/meta/reference/schemas/manni-stewardship.mdx:
     - path: src/meta/schemas/stewardship-strict/1.0.0.json
     - path: src/meta/schemas/stewardship/1.1.0.json
     - path: src/meta/schemas/stewardship-strict/1.1.0.json
+    - path: src/meta/schemas/stewardship/1.2.0.json
+    - path: src/meta/schemas/stewardship-strict/1.2.0.json
     - path: src/meta/core/schema-registry.ts
   eval-suite: meta
   evals:

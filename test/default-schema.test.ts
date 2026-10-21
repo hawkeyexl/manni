@@ -826,14 +826,15 @@ describe("the default set (proposal 0070)", () => {
     CORE_ID,
     ref("audience"),
     ref("structure"),
-    // Stewardship's default moved past 1.0.0 for its output marks (0074), and
-    // ai-context's for pinned answers (0087).
-    "manni:stewardship:1.1.0",
+    // Stewardship's default moved past 1.0.0 for its output marks (0074) and
+    // its verification fields (0098), and ai-context's for pinned answers (0087).
+    "manni:stewardship:1.2.0",
     ref("lifecycle"),
     "manni:ai-context:1.1.0",
     ref("evals"),
     ref("graph"),
-    ref("citations"),
+    // Citations moved to 1.1.0 for the verification fields on an entry (0098).
+    "manni:citations:1.1.0",
   ];
 
   it("appends the whole family after the two existing members", async () => {

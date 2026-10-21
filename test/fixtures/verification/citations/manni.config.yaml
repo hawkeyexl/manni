@@ -1,0 +1,9 @@
+# Citation entries carry verified-by and last-verified (proposal 0098). Each
+# page's entries sit in its {page}.citations.yaml, so a finding on one is
+# reported against the manifest's line.
+collections:
+  - name: pages
+    paths: ["*.md"]
+    externalMetadata:
+      - file: "{page}.citations.yaml"
+        keys: [citations]

@@ -244,6 +244,14 @@ This is the backbone of the docevals section. It is the only journey that crosse
 
 **What success looks like.** A `found` row that only reviewed questions move, and a red run when it falls under the threshold. No pin points at lines that no longer hold its answer. manni says whether a question finds its lines, and never judges the answer. Related journeys are M18 (the graph), M20 (filling what nobody wrote) and D12 (the gate).
 
+### M30 · Show readers when a check last proved a page
+
+**Outcome.** Each page that a procedure test covers says when that test last passed. Readers and agents see a date that means "this still works", beside the date the text last changed.
+
+**Steps.** Maya's pages already carry Doc Detective tests, and `manni test run` runs them in CI. She adds one `verified-by` entry to each page's front matter, naming `doc-detective` as the `tool` and the test's id as the `check`. On a pass, Doc Detective fills in that entry's `passed` and `version`. It sets `last-verified` once every listed check has passed. A failing test leaves both alone, so the date ages, and the age is the signal. A link checker or a sample runner gets an entry of its own, and `last-verified` waits for the slowest of them. `manni meta validate` checks the form of every value the tools write, in the same job. manni writes none of it.
+
+**What success looks like.** A page's `last-verified` moves only when every check that covers it passes. No key on the page names a tool. Related journeys are M5 (pins), D17 (the test gate) and S16 (how another tool writes these fields).
+
 ---
 
 ## Devin, Platform / CI Engineer
@@ -524,6 +532,16 @@ Sara needs to ship a stricter version of the schema without immediately breaking
 **Steps.** She starts from what the pages say, not from a blank glossary. The graph already reads `concepts:`, `keywords:` and `graph:` blocks, and `manni term check` names each concept no term defines. She runs `manni term fill --offline --dry-run` to see what is missing, then `manni term fill` with a provider, so a model drafts each definition. `--crawl` proposes the terms no metadata named. She reads every draft, rewrites the wrong ones, and deletes each `meta-provenance` entry she has reviewed. `manni term check` then holds the set to the rules a thesaurus needs. Related links hold both ways, broader terms list their narrower ones, and each term has a place. She writes a branch of terms, such as `Audience`, and marks the `audiences` field `x-manni-term` with `under`, so `manni meta validate` rejects a reader type the termbase lacks. She maps terms to outside vocabularies with `exact-matches` and its siblings. She hands the scheme out as SKOS with `manni term write -f skos-ttl`, or as TBX for translation. Each page declares `sample-questions`, and `manni graph check` reports a page its own question does not find. `keyword-candidate` names the next concept, which the next `term fill --crawl` picks up. `hierarchy-outside-termbase` names an edge to move onto its term page.
 
 **What success looks like.** One node per concept however a page spells it, and a termbase with no unreviewed drafts. A graph check that finds every page for its own question. Related journeys are S6 (the term pages), M18 (the graph) and D12 (the graph gate).
+
+---
+
+### S16 · Let another tool write metadata the family reads
+
+**Outcome.** A tool Sara does not own writes values into her pages, and every manni tool reads them as one shared fact. Nothing the tool writes breaks validation, a merge or a derived field.
+
+**Steps.** A tool author, or Sara wiring one in, reads the vocabulary first. `manni meta schemas show` prints each field's type and description, and the schema carries its `x-manni-location` mark. A `page` field goes in front matter, and an `external` one in the manifest the collection names. A measured fact goes in its field's companion, such as `verified-by` beside `last-verified`, and a value proposed for review goes in `meta-provenance`. The tool never writes a derived or managed field, such as `last-updated` or a citation's hashes. It writes dates as UTC days or RFC 3339 with a timezone, and only on success. It writes without churn, keeping the block's style and key order. Then it runs `manni meta validate` in the same job and fails on exit 1.
+
+**What success looks like.** A second tool's write lands as a small, idempotent diff that passes validation. No key on any page is named for one tool. Related journeys are S1 (the standard), M30 (verification) and M20 (proposals under `meta-provenance`).
 
 ---
 

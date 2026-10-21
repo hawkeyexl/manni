@@ -63,12 +63,12 @@ import { Aside } from '@astrojs/starlight/components';
 A citation pins a sentence on a page to the source lines it was written from.
 Both ends are pinned the same way, by a line range and a hash. This page is
 the vocabulary as the tool ships it. The schema it implements is the built-in
-`manni:citations:1.0.0`, which pins the claim and encrypts `source.file` as a
+`manni:citations:1.1.0`, which pins the claim and encrypts `source.file` as a
 value. `manni meta schemas` lists it with the family's other vocabularies, and
 manni cite checks each entry against the same file. The vocabulary's own
 reference page is
-[`manni:citations:1.0.0`](/manni/meta/reference/schemas/manni-citations/). It
-also documents the strict overlay, `manni:citations-strict:1.0.0`.
+[`manni:citations:1.1.0`](/manni/meta/reference/schemas/manni-citations/). It
+also documents the strict overlay, `manni:citations-strict:1.1.0`.
 
 ## Where citations live
 
@@ -139,6 +139,8 @@ block is the other end, and both carry a line range and a hash.
 | `source.integrity` | `sha256-` or `hmac-sha256-`, and 64 lowercase hex digits | yes | The pin. `hmac-sha256-` exactly when `file` is encrypted, so the page carries no verifier for a guessed private line. |
 | `source.commit-sha` | 7 to 64 lowercase hex digits | no | The git commit hash the source pin was taken at. Sixty-four covers a SHA-256 repository. With it, `check` tells `source-changed` from `source-never-true` and can show the diff. |
 | `quote` | boolean, default `false` | no | The claim is a fenced block that reproduces the source. See [Quotes](#quotes). |
+| `last-verified` | a day, or an RFC 3339 timestamp with a timezone | no | The date by which every check in `verified-by` had passed. A verifying tool writes it, and `manni cite` never reads it. |
+| `verified-by` | non-empty list of `{ tool, check, version, passed }` | no | The checks that prove the pin, such as a test that runs the cited code. See [verification](/manni/meta/reference/schemas/manni-stewardship/#verification). |
 
 An entry is closed. A `src` string, a pin at the entry root, a `commit` key
 and a claim written out as text all fail the schema. The source is an object,

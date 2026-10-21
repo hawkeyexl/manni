@@ -59,7 +59,7 @@ A suspicion must never fail a build.
 set `manni meta validate` resolves for each page, read from meta's section of
 the same config through `metaPageView` (proposal 0074). graph keeps no schema
 set of its own, so there is no `graph.schemas` key. The default set carries
-`manni:stewardship:1.1.0`, which marks the three people fields. The filter runs **once**,
+`manni:stewardship:1.2.0`, which marks the three people fields. The filter runs **once**,
 before `deriveGraph`. All four published outputs descend from what derivation
 produces, so dropping the field there keeps it out of every one of them.
 A mark nested inside `graph` is ignored, because the mark governs a top-level

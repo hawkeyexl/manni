@@ -167,14 +167,17 @@ describe("fingerprint schema-ref canonicalization", () => {
 });
 
 describe("fingerprint: annotation-only built-in versions", () => {
-  // stewardship 1.1.0 only adds annotations, and the default set moved to it.
-  // A baseline recorded under 1.0.0 must still suppress the same finding.
-  const steward = DEFAULT_SCHEMAS.find((id) => id.startsWith("manni:stewardship:"));
+  // stewardship 1.1.0 only adds annotations. A baseline recorded under 1.0.0
+  // must still suppress the same finding under 1.1.0. 1.2.0 adds keys (0098),
+  // so it is not annotation-only and fingerprints under its own id.
   const under = (schema: string) =>
     err({ schema, keyword: "type", instancePath: "/owner", subject: undefined });
 
-  it("the default set carries stewardship 1.1.0", () => {
-    expect(steward).toBe("manni:stewardship:1.1.0");
+  it("does not treat stewardship 1.2.0 as annotation-only", () => {
+    expect(DEFAULT_SCHEMAS).toContain("manni:stewardship:1.2.0");
+    expect(fingerprint(under("manni:stewardship:1.2.0"))).not.toBe(
+      fingerprint(under("manni:stewardship:1.1.0")),
+    );
   });
 
   it.each([
