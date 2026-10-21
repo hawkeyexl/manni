@@ -86,7 +86,7 @@ export interface EvalLocation {
 
 export interface PageProblem {
   message: string;
-  level: "error" | "warning";
+  level: Severity;
   line?: number;
   /**
    * The manifest that supplied the value this problem is about, when one did
@@ -432,7 +432,8 @@ export function resolvePage(
     if (ev.grader === "ai" && !inline.examples) {
       problems.push({
         message: `Eval "${inline.id}": ai-graded evals work best with examples.pass/examples.fail`,
-        level: "warning",
+        // Advice, not a defect: a notice reports and never fails a run.
+        level: "notice",
         ...locationOf(page, linePtr),
       });
     }

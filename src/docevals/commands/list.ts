@@ -119,7 +119,8 @@ export function renderList(
       if (e.assertion !== undefined) lines.push(pc.dim(`      ${e.assertion}`));
     }
     for (const pr of plan.problems) {
-      const tag = pr.level === "error" ? pc.red("error") : pc.yellow("warn");
+      const tag =
+        pr.level === "error" ? pc.red("error") : pr.level === "warning" ? pc.yellow("warn") : pc.dim("notice");
       const line = pr.line != null ? pc.dim(`:${pr.line}`) : "";
       lines.push(`  ${tag}${line} ${pr.message}`);
     }

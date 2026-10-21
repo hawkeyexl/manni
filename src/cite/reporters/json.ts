@@ -1,6 +1,6 @@
 /**
- * JSON output. `{ summary, pages }` for check; the run itself for update and
- * remove.
+ * JSON output. `{ summary, pages }` for check; the run itself for update,
+ * remove and history.
  *
  * A citation prints its two ends and how they are anchored. `resolvedPath`,
  * `diff`, `commitsSince` and a changed claim's current lines are left out of
@@ -12,6 +12,7 @@ import type {
   CheckRun,
   CitationAnchor,
   CitationResult,
+  HistoryRun,
   MarkerEnd,
   OriginKind,
   PageCitationReport,
@@ -37,7 +38,10 @@ export interface PublicSourceEnd {
   newLines?: string;
   newSrc?: string;
   candidates?: string[];
+  /** The entry's recorded `commit-sha`, as it is written. */
   commitSha?: string;
+  /** The full hash the verdict was read against, when history found one (0097). */
+  baselineSha?: string;
   historyAvailable?: boolean;
   truncatedSearch?: boolean;
 }
@@ -64,6 +68,7 @@ export function publicCitation(result: CitationResult): PublicCitationResult {
   if (result.source.newSrc !== undefined) source.newSrc = result.source.newSrc;
   if (result.source.candidates !== undefined) source.candidates = result.source.candidates;
   if (result.source.commitSha !== undefined) source.commitSha = result.source.commitSha;
+  if (result.source.baselineSha !== undefined) source.baselineSha = result.source.baselineSha;
   if (result.source.historyAvailable !== undefined) {
     source.historyAvailable = result.source.historyAvailable;
   }
@@ -112,6 +117,11 @@ export function renderRemoveJson(run: RemoveRun): string {
   // The whole run, with nothing stripped: `RemoveRun` carries no
   // pretty-only field, as `UpdateRewrite.markerLine` is below. A field added
   // to it for the terminal alone is stripped here, as that one is.
+  return JSON.stringify(run, null, 2);
+}
+
+/** `{ summary, pages }` for `history`: the run itself, which carries nothing pretty-only. */
+export function renderHistoryJson(run: HistoryRun): string {
   return JSON.stringify(run, null, 2);
 }
 

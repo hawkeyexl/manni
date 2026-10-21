@@ -62,11 +62,11 @@ docs/src/content/docs/docevals/evals/index.mdx:
       lines: 159
       integrity: sha256-f1b901847390b0ed7e374e7c1e464ec17b46a427c487a5ad6cbd2906405083d5
     - generated-by: Claude Fable 5.1
-      lines: 162-169
-      integrity: sha256-cbf6584afc56cd13ddf5186815f3a66043753ca5d40f7440f175a1f19cc8aeb1
+      lines: 162-167
+      integrity: sha256-74dd101dc157b1380fcfb7643b20e58975bc75aa652e3897fc52191996ebdc63
     - generated-by: Claude Opus 5.5
-      lines: 171-173
-      integrity: sha256-d2b0181e23e5286d3f6efdd6a4c67cc15e78fb8b2ee7476125a5b78177006726
+      lines: 168-173
+      integrity: sha256-6b2282ac68d35e22b7db8e5907ca4ab8ea7af0e62015a5d42aab4c69d504bcd7
     - generated-by: Claude Fable 5.1
       lines: 175-182
       integrity: sha256-7706921db47a39c502cd547358d7ce2f1f8692c684ccba5967d1916dbdcf9ce9

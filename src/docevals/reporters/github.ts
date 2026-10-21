@@ -58,7 +58,6 @@ export function renderGithub(report: EngineReport): string {
     }
   }
   for (const p of report.problems) {
-    const level = p.level === "error" ? "error" : "warning";
     const props = [
       `file=${escapeProperty(p.file)}`,
       p.line != null ? `line=${p.line}` : undefined,
@@ -66,7 +65,7 @@ export function renderGithub(report: EngineReport): string {
     ]
       .filter(Boolean)
       .join(",");
-    lines.push(`::${level} ${props}::${escapeData(p.message)}`);
+    lines.push(`::${p.level} ${props}::${escapeData(p.message)}`);
   }
   // The scope, as an annotation rather than only in the step summary: a
   // collapsed log still shows notices, and "nothing was evaluated" is the one

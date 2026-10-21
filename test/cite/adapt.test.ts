@@ -98,14 +98,29 @@ describe("messageFor", () => {
         source({ status: "changed", commitSha: COMMIT, historyAvailable: true, commitsSince: [] }),
       ),
     ).toBe("changed since 3f9c2a1, 0 commits");
+    // The derived baseline is named over the recorded commit (0097).
+    expect(
+      messageFor(
+        source({
+          status: "changed",
+          commitSha: COMMIT,
+          baselineSha: "26dad159" + "0".repeat(32),
+          historyAvailable: true,
+          commitsSince: ["a"],
+        }),
+      ),
+    ).toBe("changed since 26dad15, 1 commit");
     expect(messageFor(source({ status: "changed", commitSha: COMMIT, historyAvailable: false }))).toBe(
-      "changed (history unavailable: commit 3f9c2a1 not found; fetch-depth: 0)",
+      "changed (history unavailable; fetch-depth: 0)",
+    );
+    expect(messageFor(source({ status: "changed", historyAvailable: false }))).toBe(
+      "changed (history unavailable; fetch-depth: 0)",
     );
     expect(messageFor(source({ status: "never-true", commitSha: COMMIT }))).toBe(
-      "never true: the pin does not match at 3f9c2a1",
+      "never true: the pin held at no commit in the history of lib/limits.ts",
     );
     expect(messageFor(source({ status: "never-true" }))).toBe(
-      "never true: the pin does not match at the recorded commit",
+      "never true: the pin held at no commit in the history of lib/limits.ts",
     );
     expect(messageFor(source({ status: "missing" }))).toBe("missing");
     expect(messageFor(source({ status: "skipped" }))).toBe("skipped");
@@ -592,9 +607,9 @@ describe("remedyFor", () => {
     );
     expect(
       messageOf(result({ source: source({ status: "changed", commitSha: COMMIT, historyAvailable: false }) })),
-    ).toBe(`changed (history unavailable: commit 3f9c2a1 not found; fetch-depth: 0)${check}`);
+    ).toBe(`changed (history unavailable; fetch-depth: 0)${check}`);
     expect(messageOf(result({ source: source({ status: "never-true", commitSha: COMMIT }) }))).toBe(
-      `never true: the pin does not match at 3f9c2a1${check}`,
+      `never true: the pin held at no commit in the history of lib/limits.ts${check}`,
     );
   });
 
