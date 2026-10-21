@@ -123,15 +123,16 @@ jobs:
         run: |
           npm ci
           npm run build
-      # The graph of the whole site: `graph check` gates, then `graph publish`
-      # writes the chunks, the search index and llms.txt into docs/public, so
-      # the site serves the artifact of the commit it builds. llms.txt is also
-      # copied to the site root, where readers of the convention look for it.
-      - name: Check and publish the graph
+      # The graph of the whole site: `graph publish` writes the graph, the
+      # chunks, the search index and llms.txt into docs/public, so the site
+      # serves the artifact of the commit it builds. `graph check` then gates
+      # what was published, so its cited row reads the new chunks. A failing
+      # check stops this job, and `deploy` needs it, so nothing deploys.
+      # llms.txt is also copied to the site root, where readers look for it.
+      - name: Publish and check the graph
         run: |
-          node dist/cli.js graph build
-          node dist/cli.js graph check
           node dist/cli.js graph publish --out docs/public/graph
+          node dist/cli.js graph check -g docs/public/graph/graph.ttl
           cp docs/public/graph/llms.txt docs/public/llms.txt
       - name: Install docs dependencies
         run: npm ci
