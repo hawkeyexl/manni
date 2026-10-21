@@ -545,9 +545,11 @@ async function datesByPage(
     const date = (field: "created" | "last-updated"): DerivedDate => {
       const f = result.fields.find((x) => x.field === field);
       const asserted = f?.asserted ?? page[field];
+      const day = f === undefined || f.evidence === "uncommitted body change" ? null : asWritten(f.derived);
+      // No derived day, nothing to compare the page against: no stamp either.
+      if (day === null) return { day, stamp: null };
       const stamp: DerivedDate["stamp"] =
         asserted === undefined || asserted === null ? "absent" : f?.status === "current" ? "current" : "stale";
-      const day = f === undefined || f.evidence === "uncommitted body change" ? null : asWritten(f.derived);
       return { day, stamp };
     };
     out.set(result.file, {
@@ -560,13 +562,11 @@ async function datesByPage(
   return out;
 }
 
-/** Outside git, or for a page derive did not read: no days, the page's own fields. */
+/** Outside git, or for a page derive did not read: no days, so no stamps, and the page's own verification. */
 function noDates(page: Record<string, unknown>): ProvenanceRecord["dates"] {
-  const stamp = (field: string): DerivedDate["stamp"] =>
-    page[field] === undefined || page[field] === null ? "absent" : "stale";
   return {
-    created: { day: null, stamp: stamp("created") },
-    lastUpdated: { day: null, stamp: stamp("last-updated") },
+    created: { day: null, stamp: null },
+    lastUpdated: { day: null, stamp: null },
     lastVerified: asWritten(page["last-verified"]),
     verifiedBy: entriesOf(page["verified-by"]),
   };

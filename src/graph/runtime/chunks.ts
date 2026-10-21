@@ -39,10 +39,14 @@ export interface PinSummary {
   items: PinItem[];
 }
 
-/** A merge-safe date (proposals 0069, 0072): the derived UTC day, and whether the page names it. */
+/**
+ * A merge-safe date (proposals 0069, 0072): the derived UTC day, and whether
+ * the page names it. `stamp` is `null` exactly when `day` is: with no derived
+ * day there is nothing to compare the page against.
+ */
 export interface DerivedDate {
   day: string | null;
-  stamp: "current" | "stale" | "absent";
+  stamp: "current" | "stale" | "absent" | null;
 }
 
 export interface ProvenanceDates {

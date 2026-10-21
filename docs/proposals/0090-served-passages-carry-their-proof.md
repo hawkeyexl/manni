@@ -242,7 +242,7 @@ document node it is the whole body.
 | `dates` | object | The two merge-safe dates of 0069, and the page's verification. |
 | `dates.created`, `.lastUpdated` | object | Each holds a `day` and a `stamp`. |
 | `dates.*.day` | `YYYY-MM-DD`, or `null` | The day meta's derive computes from git, as a UTC day under 0072. `null` outside git, for an uncommitted body change, and when git holds no evidence. |
-| `dates.*.stamp` | `current`, `stale` or `absent` | Whether the page's own field names that day, another day, or none. |
+| `dates.*.stamp` | `current`, `stale`, `absent`, or `null` | Whether the page's own field names that day, another day, or none. `null` exactly when `day` is, since nothing derived exists to compare against. |
 | `dates.lastVerified`, `.verifiedBy` | string or `null`, list | The page's `last-verified` as written and its `verified-by` entries (0098), or `null` and `[]`. Read outside git too. |
 | `evals` | object, or `null` | The page's verdicts from the docevals report. `null` when no report was given. |
 | `evals.report` | `sha256-<64 hex>` | The digest of the report the verdicts came from. |
@@ -1019,7 +1019,7 @@ each passage with its pin and eval badges.
 - [ ] Two exports over the same commit, report and config are byte-identical.
 - [ ] Each section's `lines` and `text` match what `sliceSection` returns, and a document's cover its whole body.
 - [ ] A pin whose claim overlaps a passage appears in its `pins.items`, with cite's rule, resolved severity, recorded `commit`, `lastVerified` and `verifiedBy`.
-- [ ] `dates.created` and `dates.lastUpdated` equal what `manni meta derive` would stamp, and `stamp` reads `current`, `stale` or `absent`.
+- [ ] `dates.created` and `dates.lastUpdated` equal what `manni meta derive` would stamp, and `stamp` reads `current`, `stale` or `absent`, or `null` when `day` is `null`.
 - [ ] `dates.lastVerified` and `dates.verifiedBy` hold the page's verification fields.
 - [ ] `docevals run -f json` carries `integrity` on each result, and `evals.current` compares it.
 - [ ] `graph.export.chunks.evals` and `--evals` fill `evals`. Without either, every `evals` is `null`, with one warning.

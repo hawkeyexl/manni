@@ -196,7 +196,8 @@ describe.skipIf(!hasGit)("graph export chunks", () => {
     expect(dates.created.day).toBe("2026-03-01");
     expect(dates.lastUpdated.day).toBe("2026-05-01");
     // An uncommitted change has no day git can attest.
-    expect(row(rowsOf(dir), "urn:manni:graph:doc/docs/other.md").provenance.dates.lastUpdated.day).toBeNull();
+    // With no day to compare, there is no stamp either.
+    expect(row(rowsOf(dir), "urn:manni:graph:doc/docs/other.md").provenance.dates.lastUpdated).toEqual({ day: null, stamp: null });
   });
 
   it("ties verdicts to the page text they judged", () => {
@@ -322,8 +323,8 @@ describe("graph export chunks outside git", () => {
     expect(limits.pins).toMatchObject({ total: 2, current: 2, error: 0 });
     expect(limits.pins.items.map((i) => i.commit)).toEqual(["a".repeat(40), "a".repeat(40)]);
     expect(limits.dates).toEqual({
-      created: { day: null, stamp: "absent" },
-      lastUpdated: { day: null, stamp: "stale" },
+      created: { day: null, stamp: null },
+      lastUpdated: { day: null, stamp: null },
       lastVerified: "2026-10-20",
       verifiedBy: [{ tool: "doc-detective", check: "retry-limits", passed: "2026-10-20" }],
     });

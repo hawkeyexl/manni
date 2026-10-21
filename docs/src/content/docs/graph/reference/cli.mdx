@@ -1185,7 +1185,8 @@ finding is `{ rule, severity }`, and an empty list means the pin is current.
 `dates` holds `created` and `lastUpdated`, each `{ day, stamp }`. `day` is the
 UTC day `manni meta derive` would stamp. It is `null` outside git, or for a body
 change not yet committed. `stamp` compares that day with the page's own field:
-`current`, `stale` or `absent`. Beside them, `lastVerified` is the page's
+`current`, `stale` or `absent`. When `day` is `null`, so is `stamp`, since
+there is no day to compare. Beside them, `lastVerified` is the page's
 `last-verified` as written, or `null`. `verifiedBy` holds its `verified-by`
 entries, or `[]`.
 
