@@ -1310,8 +1310,9 @@ first step that fails stops the run with **exit 2**:
 manni: graph publish stopped at export:llms: graph export llms needs graph.export.llms.origin, the site's scheme and host.
 ```
 
-`publish` does not gate. Run `graph check` first, as in
-`manni graph check && manni graph publish`.
+`publish` does not gate. Run `graph check` on what it published, so the cited
+row reads the new chunks:
+`manni graph publish --out site/graph && manni graph check -g site/graph/graph.ttl`.
 
 With `-f json` it prints the steps:
 
