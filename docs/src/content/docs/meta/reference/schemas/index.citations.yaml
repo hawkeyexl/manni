@@ -175,7 +175,7 @@ docs/src/content/docs/meta/reference/schemas/index.mdx:
         commit-sha: ac06e6b383628ad1b1e78539fc301e26df84e834
     - id: registry-forty-four-allow-additional-properties
       claim:
-        integrity: sha256-52d2186b8100b8f207f2fec224cd43d0d1ce1af3c9eabf95a3865551ade7a25c
+        integrity: sha256-95248721c6cd7e7b65dfd07eddfcb570a155272f6346e5a30b26c5cfb5c2639f
       source:
         file: src/meta/schemas/agent-skills/1.0.json
         lines: 8
@@ -183,7 +183,7 @@ docs/src/content/docs/meta/reference/schemas/index.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: registry-all-draft-2020-12-and-builtin-refs
       claim:
-        integrity: sha256-e79eca567ebf086286f6d12b658e5897b4367aa97b5d6a137e77ebfe8620f386
+        integrity: sha256-39048ea21185296c578213787f6229f75b660f0a655332d492389f2ceeb4fe58
       source:
         file: src/meta/core/schema-registry.ts
         lines: 580-586
@@ -199,7 +199,7 @@ docs/src/content/docs/meta/reference/schemas/index.mdx:
         commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: registry-forty-five-bundled-schemas
       claim:
-        integrity: sha256-9aebd2b6b132d556781ece7bde7012543768da0b6fadc4b269ba5b3d19a566ce
+        integrity: sha256-6b979ea7b5799969efe59de46da26544d417c069a629a708dd8fd4933ddcc4d9
       source:
         file: src/meta/core/schema-registry.ts
         lines: 91-141
