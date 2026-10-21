@@ -254,7 +254,7 @@ export async function exportChunks(opts: ChunksOptions): Promise<ChunksResult> {
     }
     const file = chunksFilename(language);
     writeFileSync(join(opts.outDir, file), list.map((row) => `${canonicalJson(row)}\n`).join(""), "utf8");
-    languages[language] = { file, rows: list.length };
+    languages[language] = { file, rows: list.length, model: vectors?.models.get(language) ?? null };
   }
 
   const manifest: ChunksManifest = {
@@ -265,7 +265,6 @@ export async function exportChunks(opts: ChunksOptions): Promise<ChunksResult> {
     searchIndex: LOCALIZATIONS_FILENAME,
     commit: git.commit,
     worktree,
-    model: vectors?.model ?? null,
     retrieve: { ...config.retrieve },
     evals: opts.evals === undefined || evals === undefined ? null : { report: opts.evals.label, digest: evals.digest },
     languages,
@@ -679,27 +678,31 @@ function readEvals(
 
 // ---- vectors -----------------------------------------------------------------
 
-/** Every node's vector from the sidecars the search manifest names, or `undefined` when there are none. */
+/**
+ * Every node's vector from the sidecars the search manifest names, and each
+ * language's model from its own sidecar header, since `graph.embed.byLanguage`
+ * can embed each language with a different one. `undefined` when there are none.
+ */
 function readVectors(
   dir: string,
-): { model: { id: string; dimensions: number }; byId: Map<string, number[]> } | undefined {
+): { models: Map<string, { id: string; dimensions: number }>; byId: Map<string, number[]> } | undefined {
   const manifestPath = join(dir, LOCALIZATIONS_FILENAME);
   if (!existsSync(manifestPath)) return undefined;
   const doc = parseLocalizations(readFileSync(manifestPath, "utf8"));
   if (doc === undefined) return undefined;
   const byId = new Map<string, number[]>();
-  let model: { id: string; dimensions: number } | undefined;
+  const models = new Map<string, { id: string; dimensions: number }>();
   for (const entry of doc.languages) {
     if (entry.vectors === undefined) continue;
     const file = resolve(dir, entry.vectors.path);
     if (!existsSync(file)) continue;
     const { header, vectors } = decodeVectorIndex(readFileSync(file));
-    model ??= { id: header.model, dimensions: header.dims };
+    models.set(canonicalLanguageTag(entry.language), { id: header.model, dimensions: header.dims });
     for (const [i, id] of header.ids.entries()) {
       byId.set(id, Array.from(vectors.subarray(i * header.dims, (i + 1) * header.dims)));
     }
   }
-  return model === undefined ? undefined : { model, byId };
+  return models.size === 0 ? undefined : { models, byId };
 }
 
 // ---- values ------------------------------------------------------------------

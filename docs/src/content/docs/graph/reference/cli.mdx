@@ -1140,10 +1140,9 @@ sorted by `id`, and nothing reads the wall clock.
 | `searchIndex` | The search index's localization manifest, as `graph export search` names it. |
 | `commit` | The docs commit, or `null` outside git. |
 | `worktree` | `clean` or `modified`, or `null` outside git. |
-| `model` | `{ id, dimensions }` of the embedding model the rows' vectors come from, or `null`. |
 | `retrieve` | The resolved [`graph.retrieve`](/manni/graph/reference/configuration/#retrieve) keys, the retrieval defaults every host reads. |
 | `evals` | `{ report, digest }`: the report as the config or `--evals` names it, and its digest. `null` with no report. |
-| `languages` | `{ "<tag>": { file, rows } }`: each language's rows file and how many rows it holds. |
+| `languages` | `{ "<tag>": { file, rows, model } }`: each language's rows file, how many rows it holds, and its model. `model` is `{ id, dimensions }` of the embedding model that language's vectors come from, or `null` with no vector sidecar. [`graph.embed.byLanguage`](/manni/graph/reference/configuration/#embed) can give each language its own. |
 | `pages` | `{ "<page>": { metadata } }`: each page's delivered fields. |
 | `withheld` | `[{ id, page, because }]`: the passages `graph.retrieve.withhold` left out, and which reasons matched. |
 
