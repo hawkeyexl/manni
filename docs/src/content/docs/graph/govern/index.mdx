@@ -40,11 +40,13 @@ and why it runs over the built graph rather than over the sources.
 
 ## The bundled shapes are the floor
 
-`manni graph check` ships with a shapes file, `shapes/graph/shapes-1.1.1.ttl`, which
+`manni graph check` ships with a shapes file, `shapes/graph/shapes-1.2.0.ttl`, which
 is what it uses when you name none. It declares a node shape per class the
-emitter mints: `graph:Document`, `graph:Section`, `skos:Concept`,
-`skos:ConceptScheme`, `iirds:ProductVariant`, and the PROV agents, activities,
-attributions and associations. It adds three SKOS integrity checks core SHACL
+emitter mints: `graph:Document`, `graph:Section`, `graph:Block`,
+`graph:Verification`, `skos:Concept`, `skos:ConceptScheme`,
+`iirds:ProductVariant`, and the PROV agents, activities, attributions and
+associations. A block's lines, pin and pin status, and a verification's tool
+and dates, are checked there. It adds three SKOS integrity checks core SHACL
 cannot express: `skos:broader` cycles, `skos:related` conflicting with
 `skos:broaderTransitive`, and a mapping such as `skos:exactMatch` that points
 into the scheme itself.
@@ -67,7 +69,7 @@ Write a shapes file and point `graph.check.shapes` at it:
 graph:
   check:
     shapes:
-      - node_modules/@hawkeyexl/manni/shapes/graph/shapes-1.1.1.ttl
+      - node_modules/@hawkeyexl/manni/shapes/graph/shapes-1.2.0.ttl
       - shapes/house-rules.ttl
 ```
 

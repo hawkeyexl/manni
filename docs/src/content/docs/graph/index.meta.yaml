@@ -22,5 +22,8 @@ docs/src/content/docs/graph/index.mdx:
         /related-pages: 0.75
   provenance:
     - generated-by: Claude Opus 5.5
-      lines: 2-102
-      integrity: sha256-a72684602c6c35a0b94b367f50e5d815c64eea4b84e640b1ca716c682b85ac5a
+      lines: 2-45
+      integrity: sha256-6ab75e25a9d1a646025b98f38f67cb8c5349772f9575b6125e55ba2971cdf4c4
+    - generated-by: Claude Opus 5.5
+      lines: 47-102
+      integrity: sha256-ec8f5701f2f14345bc693579abcb9bb18985a1772a6d49f9f197a9b68923fb15

@@ -6,7 +6,7 @@ id: graph-reference-cli
 language: en
 lifecycle: published
 action: remember
-last-updated: 2026-10-20
+last-updated: 2026-10-21
 ---
 
 {/* The command, argument, and option tables on this page are drift-checked
@@ -188,15 +188,15 @@ manni graph check [options]
 $ manni graph check -c test/graph/fixtures/dd/violations.config.yaml
 error: violations/alpha.md, violations/beta.md, violations/gamma.md: "Alpha" and "Beta" form a broader cycle, so each is its own ancestor. Remove one `broader` or `narrower` value on the cycle.
   at https://example.com/dd/concept/alpha skos:broader
-  manni:graph-shapes:1.1.1 Concept-broader: A more general concept. A concept is never its own ancestor.
+  manni:graph-shapes:1.2.0 Concept-broader: A more general concept. A concept is never its own ancestor.
   Guide: https://hawkeyexl.github.io/manni/graph/fix/
 error: violations/alpha.md, violations/beta.md, violations/gamma.md: A concept is related to a concept that is also broader than it. Remove one link: from `related-concepts` or `related-terms`, or from `broader` or `narrower`.
   at https://example.com/dd/concept/alpha skos:related
-  manni:graph-shapes:1.1.1 Concept-related: A concept on the same level as this one. It is never also an ancestor or a descendant.
+  manni:graph-shapes:1.2.0 Concept-related: A concept on the same level as this one. It is never also an ancestor or a descendant.
   Guide: https://hawkeyexl.github.io/manni/graph/fix/
 error: violations/alpha.md: The page lists a variant in both `applies-to` and `not-applicable-to`. Keep it only in the one that is true.
   at https://example.com/dd/doc/violations/alpha.md graph:notApplicableToVariant
-  manni:graph-shapes:1.1.1 Document-notApplicableToVariant: The product variants the page does not apply to. A variant cannot be in both lists.
+  manni:graph-shapes:1.2.0 Document-notApplicableToVariant: The product variants the page does not apply to. A variant cannot be in both lists.
   Guide: https://hawkeyexl.github.io/manni/graph/fix/
 
 3 errors, 0 warnings, 0 notices
@@ -227,7 +227,7 @@ lines as an object, or `null` when no shape judged it.
   "path": "https://hawkeyexl.github.io/manni/graph/ns#notApplicableToVariant",
   "docs": ["violations/alpha.md"],
   "guidance": {
-    "id": "manni:graph-shapes:1.1.1",
+    "id": "manni:graph-shapes:1.2.0",
     "rule": "Document-notApplicableToVariant",
     "description": "The product variants the page does not apply to. A variant cannot be in both lists.",
     "guide": "https://hawkeyexl.github.io/manni/graph/fix/"
@@ -478,11 +478,12 @@ manni graph shapes [options]
 
 ```console
 $ manni graph shapes
-manni:graph-shapes:1.1.1  (bundled)
+manni:graph-shapes:1.2.0  (bundled)
   Guide: https://hawkeyexl.github.io/manni/graph/fix/
   ActivityShape          prov:Activity                      A generation, fill or build run that manni records. manni writes it.
   AssociationShape       prov:Association                   The role an agent played in an activity. manni writes it.
   AttributionShape       prov:Attribution                   The role an author played on a page. manni writes it.
+  BlockShape             graph:Block                        A paragraph, list or element that an inline meta statement describes.
   ConceptShape           skos:Concept                       A concept of the glossary, named by a term page, a graph label, a tag or a concepts entry.
   DocumentShape          graph:Document                     A page of the docset, as its frontmatter, links, headings and history describe it.
   FilledFieldEntryShape  objects of graph:filledFieldEntry  One field a graph fill run filled, with the model's confidence. manni writes it from meta-provenance.
@@ -490,8 +491,9 @@ manni:graph-shapes:1.1.1  (bundled)
   PersonShape            prov:Person                        A person credited as an author of a page.
   ProductVariantShape    iirds:ProductVariant               A product variant that pages name in applies-to or not-applicable-to.
   SchemeShape            skos:ConceptScheme                 The glossary that holds every concept of the docset. manni writes it.
-  SectionShape           graph:Section                      A heading of a page, typed through graph.sections.
+  SectionShape           graph:Section                      A heading of a page, typed through graph.sections or a meta statement on the heading.
   SoftwareAgentShape     prov:SoftwareAgent                 A model or tool that wrote or filled part of a page, or built the graph.
+  VerificationShape      graph:Verification                 One verified-by entry: a tool, and the check it runs.
 ```
 
 Each file opens with its id and where it came from: `(bundled)`, or the path as
@@ -536,7 +538,7 @@ manni graph shapes show <shape> [options]
 
 ```console
 $ manni graph shapes show ConceptShape
-ConceptShape  manni:graph-shapes:1.1.1  skos:Concept, closed
+ConceptShape  manni:graph-shapes:1.2.0  skos:Concept, closed
   A concept of the glossary, named by a term page, a graph label, a tag or a concepts entry.
   Guide: https://hawkeyexl.github.io/manni/graph/fix/
 
@@ -588,7 +590,7 @@ and `graph.*` keys nest under `graph:`.
 ```console
 $ manni graph shapes show ConceptShape -f markdown
 ---
-# ConceptShape, manni:graph-shapes:1.1.1
+# ConceptShape, manni:graph-shapes:1.2.0
 # Guide: https://hawkeyexl.github.io/manni/graph/fix/
 graph:
   # Other names readers use for the concept. Search matches them too.
@@ -630,7 +632,7 @@ Each of these exits 2.
 | Case | stderr |
 |---|---|
 | No shape named | `error: missing required argument 'shape'` |
-| A shape the files do not hold | `manni: Unknown shape "Document". Available: ActivityShape, AssociationShape, AttributionShape, ConceptShape, DocumentShape, FilledFieldEntryShape, OrganizationShape, PersonShape, ProductVariantShape, SchemeShape, SectionShape, SoftwareAgentShape.` |
+| A shape the files do not hold | `manni: Unknown shape "Document". Available: ActivityShape, AssociationShape, AttributionShape, BlockShape, ConceptShape, DocumentShape, FilledFieldEntryShape, OrganizationShape, PersonShape, ProductVariantShape, SchemeShape, SectionShape, SoftwareAgentShape, VerificationShape.` |
 | A shape named when the files define no node shapes | `manni: Unknown shape "Document". The shapes in effect define no node shapes.` |
 | `-f markdown` on a shape with no frontmatter keys | `manni: ActivityShape has no frontmatter keys. manni writes every value it checks.` |
 | `-f markdown` on `graph shapes` | `manni: Unknown --format "markdown". Use pretty \| json.` |
@@ -1168,7 +1170,7 @@ jq -c 'select(.reviewed) | {vars: {question: .question}, metadata: {id: .id}}' g
 
 {/* step {"description":"--collection cannot be combined with positional paths.","runShell":{"command":"manni graph build -c test/graph/fixtures/dd/docs.config.yaml --collection dd test/graph/fixtures/dd/docs","exitCodes":[2],"stdio":"cannot be combined with paths"}} */}
 
-{/* step {"description":"shapes lists the node shapes check runs, by file.","runShell":{"command":"manni graph shapes -c test/graph/fixtures/dd/docs.config.yaml","exitCodes":[0],"stdio":"manni:graph-shapes:1.1.1  (bundled)"}} */}
+{/* step {"description":"shapes lists the node shapes check runs, by file.","runShell":{"command":"manni graph shapes -c test/graph/fixtures/dd/docs.config.yaml","exitCodes":[0],"stdio":"manni:graph-shapes:1.2.0  (bundled)"}} */}
 
 {/* step {"description":"shapes show prints every property a shape checks.","runShell":{"command":"manni graph shapes show DocumentShape -c test/graph/fixtures/dd/docs.config.yaml","exitCodes":[0],"stdio":"Document-language"}} */}
 

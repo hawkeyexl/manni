@@ -1,6 +1,6 @@
 ---
 title: Write manni metadata from another tool
-description: "The rules a tool follows to write front matter and manifest values every manni tool reads: where a field lives, how to attribute it, what never to touch, and how to write without churn."
+description: "The rules a tool follows to write front matter, manifest values and meta statements every manni tool reads: where a field lives, how to attribute it, what never to touch, and how to write without churn."
 sidebar:
   label: Write metadata from a tool
   order: 1
@@ -12,6 +12,7 @@ keywords:
   - verified-by
   - last-verified
   - write-back
+  - meta statement
 language: en
 audiences:
   - schema-authors
@@ -108,17 +109,81 @@ contract, and this page says how to honor them.
    [citations vocabulary](/manni/meta/reference/schemas/manni-citations/)
    defines them. It never touches the entry's `claim` or `source`.
 10. **Follow the worked example.** Doc Detective's write-back, below, applies
-    every rule above to one page.
+    every rule on this list to one page.
+11. **Write a fact about one block as a statement.** A
+    [`meta` statement](/manni/meta/set-up/inline-statements/) sits above the
+    block it describes, in the page's own comment syntax. Change only your own
+    entry in it. Pin the block by the
+    [hashing rule](/manni/cite/reference/citations/#the-hashing-rule), with
+    `pinOf` from `@hawkeyexl/manni` or the same rule in your own language.
+    When the statement sits on a line it describes, cut its own text out of
+    that line before hashing, as manni does. Keep the statement's comment form, so the write is a one-line diff. Write
+    it on success only, as rule 6 says.
 
 ## A verification, end to end
 
 The [stewardship vocabulary](/manni/meta/reference/schemas/manni-stewardship/#verification)
-defines two page fields for a check's result. `verified-by` lists the checks
-that verify the page. `last-verified` is the date by which every one of them
-had passed.
+defines two fields for a check's result. `verified-by` lists the checks that
+verify a thing. `last-verified` is the date by which every one of them had
+passed. They go in a statement on the block a check verifies, or in front
+matter when the check covers the whole page.
 
-The author declares the check. The entry names the tool, and the test id the
-tool looks for:
+### On one procedure
+
+The author declares the check in a statement above the procedure. The entry
+names the tool, and the test id the tool looks for:
+
+```md title="docs/install.md"
+## Install
+
+<!-- meta {"verified-by":[{"tool":"doc-detective","check":"install-steps"}]} -->
+1. Run `npm install --save-dev @hawkeyexl/manni`.
+2. Run `npx manni meta validate docs/`.
+```
+
+CI runs the tests, and the test passes. Doc Detective finds the statement
+whose entry names it, and fills in that entry. It sets `last-verified`, since
+every listed check has now passed. Then it pins the two steps it proved and
+writes the line back in its own form:
+
+```diff
+-<!-- meta {"verified-by":[{"tool":"doc-detective","check":"install-steps"}]} -->
++<!-- meta sha256-384b6729be777c15e9e55ae3f0a0fb1fbe63793abf601e5f517702e9019966e3 {"last-verified":"2026-10-21","verified-by":[{"tool":"doc-detective","check":"install-steps","version":"4.27.0","passed":"2026-10-21"}]} -->
+ 1. Run `npm install --save-dev @hawkeyexl/manni`.
+ 2. Run `npx manni meta validate docs/`.
+```
+
+Each rule shows in that diff. Both fields are `page` fields, so they stay in
+the page (rule 2). The tool's version and the date sit in `verified-by`, the
+companion of `last-verified` (rule 3). The date is a UTC day (rule 5). A
+failing run writes nothing (rule 6). New keys go at the end of their objects,
+and a second passing run on the same day changes nothing (rule 7). The pin
+hashes the two steps by the hashing rule, and the comment form is unchanged
+(rule 11).
+
+The job then validates the page (rule 8), and any manni tool reads the
+statement back:
+
+```sh
+manni meta validate docs/install.md
+manni meta get title docs/install.md
+```
+
+```text
+✓ docs/install.md
+
+1 file checked, 1 passed, 0 failed, 0 errors
+docs/install.md: title=Install manni (asserted)
+docs/install.md: statement at line 9 (lines 10-11, current) {"last-verified":"2026-10-21","verified-by":[{"tool":"doc-detective","check":"install-steps","version":"4.27.0","passed":"2026-10-21"}]}
+```
+
+A later edit to either step makes `validate` warn `statement-changed`, until
+the next passing run pins the new text. A procedure on the same page with no
+statement claims nothing.
+
+### On a whole page
+
+When the check covers the whole page, the same entry goes in front matter:
 
 ```yaml
 ---
@@ -131,9 +196,7 @@ verified-by:
 ---
 ```
 
-CI runs the tests, and the test passes. Doc Detective finds the entry that
-names it, fills in its result, and sets `last-verified`, since every listed
-check has now passed:
+On a pass, Doc Detective writes the same values into that block:
 
 ```diff
  last-updated: 2026-10-17
@@ -145,13 +208,8 @@ check has now passed:
 +    passed: 2026-10-21
 ```
 
-Each rule shows in that diff. Both fields are `page` fields, so they go in the
-front matter (rule 2). The tool's version and the date sit in `verified-by`,
-the companion of `last-verified` (rule 3). `last-updated` is untouched, since
-derive owns it (rule 4). The date is a UTC day (rule 5). A failing run writes
-nothing (rule 6). The new keys go at the end of their blocks, and a second
-passing run on the same day changes nothing (rule 7).
-
+`last-updated` is untouched, since derive owns it (rule 4). The new keys go
+at the end of their blocks (rule 7).
 `test/fixtures/verification/one-entry.md` holds that page after the write.
 The job then validates it (rule 8):
 

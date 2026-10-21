@@ -38,37 +38,40 @@ docs/src/content/docs/cite/set-up/index.mdx:
       lines: 108
       integrity: sha256-bc3a772c185201f017a635add4a72914bab1b9d469d13034c57d190d45335571
     - generated-by: Claude Fable 5.1
-      lines: 109-145
-      integrity: sha256-610eb5b3519d129a28c2e11ef4ff13bfc52ba5cf3fead2a816de58175e68b279
+      lines: 109-116
+      integrity: sha256-26a4b0e0a35a2732331c735d50b24fdea3186c5657a561e2e77487337c004504
+    - generated-by: Claude Fable 5.1
+      lines: 119-146
+      integrity: sha256-1b1e086bed5b6c3aa8351af052e790ad0d493ebdd7aff45797ca7d1ae9d8f25b
     - generated-by: Claude Opus 5
-      lines: 147-148
+      lines: 148-149
       integrity: sha256-91d3d75dfcab100b1da53ea91e398da109fe1103cc6089be831df979f292171b
     - generated-by: Claude Fable 5.1
-      lines: 149-158
+      lines: 150-159
       integrity: sha256-c26523fc66d57fbb22262a9f2aea306d44463328e1f2c1eacdd6e9615331cb39
     - generated-by: Claude Opus 5
-      lines: 160
+      lines: 161
       integrity: sha256-acea8d5ca09796e800b68d9a66e1652ac4253746ef57d65119d6df61cc9591d8
     - generated-by: Claude Fable 5.1
-      lines: 161-164
+      lines: 162-165
       integrity: sha256-a4a2695c74bb953742e111ec6517f844c239e8d1c64e95899339a87a6b68f339
     - generated-by: Claude Opus 5
-      lines: 166-190
+      lines: 167-191
       integrity: sha256-37d00a5009b83823d103a7f6bb6055b71cded4deb8ac84af811dd3ca8c96fd1b
     - generated-by: Claude Fable 5.1
-      lines: 192
+      lines: 193
       integrity: sha256-88f737604b9703179fa01fec4ede969c9ad38c8ad9298e9c128483a04d23570b
     - generated-by: Claude Opus 5
-      lines: 194
+      lines: 195
       integrity: sha256-aaecc2fa31f785763ecdbfe7eb8824644e1a9ac6daa95f9b77ee5e45ed86c12e
     - generated-by: Claude Fable 5.1
-      lines: 195-226
+      lines: 196-227
       integrity: sha256-1bae5f3a28e710a0d48ec5b1c920eb32536e88447093e552a9021ea77318a35b
     - generated-by: Claude Opus 5
-      lines: 227
+      lines: 228
       integrity: sha256-c6e0a43739b2b08dd7937381a5a254d628c1b57c5b6f7efe61987b19c53201b8
     - generated-by: Claude Fable 5.1
-      lines: 228-232
+      lines: 229-233
       integrity: sha256-7ac9eab0ded80d34f636e6f6ba19aa8b219c54c406304b19689b5c8079dccb94
   owner:
     - "@hawkeyexl"

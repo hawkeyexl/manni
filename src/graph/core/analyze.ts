@@ -19,6 +19,7 @@ import {
   extractorForExtension,
   type MetadataExtractor,
 } from "../../meta/index.js";
+import { readStatements } from "../../meta/internal.js";
 import { parserByName, parserForExtension } from "../../lint/parsers/index.js";
 import type {
   ContentNode,
@@ -28,7 +29,7 @@ import type {
 import type { Root, RootContent, Definition } from "mdast";
 import { errorMessage } from "../../shared/errors.js";
 import { GraphError } from "../types.js";
-import type { DocImage, DocLink, DocModel, Section } from "../types.js";
+import type { DocImage, DocLink, DocModel, DocStatement, Section } from "../types.js";
 import {
   DEFAULT_INDEX_FILES,
   DEFAULT_LINK_EXTENSIONS,
@@ -498,6 +499,7 @@ export function analyzeDoc(
     if (link) links.push(link);
   }
   const routeLanguage = routeLanguageFor(path, routes);
+  const statements = statementsOf(content, format);
 
   return {
     path,
@@ -506,6 +508,7 @@ export function analyzeDoc(
     format,
     firstH1: body.firstH1,
     sections: body.sections,
+    ...(statements.length === 0 ? {} : { statements }),
     links,
     images: body.imageTargets.map((target) => classifyImage(path, target)),
     codeLanguages: body.codeLanguages,
@@ -517,6 +520,29 @@ export function analyzeDoc(
     // (ADR 01036). The CRLF corpus fixture depends on this not normalizing.
     contentHash: createHash("sha256").update(content, "utf8").digest("hex"),
   };
+}
+
+/**
+ * A page's inline `meta` statements (proposal 0099), read by meta's own
+ * scanner so graph and `manni meta validate` anchor and pin-check them alike.
+ * meta reports an orphan or a payload that is not one JSON object, so graph
+ * keeps only the statements that anchor something and carry an object.
+ */
+function statementsOf(content: string, format: DocFormat): DocStatement[] {
+  if (!content.includes("meta")) return [];
+  return readStatements(content, format).statements.flatMap((s) =>
+    s.anchor === undefined || s.data === undefined
+      ? []
+      : [
+          {
+            anchor: s.anchor,
+            scope: s.scope,
+            ...(s.pin === undefined ? {} : { pin: s.pin }),
+            status: s.status,
+            data: s.data,
+          },
+        ],
+  );
 }
 
 /** Parse a page's body into its `DocBody`. `path` only names the page in an error. */
@@ -582,7 +608,8 @@ export function parseBody(
         const parentKey = parentSlug ?? "";
         const order = (childCount.get(parentKey) ?? 0) + 1;
         childCount.set(parentKey, order);
-        sections.push({ slug, title, level, order, parentSlug });
+        const line = node.position?.start.line ?? null;
+        sections.push({ slug, title, level, order, parentSlug, line });
         stack.push({ level, slug });
         break;
       }
@@ -746,6 +773,7 @@ export function mintTreeSections(roots: SectionNode[]): TreeSections {
         level: node.level,
         order,
         parentSlug,
+        line: node.titlePosition?.start.line ?? null,
       });
       out.owned.push(node.children);
       out.nodes.push(node);

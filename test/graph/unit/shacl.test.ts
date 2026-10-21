@@ -785,7 +785,7 @@ describe("shapes 1.0.0 — localization", () => {
  * once.
  */
 describe("findings speak to the page's author (shapes 1.1.1)", () => {
-  const ID = "manni:graph-shapes:1.1.1";
+  const ID = "manni:graph-shapes:1.2.0";
   const GUIDE = "https://hawkeyexl.github.io/manni/graph/fix/";
   const SHAPES_110 = [join(dirname(defined(SHAPES[0])), "shapes-1.1.0.ttl")];
   const d = doc("docs/a.md");

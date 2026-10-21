@@ -24,7 +24,7 @@ describe("parseConfig", () => {
       "provenance",
       "terms",
     ]);
-    // empty = use the shapes bundled with manni (shapes/graph/shapes-1.1.1.ttl)
+    // empty = use the shapes bundled with manni (shapes/graph/shapes-1.2.0.ttl)
     expect(c.check.shapes).toEqual([]);
     expect(c.fill.validateGraph).toBe(true);
     // Opinionated defaults (ADR 01009/01010), minus the switch 0051 §6

@@ -17,6 +17,7 @@ const NODE_SHAPES = [
   "ActivityShape",
   "AssociationShape",
   "AttributionShape",
+  "BlockShape",
   "ConceptShape",
   "DocumentShape",
   "FilledFieldEntryShape",
@@ -26,6 +27,7 @@ const NODE_SHAPES = [
   "SchemeShape",
   "SectionShape",
   "SoftwareAgentShape",
+  "VerificationShape",
 ];
 
 function run(args: string[]): { stdout: string; stderr: string; status: number | null } {
@@ -52,7 +54,7 @@ describe("manni graph shapes", () => {
     expect(status).toBe(0);
     const lines = stdout.split("\n");
     expect(lines.slice(0, 2)).toEqual([
-      "manni:graph-shapes:1.1.1  (bundled)",
+      "manni:graph-shapes:1.2.0  (bundled)",
       "  Guide: https://hawkeyexl.github.io/manni/graph/fix/",
     ]);
     expect(lines.slice(2).filter((l) => l !== "").map((l) => l.trim().split(/\s+/)[0])).toEqual(
@@ -70,7 +72,7 @@ describe("manni graph shapes", () => {
     expect(shapes.map((s) => s.name)).toEqual(NODE_SHAPES);
     expect(shapes.find((s) => s.name === "DocumentShape")).toEqual({
       name: "DocumentShape",
-      id: "manni:graph-shapes:1.1.1",
+      id: "manni:graph-shapes:1.2.0",
       source: "bundled",
       target: "https://hawkeyexl.github.io/manni/graph/ns#Document",
       closed: true,
@@ -99,7 +101,7 @@ describe("manni graph shapes show", () => {
     expect(status).toBe(0);
     const lines = stdout.split("\n");
     expect(lines.slice(0, 4)).toEqual([
-      "DocumentShape  manni:graph-shapes:1.1.1  graph:Document, closed",
+      "DocumentShape  manni:graph-shapes:1.2.0  graph:Document, closed",
       "  A page of the docset, as its frontmatter, links, headings and history describe it.",
       "  Guide: https://hawkeyexl.github.io/manni/graph/fix/",
       "",
@@ -124,7 +126,7 @@ describe("manni graph shapes show", () => {
     expect(lines[0]).toBe("---");
     expect(lines.at(-1)).toBe("---");
     expect(lines.slice(1, 3)).toEqual([
-      "# DocumentShape, manni:graph-shapes:1.1.1",
+      "# DocumentShape, manni:graph-shapes:1.2.0",
       "# Guide: https://hawkeyexl.github.io/manni/graph/fix/",
     ]);
     expect(stdout).toContain(
@@ -152,7 +154,7 @@ describe("manni graph shapes show", () => {
     const { shapes } = JSON.parse(stdout) as {
       shapes: Array<Listed & { properties: Array<{ rule: string | null; key: string | null; severity: string }> }>;
     };
-    expect(shapes.map((s) => [s.name, s.id])).toEqual([["DocumentShape", "manni:graph-shapes:1.1.1"]]);
+    expect(shapes.map((s) => [s.name, s.id])).toEqual([["DocumentShape", "manni:graph-shapes:1.2.0"]]);
     expect(shapes[0]?.properties.find((p) => p.rule === "Document-language")).toEqual({
       rule: "Document-language",
       path: "http://purl.org/dc/terms/language",

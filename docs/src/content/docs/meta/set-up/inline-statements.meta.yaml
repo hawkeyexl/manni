@@ -1,0 +1,37 @@
+docs/src/content/docs/meta/set-up/inline-statements.mdx:
+  personas:
+    - maya
+    - sara
+  journeys:
+    - m31
+    - m30
+    - s16
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: src/shared/statements.ts
+    - path: src/meta/core/statements.ts
+  eval-suite: meta
+  evals:
+    - id: write-a-statement
+      assertion: A reader can write a meta statement above one procedure in their page's format and say which block it describes.
+      type: capability
+      grader: ai
+    - id: pin-and-drift
+      assertion: A reader can pin a statement with manni meta derive and say what to do when its block changes.
+      type: capability
+      grader: ai
+    - id: allowed-fields
+      assertion: A reader can say which fields a statement may carry, and why a field marked external is refused.
+      type: capability
+      grader: ai
+    - id: statement-marker-or-manifest
+      assertion: A reader can choose between a meta statement, a cite marker and a manifest for a given fact.
+      type: capability
+      grader: ai
+  owner:
+    - "@hawkeyexl"
+  provenance:
+    - generated-by: Claude Opus 5.5
+      lines: 2-325
+      integrity: sha256-5625d01dbafe8ed7fb88c1b787b799b634aede3246c52476c06b68de1e6c2bce

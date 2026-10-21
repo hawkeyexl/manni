@@ -21,6 +21,7 @@ const DCTERMS_TITLE = `${NS.dcterms}title`;
 const DCTERMS_HAS_PART = `${NS.dcterms}hasPart`;
 const GRAPH_LEVEL = `${NS.graph}level`;
 const GRAPH_ORDER = `${NS.graph}order`;
+const GRAPH_BLOCK = `${NS.graph}Block`;
 
 export interface ResolvedContent {
   iri: string;
@@ -260,6 +261,8 @@ export function documentSectionOrder(
     graph
       .out(iri, DCTERMS_HAS_PART)
       .map((e) => e.target)
+      // A statement's graph:Block is a part too (proposal 0099), not a section.
+      .filter((target) => !graph.types(target).includes(GRAPH_BLOCK))
       .sort((a, b) => {
         const oa = Number.parseInt(graph.literal(a, GRAPH_ORDER) ?? "", 10);
         const ob = Number.parseInt(graph.literal(b, GRAPH_ORDER) ?? "", 10);

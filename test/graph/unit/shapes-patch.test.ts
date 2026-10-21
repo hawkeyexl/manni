@@ -27,10 +27,6 @@ async function judged(turtle: string, shapes: string): Promise<string[]> {
 }
 
 describe("shapes 1.1.1 is a PATCH of 1.1.0", () => {
-  it("is the bundled file", () => {
-    expect(bundledShapesPath(import.meta.url)).toBe(PATCH);
-  });
-
   it.each(["corpus", "check-violations", "check-guidance", "curated-fields"])(
     "judges %s exactly as 1.1.0 does",
     async (corpus) => {

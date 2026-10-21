@@ -1283,8 +1283,9 @@ describe("OPTIONAL_FIELD_PREDECESSORS (proposal 0098)", () => {
   // A successor here only adds optional fields. On any document that carries
   // none of them it must report exactly what its predecessor reports, or the
   // entry hides a real change from every recorded baseline. Every markdown
-  // fixture without the added keys is such a document.
-  const ADDED = /^\s*-?\s*(last-verified|verified-by)\s*:/m;
+  // fixture without the added keys is such a document. An inline `meta`
+  // statement (proposal 0099) sets them as JSON keys, and counts too.
+  const ADDED = /^\s*-?\s*(last-verified|verified-by)\s*:|"(last-verified|verified-by)"\s*:/m;
   const fixtures = (dir: string): string[] =>
     readdirSync(dir, { withFileTypes: true }).flatMap((e) => {
       const p = join(dir, e.name);

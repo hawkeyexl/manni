@@ -252,6 +252,14 @@ This is the backbone of the docevals section. It is the only journey that crosse
 
 **What success looks like.** A page's `last-verified` moves only when every check that covers it passes. No key on the page names a tool. Related journeys are M5 (pins), D17 (the test gate) and S16 (how another tool writes these fields).
 
+### M31 · Pin a fact to the sentence it is about
+
+**Outcome.** A fact about one procedure, paragraph or section sits beside it in the page's source. It is validated like front matter, and an edit to the text it describes is noticed.
+
+**Steps.** Maya's page has two procedures, and only one has a Doc Detective test. She writes one `meta` statement above the tested procedure, in the page's own comment syntax. It holds a JSON object with a `verified-by` entry naming the test. `manni meta validate` checks each field against the page's own schemas, and a field the page's schemas do not define fails. `manni meta derive` pins the statement to the block below it, or Doc Detective pins it on its next pass. When she rewords a step, `validate` warns that the pinned block changed. On a heading, a statement describes the whole section, and can type it for the graph. She keeps bookkeeping and anything large in the manifest, and cite markers for pins to source.
+
+**What success looks like.** The untested procedure claims nothing, and the tested one carries its own date. A reworded step is a warning, never a silent pass. Related journeys are M30 (verification for a page), M5 (pins to source) and S16 (how another tool writes a statement).
+
 ---
 
 ## Devin, Platform / CI Engineer

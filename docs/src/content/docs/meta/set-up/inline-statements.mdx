@@ -1,0 +1,377 @@
+---
+title: Pin a fact to the sentence it is about
+description: "Write a meta statement above one procedure, paragraph or section, validate its fields against the page's schemas, and catch an edit to the text it describes."
+sidebar:
+  label: Pin a fact to the sentence it is about
+type: how-to
+id: meta-set-up-inline-statements
+keywords:
+  - inline statements
+  - meta statement
+  - block metadata
+  - verified-by
+  - pin
+language: en
+audiences:
+  - docs-engineers
+  - schema-authors
+intent: Record a fact about one block or section beside it in the page's source, validate it, and catch an edit to the text it describes.
+lifecycle: published
+applies-to:
+  - domain:meta
+next-steps:
+  - meta-integrate-write-metadata-from-a-tool
+  - meta-reference-cli
+  - test-record-last-verified
+concepts:
+  - metadata
+  - section
+risks:
+  - destructive
+sample-questions:
+  - How do I say that one procedure on a page was verified?
+  - What happens when the text under a meta statement changes?
+  - Which fields can a meta statement carry?
+graph:
+  label: Pin a fact to the sentence it is about
+  type: task
+tags:
+  - metadata
+  - verification
+  - integrity
+  - validation
+action: develop
+prerequisites:
+  - meta-get-started
+related-pages:
+  - meta-integrate-write-metadata-from-a-tool
+  - meta-schemas-field-location
+  - cite-reference-citations
+  - meta-reference-schemas-manni-graph
+last-updated: 2026-10-21
+---
+
+Front matter describes a whole page. Some facts belong to one part of it. A
+page with two procedures, one tested and one not, can only say the page was
+verified. The untested procedure borrows a date it did not earn.
+
+A `meta` statement puts the fact beside the block it describes, in the page's
+own comment syntax. `manni meta validate` checks its fields against the page's
+schemas. A pin ties it to the exact lines below it, so an edit to those lines
+is noticed.
+
+## Write a statement
+
+A statement is `meta`, then an optional pin, then one JSON object, all on one
+line. Put it on the line above the block it describes. Here it declares the
+Doc Detective test that verifies one procedure:
+
+```md title="docs/install.md"
+---
+title: Install manni
+description: Install the package and run your first check.
+type: how-to
+---
+
+## Install
+
+<!-- meta {"verified-by":[{"tool":"doc-detective","check":"install-steps"}]} -->
+1. Run `npm install --save-dev @hawkeyexl/manni`.
+2. Run `npx manni meta validate docs/`.
+```
+
+Validate the page as usual. The statement has no pin yet, which is a notice,
+and the run exits `0`:
+
+```sh
+manni meta validate docs/install.md
+```
+
+```text
+⚠ docs/install.md
+    (statement)  notice the meta statement at line 9 has no pin; run manni meta derive to pin it to the block below.  (line 9, statement)  [manni:meta]
+      manni:meta statement-unpinned: A statement without a pin cannot tell when its block changes.
+      Guide: https://hawkeyexl.github.io/manni/meta/set-up/inline-statements/
+
+1 file checked, 1 passed, 0 failed, 0 errors, 1 notice
+```
+
+The payload is JSON only, and always one object. Use double quotes, and keep
+the whole statement on one line.
+
+## The forms, per format
+
+A statement uses the comment forms a [cite marker](/manni/cite/reference/citations/#markers)
+uses, with `meta` in place of `cite`.
+
+| Format | Forms |
+|---|---|
+| Markdown | `<!-- meta … -->`, `[comment]: # (meta …)`, `{/* meta … */}` |
+| MDX | `{/* meta … */}`, `<!-- meta … -->`, `[comment]: # (meta …)` |
+| HTML | `<!-- meta … -->` |
+| XML and DITA (`.xml`, `.dita`, `.ditamap`) | `<?manni meta …?>`, preferred, or `<!-- meta … -->` |
+| DITA | `<data name="manni-meta" value='…'/>` |
+| AsciiDoc | `// (meta …)` |
+| reStructuredText | `.. (meta …)` |
+
+Three rules follow from the forms:
+
+- **Code is not read.** A statement inside a fenced block or a backtick span
+  is an example, not a statement.
+- **A line form ends at `)`.** `[comment]: # (meta …)`, `// (meta …)` and
+  `.. (meta …)` stop at the first `)`. A payload holding one needs
+  `<!-- -->` or `{/* */}`, and validation refuses it otherwise.
+- **An XML comment cannot hold `--`.** XML forbids it, so a payload holding
+  `--` needs `<?manni meta …?>`.
+
+In DITA, the `<data>` element's `value` holds the optional pin and the JSON
+object. Single quotes around it let the JSON keep its double quotes. DITA-OT
+and content management systems keep `<data>` where they drop comments and
+most processing instructions. Each element's content model decides where
+`<data>` may sit, and DITA-OT checks that. manni reads it wherever it
+appears.
+
+## What a statement describes
+
+A statement anchors exactly as a cite marker does:
+
+1. **Text on its own line.** When text follows the statement on its line, it
+   describes the rest of that line.
+2. **The next paragraph.** Otherwise it describes the next paragraph. Blank
+   lines and lines holding only markers are skipped, so stacked cite markers
+   and statements all anchor the same block.
+3. **A fenced block.** When a fenced block comes first, it describes that.
+
+A list is one paragraph, so the statement in the example describes both
+steps, lines 10 and 11.
+
+A statement in the middle of a paragraph is misplaced. Move it above the
+paragraph's first line. A statement with nothing after it anchors nothing,
+and that is an error.
+
+### In XML and DITA, a statement describes an element
+
+A tag alone on its line is one line of text. Pinning that line would miss an
+edit inside the element. So in XML and DITA a statement describes a whole
+element, from its start tag to its end tag:
+
+- **First child.** A statement that is an element's first child describes
+  that element. This is the placement to prefer, because the statement moves
+  with the element when the element is moved or reused.
+- **Before an element.** Any other statement describes the next element
+  after it.
+
+```xml title="install.dita"
+<steps>
+  <step><?manni meta {"verified-by":[{"tool":"doc-detective","check":"install"}]}?>
+    <cmd>Run the installer.</cmd>
+  </step>
+  <!-- meta {"concepts":["restart"]} -->
+  <step>
+    <cmd>Restart the service.</cmd>
+  </step>
+  <step>
+    <cmd><data name="manni-meta" value='{"concepts":["login"]}'/>Log in.</cmd>
+  </step>
+</steps>
+```
+
+The first two statements each describe one whole `<step>`, so an edit to its
+`<cmd>` changes the pin. The `<data>` element is the first child of the third
+`<cmd>`, so it describes that `<cmd>`. DITA's content model refuses `<data>`
+as a `<step>`'s first child, so use the instruction there for a whole step.
+cite markers in XML keep their own line rule.
+
+## Pin a statement to its block
+
+A pin is the hash of the lines a statement describes. It follows the
+[citations hashing rule](/manni/cite/reference/citations/#the-hashing-rule).
+The lines are joined with LF, one byte-order mark is dropped, CRLF becomes
+LF, and there is no trailing LF. It is written `sha256-` and 64 lowercase hex
+digits, after `meta`.
+
+A statement can sit inside the lines it describes. That happens when it
+shares a line with its text, or when it is an element's first child on the
+start tag's line. The statement's own text is then cut out of that line
+before hashing. Writing the pin therefore never changes what the pin covers.
+Every other line is hashed as it is.
+
+`manni meta derive` pins every unpinned statement that describes something:
+
+```sh
+manni meta derive docs/install.md
+```
+
+It prints `pinned 1 statement in 1 page.` above its usual summary, and exits
+`0`. The statement now reads:
+
+```md
+<!-- meta sha256-384b6729be777c15e9e55ae3f0a0fb1fbe63793abf601e5f517702e9019966e3 {"verified-by":[{"tool":"doc-detective","check":"install-steps"}]} -->
+```
+
+Run it twice and nothing changes. `derive` never rewrites a pin that already
+differs from its block. In CI, `manni meta derive --check` reports each
+unpinned statement as `statement-unpinned` and exits `1`. Pinning reads no
+git, because a pin hashes the file's own lines, never a commit. Outside a git
+repository, `derive` still pins statements. Its git-derived fields go
+unanswered, with one notice line.
+
+### When the block changes
+
+Reword step 2, and the pin no longer matches. `validate` warns, and the run
+still exits `0`:
+
+```text
+    (statement)  warning the block under the meta statement at line 9 changed since it was pinned. Run its checks again, or remove the pin and run manni meta derive.  (line 9, statement)  [manni:meta]
+      manni:meta statement-changed: The pinned block no longer matches.
+      Guide: https://hawkeyexl.github.io/manni/meta/set-up/inline-statements/
+```
+
+When the statement sets `last-verified`, the message adds that its
+`last-verified` may no longer hold. There are two ways forward:
+
+- **Run its checks again.** A verifying tool re-pins the statement on its
+  next pass, as Doc Detective does.
+- **Accept the edit.** Delete the pin token, keep the rest, and run
+  `manni meta derive` to pin the new text.
+
+## Describe a section from its heading
+
+A statement on a heading describes the whole section, down to the next
+heading of the same or a higher level:
+
+```md
+<!-- meta {"applies-to":["windows"],"graph":{"type":"task"}} -->
+## Install on Windows
+```
+
+The heading is an ATX heading in Markdown and MDX, a title in AsciiDoc, or a
+section title in reStructuredText. In XML and DITA, it is a statement that is
+the first child of an element with a `<title>`, or one placed just before the
+`<title>`.
+
+A heading statement differs from a block statement in two ways:
+
+- **It pins the heading only.** In XML that means the `<title>` element's
+  lines. A section's facts go stale when its title changes, not on every body
+  edit. Put verification on the blocks it verifies.
+- **It may set `graph`.** The value takes the shape of a
+  [`graph.sections`](/manni/meta/reference/schemas/manni-graph/#fields)
+  entry, so `"graph":{"type":"task"}` types the section. The topic types are
+  `task`, `concept`, `reference`, `learning`, `troubleshooting` and `form`.
+  Any other statement that sets `graph` is an error.
+
+A section has one spelling. When a heading statement and `graph.sections` in
+front matter set the same field for one section, that is an error naming
+both lines. Keep one.
+
+## Which fields a statement may carry
+
+A statement uses the fields the page's schemas already define. There is no
+statement vocabulary. Each field is checked alone, against the schema set
+that resolves for the page, so an override that adds a vocabulary reaches
+statements too.
+
+- **Defined fields only.** A key none of the page's schemas define is an
+  error. That catches a typo such as `verifed-by`, and a field the repository
+  has not adopted.
+- **Each value against its own definition.** `last-verified` means the same
+  in a statement as in front matter. A value its schema refuses is an
+  ordinary schema finding, marked `(line 9, statement)`.
+- **No required fields.** A statement describes part of a page, so `required`
+  never applies.
+- **No external fields.** A field marked
+  [`x-manni-location: external`](/manni/meta/schemas/field-location/) lives in
+  the collection's manifest, so a statement that sets it is refused.
+
+The fields that suit a statement are small facts about one block.
+`last-verified` and `verified-by` come from
+[stewardship](/manni/meta/reference/schemas/manni-stewardship/), and
+`concepts`, `applies-to` and `not-applicable-to` from
+[structure](/manni/meta/reference/schemas/manni-structure/).
+
+A statement never merges into the page's metadata. Page schemas never see
+it, and `meta get --fields` reads page fields only.
+
+## Read statements back
+
+`manni meta get` lists a page's statements under its fields, one line each:
+
+```sh
+manni meta get title docs/install.md
+```
+
+```text
+docs/install.md: title=Install manni (asserted)
+docs/install.md: statement at line 9 (lines 10-11, current) {"verified-by":[{"tool":"doc-detective","check":"install-steps"}]}
+```
+
+A heading statement names its section, as
+`(lines 46, section install-on-windows, current)`. An orphan reads
+`(anchors nothing, unpinned)`.
+
+In JSON, each page with statements gains a `statements` list:
+
+```json
+"statements": [
+  {
+    "line": 9,
+    "anchor": "10-11",
+    "scope": "block",
+    "section": "install",
+    "pin": "sha256-384b6729be777c15e9e55ae3f0a0fb1fbe63793abf601e5f517702e9019966e3",
+    "status": "current",
+    "data": { "verified-by": [{ "tool": "doc-detective", "check": "install-steps" }] }
+  }
+]
+```
+
+`scope` is `block` or `section`, and `status` is `current`, `changed` or
+`unpinned`. `pin` is absent when there is none. `data` is `null` when the
+payload is not one JSON object. The [CLI reference](/manni/meta/reference/cli/#meta-get)
+has the full shape.
+
+## A statement, a cite marker or a manifest
+
+Each holds a different kind of fact:
+
+| Use | When the fact is | Example |
+|---|---|---|
+| A `meta` statement | Small, and about one block or section of this page | `verified-by` on one procedure |
+| A [cite marker](/manni/cite/reference/citations/#markers) | A claim pinned to lines of another file | A sentence pinned to the source it describes |
+| A [manifest](/manni/meta/set-up/external-metadata/) | Bookkeeping, or anything large | `personas`, evals, owners |
+
+A statement carries its data inline. A cite marker carries ids, and its
+entries live in a manifest. A statement pins only the block it sits on,
+never another file.
+
+## What validate reports
+
+Each statement finding has the rule id `manni:meta/<rule>`, and its guide is
+this page. Only an error moves the exit code to `1`.
+
+| Rule | Severity | What it means |
+|---|---|---|
+| `statement-invalid` | error | The payload is not one JSON object. The message quotes the JSON parser's reason. |
+| `statement-unknown-field` | error | A key none of the page's schemas define. |
+| `statement-external-field` | error | A field marked `x-manni-location: external`, which lives in the manifest. |
+| `statement-orphan` | error | Nothing follows the statement for it to describe. |
+| `statement-line-form-paren` | error | A line form whose payload holds `)`. |
+| `statement-xml-comment-dashes` | error | An XML comment whose payload holds `--`. |
+| `statement-graph-not-section` | error | A statement that is not on a heading sets `graph`. |
+| `statement-conflicts-sections` | error | A heading statement and `graph.sections` set the same field. |
+| `statement-misplaced` | warning | The statement sits inside a paragraph. |
+| `statement-changed` | warning | The pinned block no longer matches. |
+| `statement-unpinned` | notice | The statement has no pin. |
+
+In JSON, each statement finding carries `statement`, with its `line` and its
+`anchor`, such as `{ "line": 9, "anchor": "10-11" }`. `anchor` is `null` on an
+orphan.
+
+## Write statements from a tool
+
+A verifying tool fills in its own `verified-by` entry on a pass, sets
+`last-verified` and pins the block, in the statement's own comment form.
+[Write manni metadata from another
+tool](/manni/meta/integrate/write-metadata-from-a-tool/#on-one-procedure)
+states the rules, and `pinOf` from `@hawkeyexl/manni` computes the pin.

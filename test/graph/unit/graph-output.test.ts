@@ -66,6 +66,25 @@ describe("graph build reads its output marks from meta's schema set (0074)", () 
     for (const key of PEOPLE) expect(keys).not.toContain(key);
   });
 
+  it("drops a marked field from an inline meta statement too (0099), and keeps verified-by", async () => {
+    const content = [
+      "---",
+      "title: Owned",
+      "---",
+      "",
+      '<!-- meta {"owner":"maya","last-verified":"2026-10-21","verified-by":[{"tool":"doc-detective"}]} -->',
+      "Run the installer.",
+      "",
+    ].join("\n");
+    const doc = analyzeDoc(content, PAGE, new Set([PAGE]));
+    const view = await openMetaView({ configPath: "manni.config.yaml" }, fixture, [PAGE]);
+    const [out] = await suppressGraphOutput([doc], view);
+    expect(Object.keys(out?.statements?.[0]?.data ?? {}).sort()).toEqual([
+      "last-verified",
+      "verified-by",
+    ]);
+  });
+
   it("keeps them when meta's set is stewardship 1.0.0 without the defaults", async () => {
     const keys = await harvested("stewardship-1.0.0.config.yaml");
     expect(keys).toEqual(expect.arrayContaining(PEOPLE));

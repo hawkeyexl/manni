@@ -5,6 +5,7 @@
  */
 import type { DocModel } from "../types.js";
 import type { TermLabel } from "../../shared/term-labels.js";
+import { spellLines } from "../../shared/pin.js";
 import { canonicalLanguage, termIndex } from "./concepts.js";
 import type { DeriveSource } from "./config.js";
 import type { GitHistory } from "./git.js";
@@ -356,6 +357,58 @@ export function deriveGraph(docs: DocModel[], options: DeriveOptions): Quad[] {
     }
   };
 
+  /** Verification nodes minted per subject, so two statements on one section never share one. */
+  const verifications = new Map<string, number>();
+
+  /**
+   * `last-verified` and `verified-by` (proposal 0098), on a document, a section
+   * or a block alike (proposal 0099). Each `verified-by` entry is one
+   * graph:Verification. It gets an IRI under the subject's fragment, never a
+   * blank node: `<doc>#/verified-by/1`, `<doc>#slug/verified-by/1`,
+   * `<doc>#slug.2/verified-by/1`. A slug never holds a `/`, so none collide.
+   */
+  const emitVerification = (subject: string, fields: Record<string, unknown>) => {
+    const last = asString(fields["last-verified"]);
+    if (last) add(subject, `${NS.graph}lastVerified`, dateTerm(last));
+    const prefix = subject.includes("#") ? subject : `${subject}#`;
+    for (const entry of recordEntries(fields["verified-by"])) {
+      const n = (verifications.get(subject) ?? 0) + 1;
+      verifications.set(subject, n);
+      const node = `${prefix}/verified-by/${String(n)}`;
+      add(subject, `${NS.graph}verifiedBy`, iri(node));
+      add(node, RDF_TYPE, iri(`${NS.graph}Verification`));
+      const tool = asString(entry["tool"]);
+      if (tool) add(node, `${NS.graph}tool`, lit(tool));
+      const check = asString(entry["check"]);
+      if (check) add(node, `${NS.graph}check`, lit(check));
+      const version = asString(entry["version"]);
+      if (version) add(node, `${NS.graph}version`, lit(version));
+      const passed = asString(entry["passed"]);
+      if (passed) add(node, `${NS.graph}passed`, dateTerm(passed));
+    }
+  };
+
+  /**
+   * A statement's fields on its section or block (proposal 0099): the iiRDS
+   * typing and concepts, harvested as the document's are, then verification.
+   * `graphObject` is the statement's `graph` field, which only a heading
+   * statement may set, so for a section this gives exactly the triples the
+   * same `graph.sections` entry gives.
+   */
+  const emitStatementFields = (
+    subject: string,
+    data: Record<string, unknown>,
+    graphObject: Record<string, unknown> | undefined,
+    language: string | undefined,
+  ) => {
+    const harvested = resolveGraph(graphObject, data);
+    emitIirdsTyping(subject, harvested);
+    for (const label of asStringArray(harvested["concepts"])) {
+      add(subject, `${NS.dcterms}subject`, iri(concept(label, language)));
+    }
+    emitVerification(subject, data);
+  };
+
   const docByPath = new Map(docs.map((d) => [normalizeDocPath(d.path), d]));
   const prov = sources.has("provenance");
 
@@ -582,6 +635,7 @@ export function deriveGraph(docs: DocModel[], options: DeriveOptions): Quad[] {
       // iiRDS Core + Software typing (ADR 01012), over the harvested block so a
       // page typed only at the top level still types its document (ADR 01024).
       emitIirdsTyping(docIri, harvested);
+      emitVerification(docIri, fm);
     }
 
     if (sources.has("tags")) {
@@ -636,6 +690,40 @@ export function deriveGraph(docs: DocModel[], options: DeriveOptions): Quad[] {
         if (!sectionSlugs.has(slug)) {
           add(docIri, `${NS.graph}brokenSectionRef`, lit(slug));
         }
+      }
+
+      // Inline `meta` statements (proposal 0099). One on a heading describes
+      // that section. Any other mints a graph:Block, `<doc>#<slug>.<n>`, the
+      // nth statement in its section, or `<doc>#.<n>` before any heading. A
+      // heading statement whose heading graph does not find is a block.
+      const headed = doc.sections.filter((s) => s.line !== null);
+      const blocksIn = new Map<string, number>();
+      for (const statement of doc.statements ?? []) {
+        const { start, end } = statement.anchor;
+        const heading =
+          statement.scope === "section"
+            ? headed.find((s) => s.line !== null && s.line >= start && s.line <= end)
+            : undefined;
+        if (heading) {
+          emitStatementFields(
+            mintSectionIri(docIri, heading.slug),
+            statement.data,
+            graphBlock(statement.data),
+            pageLanguage,
+          );
+          continue;
+        }
+        const owner = headed.filter((s) => s.line !== null && s.line <= start).at(-1);
+        const slug = owner?.slug ?? "";
+        const n = (blocksIn.get(slug) ?? 0) + 1;
+        blocksIn.set(slug, n);
+        const blockIri = mintSectionIri(docIri, `${slug}.${String(n)}`);
+        add(owner ? mintSectionIri(docIri, slug) : docIri, `${NS.dcterms}hasPart`, iri(blockIri));
+        add(blockIri, RDF_TYPE, iri(`${NS.graph}Block`));
+        add(blockIri, `${NS.graph}lines`, lit(spellLines(statement.anchor)));
+        if (statement.pin !== undefined) add(blockIri, `${NS.graph}pin`, lit(statement.pin));
+        add(blockIri, `${NS.graph}pinStatus`, lit(statement.status));
+        emitStatementFields(blockIri, statement.data, undefined, pageLanguage);
       }
     }
 
