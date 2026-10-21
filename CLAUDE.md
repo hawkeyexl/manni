@@ -282,14 +282,15 @@ says what each flag is; the ladder shows whether the flags compose into a
 command a person would type. It is where a missing default, an awkward pairing,
 or a parity break with `meta` gets caught before it ships.
 
-**Plans carry a worked example.** After the pain and before the interface, a
-plan walks one persona through the change end to end. Name the persona from
+**Plans carry a worked example.** A plan opens with the pain, the gap or
+friction the change closes. After the pain and before the interface, a plan
+walks one persona through the change end to end. Name the persona from
 `docs/content-strategy/personas.md`, and start from a real state, this
 repository's own where it can be. Show each command or call they make, in
 order, and what each prints or returns. End at the outcome the pain section
 promised. The ladder shows that the flags compose. The worked example shows
 that the job gets done. It is where a workflow that takes four commands, or an
-output missing the one field the person needed, shows up before review.
+output missing the one field the persona needed, shows up before review.
 Proposal 0090's plan grew `manni graph publish` for exactly that reason.
 
 **Plans verify by dogfooding.** Every plan's verification ends with a step that
@@ -314,6 +315,7 @@ away:
   code;
 - each message and output shape from the sections above;
 - the tests and fixtures that pin that behavior;
+- the dogfood step, with its output pasted into the PR description;
 - the obligations this file sets elsewhere, such as the reference page and its
   `docs:check-cli` coverage, a proposal's `Status:` line and the demo video for
   a `feat:`.
