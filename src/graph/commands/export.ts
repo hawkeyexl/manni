@@ -68,6 +68,8 @@ export interface ExportResult {
   warnings: string[];
   /** Notices, said once: chunks withheld, or a run outside git. */
   notices?: string[];
+  /** Every file the export wrote, absolute. */
+  files: string[];
 }
 
 /** File extension each single-file format writes to. */
@@ -91,7 +93,7 @@ function runJsonLd(cwd: string, graphPath: string, out?: string): ExportResult {
     : withExtension(graphPath, EXTENSION.jsonld);
   mkdirSync(dirname(outPath), { recursive: true });
   writeFileSync(outPath, serialized, "utf8");
-  return { outPath, format: "jsonld", nodes, warnings: [] };
+  return { outPath, format: "jsonld", nodes, warnings: [], files: [outPath] };
 }
 
 function runIirds(
@@ -136,7 +138,7 @@ function runIirds(
   mkdirSync(dirname(outPath), { recursive: true });
   writeFileSync(outPath, writeZip(entries));
   const nodes = new Set(projection.quads.map((q) => q.s)).size;
-  return { outPath, format: "iirds", nodes, warnings: projection.warnings };
+  return { outPath, format: "iirds", nodes, warnings: projection.warnings, files: [outPath] };
 }
 
 /**
@@ -219,6 +221,7 @@ function runSearchIndex(
     format: "search",
     nodes: index.entries.length,
     warnings,
+    files: [...languages.map((l) => join(outDir, l.search.path)), manifestPath],
   };
 }
 
@@ -252,7 +255,7 @@ async function runQuestions(
             ? "1 answer changed since it was pinned, so it is exported as it reads now, marked stale."
             : `${String(stale)} answers changed since they were pinned, so they are exported as they read now, marked stale.`,
         ];
-  return { outPath, format: "questions", nodes: lines.length, warnings };
+  return { outPath, format: "questions", nodes: lines.length, warnings, files: [outPath] };
 }
 
 /** Every command core is async, and the CLI awaits this one. A usage error rejects. */
@@ -306,6 +309,7 @@ export async function runExport(opts: ExportOptions): Promise<ExportResult> {
       nodes: result.rows,
       warnings: result.warnings,
       notices: result.notices,
+      files: result.files,
     };
   }
   if (opts.format === "llms") {
@@ -320,7 +324,7 @@ export async function runExport(opts: ExportOptions): Promise<ExportResult> {
       graphPath,
       outPath,
     });
-    return { outPath, format: "llms", nodes: pages, warnings };
+    return { outPath, format: "llms", nodes: pages, warnings, files: [outPath] };
   }
   if (opts.format === "search") {
     return runSearchIndex(cwd, sources, graphPath, opts.out);

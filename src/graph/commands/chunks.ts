@@ -90,6 +90,8 @@ export interface ChunksResult {
   withheld: number;
   warnings: string[];
   notices: string[];
+  /** The manifest and each language's rows, absolute. */
+  files: string[];
 }
 
 /** One passage before it becomes a row. */
@@ -275,7 +277,8 @@ export async function exportChunks(opts: ChunksOptions): Promise<ChunksResult> {
   };
   const manifestPath = join(opts.outDir, CHUNKS_MANIFEST);
   writeFileSync(manifestPath, `${canonicalJson(manifest, 2)}\n`, "utf8");
-  return { manifestPath, rows: kept.length, withheld: withheld.length, warnings, notices };
+  const files = [manifestPath, ...Object.values(languages).map((l) => join(opts.outDir, l.file))];
+  return { manifestPath, rows: kept.length, withheld: withheld.length, warnings, notices, files };
 }
 
 function languageOf(graph: GraphIndex, doc: string): string {

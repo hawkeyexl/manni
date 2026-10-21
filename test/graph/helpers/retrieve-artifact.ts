@@ -1,6 +1,6 @@
 /**
  * The retrieval fixture (`test/graph/fixtures/retrieve/`), copied outside git
- * and published the way `graph publish` will: build, the search indexes, mock
+ * and published the way `graph publish` does: build, the search indexes, mock
  * vectors, the chunks and `graph.jsonld`, all in `.manni/graph/`.
  *
  * Not collected as a suite: vitest's `include` is `test/**\/*.test.ts`.
