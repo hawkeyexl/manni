@@ -1,6 +1,6 @@
 # 0095: Provenance on the live site, with `manni site annotate`
 
-- **Status:** Implemented (#<this PR>)
+- **Status:** Implemented (#229)
 - **Serves:** Two people, three journeys, and one reader no persona covers.
   - Maya · M5, "Pin a claim and catch it going stale". Her pins stop at CI
     today. With this change the built page says which sentences rest on code.
