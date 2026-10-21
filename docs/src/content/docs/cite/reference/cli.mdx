@@ -1,6 +1,6 @@
 ---
 title: CLI reference
-description: Every manni cite command, argument, and flag (check, add, update, and remove), with exit codes, the citation baseline, and the two-checkout layout for private sources.
+description: Every manni cite command, argument, and flag (check, add, update, remove, and history), with exit codes, the citation baseline, and the two-checkout layout for private sources.
 sidebar:
   order: 1
 type: reference
@@ -11,6 +11,7 @@ keywords:
   - cite add
   - cite update
   - cite remove
+  - cite history
 language: en
 audiences:
   - docs-engineers
@@ -28,10 +29,11 @@ sample-questions:
   - What flags does manni cite check take?
   - What exit codes does manni cite return?
   - How do I remove a citation with manni cite remove?
+  - How long did a citation stand stale, and which releases shipped it?
 graph:
   label: CLI reference
   type: reference
-last-updated: 2026-10-20
+last-updated: 2026-10-21
 tags:
   - cli
   - reference
@@ -69,13 +71,14 @@ import { Aside } from '@astrojs/starlight/components';
     with `--accept --only <id>` for a claim you have re-read against source. */}
 
 {/* cite bare-cite-exits-2 */}
-manni cite exposes four verbs, [`check`](#cite-check), [`add`](#cite-add),
-[`update`](#cite-update) and [`remove`](#cite-remove). There is no default. A
-bare `manni cite` prints usage and exits `2`, because nothing here is safe to
-run by accident. `check` can fail a build, and the other three write to pages.
-`check`, `update` and `remove` take paths and share the metadata tool's [input
-model](/manni/meta/reference/cli/#shared-input-model); `add` takes one page and
-one source.
+manni cite exposes five verbs, [`check`](#cite-check), [`add`](#cite-add),
+[`update`](#cite-update), [`remove`](#cite-remove) and
+[`history`](#cite-history). There is no default. A bare `manni cite` prints
+usage and exits `2`, so nothing runs by accident. `check` can fail a build,
+three verbs write to pages, and `history` walks the whole git history.
+`check`, `update`, `remove` and `history` take paths and share the metadata
+tool's [input model](/manni/meta/reference/cli/#shared-input-model); `add`
+takes one page and one source.
 
 ```sh
 manni cite [options] <command> [command options] [arguments]
@@ -242,11 +245,13 @@ forms the claim column takes:
 | `:9 changed (history unavailable; fetch-depth: 0)` | A shallow checkout, or the 256-commit cap. |
 | `:9 changed` | No git, or no commit held the pin. |
 
-Two run notices go to stderr, once per run:
+Three run notices go to stderr, once per run. The third is the source end's
+own, for a source whose history ends before the pin held:
 
 ```
 manni: git is not available here, so citations are checked without history: no never-true, no reanchored claims, no diffs, no commit subjects.
 manni: the page history ends before the pin held; use fetch-depth: 0 to tell reanchored claims from changed ones
+manni: the source history ends before the pin held; use fetch-depth: 0 to tell never-true from changed
 ```
 
 Under `--show-diff`, a changed or reanchored claim row gains the subjects of
@@ -302,9 +307,11 @@ citation looks like this:
 }
 ```
 
-A claim end carries the two members the source end has. `commitSha` is the
+A claim end carries two of the members the source end has. `commitSha` is the
 baseline, as the full hash, and `historyAvailable` is `false` where the walk
-hit a shallow boundary or its cap. A claim `status` may read `reanchored`, and
+hit a shallow boundary or its cap. On a source end `commitSha` is the entry's
+recorded value. A source end adds `baselineSha`, the full hash its verdict was
+read against, whenever its history found one. A claim `status` may read `reanchored`, and
 a reanchored claim with its own lines adds `newLines`, as a moved one does.
 The diff, the commit subjects and the page text are in no machine format.
 
@@ -710,14 +717,16 @@ working tree so the rewrite is easy to review.
 | `--no-check-sources` | n/a | on | Refused. `update` needs the sources to know where an entry moved to. |
 | `--root` | `<dir>` | n/a | The directory `source.file` paths resolve from, exactly as on [`check`](#where-sources-resolve-from). |
 | `--accept` | n/a | off | Re-mint every changed and never-true end at `HEAD`: a new `integrity`, and a new `commit-sha` where the source had one. For a source the report prints the old and the new pin. For a claim it prints the text it re-pinned, so the acceptance is visible in the log as well as in the diff. A claim whose target line shares no sentence with the claim at its baseline is refused, reported, and exits 1, unless `--only` names it. |
-| `--recommit` | n/a | off | Re-record `commit-sha` on entries whose recorded commit does not contain the lines they pin, or is outside the history of `HEAD`. Only that one field changes: `file`, `lines` and `integrity` are left as they are. It reads only entries whose source is current, and re-records only where `HEAD` holds the pinned lines. A commit that holds them at other line numbers counts as holding them, so a pin whose lines drifted is left alone. In a full clone, a commit git cannot read is outside the history, so it is re-recorded. A shallow clone cannot tell, so it leaves such a commit alone and says so once on stderr. Needs git (exit 2 without it). |
+| `--recommit` | n/a | off | Re-record `commit-sha` to the commit where the pinned lines arrived on the history of `HEAD`. It acts on entries whose recorded commit does not contain the lines they pin, or is outside that history. Only that one field changes: `file`, `lines` and `integrity` are left as they are. It reads only entries whose source is current, and re-records only where `HEAD` holds the pinned lines. A commit that holds them at other line numbers counts as holding them, so a pin whose lines drifted is left alone. In a full clone, a commit git cannot read is outside the history, so it is re-recorded. A shallow clone cannot tell, so it leaves such a commit alone and says so once on stderr. Needs git (exit 2 without it). |
 | `--only` | `<id>` | n/a | Limit the rewrite to entries with this id. Repeatable. An entry without an id cannot be named, so give a bare pin an `--id` when you want to reach it this way. A marker's move still shifts the claim lines below it, whichever entries own them. |
 | `--dry-run` | n/a | off | Print the diffs and the report; write nothing. |
 | `-f, --format` | `<pretty\|json>` | `pretty` | Output format. `json` prints the run as `{ pages, rewritten, skipped, manifests, exitCode }`, where `manifests` lists each rewritten manifest's `file`, `diff` and `written`, and appears only when a manifest changed. Each page carries its `file`, its `rewritten` list, its `refused` list, its `skipped` findings, its `diff`, and whether it was `written`. A rewrite has `id`, `index`, `line`, `end`, `reason`, `status`, `from` and `to`. `end` is `claim`, `source` or `marker`; `reason` is `moved`, `accepted`, `re-anchored`, `shifted` or `recommitted`. Read the typed pairs rather than `from` and `to`: `fromLines` and `toLines` carry lines, `fromPin` and `toPin` carry pins, and `fromCommit` and `toCommit` carry commits. A re-anchored claim adds `lines`, the span that held, and `newLines`, the span now pinned. A claim re-pinned because its words held reads `status: "reanchored"`, and carries `commitSha`, the baseline. An accepted claim adds `at` and `text`, and an accepted source adds `src`, plus `commitSha` when the entry records one. A re-committed source reads `reason: "recommitted"` with `status: "current"`, and carries `src`, `fromCommit`, `toCommit` and `because`. `because` is `not-contained` when the recorded commit did not hold the pinned lines, and `not-in-history` when it held them outside the history of `HEAD`. A claim a blanket `--accept` refused sits on the page's `refused` list, beside `rewritten`, with `reason: "replaced"`. One `--only` named instead reads `status: "replaced"` on an ordinary `accepted` rewrite. An unknown value is an error (exit 2). |
 
-`--recommit` records the `HEAD` it runs at. Run on a branch, it re-records
-only to that branch's `HEAD`, which a squash merge leaves out of main in turn.
-The repair that lasts is one run on main, such as in a release job.
+`--recommit` is tidying, not repair. `check` derives each source's baseline
+from git, so a recorded commit that a squash merge dropped changes no verdict.
+The commit it records is the oldest in the newest unbroken run of commits that
+hold the lines. After a squash merge that is the squash commit, so a second
+run rewrites nothing.
 
 ### What is rewritten, and what is not
 
@@ -1014,3 +1023,203 @@ manni: "/citations/9" is past the last entry of docs/limits.md (4 entries).
 manni: the marker fetch-timeout at docs/limits.md:12 shares its line with text; remove it by hand.
 manni: docs/limits.md:30 is inside the claim of retries (lines 29-33). Removing the marker there would change its pin.
 ```
+
+## `cite history`
+
+Walk the git history and report how long each citation's source pin stood
+stale, and which releases shipped it. A **stale window** opens at the first
+commit where `check` would have reported `source-changed`, `source-missing` or
+`source-never-true`. It closes at the first commit where the pin holds again,
+or where the entry or its page is gone. A moved pin is supported somewhere, so
+it opens no window.
+
+```sh
+manni cite history [paths...] [options]
+```
+
+Each first-parent commit of `HEAD` is read as it stood. Its own
+`manni.config.yaml` decides where the entries live, and its tree supplies the
+pages, the manifests and the sources. The working tree is never read. The
+classification at each commit is the one `check` makes, with the move search,
+the cross-file follow and the derived baseline. A change to the claim end, or
+to `commit-sha` alone, is no event.
+
+There is no cosmetic filter. A whitespace or comment change that breaks the
+hash opens a window like any other. So a window is an upper bound on how long
+the page was wrong. The output says "stale", never "wrong", and
+`check --show-diff` is where a person decides whether a change mattered.
+
+`history` is a report, not a gate. It exits `0` whatever it finds, so a
+scheduled job can keep its output. `manni check` does not run it.
+
+<Aside type="note" title="It needs the full history">
+A shallow clone is refused, because the walk would start at its oldest commit.
+Check out with `fetch-depth: 0`, or run `git fetch --unshallow`.
+</Aside>
+
+### Arguments
+
+| Argument | Description |
+|---|---|
+| `[paths...]` | Files, directories, or globs whose citations are walked. They are matched in the working tree, and each page's past is read from git by path. Optional. Without paths the run covers every configured [collection](/manni/meta/reference/configuration/#collections), or the ones `--collection` names. `-` is refused (exit 2), because a piped page has no history. |
+
+### Options
+
+| Option | Argument | Default | Description |
+|---|---|---|---|
+| `--collection` | `<name>` | every collection | Walk a configured [collection](/manni/meta/reference/configuration/#collections), exactly as on [`check`](#cite-check). Repeatable, one name per occurrence, never comma-separated. Cannot be combined with positional paths (exit 2). |
+| `--ext` | `<list>` | supported extensions | Comma-separated extensions used when expanding directories and globs. |
+| `--exclude` | `<glob>` | n/a | Glob to exclude from directory and glob walks. Repeatable. When the run reads from collections, their `exclude:` globs apply as well. |
+| `--as` | `<format>` | n/a | Force an input [format](/manni/meta/reference/formats/) for every page. |
+| `-c, --config` | `<path>` | discovered | Path to a [config file](/manni/cite/reference/configuration/). Its `cite.severity` sets each window's severity. Its `baseline:` is not read, because a baselined pin is still stale. |
+| `--no-config` | n/a | off | Ignore any discovered config file. Entries are then each page's own frontmatter. |
+| `--allow-empty` | n/a | off | Treat zero matched files as success instead of an error (exit 2). |
+| `--no-gitignore` | n/a | on | Walk pages `.gitignore` covers as well. Overrides config `respectGitignore:`. |
+| `--root` | `<dir>` | n/a | The directory `source.file` paths resolve from, as on [`check`](#where-sources-resolve-from). It must be inside a git repository (exit 2 otherwise). |
+| `--newer-than` | `<duration>` | n/a | Walk only the commits within this span of `HEAD`'s committer time: `30m`, `24h`, `90d` or `12w`. A window already open at the first commit read is marked `bounded`. The span counts back from `HEAD`, not from the clock, so a report reproduces from its commit. That differs from `docevals run --newer-than`, which counts from now. |
+| `-f, --format` | `<pretty\|json>` | `pretty` | Output format. See [output](#output-1). `github`, `sarif` and `junit` carry findings, and a window is not a finding, so each is an error (exit 2). |
+
+### Output
+
+`pretty` prints the pages in path order, one row per window and a dim line
+under it. A row reads severity, id, source, duration and releases. The
+severity is the rule's, resolved through `cite.severity`, and colored as
+`check` colors it. The dim line names the opening and closing commits, the
+rule and the cause. A rule set `off` drops its windows.
+
+```
+docs/src/content/docs/cite/set-up/index.mdx
+  error  pages-from-collections  src/cite/core/config.ts:308-313  stale 45 minutes  v2.3.9
+         541b63e..bf8f986  source-changed, closed by a re-pin
+  error  collection-paths-config-relative  src/cite/core/config.ts:308-313  stale 45 minutes  v2.3.9
+         541b63e..bf8f986  source-changed, closed by a re-pin
+
+2 stale windows on 2 citations in 1 page, none open. 1.5 stale pin-hours.
+1 release shipped a stale pin: v2.3.9.
+Walked 193 commits, 2026-09-11 to 2026-10-21.
+```
+
+| Part | What it says |
+|---|---|
+| Duration | Minutes under an hour, hours under two days, days after that. An open window reads `stale 47 days, open`, and runs to `HEAD`'s committer time. |
+| Releases | Up to three tags by name. More read as a range, such as `v4.2.0 through v4.6.0 (5 releases)`. No release reads `-`. |
+| Cause | `closed by a re-pin`, `closed when the source was restored`, `closed when the entry was removed`, or `still open at HEAD`. |
+| `bounded` | The window was already open at the first commit the walk read. Its true start is earlier and unknown. |
+| `formerly` | The page was renamed while the window was open. The window is reported under the page's current path, with the old path beside it. |
+
+A **release** is a tag `HEAD` reaches. It shipped a window when its commit
+contains the opening commit and not the closing one. A tag on a merged side
+branch counts, and a prerelease tag on a branch never merged does not.
+
+A run with no windows prints two lines:
+
+```
+No stale windows on 52 citations in 1 page.
+Walked 193 commits, 2026-09-11 to 2026-10-21.
+```
+
+`json` prints `{ summary, pages }`. A page with no windows has an empty
+`windows` list.
+
+```json
+{
+  "summary": {
+    "head": "10779bd0…",
+    "walked": { "commits": 193, "from": "2026-09-11T02:35:25Z", "to": "2026-10-21T16:49:00Z" },
+    "files": 1,
+    "citations": 32,
+    "windows": 2,
+    "open": 0,
+    "staleSeconds": 5350,
+    "bySeverity": { "notice": 0, "warning": 0, "error": 2 },
+    "releases": ["v2.3.9"],
+    "skipped": { "encrypted": 0 }
+  },
+  "pages": [
+    {
+      "file": "docs/src/content/docs/cite/set-up/index.mdx",
+      "windows": [
+        {
+          "id": "pages-from-collections",
+          "source": "src/cite/core/config.ts:308-313",
+          "rule": "source-changed",
+          "severity": "error",
+          "opened": {
+            "commit": "541b63e5c…",
+            "date": "2026-09-17T20:19:46Z",
+            "subject": "fix(collections): honour --collection with stdin beside it (#61)",
+            "bounded": false
+          },
+          "closed": {
+            "commit": "bf8f98690…",
+            "date": "2026-09-17T21:04:21Z",
+            "subject": "docs(cite): re-pin the citations that #60 and #61 moved (#75)",
+            "by": "re-pinned"
+          },
+          "seconds": 2675,
+          "releases": ["v2.3.9"],
+          "formerly": []
+        }
+      ]
+    }
+  ]
+}
+```
+
+| Field | Values |
+|---|---|
+| `rule` | `source-changed`, `source-missing` or `source-never-true`. |
+| `severity` | `notice`, `warning` or `error`, through `cite.severity`. |
+| `closed` | An object, or `null` while the window is open. |
+| `closed.by` | `re-pinned`, `source-restored` or `removed`. |
+| `opened.bounded` | `true` when the window was already open at the first commit read. That commit is the history's start, the `--newer-than` bound, or the first commit after an old config or citation manifest that does not load. |
+| `seconds` | Whole seconds, committer time to committer time. |
+| `releases` | Tag names, oldest first. |
+| `formerly` | The page's earlier paths while the window was open, oldest first. |
+| `source` | The entry's source when the window opened, spelled as the entry spelled it. An encrypted source stays a ciphertext. |
+| `id` | The entry's id, or its pointer `/citations/N` when it has none. |
+
+Two notices go to stderr, each said once, and neither changes the exit code:
+
+```
+manni: history before 3f559dc is unread: its config or citation manifests do not load under this version. Windows open there are marked bounded.
+manni: 2 encrypted citations were skipped: no encryption key. Set MANNI_ENCRYPTION_KEY or encryptionKey: to include them.
+```
+
+The first names the first commit read after one whose config or citation
+manifests today's loader refuses. The second counts encrypted citations read without the key.
+
+### Exit codes
+
+| Code | Meaning |
+|---|---|
+| `0` | The walk finished, whatever it found, open windows included. Also `--allow-empty` with nothing matched. |
+| `2` | The walk could not run. The messages are below. |
+
+```
+manni: cite history reads git, and /tmp/not-a-repo is not inside a git repository.
+manni: cite history reads git, and /tmp/new-repo has no commits yet.
+manni: this clone is shallow, so cite history would start at its oldest commit. Fetch the full history with fetch-depth: 0, or git fetch --unshallow.
+manni: cite history reads each page's past from git, and stdin has none. Name the page's path instead of -.
+manni: No files to read. Pass paths/globs, or declare a collection under `collections:` in manni.config.yaml.
+manni: --collection selects a configured collection; it cannot be combined with paths.
+manni: Unknown --format "sarif". Use pretty or json.
+manni: --newer-than must be a duration such as 30m, 24h, 7d or 2w, got "soon"
+```
+
+There is no exit `1`. `history` measures, and `check` gates.
+
+### Examples
+
+```sh
+manni cite history docs/src/content/docs/cite/set-up/index.mdx
+manni cite history
+manni cite history --collection site -f json | jq '.summary.staleSeconds'
+manni cite history --newer-than 90d
+manni cite history --collection site --ext md,mdx --exclude "**/proposals/**" \
+  --as mdx -c manni.config.yaml --no-gitignore --allow-empty --root . \
+  --newer-than 12w -f json
+```
+
+The [stale-window journey](/manni/cite/ci/stale-windows/) runs it from a
+scheduled job to the number.

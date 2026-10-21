@@ -1,0 +1,21 @@
+# One page with an inline ai eval and no examples. Missing examples is advice,
+# reported as a notice, so the run passes: the regex eval grades the page and
+# the ai eval is skipped under --deterministic-only.
+collections:
+  - name: site
+    paths:
+      - "docs/**/*.md"
+
+docevals:
+  defaults:
+    suite: site
+  evals:
+    no-todo-markers:
+      assertion: The page carries no TODO, TBD or FIXME markers.
+      grader: tool:regex
+      options:
+        pattern: '\b(TODO|TBD|FIXME)\b'
+        match: not-contains
+      severity: error
+  suites:
+    site: { target-pass-rate: 1.0, evals: [no-todo-markers] }

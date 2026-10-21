@@ -160,19 +160,24 @@ describe.skipIf(!gitAvailable())("a source that moved to another file", () => {
     expect(result.status).toBe("missing");
   });
 
-  it("needs a commit git can show: without one nothing is followed", async () => {
+  // The baseline is derived from the old path's history (0097), so a
+  // recorded commit git cannot show, or none at all, still follows the move.
+  it("follows from the derived baseline when the recorded commit is absent or unknown", async () => {
     repo = makeTempRepo({ files: { "src/limits.ts": LIMITS } });
-    commitAll(repo, "add limits");
+    const first = commitAll(repo, "add limits");
     move(repo, "src/limits.ts", "src/core/limits.ts");
     commitAll(repo, "move limits into core");
 
     const none = await classify(repo, entry("src/limits.ts", 2, PIN_L2));
-    expect(none.status).toBe("missing");
+    expect(none.status).toBe("moved");
+    expect(none.newSrc).toBe("src/core/limits.ts:2");
+    expect(none.baselineSha).toBe(first);
     const unknown = await classify(
       repo,
       entry("src/limits.ts", 2, PIN_L2, "0123456789abcdef0123456789abcdef01234567"),
     );
-    expect(unknown.status).toBe("missing");
+    expect(unknown.status).toBe("moved");
+    expect(unknown.baselineSha).toBe(first);
   });
 
   it("drops the missing reason once the pin turns up at another path", async () => {

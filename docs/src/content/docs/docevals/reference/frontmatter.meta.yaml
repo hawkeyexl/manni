@@ -67,8 +67,14 @@ docs/src/content/docs/docevals/reference/frontmatter.mdx:
       lines: 205-207
       integrity: sha256-6037b401cd80f2d9566692ff49b089583440f94463557870b9d0a264e7dc009d
     - generated-by: Claude Fable 5.1
-      lines: 208-212
-      integrity: sha256-a89ef98ced888b8448d4edb33fd5600bf729179fac19e7330910e5179c64c8fc
+      lines: 208-209
+      integrity: sha256-e20f15af899c66c3a611ed291c1fca506a5c94d73005c7f754294158c5a36c35
+    - generated-by: Claude Opus 5.5
+      lines: 210
+      integrity: sha256-1af69a1f727d9eb2cf96c29cbe2e26c8257d14a2a4cfb174501b922811c945be
+    - generated-by: Claude Fable 5.1
+      lines: 211-212
+      integrity: sha256-9ac7d44f82981408be2178fcd04052969fe12fb58c05719f2760a39ab7ea66a0
     - generated-by: Claude Fable 5.1
       lines: 214-215
       integrity: sha256-72b71b460fbf6ac79c8d8a93ef849100421fe76aceb3b48c4bd8856ef4ddd8e3
@@ -82,8 +88,11 @@ docs/src/content/docs/docevals/reference/frontmatter.mdx:
       lines: 242-244
       integrity: sha256-dec2bee6a09a98d18b9ab8f554f673e94e3650c8e3c7ab79f7d2c49648bc89e1
     - generated-by: Claude Fable 5.1
-      lines: 245-246
-      integrity: sha256-7d6d2dfe1f3da538eb4347a4e170f45eaf71c9671bd327be3daa130e867d7f93
+      lines: 245
+      integrity: sha256-5323eda278f0e88629cae78de04debb150ca33cce8da19f4b012e280bd95107f
+    - generated-by: Claude Opus 5.5
+      lines: 246
+      integrity: sha256-295ccacbea14c3c43d1d4313fd962597fb004dc38a9e484775bb1c6d8b5d2bd5
     - generated-by: Claude Opus 5
       lines: 255-270
       integrity: sha256-b541410ed18f2eaa9c6fcfac7515c85234468047f0f6a15f0281fdb4438f3456
