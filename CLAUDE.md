@@ -292,6 +292,15 @@ that the job gets done. It is where a workflow that takes four commands, or an
 output missing the one field the person needed, shows up before review.
 Proposal 0090's plan grew `manni graph publish` for exactly that reason.
 
+**Plans verify by dogfooding.** Every plan's verification ends with a step that
+runs the finished change on this repository as its first user. That means its
+docs, its history, its CI and its site. Tests prove the code against fixtures. The
+dogfood step proves the feature against a real corpus nobody arranged for it.
+Name the commands, what each should show, and what gets recorded in the PR.
+The acceptance checklist carries one item for it, with the output pasted into
+the PR description. A step that needs something unreleased, such as another
+tool's unmerged branch, says so and runs it from a scratch install.
+
 **Plans end with an acceptance checklist.** The last section lists every
 artifact and behavior that is in place once the plan is fully built. A reviewer
 holds the finished branch against it and ticks each item off without rereading
