@@ -1,0 +1,151 @@
+---
+title: Serve the docs to an agent
+description: Run manni graph serve so an agent reads each passage with its pins, dates and eval verdicts, over MCP.
+type: how-to
+id: graph-serve
+language: en
+lifecycle: published
+action: develop
+last-updated: 2026-10-21
+---
+
+An agent that answers from your docs, or edits them, reads passages.
+`manni graph serve` hands it each passage with its proof. The proof says
+whether its pins hold, when it last changed, and how its evals went. The server
+speaks the Model Context Protocol (MCP) on stdio, so any MCP client can start
+it.
+
+This is Devin's page. The outcome: an agent asks one question, and it gets
+every passage that answers it, with the proof to quote it or flag it.
+
+## Before you start
+
+You need two things in the repository the agent works in.
+
+**A chunk artifact.** Build the graph, then export the search index and the
+chunks beside it:
+
+```sh
+manni graph build
+manni graph export search
+manni graph export chunks
+```
+
+`export chunks` writes `chunks.json` and one row file per language.
+[Publish the graph](/manni/graph/publish/) covers each target.
+
+**The MCP SDK.** It is an optional peer of manni, so install it beside manni:
+
+```sh
+npm install @modelcontextprotocol/sdk
+```
+
+## Register the server
+
+Add the server to the client's MCP config. For Claude Code, that is
+`.mcp.json` at the repository root:
+
+```json
+{
+  "mcpServers": {
+    "manni-docs": {
+      "command": "npx",
+      "args": ["manni", "graph", "serve"]
+    }
+  }
+}
+```
+
+The client starts the server in the repository, and the server reads
+`manni.config.yaml` from there. It prints one line on stderr, then waits for
+calls:
+
+```console
+$ manni graph serve
+manni: serving lookup, retrieve, traverse and impact over stdio from .manni/graph/chunks.json.
+```
+
+The server opens the artifact once, at start. Restart it after a rebuild, so
+it serves the new text. It exits 0 when the client closes its stdin.
+
+## Ask one question
+
+`lookup` is the tool to start with. It takes the question and nothing else:
+
+```json
+{ "name": "lookup", "arguments": { "question": "How does a citation pin a claim to source lines?" } }
+```
+
+The result holds three sections, and nothing is dropped from any of them:
+
+- **`matches`**: every ranked passage, with its lexical, vector and fused scores.
+- **`traversal`**: every passage reached by following links outward from the
+  matches, with each edge followed.
+- **`impact`**: every passage that depends on the matches, with each edge.
+
+On this repository, that call returns three matches from the cite pages. One
+passage is reached outward, and 21 depend on the matches. Each passage carries
+its `provenance` record. Abridged, the first match reads:
+
+```json
+{
+  "rank": 1,
+  "page": "docs/src/content/docs/cite/get-started/index.mdx",
+  "title": "Pin a claim",
+  "provenance": { "pins": { "total": 13, "current": 13, "error": 0 } }
+}
+```
+
+An agent can quote a passage whose pins are all current. It can flag one with
+an `error` pin as unverified. Before it changes behavior a page describes, it
+reads `impact` to learn which pages to update.
+
+The result arrives as `structuredContent`, and again as one text block
+holding the same JSON. [The lookup result](/manni/graph/reference/cli/#the-lookup-result)
+lists every key.
+
+## Steer when you need to
+
+Three more tools give the agent control. Each runs the same core as its CLI
+twin, so a call answers exactly as the command would.
+
+| Tool | Use it to | CLI twin |
+|---|---|---|
+| `retrieve` | Choose the language, scope, depth and budget, or filter on metadata with `where`. | `graph retrieve` |
+| `traverse` | Walk the graph from one passage. | `graph traverse --context` |
+| `impact` | List the passages that depend on one passage. | `graph traverse --impact --context` |
+
+[The tools](/manni/graph/reference/cli/#the-tools) lists every argument.
+
+## Raise the trust floor
+
+`--withhold` leaves passages out of every call. `drifted` drops a passage with
+a pin at error severity. `failing` drops one whose current eval verdict failed.
+
+```json
+"args": ["manni", "graph", "serve", "--withhold", "drifted,failing"]
+```
+
+No tool takes a `withhold` argument, so an agent cannot lower the floor you
+set. A passage left out is named in the result's `trace.withheld`. When every
+match is left out, the result is a refusal with the reason `withheld`.
+
+## A refusal is an answer
+
+A refusal comes back with `isError: false`, and its `refusal` says why. A
+mistake the CLI reports as a usage error is a refusal here too, with the CLI's
+own words in `detail`. An unknown node is `unknown-node`, for instance. The
+agent reads the reason and asks again.
+
+Only an argument the tool's schema does not name, or a value of the wrong
+type, returns `isError: true`.
+
+## When it does not start
+
+Each of these exits 2 before anything is served, with one line on stderr.
+
+| Message | Fix |
+|---|---|
+| `manni: graph serve needs the optional @modelcontextprotocol/sdk package; run npm install @modelcontextprotocol/sdk.` | Install the SDK. |
+| `manni: .manni/graph/chunks.json does not exist; run manni graph publish.` | Build the artifact, as above. |
+| `manni: .manni/graph/chunks.json was built from another graph; run manni graph publish.` | Export the chunks again from the graph you built. |

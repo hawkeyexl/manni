@@ -408,6 +408,16 @@ This is the highest-stakes journey in the section. It is the only one where a pl
 
 ---
 
+### D19 · Serve the docs to an agent with their proof
+
+**Outcome.** An agent that answers from the docs, or edits them, reads each passage with its proof. It knows which sentences are verified before it quotes them.
+
+**Steps.** Devin builds the graph and exports the chunk artifact on the checkout the agent reads. He installs the optional MCP SDK beside manni. He registers `manni graph serve` in the client's MCP config. The agent calls `lookup` with one question and gets three complete sections: the ranked matches, what they link to, and what depends on them. Each passage carries its pins, dates and eval verdicts. He sets `--withhold drifted` so no agent call serves a passage whose pin broke, and no tool argument can lower that floor. A refusal comes back as an answer with a reason, never as an error.
+
+**What success looks like.** The agent quotes current sentences, flags drifted ones, and names the pages a change affects. Related journeys are D13 (publishing the graph) and M24 (an agent that reads the docs while writing them).
+
+---
+
 ## Sara, Schema Author
 
 ### S1 · Define our metadata standard as a schema
