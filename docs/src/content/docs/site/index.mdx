@@ -1,6 +1,6 @@
 ---
 title: manni site
-description: "Start, build and preview the docs site with one command per job, whatever framework it runs on, on the port the collection url names."
+description: "Start, build, preview and annotate the docs site with one command per job, whatever framework it runs on, on the port the collection url names."
 tableOfContents: false
 hero:
   tagline: Start, build and preview the docs site, whatever framework it runs on.
@@ -15,10 +15,10 @@ hero:
       variant: minimal
 id: "site"
 type: "overview"
-keywords: ["site start", "site build", "site preview", "dev server", "framework detection", "collection url"]
+keywords: ["site start", "site build", "site preview", "site annotate", "dev server", "framework detection", "collection url"]
 language: en
 audiences: ["docs-engineers", "ci-engineers", "contributors"]
-intent: "Understand what manni site start, build and preview do, how they find the site and its framework, and where the port comes from."
+intent: "Understand what manni site start, build, preview and annotate do, how they find the site and its framework, and where the port comes from."
 lifecycle: published
 applies-to: ["domain:site"]
 next-steps: ["site-reference-cli", "a11y-get-started"]
@@ -53,13 +53,14 @@ repository manni detects.
 checks. `manni a11y check` crawls the site it serves, on the URL your
 collection already names.
 
-## Three commands
+## Four commands
 
 | Command | Does |
 | --- | --- |
 | `manni site start [dir]` | Runs the framework's dev server, with hot reload, until Ctrl-C. |
 | `manni site build [dir]` | Runs the framework's production build once. |
 | `manni site preview [dir]` | Runs `build`, then serves the output until Ctrl-C. It always builds first, so it never serves stale output. |
+| `manni site annotate [dir]` | Joins the graph's pins and statements to the built pages, as data. See [Show readers what is proven](/manni/site/annotate/). |
 
 There is no default subcommand. `manni site` alone prints usage and exits `2`.
 Each command prints one line on stderr before it runs anything. The line names
@@ -68,13 +69,16 @@ the framework's own.
 
 ## A 30-second proof
 
-This repository's site is Starlight, in `docs/`. Its `manni.config.yaml` has no
-`site:` section, only a collection whose `url:` is
-`http://127.0.0.1:4321/manni/`. Build and serve the site:
+This repository's site is Starlight, in `docs/`. Its `manni.config.yaml` sets
+only `site.annotate.after-build`, and a collection whose `url:` is
+`http://127.0.0.1:4321/manni/`. After `manni graph publish`, build, annotate and
+serve the site:
 
 ```console
 $ manni site preview
 manni: Starlight in docs/. Running npm run build
+manni: Starlight in docs/. Annotating docs/dist from docs/public/graph/chunks.json.
+docs/dist: 257 pages annotated. 4160 of 4199 pins placed, 39 listed on their page only. 2 blocks carry a verification.
 manni: Starlight in docs/. Running npm run preview -- --host 127.0.0.1 --port 4321
 ```
 
@@ -164,7 +168,12 @@ is set, nothing is detected, so any framework works this way. `--port` and
   <LinkCard
     title="CLI reference"
     href="/manni/site/reference/cli/"
-    description="Every argument and flag of start, build and preview, the framework table, the site: config keys, and every message with its exit code."
+    description="Every argument and flag of start, build, preview and annotate, the framework table, the site: config keys, and every message with its exit code."
+  />
+  <LinkCard
+    title="Show readers what is proven"
+    href="/manni/site/annotate/"
+    description="Join each pin and statement to the built page as data, and show readers which sentences rest on code."
   />
   <LinkCard
     title="Get started with a11y"

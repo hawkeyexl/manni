@@ -1,0 +1,177 @@
+---
+/**
+ * A prototype rendering for the "Show readers what is proven" page (proposal
+ * 0095). It is docs-site code only: manni ships no UI, the package does not
+ * export this, and the page labels it "Prototype". It reads nothing but what
+ * `manni site annotate` wrote into the built page: the `data-manni-*`
+ * attributes and the `#manni-provenance` island. Only that page includes it,
+ * so no other page shows marks.
+ *
+ * Each block with pins gets a mark after its last word, a button that opens a
+ * native popover listing its pins. The colours are the product's own meaning,
+ * as in the terminal: green holds, red drifted. Each pair measures 4.5:1 or
+ * more on its theme's background.
+ */
+---
+
+<section class="manni-prototype not-content" data-provenance-prototype aria-labelledby="manni-prototype-label">
+  <p class="manni-prototype-label" id="manni-prototype-label">Prototype: this page's proof, from annotate's data</p>
+  <p class="manni-prototype-status" role="status">This build is not annotated, so no marks show.</p>
+  <div class="manni-prototype-popovers"></div>
+</section>
+
+<script>
+  interface Item {
+    id: string | null;
+    source: string;
+    commit: string | null;
+    findings: { rule: string; severity: string }[];
+  }
+  interface Island {
+    commit: string | null;
+    dates: { created: { day: string | null }; lastUpdated: { day: string | null } } | null;
+    records: { pins: { items: Item[] } }[];
+  }
+
+  const REPO = "https://github.com/hawkeyexl/manni/blob/";
+
+  /** `path:a-b` as a link to those lines at the pin's commit, or the text alone. */
+  function source(item: Item): Node {
+    if (item.source.startsWith("~")) return document.createTextNode("a private source");
+    const m = /^(.*):(\d+)(?:-(\d+))?$/.exec(item.source);
+    if (m === null || item.commit === null) return document.createTextNode(item.source);
+    const a = document.createElement("a");
+    a.href = `${REPO}${item.commit}/${m[1]}#L${m[2]}${m[3] === undefined ? "" : `-L${m[3]}`}`;
+    a.textContent = item.source;
+    return a;
+  }
+
+  /** Where a mark goes: after a code block's frame, in a row's last cell, else at the block's end. */
+  function place(block: HTMLElement, mark: HTMLElement): void {
+    if (block.tagName === "PRE") (block.closest(".expressive-code") ?? block).after(mark);
+    else if (block.tagName === "TR") (block.lastElementChild ?? block).append(" ", mark);
+    else block.append(" ", mark);
+  }
+
+  function draw(): void {
+    const box = document.querySelector<HTMLElement>("[data-provenance-prototype]");
+    const status = box?.querySelector(".manni-prototype-status");
+    const popovers = box?.querySelector(".manni-prototype-popovers");
+    const raw = document.getElementById("manni-provenance")?.textContent;
+    if (!status || !popovers || !raw) return;
+    const prov = JSON.parse(raw) as Island;
+
+    // Each pin once, in the page's order; a pin with no id is `#<n>`.
+    const seen = new Set<string>();
+    const items: Item[] = [];
+    for (const record of prov.records) {
+      for (const item of record.pins.items) {
+        const key = JSON.stringify(item);
+        if (!seen.has(key)) {
+          seen.add(key);
+          items.push(item);
+        }
+      }
+    }
+    const byId = new Map(items.map((item, i) => [item.id ?? `#${i + 1}`, item]));
+
+    const commit = prov.commit === null ? "" : ` Checked at build ${prov.commit.slice(0, 7)}.`;
+    const blocks = [...document.querySelectorAll<HTMLElement>("main [data-manni-pins]")];
+    blocks.forEach((block, n) => {
+      const drifted = block.dataset.manniState === "drifted";
+      const pop = document.createElement("div");
+      pop.id = `manni-proof-${n + 1}`;
+      pop.popover = "auto";
+      pop.className = "manni-proof";
+      const head = document.createElement("p");
+      head.textContent = drifted
+        ? `A source changed after it was pinned.${commit}`
+        : `Pinned to source. Current.${commit}`;
+      const list = document.createElement("ul");
+      for (const id of (block.dataset.manniPins ?? "").split(" ")) {
+        const item = byId.get(id);
+        if (item === undefined) continue;
+        const li = document.createElement("li");
+        const failed = item.findings.length > 0;
+        li.append(failed ? "✗ " : "✓ ", source(item), ` · ${failed ? item.findings.map((f) => f.rule).join(", ") : "current"}`);
+        list.append(li);
+      }
+      pop.append(head, list);
+      popovers.append(pop);
+
+      const mark = document.createElement("button");
+      mark.type = "button";
+      mark.className = `manni-mark ${drifted ? "manni-drifted" : "manni-current"}`;
+      mark.textContent = drifted ? "✗" : "✓";
+      mark.setAttribute("aria-label", drifted ? "Proof: a source changed" : "Proof: pinned to source");
+      mark.setAttribute("popovertarget", pop.id);
+      place(block, mark);
+    });
+
+    const dates = [
+      prov.dates?.created.day ? `Created ${prov.dates.created.day}.` : "",
+      prov.dates?.lastUpdated.day ? `Updated ${prov.dates.lastUpdated.day}.` : "",
+    ].join(" ");
+    const count = blocks.length === 1 ? "1 block on this page carries" : `${blocks.length} blocks on this page carry`;
+    status.textContent = `${count} pins.${commit} ${dates}`.trim();
+  }
+
+  draw();
+</script>
+
+<style is:global>
+  .manni-prototype {
+    border: 1px dashed var(--sl-color-gray-4);
+    border-radius: 0.5rem;
+    padding: 0.75rem 1rem;
+    margin-block: 1.5rem;
+  }
+  .manni-prototype-label {
+    font-size: var(--sl-text-xs);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--sl-color-gray-2);
+  }
+  .manni-mark {
+    border: 0;
+    background: none;
+    padding: 0 0.15em;
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .manni-mark:focus-visible {
+    outline: 2px solid var(--sl-color-text-accent);
+    outline-offset: 2px;
+  }
+  .manni-current {
+    color: #3fb950;
+  }
+  .manni-drifted {
+    color: #f85149;
+  }
+  :root[data-theme="light"] .manni-current {
+    color: #1a7f37;
+  }
+  :root[data-theme="light"] .manni-drifted {
+    color: #cf222e;
+  }
+  .manni-proof {
+    max-width: min(36rem, 90vw);
+    border: 1px solid var(--sl-color-text-accent);
+    border-radius: 0.5rem;
+    padding: 0.75rem 1rem;
+    background: var(--sl-color-black);
+    color: var(--sl-color-white);
+    font-size: var(--sl-text-sm);
+  }
+  .manni-proof ul {
+    margin: 0.5rem 0 0;
+    padding-inline-start: 0;
+    list-style: none;
+  }
+  .manni-proof a {
+    color: var(--sl-color-text-accent);
+  }
+</style>

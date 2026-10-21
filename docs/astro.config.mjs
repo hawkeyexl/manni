@@ -411,13 +411,15 @@ export default defineConfig({
           ],
         },
         // `site` runs the site every other domain checks (proposal 0082). A
-        // family resource like `key`, so an overview and a reference shelf.
+        // family resource like `key`, so an overview and a reference shelf,
+        // plus the one journey annotate needs (proposal 0095).
         {
           label: "site",
           collapsed: true,
           badge: BETA,
           items: [
             { label: "Overview", link: "/site/" },
+            { label: "Show readers what is proven", link: "/site/annotate/" },
             {
               label: "Reference",
               collapsed: true,

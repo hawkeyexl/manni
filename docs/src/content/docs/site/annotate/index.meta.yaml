@@ -1,0 +1,21 @@
+docs/src/content/docs/site/annotate/index.mdx:
+  personas: ["maya", "devin"]
+  journeys: ["m32", "m5", "m26", "d13"]
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: "src/site/commands/annotate.ts"
+    - path: "src/site/core/annotate.ts"
+    - path: "src/site/rehype.ts"
+  eval-suite: site
+  evals:
+    - id: annotate-a-build
+      assertion: "A reader can annotate a built site with manni site annotate, and say which artifact it reads and what each page gains."
+      type: capability
+      grader: ai
+    - id: show-the-marks
+      assertion: "A reader can show a mark on each pinned block from the data-manni attributes, with CSS and no manni code in the browser."
+      type: capability
+      grader: ai
+  owner:
+    - "@hawkeyexl"
