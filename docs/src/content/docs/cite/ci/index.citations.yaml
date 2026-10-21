@@ -342,12 +342,12 @@ docs/src/content/docs/cite/ci/index.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: no-git-notice-when-commit
       claim:
-        integrity: sha256-e65fea832a3e2fe3a5a00d2f1b2aea62c897d1cf7020a071e2e822bbc0109392
+        integrity: sha256-ad433870cd2d53e38a99331b652fe6f31d807ef80072915b52abaf50f68a89b4
       source:
         file: src/cite/core/check-page.ts
-        lines: 349-353
-        integrity: sha256-c98d1309c9938cd21b4c2a4fb2fc0a317a30f3da8111498ed5c49eb0618347c3
-        commit-sha: f2ecf49996504a135f3e37de5bac35c5a054b237
+        lines: 351-356
+        integrity: sha256-00f8025481cbbae1ce0df64b2f564077ba936935122fcc416534e76b01299973
+        commit-sha: 5630e2210b8fdfa8e48ea4702a8a1567757e41ce
     - id: no-git-notice-show-diff
       claim:
         integrity: sha256-e65fea832a3e2fe3a5a00d2f1b2aea62c897d1cf7020a071e2e822bbc0109392

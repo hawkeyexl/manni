@@ -195,12 +195,12 @@ docs/src/content/docs/cite/reference/configuration.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: history-notice-when-commit
       claim:
-        integrity: sha256-dd2401e4f1ec44fdf81124fbc93860df854eca154e6d36dcbb0fc8a00852dbd2
+        integrity: sha256-32e04d8b6c6640a44eca79f44945bfed9c60f4e4e25705ee6d4fb419f238661a
       source:
         file: src/cite/core/check-page.ts
-        lines: 349-356
-        integrity: sha256-4b7c8283012b463c3ae924c7cf0bed57b099f1587b1eae316410d997baa5ac2d
-        commit-sha: f2ecf49996504a135f3e37de5bac35c5a054b237
+        lines: 351-359
+        integrity: sha256-53d91c1cb1a1fa3062274ebdf0f5a4c803856f2de9d5a4933ec7d41e15c479f6
+        commit-sha: 5630e2210b8fdfa8e48ea4702a8a1567757e41ce
     - id: history-notice-show-diff
       claim:
         integrity: sha256-dd2401e4f1ec44fdf81124fbc93860df854eca154e6d36dcbb0fc8a00852dbd2

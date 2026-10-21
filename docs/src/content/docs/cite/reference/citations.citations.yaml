@@ -1066,9 +1066,9 @@ docs/src/content/docs/cite/reference/citations.mdx:
         integrity: sha256-8243af8addc2d0ea2ce931a22517eec957a9ed64ab25559f9dc2f47e5cc3e5d5
       source:
         file: src/cite/core/check-page.ts
-        lines: 345-367
-        integrity: sha256-3ebba4e805b2bdf9111d9cbeb2b2bd772b13bdc3d07de93ca4330f0af99e42ba
-        commit-sha: f2ecf49996504a135f3e37de5bac35c5a054b237
+        lines: 345-370
+        integrity: sha256-0c04e0ac57a2ac44b8e76cee1cb1ed98d930b94b44b58895cc7e4efde498fec6
+        commit-sha: 5630e2210b8fdfa8e48ea4702a8a1567757e41ce
     - id: source-changed-default
       claim:
         lines: 546-548

@@ -181,9 +181,9 @@ docs/src/content/docs/cite/fix/index.mdx:
         integrity: sha256-b6e7ff4dba00dba01188f6ce08f99375dab728afb5bab6278c86d7bd8cb482ff
       source:
         file: src/cite/core/check-page.ts
-        lines: 349-356
-        integrity: sha256-4b7c8283012b463c3ae924c7cf0bed57b099f1587b1eae316410d997baa5ac2d
-        commit-sha: f2ecf49996504a135f3e37de5bac35c5a054b237
+        lines: 351-359
+        integrity: sha256-53d91c1cb1a1fa3062274ebdf0f5a4c803856f2de9d5a4933ec7d41e15c479f6
+        commit-sha: 5630e2210b8fdfa8e48ea4702a8a1567757e41ce
     - id: decode-sample-changed
       claim:
         lines: 21

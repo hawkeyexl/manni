@@ -42,9 +42,9 @@ docs/src/content/docs/cite/get-started/index.mdx:
         integrity: sha256-ebb876f939c27df3f6d82751d2fb89d27c065f610bee15f81baf79ce6d208694
       source:
         file: src/cite/core/check-page.ts
-        lines: 349-356
-        integrity: sha256-4b7c8283012b463c3ae924c7cf0bed57b099f1587b1eae316410d997baa5ac2d
-        commit-sha: f2ecf49996504a135f3e37de5bac35c5a054b237
+        lines: 351-359
+        integrity: sha256-53d91c1cb1a1fa3062274ebdf0f5a4c803856f2de9d5a4933ec7d41e15c479f6
+        commit-sha: 5630e2210b8fdfa8e48ea4702a8a1567757e41ce
     - id: no-git-still-classifies
       claim:
         lines: 19-20
