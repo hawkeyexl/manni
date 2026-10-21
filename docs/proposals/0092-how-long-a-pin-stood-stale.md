@@ -50,11 +50,9 @@ is the useful number.
 
 ## Evidence
 
-This repository pins its own docs to its own sources. A throwaway script,
-[`0092/lie-window.mjs`](0092/lie-window.mjs), walked that history to test the
-core assumption. Run it from an empty directory as
-`node lie-window.mjs <repo> ac22639ef`. It writes `windows.json`, `cf.json`
-and `naive.json` there.
+This repository pins its own docs to its own sources. A throwaway walk
+over that history, run at `ac22639ef`, tested the core assumption. The method
+and the numbers follow.
 
 ### Method
 
@@ -120,7 +118,7 @@ none reached `main` stale.
 
 ### Is a hash change enough?
 
-The script asked how many of the 1,202 breaks a filter could have excused. A
+The walk asked how many of the 1,202 breaks a filter could have excused. A
 whitespace-blind comparison excused 11 of them, or 0.9%.
 
 A comment-blind comparison needs to know where the old text sits now. The
@@ -573,7 +571,7 @@ Both proposals need the same three pieces, built once in cite's core.
 | Git calls | A first-parent log over a set of paths, a tree listing at a commit, and tags reachable from `HEAD` with their commits. | `src/cite/core/git.ts` |
 
 The timeline visits only the commits that touched an entry's home or a cited
-source. On this repository the throwaway script, which visits all 137 and
+source. On this repository the throwaway walk, which visits all 137 and
 caches nothing across runs, takes 34 seconds.
 
 Neither proposal depends on the other's verb. 0092 turns the timeline into
