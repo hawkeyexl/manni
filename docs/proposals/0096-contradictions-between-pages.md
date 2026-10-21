@@ -679,6 +679,9 @@ id and alt-labels name one subject.
 
 ## Consequences
 
+This proposal was rejected, so none of the following happened. The list
+records what building it would have changed.
+
 - `src/graph/CLAUDE.md` says two verbs reach a model, `fill` and
   `contradictions`.
 - `docs/content-strategy/cujs.md` gains M28, "Find two pages that disagree

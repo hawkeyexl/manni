@@ -177,8 +177,8 @@ older than the docs it read.
 - Two sessions supply 17 of the 24 useful moments. One research subagent alone
   fired 37 raw moments, so collapsing bursts is required.
 - Subagent threads hold 12 of the 24. Reading main threads only, as the design
-  does, would lose half the signal. That settles open question 3 against the
-  current design.
+  does, would lose half the signal. That reopens open question 3. The design
+  below still skips subagent threads, and changing it waits for a wider corpus.
 - `spec-failed` is mostly noise. A failing test is usually the test doing its
   job, and 25 of its 30 checked moments were that.
 - `source-first` found 5 useful moments in 5. `asked-user` found 1 in 11.
