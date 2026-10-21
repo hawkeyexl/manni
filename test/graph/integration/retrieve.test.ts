@@ -93,6 +93,7 @@ describe("graph lookup", () => {
     const original = readFileSync(config, "utf8");
     // Room for the first match and nothing more, in each section.
     const room = full.matches.passages[0]?.text?.length ?? 0;
+    expect(room).toBeGreaterThan(0);
     writeFileSync(config, original.replace("graph:\n", `graph:\n  retrieve:\n    maxChars: ${String(room)}\n`), "utf8");
     try {
       const tight = (await runLookup({ cwd: dir, question: QUESTION })).result;
@@ -168,7 +169,8 @@ describe("graph retrieve", () => {
       ],
     });
     expect(new Set(both.context.map((b) => b.page))).toEqual(new Set(["docs/en/rotate.md"]));
-    expect(both.trace.filtered.some((f) => f.field === "tags")).toBe(true);
+    // The store applies `where` before its cut, so the rows it never returns are not traced.
+    expect(both.trace.filtered).toContainEqual({ node: "urn:manni:graph:doc/docs/en/setup.md", field: "audience" });
   });
 
   it("refuses with each reason, as an answer", async () => {
@@ -199,6 +201,12 @@ describe("graph retrieve", () => {
     expect(bundle.trace.withheld.every((w) => w.at === "query" && w.because.includes("drifted"))).toBe(true);
     const lookedUp = (await runLookup({ cwd: dir, index: "drifted", question: QUESTION })).result;
     expect(lookedUp.refusal).toBeUndefined();
+
+    // The script surface tightens the floor per call, as the CLI does.
+    const scripted = await createRetriever({ manifest: posix(join(drifted, "chunks.json")), fetch: fileFetch, embed: false });
+    expect((await scripted.retrieve(QUESTION, { lang: "en", withhold: ["drifted"] })).refusal?.reason).toBe("withheld");
+    expect((await scripted.traverse(ROTATE, { withhold: ["drifted"] })).trace.withheld.length).toBeGreaterThan(0);
+    expect((await scripted.impact(ROTATE, { withhold: ["drifted"] })).trace.withheld.length).toBeGreaterThan(0);
   });
 });
 
@@ -210,6 +218,15 @@ describe("graph traverse --context", () => {
     expect(out.context.slice(1).every((b) => b.role === "context")).toBe(true);
     const inward = await runTraverseContext({ cwd: dir, node: ROTATE, impact: true });
     expect(inward.context.filter((b) => b.role === "dependent").map((b) => b.iri)).toContain(CI);
+  });
+
+  it("filters the walk on row metadata with where, as retrieve does", async () => {
+    const all = await runTraverseContext({ cwd: dir, node: ROTATE });
+    const where = [{ field: "audience", value: "admin" }];
+    const admin = await runTraverseContext({ cwd: dir, node: ROTATE, where });
+    expect(admin.context.every((b) => admin.pages[b.page]?.metadata.audience === "admin")).toBe(true);
+    expect(admin.context.length + admin.trace.filtered.length).toBe(all.context.length);
+    expect(admin.trace.filtered.every((f) => f.field === "audience")).toBe(true);
   });
 });
 
@@ -285,6 +302,30 @@ describe("the stores and parsers", () => {
   it("parseChunksManifest reads chunks.json and refuses anything else", () => {
     expect(parseChunksManifest(readFileSync(join(dir, INDEX, "chunks.json"), "utf8")).version).toBe(1);
     expect(() => parseChunksManifest("{}")).toThrow("Not a manni graph chunk manifest");
+  });
+
+  it("parseChunksManifest refuses a manifest missing a field it reads, at parse time", () => {
+    const { languages: _dropped, ...partial } = parseChunksManifest(readFileSync(join(dir, INDEX, "chunks.json"), "utf8"));
+    expect(() => parseChunksManifest(partial)).toThrow("Not a manni graph chunk manifest");
+  });
+
+  it("parseChunkRows refuses a row missing a field it reads", () => {
+    const [first] = readFileSync(join(dir, INDEX, "chunks.en.jsonl"), "utf8").split("\n");
+    const { provenance: _dropped, ...partial } = JSON.parse(first ?? "{}") as ChunkRow;
+    expect(() => parseChunkRows(JSON.stringify(partial))).toThrow("Line 1 is not a chunk row.");
+  });
+
+  it("the static store applies where before the k cut", async () => {
+    const all = rows();
+    const target = all.find((r) => r.id === ROTATE);
+    const store = createStaticVectorStore(all);
+    const ranked = await store.query({ text: "", vector: target?.vector ?? null, k: all.length, language: "en", where: [] });
+    const last = ranked.at(-1)?.id;
+    expect(last).toBeDefined();
+    const marked = all.map((r) => (r.id === last ? { ...r, metadata: { ...r.metadata, probe: "only" } } : r));
+    const where = [{ field: "probe", value: "only" }];
+    const hits = await createStaticVectorStore(marked).query({ text: "", vector: target?.vector ?? null, k: 1, language: "en", where });
+    expect(hits.map((h) => h.id)).toEqual([last]);
   });
 
   it("the static store ranks by cosine, within k and the language", async () => {

@@ -117,6 +117,19 @@ describe("graph traverse --context", () => {
     const withhold = graph(["traverse", ROTATE, "--withhold", "drifted"]);
     expect(withhold.status).toBe(2);
     expect(withhold.stderr).toBe("manni: --withhold needs --context.\n");
+    const where = graph(["traverse", ROTATE, "--where", "audience=admin"]);
+    expect(where.status).toBe(2);
+    expect(where.stderr).toBe("manni: --where needs --context.\n");
+  });
+
+  it("takes --where with --context, as retrieve does", () => {
+    const r = graph(["traverse", ROTATE, "--context", "--where", "audience=admin", "--where", "tags=keys", "-f", "json"]);
+    expect(r.status).toBe(0);
+    const bundle = JSON.parse(r.stdout) as { context: { page: string }[] };
+    expect(new Set(bundle.context.map((b) => b.page))).toEqual(new Set(["docs/en/rotate.md"]));
+    const bad = graph(["traverse", ROTATE, "--context", "--where", "audience"]);
+    expect(bad.status).toBe(2);
+    expect(bad.stderr).toBe("manni: --where takes field=value, and got audience.\n");
   });
 
   it("prints today's walk without --context", () => {

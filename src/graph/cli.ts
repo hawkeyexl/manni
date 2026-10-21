@@ -840,6 +840,12 @@ program
     withholdOption,
   )
   .option(
+    "--where <field=value>",
+    "Only passages whose metadata field holds the value, or a list field containing it (repeatable; all must hold; with --context)",
+    whereOption,
+    [],
+  )
+  .option(
     "-f, --format <format>",
     `Output: ${GRAPH_FORMAT_LIST}`,
     formatOption,
@@ -862,11 +868,12 @@ program
         context?: boolean;
         maxChars?: number;
         withhold?: WithholdReason[];
+        where: WhereCondition[];
         format: GraphFormat;
       },
     ) => {
       try {
-        const { softwareSubject, context, maxChars, withhold, ...others } = rest(opts);
+        const { softwareSubject, context, maxChars, withhold, where, ...others } = rest(opts);
         const inputs = {
           ...others,
           ...documentOptions(opts),
@@ -880,6 +887,7 @@ program
         if (context !== true) {
           if (maxChars !== undefined) throw new GraphError("--max-chars needs --context.");
           if (withhold !== undefined) throw new GraphError("--withhold needs --context.");
+          if (where.length > 0) throw new GraphError("--where needs --context.");
           console.log(renderTraverse(runTraverse(inputs), opts.format));
           return;
         }
@@ -887,6 +895,7 @@ program
           ...inputs,
           ...(maxChars === undefined ? {} : { maxChars }),
           ...(withhold === undefined ? {} : { withhold }),
+          ...(where.length === 0 ? {} : { where }),
         });
         console.log(renderBundle(bundle, opts.format));
       } catch (e) {
