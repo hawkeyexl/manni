@@ -158,8 +158,11 @@ docs/src/content/docs/cite/ci/index.mdx:
       lines: 375-376
       integrity: sha256-13cba9152803fb80408a71f740da21db97cafdbee0788a3aed6430c7666f38d9
     - generated-by: Claude Fable 5.1
-      lines: 378-404
-      integrity: sha256-f70d847ee4ca5a522a64d7b376605c019d1c0e4decca0d99465e0d47ebebd7dd
+      lines: 378-399
+      integrity: sha256-6a7f1dfa44e888febf32fe638881309d2d1305436604b726b7cd207e1d31303c
+    - generated-by: Claude Fable 5.1
+      lines: 401-404
+      integrity: sha256-961d55dc9176e1759b8daa70db83aef83606e59b2e87cea6b722414ea3b0252f
   owner:
     - "@hawkeyexl"
   created: 2026-09-12

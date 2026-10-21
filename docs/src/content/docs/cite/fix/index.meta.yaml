@@ -428,8 +428,11 @@ docs/src/content/docs/cite/fix/index.mdx:
       lines: 542
       integrity: sha256-8f20109ad1229bfd6df889c40be316812fcf66c3ca527d1cb7cafe7deb478b00
     - generated-by: Claude Fable 5.1
-      lines: 543-624
-      integrity: sha256-7f6fb686ea46a2e8b7a5d704372c3b6ce65d9c9a691414db74a36756843d7056
+      lines: 543-618
+      integrity: sha256-5c1facf9ee409ec1b192953a2c0339c665ec2f859f837a64cb3e76a7ebf2124c
+    - generated-by: Claude Fable 5.1
+      lines: 620-624
+      integrity: sha256-c7588c7af84eba1472b02266340f2db5ddd0984ec4ff77fa805788e462bafe5f
     - generated-by: Claude Opus 5.5
       lines: 625
       integrity: sha256-f0c00db929c420992bc1d74105d09906ab95d01ff9ea3b7867dc57b42eb2b7ab
