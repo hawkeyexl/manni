@@ -31,6 +31,7 @@ import {
 import { byCodeUnit } from "../core/sort.js";
 import { PREFIXES } from "../core/vocab.js";
 import { exportSampleQuestions } from "./questions.js";
+import { exportChunks } from "./chunks.js";
 import { GraphIndex } from "../runtime/graph.js";
 import { writeZip, type ZipEntry } from "../core/zip.js";
 
@@ -39,7 +40,7 @@ import { writeZip, type ZipEntry } from "../core/zip.js";
  * The CLI names its positional against this list, and `runExport` holds a
  * library caller to it too.
  */
-export const EXPORT_TARGETS = ["jsonld", "iirds", "search", "questions"] as const;
+export const EXPORT_TARGETS = ["jsonld", "iirds", "search", "questions", "chunks"] as const;
 
 export type ExportFormat = (typeof EXPORT_TARGETS)[number];
 
@@ -52,6 +53,8 @@ export interface ExportOptions {
   format: ExportFormat;
   /** Output path (default: the graph path with the format's extension). */
   out?: string;
+  /** `--evals`: a docevals JSON report for `chunks`, overriding `graph.export.chunks.evals`. */
+  evals?: string;
   cwd?: string;
 }
 
@@ -60,8 +63,10 @@ export interface ExportResult {
   format: ExportFormat;
   /** Distinct subject nodes in the emitted (or projected) graph; questions for `questions`. */
   nodes: number;
-  /** Non-fatal projection warnings (iiRDS only; empty otherwise). */
+  /** Non-fatal warnings: iiRDS projection, stale answers, chunk records. */
   warnings: string[];
+  /** Notices, said once: chunks withheld, or a run outside git. */
+  notices?: string[];
 }
 
 /** File extension each single-file format writes to. */
@@ -257,6 +262,9 @@ export async function runExport(opts: ExportOptions): Promise<ExportResult> {
       `Unknown export target "${opts.format}". Use ${EXPORT_TARGETS.join(" | ")}.`,
     );
   }
+  if (opts.evals !== undefined && opts.format !== "chunks") {
+    throw new GraphError("--evals applies only to graph export chunks.");
+  }
 
   const config = loadRunConfig(
     {
@@ -271,6 +279,34 @@ export async function runExport(opts: ExportOptions): Promise<ExportResult> {
   const sources = documentBase(config, {}, cwd);
 
   if (opts.format === "jsonld") return runJsonLd(cwd, graphPath, opts.out);
+  if (opts.format === "chunks") {
+    const configured = config.export.chunks.evals;
+    const evals =
+      opts.evals !== undefined
+        ? { label: opts.evals, path: resolve(cwd, opts.evals) }
+        : configured === null
+          ? undefined
+          : { label: configured, path: resolve(config.configDir, configured) };
+    const result = await exportChunks({
+      cwd,
+      config,
+      source: {
+        ...(opts.config === undefined ? {} : { configPath: opts.config }),
+        ...(opts.noConfig === undefined ? {} : { noConfig: opts.noConfig }),
+      },
+      graphPath,
+      // `--out` names the directory, as for `search`: there is more than one file.
+      outDir: opts.out ? resolve(cwd, opts.out) : dirname(graphPath),
+      ...(evals === undefined ? {} : { evals }),
+    });
+    return {
+      outPath: result.manifestPath,
+      format: "chunks",
+      nodes: result.rows,
+      warnings: result.warnings,
+      notices: result.notices,
+    };
+  }
   if (opts.format === "search") {
     return runSearchIndex(cwd, sources, graphPath, opts.out);
   }

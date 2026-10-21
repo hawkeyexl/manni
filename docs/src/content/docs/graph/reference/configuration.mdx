@@ -102,6 +102,14 @@ graph:
       title: Product documentation
       creator: Example Corp
       version: "1.3"
+    chunks:
+      evals: .manni/evals.json
+
+  retrieve:
+    seeds: 3
+    depth: 1
+    maxChars: 12000
+    withhold: []
 ```
 
 Section keys are camelCase (`baseIri`, `maxTurns`, `confidenceThreshold`). The
@@ -284,6 +292,32 @@ Tested models, with what each costs:
 | `iirds.title` | string | the exporter's own | Package title written into the iiRDS container. |
 | `iirds.creator` | string | unset | Creator organization, written as an iiRDS Party and a vCard organization. |
 | `iirds.version` | `"1.2"` or `"1.3"` | `"1.3"` | The iiRDS version literal the package declares. Quote it: unquoted, YAML reads `1.3` as a number and the value is refused. |
+| `chunks.evals` | path, or `null` | `null` | A docevals JSON report, as `manni docevals run -f json` writes it, relative to the config file. It fills each chunk record's `evals`. `null` leaves every record's `evals` `null`. `--evals` overrides it for one run. |
+
+### `retrieve`
+
+The retrieval defaults the chunk manifest hands every host. `graph export
+chunks` records the resolved values under the manifest's `retrieve`. None of
+these keys is required.
+
+| Key | Type | Default | What it does |
+|---|---|---|---|
+| `seeds` | integer ≥ 1 | `3` | The number of top-ranked passages retrieval starts from. |
+| `depth` | integer ≥ 0 | `1` | The number of graph hops retrieval follows out from those passages. |
+| `maxChars` | integer ≥ 1 | `12000` | The most characters of passage text retrieval returns. |
+| `withhold` | list of `drifted`, `failing` | `[]` | Applied at export. A matching passage is left out of the rows and listed under the manifest's `withheld`. `drifted` matches a pin at `error` severity. `failing` matches a current eval verdict that failed or errored, and a stale verdict never counts. |
+
+```yaml
+graph:
+  export:
+    chunks:
+      evals: .manni/evals.json
+  retrieve:
+    withhold: [drifted, failing]
+```
+
+See [Chunks](/manni/graph/reference/cli/#chunks) for the files the export
+writes.
 
 ## Keys that moved or went
 
@@ -307,7 +341,8 @@ Mark a top-level property `x-manni-graph-output: false` in the schema that gover
 the page. It is then dropped before derivation, so it appears in none of the
 four outputs. Absent means `true`. The mark sits beside `x-manni-location` in the
 same schema, so what a page stores and what a delivered artifact says are two
-decisions in one place.
+decisions in one place. `graph export chunks` reads both marks at every depth,
+as [Chunks](/manni/graph/reference/cli/#what-the-metadata-carries) describes.
 
 graph keeps no schema set of its own. `graph build` reads the marks from the
 set `manni meta validate` resolves for each page, so `schemas`, `strict`,

@@ -19,7 +19,7 @@ import {
 } from "../shared/cli-options.js";
 import { shouldColor } from "../shared/color.js";
 import { fail } from "../shared/run.js";
-import { warn } from "../shared/warn.js";
+import { noticeOnce, warn } from "../shared/warn.js";
 import { GraphError } from "./types.js";
 import { LOCAL_FLAG_HELP } from "../shared/providers.js";
 import { ALL_FILL_FIELDS, type FillField } from "./core/config.js";
@@ -871,7 +871,7 @@ program
 program
   .command("export")
   .description(
-    "Reserialize the built graph into a consumer format (jsonld file, iirds package, search index, or question set)",
+    "Reserialize the built graph into a consumer format (jsonld file, iirds package, search index, question set, or chunks with their provenance)",
   )
   // The target is a positional, not `-f`: `-f` is the output format in every
   // other verb of the family (0051 §2), and one flag cannot mean two things.
@@ -881,12 +881,13 @@ program
   .option("-g, --graph <path>", "Graph .ttl path (default: config out)")
   .option(
     "-o, --out <path>",
-    "Output path (default: the graph path with the target's extension)",
+    "Output path (default: the graph path with the target's extension); a directory for search and chunks",
   )
+  .option("--evals <path>", "A docevals JSON report for chunks (default: config export.chunks.evals)")
   .action(
     async (
       target: string,
-      opts: { config?: string | boolean; graph?: string; out?: string },
+      opts: { config?: string | boolean; graph?: string; out?: string; evals?: string },
     ) => {
       try {
         if (!(EXPORT_TARGETS as readonly string[]).includes(target)) {
@@ -899,9 +900,12 @@ program
           graph: opts.graph,
           format: target as ExportFormat,
           out: opts.out,
+          ...(opts.evals === undefined ? {} : { evals: opts.evals }),
         });
         for (const warning of result.warnings) warn(warning);
-        const noun = result.format === "questions" ? "question" : "node";
+        for (const said of result.notices ?? []) noticeOnce(said);
+        const noun =
+          result.format === "questions" ? "question" : result.format === "chunks" ? "chunk" : "node";
         console.log(
           `Wrote ${result.nodes} ${noun}${result.nodes === 1 ? "" : "s"} to ${result.outPath}`,
         );

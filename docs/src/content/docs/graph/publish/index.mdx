@@ -13,7 +13,7 @@ concepts:
   - vector sidecar
   - localization manifest
   - x-manni-graph-output
-last-updated: 2026-10-19
+last-updated: 2026-10-21
 ---
 
 The graph is worth more outside CI than inside it. `manni graph export`
@@ -24,7 +24,7 @@ the docs site loads in the browser. The reader questions, for an eval tool.
 This is Devin's second page. The rule it carries: **publish on the run that
 gated it**, so what ships is what passed.
 
-## Four targets
+## Five targets
 
 ```sh
 manni graph export <target> [options]
@@ -36,6 +36,7 @@ manni graph export <target> [options]
 | `iirds` | A conformant iiRDS package | A content delivery portal. RDF/XML is written inside the container. |
 | `search` | A lexical index per language, plus a localization manifest | `@hawkeyexl/manni/graph/runtime`, client-side. |
 | `questions` | One JSON line per reader question, with the text of each answer | An eval tool, such as Ragas, DeepEval or promptfoo. |
+| `chunks` | One JSON line per passage, each with its provenance record, plus a manifest | A retrieval host that serves passages with their proof. |
 
 ```console
 $ manni graph export jsonld -c test/graph/fixtures/dd/docs.config.yaml
@@ -48,6 +49,10 @@ The target is a positional, not a `-f`. Every other verb of the family means
 `-o` writes somewhere else; the default is the graph's path with the target's
 extension. `questions` writes `questions.jsonl` beside the graph. An unknown
 target is exit `2`, with the allowed set in the message.
+
+`chunks` writes into the graph's directory, or the one `-o` names. Each record
+carries the passage's pins, dates and eval verdicts, as the
+[CLI reference](/manni/graph/reference/cli/#chunks) lists.
 
 ## Linked data
 
@@ -267,6 +272,6 @@ produce something nobody checked.
 
 {/* step {"description":"questions writes the question set as JSON Lines.","runShell":{"command":"manni graph export questions -c test/graph/fixtures/dd/docs.config.yaml","exitCodes":[0],"stdio":"/Wrote \\d+ questions/"}} */}
 
-{/* step {"description":"An unknown target is refused with the allowed set named.","runShell":{"command":"manni graph export turtle -c test/graph/fixtures/dd/docs.config.yaml","exitCodes":[2],"stdio":"Use jsonld | iirds | search | questions."}} */}
+{/* step {"description":"An unknown target is refused with the allowed set named.","runShell":{"command":"manni graph export turtle -c test/graph/fixtures/dd/docs.config.yaml","exitCodes":[2],"stdio":"Use jsonld | iirds | search | questions | chunks."}} */}
 
 {/* step {"description":"search ranks nodes from the exported index.","runShell":{"command":"manni graph search installation -c test/graph/fixtures/dd/docs.config.yaml","exitCodes":[0],"stdio":"(lexical)"}} */}

@@ -179,6 +179,37 @@ describe("parseConfig", () => {
     ).toThrow(GraphError);
   });
 
+  // Proposal 0090: the chunk artifact's evals report, and the retrieval
+  // defaults the manifest hands every host.
+  it("defaults export.chunks and retrieve", () => {
+    const c = parseConfig("", "/tmp/manni.config.yaml");
+    expect(c.export.chunks).toEqual({ evals: null });
+    expect(c.retrieve).toEqual({ seeds: 3, depth: 1, maxChars: 12000, withhold: [] });
+  });
+
+  it("parses export.chunks.evals, relative to the config, and every retrieve key", () => {
+    const c = parseConfig(
+      "export:\n  chunks:\n    evals: .manni/evals.json\nretrieve:\n  seeds: 5\n  depth: 0\n  maxChars: 20000\n  withhold: [drifted, failing]\n",
+      "/tmp/manni.config.yaml",
+    );
+    expect(c.export.chunks.evals).toBe(".manni/evals.json");
+    expect(c.retrieve).toEqual({ seeds: 5, depth: 0, maxChars: 20000, withhold: ["drifted", "failing"] });
+    expect(parseConfig("export:\n  chunks:\n    evals: null\n", "/tmp/manni.config.yaml").export.chunks.evals).toBeNull();
+  });
+
+  it.each([
+    "export:\n  chunks:\n    evals: 3\n",
+    "export:\n  chunks:\n    bogus: true\n",
+    "retrieve:\n  seeds: 0\n",
+    "retrieve:\n  depth: -1\n",
+    "retrieve:\n  maxChars: 0\n",
+    "retrieve:\n  withhold: [stale]\n",
+    "retrieve:\n  withhold: drifted\n",
+    "retrieve:\n  bogus: 1\n",
+  ])("rejects %j", (text) => {
+    expect(() => parseConfig(text, "/tmp/manni.config.yaml")).toThrow(GraphError);
+  });
+
   it("normalizes baseIri with a trailing slash", () => {
     const c = parseConfig(
       "baseIri: https://example.com/graph\n",

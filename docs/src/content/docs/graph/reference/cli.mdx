@@ -279,7 +279,7 @@ published graph is still asked. A page in the graph that is no longer on disk
 is skipped, and one warning names how many and says to rebuild.
 
 A question can pin the body lines that answer it, as
-[`manni:ai-context:1.1.0`](/manni/meta/reference/schemas/manni-ai-context/)
+[`manni:ai-context:1.2.0`](/manni/meta/reference/schemas/manni-ai-context/)
 describes. A pinned question must find the part of the page that holds those
 lines. That is a section whose own text covers them, from its heading to the
 next heading of any rank. Text before the first heading belongs to the page
@@ -1013,6 +1013,7 @@ Wrote 32 nodes to .tmp/dd/graph.jsonld
 | `iirds` | A conformant iiRDS package, for a content delivery portal. RDF/XML is written inside it. |
 | `search` | The browser search index and its manifest, read client-side by `@hawkeyexl/manni/graph/runtime`. |
 | `questions` | The question set as JSON Lines, for an eval tool. See [The question set](#the-question-set). |
+| `chunks` | The passages a retrieval host serves, each with its provenance record. See [Chunks](#chunks). |
 
 An unknown target is **exit 2**, with the allowed set named.
 
@@ -1020,7 +1021,7 @@ An unknown target is **exit 2**, with the allowed set named.
 
 | Argument | Description |
 |---|---|
-| `<target>` | What to write: `jsonld`, `iirds`, `search`, or `questions`. Required. |
+| `<target>` | What to write: `jsonld`, `iirds`, `search`, `questions`, or `chunks`. Required. |
 
 ### Options
 
@@ -1029,7 +1030,8 @@ An unknown target is **exit 2**, with the allowed set named.
 | `-c, --config` | `<path>` | discovered | Path to `manni.config.yaml`. |
 | `--no-config` | n/a | off | Ignore any discovered config file. |
 | `-g, --graph` | `<path>` | config `out` | The built Turtle file to read. |
-| `-o, --out` | `<path>` | the graph path with the target's extension; `questions.jsonl` beside the graph for `questions` | Where to write. |
+| `-o, --out` | `<path>` | the graph path with the target's extension; `questions.jsonl` beside the graph for `questions`; the graph's directory for `search` and `chunks` | Where to write. For `search` and `chunks` it names a directory, because each writes more than one file. |
+| `--evals` | `<path>` | config `export.chunks.evals` | A docevals JSON report, as `manni docevals run -f json` writes it. It fills each chunk record's `evals`. Any target but `chunks` refuses it with **exit 2**. |
 
 ### The question set
 
@@ -1104,6 +1106,132 @@ dataset = EvaluationDataset(goldens=goldens)
 jq -c 'select(.reviewed) | {vars: {question: .question}, metadata: {id: .id}}' graph/questions.jsonl > tests.jsonl
 ```
 
+### Chunks
+
+`export chunks` writes the passages a retrieval host serves, and the proof
+behind each one. A passage is a section's text, from its heading to the next
+heading of the same or higher rank. Each document's whole body is a passage
+too. A passage is keyed by its graph node IRI.
+
+```console
+$ manni graph export chunks --evals .manni/evals.json
+Wrote 214 chunks to graph/chunks.json
+```
+
+It writes into one directory: `-o` names it, and the graph's directory is the
+default.
+
+| File | What it holds |
+|---|---|
+| `chunks.json` | The manifest. It says what the rows were built from, and holds the retrieval defaults. |
+| `chunks.<tag>.jsonl` | One JSON line per passage, one file per language. |
+
+Two exports of the same inputs are byte-identical. Keys are sorted, rows are
+sorted by `id`, and nothing reads the wall clock.
+
+#### The manifest
+
+| Key | Meaning |
+|---|---|
+| `format` | Always `"manni-graph-chunks"`. |
+| `version` | Always `1`. |
+| `graph` | The `sha256-` digest of the graph's JSON-LD, the bytes `graph export jsonld` writes. |
+| `graphFile` | That JSON-LD file's name. |
+| `searchIndex` | The search index's localization manifest, as `graph export search` names it. |
+| `commit` | The docs commit, or `null` outside git. |
+| `worktree` | `clean` or `modified`, or `null` outside git. |
+| `model` | `{ id, dimensions }` of the embedding model the rows' vectors come from, or `null`. |
+| `retrieve` | The resolved [`graph.retrieve`](/manni/graph/reference/configuration/#retrieve) keys, the retrieval defaults every host reads. |
+| `evals` | `{ report, digest }`: the report as the config or `--evals` names it, and its digest. `null` with no report. |
+| `languages` | `{ "<tag>": { file, rows } }`: each language's rows file and how many rows it holds. |
+| `pages` | `{ "<page>": { metadata } }`: each page's delivered fields. |
+| `withheld` | `[{ id, page, because }]`: the passages `graph.retrieve.withhold` left out, and which reasons matched. |
+
+#### A row
+
+| Field | Meaning |
+|---|---|
+| `id` | The passage's graph node IRI. |
+| `graph` | The manifest's `graph` digest. |
+| `page` | The page the passage comes from. |
+| `lines` | The passage's body lines, `N-M`. |
+| `language` | The page's language tag. |
+| `title` | The heading, or the page's title for a whole body. |
+| `text` | The passage, as the page reads at export time. |
+| `vector` | The node's vector. Present only when a sidecar from `manni graph embed` holds one for that node. |
+| `metadata` | The page's delivered fields. The delivered fields of every heading `meta` statement from the page down to this section overlay them, the nearest winning field by field. |
+| `provenance` | The passage's provenance record. |
+
+#### The provenance record
+
+A record is self-contained. Copied out of its row, it still says what it
+describes.
+
+| Field | Meaning |
+|---|---|
+| `node`, `page`, `lines` | What the record describes. |
+| `commit`, `worktree` | As in the manifest. Both are `null` outside git. |
+| `pins` | The cite pins whose claim overlaps the passage. |
+| `dates` | The page's derived and verified dates. |
+| `evals` | The page's docevals verdicts, or `null` with no report. |
+| `statements` | `[{ lines, status, data }]`: the block `meta` statements anchored inside the passage, with their delivered fields. |
+
+`pins` is `{ total, current, notice, warning, error, items }`. Each pin is
+counted once, at its worst finding. The findings use cite's own rules at the
+severity `cite.severity` sets, and they are computed outside git too. Each item
+is `{ id, claim, source, commit, findings, lastVerified, verifiedBy }`. A
+finding is `{ rule, severity }`, and an empty list means the pin is current.
+
+`dates` holds `created` and `lastUpdated`, each `{ day, stamp }`. `day` is the
+UTC day `manni meta derive` would stamp. It is `null` outside git, or for a body
+change not yet committed. `stamp` compares that day with the page's own field:
+`current`, `stale` or `absent`. Beside them, `lastVerified` is the page's
+`last-verified` as written, or `null`. `verifiedBy` holds its `verified-by`
+entries, or `[]`.
+
+`evals` is `{ report, current, pass, fail, needsReview, skipped, error, items }`.
+`report` is the report's digest. `current` says whether the page still has the
+bytes the report's `integrity` names. Each item is
+`{ name, suite, grader, outcome }`, plus `confidence` when the judge gave one.
+
+#### What the metadata carries
+
+A field reaches the manifest's `pages[].metadata`, a row's `metadata` and a
+statement's `data` unless its schema marks it. The marks are
+`x-manni-graph-output: false` and `x-manni-location: external`, read at every
+depth. So a `sample-questions` item keeps its question and loses its `answers`
+pins, which `manni:ai-context:1.2.0` marks. JSON-LD, iiRDS and the search index
+keep the graph build's rule, which reads top-level fields only.
+
+#### Withheld passages
+
+[`graph.retrieve.withhold`](/manni/graph/reference/configuration/#retrieve)
+leaves passages out of the rows and lists them under the manifest's `withheld`.
+`drifted` matches a passage with a pin at `error` severity. `failing` matches a
+current eval verdict that failed or errored. A stale verdict never counts.
+
+#### Messages
+
+Each goes to stderr, prefixed `manni: `. Only the three marked **exit 2** stop
+the export. The rest leave the exit code at 0.
+
+| Message | Kind |
+|---|---|
+| `no vector sidecar, so chunks carry no vectors and retrieval is lexical only; configure graph.embed to add them.` | warning |
+| `<N> chunks withheld by graph.retrieve.withhold (drifted); chunks.json lists them.` | notice |
+| `no docevals report is configured, so records carry no eval verdicts.` | warning |
+| `graph.export.chunks.evals names .manni/evals.json, which does not exist.` | **exit 2** |
+| `.manni/evals.json is not a docevals JSON report; write one with manni docevals run -f json.` | **exit 2** |
+| `.manni/evals.json records no page integrity, so every verdict reads stale; write it again with manni docevals run -f json.` | warning |
+| `4 pages changed since .manni/evals.json was written, so their verdicts read stale.` | warning |
+| `3 pages in .manni/evals.json are not in the graph, so their verdicts are left out.` | warning |
+| `git cannot read this directory (<git's reason>), so records carry no commit and no derived dates.` | notice, said once |
+| `2 pages differ from 26dad159, so their records describe uncommitted text.` | warning |
+| `--evals applies only to graph export chunks.` | **exit 2** |
+
+Outside git the export still succeeds. Its records carry pins and evals, with
+no commit and no derived dates.
+
 ## Exit codes
 
 | Code | Meaning |
@@ -1163,6 +1291,10 @@ jq -c 'select(.reviewed) | {vars: {question: .question}, metadata: {id: .id}}' g
 {/* step {"description":"export jsonld reserializes the built graph.","runShell":{"command":"manni graph export jsonld -c test/graph/fixtures/dd/docs.config.yaml","exitCodes":[0],"stdio":"/Wrote \\d+ nodes/"}} */}
 
 {/* step {"description":"An unknown export target is exit 2, with the allowed set named.","runShell":{"command":"manni graph export turtle -c test/graph/fixtures/dd/docs.config.yaml","exitCodes":[2],"stdio":"Unknown export target \"turtle\""}} */}
+
+{/* step {"description":"export chunks writes the passages and their manifest.","runShell":{"command":"manni graph export chunks -c test/graph/fixtures/dd/docs.config.yaml","exitCodes":[0],"stdio":"/Wrote \\d+ chunks/"}} */}
+
+{/* step {"description":"--evals belongs to chunks alone.","runShell":{"command":"manni graph export jsonld --evals evals.json -c test/graph/fixtures/dd/docs.config.yaml","exitCodes":[2],"stdio":"--evals applies only to graph export chunks."}} */}
 
 {/* step {"description":"export search writes the browser index and its manifest.","runShell":{"command":"manni graph export search -c test/graph/fixtures/dd/docs.config.yaml","exitCodes":[0],"stdio":"Wrote"}} */}
 

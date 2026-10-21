@@ -1,0 +1,19 @@
+# The chunk artifact's fixture (proposal 0090). The test copies it into a
+# temporary repository, commits it twice and leaves one page edited, so the
+# records see one drifted pin, one stale stamp, one changed page and a dirty
+# worktree.
+collections:
+  - name: pages
+    paths:
+      - "docs/**/*.md"
+
+meta:
+  derive:
+    collections: [pages]
+    sources: [git]
+
+graph:
+  out: .manni/graph/graph.ttl
+  export:
+    chunks:
+      evals: evals.json

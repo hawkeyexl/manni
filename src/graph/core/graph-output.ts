@@ -83,6 +83,62 @@ export async function suppressGraphOutput(
   return out;
 }
 
+/**
+ * `data` as agent-facing output carries it (proposal 0090, decision 12): every
+ * value its schemas mark `x-manni-graph-output: false` or
+ * `x-manni-location: external` removed, at any depth, so an answer pin inside
+ * a `sample-questions` item goes while its question stays. `data` itself when
+ * nothing is marked, and a copy otherwise; the input is never changed.
+ *
+ * This is the rule for the chunk artifact's metadata. The graph build keeps
+ * `suppressGraphOutput`'s top-level rule, because the graph is linked data,
+ * not agent context.
+ */
+export async function deliveredFields(
+  data: Record<string, unknown>,
+  refs: string[],
+  validator: Pick<MetaPageView["validator"], "deliveryExclusions">,
+): Promise<Record<string, unknown>> {
+  const pointers = await validator.deliveryExclusions(data, refs);
+  if (pointers.length === 0) return data;
+  const copy = structuredClone(data);
+  // Deepest and highest index first, so removing one never shifts another.
+  const paths = pointers.map((p) => p.slice(1).split("/").map((s) => s.replace(/~1/g, "/").replace(/~0/g, "~")));
+  paths.sort((a, b) => -comparePaths(a, b));
+  for (const path of paths) removeAt(copy, path);
+  return copy;
+}
+
+/** Segment by segment, numbers as numbers, a prefix first. */
+function comparePaths(a: readonly string[], b: readonly string[]): number {
+  for (let i = 0; i < Math.min(a.length, b.length); i++) {
+    const x = a[i] ?? "";
+    const y = b[i] ?? "";
+    if (x === y) continue;
+    const nx = /^\d+$/.test(x) ? Number(x) : Number.NaN;
+    const ny = /^\d+$/.test(y) ? Number(y) : Number.NaN;
+    if (!Number.isNaN(nx) && !Number.isNaN(ny)) return nx - ny;
+    return x < y ? -1 : 1;
+  }
+  return a.length - b.length;
+}
+
+function removeAt(root: unknown, path: readonly string[]): void {
+  let node: unknown = root;
+  for (const segment of path.slice(0, -1)) {
+    if (typeof node !== "object" || node === null) return;
+    node = (node as Record<string, unknown>)[segment];
+  }
+  const last = path[path.length - 1];
+  if (last === undefined || typeof node !== "object" || node === null) return;
+  if (Array.isArray(node)) {
+    const index = Number(last);
+    if (Number.isInteger(index) && index < node.length) node.splice(index, 1);
+    return;
+  }
+  Reflect.deleteProperty(node, last);
+}
+
 /** `data` without the keys its schemas mark `false`, or `data` itself when none are. */
 async function allowed(
   data: Record<string, unknown>,

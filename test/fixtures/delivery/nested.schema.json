@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "title": { "type": "string" },
+    "owner": { "type": "string", "x-manni-graph-output": false },
+    "authors": { "type": "array", "x-manni-location": "external" },
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "question": { "type": "string" },
+          "answers": { "type": "array", "x-manni-graph-output": false },
+          "note": { "type": "string", "x-manni-location": "page" }
+        }
+      }
+    }
+  }
+}
