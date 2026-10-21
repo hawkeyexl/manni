@@ -708,7 +708,8 @@ export async function askSampleQuestions(
   // the nodes that answer it, and a question is cited when every test has
   // one among the bundle's citations. An empty test, an answer that changed
   // or a page that is gone, is not cited, and its own finding says why.
-  let seam: CiteSeam | null | undefined = cite ? undefined : null;
+  // An object, since the seam opens inside `askCited` and flow analysis reads only this scope.
+  const row: { seam: CiteSeam | null | undefined } = { seam: cite ? undefined : null };
   let citedCount = 0;
   let withheldCount = 0;
   const languageOf = (iri: string): string | undefined => {
@@ -716,12 +717,12 @@ export async function askSampleQuestions(
     return tag === undefined ? undefined : canonicalLanguageTag(tag);
   };
   const askCited = async (question: string, language: string, targets: string[][], report: Report): Promise<void> => {
-    if (seam === undefined && cite) {
+    if (row.seam === undefined && cite) {
       try {
-        seam = await cite();
+        row.seam = await cite();
       } catch (e) {
         if (!(e instanceof GraphError)) throw e;
-        seam = null;
+        row.seam = null;
         findings.push({
           severity: "notice",
           message: `the cited row did not run: ${e.message}`,
@@ -731,6 +732,7 @@ export async function askSampleQuestions(
         });
       }
     }
+    const seam = row.seam;
     if (!seam) return;
     const bundle = await seam.retrieve(question, language);
     const cites = bundle?.citations.map((c) => c.iri) ?? [];
@@ -748,7 +750,7 @@ export async function askSampleQuestions(
       return;
     }
     if (targets.some((t) => t.length === 0)) return;
-    const held = targets.flat().find((iri) => seam?.withheld.has(iri) === true);
+    const held = targets.flat().find((iri) => seam.withheld.has(iri));
     if (held !== undefined) {
       withheldCount += 1;
       const title = held.includes("#") ? graph.literal(held, TITLE) : undefined;
@@ -912,7 +914,7 @@ export async function askSampleQuestions(
   }
 
   // The cited row and its gate, only when the row ran.
-  if (seam) {
+  if (row.seam) {
     summary.cited = citedCount;
     summary.withheld = withheldCount;
     const cited = settings.citedThreshold;
