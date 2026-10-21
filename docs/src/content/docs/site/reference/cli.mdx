@@ -185,7 +185,9 @@ HTML in two steps.
 
 A claim whose text appears twice is not placed, and the report says so. A tie
 is never broken by document order. Statements join by lines alone. Every
-`data-manni-src` stamp is removed afterwards, from every page.
+`data-manni-src` stamp is removed afterwards, from every page. So annotate
+once per build: a second run over the same build finds no stamps, and places
+by text alone.
 
 Add the plugin to the framework's rehype plugins. For Starlight that is
 `astro.config.mjs`:
