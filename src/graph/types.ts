@@ -1,10 +1,19 @@
 /** Shared types for manni graph. */
 import { ToolError } from "../shared/errors.js";
 import type { DocFormat } from "./core/analyze.js";
+import type { RefusalReason } from "./runtime/assemble.js";
 
-/** Operational error: expected failure reported to the user, exit code 2. */
+/**
+ * Operational error: expected failure reported to the user, exit code 2.
+ *
+ * `refusal` marks a usage error that a served host answers instead of failing
+ * on: `graph serve` returns it as a refusal with the CLI's text (proposal 0090).
+ */
 export class GraphError extends ToolError {
-  constructor(message: string) {
+  constructor(
+    message: string,
+    readonly refusal?: RefusalReason,
+  ) {
     super(message);
     this.name = "GraphError";
   }

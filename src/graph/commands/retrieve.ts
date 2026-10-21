@@ -61,6 +61,8 @@ export interface ArtifactOptions {
 
 export interface LookupCommandOptions extends ArtifactOptions {
   question: string;
+  /** `graph serve --withhold`; `graph lookup` takes no such flag. */
+  withhold?: WithholdReason[];
 }
 
 export interface RetrieveCommandOptions extends ArtifactOptions {
@@ -89,9 +91,12 @@ export interface TraverseContextOptions extends ArtifactOptions {
   limit?: number;
   maxChars?: number;
   withhold?: WithholdReason[];
+  /** The MCP `traverse` and `impact` tools' `where`; the CLI flag is `retrieve`'s alone. */
+  where?: WhereCondition[];
 }
 
-interface Artifact {
+/** An opened artifact: what `graph serve` holds across calls. */
+export interface Artifact {
   ctx: RetrieverContext;
   config: GraphConfig;
   label: string;
@@ -113,7 +118,7 @@ async function queryEmbedder(manifest: ChunksManifest, mode: RetrieveMode | unde
 }
 
 /** The artifact beside the graph, held to the graph it was built from. */
-async function openArtifact(opts: ArtifactOptions, mode?: RetrieveMode): Promise<Artifact> {
+export async function openArtifact(opts: ArtifactOptions, mode?: RetrieveMode): Promise<Artifact> {
   const cwd = opts.cwd ?? process.cwd();
   const config = loadRunConfig(
     {
@@ -174,18 +179,40 @@ async function served<T>(label: string, work: () => Promise<T>): Promise<T> {
 export async function runLookup(
   opts: LookupCommandOptions,
 ): Promise<{ result: LookupResult; settings: { depth: number; maxChars: number } }> {
-  const { ctx, config, label } = await openArtifact(opts);
-  const result = await served(label, () => lookup({ ...ctx, question: opts.question }));
+  const artifact = await openArtifact(opts);
+  const { config } = artifact;
+  const result = await lookupIn(artifact, opts);
   return { result, settings: { depth: config.retrieve.depth, maxChars: config.retrieve.maxChars } };
 }
 
+/** `lookup` over an artifact already open: `graph lookup` and the MCP `lookup` tool. */
+export async function lookupIn(
+  { ctx, label }: Artifact,
+  opts: Pick<LookupCommandOptions, "question" | "withhold">,
+): Promise<LookupResult> {
+  return served(label, () =>
+    lookup({ ...ctx, question: opts.question, ...(opts.withhold === undefined ? {} : { withhold: opts.withhold }) }),
+  );
+}
+
 export async function runRetrieve(opts: RetrieveCommandOptions): Promise<PassageBundle> {
-  const { ctx, label } = await openArtifact(opts, opts.mode);
+  return retrieveIn(await openArtifact(opts, opts.mode), opts);
+}
+
+/** `retrieve` over an artifact already open: `graph retrieve` and the MCP `retrieve` tool. */
+export async function retrieveIn(
+  { ctx, label }: Artifact,
+  opts: Omit<RetrieveCommandOptions, keyof ArtifactOptions>,
+): Promise<PassageBundle> {
   const languages = Object.keys(ctx.manifest.languages).sort();
-  if (opts.lang === undefined && languages.length > 1) throw new GraphError(langRequired(languages));
+  if (opts.lang === undefined && languages.length > 1) {
+    throw new GraphError(langRequired(languages), "lang-required");
+  }
   if (opts.lang !== undefined) {
     const wanted = opts.lang.toLowerCase();
-    if (!languages.some((l) => l.toLowerCase() === wanted)) throw new GraphError(noIndexFor(opts.lang, languages));
+    if (!languages.some((l) => l.toLowerCase() === wanted)) {
+      throw new GraphError(noIndexFor(opts.lang, languages), "unknown-scope");
+    }
   }
   checkScope(ctx.graph, opts);
   return served(label, () =>
@@ -206,7 +233,14 @@ export async function runRetrieve(opts: RetrieveCommandOptions): Promise<Passage
 }
 
 export async function runTraverseContext(opts: TraverseContextOptions): Promise<PassageBundle> {
-  const { ctx, label, quads } = await openArtifact(opts);
+  return traverseIn(await openArtifact(opts), opts);
+}
+
+/** A walk over an artifact already open: `graph traverse --context` and the MCP `traverse` and `impact` tools. */
+export async function traverseIn(
+  { ctx, label, quads }: Artifact,
+  opts: Omit<TraverseContextOptions, keyof ArtifactOptions>,
+): Promise<PassageBundle> {
   const { node, predicates } = checkTraverseInputs(ctx.graph, quads, opts);
   return served(label, () =>
     walkPassages({
@@ -222,6 +256,7 @@ export async function runTraverseContext(opts: TraverseContextOptions): Promise<
       ...(opts.limit === undefined ? {} : { limit: opts.limit }),
       ...(opts.maxChars === undefined ? {} : { maxChars: opts.maxChars }),
       ...(opts.withhold === undefined ? {} : { withhold: opts.withhold }),
+      ...(opts.where === undefined ? {} : { where: opts.where }),
     }),
   );
 }

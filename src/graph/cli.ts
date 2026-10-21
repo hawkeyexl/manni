@@ -71,6 +71,7 @@ import {
   runRetrieve,
   runTraverseContext,
 } from "./commands/retrieve.js";
+import { runServe } from "./commands/serve.js";
 import type { WithholdReason } from "./runtime/chunks.js";
 import type { RetrieveMode, WhereCondition } from "./runtime/retrieve.js";
 
@@ -981,6 +982,33 @@ artifactInputs(
           question,
         });
         console.log(renderBundle(bundle, format));
+      } catch (e) {
+        fail(e);
+      }
+    },
+  );
+
+program
+  .command("serve")
+  .description(
+    "Serve lookup, retrieve, traverse and impact to an agent over MCP on stdio, from the chunk artifact, until stdin closes",
+  )
+  .option("-c, --config <path>", "Path to manni.config.yaml")
+  .option("--no-config", "Ignore any discovered config file")
+  .option("-g, --graph <path>", "Graph .ttl path (default: config out)")
+  .option(
+    "-i, --index <dir>",
+    "Directory holding chunks.json, its rows and the search index (default: beside the graph)",
+  )
+  .option(
+    "--withhold <list>",
+    "Also leave out passages that are drifted or failing, comma-separated, on every call",
+    withholdOption,
+  )
+  .action(
+    async (opts: { config?: string | boolean; graph?: string; index?: string; withhold?: WithholdReason[] }) => {
+      try {
+        await runServe({ ...rest(opts), ...documentOptions(opts) });
       } catch (e) {
         fail(e);
       }
