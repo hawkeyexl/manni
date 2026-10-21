@@ -49,14 +49,15 @@ the iiRDS package when their sections exist. A step that is not set up prints
 `-o` names the directory; the default is the graph's own. The first step that
 fails stops the run with exit `2` and that step's own message.
 
-`publish` does not gate, so chain it after the gate:
+`publish` does not gate, so check what it published. The check then reads
+the new chunks, so its cited row runs:
 
 ```sh
-manni graph check && manni graph publish --out docs/public/graph
+manni graph publish --out docs/public/graph && manni graph check -g docs/public/graph/graph.ttl
 ```
 
 This site runs that line on every build, so it serves the artifact of the
-commit it shows. The [CLI reference](/manni/graph/reference/cli/#graph-publish)
+commit it shows. A failing check stops the build before anything deploys. The [CLI reference](/manni/graph/reference/cli/#graph-publish)
 lists every step and option.
 
 ## One target at a time

@@ -982,9 +982,9 @@ sections exist. Everything goes into one directory.
 `graph build`, `graph embed` and `graph export <target>` stay for one step at
 a time.
 
-### 13. Three changes in the build
+### 13. Four changes in the build
 
-The build departed from the approved plan in three places, each decided in
+The build departed from the approved plan in four places, each decided in
 review.
 
 - **The model is per language.** `chunks.json` records
@@ -1002,6 +1002,11 @@ review.
 - **`traverse --context` takes `--where`.** *Why:* the MCP `traverse` tool and
   `createRetriever().traverse()` both filter on metadata. Each tool keeps a
   CLI twin that answers exactly as it does, so the flag joins its twin.
+- **CI checks after it publishes.** `docs.yml` runs `graph publish`, then
+  `graph check` on the published graph, the reverse of this proposal's
+  examples. *Why:* checked first, the cited row finds no chunk artifact and
+  only prints a notice, so `citedThreshold` could never gate in CI. A failing
+  check still stops the build job, and `deploy` needs that job.
 
 ## The ladder
 

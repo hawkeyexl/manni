@@ -28,7 +28,7 @@ site's public folder, and the site serves the artifact of the commit it
 builds:
 
 ```sh
-manni graph check && manni graph publish --out docs/public/graph
+manni graph publish --out docs/public/graph && manni graph check -g docs/public/graph/graph.ttl
 ```
 
 [Publish the graph](/manni/graph/publish/) covers each step.
