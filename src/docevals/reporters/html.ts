@@ -197,7 +197,7 @@ blockquote{margin:.4rem 0;padding:.3rem .7rem;border-left:2px solid var(--line);
 .sev{font-size:.75rem;text-transform:uppercase;font-weight:600;margin-right:.35rem}
 .sev.error{color:var(--bad)}.sev.warning{color:var(--warn)}.sev.notice{color:var(--muted)}
 .v.ok{color:var(--ok)}.v.bad{color:var(--bad)}.v.partial{color:var(--muted)}
-.problems li.error{color:var(--bad)}.problems li.warning{color:var(--warn)}
+.problems li.error{color:var(--bad)}.problems li.warning{color:var(--warn)}.problems li.notice{color:var(--muted)}
 </style></head><body><main>
 <h1>manni docevals results</h1>
 <p class="muted">${String(report.pages)} page(s) · ${String(
