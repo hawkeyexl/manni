@@ -13,6 +13,7 @@
  * `isError`. `--withhold` tightens every call's floor, and no tool argument
  * can loosen it: no input schema names `withhold`.
  */
+import type { Readable, Writable } from "node:stream";
 import { Ajv2020 } from "ajv/dist/2020.js";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
@@ -40,6 +41,9 @@ export interface McpSdk {
 export interface ServeSeams {
   /** Injection seam for tests: load the SDK, or fail as a missing package does. */
   loadSdk?: () => Promise<McpSdk>;
+  /** Injection seams for tests: the streams served over, `process.stdin` and `process.stdout` by default. */
+  stdin?: Readable;
+  stdout?: Writable;
 }
 
 async function importSdk(): Promise<McpSdk> {
@@ -423,14 +427,18 @@ export async function runServe(opts: ServeOptions, seams: ServeSeams = {}): Prom
     }
   });
 
-  const transport = new sdk.StdioServerTransport();
+  const stdin = seams.stdin ?? process.stdin;
+  const transport = new sdk.StdioServerTransport(stdin, seams.stdout ?? process.stdout);
   const closed = new Promise<void>((done) => {
-    process.stdin.once("end", done);
-    process.stdin.once("close", done);
+    stdin.once("end", done);
+    stdin.once("close", done);
   });
   await server.connect(transport);
   notice(`serving lookup, retrieve, traverse and impact over stdio from ${artifact.label}.`);
   await closed;
   await Promise.allSettled([...pending]);
+  // The SDK writes each reply a few microtasks after its handler returns, and
+  // closing aborts any reply not yet written. One macrotask lets them all out.
+  await new Promise((done) => setImmediate(done));
   await server.close();
 }

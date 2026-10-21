@@ -9,10 +9,13 @@
 import { spawnSync } from "node:child_process";
 import { appendFileSync, copyFileSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
+import { PassThrough } from "node:stream";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { runServe } from "../../../src/graph/commands/serve.js";
+import { createMockEmbedder } from "../../../src/graph/embed/mock.js";
+import type { QueryEmbedder } from "../../../src/graph/runtime/entry.js";
 import { GraphError } from "../../../src/graph/types.js";
 import { spawnText } from "../../helpers/spawn.js";
 import { removeTempRepo } from "../../helpers/temp-repo.js";
@@ -205,6 +208,58 @@ describe("graph serve: the process", () => {
     const r = graph(["serve", "--withhold", "stale"], "");
     expect(r.status).toBe(2);
     expect(r.stderr).toBe("manni: --withhold takes drifted or failing, and got stale.\n");
+  });
+
+  it("answers every call still in flight when stdin closes, then resolves", async () => {
+    // Both lookups block in the query embedder until stdin has closed.
+    const mock = createMockEmbedder();
+    let started = 0;
+    let bothStarted = (): void => undefined;
+    const inFlight = new Promise<void>((done) => (bothStarted = done));
+    let release = (): void => undefined;
+    const gate = new Promise<void>((done) => (release = done));
+    const embedder: QueryEmbedder = {
+      model: mock.model,
+      dtype: mock.dtype,
+      async embed(text) {
+        if (++started === 2) bothStarted();
+        await gate;
+        return mock.embed(text);
+      },
+    };
+    const stdin = new PassThrough();
+    const stdout = new PassThrough();
+    let out = "";
+    stdout.on("data", (chunk: Buffer) => (out += chunk.toString("utf8")));
+    const run = runServe({ cwd: dir, embedder }, { stdin, stdout });
+
+    const send = (message: object): boolean => stdin.write(`${JSON.stringify(message)}\n`);
+    send({
+      jsonrpc: "2.0",
+      id: 1,
+      method: "initialize",
+      params: { protocolVersion: "2025-06-18", capabilities: {}, clientInfo: { name: "serve-test", version: "0.0.0" } },
+    });
+    send({ jsonrpc: "2.0", method: "notifications/initialized" });
+    send({ jsonrpc: "2.0", id: 2, method: "tools/call", params: { name: "lookup", arguments: { question: QUESTION } } });
+    send({ jsonrpc: "2.0", id: 3, method: "tools/call", params: { name: "lookup", arguments: { question: "rotate" } } });
+    await inFlight;
+    stdin.end();
+    await new Promise((done) => setImmediate(done));
+    release();
+    await run;
+
+    const replies = out
+      .split("\n")
+      .filter((line) => line !== "")
+      .map((line) => JSON.parse(line) as { id?: number; result?: ToolResult });
+    // Concurrent calls answer in whichever order they finish.
+    expect(replies.map((r) => r.id ?? 0).sort((a, b) => a - b)).toEqual([1, 2, 3]);
+    for (const id of [2, 3]) {
+      const reply = replies.find((r) => r.id === id);
+      expect(reply?.result?.isError).toBeUndefined();
+      expect(reply?.result?.structuredContent).toHaveProperty("matches");
+    }
   });
 
   it("names the package to install when the SDK is missing", async () => {
