@@ -203,9 +203,9 @@ docs/src/content/docs/key/set-up/index.mdx:
         integrity: sha256-89c39b8a6e53c0d82da49502577c776499284b268c34967c95ed10a259f4a2cb
       source:
         file: src/cite/core/adapt.ts
-        lines: 59-61
+        lines: 72-74
         integrity: sha256-49cabacd2bb212dddfa6a1e584681a12284940d1e940ea11537116c292350687
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: f2ecf49996504a135f3e37de5bac35c5a054b237
     - id: no-key-rotate-row
       claim:
         lines: 151
@@ -256,9 +256,9 @@ docs/src/content/docs/key/set-up/index.mdx:
         integrity: sha256-6ec47af4d60676c67c0f0c15b1158d0190a3e084b43283d6de9bb319c10746c4
       source:
         file: src/cite/core/adapt.ts
-        lines: 59-61
+        lines: 72-74
         integrity: sha256-49cabacd2bb212dddfa6a1e584681a12284940d1e940ea11537116c292350687
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: f2ecf49996504a135f3e37de5bac35c5a054b237
     - id: query-refusal-message
       claim:
         lines: 228

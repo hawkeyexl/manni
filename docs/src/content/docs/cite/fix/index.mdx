@@ -31,7 +31,7 @@ sample-questions:
 graph:
   label: Fix a failing check
   type: troubleshooting
-last-updated: 2026-10-20
+last-updated: 2026-10-21
 tags:
   - troubleshooting
   - citations
@@ -111,7 +111,7 @@ the entry's own line, in the manifest when a sidecar owns it.
 | [`source-moved`](#source-moved) | warning | The cited lines are intact, at a different line number. | `manni cite update` |
 | [`source-moved-ambiguous`](#source-moved-ambiguous) | error | The cited lines now occur in more than one place. | Widen the range, then `update --accept --only <id>` |
 | [`source-changed`](#source-changed) | error | The cited lines are not what they were. | Read `--show-diff`, fix the sentence, then `update --accept --only <id>` |
-| [`source-never-true`](#source-never-true) | error | The pin does not match even at the commit it records. | Check the sentence, then `update --accept --only <id>` |
+| [`source-never-true`](#source-never-true) | error | The pin held at no commit in the source's history. | Check the sentence, then `update --accept --only <id>` |
 | [`source-missing`](#source-missing) | error | The path names no tracked file, or an encrypted source cannot be decrypted. | Re-add against the new path; or fix `--root` or the key |
 | [`claim-moved`](#claim-moved) | notice | The pinned page text sits at a different line. | `manni cite update` |
 | [`claim-moved-ambiguous`](#claim-moved-ambiguous) | warning | The pinned page text now occurs in more than one place. | Re-add over a range that occurs once |
@@ -203,16 +203,20 @@ manni cite update --accept --only retries docs/limits.md
 {/* cite show-diff-subjects-diff */}
 The bytes at the cited range are not the bytes the pin was minted over, and
 they are nowhere else in the file. The sentence on line 13 may no longer be
-true. The status names the commit the pin was minted at and how many commits
-have touched the file since; `--show-diff` prints their subjects and the diff.
+true. The status names the newest commit in the file's history where the pin
+held, and how many commits have touched the file since. `--show-diff` prints
+their subjects and the diff.
+
+That commit is derived from git, not read from the entry. After a squash
+merge it is the squash commit, even though `commit-sha` names a branch commit
+that is gone.
 
 {/* cite source-changed-variants */}
 {/* cite no-git-warns-once */}
-Three variants carry the same meaning with less history. An entry with no
-`commit-sha` is a bare `changed`. On a shallow clone it is
-`changed (history unavailable: commit 9265563 not found; fetch-depth: 0)`.
-Where git is not available at all, it is a bare `changed` too, and the run
-warns once on stderr:
+Two variants carry the same meaning with less history. On a shallow clone,
+or past 256 commits, it is `changed (history unavailable; fetch-depth: 0)`.
+Where git is not available at all, it names the recorded `commit-sha`, or
+none. The run warns once on stderr:
 
 ```
 manni: git is not available here, so citations are checked without history: no never-true, no reanchored claims, no diffs, no commit subjects.
@@ -247,19 +251,19 @@ the code's shape changed, the same command re-pins the source alone.
 
 ```
 ✗ docs/limits.md
-    ✗ fetch-timeout   :13 current   lib/limits.ts:4 never true: the pin does not match at 835098c
+    ✗ fetch-timeout   :13 current   lib/limits.ts:4 never true: the pin held at no commit in the history of lib/limits.ts
       Check the sentence against the source, then run manni cite update --accept --only fetch-timeout.
 ```
 
 {/* cite never-true-searches-file */}
 {/* cite never-true-not-move */}
-The tool went back to the commit the entry records and searched the whole
-file there. No range of the cited length hashed to the pin. So the pin was
-never a record of that file at that commit. The usual cause is an entry
-edited by hand: a `source.file`, `source.integrity` or `source.commit-sha`
-that does not belong with the others. A move is not a cause. After `update`
-rewrites a moved range, a later edit to the line reads `source-changed`,
-because the pinned bytes were in the file at that commit.
+The tool walked back through every commit that touched the file, to its first
+one, and searched the whole file at each. No range of the cited length hashed
+to the pin. So the pin was never a record of that file. The usual cause is an
+entry edited by hand: a `source.file` and `source.integrity` that do not
+belong together. The recorded `commit-sha` does not decide it. A move is not a
+cause either. After `update` rewrites a moved range, a later edit to the line
+reads `source-changed`, because the pinned bytes were in the file once.
 
 {/* cite never-true-remint-head */}
 {/* cite never-true-both-pins */}
@@ -661,7 +665,7 @@ whether two ranges are "the same bytes".
     Run with `npx doc-detective`. Config: .doc-detective.json. */}
 {/* test {"testId":"cite-fix-a-failing-check","description":"The rule catalog, mapped to fixtures."} */}
 {/* step {"description":"source-moved: a warning naming the new range, exit 0.","runShell":{"command":"npx @hawkeyexl/manni cite check --no-config --root test/fixtures/cite test/fixtures/cite/pages/moved.md","exitCodes":[0],"stdio":"/moved -> src\\/moved\\.ts:4/"}} */}
-{/* step {"description":"source-changed: an error on the source end, with the claim end still current, exit 1.","runShell":{"command":"npx @hawkeyexl/manni cite check --no-config --root test/fixtures/cite test/fixtures/cite/pages/source-changed.md","exitCodes":[1],"stdio":"/:15 current\\s+src\\/changed\\.ts:2 changed/"}} */}
+{/* step {"description":"source-never-true: an error on the source end, with the claim end still current, exit 1.","runShell":{"command":"npx @hawkeyexl/manni cite check --no-config --root test/fixtures/cite test/fixtures/cite/pages/source-changed.md","exitCodes":[1],"stdio":"/:15 current\\s+src\\/changed\\.ts:2 never true/"}} */}
 {/* step {"description":"source-missing: no tracked file at the path, exit 1.","runShell":{"command":"npx @hawkeyexl/manni cite check --no-config --root test/fixtures/cite test/fixtures/cite/pages/missing.md","exitCodes":[1],"stdio":"/src\\/gone\\.ts:2 missing/"}} */}
 {/* step {"description":"claim-moved: an inserted paragraph is a notice that names both lines, exit 0.","runShell":{"command":"npx @hawkeyexl/manni cite check --no-config --root test/fixtures/cite test/fixtures/cite/pages/claim-moved.md","exitCodes":[0],"stdio":"/fetch-timeout\s+:15 moved -> :17/"}} */}
 {/* step {"description":"claim-moved-ambiguous: the pinned text at two places is a warning that names both, exit 0.","runShell":{"command":"npx @hawkeyexl/manni cite check --no-config --root test/fixtures/cite test/fixtures/cite/pages/claim-moved-ambiguous.md","exitCodes":[0],"stdio":"/retries\s+:15 moved, 2 candidates \(:17, :21\)/"}} */}
