@@ -92,7 +92,8 @@ export async function runHistory(opts: HistoryOptions): Promise<HistoryRun> {
   });
   const { commits, start } = timeline;
   const head = commits[commits.length - 1];
-  if (head === undefined) throw new CiteError(noCommitsRefusal(run.root));
+  // The guard above proved HEAD exists, and the first-parent walk from it holds at least HEAD.
+  if (head === undefined) throw new Error("history walk returned no commits for an existing HEAD");
 
   if (timeline.unread) opts.onNotice?.(unreadNotice((commits[start] ?? head).sha));
   if (timeline.encrypted > 0) opts.onNotice?.(encryptedNotice(timeline.encrypted));
@@ -109,7 +110,9 @@ export async function runHistory(opts: HistoryOptions): Promise<HistoryRun> {
   const staleWindow = (window: TimelineWindow, level: Severity): StaleWindow => {
     const opened = commits[window.opened] ?? head;
     const closed = window.closed === undefined ? undefined : (commits[window.closed.at] ?? head);
-    const now = label(pages.find((page) => page.label === window.page)?.path ?? "");
+    const home = pages.find((page) => page.label === window.page);
+    if (home === undefined) throw new Error(`window for unknown page: ${window.page}`);
+    const now = label(home.path);
     return {
       id: window.id,
       source: window.source,
