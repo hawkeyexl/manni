@@ -104,6 +104,10 @@ export type {
   SchemaPin,
 } from "./core/schema-registry.js";
 export { integrityOf, isIntegrity, INTEGRITY_SHAPE } from "./core/integrity.js";
+// Inline `meta` statements (proposal 0099): the hashing rule a writer pins a
+// statement's block with, and the shape `get` reports each statement in.
+export { pinOf } from "./core/statements.js";
+export type { StatementView } from "./core/statements.js";
 export {
   loadExternalMetadata,
   mergeExternalMetadata,

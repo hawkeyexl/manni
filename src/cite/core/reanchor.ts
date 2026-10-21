@@ -21,56 +21,16 @@ import type { ClaimEnd, PageCitation, PageCitations, PageLines } from "../types.
 import { hashLines } from "./hash.js";
 import { MAX_MARKERS_PER_PAGE } from "./page.js";
 import { spellLines } from "../../shared/pin.js";
-import { ANY_FENCE, anchoredLines, isBoundLine, isMarkerLine } from "./statements.js";
+import { ANY_FENCE, anchoredLines, isMarkerLine, markerRunAt, splitUnit } from "./statements.js";
 
-/** Whether a line is text a paragraph is made of. */
-export function isUnitText(line: string | undefined, format: string): boolean {
-  if (line === undefined) return false;
-  if (line.trim() === "") return false;
-  if (ANY_FENCE.test(line)) return false;
-  if (isMarkerLine(line, format)) return false;
-  return !isBoundLine(line, format);
-}
+// The run and unit helpers live in the shared scanner (proposal 0099), where
+// meta reads a misplaced statement by them. cite still imports them from here.
+export { isUnitText, markerRunAt, splitUnit } from "./statements.js";
 
 /** Whether the file line `n` holds one marker and nothing else. */
 function markerAt(lines: readonly string[], n: number, format: string): boolean {
   const line = lines[n - 1];
   return line !== undefined && isMarkerLine(line, format);
-}
-
-/** The run of marker-only lines that holds `line`. */
-export function markerRunAt(
-  lines: readonly string[],
-  line: number,
-  format: string,
-  bodyLine: number,
-): PageLines {
-  let start = line;
-  while (start - 1 >= bodyLine && markerAt(lines, start - 1, format)) start--;
-  let end = line;
-  while (end + 1 <= lines.length && markerAt(lines, end + 1, format)) end++;
-  return { start, end };
-}
-
-/**
- * The paragraph a run splits, in file lines, marker lines included.
- * `undefined` when the run sits where `add` writes markers: after a blank
- * line, a fence, a bound line, or the body's first line.
- */
-export function splitUnit(
-  lines: readonly string[],
-  run: PageLines,
-  format: string,
-  bodyLine: number,
-): PageLines | undefined {
-  if (run.start - 1 < bodyLine) return undefined;
-  if (!isUnitText(lines[run.start - 2], format)) return undefined;
-  if (!isUnitText(lines[run.end], format)) return undefined;
-  let start = run.start - 1;
-  while (start - 1 >= bodyLine && isUnitText(lines[start - 2], format)) start--;
-  let end = run.end + 1;
-  while (end + 1 <= lines.length && isUnitText(lines[end], format)) end++;
-  return { start, end };
 }
 
 /**

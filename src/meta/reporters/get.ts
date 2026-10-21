@@ -142,6 +142,14 @@ export function renderGet(
         `${c.dim(`${r.file}:`)} ${f}=${valueOf(r, f, effective[f])}${suffix}`,
       );
     }
+    // Inline statements (proposal 0099), under the page and apart from its
+    // fields, since a statement describes a block rather than the page.
+    for (const s of r.statements ?? []) {
+      const span = s.anchor === null ? "anchors nothing" : `lines ${s.anchor}`;
+      const scope = s.scope === "section" ? `, section ${s.section}` : "";
+      const data = s.data === null ? c.red("(not one JSON object)") : JSON.stringify(s.data);
+      lines.push(`${c.dim(`${r.file}:`)} statement at line ${String(s.line)} (${span}${scope}, ${s.status}) ${data}`);
+    }
   }
   return lines.join("\n");
 }

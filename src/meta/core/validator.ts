@@ -927,7 +927,7 @@ function isWrapper(e: ErrorObject): boolean {
  * schema forbids outright. Every other message is Ajv's own, because a
  * pattern or a format is its own exact statement of the rule.
  */
-function messageFor(e: DefinedError, fallback: string): string {
+export function messageFor(e: DefinedError, fallback: string): string {
   // Ajv raises this for a `false` subschema, and it is not in `DefinedError`.
   if ((e as ErrorObject).keyword === "false schema") return "must not be present";
   switch (e.keyword) {

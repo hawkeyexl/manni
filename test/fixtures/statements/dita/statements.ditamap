@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE map PUBLIC "-//OASIS//DTD DITA Map//EN" "map.dtd">
+<!-- Topics carrying every meta statement form. They must stay DTD-valid. -->
+<map>
+  <title>Statements</title>
+  <topicref href="task.dita"/>
+  <topicref href="concept.dita"/>
+</map>

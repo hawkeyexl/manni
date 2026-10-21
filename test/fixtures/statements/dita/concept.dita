@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE concept PUBLIC "-//OASIS//DTD DITA Concept//EN" "concept.dtd">
+<concept id="how-statements-anchor">
+  <?manni meta sha256-07b5116e9c0c677cdfdc85a40143ea288cf43270c309284cdd7bda8a1becb36b {"concepts":["install"]}?>
+  <title>How statements anchor</title>
+  <shortdesc>A statement on a topic or a section describes it whole.</shortdesc>
+  <conbody>
+    <section id="sections">
+      <?manni meta sha256-87266bb5f1a00782fe0aeecefc7b01a5766589fee145bf9e54e820ae3e543e5e {"applies-to":["windows"],"graph":{"type":"concept"}}?>
+      <title>Sections</title>
+      <p>A section statement pins the section's title, not its body.</p>
+    </section>
+  </conbody>
+</concept>
