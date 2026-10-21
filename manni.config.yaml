@@ -268,3 +268,12 @@ graph:
   # under exactly the rules a reader of these pages would get.
   check:
     shapes: []
+
+  # `graph publish` writes llms.txt beside the chunks. Each link is the
+  # origin plus the page's route under basePath above, and each description
+  # is the page's own.
+  export:
+    llms:
+      title: manni
+      summary: One CLI for docs-as-code. It validates metadata, pins sentences to sources, and serves the docs with their proof.
+      origin: https://hawkeyexl.github.io
