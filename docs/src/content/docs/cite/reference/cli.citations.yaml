@@ -118,9 +118,9 @@ docs/src/content/docs/cite/reference/cli.mdx:
         integrity: sha256-69a1113692cab50aa55f34a5c29bd3d20f429c8c67e69ad0c24a3339b42f2aca
       source:
         file: src/cite/core/check-page.ts
-        lines: 415-421
+        lines: 418-424
         integrity: sha256-3849602b3122eb1b1b5b858d50850009800c2d3de6fd03fd5c74c397e3736a23
-        commit-sha: f2ecf49996504a135f3e37de5bac35c5a054b237
+        commit-sha: 263c233819a6952bea7dbf537bb2856714583171
     - id: collection-refusals
       claim:
         lines: 99
