@@ -435,7 +435,7 @@ citations.
 | `severity` | `notice`, `warning` or `error`, from `src/shared/severity.ts`, resolved through `cite.severity` |
 | `closed` | an object, or `null` while the window is open |
 | `closed.by` | `re-pinned`, `source-restored` or `removed` |
-| `opened.bounded` | `true` when the window was already open at the first commit the walk could read. That is the history's start, the `--newer-than` bound, or the first commit after an old config that does not load |
+| `opened.bounded` | `true` when the window was already open at the first commit the walk could read. That is the history's start, the `--newer-than` bound, or the first commit after an old config or citation manifest that does not load |
 | `seconds` | whole seconds, committer time to committer time |
 | `releases` | tag names, oldest first |
 | `formerly` | the page's earlier paths while the window was open, oldest first, or empty |
@@ -462,6 +462,7 @@ Messages on stderr, each prefixed `manni:` by the shared runner:
 | Message | Exit |
 |---|---|
 | `cite history reads git, and <root> is not inside a git repository.` | 2 |
+| `cite history reads git, and <root> has no commits yet.` | 2 |
 | `this clone is shallow, so cite history would start at its oldest commit. Fetch the full history with fetch-depth: 0, or git fetch --unshallow.` | 2 |
 | `cite history reads each page's past from git, and stdin has none. Name the page's path instead of -.` | 2 |
 | `No files to read. Pass paths/globs, or declare a collection under \`collections:\` in manni.config.yaml.` | 2 |
@@ -473,7 +474,7 @@ Notices on stderr, said once, never changing the exit code:
 
 | Notice | When |
 |---|---|
-| `history before <sha> is unread: its manni.config.yaml does not load under this version. Windows open there are marked bounded.` | An old commit's config fails today's loader. |
+| `history before <sha> is unread: its config or citation manifests do not load under this version. Windows open there are marked bounded.` | An old commit's config or citation manifests fail today's loader. |
 | `<n> encrypted citations were skipped: no encryption key. Set MANNI_ENCRYPTION_KEY or encryptionKey: to include them.` | Keyed pins and no key. |
 
 ### 8. From minimal to maximal
@@ -726,8 +727,10 @@ The draft left five questions open. Each was settled before the build.
 - [ ] `-f sarif`, `-f github` and `-f junit` exit `2` with the unknown-format
       message.
 - [ ] `--collection` beside paths exits `2` with `check`'s message.
-- [ ] An old config that fails to load prints the notice once and marks open
-      windows `bounded: true`.
+- [ ] An old config or citation manifest that fails to load prints the notice
+      once and marks open windows `bounded: true`.
+- [ ] A repository with no commits exits `2` with the "has no commits yet"
+      message.
 - [ ] Encrypted citations without a key are skipped, counted in
       `summary.skipped.encrypted`, and noticed once.
 - [ ] `test/cite/timeline.test.ts` builds a temporary repository that mints a

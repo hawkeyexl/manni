@@ -1172,7 +1172,7 @@ Walked 193 commits, 2026-09-11 to 2026-10-21.
 | `severity` | `notice`, `warning` or `error`, through `cite.severity`. |
 | `closed` | An object, or `null` while the window is open. |
 | `closed.by` | `re-pinned`, `source-restored` or `removed`. |
-| `opened.bounded` | `true` when the window was already open at the first commit read. That commit is the history's start, the `--newer-than` bound, or the first commit after an old config that does not load. |
+| `opened.bounded` | `true` when the window was already open at the first commit read. That commit is the history's start, the `--newer-than` bound, or the first commit after an old config or citation manifest that does not load. |
 | `seconds` | Whole seconds, committer time to committer time. |
 | `releases` | Tag names, oldest first. |
 | `formerly` | The page's earlier paths while the window was open, oldest first. |
@@ -1182,12 +1182,12 @@ Walked 193 commits, 2026-09-11 to 2026-10-21.
 Two notices go to stderr, each said once, and neither changes the exit code:
 
 ```
-manni: history before 3f559dc is unread: its manni.config.yaml does not load under this version. Windows open there are marked bounded.
+manni: history before 3f559dc is unread: its config or citation manifests do not load under this version. Windows open there are marked bounded.
 manni: 2 encrypted citations were skipped: no encryption key. Set MANNI_ENCRYPTION_KEY or encryptionKey: to include them.
 ```
 
-The first names the first commit read after one whose config today's loader
-refuses. The second counts encrypted citations read without the key.
+The first names the first commit read after one whose config or citation
+manifests today's loader refuses. The second counts encrypted citations read without the key.
 
 ### Exit codes
 
@@ -1198,6 +1198,7 @@ refuses. The second counts encrypted citations read without the key.
 
 ```
 manni: cite history reads git, and /tmp/not-a-repo is not inside a git repository.
+manni: cite history reads git, and /tmp/new-repo has no commits yet.
 manni: this clone is shallow, so cite history would start at its oldest commit. Fetch the full history with fetch-depth: 0, or git fetch --unshallow.
 manni: cite history reads each page's past from git, and stdin has none. Name the page's path instead of -.
 manni: No files to read. Pass paths/globs, or declare a collection under `collections:` in manni.config.yaml.
