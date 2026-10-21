@@ -194,8 +194,9 @@ const UNIT = "";
 
 /**
  * What a run says, once, when git is not there and the run wanted it: a
- * citation carries a commit, or `--show-diff` asked for diffs, so history
- * would have been read. Said through `onNotice`; never a finding.
+ * citation carries a commit, a pin no longer holds where it was recorded, or
+ * `--show-diff` asked for diffs, so history would have been read. Said
+ * through `onNotice`; never a finding.
  */
 export const GIT_UNAVAILABLE_HISTORY =
   "git is not available here, so citations are checked without history: no never-true, no reanchored claims, no diffs, no commit subjects.";

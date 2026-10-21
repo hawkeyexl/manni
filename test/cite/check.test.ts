@@ -874,10 +874,12 @@ describe("without git", () => {
     expect(await heard({ inputs: ["pages/current.md"], showDiff: true })).toEqual([NO_HISTORY]);
   });
 
+  it("says it once for pins that no longer hold, with no commit on the page (0097)", async () => {
+    expect(await heard({ inputs: ["pages/moved.md", "pages/source-changed.md"] })).toEqual([NO_HISTORY]);
+  });
+
   it("says nothing when nothing needed git", async () => {
-    expect(
-      await heard({ inputs: ["pages/current.md", "pages/moved.md", "pages/source-changed.md"] }),
-    ).toEqual([]);
+    expect(await heard({ inputs: ["pages/current.md"] })).toEqual([]);
     // With the sources off git is never asked, commit or no commit.
     expect(await heard({ inputs: ["pages/frontmatter-only.md"], checkSources: false, showDiff: true })).toEqual([]);
   });

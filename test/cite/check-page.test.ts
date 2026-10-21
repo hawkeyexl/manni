@@ -365,10 +365,14 @@ describe("checkCitations", () => {
     expect(report.notices).toEqual([NO_HISTORY]);
   });
 
-  it("says nothing about git when no citation carries a commit, or the sources are off", async () => {
+  it("says why git is wanted for a citation with no commit, whose history is read too (0097)", async () => {
     const plain = await check("source-changed.md", { gitClient: shallowGit(FIXTURE_FILES, false) });
     expect(sourceStatuses(plain)).toEqual(["changed"]);
-    expect(plain.notices).toEqual([]);
+    expect(rules(plain)).toEqual(["source-changed"]);
+    expect(plain.notices).toEqual([NO_HISTORY]);
+  });
+
+  it("says nothing about git when the sources are off", async () => {
     const skipped = await page(inline(SHALLOW_ENTRY, ["Body."]), {
       gitClient: noGit(),
       checkSources: false,
