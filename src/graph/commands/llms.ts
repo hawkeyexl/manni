@@ -8,6 +8,7 @@
  */
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
+import { loadSiteConfig } from "../../site/core/config.js";
 import { detectFramework } from "../../site/core/detect.js";
 import { analyzeDoc } from "../core/analyze.js";
 import type { GraphConfig, RouteMapping } from "../core/config.js";
@@ -106,16 +107,19 @@ export async function exportLlms(opts: LlmsOptions): Promise<{ pages: number; wa
   const graph = GraphIndex.fromQuads(storeToQuads(loadGraph(opts.graphPath)), Object.fromEntries(PREFIXES));
   const sources = documentBase(config, {}, cwd);
   const pages: { doc: string; path: string; content: string }[] = [];
+  let missing = 0;
   for (const doc of graph.instancesOf(`${NS.graph}Document`)) {
     const path = graph.literal(doc, `${NS.graph}path`);
     if (path === undefined || path === STDIN_PATH) continue;
     const abs = resolve(sources, path);
     if (existsSync(abs)) pages.push({ doc, path, content: readFileSync(abs, "utf8") });
+    else missing += 1;
   }
   pages.sort((a, b) => byCodeUnit(a.path, b.path));
 
   const routes = routesFrom(config, sources);
-  const style = urlStyle(detectFramework(config.configDir));
+  // The site is where `manni site` looks: `site.dir` when set, else the config's directory.
+  const style = urlStyle(detectFramework(loadSiteConfig(config.configDir).dir ?? config.configDir));
   const paths = pages.map((p) => p.path);
   const view = await openMetaView(opts.source, cwd, paths, sources);
   const models = await withExternalMetadata(
@@ -146,14 +150,21 @@ export async function exportLlms(opts: LlmsOptions): Promise<{ pages: number; wa
 
   mkdirSync(dirname(opts.outPath), { recursive: true });
   writeFileSync(opts.outPath, renderLlms({ title, ...(settings?.summary === undefined ? {} : { summary: settings.summary }) }, entries), "utf8");
-  const warnings =
-    unrouted === 0
-      ? []
-      : [
-          unrouted === 1
-            ? "1 page is under no route, so llms.txt leaves it out."
-            : `${String(unrouted)} pages are under no route, so llms.txt leaves them out.`,
-        ];
+  const warnings: string[] = [];
+  if (missing > 0) {
+    warnings.push(
+      missing === 1
+        ? "1 page in the graph is not on disk, so llms.txt leaves it out; run manni graph build."
+        : `${String(missing)} pages in the graph are not on disk, so llms.txt leaves them out; run manni graph build.`,
+    );
+  }
+  if (unrouted > 0) {
+    warnings.push(
+      unrouted === 1
+        ? "1 page is under no route, so llms.txt leaves it out."
+        : `${String(unrouted)} pages are under no route, so llms.txt leaves them out.`,
+    );
+  }
   return { pages: entries.length, warnings };
 }
 
