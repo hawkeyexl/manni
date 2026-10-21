@@ -32,7 +32,11 @@ function passages(
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
-    const { question } = (await request.json()) as { question: string };
+    const body: unknown = await request.json().catch(() => null);
+    const question = typeof body === "object" && body !== null && "question" in body ? body.question : null;
+    if (typeof question !== "string" || question === "") {
+      return Response.json({ error: 'Send JSON like {"question": "..."}.' }, { status: 400 });
+    }
     const result = await docs.lookup(question);
     if (result.refusal) return Response.json({ answer: null, refusal: result.refusal });
     const context = [
