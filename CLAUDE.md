@@ -300,7 +300,8 @@ dogfood step proves the feature against a real corpus nobody arranged for it.
 Name the commands, what each should show, and what gets recorded in the PR.
 The acceptance checklist carries one item for it, with the output pasted into
 the PR description. A step that needs something unreleased, such as another
-tool's unmerged branch, says so and runs it from a scratch install.
+tool's unmerged branch, says so. It then installs that branch from source in
+a temporary directory and runs against it.
 
 **Plans end with an acceptance checklist.** The last section lists every
 artifact and behavior that is in place once the plan is fully built. A reviewer
