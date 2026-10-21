@@ -5,9 +5,9 @@ docs/src/content/docs/meta/schemas/field-location.mdx:
         integrity: sha256-65d415eb59e20e3e7e6ba0617020404bdd9d074834ddd81d972e3c2fd4d76a70
       source:
         file: src/meta/core/validator.ts
-        lines: 749-757
+        lines: 773-781
         integrity: sha256-3b7515831639551c487098af7a1bb96164eaba40a87a3839df62c28fdda70092
-        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
+        commit-sha: ac06e6b383628ad1b1e78539fc301e26df84e834
     - id: a-mark-covers-a-whole-top-level-key
       claim:
         integrity: sha256-41e35fcd2286e34627ab7e1569437b03f0356f839b2c8edf17c041191c6a54e5

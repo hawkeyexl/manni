@@ -132,9 +132,9 @@ docs/src/content/docs/meta/ci/consume-results.mdx:
         integrity: sha256-c72170848ec06cd4904cae2311f37dfcc36eba80bcac65ca8c4730777f014376
       source:
         file: src/meta/core/validator.ts
-        lines: 1007-1015
+        lines: 1071-1079
         integrity: sha256-7d405e798226afa451d2c0ff05a3e1807cb0fb448f8d8d295f1a329a45beaf2e
-        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
+        commit-sha: ac06e6b383628ad1b1e78539fc301e26df84e834
     - id: validate-json-is-one-object
       claim:
         integrity: sha256-be3c85c762bffb7f91e0f85e254aae6faf360087e21c454e1dbf305a2150d292

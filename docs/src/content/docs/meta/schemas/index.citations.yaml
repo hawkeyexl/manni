@@ -30,17 +30,17 @@ docs/src/content/docs/meta/schemas/index.mdx:
         integrity: sha256-546c0aaae16911ec5ea485d3e113abd28e488fd018c3337df2e9a3fba3a4ee89
       source:
         file: src/meta/core/schema-registry.ts
-        lines: 1427-1431
+        lines: 1434-1438
         integrity: sha256-58dcb64f18f7ddeb4a5175d21bb6cb92ee33e473384c5aaca08a9395140bea5e
-        commit-sha: 03518fa2c75bdbeb46f732bbac3f8b35c92c16f2
+        commit-sha: ac06e6b383628ad1b1e78539fc301e26df84e834
     - id: the-three-reference-kinds
       claim:
         integrity: sha256-a4fd7bcc0a486a118551bbf7e3bbabc59aa43f8d0e60ef4a49045d1be70dec66
       source:
         file: src/meta/core/schema-registry.ts
-        lines: 579-592
+        lines: 586-599
         integrity: sha256-2f40a8e1715136cf70277d50252b4172f3fd9106e42a5fccd6914c78d0d6f32c
-        commit-sha: 03518fa2c75bdbeb46f732bbac3f8b35c92c16f2
+        commit-sha: ac06e6b383628ad1b1e78539fc301e26df84e834
     - id: document-names-its-own-schema
       claim:
         integrity: sha256-2e9e70750388d767b7562acdee44aca8ea482909e69207e404a25dca04fc9d7b
@@ -98,18 +98,18 @@ docs/src/content/docs/meta/schemas/index.mdx:
         integrity: sha256-f06920d66d5f43f126e4e6cb078996a46d61e1587e968b1a60247a99b6defe2f
       source:
         file: src/meta/core/schema-registry.ts
-        lines: 90-140
+        lines: 91-141
         integrity: sha256-b70ffb8c7c31cf749ddc88c0c2f42d247087fa2bc804f8efa873264a6215c179
-        commit-sha: 77ca1cddd34b0dc3667d7b00c0ff08f4878680c3
+        commit-sha: ac06e6b383628ad1b1e78539fc301e26df84e834
     - id: builtin-ids-are-bundled-not-registered
       claim:
         lines: 198
         integrity: sha256-d1974a43b00c7b305c06a0d0973b8cb5ca61f1b20d6018cb5008e33a5c2da6cb
       source:
         file: src/meta/core/schema-registry.ts
-        lines: 90-140
+        lines: 91-141
         integrity: sha256-b70ffb8c7c31cf749ddc88c0c2f42d247087fa2bc804f8efa873264a6215c179
-        commit-sha: 77ca1cddd34b0dc3667d7b00c0ff08f4878680c3
+        commit-sha: ac06e6b383628ad1b1e78539fc301e26df84e834
     - id: okf-tolerates-unknown-keys
       claim:
         lines: 196
@@ -134,8 +134,8 @@ docs/src/content/docs/meta/schemas/index.mdx:
       source:
         file: src/meta/core/resolve-schema.ts
         lines: 30-53
-        integrity: sha256-06099705eafc20a689ba6358415d95ed2aa92003b62c244102f80a8f1b9ae5c3
-        commit-sha: 77ca1cddd34b0dc3667d7b00c0ff08f4878680c3
+        integrity: sha256-548083d8d9b9bb2b0917f6d2f0e28ab045f370168ef0b7f77a35cb053c9247f2
+        commit-sha: ac06e6b383628ad1b1e78539fc301e26df84e834
     - id: fixture-title-must-be-non-empty-string
       claim:
         lines: 32
@@ -168,9 +168,9 @@ docs/src/content/docs/meta/schemas/index.mdx:
         integrity: sha256-ba7bfec345f3e42d7f5a289645ec9c70fb5d7cd10900c721e28767a71631eda0
       source:
         file: src/meta/core/validator.ts
-        lines: 887-889
+        lines: 951-953
         integrity: sha256-b8f39d6d21f30a400cabe25059d553fc2d70ec3f6633292881c053d55975c4ca
-        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
+        commit-sha: ac06e6b383628ad1b1e78539fc301e26df84e834
     - id: tgdp-25-template-slugs
       claim:
         lines: 226

@@ -69,9 +69,9 @@ docs/src/content/docs/meta/set-up/index.mdx:
         integrity: sha256-23b4200b127b40399a05997509b2db106f4feb482deb936ab5721c1c27671f3d
       source:
         file: src/meta/core/validator.ts
-        lines: 893-904
+        lines: 957-968
         integrity: sha256-5df291a46b86659b90de1a063b96f3fe5ec57fc2989611328d6041f2ddb1cf7d
-        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
+        commit-sha: ac06e6b383628ad1b1e78539fc301e26df84e834
     - id: explicit-file-bypasses-ext-filter
       claim:
         lines: 32

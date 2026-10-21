@@ -13,6 +13,6 @@ docs/src/content/docs/meta/reference/glossary/dialect.mdx:
         integrity: sha256-8567a38181b531825d20399f923605cdbb5c043dda262d3953ce80ad4cdf1900
       source:
         file: src/meta/core/validator.ts
-        lines: 568-575
+        lines: 592-599
         integrity: sha256-8840fb1cfdaac1a347c7aa343d4b2263d18d993c62b39c7e730df0b431727c3a
-        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
+        commit-sha: ac06e6b383628ad1b1e78539fc301e26df84e834

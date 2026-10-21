@@ -813,9 +813,9 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         integrity: sha256-4aebff5863d065a8f0a59d1948a7e47670b468a15a096c6c095c3cdbbd1f79ae
       source:
         file: src/meta/core/validator.ts
-        lines: 1029-1039
+        lines: 1093-1103
         integrity: sha256-7c6875fb7c20e8e4f224fd456aa8f67de951850c6b8c747ca45ce59e8fb4e85a
-        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
+        commit-sha: ac06e6b383628ad1b1e78539fc301e26df84e834
     - id: owned-key-written-into-the-manifest
       claim:
         lines: 867-875
@@ -980,9 +980,9 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         integrity: sha256-e3b5f0231a5b4cade0ce3b1bfea4fc093a3bc6ab5262aa2ffbd898b4caae8aa9
       source:
         file: src/meta/core/validator.ts
-        lines: 1029-1039
+        lines: 1093-1103
         integrity: sha256-7c6875fb7c20e8e4f224fd456aa8f67de951850c6b8c747ca45ce59e8fb4e85a
-        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
+        commit-sha: ac06e6b383628ad1b1e78539fc301e26df84e834
     - id: external-metadata-exit-1-cases
       claim:
         lines: 1046
@@ -1425,9 +1425,9 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         integrity: sha256-a0445253f21233dd09149c4dcbb9ca1f871514f2a509d21ee22874f7f3acf86b
       source:
         file: src/meta/core/schema-registry.ts
-        lines: 1171-1179
+        lines: 1178-1186
         integrity: sha256-0fdd2bc93eb0acbc84d62eaaf5f1c7ec2795441da58714327642a7d7ee77c36c
-        commit-sha: 03518fa2c75bdbeb46f732bbac3f8b35c92c16f2
+        commit-sha: ac06e6b383628ad1b1e78539fc301e26df84e834
     - id: offline-flag-is-per-run
       claim:
         integrity: sha256-50cc1fbd993bc5e2a23e9cdb9373a16358550f893478fc626477be551f7abcc7
