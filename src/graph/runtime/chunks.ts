@@ -115,7 +115,7 @@ export interface ChunkRow {
   language: string;
   title: string;
   text: string;
-  /** Present when the manifest names a model. */
+  /** Present when the manifest names a model for the row's language. */
   vector?: number[];
   /** The page's delivered fields, overlaid by its heading statements down to this section. */
   metadata: Record<string, unknown>;
@@ -134,10 +134,10 @@ export interface ChunksManifest {
   searchIndex: string;
   commit: string | null;
   worktree: "clean" | "modified" | null;
-  model: { id: string; dimensions: number } | null;
   retrieve: { seeds: number; depth: number; maxChars: number; withhold: WithholdReason[] };
   evals: { report: string; digest: string } | null;
-  languages: Record<string, { file: string; rows: number }>;
+  /** Each language's rows, and the model its vector sidecar was embedded with, or `null` without one. */
+  languages: Record<string, { file: string; rows: number; model: { id: string; dimensions: number } | null }>;
   pages: Record<string, { metadata: Record<string, unknown> }>;
   withheld: { id: string; page: string; because: WithholdReason[] }[];
 }

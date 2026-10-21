@@ -195,7 +195,7 @@ const result = await docs.lookup("How do I rotate the encryption key?");
 | `manifest` | URL string, or a parsed manifest | required | `chunks.json`. The graph, the search index and the rows resolve from its directory. |
 | `store` | `VectorStore` | the static store over the rows' vectors | Pass `createHttpVectorStore(...)` for a hosted vector DB. |
 | `chunks` | `ChunkSource` | the chunk files the manifest names | Pass your own to read rows from a vector DB by id. |
-| `embed` | an embedder, or `false` | `graph/embed` with the manifest's model | `false` forces lexical entry. |
+| `embed` | an embedder, or `false` | `graph/embed` with each language's model | `false` forces lexical entry. A model loads once, when a language that needs it is first queried. |
 | `fetch` | function | the global `fetch` | For hosts without one, or for tests. |
 
 The four verbs are the CLI's, over the same artifact, and they answer alike.
@@ -217,11 +217,14 @@ Two errors throw instead:
 
 - `StaleArtifactError`, when the graph or a row was built from another graph
   than the manifest names.
-- `ModelMismatchError`, when the embedder is not the model the rows were
-  embedded with.
+- `ModelMismatchError`, when the embedder is not the model the queried
+  language's rows were embedded with. A language is checked only when it is
+  queried.
 
-A host that cannot load the manifest's model falls back to lexical entry.
-`trace.entry.fallback` then reads `"lexical"`. The default embedder loads from
+Each language in `chunks.json` names its own model, and the question is
+embedded with the queried language's. A host that cannot load that model
+falls back to lexical entry. So does a language with no model, when another
+language has one. `trace.entry.fallback` then reads `"lexical"`. The default embedder loads from
 the `graph/embed` file beside the runtime, so a bundler that does not ship it
 gets the fallback.
 
@@ -261,7 +264,7 @@ options in one object. A host with seams of its own can call them directly.
 | Area | Exports |
 |---|---|
 | The script surface | `createRetriever`, with `CreateRetrieverOptions`, `Retriever` and `RetrieverFetch` |
-| The cores | `lookup`, `retrieve`, with `RetrieverContext`, `LookupOptions` and `RetrieveOptions` |
+| The cores | `lookup`, `retrieve`, with `RetrieverContext`, `EmbeddingModel`, `LookupOptions` and `RetrieveOptions` |
 | The seams | `VectorStore`, `VectorStoreQuery`, `VectorStoreMatch`, `ChunkSource`, `WhereCondition`, `createStaticVectorStore`, `createHttpVectorStore`, `createChunkFileSource` |
 | The artifact | `parseChunkRows`, `parseChunksManifest`, `ChunkRow`, `ChunksManifest`, `ProvenanceRecord` and its parts |
 | Results | `LookupResult`, `LookupMatch`, `LookupReached`, `LookupEdge`, `PassageBundle`, `PassageBlock`, `RetrievalTrace`, `WithheldNode`, `FilteredNode` |

@@ -257,7 +257,7 @@ export async function exportChunks(opts: ChunksOptions): Promise<ChunksResult> {
     }
     const file = chunksFilename(language);
     writeFileSync(join(opts.outDir, file), list.map((row) => `${canonicalJson(row)}\n`).join(""), "utf8");
-    languages[language] = { file, rows: list.length };
+    languages[language] = { file, rows: list.length, model: vectors?.models.get(language) ?? null };
   }
 
   const manifest: ChunksManifest = {
@@ -268,7 +268,6 @@ export async function exportChunks(opts: ChunksOptions): Promise<ChunksResult> {
     searchIndex: LOCALIZATIONS_FILENAME,
     commit: git.commit,
     worktree,
-    model: vectors?.model ?? null,
     retrieve: { ...config.retrieve },
     evals: opts.evals === undefined || evals === undefined ? null : { report: opts.evals.label, digest: evals.digest },
     languages,
@@ -483,11 +482,13 @@ function claimLines(result: CitationResult, bodyLine: number): { start: number; 
   return file && { start: file.start - bodyLine + 1, end: file.end - bodyLine + 1 };
 }
 
-function range(spec: string): { start: number; end: number } | undefined {
+/** A cite line spec, `N` or `N-M`, as a span; `undefined` when it is not one or runs backwards. */
+export function range(spec: string): { start: number; end: number } | undefined {
   const m = /^(\d+)(?:-(\d+))?$/.exec(spec.trim());
   if (m?.[1] === undefined) return undefined;
   const start = Number(m[1]);
-  return { start, end: m[2] === undefined ? start : Number(m[2]) };
+  const end = m[2] === undefined ? start : Number(m[2]);
+  return end < start ? undefined : { start, end };
 }
 
 const RANK = { notice: 1, warning: 2, error: 3 } as const;
@@ -633,10 +634,12 @@ function readEvals(
   out.digest = digest;
   let changed = 0;
   for (const page of pages) {
-    const list = byPage.get(page.path) ?? [];
+    // A page the report never judged has no verdicts: its record's evals stay null.
+    const list = byPage.get(page.path);
+    if (list === undefined) continue;
     const now = integrityOf(Buffer.from(page.content, "utf8"));
     const current = list.every((r) => r.integrity === now);
-    if (!current && anyIntegrity && list.some((r) => r.integrity !== undefined)) changed += 1;
+    if (!current && list.some((r) => r.integrity !== undefined)) changed += 1;
     const count = (outcome: EvalItem["outcome"]): number => list.filter((r) => r.outcome === outcome).length;
     out.set(page.path, {
       report: digest,
@@ -673,27 +676,31 @@ function readEvals(
 
 // ---- vectors -----------------------------------------------------------------
 
-/** Every node's vector from the sidecars the search manifest names, or `undefined` when there are none. */
+/**
+ * Every node's vector from the sidecars the search manifest names, and each
+ * language's model from its own sidecar header, since `graph.embed.byLanguage`
+ * can embed each language with a different one. `undefined` when there are none.
+ */
 function readVectors(
   dir: string,
-): { model: { id: string; dimensions: number }; byId: Map<string, number[]> } | undefined {
+): { models: Map<string, { id: string; dimensions: number }>; byId: Map<string, number[]> } | undefined {
   const manifestPath = join(dir, LOCALIZATIONS_FILENAME);
   if (!existsSync(manifestPath)) return undefined;
   const doc = parseLocalizations(readFileSync(manifestPath, "utf8"));
   if (doc === undefined) return undefined;
   const byId = new Map<string, number[]>();
-  let model: { id: string; dimensions: number } | undefined;
+  const models = new Map<string, { id: string; dimensions: number }>();
   for (const entry of doc.languages) {
     if (entry.vectors === undefined) continue;
     const file = resolve(dir, entry.vectors.path);
     if (!existsSync(file)) continue;
     const { header, vectors } = decodeVectorIndex(readFileSync(file));
-    model ??= { id: header.model, dimensions: header.dims };
+    models.set(canonicalLanguageTag(entry.language), { id: header.model, dimensions: header.dims });
     for (const [i, id] of header.ids.entries()) {
       byId.set(id, Array.from(vectors.subarray(i * header.dims, (i + 1) * header.dims)));
     }
   }
-  return model === undefined ? undefined : { model, byId };
+  return models.size === 0 ? undefined : { models, byId };
 }
 
 // ---- values ------------------------------------------------------------------

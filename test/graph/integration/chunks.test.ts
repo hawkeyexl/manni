@@ -19,6 +19,13 @@ import { sliceSection } from "../../../src/graph/runtime/resolve.js";
 import type { ChunkRow, ChunksManifest } from "../../../src/graph/runtime/chunks.js";
 import { GraphError } from "../../../src/graph/types.js";
 import {
+  emitLocalizations,
+  LOCALIZATIONS_FILENAME,
+  parseLocalizations,
+  vectorIndexFilename,
+} from "../../../src/graph/core/localizations.js";
+import { encodeVectorIndex } from "../../../src/graph/core/vector-index.js";
+import {
   commit,
   gitAvailable,
   makeTempRepo,
@@ -27,6 +34,7 @@ import {
 } from "../../helpers/temp-repo.js";
 
 const FIXTURE = join(import.meta.dirname, "..", "fixtures", "provenance");
+const LANGUAGES = join(import.meta.dirname, "..", "fixtures", "chunks-languages");
 const DOC = "urn:manni:graph:doc/docs/retry.md";
 const LIMITS = `${DOC}#retry-limits`;
 const BACKOFF = `${DOC}#backoff`;
@@ -115,7 +123,7 @@ describe.skipIf(!hasGit)("graph export chunks", () => {
     expect(result.outPath).toBe(join(dir, ".manni/graph/chunks.json"));
     const manifest = manifestOf(dir);
     expect(Object.keys(manifest)).toEqual([
-      "commit", "evals", "format", "graph", "graphFile", "languages", "model", "pages", "retrieve", "searchIndex", "version", "withheld", "worktree",
+      "commit", "evals", "format", "graph", "graphFile", "languages", "pages", "retrieve", "searchIndex", "version", "withheld", "worktree",
     ]);
     expect(manifest).toMatchObject({
       format: "manni-graph-chunks",
@@ -124,14 +132,13 @@ describe.skipIf(!hasGit)("graph export chunks", () => {
       searchIndex: "localizations.json",
       commit: second,
       worktree: "modified",
-      model: null,
       retrieve: { seeds: 3, depth: 1, maxChars: 12000, withhold: [] },
       evals: { report: "evals.json", digest: integrityOf(readFileSync(join(dir, "evals.json"))) },
       withheld: [],
     });
     expect(manifest.graph).toMatch(/^sha256-[0-9a-f]{64}$/);
     const rows = rowsOf(dir);
-    expect(manifest.languages).toEqual({ und: { file: "chunks.und.jsonl", rows: rows.length } });
+    expect(manifest.languages).toEqual({ und: { file: "chunks.und.jsonl", model: null, rows: rows.length } });
     expect(rows.map((r) => r.id)).toEqual([...rows.map((r) => r.id)].sort());
     for (const r of rows) {
       expect(r.graph).toBe(manifest.graph);
@@ -259,14 +266,50 @@ describe.skipIf(!hasGit)("graph export chunks", () => {
     }
   });
 
+  it("withholds a page whose current verdicts failed, and never one whose verdicts are stale", async () => {
+    const config = read(dir, "manni.config.yaml");
+    writeFile(dir, "manni.config.yaml", `${config}  retrieve:\n    withhold: [failing]\n`);
+    try {
+      await runExport({ cwd: dir, format: "chunks" });
+      const ids = rowsOf(dir).map((r) => r.id);
+      expect(ids).not.toContain(LIMITS);
+      expect(ids).not.toContain(BACKOFF);
+      expect(ids).toContain("urn:manni:graph:doc/docs/other.md");
+      const withheld = manifestOf(dir).withheld;
+      expect(withheld.map((w) => w.page)).toEqual(withheld.map(() => "docs/retry.md"));
+      expect(withheld.map((w) => w.because)).toEqual(withheld.map(() => ["failing"]));
+      expect(withheld.map((w) => w.id)).toEqual(expect.arrayContaining([DOC, LIMITS, BACKOFF]));
+    } finally {
+      writeFile(dir, "manni.config.yaml", config);
+    }
+  });
+
+  it("gives a page the report never judged no verdicts, and withholds nothing for it", async () => {
+    const full = JSON.parse(read(dir, "evals.json")) as { evalResults: { file: string; outcome: string }[] };
+    full.evalResults = full.evalResults.filter((r) => r.file !== "docs/other.md");
+    for (const r of full.evalResults) r.outcome = "fail";
+    writeFileSync(join(dir, "partial.json"), JSON.stringify(full));
+    const config = read(dir, "manni.config.yaml");
+    writeFile(dir, "manni.config.yaml", `${config}  retrieve:\n    withhold: [drifted, failing]\n`);
+    try {
+      await runExport({ cwd: dir, format: "chunks", evals: "partial.json" });
+      const other = row(rowsOf(dir), "urn:manni:graph:doc/docs/other.md");
+      expect(other.provenance.evals).toBeNull();
+      expect(manifestOf(dir).withheld.some((w) => w.page === "docs/other.md")).toBe(false);
+    } finally {
+      writeFile(dir, "manni.config.yaml", config);
+    }
+  });
+
   it("attaches each node's vector when a sidecar holds one", async () => {
     await runExport({ cwd: dir, format: "search" });
     await runEmbed({ cwd: dir, model: "mock", noCache: true });
     const withVectors = await runExport({ cwd: dir, format: "chunks" });
     const manifest = manifestOf(dir);
-    expect(manifest.model?.id).toBe("mock");
+    const model = manifest.languages.und?.model;
+    expect(model?.id).toBe("mock");
     const limits = row(rowsOf(dir), LIMITS);
-    expect(limits.vector).toHaveLength(manifest.model?.dimensions ?? -1);
+    expect(limits.vector).toHaveLength(model?.dimensions ?? -1);
     expect(withVectors.warnings.some((w) => w.startsWith("no vector sidecar"))).toBe(false);
   });
 
@@ -304,6 +347,53 @@ describe.skipIf(!hasGit)("graph export chunks", () => {
       writeFile(dir, "manni.config.yaml", config);
     }
   });
+});
+
+// graph.embed.byLanguage can embed each language with its own model, so the
+// manifest records the model per language, from that language's sidecar.
+describe("graph export chunks across languages", () => {
+  it("records each language's model, and null for a language with no sidecar", async () => {
+    const files: Record<string, string> = {};
+    for (const rel of ["manni.config.yaml", "docs/en.md", "docs/de.md", "docs/fr.md"]) {
+      files[rel] = readFileSync(join(LANGUAGES, rel), "utf8");
+    }
+    const dir = makeTempRepo({ files, init: false });
+    dirs.push(dir);
+    await runBuild({ cwd: dir });
+    await runExport({ cwd: dir, format: "search" });
+    const out = join(dir, ".manni/graph");
+    const manifestPath = join(out, LOCALIZATIONS_FILENAME);
+    const doc = parseLocalizations(readFileSync(manifestPath, "utf8"));
+    if (doc === undefined) throw new Error("no localizations manifest");
+    // English and German embedded with different models; French left without vectors.
+    const models: Record<string, { model: string; dims: number }> = { en: { model: "model-en", dims: 4 }, de: { model: "model-de", dims: 6 } };
+    for (const entry of doc.languages) {
+      const want = models[entry.language];
+      if (want === undefined) continue;
+      const index = JSON.parse(readFileSync(join(out, entry.search.path), "utf8")) as { entries: { id: string }[] };
+      const path = vectorIndexFilename(entry.language);
+      const vectors = index.entries.map((e) => ({ id: e.id, vector: new Float32Array(want.dims).fill(0.5) }));
+      writeFileSync(join(out, path), encodeVectorIndex(vectors, { model: want.model, dtype: "fp32", source: entry.search.digest, language: entry.language }));
+      entry.vectors = { path, model: want.model, dtype: "fp32", dims: want.dims, count: vectors.length };
+    }
+    writeFileSync(manifestPath, emitLocalizations(doc));
+
+    await runExport({ cwd: dir, format: "chunks" });
+    const first = read(dir, ".manni/graph/chunks.json");
+    const manifest = JSON.parse(first) as ChunksManifest;
+    expect(manifest).not.toHaveProperty("model");
+    expect(manifest.languages).toEqual({
+      de: { file: "chunks.de.jsonl", model: { id: "model-de", dimensions: 6 }, rows: rowsOf(dir, "chunks.de.jsonl").length },
+      en: { file: "chunks.en.jsonl", model: { id: "model-en", dimensions: 4 }, rows: rowsOf(dir, "chunks.en.jsonl").length },
+      fr: { file: "chunks.fr.jsonl", model: null, rows: rowsOf(dir, "chunks.fr.jsonl").length },
+    });
+    expect(Object.keys(manifest.languages.en ?? {})).toEqual(["file", "model", "rows"]);
+    expect(rowsOf(dir, "chunks.de.jsonl").every((r) => r.vector?.length === 6)).toBe(true);
+    expect(rowsOf(dir, "chunks.fr.jsonl").every((r) => r.vector === undefined)).toBe(true);
+
+    await runExport({ cwd: dir, format: "chunks" });
+    expect(read(dir, ".manni/graph/chunks.json")).toBe(first);
+  }, 60_000);
 });
 
 // Proposal 0099, decision 11: a repository without git is a normal case.

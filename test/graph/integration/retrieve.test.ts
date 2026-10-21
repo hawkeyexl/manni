@@ -12,10 +12,12 @@ import { canonicalJson } from "../../../src/graph/commands/chunks.js";
 import { runLookup, runRetrieve, runTraverseContext } from "../../../src/graph/commands/retrieve.js";
 import { createMockEmbedder } from "../../../src/graph/embed/mock.js";
 import type { ChunkRow } from "../../../src/graph/runtime/chunks.js";
+import { artifactContext, lookup, retrieve } from "../../../src/graph/runtime/retrieve.js";
 import {
   createHttpVectorStore,
   createRetriever,
   createStaticVectorStore,
+  GraphIndex,
   ModelMismatchError,
   parseChunkRows,
   parseChunksManifest,
@@ -23,7 +25,15 @@ import {
   type RetrieverFetch,
 } from "../../../src/graph/runtime/index.js";
 import { removeTempRepo } from "../../helpers/temp-repo.js";
-import { CI, DE_QUESTION, INDEX, QUESTION, ROTATE, retrieveArtifact } from "../helpers/retrieve-artifact.js";
+import {
+  CI,
+  DE_QUESTION,
+  INDEX,
+  languagesArtifact,
+  QUESTION,
+  ROTATE,
+  retrieveArtifact,
+} from "../helpers/retrieve-artifact.js";
 
 let dir: string;
 beforeAll(async () => {
@@ -288,6 +298,118 @@ describe("createRetriever", () => {
       ok: false,
       error: "no chunk row",
     });
+  });
+});
+
+describe("one model per language", () => {
+  let langDir: string;
+  beforeAll(async () => {
+    langDir = await languagesArtifact();
+  }, 60_000);
+  afterAll(() => {
+    removeTempRepo(langDir);
+  });
+
+  const EN = "Run manni key rotate.";
+  const DE = "Den Schlüssel rotieren";
+  const FR = "Changer la clé";
+  const langManifest = (): string => posix(join(langDir, INDEX, "chunks.json"));
+
+  /** The cores over the artifact, recording each model loaded and each vector the store is asked with. */
+  function spied(): {
+    ctx: ReturnType<typeof artifactContext>;
+    loaded: string[];
+    asked: { language: string | null; dims: number | null }[];
+  } {
+    const loaded: string[] = [];
+    const asked: { language: string | null; dims: number | null }[] = [];
+    const manifest = parseChunksManifest(readFileSync(join(langDir, INDEX, "chunks.json"), "utf8"));
+    const graph = GraphIndex.fromJsonLd(readFileSync(join(langDir, INDEX, "graph.jsonld"), "utf8"));
+    const read = (path: string): Promise<string> => Promise.resolve(readFileSync(join(langDir, INDEX, path), "utf8"));
+    const rows = ["de", "en", "fr"].flatMap((l) => parseChunkRows(readFileSync(join(langDir, INDEX, `chunks.${l}.jsonl`), "utf8")));
+    const ctx = artifactContext(manifest, graph, read, {
+      store: {
+        query(q) {
+          asked.push({ language: q.language, dims: q.vector?.length ?? null });
+          return createStaticVectorStore(rows).query(q);
+        },
+      },
+      embedder(model) {
+        loaded.push(model.id);
+        return Promise.resolve(createMockEmbedder({ model: model.id, dims: model.dimensions }));
+      },
+    });
+    return { ctx, loaded, asked };
+  }
+
+  it("embeds each query with its language's model, loading each model once and only when queried", async () => {
+    const { ctx, loaded, asked } = spied();
+    expect(loaded).toEqual([]);
+    const de = await retrieve({ ...ctx, question: DE, lang: "de" });
+    expect(de.refusal).toBeUndefined();
+    expect(loaded).toEqual(["model-de"]);
+    expect(asked).toEqual([{ language: "de", dims: 6 }]);
+    await retrieve({ ...ctx, question: EN, lang: "en" });
+    await retrieve({ ...ctx, question: EN, lang: "en" });
+    expect(loaded).toEqual(["model-de", "model-en"]);
+    expect(asked.slice(1)).toEqual([
+      { language: "en", dims: 4 },
+      { language: "en", dims: 4 },
+    ]);
+  });
+
+  it("lookup picks the language first, then embeds with that language's model alone", async () => {
+    const { ctx, loaded, asked } = spied();
+    const result = await lookup({ ...ctx, question: DE });
+    expect(result.language).toBe("de");
+    expect(result.trace.entry.chosen).toBe("de");
+    expect(Object.keys(result.trace.entry.languages ?? {})).toContain("de");
+    expect(loaded).toEqual(["model-de"]);
+    expect(asked).toEqual([{ language: "de", dims: 6 }]);
+    expect(result.matches.passages[0]?.score.vector).not.toBeNull();
+  });
+
+  it("enters a language with no model lexically, and says so", async () => {
+    const { ctx, loaded, asked } = spied();
+    const fr = await retrieve({ ...ctx, question: FR, lang: "fr" });
+    expect(fr.refusal).toBeUndefined();
+    expect(fr.trace.entry.fallback).toBe("lexical");
+    expect(loaded).toEqual([]);
+    expect(asked).toEqual([]);
+    const looked = await lookup({ ...ctx, question: FR });
+    expect(looked.language).toBe("fr");
+    expect(looked.trace.entry.fallback).toBe("lexical");
+    expect(looked.matches.passages[0]?.score.vector).toBeNull();
+  });
+
+  it("checks a supplied embedder against the queried language's model only", async () => {
+    const docs = await createRetriever({
+      manifest: langManifest(),
+      fetch: fileFetch,
+      embed: createMockEmbedder({ model: "model-en", dims: 4 }),
+    });
+    expect((await docs.retrieve(EN, { lang: "en" })).refusal).toBeUndefined();
+    expect((await docs.retrieve(FR, { lang: "fr" })).refusal).toBeUndefined();
+    await expect(docs.retrieve(DE, { lang: "de" })).rejects.toThrow(ModelMismatchError);
+    await expect(docs.retrieve(DE, { lang: "de" })).rejects.toThrow(
+      "chunks.json was embedded with model-de, and the embedder loads model-en.",
+    );
+    await expect(docs.lookup(DE)).rejects.toThrow(ModelMismatchError);
+  });
+
+  it("parseChunksManifest refuses a top-level model and a malformed language model", () => {
+    const manifest = JSON.parse(readFileSync(join(langDir, INDEX, "chunks.json"), "utf8")) as Record<string, unknown> & {
+      languages: Record<string, Record<string, unknown>>;
+    };
+    expect(parseChunksManifest(manifest).languages.fr?.model).toBeNull();
+    expect(() => parseChunksManifest({ ...manifest, model: null })).toThrow("Not a manni graph chunk manifest");
+    const withModel = (model: unknown): object => ({
+      ...manifest,
+      languages: { ...manifest.languages, en: { ...manifest.languages.en, model } },
+    });
+    expect(() => parseChunksManifest(withModel("model-en"))).toThrow("Not a manni graph chunk manifest");
+    expect(() => parseChunksManifest(withModel({ id: "model-en" }))).toThrow("Not a manni graph chunk manifest");
+    expect(() => parseChunksManifest(withModel(undefined))).toThrow("Not a manni graph chunk manifest");
   });
 });
 

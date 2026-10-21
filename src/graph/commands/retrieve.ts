@@ -35,6 +35,7 @@ import {
   retrieve,
   StaleArtifactError,
   walkPassages,
+  type EmbeddingModel,
   type LookupEdge,
   type LookupResult,
   type PassageBundle,
@@ -105,10 +106,8 @@ export interface Artifact {
   quads: ReturnType<typeof storeToQuads>;
 }
 
-/** The query embedder for the manifest's model, or `null` when entry stays lexical. */
-async function queryEmbedder(manifest: ChunksManifest, mode: RetrieveMode | undefined): Promise<QueryEmbedder | null> {
-  const model = manifest.model;
-  if (model === null || mode === "lexical") return null;
+/** The query embedder for one language's model, or `null` when entry stays lexical. */
+async function queryEmbedder(model: EmbeddingModel): Promise<QueryEmbedder | null> {
   if (model.id === "mock") return createMockEmbedder({ dims: model.dimensions });
   try {
     return await createLocalEmbedder({ model: model.id, role: "query" });
@@ -120,7 +119,7 @@ async function queryEmbedder(manifest: ChunksManifest, mode: RetrieveMode | unde
 }
 
 /** The artifact beside the graph, held to the graph it was built from. */
-export async function openArtifact(opts: ArtifactOptions, mode?: RetrieveMode): Promise<Artifact> {
+export function openArtifact(opts: ArtifactOptions): Artifact {
   const cwd = opts.cwd ?? process.cwd();
   const config = loadRunConfig(
     {
@@ -154,7 +153,9 @@ export async function openArtifact(opts: ArtifactOptions, mode?: RetrieveMode): 
       throw new GraphError(`${shown(abs)} does not exist; run manni graph publish.`);
     }
   };
-  const embedder = opts.embedder === undefined ? await queryEmbedder(manifest, mode) : opts.embedder;
+  const injected = opts.embedder;
+  const embedder: RetrieverContext["embedder"] =
+    injected === undefined ? queryEmbedder : () => Promise.resolve(injected);
   // The config's settings, not the ones the manifest recorded for other hosts.
   const ctx = artifactContext({ ...manifest, retrieve: { ...config.retrieve } }, graph, read, { embedder });
   return { ctx, config, label, quads };
@@ -181,7 +182,7 @@ async function served<T>(label: string, work: () => Promise<T>): Promise<T> {
 export async function runLookup(
   opts: LookupCommandOptions,
 ): Promise<{ result: LookupResult; settings: { depth: number; maxChars: number } }> {
-  const artifact = await openArtifact(opts);
+  const artifact = openArtifact(opts);
   const { config } = artifact;
   const result = await lookupIn(artifact, opts);
   return { result, settings: { depth: config.retrieve.depth, maxChars: config.retrieve.maxChars } };
@@ -198,7 +199,7 @@ export async function lookupIn(
 }
 
 export async function runRetrieve(opts: RetrieveCommandOptions): Promise<PassageBundle> {
-  return retrieveIn(await openArtifact(opts, opts.mode), opts);
+  return retrieveIn(openArtifact(opts), opts);
 }
 
 /** `retrieve` over an artifact already open: `graph retrieve` and the MCP `retrieve` tool. */
@@ -235,7 +236,7 @@ export async function retrieveIn(
 }
 
 export async function runTraverseContext(opts: TraverseContextOptions): Promise<PassageBundle> {
-  return traverseIn(await openArtifact(opts), opts);
+  return traverseIn(openArtifact(opts), opts);
 }
 
 /** A walk over an artifact already open: `graph traverse --context` and the MCP `traverse` and `impact` tools. */
