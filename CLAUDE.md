@@ -282,6 +282,16 @@ says what each flag is; the ladder shows whether the flags compose into a
 command a person would type. It is where a missing default, an awkward pairing,
 or a parity break with `meta` gets caught before it ships.
 
+**Plans carry a worked example.** After the pain and before the interface, a
+plan walks one person through the change end to end. Name the persona from
+`docs/content-strategy/personas.md`, and start from a real state, this
+repository's own where it can be. Show each command or call they make, in
+order, and what each prints or returns. End at the outcome the pain section
+promised. The ladder shows that the flags compose. The worked example shows
+that the job gets done. It is where a workflow that takes four commands, or an
+output missing the one field the person needed, shows up before review.
+Proposal 0090's plan grew `manni graph publish` for exactly that reason.
+
 **Plans end with an acceptance checklist.** The last section lists every
 artifact and behavior that is in place once the plan is fully built. A reviewer
 holds the finished branch against it and ticks each item off without rereading
