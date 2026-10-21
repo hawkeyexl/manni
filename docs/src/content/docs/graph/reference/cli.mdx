@@ -969,6 +969,7 @@ $ manni graph traverse -c test/graph/fixtures/dd/docs.config.yaml \
 | `--context` | n/a | off | Return the passages the walk reaches, with their text and proof, as a [bundle](#the-bundle). It reads the [chunk artifact](#chunks) beside the graph. |
 | `--max-chars` | `<n>` | config `retrieve.maxChars` | The character budget for the passages. Valid only with `--context`. |
 | `--withhold` | `<list>` | none | Also leave out passages that are `drifted` or `failing`, comma-separated and given once. Valid only with `--context`. |
+| `--where` | `<field=value>` | none | Serve only passages whose row `metadata` field holds the value, as [`graph retrieve`](#graph-retrieve) does. Repeatable, and every condition must hold. Valid only with `--context`. |
 | `-f, --format` | `<pretty\|json>` | `pretty` | Output format. |
 
 Without `--context`, the output is the walk above, unchanged. With it, the
@@ -984,8 +985,9 @@ setup.md                               context, depth 1
 3 passages, in en. Pass -f json for the text and trace.
 ```
 
-`--max-chars` or `--withhold` without `--context` is **exit 2**, with
-`manni: --max-chars needs --context.` or `manni: --withhold needs --context.`
+`--max-chars`, `--withhold` or `--where` without `--context` is **exit 2**,
+with `manni: --max-chars needs --context.`, and likewise for the other two. A
+malformed `--where` is **exit 2**, with the message `graph retrieve` prints.
 
 ## `graph lookup`
 
@@ -1137,7 +1139,7 @@ bundle.
 | `trace.entry` | `{ candidates }`, the ranked candidates that became matches. `fallback` is `"lexical"` when the vector path was wanted and could not run. |
 | `trace.hops`, `trace.exclusions`, `trace.resolutions` | Every edge walked, every node a scope filter excluded, and every row looked up. A candidate no row holds is a resolution with `ok: false`. |
 | `trace.withheld` | `{ node, because, at }` for each passage the floor left out. `at` is `export` or `query`. Always present. |
-| `trace.filtered` | `{ node, field }` for each passage `--where` left out, with the first field it failed. Always present. |
+| `trace.filtered` | `{ node, field }` for each passage `--where` left out, with the first field it failed. The vector store applies `--where` itself, so a row it never returns is not listed. Always present. |
 
 A refusal is an answer, and it exits 0. Its `reason` is one of these:
 

@@ -203,13 +203,16 @@ The four verbs are the CLI's, over the same artifact, and they answer alike.
 | Member | Same as | Returns |
 |---|---|---|
 | `lookup(question)` | `graph lookup` | the [lookup result](/manni/graph/reference/cli/#the-lookup-result) |
-| `retrieve(question, { lang, variant, softwareSubject, depth, maxChars, mode, where })` | `graph retrieve` | a [bundle](/manni/graph/reference/cli/#the-bundle) |
-| `traverse(node, { depth, predicates, reverse, lang, variant, softwareSubject, limit, maxChars, where })` | `graph traverse --context` | a bundle |
-| `impact(node, { depth, lang, variant, softwareSubject, limit, maxChars, where })` | `graph traverse --impact --context` | a bundle |
+| `retrieve(question, { lang, variant, softwareSubject, depth, maxChars, mode, where, withhold })` | `graph retrieve` | a [bundle](/manni/graph/reference/cli/#the-bundle) |
+| `traverse(node, { depth, predicates, reverse, lang, variant, softwareSubject, limit, maxChars, where, withhold })` | `graph traverse --context` | a bundle |
+| `impact(node, { depth, lang, variant, softwareSubject, limit, maxChars, where, withhold })` | `graph traverse --impact --context` | a bundle |
 | `manifest` | n/a | the parsed manifest |
 
 Every option is optional. `where` is a list of `{ field, value }`, and every
-condition must hold, as with `--where`. A refusal comes back in the result.
+condition must hold, as with `--where`. `withhold` lists `drifted`, `failing`
+or both, as `--withhold` does. It tightens the floor the artifact was exported
+with, for that call, and never lowers it. `lookup` serves the exported floor.
+A refusal comes back in the result.
 Two errors throw instead:
 
 - `StaleArtifactError`, when the graph or a row was built from another graph
@@ -239,8 +242,8 @@ interface ChunkSource {
 }
 ```
 
-- **`createStaticVectorStore(rows)`** ranks rows by cosine in memory. It needs
-  no service.
+- **`createStaticVectorStore(rows)`** ranks rows by cosine in memory, among
+  those that meet `where`. It needs no service.
 - **`createHttpVectorStore({ url, fetch })`** POSTs `{ text, vector, k,
   language, where }` as JSON and expects `{ matches: [{ id, score, row }] }`.
   `row` is optional. Without it, the id is read through the `ChunkSource`. An
@@ -250,7 +253,7 @@ interface ChunkSource {
   `chunks.<tag>.jsonl`, given as its text or its URL.
 - **`parseChunkRows(text)`** returns a JSONL file's rows, for ingestion into a
   vector DB. **`parseChunksManifest(input)`** checks that a document is a
-  chunk manifest.
+  chunk manifest. Both throw on a document missing a field the cores read.
 
 The cores the verbs call, `lookup` and `retrieve`, take the context and the
 options in one object. A host with seams of its own can call them directly.
