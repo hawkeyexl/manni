@@ -281,7 +281,7 @@ describe.skipIf(!gitAvailable())("cite history (0092)", { timeout: 90_000 }, () 
     expect(withKey.run.summary).toMatchObject({ citations: 2, windows: 0, skipped: { encrypted: 0 } });
   });
 
-  it("refuses stdin, a path outside git and a shallow clone", async () => {
+  it("refuses stdin, a path outside git, an empty repository and a shallow clone", async () => {
     const { repo } = story();
     await expect(history(repo, { inputs: ["-"] })).rejects.toThrow(
       "cite history reads each page's past from git, and stdin has none. Name the page's path instead of -.",
@@ -291,6 +291,9 @@ describe.skipIf(!gitAvailable())("cite history (0092)", { timeout: 90_000 }, () 
     await expect(history(plain, { root: plain })).rejects.toThrow(
       `cite history reads git, and ${plain} is not inside a git repository.`,
     );
+    const empty = makeTempRepo({ files: { "docs/page.md": page([]) } });
+    dirs.push(empty);
+    await expect(history(empty, { root: empty })).rejects.toThrow(`cite history reads git, and ${empty} has no commits yet.`);
     const shallow = makeTempRepo({ init: false, files: {} });
     dirs.push(shallow);
     git(shallow, ["clone", "-q", "--depth", "1", pathToFileURL(repo).href, "clone"]);

@@ -36,6 +36,11 @@ export function notInGitRefusal(root: string): string {
   return `cite history reads git, and ${root} is not inside a git repository.`;
 }
 
+/** `<root>` is in a repository with nothing committed. */
+export function noCommitsRefusal(root: string): string {
+  return `cite history reads git, and ${root} has no commits yet.`;
+}
+
 /** Said once when an older commit's config or citation manifests do not load. */
 export function unreadNotice(sha: string): string {
   return `history before ${shortCommit(sha)} is unread: its config or citation manifests do not load under this version. Windows open there are marked bounded.`;
@@ -67,6 +72,7 @@ export async function runHistory(opts: HistoryOptions): Promise<HistoryRun> {
   const { run, files } = prepared;
   const top = await topLevel(run.root);
   if (top === null) throw new CiteError(notInGitRefusal(run.root));
+  if ((await prepared.git.head()) === null) throw new CiteError(noCommitsRefusal(run.root));
   if (await prepared.git.shallow?.()) throw new CiteError(HISTORY_SHALLOW_REFUSAL);
 
   const realTop = await realpath(top);
@@ -86,7 +92,7 @@ export async function runHistory(opts: HistoryOptions): Promise<HistoryRun> {
   });
   const { commits, start } = timeline;
   const head = commits[commits.length - 1];
-  if (head === undefined) throw new CiteError(notInGitRefusal(run.root));
+  if (head === undefined) throw new CiteError(noCommitsRefusal(run.root));
 
   if (timeline.unread) opts.onNotice?.(unreadNotice((commits[start] ?? head).sha));
   if (timeline.encrypted > 0) opts.onNotice?.(encryptedNotice(timeline.encrypted));
