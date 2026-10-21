@@ -265,9 +265,10 @@ export interface CrossFileHit {
  * the entry's own file is dropped because the in-file search covered it, and a
  * path the tracked-file index does not hold is dropped exactly as a cited path
  * would be. The bytes come from where every other source read gets them: the
- * working tree, or the commit's tree for an index over one. Each candidate costs its own bytes against the citation's counter, and
- * the `original` lines take `findWindows` down its filtered path, which hashes
- * only a start line whose text already matches.
+ * working tree, or the commit's tree for an index over one. Each candidate
+ * costs its own bytes against the citation's counter, and the `original`
+ * lines take `findWindows` down its filtered path, which hashes only a start
+ * line whose text already matches.
  */
 export async function followAcross(
   ask: {

@@ -147,9 +147,10 @@ export function gitClient(root: string, rev = "HEAD"): GitClient {
         return out.stdout.split(/\r?\n/).filter((line) => line !== "");
       }),
 
-    // `HEAD` is written out: with no second revision git compares the commit
-    // to the working tree, and this list is committed changes only, so a move
-    // that is merely saved is never followed into a page (0055 stress test 8).
+    // The revision is written out, `HEAD` for a check: with no second revision
+    // git compares the commit to the working tree, and this list is committed
+    // changes only, so a move that is merely saved is never followed into a
+    // page (0055 stress test 8).
     changedSince: (commit) =>
       once(`changed\0${commit}`, async () => {
         if (!(await available())) return [];
