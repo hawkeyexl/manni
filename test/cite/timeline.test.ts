@@ -221,10 +221,39 @@ describe.skipIf(!gitAvailable())("cite history (0092)", { timeout: 90_000 }, () 
 
     const { run, notices } = await history(repo, { inputs: [], noConfig: false });
     expect(notices.filter((n) => n.startsWith("history before"))).toEqual([
-      `history before ${fixed.slice(0, 7)} is unread: its manni.config.yaml does not load under this version. Windows open there are marked bounded.`,
+      `history before ${fixed.slice(0, 7)} is unread: its config or citation manifests do not load under this version. Windows open there are marked bounded.`,
     ]);
     expect(windowsOf(run).get("omega")).toMatchObject({ opened: { commit: fixed, bounded: true }, closed: null });
     expect(run.summary.walked.commits).toBe(1);
+  });
+
+  it("says the same when an older citation manifest does not load", async () => {
+    const text = source("M");
+    const repo = makeTempRepo({ files: { "src/m.ts": text } });
+    dirs.push(repo);
+    const p = pin("mu", "src/m.ts", text, 1, 2);
+    writeFile(
+      repo,
+      "manni.config.yaml",
+      'collections:\n  - name: site\n    paths: ["docs/**/*.md"]\n    externalMetadata:\n      - file: "{page}.citations.yaml"\n        keys: [citations]\n',
+    );
+    writeFile(repo, "docs/page.md", "---\ntitle: t\n---\nPinned prose.\n");
+    writeFile(repo, "docs/page.citations.yaml", "docs/page.md: [unclosed\n");
+    commit(repo, "broken manifest", { authorDate: at(0) });
+    writeFile(repo, "src/m.ts", source("M", (n) => (n === 1 ? "export const M_1 = 10;" : undefined)));
+    commit(repo, "change m", { authorDate: at(1) });
+    writeFile(
+      repo,
+      "docs/page.citations.yaml",
+      `docs/page.md:\n  citations:\n    - id: mu\n      source:\n        file: src/m.ts\n        lines: 1-2\n        integrity: ${p.integrity}\n`,
+    );
+    const fixed = commit(repo, "fixed manifest", { authorDate: at(2) });
+
+    const { run, notices } = await history(repo, { inputs: [], noConfig: false });
+    expect(notices.filter((n) => n.startsWith("history before"))).toEqual([
+      `history before ${fixed.slice(0, 7)} is unread: its config or citation manifests do not load under this version. Windows open there are marked bounded.`,
+    ]);
+    expect(windowsOf(run).get("mu")).toMatchObject({ opened: { commit: fixed, bounded: true }, closed: null });
   });
 
   it("skips an encrypted citation without the key, and says so once", async () => {

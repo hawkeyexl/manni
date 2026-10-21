@@ -36,9 +36,9 @@ export function notInGitRefusal(root: string): string {
   return `cite history reads git, and ${root} is not inside a git repository.`;
 }
 
-/** Said once when an older commit's config does not load. */
+/** Said once when an older commit's config or citation manifests do not load. */
 export function unreadNotice(sha: string): string {
-  return `history before ${shortCommit(sha)} is unread: its manni.config.yaml does not load under this version. Windows open there are marked bounded.`;
+  return `history before ${shortCommit(sha)} is unread: its config or citation manifests do not load under this version. Windows open there are marked bounded.`;
 }
 
 /** Said once when keyed pins were skipped for want of the key. */

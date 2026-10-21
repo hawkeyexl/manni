@@ -177,7 +177,7 @@ export async function buildTimeline(input: TimelineInput): Promise<Timeline> {
       if (i < start) continue;
       for (const { label, to } of renames.get(i) ?? []) paths.set(label, to);
       if (!(await walk.read(i, commit, tree, i === start))) {
-        // This commit's config does not load: nothing before the next one
+        // This commit's config or manifests do not load: nothing before the next one
         // counts, and a window open there is bounded.
         walk.reset();
         start = i + 1;
@@ -244,7 +244,7 @@ class Walk {
     return [...this.closed, ...[...this.open.values()].map(strip)];
   }
 
-  /** Read one commit. False when its config does not load. */
+  /** Read one commit. False when its config or citation manifests do not load. */
   async read(i: number, commit: WalkCommit, tree: ReadonlyMap<string, Leaf>, first: boolean): Promise<boolean> {
     const configBlob = this.input.config === undefined ? undefined : tree.get(this.input.config)?.blob;
     if (configBlob !== this.configBlob) {
