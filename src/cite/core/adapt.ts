@@ -51,6 +51,19 @@ function citesEncrypted(src: string): boolean {
 }
 
 /**
+ * The file half of a source as the entry spelled it: a plain path in full, a
+ * ciphertext abbreviated, so no message names an encrypted path.
+ */
+function sourceFile(src: string): string {
+  try {
+    const { path } = parseSrc(src);
+    return shortSrc(path);
+  } catch {
+    return shortSrc(src);
+  }
+}
+
+/**
  * Why an encrypted source is missing, in words that never name the path. A
  * plain path names its own file, so the bare status says the rest.
  */
@@ -88,18 +101,17 @@ export function messageFor(source: SourceEnd): string {
       // Where the old first and last line sit now, when the in-range search
       // found each exactly once: the span `update --accept` re-mints at.
       const span = source.newLines === undefined ? "" : `; now at lines ${source.newLines}`;
-      if (source.commitSha === undefined) return `changed${span}`;
-      const at = short(source.commitSha);
-      if (source.historyAvailable === false) {
-        return `changed (history unavailable: commit ${at} not found; fetch-depth: 0)`;
-      }
+      if (source.historyAvailable === false) return "changed (history unavailable; fetch-depth: 0)";
+      // The derived baseline when history found one (0097). Without git
+      // there is none, and the recorded commit is all the entry says.
+      const since = source.baselineSha ?? source.commitSha;
+      if (since === undefined) return `changed${span}`;
+      const at = short(since);
       if (source.commitsSince === undefined) return `changed since ${at}${span}`;
       return `changed since ${at}, ${plural(source.commitsSince.length, "commit")}${span}`;
     }
     case "never-true":
-      return source.commitSha === undefined
-        ? "never true: the pin does not match at the recorded commit"
-        : `never true: the pin does not match at ${short(source.commitSha)}`;
+      return `never true: the pin held at no commit in the history of ${sourceFile(source.src)}`;
     case "missing":
       return missingMessage(source);
   }

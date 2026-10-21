@@ -1251,7 +1251,7 @@ describe("runUpdate: both ends, and what is left", () => {
     );
   });
 
-  it("says once, under --accept, that a re-mint without git records no commit", async () => {
+  it("says once, under --accept, that history is off and a re-mint without git records no commit", async () => {
     workspace("source-changed.md");
     const notices: string[] = [];
     const run = await update({
@@ -1260,14 +1260,15 @@ describe("runUpdate: both ends, and what is left", () => {
       onNotice: (m) => notices.push(m),
     });
     expect(run.rewritten).toBe(1);
-    expect(notices).toEqual([NO_COMMIT]);
+    // The pin no longer holds, so its history was wanted, commit or not (0097).
+    expect(notices).toEqual([NO_HISTORY, NO_COMMIT]);
   });
 
   it("says nothing about git when nothing needed it", async () => {
-    workspace("moved.md");
+    workspace("current.md");
     const notices: string[] = [];
     await update({
-      inputs: ["pages/moved.md"],
+      inputs: ["pages/current.md"],
       accept: true,
       onNotice: (m) => notices.push(m),
     });

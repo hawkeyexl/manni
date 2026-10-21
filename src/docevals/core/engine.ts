@@ -10,6 +10,7 @@ import type {
   EvalResult,
   Finding,
   RunReport,
+  Severity,
   SuiteSummary,
 } from "../types.js";
 import { loadRunConfig, type DocevalsConfig } from "./config.js";
@@ -48,7 +49,7 @@ import { resolve } from "node:path";
 export interface RunProblem {
   file: string;
   message: string;
-  level: "error" | "warning";
+  level: Severity;
   line?: number;
 }
 

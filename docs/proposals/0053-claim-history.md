@@ -1,6 +1,6 @@
 # 0053: claim history, so `manni cite` reads the page's past as it reads the source's
 
-- **Status:** Implemented (#73)
+- **Status:** Implemented (#73); superseded in part by 0097
 - **Serves:** Three journeys in `../content-strategy/cujs.md`.
   - Maya · M5, "Pin a claim and catch it going stale". She reviews the claims
     whose words changed, and no others.

@@ -1,7 +1,7 @@
 /**
  * The `cite` domain's commander program. Mounted by `src/cli.ts` under
  * `manni cite`; no entry point of its own. Grammar per proposal 0034: verbs are
- * `check`, `add`, `update`, `remove`; there is no default subcommand.
+ * `check`, `add`, `update`, `remove`, `history`; there is no default subcommand.
  *
  * Follows clig.dev as meta's does: primary output to stdout, diagnostics to
  * stderr, colour only on a TTY and never under `NO_COLOR`/`--no-color`, exit
@@ -32,15 +32,21 @@ import {
 import { REPORT_FORMATS, isReportFormat } from "../meta/index.js";
 import { runAdd } from "./commands/add.js";
 import { runCheck } from "./commands/check.js";
+import { runHistory } from "./commands/history.js";
 import { runRemove } from "./commands/remove.js";
 import { runUpdate } from "./commands/update.js";
 import { CiteError, asCiteError } from "./errors.js";
 import { spellSource } from "./core/range.js";
 import { shortCommit, shortLine, shortPin, shortSrc } from "./core/spell.js";
 import { renderCheckGithub } from "./reporters/github.js";
-import { renderCheckJson, renderRemoveJson, renderUpdateJson } from "./reporters/json.js";
+import { renderCheckJson, renderHistoryJson, renderRemoveJson, renderUpdateJson } from "./reporters/json.js";
 import { renderCheckJunit } from "./reporters/junit.js";
-import { renderCheckPretty, renderRemovePretty, renderUpdatePretty } from "./reporters/pretty.js";
+import {
+  renderCheckPretty,
+  renderHistoryPretty,
+  renderRemovePretty,
+  renderUpdatePretty,
+} from "./reporters/pretty.js";
 import { renderCheckSarif } from "./reporters/sarif.js";
 import type { AddResult, PageLines } from "./types.js";
 
@@ -49,6 +55,12 @@ type UpdateFormat = (typeof UPDATE_FORMATS)[number];
 /** The same two `update` has: a removal is a write, and writes report alike. */
 const REMOVE_FORMATS = UPDATE_FORMATS;
 type RemoveFormat = UpdateFormat;
+/** The same two again: a window is not a finding, so the finding sinks are left out. */
+const HISTORY_FORMATS = UPDATE_FORMATS;
+
+function isHistoryFormat(value: string): value is UpdateFormat {
+  return (HISTORY_FORMATS as readonly string[]).includes(value);
+}
 
 /**
  * Whether `command`'s output gets colour: this domain's `--no-color` and
@@ -153,6 +165,12 @@ interface RemoveCliOptions extends Omit<InputCliOptions, "root"> {
   /** `--only <id>`, repeatable; commander's default value is `[]`. */
   only: string[];
   dryRun?: boolean;
+  format: string;
+}
+
+interface HistoryCliOptions extends InputCliOptions {
+  /** `--newer-than <duration>`; the core parses it. */
+  newerThan?: string;
   format: string;
 }
 
@@ -489,7 +507,7 @@ export function buildProgram(): Command {
     .option("--accept", "re-mint changed and never-true entries at HEAD; prints old and new pins")
     .option(
       "--recommit",
-      "re-record commit-sha where the recorded commit does not contain the pinned lines, or is outside HEAD's history",
+      "re-record commit-sha to the commit where the pinned lines arrived on HEAD's history, where the recorded commit does not contain them or is outside that history",
     )
     .option("--only <id>", "limit to entries with this id; repeatable", collect, [])
     .option("--dry-run", "print the diffs; write nothing")
@@ -666,6 +684,79 @@ export function buildProgram(): Command {
           process.stdout.write(`${text}\n`);
         }
         // Everything named was removed, or previewed: there is no exit 1.
+        process.exitCode = 0;
+      } catch (err) {
+        fail(err);
+      }
+    });
+
+  program
+    .command("history")
+    .description("Walk the git history and report how long each pin stood stale, and which releases shipped it")
+    .argument("[paths...]", "files, directories, or globs whose citations are walked")
+    .option(
+      "--collection <name>",
+      "configured collection to walk; repeatable",
+      collect,
+      [],
+    )
+    .option("--ext <list>", "comma-separated extensions for directory walks")
+    .option("--exclude <glob>", "glob to exclude; repeatable", collect, [])
+    .option("--as <format>", "force the page format for every input")
+    .option("-c, --config <path>", "path to a manni config file")
+    .option("--no-config", "ignore any discovered config file")
+    .option("--allow-empty", "treat zero matched files as success")
+    .option("--no-gitignore", "walk pages .gitignore covers")
+    .option("--root <dir>", "directory src: paths resolve from (as check)")
+    .option(
+      "--newer-than <duration>",
+      "walk only the commits within this span of HEAD's committer time, e.g. 90d or 12w",
+    )
+    .option(
+      "-f, --format <format>",
+      `output: ${HISTORY_FORMATS.join(" | ")}`,
+      "pretty",
+    )
+    .addHelpText(
+      "after",
+      [
+        "",
+        "Examples:",
+        "  manni cite history docs/limits.md                 # one page's stale windows",
+        "  manni cite history                                # every collection",
+        "  manni cite history -f json | jq .summary.staleSeconds",
+        "  manni cite history --newer-than 90d               # the last quarter only",
+      ].join("\n"),
+    )
+    .action(async (paths: string[], options: HistoryCliOptions, command: Command) => {
+      try {
+        const format = options.format;
+        if (!isHistoryFormat(format)) {
+          throw new CiteError(
+            `Unknown --format "${format}". Use ${COMMON_FORMAT_LIST}.`,
+          );
+        }
+        const cwd = process.cwd();
+        const run = await runHistory({
+          inputs: paths,
+          collection: options.collection,
+          exts: options.ext ? splitList(options.ext) : undefined,
+          exclude: options.exclude,
+          as: options.as,
+          ...configOption(options.config),
+          onConfigLoaded: reportConfig(format === "pretty", cwd),
+          allowEmpty: options.allowEmpty ? true : undefined,
+          respectGitignore: explicitFalse(options.gitignore),
+          onNotice: notice,
+          root: options.root,
+          newerThan: options.newerThan,
+        });
+        const text =
+          format === "json"
+            ? renderHistoryJson(run)
+            : renderHistoryPretty(run, { color: colorFor(command, process.stdout.isTTY) });
+        process.stdout.write(`${text}\n`);
+        // A report, not a gate: whatever the walk found, it exits 0.
         process.exitCode = 0;
       } catch (err) {
         fail(err);
