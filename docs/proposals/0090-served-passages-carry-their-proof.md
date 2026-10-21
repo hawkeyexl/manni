@@ -118,18 +118,21 @@ document node it is the whole body.
         "id": "retry-default",
         "claim": "41-43",
         "source": "src/upload.ts:88-90",
+        "commit": "9f3a1c7e5b2d4086a1c3e5f7092b4d6e8a0c2e41",
         "findings": []
       },
       {
         "id": null,
         "claim": "47",
         "source": "src/upload.ts:102-104",
+        "commit": "4be07d19a3c5f8206b1d3e5a7c9f0b2d4e6a8c10",
         "findings": [{ "rule": "source-changed", "severity": "error" }]
       },
       {
         "id": "retry-backoff",
         "claim": "49-50",
         "source": "src/upload.ts:110-118",
+        "commit": "9f3a1c7e5b2d4086a1c3e5f7092b4d6e8a0c2e41",
         "findings": []
       }
     ]
@@ -167,6 +170,7 @@ document node it is the whole body.
 | `pins.items[].id` | string, or `null` | The citation's `id`, when it has one. |
 | `pins.items[].claim` | `N` or `"N-M"` | The body lines the claim occupies now. |
 | `pins.items[].source` | string | `path:lines` as cite writes it. An encrypted path stays the ciphertext token. |
+| `pins.items[].commit` | 40 hex | The commit the citation's source end was recorded at, as cite recorded it. |
 | `pins.items[].findings` | list | Each cite rule that fires, with the severity `cite.severity` resolves for it. Empty means current. |
 | `dates` | object, or `null` | The two merge-safe dates of 0069. `null` outside git. |
 | `dates.*.day` | `YYYY-MM-DD`, or `null` | The day meta's derive computes from git, as a UTC day under 0072. `null` when git holds no evidence. |
@@ -179,6 +183,10 @@ document node it is the whole body.
 - **The record is self-contained.** `commit` and `worktree` repeat in every
   record, so a record copied out of a bundle still says what it describes.
   0095 reuses this shape for live-site provenance, unchanged.
+- **A pin carries its own commit.** The record's top-level `commit` is the
+  docs checkout. It is wrong for a source in another repository, and for a pin
+  that has drifted. A recorded commit can be unreachable after a squash merge,
+  and the field carries it as recorded.
 - **Dates are the two merge-safe ones.** `created` and `last-updated` hold
   after a squash, by 0069. `last-reviewed` comes from merged pull requests,
   which needs the network. An export stays hermetic, so it is left out.
@@ -898,6 +906,7 @@ each passage with its pin and eval badges.
 - [ ] Two exports over the same commit, report and config are byte-identical.
 - [ ] Each node's `lines` match what `sliceSection` returns for a section, and the whole body for a document.
 - [ ] A pin whose claim overlaps a node's lines appears in that node's `pins.items`, with cite's rule and resolved severity.
+- [ ] Each `pins.items[]` entry carries `commit`, equal to cite's recorded commit for that citation, reachable or not.
 - [ ] `dates.created` and `dates.lastUpdated` equal what `manni meta derive` would stamp, as UTC days.
 - [ ] `stamp` reads `current`, `stale` or `absent` against the page's own field.
 - [ ] `graph.export.provenance.evals` and `--evals` fill `evals`. Without either, every `evals` is `null`.
