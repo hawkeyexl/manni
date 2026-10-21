@@ -111,7 +111,7 @@ export async function runPublish(opts: PublishOptions = {}): Promise<PublishRepo
     skip("embed", "graph.embed");
   }
   await exported("jsonld", (r) => `${names(r)}: ${plural(r.nodes, "node")}`);
-  await exported("chunks", (r) => `${names(r)}: ${plural(r.nodes, "chunk")}`, outDir);
+  await exported("chunks", (r) => `${names(r)}: ${plural(r.nodes, "chunk")}, ${String(r.withheld ?? 0)} withheld`, outDir);
   if (config.export.llms !== null) {
     await exported("llms", (r) => `${names(r)}: ${plural(r.nodes, "page")}`, join(outDir, LLMS_FILENAME));
   } else {

@@ -70,6 +70,8 @@ export interface ExportResult {
   notices?: string[];
   /** Every file the export wrote, absolute. */
   files: string[];
+  /** `chunks`: the passages `graph.retrieve.withhold` left out. */
+  withheld?: number;
 }
 
 /** File extension each single-file format writes to. */
@@ -310,6 +312,7 @@ export async function runExport(opts: ExportOptions): Promise<ExportResult> {
       warnings: result.warnings,
       notices: result.notices,
       files: result.files,
+      withheld: result.withheld,
     };
   }
   if (opts.format === "llms") {
