@@ -23,8 +23,8 @@ docs/src/content/docs/meta/set-up/different-schemas-per-folder.mdx:
       source:
         file: src/meta/core/resolve-schema.ts
         lines: 41-53
-        integrity: sha256-c9c09b5a77280ca5fade1c6b631d19c91b55fcf0ad23a8f55a4ecb1ae975d49e
-        commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
+        integrity: sha256-7213c3bbfaaaa57a35092930fcef77d446b6a59cb5986bc058f3a45a2b0142a5
+        commit-sha: 77ca1cddd34b0dc3667d7b00c0ff08f4878680c3
     - id: config-schemas-are-fourth-in-chain
       claim:
         lines: 153
