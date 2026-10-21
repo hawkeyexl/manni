@@ -52,7 +52,7 @@ import {
 import { hashLines, sliceLines, splitLines } from "./hash.js";
 import { MAX_PAGE_COMMITS } from "./history.js";
 import { formatSrc, lineSpec, sourceRange, spellSource } from "./range.js";
-import { encryptSourcePath, readSource, readTracked, resolveSourcePath } from "./sources.js";
+import { encryptSourcePath, readIndexed, readSource, resolveSourcePath } from "./sources.js";
 
 // The move search is the shared pin engine's; this path keeps cite's imports working.
 export { MAX_RANGE_LINES, MOVE_BUDGET_BYTES, MOVE_WINDOW_LINES, findWindows } from "../../shared/pin.js";
@@ -264,8 +264,8 @@ export interface CrossFileHit {
  * is `git diff --name-only <commit> HEAD`, so it is committed changes only;
  * the entry's own file is dropped because the in-file search covered it, and a
  * path the tracked-file index does not hold is dropped exactly as a cited path
- * would be. The bytes come from the working tree, as every other source read
- * does. Each candidate costs its own bytes against the citation's counter, and
+ * would be. The bytes come from where every other source read gets them: the
+ * working tree, or the commit's tree for an index over one. Each candidate costs its own bytes against the citation's counter, and
  * the `original` lines take `findWindows` down its filtered path, which hashes
  * only a start line whose text already matches.
  */
@@ -293,7 +293,7 @@ export async function followAcross(
     (path) => path !== ask.own && ask.index.has(path),
   );
   for (const path of candidates) {
-    const text = await readTracked(ask.root, path);
+    const text = await readIndexed(ask.root, ask.index, path);
     // A deletion the diff named, a permission error, or a file that went away
     // between the diff and the read: skipped, never an operational error.
     if (text === undefined) continue;
