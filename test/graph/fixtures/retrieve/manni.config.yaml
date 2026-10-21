@@ -1,0 +1,18 @@
+# The retrieval fixture (proposal 0090, PR 2). Two localizations, so lookup
+# has a language to choose and retrieve has one to require. The English pages
+# link in a chain, so a walk reaches more passages than a small budget holds:
+# release -> ci -> rotate -> setup -> glossary.
+collections:
+  - name: pages
+    paths:
+      - "docs/**/*.md"
+
+graph:
+  out: .manni/graph/graph.ttl
+  routes:
+    - root: docs/en
+      basePath: /en
+      language: en
+    - root: docs/de
+      basePath: /de
+      language: de
