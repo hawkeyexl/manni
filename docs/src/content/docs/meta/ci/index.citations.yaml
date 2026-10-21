@@ -34,7 +34,7 @@ docs/src/content/docs/meta/ci/index.mdx:
         commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
     - id: github-format-one-command-per-error
       claim:
-        lines: 56-58
+        lines: 62-64
         integrity: sha256-80f76a421af32d1af0bb336c11692536b9bbe66569075ac07deb33ffd5d9283f
       source:
         file: src/meta/reporters/index.ts
@@ -43,7 +43,7 @@ docs/src/content/docs/meta/ci/index.mdx:
         commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: validate-exits-1-on-failures
       claim:
-        lines: 51-52
+        lines: 57-58
         integrity: sha256-067fc1c4647fac356549702fc0a75310b4a5d318c99c074a51a0203f6c66850f
       source:
         file: src/meta/cli.ts
@@ -52,7 +52,7 @@ docs/src/content/docs/meta/ci/index.mdx:
         commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: operational-error-exits-2
       claim:
-        lines: 52-53
+        lines: 58-59
         integrity: sha256-6ae64be9b1576084dfe89dd105652f549f49efbda0e219c82c48b65e30d34b66
       source:
         file: src/shared/run.ts
@@ -69,37 +69,37 @@ docs/src/content/docs/meta/ci/index.mdx:
         commit-sha: 922dea44962f188cfa8119a67aa5c744ce824710
     - id: action-inputs-lines-or-spaces
       claim:
-        lines: 25-28
+        lines: 30-33
         integrity: sha256-5bc8aaec8752c6de47b641591814302ddd637fb0124b0edba55bbf4b6a9e6ebd
       source:
         file: action.yml
-        lines: 113-138
+        lines: 135-160
         integrity: sha256-a2cf8261e68fe6452568bca01f4dd6e93f95c99a671fe85d6d91d89a2f99830e
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: 73751cd645718dd842f739c267eacb04f7406f93
     - id: action-defaults-to-github-format
       claim:
         lines: 15-16
         integrity: sha256-cb0f391f1a58a9cbda15be2021386b68b47d22f47e493f018c5c14d7ffa690dd
       source:
         file: action.yml
-        lines: 34-37
-        integrity: sha256-ba6ed77d91186f7d00fcef1804f78ac54951c3106e17ba6359b7924107193b8b
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        lines: 45-50
+        integrity: sha256-de4886c34d3b011d069ed6229a5360fff7790e3fbfb4c2556a435c257fe219ec
+        commit-sha: 73751cd645718dd842f739c267eacb04f7406f93
     - id: action-version-input-pins-the-cli
       claim:
         lines: 15-16
         integrity: sha256-cb0f391f1a58a9cbda15be2021386b68b47d22f47e493f018c5c14d7ffa690dd
       source:
         file: action.yml
-        lines: 38-45
+        lines: 57-64
         integrity: sha256-70342395edaf9a3798dad037bb99de851aa4bf4ad45087d98425a95ffb5f5c3e
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: 73751cd645718dd842f739c267eacb04f7406f93
     - id: action-sets-up-node
       claim:
         lines: 15-16
         integrity: sha256-cb0f391f1a58a9cbda15be2021386b68b47d22f47e493f018c5c14d7ffa690dd
       source:
         file: action.yml
-        lines: 73-75
+        lines: 93-95
         integrity: sha256-1fc76c9e5adf857cc49898c91b8d17d9862de35ff880576bc8bc784376bc0f28
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: 73751cd645718dd842f739c267eacb04f7406f93

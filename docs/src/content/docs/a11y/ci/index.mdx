@@ -142,10 +142,11 @@ page.
 - With `urls` and `severity` under `a11y:` in `manni.config.yaml`, the step is a
   bare `manni a11y check`.
 
-<Aside type="caution" title="The packaged action runs meta only">
-The [manni GitHub Action](/manni/meta/reference/action/) wraps the metadata
-tool, and it has no a11y mode yet. A plain `run:` step is the way to run this
-check.
+<Aside type="note" title="The packaged Action">
+The [manni GitHub Action](/manni/family/reference/action/) runs `manni check`
+by default, and `manni check` does not run a11y. A step with
+`command: a11y check` runs it once the site is up. The `run:` step above does
+the same.
 </Aside>
 
 ## Annotations

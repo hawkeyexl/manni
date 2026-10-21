@@ -146,7 +146,7 @@ docs/src/content/docs/meta/set-up/derived-metadata.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: derive-source-hint-is-narrow-sources-or-fields
       claim:
-        lines: 483
+        lines: 486
         integrity: sha256-7cb7a136d5181a06b0a3cf1b7f07dd6b2d63da94b0f32fcd1df1518e8e8e593f
       source:
         file: src/meta/commands/derive.ts
@@ -155,7 +155,7 @@ docs/src/content/docs/meta/set-up/derived-metadata.mdx:
         commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: no-half-derived-source
       claim:
-        lines: 481
+        lines: 484
         integrity: sha256-52ff3b2094bf1a7ec1e02cab5bc4bdec0ac550f1d9a05b0d569dfa41eba866b4
       source:
         file: src/meta/core/derive/command.ts
@@ -164,7 +164,7 @@ docs/src/content/docs/meta/set-up/derived-metadata.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: explicit-codeowners-path-missing-is-unavailable
       claim:
-        lines: 480
+        lines: 483
         integrity: sha256-fbcce9dbeb53c0bd1f1361adc82403a8faaf31813bc5654502e46dd1bc0bff86
       source:
         file: src/meta/core/derive/codeowners.ts
@@ -173,7 +173,7 @@ docs/src/content/docs/meta/set-up/derived-metadata.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: unavailable-source-throws-exit-two
       claim:
-        lines: 479
+        lines: 482
         integrity: sha256-5aa659ad74bf9a7d7ff20675ef32ae9d0c2a481b34b851ec15fa724035a8b884
       source:
         file: src/meta/core/derive/index.ts
@@ -190,15 +190,15 @@ docs/src/content/docs/meta/set-up/derived-metadata.mdx:
         commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: action-invokes-meta-validate
       claim:
-        integrity: sha256-1a4d130c7fa9a7deedaff7ea2b163c831ea87d11cf01829476e1990c866f5701
+        integrity: sha256-c72fd8cb855bb89c63cf9ffb07cfeb841bc5b23b3dc989eeaaa021af415ae8d6
       source:
         file: action.yml
-        lines: 173-176
-        integrity: sha256-b616caefed6ca564368014d54ab5a9ebf113b87e58a69e49d35b410c2b9a4046
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        lines: 162-169
+        integrity: sha256-15f01229c13acfb322b68eb8d9b9acaa6d953d14ccf5709f907fca9217e20c4f
+        commit-sha: 73751cd645718dd842f739c267eacb04f7406f93
     - id: github-format-emits-line-anchored-annotation
       claim:
-        integrity: sha256-1a4d130c7fa9a7deedaff7ea2b163c831ea87d11cf01829476e1990c866f5701
+        integrity: sha256-c72fd8cb855bb89c63cf9ffb07cfeb841bc5b23b3dc989eeaaa021af415ae8d6
       source:
         file: src/meta/reporters/index.ts
         lines: 317-324
@@ -206,15 +206,15 @@ docs/src/content/docs/meta/set-up/derived-metadata.mdx:
         commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: action-args-input-appends-arguments
       claim:
-        integrity: sha256-1a4d130c7fa9a7deedaff7ea2b163c831ea87d11cf01829476e1990c866f5701
+        integrity: sha256-c72fd8cb855bb89c63cf9ffb07cfeb841bc5b23b3dc989eeaaa021af415ae8d6
       source:
         file: action.yml
-        lines: 46-51
+        lines: 65-70
         integrity: sha256-d699ba5a80dec22e8ba6bb268ee4f637d29b5468edc0a53a8b1efb6a85ee80ae
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: 73751cd645718dd842f739c267eacb04f7406f93
     - id: no-derive-skips-managed-field-comparison
       claim:
-        integrity: sha256-1a4d130c7fa9a7deedaff7ea2b163c831ea87d11cf01829476e1990c866f5701
+        integrity: sha256-c72fd8cb855bb89c63cf9ffb07cfeb841bc5b23b3dc989eeaaa021af415ae8d6
       source:
         file: src/meta/cli.ts
         lines: 798-801

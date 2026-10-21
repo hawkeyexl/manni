@@ -1,20 +1,21 @@
-docs/src/content/docs/meta/reference/action.mdx:
+docs/src/content/docs/family/reference/action.mdx:
   personas:
     - devin
   journeys:
     - d1
+    - d16
   visibility: public
   review-interval: P180D
   source-of-truth:
     - path: action.yml
-  eval-suite: meta
+  eval-suite: family
   evals:
     - id: configure-action-inputs
       assertion: A reader can write a workflow step that sets the Action's inputs, including a multi-value input with one item per line.
       type: capability
       grader: ai
     - id: reproduce-action-by-hand
-      assertion: A reader can write the manni meta validate command the Action runs for a given set of inputs.
+      assertion: A reader can write the manni command line the Action runs for a given set of inputs, including the default command.
       type: capability
       grader: ai
   provenance:

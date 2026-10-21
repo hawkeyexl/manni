@@ -162,7 +162,9 @@ says to run `manni status`.
 
 ## Run it in CI
 
-Replace the per-domain steps with one. `-f github` prints each domain's own
+Replace the per-domain steps with one. The
+[manni GitHub Action](/manni/family/reference/action/) runs
+`manni check --format github` when given no inputs. Each domain prints its own
 `github` output, so findings appear as annotations on the line that caused them.
 
 ```yaml title=".github/workflows/docs.yml"
@@ -174,12 +176,20 @@ jobs:
         with:
           fetch-depth: 0   # cite check reads the commit each pin was minted at
 
+      - uses: hawkeyexl/manni@v4
+```
+
+The same gate without the Action is a `run:` step. Redirect stdin from
+`/dev/null`. Otherwise `check` waits up to 1.5 seconds on the runner's silent
+pipe, reading it for a Claude Code hook.
+
+```yaml title=".github/workflows/docs.yml"
       - uses: actions/setup-node@v6
         with:
           node-version: 24
 
       - name: Run every manni check
-        run: npx -y @hawkeyexl/manni check -f github
+        run: npx -y @hawkeyexl/manni check -f github < /dev/null
 ```
 
 The checkout needs the full history. `manni cite check` compares each pin with
@@ -210,19 +220,35 @@ A check's `status` is `pass`, `fail`, `error` or `skipped`. The last two carry a
 `-f sarif` prints one SARIF 2.1.0 log for every check that ran. Each domain's
 run carries its own category, such as `manni/meta/`, so upload the log once and
 leave `category` unset. A domain you set up later reaches code scanning with no
-change to the workflow.
+change to the workflow. The Action's `output-file` input writes the log where
+the upload can read it:
 
 ```yaml title=".github/workflows/docs.yml"
-      - name: Run every manni check
-        run: npx -y @hawkeyexl/manni check -f sarif > manni.sarif
-        continue-on-error: true
-
-      - name: Upload to code scanning
-        if: always()
+jobs:
+  manni:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write   # upload-sarif needs it; without it the upload is a 403
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - id: manni
+        uses: hawkeyexl/manni@v4
+        with:
+          format: sarif
+          output-file: manni.sarif
+      - if: ${{ !cancelled() && hashFiles('manni.sarif') != '' }}
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: manni.sarif
 ```
+
+The manni step still fails the job on exit 1 or 2, and the upload runs anyway.
+When manni fails before printing, the Action removes the empty file, so the
+upload is skipped. A `run:` step gets the same log from
+`npx -y @hawkeyexl/manni check -f sarif > manni.sarif < /dev/null`.
 
 The upload needs `permissions: security-events: write`. A last run in the log,
 `manni/check/`, names each check that was skipped or could not run. A check that

@@ -500,6 +500,8 @@ jobs:
         with:
           fetch-depth: 0
       - uses: hawkeyexl/manni@v4
+        with:
+          command: meta validate
         env:
           GH_TOKEN: ${{ github.token }}
 ```
@@ -508,7 +510,7 @@ jobs:
 {/* cite github-format-emits-line-anchored-annotation */}
 {/* cite action-args-input-appends-arguments */}
 {/* cite no-derive-skips-managed-field-comparison */}
-The Action runs `validate`, and `validate` compares every managed field. A
+The step runs `validate`, and `validate` compares every managed field. A
 stale stamp is an inline annotation on the diff, at the field's line, with
 the command to run in the message. The Action has no input for this. Anything
 you need to pass reaches it through `args`, and the one flag worth knowing is
@@ -517,6 +519,7 @@ the opt-out:
 ```yaml
       - uses: hawkeyexl/manni@v4
         with:
+          command: meta validate
           args: --no-derive
 ```
 
