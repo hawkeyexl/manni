@@ -106,10 +106,9 @@ export async function runHistory(opts: HistoryOptions): Promise<HistoryRun> {
   /** A repository path, spelled as the run spells its pages. */
   const label = (path: string): string => toPosix(relative(base, join(realTop, path)));
 
-  const tip = head;
   const staleWindow = (window: TimelineWindow, level: Severity): StaleWindow => {
-    const opened = commits[window.opened] ?? tip;
-    const closed = window.closed === undefined ? undefined : (commits[window.closed.at] ?? tip);
+    const opened = commits[window.opened] ?? head;
+    const closed = window.closed === undefined ? undefined : (commits[window.closed.at] ?? head);
     const now = label(pages.find((page) => page.label === window.page)?.path ?? "");
     return {
       id: window.id,
@@ -118,7 +117,7 @@ export async function runHistory(opts: HistoryOptions): Promise<HistoryRun> {
       severity: level,
       opened: { ...at(window.opened), bounded: window.bounded },
       closed: window.closed === undefined ? null : { ...at(window.closed.at), by: window.closed.by },
-      seconds: (closed ?? tip).time - opened.time,
+      seconds: (closed ?? head).time - opened.time,
       releases: releasesOf(opened.sha, closed?.sha),
       formerly: [...new Set(window.paths.map(label))].filter((path) => path !== now),
     };

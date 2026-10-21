@@ -256,7 +256,11 @@ export function noGit(): GitClient {
 
 // --- The history walk's git calls (proposal 0092) ---
 
-/** Room for a whole repository's first-parent log, renames and all. */
+/**
+ * Room for a whole repository's first-parent log, renames and all. A
+ * long-lived repository's log can exceed smaller ceilings, and execFile fails
+ * outright when its output overflows the buffer.
+ */
 const LOG_BUFFER = 1024 * 1024 * 1024;
 
 const ZERO = /^0+$/;
