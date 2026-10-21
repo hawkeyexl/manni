@@ -485,11 +485,13 @@ function claimLines(result: CitationResult, bodyLine: number): { start: number; 
   return file && { start: file.start - bodyLine + 1, end: file.end - bodyLine + 1 };
 }
 
-function range(spec: string): { start: number; end: number } | undefined {
+/** A cite line spec, `N` or `N-M`, as a span; `undefined` when it is not one or runs backwards. */
+export function range(spec: string): { start: number; end: number } | undefined {
   const m = /^(\d+)(?:-(\d+))?$/.exec(spec.trim());
   if (m?.[1] === undefined) return undefined;
   const start = Number(m[1]);
-  return { start, end: m[2] === undefined ? start : Number(m[2]) };
+  const end = m[2] === undefined ? start : Number(m[2]);
+  return end < start ? undefined : { start, end };
 }
 
 const RANK = { notice: 1, warning: 2, error: 3 } as const;
@@ -635,10 +637,12 @@ function readEvals(
   out.digest = digest;
   let changed = 0;
   for (const page of pages) {
-    const list = byPage.get(page.path) ?? [];
+    // A page the report never judged has no verdicts: its record's evals stay null.
+    const list = byPage.get(page.path);
+    if (list === undefined) continue;
     const now = integrityOf(Buffer.from(page.content, "utf8"));
     const current = list.every((r) => r.integrity === now);
-    if (!current && anyIntegrity && list.some((r) => r.integrity !== undefined)) changed += 1;
+    if (!current && list.some((r) => r.integrity !== undefined)) changed += 1;
     const count = (outcome: EvalItem["outcome"]): number => list.filter((r) => r.outcome === outcome).length;
     out.set(page.path, {
       report: digest,

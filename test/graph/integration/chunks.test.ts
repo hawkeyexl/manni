@@ -259,6 +259,41 @@ describe.skipIf(!hasGit)("graph export chunks", () => {
     }
   });
 
+  it("withholds a page whose current verdicts failed, and never one whose verdicts are stale", async () => {
+    const config = read(dir, "manni.config.yaml");
+    writeFile(dir, "manni.config.yaml", `${config}  retrieve:\n    withhold: [failing]\n`);
+    try {
+      await runExport({ cwd: dir, format: "chunks" });
+      const ids = rowsOf(dir).map((r) => r.id);
+      expect(ids).not.toContain(LIMITS);
+      expect(ids).not.toContain(BACKOFF);
+      expect(ids).toContain("urn:manni:graph:doc/docs/other.md");
+      const withheld = manifestOf(dir).withheld;
+      expect(withheld.map((w) => w.page)).toEqual(withheld.map(() => "docs/retry.md"));
+      expect(withheld.map((w) => w.because)).toEqual(withheld.map(() => ["failing"]));
+      expect(withheld.map((w) => w.id)).toEqual(expect.arrayContaining([DOC, LIMITS, BACKOFF]));
+    } finally {
+      writeFile(dir, "manni.config.yaml", config);
+    }
+  });
+
+  it("gives a page the report never judged no verdicts, and withholds nothing for it", async () => {
+    const full = JSON.parse(read(dir, "evals.json")) as { evalResults: { file: string; outcome: string }[] };
+    full.evalResults = full.evalResults.filter((r) => r.file !== "docs/other.md");
+    for (const r of full.evalResults) r.outcome = "fail";
+    writeFileSync(join(dir, "partial.json"), JSON.stringify(full));
+    const config = read(dir, "manni.config.yaml");
+    writeFile(dir, "manni.config.yaml", `${config}  retrieve:\n    withhold: [drifted, failing]\n`);
+    try {
+      await runExport({ cwd: dir, format: "chunks", evals: "partial.json" });
+      const other = row(rowsOf(dir), "urn:manni:graph:doc/docs/other.md");
+      expect(other.provenance.evals).toBeNull();
+      expect(manifestOf(dir).withheld.some((w) => w.page === "docs/other.md")).toBe(false);
+    } finally {
+      writeFile(dir, "manni.config.yaml", config);
+    }
+  });
+
   it("attaches each node's vector when a sidecar holds one", async () => {
     await runExport({ cwd: dir, format: "search" });
     await runEmbed({ cwd: dir, model: "mock", noCache: true });

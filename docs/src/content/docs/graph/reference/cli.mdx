@@ -1173,7 +1173,7 @@ describes.
 | `commit`, `worktree` | As in the manifest. Both are `null` outside git. |
 | `pins` | The cite pins whose claim overlaps the passage. |
 | `dates` | The page's derived and verified dates. |
-| `evals` | The page's docevals verdicts, or `null` with no report. |
+| `evals` | The page's docevals verdicts, or `null` when no report is configured or the report holds none for the page. |
 | `statements` | `[{ lines, status, data }]`: the block `meta` statements anchored inside the passage, with their delivered fields. |
 
 `pins` is `{ total, current, notice, warning, error, items }`. Each pin is
