@@ -90,6 +90,20 @@ describe.skipIf(!gitAvailable())("manni check, by hand", () => {
     expect(doc.files).toEqual(["docs/page.md"]);
   });
 
+  it("-f github carries docevals' missing-examples advice as ::notice, exit 0", () => {
+    dir = fixtureRepo("only-docevals");
+    edit(dir, "docs/page.md", (t) =>
+      t.replace(
+        "title: Page\n",
+        "title: Page\nevals:\n  - id: states-purpose\n    assertion: The page says what it is for.\n",
+      ),
+    );
+    const r = run(["check", "-f", "github"], dir);
+    expect(r.status).toBe(0);
+    expect(r.stdout).toMatch(/^::notice file=docs\/page\.md,line=4,[^\n]*work best with examples/m);
+    expect(r.stdout).not.toMatch(/^::warning /m);
+  });
+
   it("-f github is the domains' own annotations", () => {
     dir = fixtureRepo("only-docevals");
     edit(dir, "docs/page.md", addTodo);

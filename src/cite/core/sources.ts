@@ -162,7 +162,7 @@ export async function readSource(
   const resolvedPath = resolved.path;
   if (!index.has(resolvedPath)) return { kind: "missing", reason: "untracked" };
   if (cache === undefined) {
-    const text = await readTracked(root, resolvedPath);
+    const text = await readIndexed(root, index, resolvedPath);
     return text === undefined
       ? { kind: "missing", reason: "unreadable" }
       : { kind: "ok", resolvedPath, text };
@@ -170,7 +170,7 @@ export async function readSource(
   const slot = JSON.stringify([root, resolvedPath]);
   let read = cache.get(slot);
   if (read === undefined) {
-    read = readTracked(root, resolvedPath).then((text) =>
+    read = readIndexed(root, index, resolvedPath).then((text) =>
       text === undefined ? undefined : { text, lines: splitLines(text) },
     );
     cache.set(slot, read);
@@ -179,6 +179,11 @@ export async function readSource(
   return file === undefined
     ? { kind: "missing", reason: "unreadable" }
     : { kind: "ok", resolvedPath, text: file.text, lines: file.lines };
+}
+
+/** A file the index holds, read the way the index reads: from a commit's tree, or from disk. */
+export function readIndexed(root: string, index: SourceIndex, path: string): Promise<string | undefined> {
+  return index.read === undefined ? readTracked(root, path) : index.read(path);
 }
 
 /**

@@ -16,13 +16,21 @@ import { execSync, spawnSync } from "node:child_process";
 import { cpSync, existsSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
-import { afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { fileURLToPath, pathToFileURL } from "node:url";
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import type { HistoryRun } from "../../src/cite/types.js";
+import {
+  at as historyAt,
+  page as historyPage,
+  pin as historyPin,
+  story as historyStory,
+  type Story,
+} from "./fixtures/history-repo.js";
 import { DEFAULT_CITE_BASELINE_PATH } from "../../src/cite/core/config.js";
 import { hashRange } from "../../src/cite/core/hash.js";
 import { encryptSourcePath } from "../../src/cite/core/sources.js";
 import { supportedExtensions } from "../../src/meta/index.js";
-import { commitAll, gitAvailable, makeTempRepo, removeTempRepo } from "../helpers/temp-repo.js";
+import { commit as commitAt, commitAll, gitAvailable, makeTempRepo, removeTempRepo } from "../helpers/temp-repo.js";
 import type { Command } from "commander";
 import { buildProgram as buildCite, colorFor, splitPageArgument } from "../../src/cite/cli.js";
 import { STDIN_LINES_MARKER, normalizeStdinArgv } from "../../src/shared/run.js";
@@ -115,7 +123,7 @@ afterEach(() => {
 });
 
 describe("manni cite (grammar)", () => {
-  it("lists check, add, update and remove, and nothing else", () => {
+  it("lists check, add, update, remove and history, and nothing else", () => {
     const r = run(["cite", "--help"]);
     expect(r.status).toBe(0);
     expect(r.stdout).toMatch(/^Usage: manni cite /m);
@@ -123,6 +131,7 @@ describe("manni cite (grammar)", () => {
     expect(r.stdout).toMatch(/^\s+add\b/m);
     expect(r.stdout).toMatch(/^\s+update\b/m);
     expect(r.stdout).toMatch(/^\s+remove\b/m);
+    expect(r.stdout).toMatch(/^\s+history\b/m);
     // The key moved to the family: `manni key set|rotate`.
     expect(r.stdout).not.toMatch(/^\s+salt\b/m);
   });
@@ -1257,7 +1266,8 @@ describe("manni cite update", () => {
     expect(r.stdout).toContain("1 citation rewritten in 1 file, 0 skipped");
     // The page itself is not printed: `# Limits` is outside every hunk's context.
     expect(r.stdout).not.toContain("# Limits");
-    expect(r.stderr).toBe("");
+    // No git here, and a moved pin's history is read, commit or not (0097).
+    expect(r.stderr).toBe(`manni: ${NO_HISTORY}\n`);
   });
 
   it("--only limits the rewrite to the named id", () => {
@@ -1412,5 +1422,113 @@ describe("manni cite --no-color (resolution)", () => {
     const check = await umbrellaCheck(["check", "x.md"]);
     expect(colorFor(check, true, { NO_COLOR: "1" })).toBe(false);
     expect(colorFor(check, undefined, {})).toBe(false);
+  });
+});
+
+/**
+ * `manni cite history` (proposal 0092), rung by rung, against the story
+ * repository in `fixtures/history-repo.ts`. One repository serves every
+ * rung: none of them writes.
+ */
+describe.skipIf(!gitAvailable())("manni cite history (the ladder)", () => {
+  let story: Story;
+  const history = (args: string[], cwd = story.repo): Run => run(["cite", "history", ...args], { cwd });
+
+  beforeAll(() => {
+    story = historyStory();
+    // A page whose pin never breaks, for the clean rung.
+    const text = readFileSync(join(story.repo, "src/z.ts"), "utf8");
+    writeFileSync(join(story.repo, "docs/clean.md"), historyPage([historyPin("steady", "src/z.ts", text, 5, 6)]));
+    commitAt(story.repo, "a clean page", { authorDate: historyAt(8) });
+  }, 120000);
+
+  afterAll(() => {
+    removeTempRepo(story.repo);
+  });
+
+  it("one page: its windows, the totals, exit 0", () => {
+    const r = history(["docs/guide.md"]);
+    expect(r.status).toBe(0);
+    expect(r.stdout).toMatch(/^docs\/guide\.md$/m);
+    expect(r.stdout).toMatch(/^ {2}error {2}gamma {2}src\/c\.ts:5-6 {2}stale 3 hours {2}v1\.0\.0, v1\.1\.0, v1\.2\.0$/m);
+    expect(r.stdout).toMatch(/^5 stale windows on 5 citations in 1 page, 1 open\. \d+\.\d stale pin-hours\.$/m);
+    expect(r.stdout).toMatch(/^3 releases shipped a stale pin: v1\.0\.0, v1\.1\.0, v1\.2\.0\.$/m);
+    expect(r.stdout).toMatch(/^Walked \d+ commits, \d{4}-\d{2}-\d{2} to \d{4}-\d{2}-\d{2}\.$/m);
+  });
+
+  it("a clean page: one line and the walk, exit 0", () => {
+    const r = history(["docs/clean.md"]);
+    expect(r.status).toBe(0);
+    expect(r.stdout).toMatch(/^No stale windows on 1 citation in 1 page\.\nWalked \d+ commits, .+\.$/m);
+  });
+
+  it("config fallback: every collection's pages", () => {
+    const r = history([]);
+    expect(r.status).toBe(0);
+    expect(r.stdout).toMatch(/^5 stale windows on 5 citations in 1 page, 1 open\./m);
+  });
+
+  it("the number, for a dashboard: --collection site -f json", () => {
+    const r = history(["--collection", "site", "-f", "json"]);
+    expect(r.status).toBe(0);
+    const out = JSON.parse(r.stdout) as HistoryRun;
+    const windows = out.pages.flatMap((p) => p.windows);
+    expect(out.summary.staleSeconds).toBe(windows.reduce((sum, w) => sum + w.seconds, 0));
+    expect(Object.keys(out.summary)).toEqual([
+      "head", "walked", "files", "citations", "windows", "open", "staleSeconds", "bySeverity", "releases", "skipped",
+    ]);
+    expect(Object.keys(windows[0] ?? {})).toEqual([
+      "id", "source", "rule", "severity", "opened", "closed", "seconds", "releases", "formerly",
+    ]);
+    expect(out.pages.map((p) => p.file)).toEqual(["docs/clean.md", "docs/guide.md"]);
+  });
+
+  it("the last stretch only: --newer-than marks a window open at the bound", () => {
+    const r = history(["--newer-than", "3h"]);
+    expect(r.status).toBe(0);
+    expect(r.stdout).toContain("source-changed, bounded, still open at HEAD");
+  });
+
+  it("every option at once", () => {
+    const r = history([
+      "--collection", "site", "--ext", "md", "--exclude", "**/nothing/**", "--as", "markdown",
+      "-c", "manni.config.yaml", "--no-gitignore", "--allow-empty", "--root", ".", "--newer-than", "12w", "-f", "json",
+    ]);
+    expect(r.status).toBe(0);
+    expect((JSON.parse(r.stdout) as HistoryRun).summary.windows).toBe(5);
+  });
+
+  it.each([
+    [["-", "--as", "markdown"], "manni: cite history reads each page's past from git, and stdin has none. Name the page's path instead of -."],
+    [["docs/", "--collection", "site"], "manni: --collection selects a configured collection; it cannot be combined with paths."],
+    [["-f", "sarif"], 'manni: Unknown --format "sarif". Use pretty or json.'],
+    [["-f", "github"], 'manni: Unknown --format "github". Use pretty or json.'],
+    [["-f", "junit"], 'manni: Unknown --format "junit". Use pretty or json.'],
+    [["--newer-than", "soon"], 'manni: --newer-than must be a duration such as 30m, 24h, 7d or 2w, got "soon"'],
+    [["--no-config"], "manni: No files to read. Pass paths/globs, or declare a collection under `collections:` in manni.config.yaml."],
+  ])("refuses %j with exit 2", (args, line) => {
+    const r = history(args);
+    expect(r.status).toBe(2);
+    expect(r.stdout).toBe("");
+    expect(r.stderr.trim()).toBe(line);
+  });
+
+  it("refuses a shallow clone and a directory outside git with exit 2", () => {
+    const scratch = realpathSync(mkdtempSync(join(tmpdir(), "manni-history-")));
+    try {
+      execSync(`git clone -q --depth 1 "${pathToFileURL(story.repo).href}" clone`, { cwd: scratch, stdio: "ignore" });
+      const shallow = history([], join(scratch, "clone"));
+      expect(shallow.status).toBe(2);
+      expect(shallow.stderr.trim()).toBe(
+        "manni: this clone is shallow, so cite history would start at its oldest commit. Fetch the full history with fetch-depth: 0, or git fetch --unshallow.",
+      );
+      const plain = join(scratch, "plain");
+      cpSync(join(story.repo, "docs"), join(plain, "docs"), { recursive: true });
+      const outside = history(["docs/guide.md"], plain);
+      expect(outside.status).toBe(2);
+      expect(outside.stderr.trim()).toBe(`manni: cite history reads git, and ${plain} is not inside a git repository.`);
+    } finally {
+      rmSync(scratch, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+    }
   });
 });

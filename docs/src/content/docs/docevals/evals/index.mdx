@@ -2,7 +2,7 @@
 title: Write evals
 description: Declare evals in page frontmatter, covering the contract, the three entry forms, and what wins on collision.
 type: how-to
-last-updated: 2026-10-20
+last-updated: 2026-10-21
 ---
 
 Every eval declaration lives under the `evals` key in page frontmatter. This page is the contract;
@@ -171,8 +171,8 @@ neighbours.
 ## Problems are reported, not thrown
 
 A malformed page does not stop the run. Unknown suite names, unknown eval references, and
-schema-invalid frontmatter are reported as page errors with a source line. Duplicate names and
-inline ai evals missing `examples` are warnings.
+schema-invalid frontmatter are reported as page errors with a source line. Duplicate names are
+warnings. An inline ai eval missing `examples` is a notice, which reports but never fails the run.
 
 Validate the declarations themselves with [`manni meta validate`](/manni/meta/). It checks them
 against the shipped [`manni:evals:1.0.0`](/manni/meta/reference/schemas/manni-evals/) vocabulary, so

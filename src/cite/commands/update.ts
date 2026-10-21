@@ -38,7 +38,7 @@ import {
   type ClaimUnit,
   type NoUnit,
 } from "../core/claims.js";
-import { historyOf } from "../core/classify.js";
+import { arrivalOf, historyOf } from "../core/classify.js";
 import { GIT_UNAVAILABLE_COMMIT, SHALLOW_RECOMMIT } from "../core/git.js";
 import { splitLines } from "../core/hash.js";
 import { claimWords, sharesSentence, wordShare } from "../core/history.js";
@@ -930,7 +930,13 @@ export async function runUpdate(opts: UpdateOptions): Promise<UpdateRun> {
     // anywhere else in the file. That is the same reading as question one, so
     // the two answers are comparable.
     const now = await historyOf(git, head, path, range, pin, key, undefined);
-    return now.kind === "original" ? { commit: head, because } : undefined;
+    if (now.kind !== "original") return undefined;
+    // Where the lines arrived on HEAD's history, which after a squash merge
+    // is the squash commit (0097). A second run then finds that commit in the
+    // history and holding the lines, and leaves it alone. A client that
+    // cannot list a path's commits records HEAD, as before.
+    const arrived = await arrivalOf(git, path, range, pin, key);
+    return { commit: arrived ?? head, because };
   };
 
   /** What this citation needs, in the order the repairs are worth trying. */

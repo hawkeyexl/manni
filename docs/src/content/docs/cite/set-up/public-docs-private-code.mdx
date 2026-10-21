@@ -30,7 +30,7 @@ sample-questions:
 graph:
   label: Public docs, private code
   type: task
-last-updated: 2026-10-20
+last-updated: 2026-10-21
 tags:
   - encryption
   - security
@@ -385,7 +385,7 @@ jobs:
           repository: your-org/code
           token: ${{ secrets.CODE_READ_TOKEN }}
           path: code
-          fetch-depth: 0   # never-true and diffs need the pin's commit
+          fetch-depth: 0   # tells never-true from changed
       - uses: actions/setup-node@v6
         with:
           node-version: 24
@@ -399,9 +399,9 @@ jobs:
 ```
 
 {/* cite shallow-history-unavailable */}
-The private checkout wants `fetch-depth: 0`. A shallow clone cannot show the
-file at the commit a pin was minted at, so `source-never-true` and the diff degrade
-to `changed (history unavailable)`. [Run it in CI](/manni/cite/ci/#full-history)
+The private checkout wants `fetch-depth: 0`. A shallow clone's history can end
+before a pin held, so `source-never-true` and the diff degrade to
+`changed (history unavailable)`. [Run it in CI](/manni/cite/ci/#full-history)
 explains.
 
 ## When an encrypted source does not resolve
