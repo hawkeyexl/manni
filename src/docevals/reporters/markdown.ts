@@ -98,7 +98,7 @@ export function renderMarkdown(report: EngineReport): string {
   }
 
   for (const p of report.problems) {
-    lines.push(`- ⚠️ \`${p.file}\`${p.line != null ? `:${p.line}` : ""} ${p.message}`);
+    lines.push(`- ${p.level === "notice" ? "ℹ️" : "⚠️"} \`${p.file}\`${p.line != null ? `:${p.line}` : ""} ${p.message}`);
   }
 
   if (report.generated.length > 0) {

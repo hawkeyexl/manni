@@ -12,8 +12,8 @@
  * edit, or a second writer of the same manifest can.
  *
  * The path must be tracked, and the pin must hold under the old key, over the
- * lines as they are today or, with git, as they were at the entry's
- * `commit-sha` (the classifier's history search). Then `file` becomes the
+ * lines as they are today or, with git, as they were at the baseline the
+ * classifier derives from the source's history (proposal 0097). Then `file` becomes the
  * path's ciphertext under the new key, its lines kept, and `integrity` the
  * keyed pin under it, so a `changed` citation stays exactly as changed. A pin
  * that holds nowhere is skipped, with `update --accept` named as the repair.
@@ -29,7 +29,7 @@ import type {
   SourceIndex,
   SourceRange,
 } from "../types.js";
-import { historyOf } from "./classify.js";
+import { sourceBaseline } from "./classify.js";
 import { gitClient } from "./git.js";
 import { hashLines, sliceLines, splitLines } from "./hash.js";
 import { readPage } from "./page.js";
@@ -59,7 +59,7 @@ interface Context {
 
 /**
  * The lines the pin was taken over, joined: today's when the pin holds there
- * under `key`, else the lines at the entry's commit when git can show them;
+ * under `key`, else the lines at the derived baseline when git finds one;
  * else why neither.
  */
 async function pinnedLines(
@@ -81,9 +81,11 @@ async function pinnedLines(
   }
   if (joined !== undefined && hashLines(joined, key) === pin) return { joined };
 
-  const commit = citation.source["commit-sha"];
-  if (commit !== undefined && (await ctx.git.available())) {
-    const history = await historyOf(ctx.git, commit, path, range, pin, key, undefined);
+  // The baseline the classifier derives (0097): the recorded commit when it
+  // holds, else the newest commit in the source's history that does.
+  if (await ctx.git.available()) {
+    const recorded = citation.source["commit-sha"];
+    const { history } = await sourceBaseline(ctx.git, recorded, path, range, pin, key, undefined);
     if (history.kind === "original") return { joined: history.lines.join("\n") };
   }
   return { skip: CHANGED };
