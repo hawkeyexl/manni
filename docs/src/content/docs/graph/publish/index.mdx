@@ -1,6 +1,6 @@
 ---
 title: Publish the graph
-description: Export the built graph as linked data, an iiRDS package, or a browser search index, on the run that already gated it.
+description: Write the graph, its search index and the passages agents read into one directory with one command, on the run that already gated it.
 type: how-to
 id: graph-publish
 language: en
@@ -16,15 +16,53 @@ concepts:
 last-updated: 2026-10-21
 ---
 
-The graph is worth more outside CI than inside it. `manni graph export`
-reserializes what `build` produced into the shape a consumer reads. Linked data
-for an ingester. An iiRDS package for a content delivery portal. A search index
-the docs site loads in the browser. The reader questions, for an eval tool.
+The graph is worth more outside CI than inside it. Linked data for an
+ingester. An iiRDS package for a content delivery portal. A search index the
+docs site loads in the browser. Passages with their proof, for an agent or a
+site's Ask AI. The reader questions, for an eval tool.
 
 This is Devin's second page. The rule it carries: **publish on the run that
 gated it**, so what ships is what passed.
 
-## Five targets
+## One command
+
+`manni graph publish` builds the graph and writes everything serving needs
+into one directory:
+
+```console
+$ manni graph publish -c test/graph/fixtures/dd/docs.config.yaml
+build     graph.ttl: 3 pages, 137 triples
+export    search.und.json, localizations.json: 14 entries
+skipped   embed: no graph.embed section
+export    graph.jsonld: 25 nodes
+export    chunks.json, chunks.und.jsonl: 11 chunks, 0 withheld
+skipped   llms: no graph.export.llms section
+skipped   iirds: no graph.export.iirds section
+Published 6 files to .tmp/dd/.
+```
+
+It builds, then embeds when `graph.embed` is configured. It always exports
+the search index, the linked data and the chunks. It writes `llms.txt` and
+the iiRDS package when their sections exist. A step that is not set up prints
+`skipped` and never fails the run.
+
+`-o` names the directory; the default is the graph's own. The first step that
+fails stops the run with exit `2` and that step's own message.
+
+`publish` does not gate, so chain it after the gate:
+
+```sh
+manni graph check && manni graph publish --out docs/public/graph
+```
+
+This site runs that line on every build, so it serves the artifact of the
+commit it shows. The [CLI reference](/manni/graph/reference/cli/#graph-publish)
+lists every step and option.
+
+## One target at a time
+
+`manni graph export` writes a single target, for a pipeline that wants one
+artifact or a different order. Each section below covers one.
 
 ```sh
 manni graph export <target> [options]
@@ -37,10 +75,11 @@ manni graph export <target> [options]
 | `search` | A lexical index per language, plus a localization manifest | `@hawkeyexl/manni/graph/runtime`, client-side. |
 | `questions` | One JSON line per reader question, with the text of each answer | An eval tool, such as Ragas, DeepEval or promptfoo. |
 | `chunks` | One JSON line per passage, each with its provenance record, plus a manifest | A retrieval host that serves passages with their proof. |
+| `llms` | `llms.txt`, one link per page with its `description` | An agent that reads the site's index. |
 
 ```console
 $ manni graph export jsonld -c test/graph/fixtures/dd/docs.config.yaml
-Wrote 32 nodes to .tmp/dd/graph.jsonld
+Wrote 25 nodes to .tmp/dd/graph.jsonld
 ```
 
 The target is a positional, not a `-f`. Every other verb of the family means
@@ -200,6 +239,12 @@ that produced them, and stops. Wiring a model is the host's job, and the trace
 is what lets an answer be argued with. See the
 [library API reference](/manni/graph/reference/library-api/#the-browser-runtime).
 
+For passages with their proof, read the chunks instead of walking the graph
+by hand. [Retrieve from a script](/manni/graph/retrieve-from-a-script/) builds
+a site's Ask AI on `createRetriever`.
+[Serve the docs to an agent](/manni/graph/serve/) hands the same passages to
+an agent over MCP.
+
 ## Questions for an eval tool
 
 `export questions` hands the golden set to a tool that judges answers. manni
@@ -242,23 +287,40 @@ Encrypted values need no mark. graph never decrypts, so an encrypted value reach
 the graph as its `~…` token. The graph records that a value exists and says
 nothing about what it is.
 
+### What reaches an agent
+
+The chunks, their manifest, `llms.txt` and every served result hand page
+fields to an agent. One rule decides which:
+
+**A field reaches agent-facing output unless its schema marks it
+`x-manni-graph-output: false` or `x-manni-location: external`.**
+
+- `x-manni-graph-output: false` keeps a field out of anything published.
+- `x-manni-location: external` keeps it out of the page, so a served page
+  never carries it either.
+- Unmarked means delivered.
+- Marks are read at every depth. `manni:ai-context:1.2.0` marks the answer
+  pins inside each `sample-questions` item, so an agent gets the question
+  without them.
+
+The `jsonld`, `iirds` and `search` targets keep the first mark alone,
+because they are linked data rather than agent context. Delivery tools
+outside manni can read the same two marks. They are plain schema
+annotations.
+
 ## Publish what passed
 
 ```yaml
       - run: npx @hawkeyexl/manni graph build
       - run: npx @hawkeyexl/manni graph check -f github
       - run: npx @hawkeyexl/manni graph stats --check
-      - run: npx @hawkeyexl/manni graph export jsonld
-      - run: npx @hawkeyexl/manni graph export search
-      - uses: actions/upload-artifact@v4
-        with:
-          name: graph
-          path: graph/
+      - run: npx @hawkeyexl/manni graph publish --out site/public/graph
 ```
 
-The export steps run after the gates, in the same job, from the same graph
-file. A separate publish job would rebuild, and a rebuild is a second chance to
-produce something nobody checked.
+`publish` runs after the gates, in the same job. It rebuilds from the same
+commit, and a build over unchanged inputs is byte-identical, so what ships is
+what `check` passed. A separate publish job would check out again, which is a
+second chance to ship something nobody checked.
 
 {/* Verified by Doc Detective in docs-as-tests, against test/graph/fixtures/dd/. */}
 
@@ -272,6 +334,8 @@ produce something nobody checked.
 
 {/* step {"description":"questions writes the question set as JSON Lines.","runShell":{"command":"manni graph export questions -c test/graph/fixtures/dd/docs.config.yaml","exitCodes":[0],"stdio":"/Wrote \\d+ questions/"}} */}
 
-{/* step {"description":"An unknown target is refused with the allowed set named.","runShell":{"command":"manni graph export turtle -c test/graph/fixtures/dd/docs.config.yaml","exitCodes":[2],"stdio":"Use jsonld | iirds | search | questions | chunks."}} */}
+{/* step {"description":"An unknown target is refused with the allowed set named.","runShell":{"command":"manni graph export turtle -c test/graph/fixtures/dd/docs.config.yaml","exitCodes":[2],"stdio":"Use jsonld | iirds | search | questions | chunks | llms."}} */}
+
+{/* step {"description":"publish builds and exports every set-up target into one directory.","runShell":{"command":"manni graph publish -c test/graph/fixtures/dd/docs.config.yaml","exitCodes":[0],"stdio":"/Published \\d+ files/"}} */}
 
 {/* step {"description":"search ranks nodes from the exported index.","runShell":{"command":"manni graph search installation -c test/graph/fixtures/dd/docs.config.yaml","exitCodes":[0],"stdio":"(lexical)"}} */}

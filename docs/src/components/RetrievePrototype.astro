@@ -1,0 +1,176 @@
+---
+/**
+ * A prototype search box for the "Retrieve from a script" page (proposal
+ * 0090). It is docs-site code only: manni ships no UI, the package does not
+ * export this, and the page labels it "Prototype". It is built from the
+ * public `createRetriever().lookup()`, imported from the built runtime bundle,
+ * so the root `npm run build` has to run before the site builds, as the Docs
+ * workflow already does.
+ *
+ * Lexical only (`embed: false`), and nothing loads until the first search.
+ * The artifact comes from `graph publish --out docs/public/graph`; where that
+ * did not run, the status line says the artifact could not load.
+ */
+const manifest = `${import.meta.env.BASE_URL.replace(/\/$/, "")}/graph/chunks.json`;
+---
+
+<section class="retrieve-prototype not-content" data-retrieve-prototype data-manifest={manifest} aria-labelledby="retrieve-prototype-label">
+  <p class="label" id="retrieve-prototype-label">Prototype: ask this site's docs</p>
+  <form>
+    <label for="retrieve-prototype-question">Question</label>
+    <div class="row">
+      <input id="retrieve-prototype-question" name="question" type="search" required autocomplete="off" />
+      <button type="submit">Look up</button>
+    </div>
+  </form>
+  <p class="status" role="status" aria-live="polite"></p>
+  <ol class="results"></ol>
+</section>
+
+<script>
+  import { createRetriever } from "../../../dist/graph/runtime.js";
+
+  type Retriever = Awaited<ReturnType<typeof createRetriever>>;
+  type Result = Awaited<ReturnType<Retriever["lookup"]>>;
+  type Passage = Result["matches"]["passages"][number];
+
+  const sections = [
+    ["matches", "match"],
+    ["traversal", "context"],
+    ["impact", "dependent"],
+  ] as const;
+
+  function pins(p: Passage): string {
+    const { total, current, error } = p.provenance.pins;
+    if (total === 0) return "no pins";
+    return error > 0 ? `${current} of ${total} pins current, ${error} error` : `${current} of ${total} pins current`;
+  }
+
+  function item(p: Passage, role: string): HTMLLIElement {
+    const li = document.createElement("li");
+    const head = document.createElement("p");
+    const badge = document.createElement("span");
+    badge.className = "badge";
+    badge.textContent = role;
+    const title = document.createElement("strong");
+    title.textContent = p.title;
+    head.append(badge, " ", title);
+    const meta = document.createElement("p");
+    meta.className = "meta";
+    const pinBadge = document.createElement("span");
+    pinBadge.className = "badge";
+    pinBadge.textContent = pins(p);
+    meta.append(pinBadge, ` ${p.page.replace(/^docs\/src\/content\/docs\//, "")}, lines ${p.lines}`);
+    if (p.text === null) meta.append(", text not included: over the budget");
+    li.append(head, meta);
+    return li;
+  }
+
+  for (const root of document.querySelectorAll<HTMLElement>("[data-retrieve-prototype]")) {
+    const form = root.querySelector("form");
+    const input = root.querySelector("input");
+    const status = root.querySelector(".status");
+    const list = root.querySelector(".results");
+    const manifest = root.dataset.manifest;
+    if (!form || !input || !status || !list || manifest === undefined) continue;
+    let docs: Promise<Retriever> | undefined;
+
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
+      const question = input.value.trim();
+      if (question === "") return;
+      list.replaceChildren();
+      status.textContent = "Looking up…";
+      void (async () => {
+        try {
+          docs ??= createRetriever({ manifest, embed: false });
+          const result = await (await docs).lookup(question);
+          if (result.refusal) {
+            status.textContent = `No passage answers it (${result.refusal.reason}).`;
+            return;
+          }
+          for (const [section, role] of sections) {
+            for (const p of result[section].passages) list.append(item(p, role));
+          }
+          status.textContent = `${result.matches.passages.length} matches, ${result.traversal.passages.length} reached outward, ${result.impact.passages.length} depend on them.`;
+        } catch (error) {
+          docs = undefined;
+          status.textContent = `The prototype could not load this site's chunk artifact: ${error instanceof Error ? error.message : String(error)}`;
+        }
+      })();
+    });
+  }
+</script>
+
+<style>
+  .retrieve-prototype {
+    border: 1px solid var(--sl-color-gray-5);
+    border-radius: 0.5rem;
+    padding: 1rem;
+    margin-top: 1.5rem;
+  }
+  .label {
+    font-weight: 600;
+    color: var(--sl-color-white);
+    margin: 0 0 0.75rem;
+  }
+  .row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.25rem;
+  }
+  input {
+    flex: 1 1 12rem;
+    min-width: 0;
+    padding: 0.4rem 0.6rem;
+    border: 1px solid var(--sl-color-gray-3);
+    border-radius: 0.25rem;
+    background: var(--sl-color-black);
+    color: var(--sl-color-white);
+    font: inherit;
+  }
+  button {
+    padding: 0.4rem 1rem;
+    border: 0;
+    border-radius: 0.25rem;
+    background: var(--sl-color-text-accent);
+    color: var(--sl-color-black);
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  input:focus-visible,
+  button:focus-visible {
+    outline: 2px solid var(--sl-color-text-accent);
+    outline-offset: 2px;
+  }
+  .status {
+    margin: 0.75rem 0 0;
+  }
+  .results {
+    list-style: none;
+    padding: 0;
+    margin: 0.5rem 0 0;
+  }
+  .results li {
+    border-top: 1px solid var(--sl-color-gray-5);
+    padding: 0.5rem 0;
+  }
+  .results p {
+    margin: 0;
+    overflow-wrap: anywhere;
+  }
+  .meta {
+    font-size: var(--sl-text-sm);
+  }
+  .badge {
+    display: inline-block;
+    padding: 0 0.4rem;
+    border: 1px solid var(--sl-color-gray-4);
+    border-radius: 0.25rem;
+    background: var(--sl-color-gray-6);
+    color: var(--sl-color-white);
+    font-size: var(--sl-text-xs);
+  }
+</style>
