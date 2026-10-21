@@ -6,10 +6,15 @@
  * set's health is summed up after the findings (proposal 0087). Errors exit 1; warnings and notices are
  * reported but pass.
  */
-import { dirname, resolve } from "node:path";
+import { existsSync } from "node:fs";
+import { dirname, join, resolve } from "node:path";
 import type { Severity } from "../../shared/severity.js";
 import { loadRunConfig } from "../core/config.js";
-import { loadGraph, compactIri, parseGraph } from "../core/load.js";
+import { loadGraph, compactIri, parseGraph, storeToQuads } from "../core/load.js";
+import type { Quad } from "../core/derive.js";
+import { GraphError } from "../types.js";
+import { CHUNKS_MANIFEST } from "./chunks.js";
+import { openArtifact, retrieveIn } from "./retrieve.js";
 import { documentBase } from "../core/discover.js";
 import { bundledShapesPath } from "../core/pkg.js";
 import {
@@ -20,6 +25,7 @@ import {
 import {
   askSampleQuestions,
   renderQuestionSummary,
+  type CiteSeam,
   type QuestionSummary,
 } from "./questions.js";
 import { palette } from "../../shared/color.js";
@@ -107,6 +113,7 @@ export async function runCheck(opts: CheckOptions = {}): Promise<CheckReport> {
     },
     config.questionFiles,
     config.configDir,
+    () => openCite({ ...opts, cwd }, dirname(graphPath), storeToQuads(store)),
   );
   const findings = [...(await validateGraph(store, sources)), ...asked.findings].sort(
     compareFindings,
@@ -126,6 +133,30 @@ export async function runCheck(opts: CheckOptions = {}): Promise<CheckReport> {
     // Only an `error` fails the run; a warning and a notice are reported and
     // pass, as they were when they were called violations and warnings.
     exitCode: errors > 0 ? 1 : 0,
+  };
+}
+
+/**
+ * The cited row's seam (proposal 0090): `graph retrieve` over the chunk
+ * artifact beside the graph, held to the graph being checked. No artifact,
+ * or one from another graph, is a `GraphError` the row reports as a notice.
+ */
+async function openCite(opts: CheckOptions & { cwd: string }, indexDir: string, quads: Quad[]): Promise<CiteSeam> {
+  if (!existsSync(join(indexDir, CHUNKS_MANIFEST))) {
+    throw new GraphError("no chunk artifact; run manni graph publish.");
+  }
+  const artifact = await openArtifact({
+    ...(opts.config === undefined ? {} : { config: opts.config }),
+    ...(opts.noConfig === undefined ? {} : { noConfig: opts.noConfig }),
+    index: indexDir,
+    cwd: opts.cwd,
+    quads,
+  });
+  const languages = new Set(Object.keys(artifact.ctx.manifest.languages));
+  return {
+    retrieve: async (question, language) =>
+      languages.has(language) ? retrieveIn(artifact, { question, lang: language }) : undefined,
+    withheld: new Map(artifact.ctx.manifest.withheld.map((w) => [w.id, w.because])),
   };
 }
 

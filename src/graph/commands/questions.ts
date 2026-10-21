@@ -80,6 +80,7 @@ import { byCodeUnit } from "../core/sort.js";
 import { VectorIndexError } from "../core/vector-index.js";
 import { NS, PREFIXES } from "../core/vocab.js";
 import type { Embedder } from "../embed/types.js";
+import type { WithholdReason } from "../runtime/chunks.js";
 import { findEntry } from "../runtime/entry.js";
 import { GraphIndex } from "../runtime/graph.js";
 import { createLexicalIndex, type LexicalIndex } from "../runtime/lexical.js";
@@ -90,6 +91,7 @@ import {
   type VectorIndex,
 } from "../runtime/vector.js";
 import type { Position } from "../../lint/types.js";
+import type { PassageBundle } from "../runtime/retrieve.js";
 import { GraphError } from "../types.js";
 import { resolveEmbedder } from "./search.js";
 
@@ -435,6 +437,23 @@ export interface QuestionSummary {
   };
   /** Golden-set questions with no answers: questions the docs don't answer. */
   gaps: number;
+  /**
+   * Reviewed questions `graph retrieve` cites an answer for, of
+   * `found.reviewed.of` (proposal 0090). Absent when the row did not run.
+   */
+  cited?: number;
+  /** Reviewed questions not cited because `graph.retrieve.withhold` left their answer out. */
+  withheld?: number;
+}
+
+/**
+ * What the cited row asks through: `graph retrieve` over the chunk artifact
+ * beside the graph, and the passages its export withheld.
+ */
+export interface CiteSeam {
+  /** The bundle for a question in a language, or `undefined` when the artifact holds no such language. */
+  retrieve(question: string, language: string): Promise<PassageBundle | undefined>;
+  withheld: ReadonlyMap<string, WithholdReason[]>;
 }
 
 /**
@@ -468,6 +487,11 @@ export function renderQuestionSummary(s: QuestionSummary): string[] {
   return [
     `questions  ${String(s.total)}: ${String(s.reviewed)} reviewed, ${String(s.drafted)} drafted${homes.length > 0 ? `, ${homes.join(" and ")}` : ""}`,
     `  found    ${String(reviewed.inTop)} of ${String(reviewed.of)} reviewed in the top ${String(s.top)} (${String(percent(reviewed.inTop, reviewed.of))}%), ${String(reviewed.first)} first (${String(percent(reviewed.first, reviewed.of))}%)`,
+    ...(s.cited === undefined
+      ? []
+      : [
+          `  cited    ${String(s.cited)} of ${String(reviewed.of)} reviewed by graph retrieve (${String(percent(s.cited, reviewed.of))}%)${s.withheld ? `, ${String(s.withheld)} withheld` : ""}`,
+        ]),
     ...(drafted.of > 0
       ? [`  drafted  ${String(drafted.inTop)} of ${String(drafted.of)} in the top ${String(s.top)}, not counted until reviewed`]
       : []),
@@ -493,7 +517,8 @@ type Report = (kind: "knob" | Severity, message: string, draft?: "question" | "p
  * sidecar's manifest sits, and `view` is the config meta's merge reads.
  * `questionFiles` are the golden-set files, and they and their answers'
  * `file`s resolve from `configDir`. The summary is absent when no question
- * exists.
+ * exists. `cite` opens the cited row's seam on first use, and a `GraphError`
+ * from it skips the row with a notice.
  */
 export async function askSampleQuestions(
   store: Store,
@@ -503,6 +528,7 @@ export async function askSampleQuestions(
   view: { source: MetaViewSource; cwd: string },
   questionFiles: readonly string[],
   configDir: string,
+  cite?: () => Promise<CiteSeam>,
 ): Promise<{ findings: CheckFinding[]; summary?: QuestionSummary }> {
   const knob = settings.severity;
   const top = settings.top;
@@ -616,7 +642,7 @@ export async function askSampleQuestions(
     report: Report,
     draft: "question" | "pin" | undefined,
     file?: string,
-  ): Promise<{ position: number; text?: string }> => {
+  ): Promise<{ position: number; text?: string; answering: string[] }> => {
     const fresh = freshness(page.body, pin);
     if (fresh.state === "changed") {
       summary.answers.changed += 1;
@@ -632,7 +658,7 @@ export async function askSampleQuestions(
         `lines ${spellLines(pin.lines)}${of} no longer hold the answer to "${question}" as pinned, so ${fix}.`,
         draft,
       );
-      return { position: 0 };
+      return { position: 0, answering: [] };
     }
     const [range] = fresh.ranges;
     const inFile = file === undefined ? "" : ` in ${file}`;
@@ -661,7 +687,8 @@ export async function askSampleQuestions(
       (b, p, i) => (p >= 1 && (b.p === 0 || p < b.p) ? { p, i } : b),
       { p: 0, i: 0 },
     );
-    if (best.p >= 1 && best.p <= top) return { position: best.p, ...(text === undefined ? {} : { text }) };
+    const found = { position: best.p, answering, ...(text === undefined ? {} : { text }) };
+    if (best.p >= 1 && best.p <= top) return found;
     const holder = answering[best.i];
     if (holder !== undefined) {
       const title = holder.includes("#") ? graph.literal(holder, TITLE) : undefined;
@@ -673,7 +700,70 @@ export async function askSampleQuestions(
             : `does not find the section that answers it, § ${title},`;
       report("knob", `"${question}" ${target} in the top ${String(top)} (${where(best.p, nodes[0])})`, draft);
     }
-    return { position: best.p, ...(text === undefined ? {} : { text }) };
+    return found;
+  };
+
+  // The cited row (proposal 0090): each reviewed question asked through
+  // `graph retrieve`, in its own language. `targets` holds, per counted test,
+  // the nodes that answer it, and a question is cited when every test has
+  // one among the bundle's citations. An empty test, an answer that changed
+  // or a page that is gone, is not cited, and its own finding says why.
+  let seam: CiteSeam | null | undefined = cite ? undefined : null;
+  let citedCount = 0;
+  let withheldCount = 0;
+  const languageOf = (iri: string): string | undefined => {
+    const tag = graph.literal(pageOf(iri), LANGUAGE);
+    return tag === undefined ? undefined : canonicalLanguageTag(tag);
+  };
+  const askCited = async (question: string, language: string, targets: string[][], report: Report): Promise<void> => {
+    if (seam === undefined && cite) {
+      try {
+        seam = await cite();
+      } catch (e) {
+        if (!(e instanceof GraphError)) throw e;
+        seam = null;
+        findings.push({
+          severity: "notice",
+          message: `the cited row did not run: ${e.message}`,
+          focusNode: "questions",
+          docs: [],
+          guidance: null,
+        });
+      }
+    }
+    if (!seam) return;
+    const bundle = await seam.retrieve(question, language);
+    const cites = bundle?.citations.map((c) => c.iri) ?? [];
+    const leak = cites.find((iri) => {
+      const l = languageOf(iri);
+      return l !== undefined && l !== UNDETERMINED && l !== language;
+    });
+    if (leak !== undefined) {
+      const page = graph.literal(pageOf(leak), PATH) ?? pageOf(leak);
+      report("error", `"${question}" asks in ${language}, and graph retrieve cites ${page}, which is ${languageOf(leak) ?? ""}.`);
+      return;
+    }
+    if (targets.every((t) => t.some((iri) => cites.includes(iri)))) {
+      citedCount += 1;
+      return;
+    }
+    if (targets.some((t) => t.length === 0)) return;
+    const held = targets.flat().find((iri) => seam?.withheld.has(iri) === true);
+    if (held !== undefined) {
+      withheldCount += 1;
+      const title = held.includes("#") ? graph.literal(held, TITLE) : undefined;
+      const what = title === undefined ? (graph.literal(pageOf(held), PATH) ?? pageOf(held)) : `§ ${title}`;
+      const because = listOf(seam.withheld.get(held) ?? []);
+      report("knob", `"${question}" is not cited by graph retrieve, because graph.retrieve.withhold left out ${what} as ${because}.`);
+      return;
+    }
+    const first = cites[0];
+    report(
+      "knob",
+      first === undefined
+        ? `"${question}" is not cited by graph retrieve, which cites nothing for it.`
+        : `"${question}" is not cited by graph retrieve, which cites ${describe(first)} first.`,
+    );
   };
 
   /** A question that repeats over half its answer's word pairs tests matching more than finding. */
@@ -700,11 +790,13 @@ export async function askSampleQuestions(
       asked.push({ key: questionKey(q.question), where: page.path, order: n, text: q.question, report, ...(drafted ? { draft: drafted } : {}) });
       if (q.answers.length === 0) summary.answers.unpinned += 1;
       const tests: number[] = [];
+      const targets: string[][] = [];
       // 0086's test: an unpinned question, or a confirmed one whose every
       // pin is still a draft, must find the page itself. A drafted question
       // with any pin skips it and goes straight to the pin checks, which
       // report at notice through `drafted`.
       if (q.answers.length === 0 || (q.reviewed && q.answers.every((a) => !a.reviewed))) {
+        targets.push([page.doc, ...page.sections.map((s) => s.iri)]);
         const nodes = await rank(page.language, q.question);
         const pagesFound = [...new Set(nodes.map(pageOf))];
         const position = pagesFound.indexOf(page.doc) + 1;
@@ -722,13 +814,17 @@ export async function askSampleQuestions(
         const draft = drafted ?? (pin.reviewed ? undefined : "pin");
         summary.answers.pinned += 1;
         if (draft) summary.answers.unreviewed += 1;
-        const { position, text } = await askPin(page, pin, q.question, page.language, report, draft);
+        const { position, text, answering } = await askPin(page, pin, q.question, page.language, report, draft);
         if (text !== undefined) said.push(text);
         // A drafted pin on a confirmed question is reported, not counted.
-        if (draft !== "pin") tests.push(position);
+        if (draft !== "pin") {
+          tests.push(position);
+          targets.push(answering);
+        }
       }
       copies(q.question, said, report, drafted);
       tally(q.reviewed, tests);
+      if (q.reviewed && tests.length > 0) await askCited(q.question, page.language, targets, report);
     }
   }
 
@@ -749,6 +845,7 @@ export async function askSampleQuestions(
       const language =
         q.language !== undefined ? canonicalLanguageTag(q.language) : (firstPage?.language ?? UNDETERMINED);
       const tests: number[] = [];
+      const targets: string[][] = [];
       const said: string[] = [];
       for (const pin of q.answers) {
         const draft = drafted ?? (pin.reviewed ? undefined : "pin");
@@ -772,15 +869,22 @@ export async function askSampleQuestions(
               draft,
             );
           }
-          if (draft !== "pin") tests.push(0);
+          if (draft !== "pin") {
+            tests.push(0);
+            targets.push([]);
+          }
           continue;
         }
-        const { position, text } = await askPin(page, pin, q.question, language, report, draft, pin.file);
+        const { position, text, answering } = await askPin(page, pin, q.question, language, report, draft, pin.file);
         if (text !== undefined) said.push(text);
-        if (draft !== "pin") tests.push(position);
+        if (draft !== "pin") {
+          tests.push(position);
+          targets.push(answering);
+        }
       }
       copies(q.question, said, report, drafted);
       tally(q.reviewed, tests);
+      if (q.reviewed && tests.length > 0) await askCited(q.question, language, targets, report);
     }
   }
 
@@ -805,6 +909,22 @@ export async function askSampleQuestions(
       docs: [],
       guidance: null,
     });
+  }
+
+  // The cited row and its gate, only when the row ran.
+  if (seam) {
+    summary.cited = citedCount;
+    summary.withheld = withheldCount;
+    const cited = settings.citedThreshold;
+    if (cited !== null && of > 0 && (citedCount / of) * 100 < cited) {
+      findings.push({
+        severity: "error",
+        message: `${String(citedCount)} of ${String(of)} reviewed questions are cited by graph retrieve (${String(percent(citedCount, of))}%), under the ${String(cited)}% that graph.check.questions.citedThreshold asks for.`,
+        focusNode: "questions",
+        docs: [],
+        guidance: null,
+      });
+    }
   }
   return { findings, summary };
 }

@@ -175,7 +175,7 @@ describe("graph export takes its target as a positional", () => {
   it("refuses an unknown target, naming the three", () => {
     const { status, stderr } = run(["export", "nope", "-g", graph]);
     expect(stderr).toContain(
-      'Unknown export target "nope". Use jsonld | iirds | search | questions | chunks.',
+      'Unknown export target "nope". Use jsonld | iirds | search | questions | chunks | llms.',
     );
     expect(status).toBe(2);
   });
