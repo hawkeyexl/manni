@@ -211,7 +211,7 @@ describe("parity", () => {
     );
     const golden = lines.map((l) => JSON.parse(l) as { question: string; language: string });
     expect(golden.length).toBe(4);
-    const artifact = await openArtifact({ cwd: dir });
+    const artifact = openArtifact({ cwd: dir });
     const script = await createRetriever({
       manifest: join(dir, ".manni/graph/chunks.json").split("\\").join("/"),
       fetch: fileFetch,

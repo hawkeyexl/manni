@@ -528,7 +528,7 @@ export async function askSampleQuestions(
   view: { source: MetaViewSource; cwd: string },
   questionFiles: readonly string[],
   configDir: string,
-  cite?: () => Promise<CiteSeam>,
+  cite?: () => CiteSeam | Promise<CiteSeam>,
 ): Promise<{ findings: CheckFinding[]; summary?: QuestionSummary }> {
   const knob = settings.severity;
   const top = settings.top;

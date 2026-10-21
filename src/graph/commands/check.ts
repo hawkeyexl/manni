@@ -141,11 +141,11 @@ export async function runCheck(opts: CheckOptions = {}): Promise<CheckReport> {
  * artifact beside the graph, held to the graph being checked. No artifact,
  * or one from another graph, is a `GraphError` the row reports as a notice.
  */
-async function openCite(opts: CheckOptions & { cwd: string }, indexDir: string, quads: Quad[]): Promise<CiteSeam> {
+function openCite(opts: CheckOptions & { cwd: string }, indexDir: string, quads: Quad[]): CiteSeam {
   if (!existsSync(join(indexDir, CHUNKS_MANIFEST))) {
     throw new GraphError("no chunk artifact; run manni graph publish.");
   }
-  const artifact = await openArtifact({
+  const artifact = openArtifact({
     ...(opts.config === undefined ? {} : { config: opts.config }),
     ...(opts.noConfig === undefined ? {} : { noConfig: opts.noConfig }),
     index: indexDir,
