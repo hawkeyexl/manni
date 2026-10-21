@@ -248,7 +248,7 @@ allows it. An encrypted source stays its ciphertext token.
 `pretty` prints one line, then one line per page that has something to say:
 
 ```text
-docs/dist: 257 pages annotated. 4160 of 4199 pins placed, 39 listed on their page only. 2 blocks carry a verification.
+docs/dist: 258 pages annotated. 4163 of 4202 pins placed, 39 listed on their page only. 2 blocks carry a verification.
   cite/fix/index.html: 1 pin not placed, because its text appears twice: decode-sample-changed.
 ```
 
@@ -257,8 +257,8 @@ docs/dist: 257 pages annotated. 4160 of 4199 pins placed, 39 listed on their pag
 ```json
 {
   "out": "docs/dist",
-  "pages": 257,
-  "pins": { "total": 4199, "placed": 4160 },
+  "pages": 258,
+  "pins": { "total": 4202, "placed": 4163 },
   "statements": { "total": 2, "placed": 2 },
   "unplaced": [
     { "page": "cite/fix/index.html", "kind": "pin", "ids": ["decode-sample-changed"], "reason": "repeated-text" }
@@ -285,7 +285,7 @@ arguments after `--` is refused there, exit `2`.
 $ manni site preview -- --open
 manni: Starlight in docs/. Running npm run build
 manni: Starlight in docs/. Annotating docs/dist from docs/public/graph/chunks.json.
-docs/dist: 257 pages annotated. 4160 of 4199 pins placed, 39 listed on their page only. 2 blocks carry a verification.
+docs/dist: 258 pages annotated. 4163 of 4202 pins placed, 39 listed on their page only. 2 blocks carry a verification.
 manni: Starlight in docs/. Running npm run preview -- --host 127.0.0.1 --port 4321 --open
 ```
 
@@ -450,7 +450,7 @@ spaces, and names the built page relative to the output.
 | When | Line | Exit |
 |---|---|---|
 | Before the join | `manni: Starlight in docs/. Annotating docs/dist from docs/public/graph/chunks.json.` | n/a |
-| Annotated (stdout) | `docs/dist: 257 pages annotated. 4160 of 4199 pins placed, 39 listed on their page only. 2 blocks carry a verification.` | `0` |
+| Annotated (stdout) | `docs/dist: 258 pages annotated. 4163 of 4202 pins placed, 39 listed on their page only. 2 blocks carry a verification.` | `0` |
 | A pin's text appears twice (stdout) | `cite/fix/index.html: 1 pin not placed, because its text appears twice: decode-sample-changed.` | `0` |
 | No block holds a pin's text (stdout) | `key/ci/index.html: 1 pin not placed, because no block holds its text: no-key-message.` | `0` |
 | No block holds a statement's lines (stdout) | `cite/set-up/index.html: 1 statement not placed, because no block holds lines 53-54.` | `0` |
@@ -496,13 +496,13 @@ manni: Starlight in docs/. Running npm run dev -- --host 127.0.0.1 --port 4321
 $ manni site build
 manni: Starlight in docs/. Running npm run build
 manni: Starlight in docs/. Annotating docs/dist from docs/public/graph/chunks.json.
-docs/dist: 257 pages annotated. 4160 of 4199 pins placed, 39 listed on their page only. 2 blocks carry a verification.
+docs/dist: 258 pages annotated. 4163 of 4202 pins placed, 39 listed on their page only. 2 blocks carry a verification.
 
 # Build, annotate, then serve; a11y check in another terminal needs no flags
 $ manni site preview
 manni: Starlight in docs/. Running npm run build
 manni: Starlight in docs/. Annotating docs/dist from docs/public/graph/chunks.json.
-docs/dist: 257 pages annotated. 4160 of 4199 pins placed, 39 listed on their page only. 2 blocks carry a verification.
+docs/dist: 258 pages annotated. 4163 of 4202 pins placed, 39 listed on their page only. 2 blocks carry a verification.
 manni: Starlight in docs/. Running npm run preview -- --host 127.0.0.1 --port 4321
 
 # A directory named, and a port chosen (a Docusaurus repository)
@@ -521,7 +521,7 @@ manni: Running site.commands.start in docs/: pnpm dev --port 4000
 # Join the graph's pins to the built site, after manni graph publish
 $ manni site annotate
 manni: Starlight in docs/. Annotating docs/dist from docs/public/graph/chunks.json.
-docs/dist: 257 pages annotated. 4160 of 4199 pins placed, 39 listed on their page only. 2 blocks carry a verification.
+docs/dist: 258 pages annotated. 4163 of 4202 pins placed, 39 listed on their page only. 2 blocks carry a verification.
 
 # The unplaced pins whose text repeats, for a script
 $ manni site annotate -f json | jq '.unplaced[] | select(.reason == "repeated-text")'
