@@ -176,9 +176,9 @@ older than the docs it read.
   the product. This machine holds 20 consumer sessions.
 - Two sessions supply 17 of the 24 useful moments. One research subagent alone
   fired 37 raw moments, so collapsing bursts is required.
-- Subagent threads hold 12 of the 24. Reading main threads only, as the design
-  does, would lose half the signal. That reopens open question 3. The design
-  below still skips subagent threads, and changing it waits for a wider corpus.
+- Subagent threads hold 12 of the 24. Reading main threads only, as the first
+  design did, would lose half the signal. That settles open question 3, and
+  the design below now reads them.
 - `spec-failed` is mostly noise. A failing test is usually the test doing its
   job, and 25 of its 30 checked moments were that.
 - `source-first` found 5 useful moments in 5. `asked-user` found 1 in 11.
@@ -187,8 +187,9 @@ older than the docs it read.
 
 The gate does not pass, so nothing is built. The precision this command needs
 appears once a corpus has readers in it. The corpus is still too small to
-trust, and the signal set needs three changes before a build. Those are
-subagent threads read by default, bursts collapsed, and `source-first` added.
+trust, and the signal set needed three changes, which the design below now
+makes. Subagent threads are read by default, bursts collapse, and
+`source-first` is added.
 Run the gate again when this machine holds 100 consumer sessions.
 
 #### Gaps it found in Doc Detective's docs
@@ -238,9 +239,11 @@ theirs.
 
 ### What is deterministic
 
-Everything below runs with no model and no network. It reads the main thread of
-each session only. Subagent threads are skipped, because the evidence shows
-their briefs ask for source reads.
+Everything below runs with no model and no network. It reads every thread of
+each session, main and subagent, because the second run found half the useful
+moments in subagent threads. The producer filter keeps out the briefs that
+only ask for source reads. Consecutive moments of one signal on one thread
+collapse into one.
 
 A **docs read** is a `Read` of a file in any collection, or a `WebFetch` of a
 URL under a collection's `url:`. **Product terms** are the strings in
@@ -249,6 +252,7 @@ URL under a collection's `url:`. **Product terms** are the strings in
 | signal | a moment is |
 |---|---|
 | `read-then-source` | A docs read, then within 8 tool calls a `Read`, `Grep` or `Glob` of a file outside every collection. The file must be in the project or under a `node_modules` directory named by a product term. |
+| `source-first` | A thread's first `Read`, `Grep` or `Glob` of a file outside every collection, with no docs read before it in that thread. The file must be in the project or under a `node_modules` directory named by a product term. |
 | `asked-user` | An `AskUserQuestion` call within 8 tool calls after a docs read, or whose text contains a product term. |
 | `searched-web` | A `WebSearch` whose query contains a product term. |
 | `command-failed` | A shell call whose first command word is a product term and whose result reports exit code 2. Within 5 calls the session runs `--help`, reads a docs page or source, or reruns the command with other flags. |
@@ -515,8 +519,6 @@ read anchors the moment.
   person pins the answer.
 - **Read other agents' traces.** It reads what tracevals reads, which is Claude
   Code sessions today.
-- **Read subagent threads.** The evidence shows their briefs, not their
-  readers, send them to the source.
 - **Copy transcript text into the repo.** Only the judge's question is written.
 
 ## Open questions
@@ -525,8 +527,10 @@ read anchors the moment.
    `check` and `list`. `mine` is the alternative, and it reads as a possessive.
 2. **Should a draft record where it came from?** A key such as `asked-in` would
    help review, but a session id means nothing on another machine.
-3. **Should subagent threads be opt-in?** In a reader's project an `Explore`
-   subagent reading docs then source may be a true struggle.
+3. **Is the producer filter enough to keep subagent briefs out?** The second
+   run settled that subagent threads are read. In the first run, briefs that
+   asked for source reads were most of the noise. The next gate run measures
+   whether the producer filter alone keeps them out.
 4. **Is exit code 2 the right usage-error signal for other products?** It is
    manni's and POSIX's convention, and many CLIs exit 1 for everything.
 5. **Should an answered-but-missed moment draft a question with a pin?** Two of
@@ -550,10 +554,11 @@ read anchors the moment.
       `src/tracevals/core/config-schema.json`, with the defaults above. With no
       `product`, the default comes from `package.json` and the collection URLs.
 - [ ] `manni tracevals gaps <trace>` prints each moment as a notice and exits 0.
-- [ ] Each of the four signals fires on its own fixture under
+- [ ] Each of the five signals fires on its own fixture under
       `test/tracevals/fixtures/gaps/`, and the producer and shell fixtures
       produce no moment.
-- [ ] A subagent thread in a fixture produces no moment.
+- [ ] A subagent thread's own moment is reported. Consecutive moments of one
+      signal on one thread are reported once.
 - [ ] Without `--judge` or `--draft`, a test with the network and providers
       stubbed to throw passes.
 - [ ] `--judge` with a mocked provider reports gaps as warnings, counts noise,
