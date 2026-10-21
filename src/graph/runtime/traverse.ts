@@ -34,7 +34,7 @@ const DCTERMS_LANGUAGE = `${NS.dcterms}language`;
  */
 const STATEMENT_DATA = new Set([`${NS.graph}Block`, `${NS.graph}Verification`]);
 
-export function isStatementData(graph: GraphIndex, iri: string): boolean {
+function isStatementData(graph: GraphIndex, iri: string): boolean {
   return graph.types(iri).some((t) => STATEMENT_DATA.has(t));
 }
 

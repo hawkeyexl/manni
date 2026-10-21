@@ -9,7 +9,11 @@
 #   - graph:Block is a new class, one per block statement. It carries
 #     graph:lines (`N` or `N-M`), an optional graph:pin (`sha256-` and 64
 #     lowercase hex characters) and graph:pinStatus (current, changed or
-#     unpinned), plus the typing, concepts and verification a statement gives.
+#     unpinned), plus every field a statement derives.
+#   - A Section and a Block admit the Document's front-matter predicates, from
+#     dcterms:description to prov:wasGeneratedBy, because a statement's fields
+#     derive through the same mapping as front matter. A Block also admits
+#     dcterms:title. schema:workTranslation may point at a Section or a Block.
 #   - graph:Verification is a new class, one per `verified-by` entry. It needs
 #     a graph:tool, and may carry graph:check, graph:version and graph:passed,
 #     a date or a dateTime.
@@ -279,10 +283,10 @@ dsh:Document-translationOfWork
 
 dsh:Document-workTranslation
   a sh:PropertyShape ;
-  sh:description "A page that translates this one. manni writes it from the other page's translation-of." ;
+  sh:description "A page, section or block that translates this one. manni writes it from the other node's translation-of." ;
   sh:path schema:workTranslation ;
   sh:nodeKind sh:IRI ;
-  sh:class graph:Document .
+  sh:or ( [ sh:class graph:Document ] [ sh:class graph:Section ] [ sh:class graph:Block ] ) .
 
 dsh:Document-primaryTopic
   a sh:PropertyShape ;
@@ -534,7 +538,21 @@ dsh:SectionShape
     dsh:Section-notApplicableToVariant ,
     dsh:Section-notSoftwareSubject ,
     dsh:Section-lastVerified ,
-    dsh:Section-verifiedBy .
+    dsh:Section-verifiedBy ,
+    dsh:Document-description ,
+    dsh:Document-creator ,
+    dsh:Document-created ,
+    dsh:Document-modified ,
+    dsh:Document-language ,
+    dsh:Document-primaryTopic ,
+    dsh:Document-sampleQuestion ,
+    dsh:Document-translationOfWork ,
+    dsh:Document-wasAttributedTo ,
+    dsh:Document-qualifiedAttribution ,
+    dsh:Document-generatedAtTime ,
+    dsh:Document-wasDerivedFrom ,
+    dsh:Document-wasRevisionOf ,
+    dsh:Document-wasGeneratedBy .
 
 dsh:Section-title
   a sh:PropertyShape ;
@@ -676,8 +694,8 @@ dsh:Section-notSoftwareSubject
 
 # --- Blocks ------------------------------------------------------------------
 # One per inline `meta` statement that does not sit on a heading (proposal
-# 0099). Its typing and concepts come from the statement's own fields, through
-# the same mapping as the page's, so the Document's property shapes serve.
+# 0099). Its fields derive through the same mapping as the page's front
+# matter, so the Document's property shapes serve.
 
 dsh:BlockShape
   a sh:NodeShape ;
@@ -692,13 +710,28 @@ dsh:BlockShape
     dsh:Block-pinStatus ,
     dsh:Block-lastVerified ,
     dsh:Block-verifiedBy ,
+    dsh:Document-title ,
     dsh:Document-subject ,
     dsh:Document-topicType ,
     dsh:Document-appliesToVariant ,
     dsh:Document-softwareLifecyclePhase ,
     dsh:Document-softwareSubject ,
     dsh:Document-notApplicableToVariant ,
-    dsh:Document-notSoftwareSubject .
+    dsh:Document-notSoftwareSubject ,
+    dsh:Document-description ,
+    dsh:Document-creator ,
+    dsh:Document-created ,
+    dsh:Document-modified ,
+    dsh:Document-language ,
+    dsh:Document-primaryTopic ,
+    dsh:Document-sampleQuestion ,
+    dsh:Document-translationOfWork ,
+    dsh:Document-wasAttributedTo ,
+    dsh:Document-qualifiedAttribution ,
+    dsh:Document-generatedAtTime ,
+    dsh:Document-wasDerivedFrom ,
+    dsh:Document-wasRevisionOf ,
+    dsh:Document-wasGeneratedBy .
 
 dsh:Block-lines
   a sh:PropertyShape ;

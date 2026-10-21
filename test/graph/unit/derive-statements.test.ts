@@ -22,7 +22,7 @@ const fixture = join(
   "statements",
 );
 const BASE = "https://example.com/graph/";
-const PAGES = ["heading-statement.md", "graph-sections.md", "page.md"].map(
+const PAGES = ["heading-statement.md", "graph-sections.md", "page.md", "fields.md"].map(
   (name) => `docs/${name}`,
 );
 
@@ -105,6 +105,7 @@ describe("block statements (decision 10c)", () => {
     const blocks = quads
       .filter((q) => q.p === RDF_TYPE && q.o.value === g("Block"))
       .map((q) => q.s)
+      .filter((s) => s.startsWith(`${page}#`))
       .sort();
     expect(blocks).toEqual([
       `${page}#.1`,
@@ -152,6 +153,68 @@ describe("block statements (decision 10c)", () => {
         `${g("passed")} ${JSON.stringify(lit("2026-10-21T08:00:00Z", XSD_DATETIME))}`,
       ].sort(),
     );
+  });
+});
+
+describe("a statement's other fields derive as front matter does (decisions 10a and 10c)", () => {
+  const page = doc("fields.md");
+  const section = `${page}#install-on-windows`;
+  const block = `${page}#install-on-windows.1`;
+  const DC = NS.dcterms;
+  const PROV = NS.prov;
+
+  it("titles a block from its statement, and keeps a section's heading as its title", () => {
+    expect(has(block, `${DC}title`, lit("The download step"))).toBe(true);
+    expect(quads.filter((q) => q.s === section && q.p === `${DC}title`).map((q) => q.o.value)).toEqual([
+      "Install on Windows",
+    ]);
+  });
+
+  it("maps description, authors and dates", () => {
+    expect(has(section, `${DC}description`, lit("How the Windows install goes."))).toBe(true);
+    expect(has(block, `${DC}description`, lit("Get the installer."))).toBe(true);
+    expect(has(section, `${DC}creator`, iri(`${BASE}agent/person/ada`))).toBe(true);
+    expect(has(section, `${PROV}wasAttributedTo`, iri(`${BASE}agent/person/ada`))).toBe(true);
+    expect(has(block, `${DC}creator`, iri(`${BASE}agent/person/grace`))).toBe(true);
+    expect(has(section, `${DC}created`, lit("2026-09-01", XSD_DATE))).toBe(true);
+    expect(has(section, `${PROV}generatedAtTime`, lit("2026-09-01", XSD_DATE))).toBe(true);
+    expect(has(section, `${DC}modified`, lit("2026-10-02", XSD_DATE))).toBe(true);
+    expect(has(block, `${DC}created`, lit("2026-09-03", XSD_DATE))).toBe(true);
+    expect(has(block, `${DC}modified`, lit("2026-10-03", XSD_DATE))).toBe(true);
+  });
+
+  it("writes only the language a statement declares, and reads its labels in the page's otherwise", () => {
+    expect(has(section, `${DC}language`, lit("de"))).toBe(true);
+    expect(quads.some((q) => q.s === block && q.p === `${DC}language`)).toBe(false);
+    const question = (s: string) =>
+      quads.find((q) => q.s === s && q.p === g("sampleQuestion"))?.o;
+    expect(question(section)).toEqual({ kind: "literal", value: "How do I install on Windows?", language: "de" });
+    expect(question(block)).toEqual({ kind: "literal", value: "Where is the installer?", language: "en" });
+  });
+
+  it("maps tags and keywords to dcterms:subject", () => {
+    expect(has(section, `${DC}subject`, iri(`${BASE}concept/windows`))).toBe(true);
+    expect(has(block, `${DC}subject`, iri(`${BASE}concept/download`))).toBe(true);
+  });
+
+  it("maps supersedes, translation-of and provenance, and puts a broken target on the page", () => {
+    expect(has(section, `${PROV}wasRevisionOf`, iri(doc("graph-sections.md")))).toBe(true);
+    expect(has(block, `${PROV}wasRevisionOf`, iri(doc("heading-statement.md")))).toBe(true);
+    expect(has(section, `${NS.schema}translationOfWork`, iri(doc("page.md")))).toBe(true);
+    expect(has(doc("page.md"), `${NS.schema}workTranslation`, iri(section))).toBe(true);
+    expect(has(page, g("brokenLink"), lit("./missing.md"))).toBe(true);
+    expect(quads.some((q) => q.s === block && q.p === g("brokenLink"))).toBe(false);
+    expect(has(section, `${PROV}wasGeneratedBy`, iri(`${section}.prov.generation`))).toBe(true);
+    expect(has(`${section}.prov.generation`, `${PROV}wasAssociatedWith`, iri(`${BASE}agent/software/model-a`))).toBe(true);
+    expect(has(block, `${PROV}wasGeneratedBy`, iri(`${block}.prov.generation`))).toBe(true);
+  });
+
+  it("verifies a section from its heading statement", () => {
+    expect(has(section, g("lastVerified"), lit("2026-10-21", XSD_DATE))).toBe(true);
+    const v = `${section}/verified-by/1`;
+    expect(has(section, g("verifiedBy"), iri(v))).toBe(true);
+    expect(has(v, g("tool"), lit("doc-detective"))).toBe(true);
+    expect(has(v, g("check"), lit("install-section"))).toBe(true);
   });
 });
 

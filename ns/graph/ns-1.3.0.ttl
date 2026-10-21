@@ -312,8 +312,8 @@ graph:version
     a rdf:Property ;
     rdfs:label "version" ;
     rdfs:comment """Version string of a software agent — the manni release that
-built the graph, or a model that proposed metadata — or of the tool a
-Verification names. Distinct from owl:versionInfo, which versions this
+built the graph, a model that proposed metadata, or the tool a Verification
+names. Distinct from owl:versionInfo, which versions this
 vocabulary rather than an agent.""" ;
     schema:domainIncludes prov:SoftwareAgent, graph:Verification ;
     schema:rangeIncludes xsd:string ;
