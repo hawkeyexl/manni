@@ -37,9 +37,9 @@ docs/src/content/docs/key/index.mdx:
         integrity: sha256-2dab680b74eb6573fae9f60cbdeecb8164eb1c72f70c22d8a49955da44cd04e2
       source:
         file: src/cite/cli.ts
-        lines: 392-393
+        lines: 410-411
         integrity: sha256-16808a9273fc23ddb9b280ae2a9575d17bfc29ba6ec89909e8faba7fb17ffc42
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: 10779bd0275d184cbf25f55e2762574229697996
     - id: keyed-pin-prefix
       claim:
         integrity: sha256-2dab680b74eb6573fae9f60cbdeecb8164eb1c72f70c22d8a49955da44cd04e2

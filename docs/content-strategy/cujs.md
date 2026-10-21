@@ -390,6 +390,14 @@ This is the highest-stakes journey in the section. It is the only one where a pl
 
 **What success looks like.** The docs gate reads like every other gate in the pipeline. A broken procedure is an annotation on its page, not a line buried in a log.
 
+### D18 · Put a number on how long the docs were wrong
+
+**Outcome.** One scheduled job says how long each citation stood stale and which releases shipped it, and totals that time as a number a dashboard tracks.
+
+**Steps.** His trigger is a question the gate cannot answer. A reader filed a bug against a release, and someone asks how long the page was wrong. Or the team ramped in with `--baseline`, and nobody knows how old the forgiven pins are. He adds a weekly job that checks out the full history and runs `manni cite history -f json`. He learns that a window opens where `cite check` would have reported a stale source. It closes at the re-pin, the restored source or the removed entry, and a moved pin opens none. He reads `summary.staleSeconds` as the total, and `summary.releases` as the tags that shipped a stale pin. He learns the number is an upper bound, which is why the report says "stale" and never "wrong". The job never fails on what it finds, because `cite check` stays the gate. When a reader's bug names one page, Maya runs the same verb on that page and reads the window and the release. A long history gets `--newer-than 90d`.
+
+**What success looks like.** A dashboard number that falls to zero once the gate is on, and a one-line answer to "which releases shipped this page stale?"
+
 ---
 
 ## Sara, Schema Author

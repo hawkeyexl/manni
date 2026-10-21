@@ -1,5 +1,5 @@
 /**
- * Pretty output for `check` and `update`.
+ * Pretty output for `check`, `update`, `remove` and `history`.
  *
  * A citation is one row: its name, its claim end, its source end, and, when a
  * manifest owns the entry, where that is. Both ends read in file lines, the
@@ -19,8 +19,10 @@ import type {
   CheckRun,
   CitationFinding,
   CitationResult,
+  HistoryRun,
   PageCitationReport,
   RecommitReason,
+  StaleWindow,
   Removal,
   RemoveRun,
   UpdateRewrite,
@@ -692,5 +694,75 @@ export function renderRemovePretty(run: RemoveRun, opts: PrettyOptions): string 
   }
   const verb = opts.dryRun === true ? "would be removed" : "removed";
   lines.push(c.green(`${plural(run.removed, "citation")} ${verb} from ${plural(files, "file")}`));
+  return lines.join("\n");
+}
+
+/** `45 minutes`, `5 hours` or `47 days`: minutes under an hour, hours under two days. */
+export function staleFor(seconds: number): string {
+  if (seconds < 3600) return plural(Math.round(seconds / 60), "minute");
+  if (seconds < 2 * 86400) return plural(Math.round(seconds / 3600), "hour");
+  return plural(Math.round(seconds / 86400), "day");
+}
+
+/** A window's releases: up to three by name, more as a range, none as `-`. */
+export function releasesCell(names: readonly string[]): string {
+  const [first] = names;
+  const last = names[names.length - 1];
+  if (first === undefined || last === undefined) return "-";
+  if (names.length <= 3) return names.join(", ");
+  return `${first} through ${last} (${String(names.length)} releases)`;
+}
+
+const CAUSES: Record<NonNullable<StaleWindow["closed"]>["by"], string> = {
+  "re-pinned": "closed by a re-pin",
+  "source-restored": "closed when the source was restored",
+  removed: "closed when the entry was removed",
+};
+
+/**
+ * `history`: one row per stale window under its page, a dim line naming the
+ * commits, the rule and the cause, then the totals.
+ */
+export function renderHistoryPretty(run: HistoryRun, opts: Pick<PrettyOptions, "color">): string {
+  const c = palette(opts.color);
+  const { summary } = run;
+  const lines: string[] = [];
+  const walked = `Walked ${plural(summary.walked.commits, "commit")}, ${summary.walked.from.slice(0, 10)} to ${summary.walked.to.slice(0, 10)}.`;
+  if (summary.windows === 0) {
+    lines.push(`No stale windows on ${plural(summary.citations, "citation")} in ${plural(summary.files, "page")}.`, walked);
+    return lines.join("\n");
+  }
+  const word = { error: c.red, warning: c.yellow, notice: c.dim } as const;
+  const cited = new Set<string>();
+  let pages = 0;
+  for (const page of run.pages) {
+    if (page.windows.length === 0) continue;
+    pages += 1;
+    lines.push(page.file);
+    for (const window of page.windows) {
+      cited.add(`${page.file}\0${window.id}`);
+      const open = window.closed === null ? ", open" : "";
+      lines.push(
+        `  ${word[window.severity](window.severity)}  ${window.id}  ${shortSrc(window.source)}  stale ${staleFor(window.seconds)}${open}  ${releasesCell(window.releases)}`,
+      );
+      const span = `${shortCommit(window.opened.commit)}..${window.closed === null ? "HEAD" : shortCommit(window.closed.commit)}`;
+      const bounded = window.opened.bounded ? ", bounded" : "";
+      const cause = window.closed === null ? "still open at HEAD" : CAUSES[window.closed.by];
+      const formerly = window.formerly.length === 0 ? "" : ` (formerly ${window.formerly.join(", ")})`;
+      lines.push(`${" ".repeat(4 + window.severity.length)}${c.dim(`${span}  ${window.rule}${bounded}, ${cause}${formerly}`)}`);
+    }
+  }
+  const open = summary.open === 0 ? "none" : String(summary.open);
+  lines.push(
+    "",
+    `${plural(summary.windows, "stale window")} on ${plural(cited.size, "citation")} in ${plural(pages, "page")}, ${open} open. ${(summary.staleSeconds / 3600).toFixed(1)} stale pin-hours.`,
+  );
+  const [first] = summary.releases;
+  const last = summary.releases[summary.releases.length - 1];
+  if (first !== undefined && last !== undefined) {
+    const named = summary.releases.length <= 3 ? summary.releases.join(", ") : `${first} through ${last}`;
+    lines.push(`${plural(summary.releases.length, "release")} shipped a stale pin: ${named}.`);
+  }
+  lines.push(walked);
   return lines.join("\n");
 }

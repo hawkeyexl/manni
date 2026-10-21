@@ -1,0 +1,197 @@
+---
+title: Measure how long pins stood stale
+description: Run manni cite history from a scheduled job to measure how long each citation stood stale, which releases shipped it, and the total as one number for a dashboard.
+type: how-to
+id: cite-ci-stale-windows
+keywords:
+  - cite history
+  - stale window
+  - releases
+  - scheduled job
+  - full history
+language: en
+audiences:
+  - ci-engineers
+  - docs-engineers
+intent: Put a number on how long the docs' citations stood stale, and name the releases that shipped them.
+lifecycle: published
+applies-to:
+  - domain:cite
+next-steps:
+  - cite-fix
+  - cite-reference-cli
+risks: read-only
+sample-questions:
+  - How long was this page's citation stale?
+  - Which releases shipped a stale citation?
+  - How do I track stale citation time on a dashboard?
+graph:
+  label: Measure how long pins stood stale
+  type: task
+last-updated: 2026-10-21
+tags:
+  - ci
+  - github-actions
+  - automation
+  - git
+  - citations
+action: develop
+prerequisites:
+  - cite-ci
+related-pages:
+  - cite-reference-cli
+  - cite-fix
+concepts:
+  - validation
+---
+
+import { Steps, Aside, CardGrid, LinkCard } from '@astrojs/starlight/components';
+
+`manni cite check` says whether each pin holds now. It cannot say how long a
+pin had failed before someone noticed, or which releases shipped the page
+meanwhile. `manni cite history` answers both, from git alone. This page runs
+it on one page, then from a scheduled job, and reads the number it produces.
+
+## What a stale window is
+
+A **stale window** belongs to one citation, named by its page and entry id. It
+opens at the first commit where `cite check` would have reported
+`source-changed`, `source-missing` or `source-never-true`. It closes at the
+commit that re-pinned the entry, restored the source, or removed the entry. A
+moved pin is supported somewhere, so it opens no window.
+
+Each first-parent commit of `HEAD` is read as it stood, with its own config,
+entries and sources. So citations that moved from frontmatter into a sidecar
+are no event, and a page renamed under git's rename detection keeps its
+windows.
+
+<Aside type="note" title="An upper bound">
+A whitespace or comment change that breaks the hash opens a window like any
+other. The report says "stale", never "wrong". `cite check --show-diff` is
+where a person decides whether a change mattered.
+</Aside>
+
+## Answer a reader's bug about one page
+
+A reader filed a bug against a release, and the page it names cites the
+source. Run the walk on that page:
+
+```sh
+npx @hawkeyexl/manni cite history docs/src/content/docs/cite/set-up/index.mdx
+```
+
+```
+docs/src/content/docs/cite/set-up/index.mdx
+  error  pages-from-collections  src/cite/core/config.ts:308-313  stale 45 minutes  v2.3.9
+         541b63e..bf8f986  source-changed, closed by a re-pin
+  error  collection-paths-config-relative  src/cite/core/config.ts:308-313  stale 45 minutes  v2.3.9
+         541b63e..bf8f986  source-changed, closed by a re-pin
+
+2 stale windows on 2 citations in 1 page, none open. 1.5 stale pin-hours.
+1 release shipped a stale pin: v2.3.9.
+Walked 193 commits, 2026-09-11 to 2026-10-21.
+```
+
+Each row names the severity, the entry and its source, how long the window
+lasted, and the releases inside it. The dim line under it names the opening
+and closing commits and why the window closed. Here one source change broke
+two pins, v2.3.9 shipped them, and a re-pin 45 minutes later closed both.
+
+A release is a tag `HEAD` reaches whose commit contains the opening commit and
+not the closing one. A tag on a merged side branch counts. A prerelease on a
+branch that never merged does not.
+
+## Track the number from a scheduled job
+
+The pull request gate keeps new windows short. The number is worth tracking
+where the gate is not on yet, or where a [baseline](/manni/cite/ci/#ramp-in-with-a-baseline)
+forgives known stale pins. A baselined pin is still stale, so `history` counts
+it.
+
+<Steps>
+
+1. **Create the workflow file.** Add `.github/workflows/stale-citations.yml`:
+
+   ```yaml title=".github/workflows/stale-citations.yml"
+   # Measure how long citations stood stale, once a week.
+   name: Stale citations
+
+   on:
+     schedule:
+       - cron: "0 6 * * 1"
+     workflow_dispatch:
+
+   jobs:
+     history:
+       runs-on: ubuntu-latest
+       steps:
+         - uses: actions/checkout@v7
+           with:
+             fetch-depth: 0   # the walk reads every commit
+
+         - uses: actions/setup-node@v6
+           with:
+             node-version: 24
+
+         - name: Walk the citation history
+           run: npx --yes @hawkeyexl/manni@latest cite history -f json > cite-history.json
+
+         - uses: actions/upload-artifact@v4
+           with:
+             name: cite-history
+             path: cite-history.json
+   ```
+
+2. **Keep the full history.** A shallow clone is refused with exit `2`,
+   because the walk would start at the oldest commit the clone holds.
+   `fetch-depth: 0` fetches every commit and every tag.
+
+3. **Read the number.** `summary.staleSeconds` is the total time every window
+   stood stale, open windows included. `summary.open` counts the windows
+   still open at `HEAD`, and `summary.releases` names the tags that shipped
+   one.
+
+   ```sh
+   jq '.summary | {staleSeconds, open, releases}' cite-history.json
+   ```
+
+</Steps>
+
+`history` never exits `1`, so the job stays green whatever it finds. It is a
+measure, and `cite check` remains the gate.
+
+## Bound the walk
+
+A long history takes longer to walk. `--newer-than 90d` reads only the
+commits within 90 days of `HEAD`'s committer time. A window already open at
+the first commit read is marked `bounded`, because its true start is earlier.
+
+```sh
+npx @hawkeyexl/manni cite history --newer-than 90d -f json
+```
+
+The span counts back from `HEAD`, not from the clock. Two runs on one
+checkout print the same report, and an open window runs to `HEAD`'s committer
+time for the same reason.
+
+<CardGrid>
+  <LinkCard
+    title="Fix a failing check"
+    href="/manni/cite/fix/"
+    description="What each source rule means, and which update flag closes the window."
+  />
+  <LinkCard
+    title="CLI reference"
+    href="/manni/cite/reference/cli/#cite-history"
+    description="Every flag of history, the JSON fields, and the exit-2 messages."
+  />
+</CardGrid>
+
+{/* Doc Detective inline tests: verify this page's documented manni cite behavior
+    against the local build, exposed as `manni cite` / `npx @hawkeyexl/manni cite` via `npm link`
+    (see .github/workflows/docs-as-tests.yml). Run with `npx doc-detective`.
+    Config: .doc-detective.json. */}
+{/* test {"testId":"cite-history","description":"cite history refuses what it cannot walk, with exit 2."} */}
+{/* step {"description":"No inputs and no config exits 2 and names what to pass.","runShell":{"command":"npx @hawkeyexl/manni cite history --no-config","exitCodes":[2],"stdio":"No files to read"}} */}
+{/* step {"description":"A finding sink is not a history format, so -f sarif exits 2.","runShell":{"command":"npx @hawkeyexl/manni cite history -f sarif","exitCodes":[2],"stdio":"Use pretty or json"}} */}
+{/* test end */}
