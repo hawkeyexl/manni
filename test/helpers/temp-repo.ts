@@ -38,6 +38,10 @@ export function makeTempRepo(opts: TempRepoOptions): string {
   }
   if (opts.init !== false) {
     execFileSync("git", ["init", "-q"], { cwd: dir, stdio: "ignore" });
+    // In the repository's own config, so a checkout, merge or rebase agrees
+    // with `commitAll`. A machine-wide `autocrlf=true`, as on Windows CI,
+    // otherwise checks files out with CRLF and the next commit takes them.
+    execFileSync("git", ["config", "core.autocrlf", "false"], { cwd: dir, stdio: "ignore" });
   }
   return dir;
 }

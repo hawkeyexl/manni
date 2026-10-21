@@ -168,18 +168,18 @@ docs/src/content/docs/cite/set-up/index.mdx:
         integrity: sha256-80151343b5cbf3a9aedad361bb81934b2e3cb0a672a90bf68088b71e5ac2860d
       source:
         file: src/cite/cli.ts
-        lines: 380-387
+        lines: 398-405
         integrity: sha256-1ee551e44da3efabddaf000526f4498547dda21b48a47ebce21032fd962751a9
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: 10779bd0275d184cbf25f55e2762574229697996
     - id: add-dry-run-prints-diff
       claim:
         lines: 80
         integrity: sha256-0a983049f2ef33fe50fb803b60faaf67673d973649f50d58b87d857c747b2dbd
       source:
         file: src/cite/cli.ts
-        lines: 455-457
+        lines: 473-475
         integrity: sha256-814d8f4b73ccbaf01a681ff3d14189ee0890cb1dabcf879fd84c84a96744e9d0
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: 10779bd0275d184cbf25f55e2762574229697996
     - id: add-dry-run-writes-nothing
       claim:
         lines: 80
@@ -195,9 +195,9 @@ docs/src/content/docs/cite/set-up/index.mdx:
         integrity: sha256-da3e0d8b235e4e7e26910b9facf1dfafa097b8ea97fb82cfaf1c0cbbc17e4fad
       source:
         file: src/cite/cli.ts
-        lines: 225
+        lines: 243
         integrity: sha256-1ef9c6c14c258e8e8eff77bcc8dac4c447a60a9ec80b5330200ec3cf9c219c70
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: 10779bd0275d184cbf25f55e2762574229697996
     - id: add-report-file-line-after-write
       claim:
         lines: 111-112
@@ -222,9 +222,9 @@ docs/src/content/docs/cite/set-up/index.mdx:
         integrity: sha256-26f78a8f47b6cbad6e76e2315cefda95c14d521ec755498142d30c735bf032ab
       source:
         file: src/cite/reporters/pretty.ts
-        lines: 137-145
+        lines: 139-147
         integrity: sha256-8ee12eb911451e8793e2683893d0d0c2050060832ac0abbc467634bd14290479
-        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
+        commit-sha: 10779bd0275d184cbf25f55e2762574229697996
     - id: no-inputs-is-an-error
       claim:
         integrity: sha256-622dccd00088a07c45e856fc590b1d9b59c7df0e85b90e35f06dcc305d171bf2
@@ -281,6 +281,6 @@ docs/src/content/docs/cite/set-up/index.mdx:
         integrity: sha256-2f0a6aaec0a05f4e02f67ea6506ac359a444b04e94d94fc48d13d77e5c8f5255
       source:
         file: src/cite/reporters/pretty.ts
-        lines: 332-334
+        lines: 334-336
         integrity: sha256-429405b163b60574ddbbf8a502bcfd693b74d01b0f7ef9efabfb681c417403b5
-        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
+        commit-sha: 10779bd0275d184cbf25f55e2762574229697996

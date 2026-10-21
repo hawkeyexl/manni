@@ -105,8 +105,8 @@ docs/src/content/docs/cite/index.mdx:
       lines: 144-148
       integrity: sha256-8c4b3127d0a25520a15dd903d4920d8c340e3b4782535fd991dd1e03d0ae4240
     - generated-by: Claude Fable 5.1
-      lines: 150-157
-      integrity: sha256-8b2f21940b93b3fd7d974d17d5e3d0620ae47e9181bef57c8c45c347a2ab3ab6
+      lines: 150-156
+      integrity: sha256-4e0132e38d40d8ef4cf3fe6c317e695a57bd6027cf95a1bbe39de9a75874a6c9
     - generated-by: Claude Fable 5.1
       lines: 159
       integrity: sha256-93705946081ed34d379190b4b2daf68fb1693334ed0e1af78ff3d0d0a7a09a46

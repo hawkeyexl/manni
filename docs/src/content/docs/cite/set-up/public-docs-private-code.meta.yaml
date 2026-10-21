@@ -152,8 +152,8 @@ docs/src/content/docs/cite/set-up/public-docs-private-code.mdx:
       lines: 338
       integrity: sha256-58f00e46fdbbb68a75f1437f9f5dfcade0928cfd0a7553c1b8ab4520a4c96642
     - generated-by: Claude Fable 5.1
-      lines: 339-343
-      integrity: sha256-30d8c9c2591d8ed375cdc5ae5c1e431a8fa22f5dd308bf7b0c4a54ae811ac322
+      lines: 339-342
+      integrity: sha256-93be6a132c405a43895823b32978dfeec4ef679ae92b0f99bb084fad7b02b03c
     - generated-by: Claude Opus 5
       lines: 344
       integrity: sha256-6a0a758ff1bf8537edb3e92fbce6a96da933e402908814de0ab78bf569b00098
@@ -164,8 +164,8 @@ docs/src/content/docs/cite/set-up/public-docs-private-code.mdx:
       lines: 356
       integrity: sha256-55a4fda6b29d5fd73cd562adbb19cba52fbbb59a90672e76d405be13fcac56f8
     - generated-by: Claude Fable 5.1
-      lines: 357-362
-      integrity: sha256-6fe9cfb1debe616c497c4964b4fd31be8c83db475fb66d600bc971d9a833d397
+      lines: 360-362
+      integrity: sha256-459b5ec4a85d1638a4cc78cd8f901255936ab9a1e38f5070d21bb758fe8df3b8
     - generated-by: Claude Opus 5
       lines: 364
       integrity: sha256-3d6acbab9fc84ad0ad7143ccc5e016ac9af7fcf60da98255846888c5cb0cf3ce
