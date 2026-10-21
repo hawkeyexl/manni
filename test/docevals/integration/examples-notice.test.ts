@@ -63,7 +63,7 @@ describe("missing judge examples is a notice", () => {
     const sarif = run("sarif");
     expect(sarif.status).toBe(0);
     const log = JSON.parse(sarif.stdout) as { runs: { results: { level: string }[] }[] };
-    expect(log.runs[0]?.results.filter((r) => r.level !== "note")).toEqual([]);
+    expect((log.runs[0]?.results ?? []).filter((r) => r.level !== "note")).toEqual([]);
 
     const junit = run("junit");
     expect(junit.status).toBe(0);
