@@ -1,6 +1,6 @@
 # 0092: How long a pin stood stale, and which releases shipped it
 
-- **Status:** Proposed
+- **Status:** Implemented
 - **Serves:** Two people.
   - Devin · D5, "Gate citations in CI without blocking on prose". His ramp-in
     runs the PR job with `--baseline`, so known stale pins stay on main by
@@ -14,10 +14,9 @@
   - [0055](0055-following-a-source.md) taught the classifier to follow a
     source across files. A moved pin is not a stale one.
   - [0034](0034-command-grammar.md) is the grammar a new verb has to fit.
-- **Relates to:** [0093](0093-rot-forecast.md), the rot forecast. It reads the
-  same pin history forward, to say which pins are likely to go stale next.
-  This proposal reads it backward. The section on shared machinery names what
-  the two build once.
+- **Relates to:** [0097](0097-the-source-end-derives-its-baseline.md), the
+  derived source baseline. Each commit's classification uses it, so a pin a
+  squash merge recorded against a pruned commit reads as `check` reads it.
 - **Touches:** `src/cite/core/` (a new `timeline.ts`, `git.ts`, `classify.ts`,
   `sources.ts`), `src/cite/commands/history.ts`, `src/cite/cli.ts`,
   `src/cite/reporters/`, `test/cite/`, `scripts/check-cli-reference.mjs`,
@@ -311,12 +310,13 @@ manni cite history [paths...] [options]
 | `--allow-empty` | flag | off | Zero matched files is success. |
 | `--no-gitignore` | flag | off | Walk pages `.gitignore` covers. |
 | `--root <dir>` | path | `cite.root`, else the git root | Where source paths resolve. |
+| `--newer-than <duration>` | duration, such as `90d` or `12w` | whole history | Walk only the commits within that span of `HEAD`'s committer time. |
 | `-f, --format <format>` | `pretty` or `json` | `pretty` | The output. |
 
-The positional pages are matched in the working tree, as `check` matches
-them. Their history is then read from git by path. A path argument cannot
-reach a page deleted before `HEAD`. Its windows appear only in a run over a
-collection whose `paths:` once matched it.
+The pages are matched in the working tree, as `check` matches them, whether
+they come from paths or from a collection. Their history is then read from git
+by path, and through each rename git detects. A page deleted before `HEAD`
+matches nothing, so its windows are not reported.
 
 Parity with `check`, flag by flag:
 
@@ -365,7 +365,8 @@ such as `v4.2.0 through v4.6.0 (5 releases)`. No release reads `-`.
 The dim line names the opening and closing commits, the rule and the cause.
 Causes print as `closed by a re-pin`, `closed when the source was restored`
 and `closed when the entry was removed`. An open window prints `still open at
-HEAD`.
+HEAD`. A window already open at the first commit read adds `bounded`, and a
+renamed page adds `(formerly <old path>)`.
 
 A run with no windows prints one summary:
 
@@ -419,7 +420,8 @@ citations.
             "by": "re-pinned"
           },
           "seconds": 2675,
-          "releases": ["v2.3.9"]
+          "releases": ["v2.3.9"],
+          "formerly": []
         }
       ]
     }
@@ -433,9 +435,10 @@ citations.
 | `severity` | `notice`, `warning` or `error`, from `src/shared/severity.ts`, resolved through `cite.severity` |
 | `closed` | an object, or `null` while the window is open |
 | `closed.by` | `re-pinned`, `source-restored` or `removed` |
-| `opened.bounded` | `true` when the window was already open at the first commit the walk could read |
+| `opened.bounded` | `true` when the window was already open at the first commit the walk could read. That is the history's start, the `--newer-than` bound, or the first commit after an old config that does not load |
 | `seconds` | whole seconds, committer time to committer time |
 | `releases` | tag names, oldest first |
+| `formerly` | the page's earlier paths while the window was open, oldest first, or empty |
 | `source` | the entry's source as it stood when the window opened, spelled as `check` spells it |
 
 A page with no windows appears in `pages` with an empty `windows` list. An
@@ -464,6 +467,7 @@ Messages on stderr, each prefixed `manni:` by the shared runner:
 | `No files to read. Pass paths/globs, or declare a collection under \`collections:\` in manni.config.yaml.` | 2 |
 | `--collection selects a configured collection; it cannot be combined with paths.` | 2 |
 | `Unknown --format "<format>". Use pretty or json.` | 2 |
+| The shared duration parser's message for a bad `--newer-than` value | 2 |
 
 Notices on stderr, said once, never changing the exit code:
 
@@ -514,6 +518,13 @@ $ manni cite history --collection site -f json | jq '.summary.staleSeconds'
 29425
 ```
 
+**The last quarter only.** The walk reads the commits inside 90 days of
+`HEAD`'s committer time. A window already open at the bound reads `bounded`.
+
+```
+$ manni cite history --newer-than 90d
+```
+
 **A scheduled job.** Full history, then the report as an artifact.
 
 ```yaml
@@ -526,7 +537,8 @@ $ manni cite history --collection site -f json | jq '.summary.staleSeconds'
 
 ```
 $ manni cite history --collection site --ext md,mdx --exclude "**/proposals/**" \
-    --as mdx -c manni.config.yaml --no-gitignore --allow-empty --root . -f json
+    --as mdx -c manni.config.yaml --no-gitignore --allow-empty --root . \
+    --newer-than 12w -f json
 ```
 
 **Usage errors.**
@@ -556,27 +568,29 @@ $ cd /tmp/not-a-repo && manni cite history page.md
 manni: cite history reads git, and /tmp/not-a-repo is not inside a git repository.
 $ echo $?
 2
+
+$ manni cite history --newer-than soon
+manni: --newer-than must be a duration such as 30m, 24h, 7d or 2w, got "soon"
+$ echo $?
+2
 ```
 
-### 9. Machinery shared with 0093
+### 9. What it reuses
 
-0093 forecasts which pins will go stale. Its input is the counterfactual pass
-above, read per source file: how soon pins on that file broke in the past.
-Both proposals need the same three pieces, built once in cite's core.
+The classification at each commit is `classifyCitation`, the one `check`
+runs. Two pieces are built here so it can answer "as of commit C". The
+derived baseline is 0097's walk, reused rather than built twice.
 
 | Piece | What it is | Where |
 |---|---|---|
-| The pin timeline | For each citation, the commits at which its state or its source changed, and its classification at each. Read first-parent, from each commit's own config, entries and tree. | `src/cite/core/timeline.ts` |
-| A tree-backed source reader | The classifier's source read, from a commit's tree rather than the working tree, so `classifyCitation` answers "as of commit C". | `src/cite/core/sources.ts`, `classify.ts` |
-| Git calls | A first-parent log over a set of paths, a tree listing at a commit, and tags reachable from `HEAD` with their commits. | `src/cite/core/git.ts` |
+| The pin timeline | For each citation, its classification at each first-parent commit, read from that commit's own config, entries and tree. | `src/cite/core/timeline.ts` |
+| A tree-backed source reader | The classifier's source read, from a commit's tree rather than the working tree. | `src/cite/core/sources.ts`, `classify.ts` |
+| Git calls | A client whose `HEAD` is commit C, so 0097's baseline walk and the cross-file follow read the history as it stood there. A first-parent log with each commit's changes, a blob reader, and tags with their commits. | `src/cite/core/git.ts` |
 
-The timeline visits only the commits that touched an entry's home or a cited
-source. On this repository the throwaway walk, which visits all 137 and
-caches nothing across runs, takes 34 seconds.
-
-Neither proposal depends on the other's verb. 0092 turns the timeline into
-windows. 0093 turns it into rates. Whichever lands first builds the timeline,
-and the second reuses it.
+A citation is classified again only when its entry or its source's blob
+changed, unless its last verdict depended on other files. Two derivations of
+"holds at commit C" would let `check` and `history` disagree about one pin,
+so there is one.
 
 ### 10. `manni check` and `manni status` do not run it
 
@@ -643,9 +657,11 @@ ancestry, so a tag on a merged branch still lands in the right window.
 
 ### 6. A page renamed
 
-A window belongs to a page path and an id. A rename closes the old window as
-`removed`, and the new path starts fresh. Following renames is an open
-question.
+A window belongs to a page and an id. When git's rename detection pairs the
+old and new page paths between consecutive commits, and the id persists, the
+window continues. It is reported under the newest path, with the old paths in
+`formerly`. Without that, a rename would restart the clock and understate the
+debt.
 
 ### 7. Does it agree with `check` at `HEAD`?
 
@@ -653,23 +669,25 @@ It must. A window open at `HEAD` is exactly a `source-changed`,
 `source-missing` or `source-never-true` finding from `check` on the same
 checkout, before any baseline. The acceptance checklist pins that equality.
 
-## Open questions
+## Settled questions
 
-1. Should a repository that tags non-releases get a tag pattern? This repo
-   needs none, because reachability already excludes its prerelease tags.
-2. Should a page rename carry its windows across, through git's rename
-   detection?
-3. Should `manni status` show the open-window count beside cite's row?
-4. Should the walk have a ceiling, as the claim end's 256-commit cap does? A
-   repo with years of history and thousands of pins may need one.
-5. Is `history` the right verb? `windows` and `debt` were the alternatives.
-   `history` reads as what it prints, and the others need explaining.
+The draft left five questions open. Each was settled before the build.
+
+1. **No release-tag pattern.** Reachability already excludes this repo's
+   prerelease tags, so a pattern would name something the tool detects.
+2. **A page rename carries its windows.** Stress test 6 says how.
+3. **`manni status` is unchanged.** It lists domains, not verbs.
+4. **`--newer-than <duration>` bounds the walk.** It takes the shared duration
+   grammar from `src/shared/duration.ts`, as docevals and tracevals do. It
+   counts back from `HEAD`'s committer time rather than the clock, so a report
+   reproduces from its commit. A window open at the bound is `bounded`.
+5. **The verb stays `history`.** It reads as what it prints.
 
 ## Consequences
 
 - A docs owner can answer "how long, and in which releases" with one command.
 - A repo ramping in with `--baseline` sees the age of its debt.
-- The pin timeline exists once, in cite's core, for 0093 to reuse.
+- The pin timeline exists once, in cite's core.
 - `cite` gains a fifth verb, and its reference page a section.
 - The CUJ list gains D18.
 
@@ -677,8 +695,8 @@ checkout, before any baseline. The acceptance checklist pins that equality.
 
 - [ ] `src/cite/core/timeline.ts` exists and builds each citation's timeline
       from each commit's own config, entries and tree.
-- [ ] `src/cite/core/git.ts` gains a first-parent log over paths, a tree
-      listing at a commit, and reachable tags with their commits.
+- [ ] `src/cite/core/git.ts` gains a client at a commit, a first-parent log
+      with each commit's changes, a blob reader, and tags with their commits.
 - [ ] `classifyCitation` classifies against a commit's tree, and `check`'s
       output is unchanged.
 - [ ] `src/cite/commands/history.ts` holds the command core, free of CLI and
@@ -692,6 +710,10 @@ checkout, before any baseline. The acceptance checklist pins that equality.
       `warning` and `error`.
 - [ ] A moved pin opens no window. A whitespace-only change opens one.
 - [ ] A change to `commit-sha` alone opens and closes nothing.
+- [ ] A renamed page's window continues under the new path, with `formerly`
+      listing the old one.
+- [ ] `--newer-than 90d` walks only commits within 90 days of `HEAD`'s
+      committer time and marks a window open at the bound `bounded: true`.
 - [ ] A release counts in a window exactly when its commit contains the
       opening commit and not the closing one.
 - [ ] An open window's duration runs to `HEAD`'s committer time, so two runs
