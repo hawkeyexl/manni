@@ -288,8 +288,8 @@ directory, beside the graph unless `-o` names another.
 
 - **`chunks.json`, the manifest.** Its keys are `format`
   (`manni-graph-chunks`), `version` (1), `graph`, `graphFile`, `searchIndex`,
-  `commit`, `worktree`, `model`, `retrieve`, `evals`, `languages`, `pages`
-  and `withheld`.
+  `commit`, `worktree`, `retrieve`, `evals`, `languages`, `pages` and
+  `withheld`. Each `languages` entry is `{ file, rows, model }`.
 - **One `chunks.<tag>.jsonl` per localization.** Each line is one passage:
   `id` (the node IRI), `graph`, `page`, `lines`, `language`, `title`, `text`,
   `vector` when a sidecar holds one, `metadata`, and `provenance`, the record
@@ -304,10 +304,14 @@ directory, beside the graph unless `-o` names another.
   "searchIndex": "localizations.json",
   "commit": "26dad159c0f1e4a8b7d2c3e5f6a7b8c9d0e1f2a3",
   "worktree": "clean",
-  "model": { "id": "Xenova/bge-small-en-v1.5", "dimensions": 384 },
   "retrieve": { "seeds": 3, "depth": 1, "maxChars": 12000, "withhold": [] },
   "evals": { "report": ".manni/evals.json", "digest": "sha256-5c1e…" },
-  "languages": { "en": { "file": "chunks.en.jsonl", "rows": 611 } },
+  "languages": {
+    "en": {
+      "file": "chunks.en.jsonl", "rows": 611,
+      "model": { "id": "Xenova/bge-small-en-v1.5", "dimensions": 384 }
+    }
+  },
   "pages": {
     "docs/uploads/retry.md": {
       "metadata": { "title": "Retry an upload", "description": "…", "type": "how-to" }
@@ -327,8 +331,10 @@ directory, beside the graph unless `-o` names another.
   `graph export jsonld` writes. Every row repeats it, and every host refuses
   a mismatch.
 - **Vectors come from the sidecar.** A node `graph embed` embedded carries
-  its vector, and `model` names the model. With no sidecar, rows carry none,
-  and the export warns once.
+  its vector. Each language's `model` names the model its own sidecar was
+  embedded with, because `graph.embed.byLanguage` can embed each language
+  with a different one. A language with no sidecar has `model: null`. With no
+  sidecar at all, rows carry no vectors, and the export warns once.
 - **Byte-stable.** Keys are sorted, rows are in id order, and nothing reads
   the wall clock. The same commit, report and config give the same bytes.
 - **Eval verdicts come from a report, never a run.** Export never runs an
@@ -1015,7 +1021,7 @@ each passage with its pin and eval badges.
 
 - [ ] `src/graph/commands/chunks.ts` builds the artifact on the Node side from cite's check, meta's derive and a docevals report.
 - [ ] `manni graph export chunks` writes `chunks.json` and one `chunks.<tag>.jsonl` per language, and exits 0.
-- [ ] The manifest's keys are `format`, `version`, `graph`, `graphFile`, `searchIndex`, `commit`, `worktree`, `model`, `retrieve`, `evals`, `languages`, `pages` and `withheld`.
+- [ ] The manifest's keys are `format`, `version`, `graph`, `graphFile`, `searchIndex`, `commit`, `worktree`, `retrieve`, `evals`, `languages`, `pages` and `withheld`. Each `languages` entry is `{ file, rows, model }`, and `model` is `null` for a language with no vector sidecar.
 - [ ] Two exports over the same commit, report and config are byte-identical.
 - [ ] Each section's `lines` and `text` match what `sliceSection` returns, and a document's cover its whole body.
 - [ ] A pin whose claim overlaps a passage appears in its `pins.items`, with cite's rule, resolved severity, recorded `commit`, `lastVerified` and `verifiedBy`.
