@@ -79,7 +79,7 @@ export interface ProvenanceEvals {
   items: EvalItem[];
 }
 
-/** A block statement (proposal 0099) anchored inside the passage. */
+/** A statement (proposal 0099) anchored inside the passage: on a block, or on a section's heading. */
 export interface PassageStatement {
   /** Body lines, `N-M`. */
   lines: string;

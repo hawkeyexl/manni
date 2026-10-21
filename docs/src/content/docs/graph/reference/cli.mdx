@@ -1540,7 +1540,7 @@ describes.
 | `pins` | The cite pins whose claim overlaps the passage. |
 | `dates` | The page's derived and verified dates. |
 | `evals` | The page's docevals verdicts, or `null` when no report is configured or the report holds none for the page. |
-| `statements` | `[{ lines, status, data }]`: the block `meta` statements anchored inside the passage, with their delivered fields. |
+| `statements` | `[{ lines, status, data }]`: the `meta` statements anchored inside the passage, with their delivered fields. A heading statement sits at its heading's lines. |
 
 `pins` is `{ total, current, notice, warning, error, items }`. Each pin is
 counted once, at its worst finding. The findings use cite's own rules at the

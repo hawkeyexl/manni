@@ -184,6 +184,9 @@ export async function exportChunks(opts: ChunksOptions): Promise<ChunksResult> {
         (x) => x.line !== null && x.line >= s.anchor.start && x.line <= s.anchor.end,
       );
       if (section === undefined) continue;
+      // The record carries it too, at its heading's lines, so a host can
+      // place it on the heading (proposal 0095).
+      blocks.push({ start: s.anchor.start - bodyLine + 1, end: s.anchor.end - bodyLine + 1, status: s.status, data });
       const list = bySection.get(section.slug) ?? [];
       list.push(data);
       bySection.set(section.slug, list);
