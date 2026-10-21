@@ -749,6 +749,9 @@ export async function askSampleQuestions(
       citedCount += 1;
       return;
     }
+    // Deliberate: any empty test (a changed answer pin) leaves the question unclassified, even when
+    // another test is withheld. That pin's own finding is the one to fix first, and the withheld
+    // count would only describe a question whose answers are not yet settled.
     if (targets.some((t) => t.length === 0)) return;
     const held = targets.flat().find((iri) => seam.withheld.has(iri));
     if (held !== undefined) {
