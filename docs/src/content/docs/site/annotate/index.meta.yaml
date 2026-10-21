@@ -22,5 +22,5 @@ docs/src/content/docs/site/annotate/index.mdx:
   provenance:
     - generated-by: Claude Opus 5.5
       lines: 2-142
-      integrity: sha256-a51e1caf07f96ff0b3e10cb7f8b28e7ba86139577f9625a1115098da63a08633
+      integrity: sha256-6710f6f148f31815857e2676fa2bb771fe38919748d716e9e71f554ac27f7897
   created: 2026-10-21
