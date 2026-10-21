@@ -68,6 +68,7 @@ export {
   GIT_UNAVAILABLE_COMMIT,
   GIT_UNAVAILABLE_HISTORY,
   PAGE_HISTORY_UNAVAILABLE,
+  SOURCE_HISTORY_UNAVAILABLE,
   gitClient,
   noGit,
 } from "./core/git.js";
@@ -143,16 +144,18 @@ export { runCheck } from "./commands/check.js";
 export { runAdd } from "./commands/add.js";
 export { runRemove } from "./commands/remove.js";
 export { runUpdate } from "./commands/update.js";
+export { runHistory } from "./commands/history.js";
 export { reencryptCitationEntries, reencryptCitations } from "./core/reencrypt.js";
 export type { ReencryptEntriesResult, ReencryptOptions } from "./core/reencrypt.js";
 export {
   refusalLine,
   removalLine,
   renderCheckPretty,
+  renderHistoryPretty,
   renderRemovePretty,
   renderUpdatePretty,
   rewriteLine,
 } from "./reporters/pretty.js";
 export type { PrettyOptions } from "./reporters/pretty.js";
-export { renderCheckJson, renderRemoveJson, renderUpdateJson } from "./reporters/json.js";
+export { renderCheckJson, renderHistoryJson, renderRemoveJson, renderUpdateJson } from "./reporters/json.js";
 export { renderCheckGithub } from "./reporters/github.js";

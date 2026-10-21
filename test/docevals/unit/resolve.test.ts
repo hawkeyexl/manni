@@ -160,14 +160,16 @@ describe("resolvePage", () => {
     expect(plan.evals[0]?.suite).toBe("default");
   });
 
-  it("warns when an inline ai eval lacks examples", () => {
+  it("notes, at notice level, when an inline ai eval lacks examples", () => {
     const plan = resolvePage(
       page(
         "evals:\n  - id: bare\n    assertion: Claim.",
       ),
       CONFIG,
     );
-    expect(plan.problems.some((p) => p.level === "warning" && /examples/.test(p.message))).toBe(true);
+    expect(plan.problems.filter((p) => /examples/.test(p.message)).map((p) => p.level)).toEqual([
+      "notice",
+    ]);
   });
 
   it("reports unknown eval references as errors with a line", () => {
