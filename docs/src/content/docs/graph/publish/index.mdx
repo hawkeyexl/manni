@@ -272,6 +272,6 @@ produce something nobody checked.
 
 {/* step {"description":"questions writes the question set as JSON Lines.","runShell":{"command":"manni graph export questions -c test/graph/fixtures/dd/docs.config.yaml","exitCodes":[0],"stdio":"/Wrote \\d+ questions/"}} */}
 
-{/* step {"description":"An unknown target is refused with the allowed set named.","runShell":{"command":"manni graph export turtle -c test/graph/fixtures/dd/docs.config.yaml","exitCodes":[2],"stdio":"Use jsonld | iirds | search | questions | chunks."}} */}
+{/* step {"description":"An unknown target is refused with the allowed set named.","runShell":{"command":"manni graph export turtle -c test/graph/fixtures/dd/docs.config.yaml","exitCodes":[2],"stdio":"Use jsonld | iirds | search | questions | chunks | llms."}} */}
 
 {/* step {"description":"search ranks nodes from the exported index.","runShell":{"command":"manni graph search installation -c test/graph/fixtures/dd/docs.config.yaml","exitCodes":[0],"stdio":"(lexical)"}} */}
