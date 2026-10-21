@@ -24,3 +24,6 @@ export * as tracevals from "./tracevals/index.js";
 // The test domain: the command core that runs Doc Detective, with an
 // injectable spawn, and its reporters. `import { test } from "@hawkeyexl/manni"`.
 export * as test from "./test/index.js";
+// The site domain (proposals 0082 and 0095): the annotate command core and its
+// report. Its rehype plugin is the package subpath `./site/rehype`.
+export * as site from "./site/index.js";
