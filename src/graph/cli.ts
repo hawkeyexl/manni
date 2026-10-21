@@ -1082,7 +1082,7 @@ program
 program
   .command("export")
   .description(
-    "Reserialize the built graph into a consumer format (jsonld file, iirds package, search index, question set, or chunks with their provenance)",
+    "Reserialize the built graph into a consumer format (jsonld file, iirds package, search index, question set, chunks with their provenance, or llms.txt)",
   )
   // The target is a positional, not `-f`: `-f` is the output format in every
   // other verb of the family (0051 §2), and one flag cannot mean two things.
@@ -1116,7 +1116,13 @@ program
         for (const warning of result.warnings) warn(warning);
         for (const said of result.notices ?? []) noticeOnce(said);
         const noun =
-          result.format === "questions" ? "question" : result.format === "chunks" ? "chunk" : "node";
+          result.format === "questions"
+            ? "question"
+            : result.format === "chunks"
+              ? "chunk"
+              : result.format === "llms"
+                ? "page"
+                : "node";
         console.log(
           `Wrote ${result.nodes} ${noun}${result.nodes === 1 ? "" : "s"} to ${result.outPath}`,
         );

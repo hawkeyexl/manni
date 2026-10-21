@@ -32,6 +32,7 @@ import { byCodeUnit } from "../core/sort.js";
 import { PREFIXES } from "../core/vocab.js";
 import { exportSampleQuestions } from "./questions.js";
 import { exportChunks } from "./chunks.js";
+import { defaultLlmsPath, exportLlms } from "./llms.js";
 import { GraphIndex } from "../runtime/graph.js";
 import { writeZip, type ZipEntry } from "../core/zip.js";
 
@@ -40,7 +41,7 @@ import { writeZip, type ZipEntry } from "../core/zip.js";
  * The CLI names its positional against this list, and `runExport` holds a
  * library caller to it too.
  */
-export const EXPORT_TARGETS = ["jsonld", "iirds", "search", "questions", "chunks"] as const;
+export const EXPORT_TARGETS = ["jsonld", "iirds", "search", "questions", "chunks", "llms"] as const;
 
 export type ExportFormat = (typeof EXPORT_TARGETS)[number];
 
@@ -61,7 +62,7 @@ export interface ExportOptions {
 export interface ExportResult {
   outPath: string;
   format: ExportFormat;
-  /** Distinct subject nodes in the emitted (or projected) graph; questions for `questions`. */
+  /** Distinct subject nodes in the emitted (or projected) graph; questions for `questions`, pages for `llms`. */
   nodes: number;
   /** Non-fatal warnings: iiRDS projection, stale answers, chunk records. */
   warnings: string[];
@@ -306,6 +307,20 @@ export async function runExport(opts: ExportOptions): Promise<ExportResult> {
       warnings: result.warnings,
       notices: result.notices,
     };
+  }
+  if (opts.format === "llms") {
+    const outPath = opts.out ? resolve(cwd, opts.out) : defaultLlmsPath(graphPath);
+    const { pages, warnings } = await exportLlms({
+      cwd,
+      config,
+      source: {
+        ...(opts.config === undefined ? {} : { configPath: opts.config }),
+        ...(opts.noConfig === undefined ? {} : { noConfig: opts.noConfig }),
+      },
+      graphPath,
+      outPath,
+    });
+    return { outPath, format: "llms", nodes: pages, warnings };
   }
   if (opts.format === "search") {
     return runSearchIndex(cwd, sources, graphPath, opts.out);

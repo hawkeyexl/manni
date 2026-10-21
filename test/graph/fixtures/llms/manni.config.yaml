@@ -1,0 +1,24 @@
+# The llms.txt fixture (proposal 0090, PR 4). Two localizations, so the file
+# has one section per language. An index page, a nested page, and one page
+# under no route, which llms.txt leaves out. package.json names Starlight, so
+# links end in a slash.
+collections:
+  - name: pages
+    paths:
+      - "docs/**/*.md"
+      - "notes/**/*.md"
+
+graph:
+  out: .manni/graph/graph.ttl
+  routes:
+    - root: docs/en
+      basePath: /docs
+      language: en
+    - root: docs/de
+      basePath: /docs/de
+      language: de
+  export:
+    llms:
+      title: Example
+      summary: Docs for the example tool.
+      origin: https://docs.example.com
