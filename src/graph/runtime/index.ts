@@ -87,6 +87,7 @@ export {
   StaleArtifactError,
   type ChunkSource,
   type CreateRetrieverOptions,
+  type EmbeddingModel,
   type FilteredNode,
   type LookupEdge,
   type LookupMatch,
