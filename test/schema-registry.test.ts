@@ -30,6 +30,7 @@ import {
   isPublishedBuiltinUrl,
   loadSchema,
   publishedBuiltins,
+  strictIdOf,
 } from "../src/meta/core/schema-registry.js";
 import { SchemaCache } from "../src/meta/core/schema-cache.js";
 import { runValidate } from "../src/meta/commands/validate.js";
@@ -1257,6 +1258,20 @@ describe("ANNOTATION_ONLY_PREDECESSORS", () => {
 
   it("is not empty", () => {
     expect(ANNOTATION_ONLY_PREDECESSORS.size).toBeGreaterThan(0);
+  });
+
+  it("carries ai-context 1.2.0 to 1.1.0, on the 1.0.0 strict overlay (proposal 0090)", () => {
+    expect(ANNOTATION_ONLY_PREDECESSORS.get("manni:ai-context:1.2.0")).toBe("manni:ai-context:1.1.0");
+    expect(baselineIdentity("manni:ai-context:1.2.0")).toBe("manni:ai-context:1.1.0");
+    expect(strictIdOf("manni:ai-context:1.2.0")).toBe("manni:ai-context-strict:1.0.0");
+  });
+
+  it("publishes ai-context 1.2.0 with answers marked out of graph output", async () => {
+    expect(publishedBuiltins().map((b) => b.id)).toContain("manni:ai-context:1.2.0");
+    const schema = (await loadSchema("manni:ai-context:1.2.0")) as {
+      $defs: { sampleQuestionObject: { properties: { answers: Record<string, unknown> } } };
+    };
+    expect(schema.$defs.sampleQuestionObject.properties.answers["x-manni-graph-output"]).toBe(false);
   });
 
   it.each([...ANNOTATION_ONLY_PREDECESSORS])(

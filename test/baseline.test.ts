@@ -178,6 +178,13 @@ describe("fingerprint: annotation-only built-in versions", () => {
     expect(DEFAULT_SCHEMAS).toContain("manni:citations:1.1.0");
   });
 
+  it("the default set carries ai-context 1.2.0, annotation-only over 1.1.0 (0090)", () => {
+    expect(DEFAULT_SCHEMAS).toContain("manni:ai-context:1.2.0");
+    expect(fingerprint(under("manni:ai-context:1.2.0"))).toBe(
+      fingerprint(under("manni:ai-context:1.1.0")),
+    );
+  });
+
   it.each([
     ["manni:stewardship:1.0.0", "manni:stewardship:1.1.0"],
     ["manni:stewardship:1.1.0", "manni:stewardship:1.0.0"],
@@ -191,6 +198,8 @@ describe("fingerprint: annotation-only built-in versions", () => {
     ["manni:citations:1.0.0", "manni:citations:1.1.0"],
     ["manni:citations:1.1.0", "manni:citations:1.0.0"],
     ["manni:citations-strict:1.0.0", "manni:citations-strict:1.1.0"],
+    ["manni:ai-context:1.1.0", "manni:ai-context:1.2.0"],
+    ["manni:ai-context:1.2.0", "manni:ai-context:1.1.0"],
   ])("a baseline recorded under %s suppresses the finding under %s", (from, to) => {
     const recorded = buildBaseline([result("a.md", [under(from)])], "1.0.0");
     const applied = applyBaseline([result("a.md", [under(to)])], recorded);
