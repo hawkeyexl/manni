@@ -98,6 +98,13 @@ exactly as a `graph.sections` entry does. Any other statement mints a block,
 before the first heading mints `page.md#.1`. Its section, or the page, holds it
 through `dcterms:hasPart`.
 
+A statement's fields derive through the page's own front-matter mapping, with
+the section or block as subject. A section keeps its heading as its title, and
+a statement's language is its own `lang`. Each `verified-by` entry is a
+Verification node, such as `page.md#install.2/verified-by/1`. The `sections`
+source carries every statement triple, and the `frontmatter`, `tags` and
+`provenance` sources gate their fields as they do for the page.
+
 Blocks are graph data, not passages. `graph traverse` never steps into one, and
 search still indexes whole sections. `graph query` reads them, so a query can
 find every verified block whose text changed since its pin.

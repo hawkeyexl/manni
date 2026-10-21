@@ -331,6 +331,26 @@ In JSON, each page with statements gains a `statements` list:
 payload is not one JSON object. The [CLI reference](/manni/meta/reference/cli/#meta-get)
 has the full shape.
 
+## In the graph
+
+`manni graph build` reads statements through the same scanner. A heading
+statement gives its fields to the section node. Any other statement mints a
+`graph:Block` node, `page.md#install.2` for the second statement under that
+heading. [How graph works](/manni/graph/get-started/how-graph-works/#what-becomes-a-node)
+has the details.
+
+- **Every field derives as front matter does.** Title, description, authors,
+  dates, tags, concepts, typing, provenance and verification all reach the
+  section or block.
+- **A section keeps its heading as its title.** A heading statement's `title`
+  derives nothing.
+- **Nothing is copied from the page.** A statement's language is its own
+  `lang`, never the page's.
+- **Each `verified-by` entry is a node.** Its IRI adds `/verified-by/1` to its
+  subject's, as in `page.md#install.2/verified-by/1`.
+- **The `sections` derive source carries them.** A `graph.derive` list without
+  `sections` drops every statement triple.
+
 ## A statement, a cite marker or a manifest
 
 Each holds a different kind of fact:

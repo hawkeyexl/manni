@@ -180,6 +180,18 @@ sentence's own source.
       through the mapping the document node uses. A section node carries only
       what was said about it, as ADR 01013 requires. A query walks
       `dcterms:isPartOf` upward for the inherited view.
+    - That mapping is the document's front-matter mapping, field for field:
+      title, description, authors, dates, language, sample questions, tags,
+      concepts, typing, `translation-of`, `supersedes`, `provenance` and
+      verification. A section keeps its heading as its title, so a heading
+      statement's `title` derives nothing. A statement's language is its own
+      `lang`, never the page's, though its labels are read in the page's
+      language when it sets none. A broken `translation-of` or `supersedes`
+      target is flagged on the page.
+    - Every statement triple comes from the `sections` derive source. A
+      config that leaves `sections` out of `graph.derive` drops them all. The
+      `frontmatter`, `tags` and `provenance` sources gate their fields at
+      every level, as they do for the document.
     - Each block statement mints a `graph:Block` node,
       `<docIri>#<sectionSlug>.<n>`, where `n` counts statements within the
       section from 1. Before the first heading the slug is empty. Its section
@@ -285,7 +297,7 @@ carries them when it lands.
   statement.
 - A section can be typed on its heading, so a page's per-section typing sits
   beside the section it types.
-- Four deviations from the plan, each accepted in review:
+- Five deviations from the plan, each accepted in review:
   - Each `graph:Verification` node gets an IRI, the subject's IRI with
     `/verified-by/<n>` added to its fragment. The plan said blank node, and
     the graph tool forbids blank nodes.
@@ -296,6 +308,9 @@ carries them when it lands.
     hashing. Otherwise writing its own pin would change what the pin covers.
   - A section's type is a `graph.type` value such as `task`. The plan's
     `iirds:Task` fails the schema's enum.
+  - `meta derive` used to stop outside a git repository. It now pins
+    statements there, and prints one notice for the git fields it leaves
+    unanswered.
 
 ## Stress test
 
