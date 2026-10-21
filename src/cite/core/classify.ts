@@ -217,6 +217,10 @@ async function inHistory(git: GitClient, commit: string): Promise<boolean> {
  * a squash merge that is the squash commit. `undefined` when the newest such
  * commit does not hold the pin, which is an uncommitted edit, or when the
  * client cannot list a path's commits. What `update --recommit` records.
+ *
+ * Here a commit holds the pin only at the entry's own lines. The commit is
+ * recorded beside those lines, and an older commit where the same bytes sat
+ * at other line numbers would name a range it cannot reach.
  */
 export async function arrivalOf(
   git: GitClient,
@@ -229,13 +233,23 @@ export async function arrivalOf(
   const { commits } = await git.pageCommits(path, MAX_PAGE_COMMITS);
   let arrived: string | undefined;
   for (const commit of commits) {
-    const history = await historyOf(git, commit.sha, path, range, pin, key, undefined);
-    if (history.kind !== "original") break;
+    const shown = await git.showFile(commit.sha, path);
+    if (!("text" in shown) || !holdsAt(shown.text, range, pin, key)) break;
     arrived = commit.sha;
   }
   // A run the cap or a shallow boundary cut short ends at the oldest commit
   // the clone holds, which still holds the pin.
   return arrived;
+}
+
+/** Whether a file's text hashes to the pin at exactly the range. */
+function holdsAt(text: string, range: SourceRange, pin: string, key: string | undefined): boolean {
+  try {
+    return hashLines(sliceLines(splitLines(text), range), key) === pin;
+  } catch {
+    // The range runs past the end of the file.
+    return false;
+  }
 }
 
 /** One window that hashes to the pin, at the file it was found in. */

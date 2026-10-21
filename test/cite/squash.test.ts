@@ -355,6 +355,23 @@ describe.skipIf(!gitAvailable())("cite update --recommit after a squash merge (0
     expect(second.pages[0]?.rewritten ?? []).toEqual([]);
     expect(readFileSync(join(repo, "docs", "page.md"), "utf8")).toContain(`commit-sha: ${squash}`);
   });
+
+  it("records where the lines arrived at the entry's own range, not where the bytes sat before", async () => {
+    // The trunk held the pinned bytes one line lower, under a header. The
+    // squash dropped the header, so lines 10-14 hold the pin from it on.
+    const repo = makeTempRepo({ files: { [SOURCE_PATH]: `// header\n${MINTED}` } });
+    dirs.push(repo);
+    const before = commitAll(repo, "limits under a header");
+    writeFile(repo, SOURCE_PATH, MINTED);
+    const squash = commitAll(repo, "drop the header (#2)");
+    const gone = "dec0de".repeat(6) + "abcd";
+    writeFile(repo, "docs/page.md", pageText(gone));
+
+    const run = await update(repo);
+
+    expect(run.pages[0]?.rewritten[0]).toMatchObject({ fromCommit: gone, toCommit: squash });
+    expect(readFileSync(join(repo, "docs", "page.md"), "utf8")).not.toContain(before);
+  });
 });
 
 describe("the source-never-true rule description (0097)", () => {
