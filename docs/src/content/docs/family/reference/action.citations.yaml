@@ -21,9 +21,9 @@ docs/src/content/docs/family/reference/action.mdx:
         integrity: sha256-0394f74111db68a8c5dfb3a9a18502ede257c8559ed0a6853ba6ac72234f0b68
       source:
         file: action.yml
-        lines: 215
+        lines: 216
         integrity: sha256-ac311566432e4f9a32bdee55a76ce6fcfc03b2aa255ed59061fd07e4a2c11b5d
-        commit-sha: 73751cd645718dd842f739c267eacb04f7406f93
+        commit-sha: 485a386889d3a506ac498e02177a574bea750e29
     - id: action-major-tag-moves-on-each-release
       claim:
         integrity: sha256-a1c9dd3025fa934247484e36661db95fc22c9e2dcd94db218ac31939ce09d1b8
@@ -46,9 +46,9 @@ docs/src/content/docs/family/reference/action.mdx:
         integrity: sha256-04f1372c160c4b4654ab8c1fe5e1d83840c381e672ec1a391e6ada092bd0bdde
       source:
         file: action.yml
-        lines: 230-234
+        lines: 231-235
         integrity: sha256-aab55bd6fada2346e04957d1f4cd350410528dbe11e5ea7eaaa83adbaaa99bb7
-        commit-sha: 73751cd645718dd842f739c267eacb04f7406f93
+        commit-sha: 485a386889d3a506ac498e02177a574bea750e29
     - id: action-output-exit-code
       claim:
         lines: 260
@@ -123,9 +123,9 @@ docs/src/content/docs/family/reference/action.mdx:
         integrity: sha256-5dc4ded53d592faaea4a0f491da62d6e9da57650bdc2d7e62a60d391c8e95ac0
       source:
         file: action.yml
-        lines: 199-200
+        lines: 200-201
         integrity: sha256-df037a50aa0aa1c159adaef5a13643d3cd08f329862768fcfb571c7ab53df24b
-        commit-sha: 73751cd645718dd842f739c267eacb04f7406f93
+        commit-sha: 485a386889d3a506ac498e02177a574bea750e29
     - id: action-input-version
       claim:
         lines: 35
@@ -141,27 +141,27 @@ docs/src/content/docs/family/reference/action.mdx:
         integrity: sha256-0e0a199732fe28c8735e2fae9d5be359d339f81f60aa372e932a6a6f1f9a17d8
       source:
         file: action.yml
-        lines: 197-198
+        lines: 198-199
         integrity: sha256-2771127a1ac3995a0fb37b8e3818be5b008df429cecff4f1145ed96fba21a3f0
-        commit-sha: 73751cd645718dd842f739c267eacb04f7406f93
+        commit-sha: 485a386889d3a506ac498e02177a574bea750e29
     - id: action-input-config
       claim:
         lines: 32
         integrity: sha256-2cd58fc70f42d6f6dda371cd9737e576f2d71bc49ed67a004449cca6982d5aa7
       source:
         file: action.yml
-        lines: 196
+        lines: 197
         integrity: sha256-517d0276112e814727f7cea892dc9373094f54bfe3952be539a6c7ad2178ab38
-        commit-sha: 73751cd645718dd842f739c267eacb04f7406f93
+        commit-sha: 485a386889d3a506ac498e02177a574bea750e29
     - id: action-input-schema-one-s-per-line
       claim:
         lines: 31
         integrity: sha256-331b6d62284c61cb7c22c78db667ebf4cf6c6c26b39cdf3644bb6b21f0f309af
       source:
         file: action.yml
-        lines: 188-195
+        lines: 189-196
         integrity: sha256-b49666d6f6e0e8d20b113b77afd2bf1d9610ab7e0941ad0ec82f4f7425afc45b
-        commit-sha: 73751cd645718dd842f739c267eacb04f7406f93
+        commit-sha: 485a386889d3a506ac498e02177a574bea750e29
     - id: action-input-paths-falls-back-to-collections
       claim:
         lines: 30
@@ -192,33 +192,33 @@ docs/src/content/docs/family/reference/action.mdx:
         integrity: sha256-c61f869c2baf4a07732761455017fc8b2030f0ea3ca9ef305af5aa1b948eeb72
       source:
         file: action.yml
-        lines: 216-221
+        lines: 217-222
         integrity: sha256-713c046543944de749df3c717b4f1a5158b79fd6aab19fb40177a91b4f032876
-        commit-sha: 73751cd645718dd842f739c267eacb04f7406f93
+        commit-sha: 485a386889d3a506ac498e02177a574bea750e29
     - id: action-removes-an-empty-output-file
       claim:
         integrity: sha256-514f70f87bf846bd989f9d7774f5805b3b2344afa094c4cef4cb5fea6b28ce62
       source:
         file: action.yml
-        lines: 225-228
+        lines: 226-229
         integrity: sha256-d8a66fd5f0a159f94d6956c87f5ab883ea639579a2d2744ad3c52d3f8b293d8d
-        commit-sha: 73751cd645718dd842f739c267eacb04f7406f93
+        commit-sha: 485a386889d3a506ac498e02177a574bea750e29
     - id: action-stdin-is-dev-null
       claim:
         integrity: sha256-26a82d1a9d6d140d3bdfbe636f370a32bf49205c31e5df17b28a155249277979
       source:
         file: action.yml
-        lines: 212-231
+        lines: 213-232
         integrity: sha256-15306fa77285fbb99f98d883aa4aca1cc5961a28647c0aa776f44ff397f4a4ed
-        commit-sha: 73751cd645718dd842f739c267eacb04f7406f93
+        commit-sha: 485a386889d3a506ac498e02177a574bea750e29
     - id: action-builds-the-argv
       claim:
         integrity: sha256-cc9dc3ab59e70dbf19e7cdca1a53a2d7e6e4b77a2e24182f020c6273ebb92b70
       source:
         file: action.yml
-        lines: 185-210
+        lines: 186-211
         integrity: sha256-c01eb9337ba3a9be56aab75dfa6cc326584cea458275bf7c9fbc5df15b0fa02f
-        commit-sha: 73751cd645718dd842f739c267eacb04f7406f93
+        commit-sha: 485a386889d3a506ac498e02177a574bea750e29
     - id: action-input-output-file
       claim:
         lines: 34
@@ -234,9 +234,9 @@ docs/src/content/docs/family/reference/action.mdx:
         integrity: sha256-6e80f3c77bcdd630b090217fc12f5f2d7d0f209b2b80b7a3b4c76fede2a55249
       source:
         file: action.yml
-        lines: 162-169
-        integrity: sha256-15f01229c13acfb322b68eb8d9b9acaa6d953d14ccf5709f907fca9217e20c4f
-        commit-sha: 73751cd645718dd842f739c267eacb04f7406f93
+        lines: 162-170
+        integrity: sha256-e5435687b84ba51380183570298c2fb07740e1d1c66e2c0f15e77f9f0b09497f
+        commit-sha: 485a386889d3a506ac498e02177a574bea750e29
     - id: action-runs-check-by-default
       claim:
         integrity: sha256-168a7916bf4e5d8b690fdafaa784426caed905cd05bc9d42c3ea383fe0a7f08a

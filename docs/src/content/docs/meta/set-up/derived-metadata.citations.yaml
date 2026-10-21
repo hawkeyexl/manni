@@ -193,9 +193,9 @@ docs/src/content/docs/meta/set-up/derived-metadata.mdx:
         integrity: sha256-c72fd8cb855bb89c63cf9ffb07cfeb841bc5b23b3dc989eeaaa021af415ae8d6
       source:
         file: action.yml
-        lines: 162-169
-        integrity: sha256-15f01229c13acfb322b68eb8d9b9acaa6d953d14ccf5709f907fca9217e20c4f
-        commit-sha: 73751cd645718dd842f739c267eacb04f7406f93
+        lines: 162-170
+        integrity: sha256-e5435687b84ba51380183570298c2fb07740e1d1c66e2c0f15e77f9f0b09497f
+        commit-sha: 485a386889d3a506ac498e02177a574bea750e29
     - id: github-format-emits-line-anchored-annotation
       claim:
         integrity: sha256-c72fd8cb855bb89c63cf9ffb07cfeb841bc5b23b3dc989eeaaa021af415ae8d6
