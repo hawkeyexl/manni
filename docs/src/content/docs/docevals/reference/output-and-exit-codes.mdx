@@ -385,7 +385,7 @@ not stop the run. The pretty, markdown, github and html reporters all print them
 |---|---|
 | `file` | The file to edit. Usually the page, and the **manifest** when a manifest supplied the value. |
 | `line` | 1-based, in `file`. Absent when the problem has no line. |
-| `level` | `error` or `warning`. An `error` drops the page from grading and makes the run exit `1`. |
+| `level` | `error`, `warning` or `notice`. An `error` drops the page from grading and makes the run exit `1`. The other two report and pass. |
 | `message` | What is wrong. |
 
 **Read `file` rather than assuming the page.** A corpus that keeps its eval keys in a

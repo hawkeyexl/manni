@@ -33,7 +33,12 @@ import { misplacedMarkers, type MisplacedMarker } from "./reanchor.js";
 import { spellLines } from "../../shared/pin.js";
 import { classifyCitation, MOVE_BUDGET_BYTES } from "./classify.js";
 import { blockMatches, claimEnd, claimLineNow, claimLinesNow } from "./claims.js";
-import { GIT_UNAVAILABLE_HISTORY, PAGE_HISTORY_UNAVAILABLE, gitClient } from "./git.js";
+import {
+  GIT_UNAVAILABLE_HISTORY,
+  PAGE_HISTORY_UNAVAILABLE,
+  SOURCE_HISTORY_UNAVAILABLE,
+  gitClient,
+} from "./git.js";
 import { claimHistory, refineClaim } from "./history.js";
 import { hashLines, sliceLines, splitLines } from "./hash.js";
 import { readPage } from "./page.js";
@@ -337,13 +342,16 @@ export async function checkCitations(
   // Every finding names its rule, what it means and its section of the fix page.
   for (const finding of findings) finding.guidance = guidanceFor(finding.rule);
 
-  // History is read for a citation with a commit, and for every claim that no
-  // longer holds, so a page holding either and with no git to read it through
-  // says why its verdicts are plainer. With the sources off nothing is
-  // classified, but a claim end still is, and it still wants the page's past.
+  // History is read for a citation with a commit, for every source whose pin
+  // no longer holds where it was recorded, commit or not (0097), and for every
+  // claim that no longer holds. So a page holding any of them, with no git to
+  // read it through, says why its verdicts are plainer. With the sources off
+  // nothing is classified, but a claim end still is, and it still wants the
+  // page's past.
   const wantsSourceHistory =
     checkSources &&
-    read.citations.some(({ citation }) => citation.source["commit-sha"] !== undefined);
+    (read.citations.some(({ citation }) => citation.source["commit-sha"] !== undefined) ||
+      results.some((r) => r.source.status !== "current"));
   const wantsClaimHistory = results.some((r) => r.claim?.status === "changed");
   if (wantsSourceHistory && !(await client.available())) notices.push(GIT_UNAVAILABLE_HISTORY);
   else if (wantsClaimHistory && !(await pageGit.available())) {
@@ -355,11 +363,10 @@ export async function checkCitations(
     notices.push(PAGE_HISTORY_UNAVAILABLE);
   }
 
-  const unavailable = results.find((r) => r.source.historyAvailable === false);
-  if (unavailable?.source.commitSha !== undefined) {
-    notices.push(
-      `commit ${unavailable.source.commitSha.slice(0, 7)} not found in history; use fetch-depth: 0 to enable never-true and diffs`,
-    );
+  // A source whose walk ran out of commits: the rest of the history would
+  // have told a pin that never held from one that changed (0097).
+  if (results.some((r) => r.source.historyAvailable === false)) {
+    notices.push(SOURCE_HISTORY_UNAVAILABLE);
   }
   // Two forms, because "the file" is the wrong noun for a scan across the
   // files a commit touched. A run raises each at most once, and both when it

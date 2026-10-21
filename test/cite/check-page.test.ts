@@ -55,7 +55,7 @@ const FIXTURE_FILES = ["src/a.txt", "src/limits.ts", "src/changed.ts", "src/move
 const NO_HISTORY =
   "git is not available here, so citations are checked without history: no never-true, no reanchored claims, no diffs, no commit subjects.";
 const SHALLOW =
-  "commit 0123456 not found in history; use fetch-depth: 0 to enable never-true and diffs";
+  "the source history ends before the pin held; use fetch-depth: 0 to tell never-true from changed";
 
 function check(name: string, over?: Partial<CheckPageOptions>): Promise<PageCitationReport> {
   const file = join(PAGES, name);
@@ -338,16 +338,16 @@ describe("checkCitations", () => {
       [
         "source-never-true",
         "error",
-        "never true: the pin does not match at 0123456. Check the sentence against the source, then run manni cite update --accept --only fetch-timeout.",
+        "never true: the pin held at no commit in the history of src/changed.ts. Check the sentence against the source, then run manni cite update --accept --only fetch-timeout.",
       ],
     ]);
   });
 
-  it("says which commit history could not show, once per run", async () => {
+  it("says the source history ends before the pin held, once per run", async () => {
     const report = await page(inline(SHALLOW_ENTRY, ["Body."]));
     expect(report.citations[0]?.source.historyAvailable).toBe(false);
     expect(messages(report)).toEqual([
-      "changed (history unavailable: commit 0123456 not found; fetch-depth: 0). Check the sentence against the source, then run manni cite update --accept --only fetch-timeout.",
+      "changed (history unavailable; fetch-depth: 0). Check the sentence against the source, then run manni cite update --accept --only fetch-timeout.",
     ]);
     expect(report.notices).toEqual([SHALLOW]);
   });
@@ -365,10 +365,14 @@ describe("checkCitations", () => {
     expect(report.notices).toEqual([NO_HISTORY]);
   });
 
-  it("says nothing about git when no citation carries a commit, or the sources are off", async () => {
+  it("says why git is wanted for a citation with no commit, whose history is read too (0097)", async () => {
     const plain = await check("source-changed.md", { gitClient: shallowGit(FIXTURE_FILES, false) });
     expect(sourceStatuses(plain)).toEqual(["changed"]);
-    expect(plain.notices).toEqual([]);
+    expect(rules(plain)).toEqual(["source-changed"]);
+    expect(plain.notices).toEqual([NO_HISTORY]);
+  });
+
+  it("says nothing about git when the sources are off", async () => {
     const skipped = await page(inline(SHALLOW_ENTRY, ["Body."]), {
       gitClient: noGit(),
       checkSources: false,
