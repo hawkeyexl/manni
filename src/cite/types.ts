@@ -222,13 +222,19 @@ export interface SourceEnd {
   newSrc?: string;
   /** For `moved-ambiguous`: every candidate `src`. */
   candidates?: string[];
-  /** The commit the pin was taken at. */
+  /** The entry's recorded `commit-sha`: a hint, where the pin was minted (0097). */
   commitSha?: string;
-  /** For `changed` with a commit: whether git could show that commit. */
+  /**
+   * The full hash the verdict was read against: the recorded commit when it
+   * is an ancestor of HEAD and holds the pin, else the newest commit in the
+   * source's history that does. Derived, never stored (0097).
+   */
+  baselineSha?: string;
+  /** For `changed`: `false` when the walk hit a shallow boundary or its cap. */
   historyAvailable?: boolean;
-  /** Subjects of commits touching the path since the commit. Pretty-only. */
+  /** Subjects of commits touching the path since the baseline. Pretty-only. */
   commitsSince?: string[];
-  /** Unified diff of the path since the commit. Pretty-only, `--show-diff`. */
+  /** Unified diff of the path since the baseline. Pretty-only, `--show-diff`. */
   diff?: string;
   /** The move search hit its byte budget before covering the file. */
   truncatedSearch?: boolean;

@@ -68,6 +68,7 @@ export {
   GIT_UNAVAILABLE_COMMIT,
   GIT_UNAVAILABLE_HISTORY,
   PAGE_HISTORY_UNAVAILABLE,
+  SOURCE_HISTORY_UNAVAILABLE,
   gitClient,
   noGit,
 } from "./core/git.js";

@@ -137,7 +137,7 @@ block is the other end, and both carry a line range and a hash.
 | `source.file` | root-relative posix path, or `~` and 82 or more base64url characters | yes | The file. A `~` value is the path encrypted with the family key. See [the file grammar](#the-file-grammar). |
 | `source.lines` | `L` or `"L1-L2"` | no | File lines, 1-based and inclusive. Absent pins the whole file. Readable even when `file` is encrypted. |
 | `source.integrity` | `sha256-` or `hmac-sha256-`, and 64 lowercase hex digits | yes | The pin. `hmac-sha256-` exactly when `file` is encrypted, so the page carries no verifier for a guessed private line. |
-| `source.commit-sha` | 7 to 64 lowercase hex digits | no | The git commit hash the source pin was taken at. Sixty-four covers a SHA-256 repository. With it, `check` tells `source-changed` from `source-never-true` and can show the diff. |
+| `source.commit-sha` | 7 to 64 lowercase hex digits | no | Where the pin was minted, which is a hint rather than a record. Sixty-four covers a SHA-256 repository. `check` reads it first when it is an ancestor of `HEAD`. Otherwise it derives the [source's baseline](#the-sources-baseline) from git, so a squash merge that drops this commit costs nothing. |
 | `quote` | boolean, default `false` | no | The claim is a fenced block that reproduces the source. See [Quotes](#quotes). |
 
 An entry is closed. A `src` string, a pin at the entry root, a `commit` key
@@ -600,8 +600,8 @@ under the row, then the rule line and a Guide link to the
 |---|---|---|---|
 | <span id="source-moved">`source-moved`</span> | The pin does not hold at its range, and exactly one window of the same length hashes to it. That window sits elsewhere in the file, or in another file a commit touched. `update` rewrites `source.lines`, and `source.file` too where the pin changed file. A whole-file citation never moves inside its file, and does follow a rename. | `moved -> lib/config/limits.ts:4. Run manni cite update.` | `warning` |
 | <span id="source-moved-ambiguous">`source-moved-ambiguous`</span> | Two or more windows hash to the pin, in one file or across several; the tool will not guess which. Widen the range. | `moved, 2 candidates (lib/config/limits.ts:4, vendor/limits.ts:4). Widen source.lines until the range occurs once, then run manni cite update --accept --only fetch-timeout.` | `error` |
-| <span id="source-changed">`source-changed`</span> | No window hashes to the pin. With a commit and history: since when, and how many commits touched the path. The message names the span the old first and last line now cover, when each sits exactly once and in order. With a commit git cannot show: `history unavailable`, plus one run notice about `fetch-depth: 0`. Where git is not available, a bare `changed`, plus one run notice. | `changed since 3f9c2a1, 2 commits; now at lines 200-215. Check the sentence against the source, then run manni cite update --accept --only fetch-timeout.` | `error` |
-| <span id="source-never-true">`source-never-true`</span> | No window of the range's length anywhere in the file at the recorded commit hashes to the pin, or the path was absent there. Asserted only when git can show that commit. No span is offered, because the pinned lines had no home at that commit. | `never true: the pin does not match at 3f9c2a1. Check the sentence against the source, then run manni cite update --accept --only fetch-timeout.` | `error` |
+| <span id="source-changed">`source-changed`</span> | No window hashes to the pin. With a [baseline](#the-sources-baseline): since when, and how many commits touched the path. The message names the span the old first and last line now cover, when each sits exactly once and in order. Where the history ends before the pin held: `history unavailable`, plus one run notice about `fetch-depth: 0`. Where git is not available, the recorded commit or none, plus one run notice. | `changed since 3f9c2a1, 2 commits; now at lines 200-215. Check the sentence against the source, then run manni cite update --accept --only fetch-timeout.` | `error` |
+| <span id="source-never-true">`source-never-true`</span> | No window of the range's length anywhere in the file hashed to the pin at any commit in the source's history. Asserted only when the walk reached the file's first commit, in a clone that is not shallow. No span is offered, because the pinned lines never had a home. | `never true: the pin held at no commit in the history of lib/limits.ts. Check the sentence against the source, then run manni cite update --accept --only fetch-timeout.` | `error` |
 | <span id="source-missing">`source-missing`</span> | The path is not a tracked file under the root (without git, not a file under it), or an encrypted source cannot be decrypted. It is reached only once no file a commit touched holds the pin. | `missing. Run manni cite remove --only fetch-timeout, then manni cite add against the file's new path.` For an encrypted source the status is one of `missing (no encryption key is available to decrypt it)`, `missing (does not decrypt under the current key)` or `missing (no tracked file matches; wrong --root?)`, then what to do about that cause. | `error` |
 
 {/* cite move-search-order move-search-first-line move-window-2000 move-search-band move-budget-64mib move-budget-truncated range-limit-either-end */}
@@ -618,13 +618,29 @@ once. A range longer than 5,000 lines, at either end, is `entry-invalid`.
 {/* cite follow-span-search */}
 {/* cite follow-across-files */}
 A pin that holds nowhere in its own file is looked for in the files that
-changed since its commit. The candidate list is `git diff --name-only
-<commit> HEAD`, so it covers committed changes only, and every path the
+changed since its baseline. The candidate list is `git diff --name-only
+<baseline> HEAD`, so it covers committed changes only, and every path the
 tracked-file index does not hold is dropped. One hit is `source-moved` with
 the new path in it, and several are `source-moved-ambiguous`. The 64 MiB
 budget is one counter per citation, spent by every search that settles it.
-Both searches need the original text, so an entry with no `commit-sha`, and a
-commit git cannot show, are classified as they always were.
+Both searches need the original text, so a pin with no baseline is classified
+as it always was.
+
+### The source's baseline
+
+A source finding says since when, and the commit it names is the source's
+**baseline**. The recorded `commit-sha` is where `check` looks first. It is
+taken, with one `git show`, when it is an ancestor of `HEAD` and holds the
+pin. Otherwise `check` walks the commits that touched the source, newest
+first, and takes the newest one that held the pin. A commit where the path is
+absent is walked past, so a rename does not end the walk. The walk reads at
+most 256 commits.
+
+So a squash, rebase or cherry-pick merge that drops the recorded commit costs
+nothing. The baseline is the commit `main` took instead. A walk that ends
+before the pin held, in a shallow clone or at the cap, reads
+`history unavailable` and names `fetch-depth: 0`. JSON output carries both.
+`commitSha` is the recorded value and `baselineSha` the derived one.
 
 ### Claim-end rules
 

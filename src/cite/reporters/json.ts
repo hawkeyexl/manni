@@ -37,7 +37,10 @@ export interface PublicSourceEnd {
   newLines?: string;
   newSrc?: string;
   candidates?: string[];
+  /** The entry's recorded `commit-sha`, as it is written. */
   commitSha?: string;
+  /** The full hash the verdict was read against, when history found one (0097). */
+  baselineSha?: string;
   historyAvailable?: boolean;
   truncatedSearch?: boolean;
 }
@@ -64,6 +67,7 @@ export function publicCitation(result: CitationResult): PublicCitationResult {
   if (result.source.newSrc !== undefined) source.newSrc = result.source.newSrc;
   if (result.source.candidates !== undefined) source.candidates = result.source.candidates;
   if (result.source.commitSha !== undefined) source.commitSha = result.source.commitSha;
+  if (result.source.baselineSha !== undefined) source.baselineSha = result.source.baselineSha;
   if (result.source.historyAvailable !== undefined) {
     source.historyAvailable = result.source.historyAvailable;
   }

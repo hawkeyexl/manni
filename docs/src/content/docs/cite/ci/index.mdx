@@ -147,17 +147,18 @@ why that matters.
 {/* cite never-true-needs-commit */}
 {/* cite show-diff-from-commit */}
 {/* cite shallow-clone-degrades */}
-`actions/checkout` fetches one commit by default. A citation records the
-commit its pin was minted at, and two of the check's answers need the file as
-it was then. `source-never-true` is the finding that the pin never matched at
-that commit, and the diff under `--show-diff` runs from that commit to the working tree.
-On a shallow clone neither is possible, and the check degrades honestly rather
-than guessing:
+`actions/checkout` fetches one commit by default. When a pin no longer holds,
+the check walks back through the commits that touched the source, newest
+first. The newest commit where the pin held is its baseline. The diff under
+`--show-diff` runs from there to the working tree. `source-never-true` is the
+finding that the walk reached the file's first commit and the pin held nowhere.
+On a shallow clone the walk can run out first, and the check degrades honestly
+rather than guessing:
 
 ```
-manni: commit 9265563 not found in history; use fetch-depth: 0 to enable never-true and diffs
+manni: the source history ends before the pin held; use fetch-depth: 0 to tell never-true from changed
 ✗ docs/limits.md
-    ✗ fetch-timeout   :13 current   lib/limits.ts:2 changed (history unavailable: commit 9265563 not found; fetch-depth: 0)
+    ✗ fetch-timeout   :13 current   lib/limits.ts:2 changed (history unavailable; fetch-depth: 0)
       Check the sentence against the source, then run manni cite update --accept --only fetch-timeout.
       manni:cite source-changed: The cited lines are not what they were.
       Guide: https://hawkeyexl.github.io/manni/cite/fix/#source-changed
@@ -171,6 +172,10 @@ claim end needs no history, so it is judged either way. What is lost
 is the distinction between a line that changed since and a pin that was
 wrong from the start. Set `fetch-depth: 0` on the checkout that holds the
 sources and both come back.
+
+Squash merges need nothing extra. A pin minted on a branch records a branch
+commit that a squash, rebase or cherry-pick drops. The walk finds the commit
+that main took instead, so the recorded `commit-sha` is only a hint.
 
 {/* cite git-when-available */}
 {/* cite no-git-directory-walk */}
@@ -210,7 +215,7 @@ an unpacked archive.
        steps:
          - uses: actions/checkout@v7
            with:
-             fetch-depth: 0   # never-true and --show-diff need the pin's commit
+             fetch-depth: 0   # tells never-true from changed
 
          - uses: actions/setup-node@v6
            with:
@@ -250,8 +255,8 @@ docs in CI can add one step beside the gates that job runs:
   run: npx --yes @hawkeyexl/manni@latest cite check -f github
 ```
 
-That job still wants `fetch-depth: 0` on its checkout. Without the pin's commit
-in history, the check cannot tell a changed source from one the pin never
+That job still wants `fetch-depth: 0` on its checkout. Without the source's
+full history, the check cannot tell a changed source from one the pin never
 matched. [Full history](#full-history) gives the complete picture.
 
 The step fails on an error-severity finding and on nothing else. So it sits

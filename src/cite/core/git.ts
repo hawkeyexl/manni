@@ -209,6 +209,15 @@ export const PAGE_HISTORY_UNAVAILABLE =
   "the page history ends before the pin held; use fetch-depth: 0 to tell reanchored claims from changed ones";
 
 /**
+ * What a run says, once, when a source's walk ran out of commits before the
+ * pin held: a shallow checkout, or the 256-commit cap (proposal 0097).
+ * Without the rest of the history a pin that never held and one that changed
+ * read the same.
+ */
+export const SOURCE_HISTORY_UNAVAILABLE =
+  "the source history ends before the pin held; use fetch-depth: 0 to tell never-true from changed";
+
+/**
  * What `update --recommit` says, once, in a shallow clone. A commit the clone
  * lacks may still be in the history, so only the containment test ran.
  */

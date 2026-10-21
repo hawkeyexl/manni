@@ -3,14 +3,15 @@
  *
  * current: the range hashes to the pin. moved / moved-ambiguous: a window of
  * the same length hashes equal elsewhere (once / more than once); whole-file
- * citations never move. changed: none equal; with a commit and history,
- * the diff and commit subjects are attached (pretty-only). never-true: no
- * window of the range's length anywhere in the file at the commit hashes to
- * the pin, or the path is absent there. The recorded lines are tried first;
- * the rest of the file is searched because `update` rewrites `src` for a move
- * without touching `commit`, so the lines a pin was minted from may sit
- * elsewhere in the file as it was then. A window that matches there is the
- * original for the move search below. missing: the source cannot be read.
+ * citations never move. changed: none equal; with a baseline, the diff and
+ * commit subjects are attached (pretty-only). never-true: the pin held at no
+ * commit in the source's history (proposal 0097: `sourceBaseline` derives the
+ * baseline, and the recorded commit is a hint). At each commit the recorded
+ * lines are tried first; the rest of the file is searched because `update`
+ * rewrites `src` for a move without touching `commit`, so the lines a pin was
+ * minted from may sit elsewhere in the file as it was then. A window that
+ * matches there is the original for the move search below. missing: the
+ * source cannot be read.
  *
  * Move search: with the original text (git could show the commit), candidate
  * offsets are where the first line matches, compared lexically, hashed only on
@@ -25,7 +26,7 @@
  *
  * Proposal 0055 widens that in two directions, both gated on the original
  * text. A pin that holds nowhere in its own file is looked for in every file
- * that changed in committed history since its commit, so a rename is `moved`
+ * that changed in committed history since its baseline, so a rename is `moved`
  * with a new path rather than `missing`. And a `changed` end is bracketed by
  * its old first and last line, so the finding names the span they cover now
  * and `update --accept` re-mints there rather than over a stale range. The
@@ -49,6 +50,7 @@ import {
   type SearchBudget,
 } from "../../shared/pin.js";
 import { hashLines, sliceLines, splitLines } from "./hash.js";
+import { MAX_PAGE_COMMITS } from "./history.js";
 import { formatSrc, lineSpec, sourceRange, spellSource } from "./range.js";
 import { encryptSourcePath, readSource, readTracked, resolveSourcePath } from "./sources.js";
 
@@ -125,6 +127,115 @@ export async function historyOf(
     return { kind: "original", lines: then.slice(first - 1, first - 1 + length) };
   }
   return found.truncated ? { kind: "unknown" } : { kind: "never-true" };
+}
+
+/**
+ * What the source's history says about a pin: `historyOf`'s answer, and the
+ * commit it was read at when that is `original`. `commitsSince` is the
+ * subjects the walk passed on its way there, newest first; the fast path
+ * leaves it to `subjectsSince`.
+ */
+export interface SourceBaseline {
+  history: History;
+  /** The full hash the pinned lines were found at. Set exactly when `history` is `original`. */
+  commit?: string;
+  commitsSince?: string[];
+}
+
+/**
+ * The source end's baseline, derived as the claim end's is (proposal 0097).
+ *
+ * The recorded commit is a hint. It is read first, with one `git show`, when
+ * it is an ancestor of HEAD, and taken when it holds the pin. Otherwise the
+ * commits that touched the path are walked, newest first, up to
+ * `MAX_PAGE_COMMITS`, and the newest that holds the pin is the baseline. A
+ * commit where the path is absent is walked past, so a rename or a deletion
+ * does not end the search. Only a walk that reached the path's first commit,
+ * in a clone that is not shallow, can say the pin never held; one cut short
+ * is `unavailable`. So a squash, a rebase or a cherry-pick that drops the
+ * recorded commit costs nothing.
+ *
+ * A client that cannot list a path's commits reads the recorded commit
+ * alone, as the source end did before.
+ */
+export async function sourceBaseline(
+  git: GitClient,
+  recorded: string | undefined,
+  path: string,
+  range: SourceRange,
+  pin: string,
+  key: string | undefined,
+  budget: number | undefined,
+  counter?: SearchBudget,
+): Promise<SourceBaseline> {
+  const at = (commit: string): Promise<History> =>
+    historyOf(git, commit, path, range, pin, key, budget, counter);
+  if (git.pageCommits === undefined) {
+    if (recorded === undefined) return { history: { kind: "none" } };
+    const history = await at(recorded);
+    return history.kind === "original" ? { history, commit: recorded } : { history };
+  }
+  if (recorded !== undefined && (await inHistory(git, recorded))) {
+    const history = await at(recorded);
+    if (history.kind === "original") return { history, commit: recorded };
+  }
+  const { commits, shallow, truncated } = await git.pageCommits(path, MAX_PAGE_COMMITS);
+  let unknown = false;
+  for (const [i, commit] of commits.entries()) {
+    const history = await at(commit.sha);
+    if (history.kind === "original") {
+      return {
+        history,
+        commit: commit.sha,
+        commitsSince: commits.slice(0, i).map((c) => c.subject),
+      };
+    }
+    // A listed commit git cannot show is a shallow boundary.
+    if (history.kind === "unavailable") return { history };
+    if (history.kind === "unknown") unknown = true;
+    // `never-true` here is one commit's answer, or the path absent there:
+    // an older commit may still hold the pin.
+  }
+  if (shallow || truncated) return { history: { kind: "unavailable" } };
+  return { history: unknown ? { kind: "unknown" } : { kind: "never-true" } };
+}
+
+/**
+ * Whether `commit` is HEAD or one of its ancestors. A client that cannot ask
+ * trusts the recorded commit, as the source end always did.
+ */
+async function inHistory(git: GitClient, commit: string): Promise<boolean> {
+  if (git.isAncestor === undefined) return true;
+  const head = await git.head();
+  if (head === null) return true;
+  return git.isAncestor(commit, head);
+}
+
+/**
+ * Where the pinned lines arrived on HEAD's history: the oldest commit in the
+ * newest unbroken run of commits that touched the path and hold the pin. After
+ * a squash merge that is the squash commit. `undefined` when the newest such
+ * commit does not hold the pin, which is an uncommitted edit, or when the
+ * client cannot list a path's commits. What `update --recommit` records.
+ */
+export async function arrivalOf(
+  git: GitClient,
+  path: string,
+  range: SourceRange,
+  pin: string,
+  key: string | undefined,
+): Promise<string | undefined> {
+  if (git.pageCommits === undefined) return undefined;
+  const { commits } = await git.pageCommits(path, MAX_PAGE_COMMITS);
+  let arrived: string | undefined;
+  for (const commit of commits) {
+    const history = await historyOf(git, commit.sha, path, range, pin, key, undefined);
+    if (history.kind !== "original") break;
+    arrived = commit.sha;
+  }
+  // A run the cap or a shallow boundary cut short ends at the oldest commit
+  // the clone holds, which still holds the pin.
+  return arrived;
 }
 
 /** One window that hashes to the pin, at the file it was found in. */
@@ -266,11 +377,16 @@ export async function classifyCitation(
   // One counter for this citation, spent in ladder order by every search below.
   const counter: SearchBudget = { left: opts.budget ?? MOVE_BUDGET_BYTES };
 
-  let history: History = { kind: "none" };
-  if (commit !== undefined && (await opts.git.available())) {
-    history = await historyOf(opts.git, commit, path, range, pin, key, opts.budget, counter);
+  // The baseline is derived from the source's history; the recorded commit
+  // is only the first place to look (0097).
+  let derived: SourceBaseline = { history: { kind: "none" } };
+  if (await opts.git.available()) {
+    derived = await sourceBaseline(opts.git, commit, path, range, pin, key, opts.budget, counter);
   }
+  const history = derived.history;
+  const baseline = derived.commit;
   const original = history.kind === "original" ? history.lines : undefined;
+  if (baseline !== undefined) result.baselineSha = baseline;
 
   /** The new source as the entry spells sources: a ciphertext stays one. */
   const spellAt = (at: string, start?: number, end?: number): string => {
@@ -307,9 +423,9 @@ export async function classifyCitation(
   // The pin holds nowhere in its own file. Every file the commit touched is
   // asked the same question, and a hit is a move whatever else is true of the
   // old range.
-  if (commit !== undefined && original !== undefined) {
+  if (baseline !== undefined && original !== undefined) {
     const across = await followAcross(
-      { git: opts.git, root: opts.root, index: opts.index, commit, own: path, pin, key, original },
+      { git: opts.git, root: opts.root, index: opts.index, commit: baseline, own: path, pin, key, original },
       counter,
     );
     if (across.truncated) {
@@ -351,10 +467,10 @@ export async function classifyCitation(
   result.status = "changed";
   if (history.kind === "unavailable") result.historyAvailable = false;
   if (history.kind === "unknown") result.truncatedSearch = true;
-  if (original !== undefined && commit !== undefined) {
+  if (original !== undefined && baseline !== undefined) {
     result.historyAvailable = true;
-    result.commitsSince = await opts.git.subjectsSince(commit, path);
-    result.diff = await opts.git.diffSince(commit, path);
+    result.commitsSince = derived.commitsSince ?? (await opts.git.subjectsSince(baseline, path));
+    result.diff = await opts.git.diffSince(baseline, path);
     // Where the old first and last line sit now. The content between them did
     // change, so the status stands; what the span buys is a diff and an
     // `--accept` over the lines the sentence rests on.

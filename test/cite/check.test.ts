@@ -887,6 +887,8 @@ describe("without git", () => {
       ...noGit(),
       available: () => Promise.resolve(true),
       lsFiles: () => Promise.resolve(["src/a.txt", "src/limits.ts", "src/changed.ts"]),
+      // A depth-1 clone: the walk runs out of commits before the pin held.
+      pageCommits: () => Promise.resolve({ commits: [], shallow: true, truncated: false }),
     };
     const notices = await heard({
       inputs: ["-"],
@@ -910,7 +912,7 @@ describe("without git", () => {
     // History is asked for and a depth-1 clone cannot show it: that is the
     // shallow-clone advice, not the missing-git one.
     expect(notices).toEqual([
-      "commit 0123456 not found in history; use fetch-depth: 0 to enable never-true and diffs",
+      "the source history ends before the pin held; use fetch-depth: 0 to tell never-true from changed",
     ]);
   });
 });
@@ -940,7 +942,10 @@ describe.skipIf(!gitAvailable())("with git", () => {
       "",
     ].join("\n");
 
-  it("says a commit history cannot show once per run, however many pages hit it", async () => {
+  // A commit the repository lacks no longer reads as a short history (0097).
+  // The walk reaches the source's first commit, so the verdict is never-true
+  // and no run asks for a deeper fetch.
+  it("reads a pin against a commit history cannot show from the source's own history", async () => {
     repo = makeTempRepo({
       files: {
         "src/limits.ts": source("changed.ts"),
@@ -952,11 +957,11 @@ describe.skipIf(!gitAvailable())("with git", () => {
     const notices: string[] = [];
     const run = await runCheck({ cwd: repo, inputs: ["docs"], noConfig: true, env: {}, onNotice: (m) => notices.push(m) });
     expect(run.results.map((r) => r.file)).toEqual(["docs/a.md", "docs/b.md"]);
-    expect(run.pages.map((p) => p.notices.length)).toEqual([1, 1]);
-    expect(notices).toEqual([
-      "commit 0123456 not found in history; use fetch-depth: 0 to enable never-true and diffs",
+    expect(run.pages.map((p) => p.citations.map((c) => c.source.status))).toEqual([
+      ["never-true"],
+      ["never-true"],
     ]);
-    expect(run.pages[0]?.citations[0]?.source.historyAvailable).toBe(false);
+    expect(notices).toEqual([]);
   });
 
   it("classifies never-true and changed-with-history from the repository", async () => {
@@ -985,7 +990,7 @@ describe.skipIf(!gitAvailable())("with git", () => {
       `changed since ${first.slice(0, 7)}, 1 commit. Check the sentence against the source, then run manni cite update --accept --only fetch-timeout.`,
     );
     expect(run.pages[1]?.findings[0]?.message).toBe(
-      `never true: the pin does not match at ${second.slice(0, 7)}. Check the sentence against the source, then run manni cite update --accept --only fetch-timeout.`,
+      "never true: the pin held at no commit in the history of src/limits.ts. Check the sentence against the source, then run manni cite update --accept --only fetch-timeout.",
     );
     // Where git is not there, both are a plain `changed`, and the run says why once.
     const notices: string[] = [];
