@@ -222,8 +222,8 @@ The island holds every record whose `page` is this page, unchanged and in
 `lines` order. `<script type="application/json">` never runs, so a strict
 content security policy allows it.
 
-The live site needs one fact the record lacks. **Proposed change to 0090:**
-each `pins.items[]` entry gains `commit`.
+The live site needs one fact the record first lacked. 0090 now carries it:
+each `pins.items[]` entry has `commit`.
 
 | field | type | meaning |
 |---|---|---|
@@ -551,8 +551,8 @@ cannot tell, and the build can. Exporting again costs one command.
 
 ## Open questions
 
-1. **The pin commit.** Does 0090 take `pins.items[].commit` (decision 5)?
-   Without it, a link goes to the docs checkout's commit, which is wrong for
+1. **The pin commit.** Answered: 0090 now takes `pins.items[].commit`
+   (decision 5). Without it, a link goes to the docs checkout's commit, which is wrong for
    a cross-repository source.
 2. **Authorship.** 0046's `provenance` pins the lines a model wrote. Should
    0090's record carry that too, so a reader sees which passages a model
