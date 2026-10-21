@@ -212,3 +212,46 @@ jobs:
         run: |
           [ "${{ steps.status.outputs.exit-code }}" = "0" ] \
             || { echo "expected 0, got '${{ steps.status.outputs.exit-code }}': format \"\" did not omit --format"; exit 1; }
+
+  # This repository under its own Action: no inputs but the tarball, so the
+  # run is the default `check` over manni's own config. It needs the full
+  # history because cite and graph read it, and the checkout sits at the
+  # workspace root because `check` discovers manni.config.yaml from there.
+  dogfood:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - id: pack
+        run: echo "tarball=./$(npm pack --silent)" >> "$GITHUB_OUTPUT"
+
+      - id: dogfood
+        uses: ./
+        with:
+          version: ${{ steps.pack.outputs.tarball }}
+      - name: A bare check on this repository reports exit-code 0
+        run: |
+          [ "${{ steps.dogfood.outputs.exit-code }}" = "0" ] \
+            || { echo "expected 0, got '${{ steps.dogfood.outputs.exit-code }}'"; exit 1; }
+
+      # The same run as SARIF in a file, as the code-scanning recipe writes it.
+      # It is not uploaded.
+      - id: dogfood-sarif
+        uses: ./
+        with:
+          version: ${{ steps.pack.outputs.tarball }}
+          format: sarif
+          output-file: manni.sarif
+      - name: output-file holds a SARIF 2.1.0 log
+        run: |
+          [ "${{ steps.dogfood-sarif.outputs.exit-code }}" = "0" ] \
+            || { echo "expected 0, got '${{ steps.dogfood-sarif.outputs.exit-code }}'"; exit 1; }
+          [ -s manni.sarif ] || { echo "manni.sarif is missing or empty"; exit 1; }
+          jq -e '.version == "2.1.0"' manni.sarif
