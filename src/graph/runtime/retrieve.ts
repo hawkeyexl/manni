@@ -14,9 +14,11 @@
  * `ChunkSource`, which reads rows by id. The CLI and `createRetriever` build
  * the same context over the same artifact, so both answer alike.
  *
- * Platform-neutral: no `node:` imports. The default embedder is loaded from
- * the sibling `graph/embed` file at run time, and a host where that fails
- * falls back to lexical entry and says so in the trace.
+ * Platform-neutral: no `node:` imports. Each language's rows name their own
+ * model, and the query is embedded with the queried language's. The default
+ * embedder loads each model from the sibling `graph/embed` file when a
+ * language first needs it, and a host where that fails falls back to lexical
+ * entry and says so in the trace.
  */
 import { byCodeUnit } from "../core/sort.js";
 import { canonicalLanguageTag, parseLocalizations } from "../core/localizations.js";
@@ -89,7 +91,7 @@ export class StaleArtifactError extends Error {
   }
 }
 
-/** The query embedder is not the model the rows were embedded with. */
+/** The query embedder is not the model the queried language's rows were embedded with. */
 export class ModelMismatchError extends Error {
   readonly expected: string;
   readonly actual: string;
@@ -216,6 +218,12 @@ export interface LookupResult {
 
 // ---- the context every core reads --------------------------------------------
 
+/** The model one language's rows were embedded with, as `chunks.json` records it. */
+export interface EmbeddingModel {
+  id: string;
+  dimensions: number;
+}
+
 export interface RetrieverContext {
   manifest: ChunksManifest;
   graph: GraphIndex;
@@ -223,8 +231,8 @@ export interface RetrieverContext {
   lexical(language: string): Promise<LexicalIndex | undefined>;
   store: VectorStore;
   chunks: ChunkSource;
-  /** The query embedder, or `null` to send no query vector. */
-  embedder: QueryEmbedder | null;
+  /** The query embedder for one model, or `null` to send no query vector. */
+  embedder(model: EmbeddingModel): Promise<QueryEmbedder | null>;
 }
 
 export type RetrieveMode = "lexical" | "vector" | "hybrid";
@@ -312,11 +320,8 @@ interface Entry {
   best: number | undefined;
 }
 
-function checkModel(ctx: RetrieverContext): void {
-  const model = ctx.manifest.model;
-  if (model !== null && ctx.embedder !== null && ctx.embedder.model !== model.id) {
-    throw new ModelMismatchError(model.id, ctx.embedder.model);
-  }
+function modelOf(manifest: ChunksManifest, language: string): EmbeddingModel | null {
+  return manifest.languages[language]?.model ?? null;
 }
 
 async function rank(
@@ -326,15 +331,20 @@ async function rank(
   mode: RetrieveMode | undefined,
   where: WhereCondition[],
 ): Promise<Entry> {
-  const wantVector = mode === "vector" || mode === "hybrid" || (mode === undefined && ctx.manifest.model !== null);
+  const model = modelOf(ctx.manifest, language);
+  const wantVector = mode === "vector" || mode === "hybrid" || (mode === undefined && model !== null);
   let vector: EntryCandidate[] = [];
   const storeRows = new Map<string, ChunkRow>();
-  let fallback = false;
+  // A language with no model, in a corpus where another has one, enters
+  // lexically as a host that cannot load the model does, and says so.
+  let fallback =
+    mode === undefined && model === null && Object.values(ctx.manifest.languages).some((l) => l.model !== null);
   if (wantVector && question.trim() !== "") {
     let queryVector: number[] | null = null;
-    if (ctx.embedder !== null) {
-      checkModel(ctx);
-      queryVector = Array.from(await ctx.embedder.embed(question));
+    const embedder = model === null ? null : await ctx.embedder(model);
+    if (model !== null && embedder !== null) {
+      if (embedder.model !== model.id) throw new ModelMismatchError(model.id, embedder.model);
+      queryVector = Array.from(await embedder.embed(question));
     }
     const found = await ctx.store.query({ text: question, vector: queryVector, k: ENTRY_POOL, language, where });
     for (const m of found) if (m.row !== undefined) storeRows.set(m.id, m.row);
@@ -787,17 +797,25 @@ export async function lookup(input: RetrieverContext & LookupOptions): Promise<L
     refusal: r,
   });
 
-  const scores: Record<string, number> = {};
-  let chosen: { language: string; entry: Entry; best: number } | undefined;
-  for (const language of languagesOf(ctx.manifest)) {
-    const entry = await rank(ctx, input.question, language, undefined, []);
-    if (entry.best === undefined) continue;
-    scores[language] = entry.best;
-    if (chosen === undefined || entry.best > chosen.best) chosen = { language, entry, best: entry.best };
-  }
-  trace.entry.languages = scores;
-  if (chosen === undefined) return empty(null, refusal("no-route", "No passage in the docs matches this question."));
-  const { language, entry } = chosen;
+  // The language first, by its lexical scores, so only its model loads. With
+  // no lexical match anywhere, each language's vector leg speaks for it.
+  const choose = async (mode: RetrieveMode | undefined) => {
+    const scores: Record<string, number> = {};
+    let chosen: { language: string; entry: Entry; best: number } | undefined;
+    for (const language of languagesOf(ctx.manifest)) {
+      const entry = await rank(ctx, input.question, language, mode, []);
+      if (entry.best === undefined) continue;
+      scores[language] = entry.best;
+      if (chosen === undefined || entry.best > chosen.best) chosen = { language, entry, best: entry.best };
+    }
+    return { scores, chosen };
+  };
+  let picked = await choose("lexical");
+  if (picked.chosen === undefined) picked = await choose(undefined);
+  else picked.chosen.entry = await rank(ctx, input.question, picked.chosen.language, undefined, []);
+  trace.entry.languages = picked.scores;
+  if (picked.chosen === undefined) return empty(null, refusal("no-route", "No passage in the docs matches this question."));
+  const { language, entry } = picked.chosen;
   trace.entry.chosen = language;
   if (entry.fallback) trace.entry.fallback = "lexical";
 
@@ -944,14 +962,18 @@ export function parseChunksManifest(input: string | object): ChunksManifest {
     doc.format === "manni-graph-chunks" &&
     doc.version === 1 &&
     ["graph", "graphFile", "searchIndex"].every((k) => typeof doc[k] === "string") &&
-    (doc.model === null || isRecord(doc.model)) &&
+    !("model" in doc) &&
     isRecord(doc.retrieve) &&
     isRecord(doc.pages) &&
     Array.isArray(doc.withheld) &&
     isRecord(doc.languages) &&
-    Object.values(doc.languages).every((l) => isRecord(l) && typeof l.file === "string");
+    Object.values(doc.languages).every((l) => isRecord(l) && typeof l.file === "string" && isModel(l.model));
   if (!valid) throw new Error('Not a manni graph chunk manifest: expected format "manni-graph-chunks", version 1.');
   return doc as unknown as ChunksManifest;
+}
+
+function isModel(v: unknown): boolean {
+  return v === null || (isRecord(v) && typeof v.id === "string" && typeof v.dimensions === "number");
 }
 
 /** Reads one `chunks.<tag>.jsonl`, given as its text or its URL. */
@@ -991,8 +1013,19 @@ export function artifactContext(
   manifest: ChunksManifest,
   graph: GraphIndex,
   read: (path: string) => Promise<string>,
-  seams: { store?: VectorStore; chunks?: ChunkSource; embedder: QueryEmbedder | null },
+  seams: { store?: VectorStore; chunks?: ChunkSource; embedder: RetrieverContext["embedder"] },
 ): RetrieverContext {
+  // Each model loads once, when a language that needs it is first queried.
+  const embedders = new Map<string, Promise<QueryEmbedder | null>>();
+  const embedder = (model: EmbeddingModel): Promise<QueryEmbedder | null> => {
+    let pending = embedders.get(model.id);
+    if (pending === undefined) {
+      pending = seams.embedder(model);
+      embedders.set(model.id, pending);
+    }
+    return pending;
+  };
+
   const loaded = new Map<string, Promise<ChunkRow[]>>();
   const rowsOf = (language: string): Promise<ChunkRow[]> => {
     let pending = loaded.get(language);
@@ -1035,7 +1068,7 @@ export function artifactContext(
     return pending;
   };
 
-  return { manifest, graph, lexical, store, chunks, embedder: seams.embedder };
+  return { manifest, graph, lexical, store, chunks, embedder };
 }
 
 // ---- the script surface --------------------------------------------------------------
@@ -1047,7 +1080,7 @@ export interface CreateRetrieverOptions {
   store?: VectorStore;
   /** Default: the chunk files the manifest names. */
   chunks?: ChunkSource;
-  /** Default: `graph/embed` with the manifest's model. `false` forces lexical entry. */
+  /** Default: `graph/embed` with each language's model, loaded when first queried. `false` forces lexical entry. */
   embed?: QueryEmbedder | false;
   /** Default: the global `fetch`. */
   fetch?: RetrieverFetch;
@@ -1091,11 +1124,11 @@ interface EmbedModule {
 }
 
 /**
- * The manifest's model, loaded from the `graph/embed` file beside this one.
+ * One language's model, loaded from the `graph/embed` file beside this one.
  * The specifier is not a literal, so a bundler leaves it alone, and a host
  * that cannot load it gets `null`: lexical entry, traced as a fallback.
  */
-async function defaultEmbedder(model: { id: string; dimensions: number }): Promise<QueryEmbedder | null> {
+async function defaultEmbedder(model: EmbeddingModel): Promise<QueryEmbedder | null> {
   try {
     const specifier = "./embed.js";
     const embed = (await import(/* @vite-ignore */ specifier)) as EmbedModule;
@@ -1123,10 +1156,9 @@ export async function createRetriever(options: CreateRetrieverOptions): Promise<
   if (digest !== manifest.graph) throw new StaleArtifactError(manifest.graph, digest);
   const graph = GraphIndex.fromJsonLd(graphText);
 
-  const embedder =
-    options.embed === false
-      ? null
-      : (options.embed ?? (manifest.model === null ? null : await defaultEmbedder(manifest.model)));
+  const embed = options.embed;
+  const embedder: RetrieverContext["embedder"] =
+    embed === false ? () => Promise.resolve(null) : embed === undefined ? defaultEmbedder : () => Promise.resolve(embed);
   const ctx = artifactContext(manifest, graph, read, {
     ...(options.store === undefined ? {} : { store: options.store }),
     ...(options.chunks === undefined ? {} : { chunks: options.chunks }),

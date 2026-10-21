@@ -382,7 +382,7 @@ export async function runServe(opts: ServeOptions, seams: ServeSeams = {}): Prom
       "graph serve needs the optional @modelcontextprotocol/sdk package; run npm install @modelcontextprotocol/sdk.",
     );
   }
-  const artifact = await openArtifact(opts);
+  const artifact = openArtifact(opts);
 
   const ajv = new Ajv2020({ allErrors: false, strict: false });
   const validators = new Map(TOOLS.map((t) => [t.name as string, ajv.compile(t.inputSchema)]));
