@@ -6,7 +6,7 @@
  * say which commit contains which. The dates are pinned, so durations are
  * exact and two runs agree.
  */
-import { afterEach, describe, expect, it } from "vitest";
+import { afterAll, afterEach, describe, expect, it } from "vitest";
 import { pathToFileURL } from "node:url";
 import { runCheck } from "../../src/cite/commands/check.js";
 import { runHistory } from "../../src/cite/commands/history.js";
@@ -24,11 +24,14 @@ afterEach(() => {
   for (const dir of dirs.splice(0)) removeTempRepo(dir);
 });
 
+/** One story for the suite: every case reads it, and the one that writes puts it back. */
+let shared: Story | undefined;
 function story(): Story {
-  const made = built();
-  dirs.push(made.repo);
-  return made;
+  return (shared ??= built());
 }
+afterAll(() => {
+  removeTempRepo(shared?.repo);
+});
 
 async function history(repo: string, over: Partial<HistoryOptions> = {}): Promise<{ run: HistoryRun; notices: string[] }> {
   const notices: string[] = [];
@@ -47,7 +50,9 @@ function windowsOf(run: HistoryRun): Map<string, StaleWindow> {
   return new Map(run.pages.flatMap((p) => p.windows.map((w) => [w.id, w] as const)));
 }
 
-describe.skipIf(!gitAvailable())("cite history (0092)", () => {
+// Each case walks a real history, a few seconds each and several times that
+// on a loaded Windows runner, so the suite's 30s ceiling is raised a notch.
+describe.skipIf(!gitAvailable())("cite history (0092)", { timeout: 90_000 }, () => {
   it("opens, closes and dates each window, with its cause, releases and earlier paths", async () => {
     const { repo, c } = story();
     const { run } = await history(repo);
@@ -153,12 +158,16 @@ describe.skipIf(!gitAvailable())("cite history (0092)", () => {
 
   it("gives each window the severity cite.severity sets, and drops a rule set off", async () => {
     const { repo } = story();
-    writeFile(repo, "manni.config.yaml", `${CONFIG}cite:\n  severity:\n    source-changed: warning\n`);
-    const warned = await history(repo, { inputs: [], noConfig: false });
-    expect(warned.run.summary.bySeverity).toEqual({ notice: 0, warning: 5, error: 0 });
-    writeFile(repo, "manni.config.yaml", `${CONFIG}cite:\n  severity:\n    source-changed: "off"\n`);
-    const off = await history(repo, { inputs: [], noConfig: false });
-    expect(off.run.summary.windows).toBe(0);
+    try {
+      writeFile(repo, "manni.config.yaml", `${CONFIG}cite:\n  severity:\n    source-changed: warning\n`);
+      const warned = await history(repo, { inputs: [], noConfig: false });
+      expect(warned.run.summary.bySeverity).toEqual({ notice: 0, warning: 5, error: 0 });
+      writeFile(repo, "manni.config.yaml", `${CONFIG}cite:\n  severity:\n    source-changed: "off"\n`);
+      const off = await history(repo, { inputs: [], noConfig: false });
+      expect(off.run.summary.windows).toBe(0);
+    } finally {
+      writeFile(repo, "manni.config.yaml", CONFIG);
+    }
   });
 
   it("refuses a duration it cannot read", async () => {
