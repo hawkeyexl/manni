@@ -56,22 +56,22 @@ docs/src/content/docs/cite/set-up/index.mdx:
       lines: 162-165
       integrity: sha256-a4a2695c74bb953742e111ec6517f844c239e8d1c64e95899339a87a6b68f339
     - generated-by: Claude Opus 5
-      lines: 167-191
+      lines: 168-192
       integrity: sha256-37d00a5009b83823d103a7f6bb6055b71cded4deb8ac84af811dd3ca8c96fd1b
     - generated-by: Claude Fable 5.1
-      lines: 193
+      lines: 194
       integrity: sha256-88f737604b9703179fa01fec4ede969c9ad38c8ad9298e9c128483a04d23570b
     - generated-by: Claude Opus 5
-      lines: 195
+      lines: 196
       integrity: sha256-aaecc2fa31f785763ecdbfe7eb8824644e1a9ac6daa95f9b77ee5e45ed86c12e
     - generated-by: Claude Fable 5.1
-      lines: 196-227
+      lines: 197-228
       integrity: sha256-1bae5f3a28e710a0d48ec5b1c920eb32536e88447093e552a9021ea77318a35b
     - generated-by: Claude Opus 5
-      lines: 228
+      lines: 229
       integrity: sha256-c6e0a43739b2b08dd7937381a5a254d628c1b57c5b6f7efe61987b19c53201b8
     - generated-by: Claude Fable 5.1
-      lines: 229-233
+      lines: 230-234
       integrity: sha256-7ac9eab0ded80d34f636e6f6ba19aa8b219c54c406304b19689b5c8079dccb94
   owner:
     - "@hawkeyexl"
