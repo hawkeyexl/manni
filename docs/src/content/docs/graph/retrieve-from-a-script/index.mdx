@@ -104,7 +104,11 @@ function passages(
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
-    const { question } = (await request.json()) as { question: string };
+    const body: unknown = await request.json().catch(() => null);
+    const question = typeof body === "object" && body !== null && "question" in body ? body.question : null;
+    if (typeof question !== "string" || question === "") {
+      return Response.json({ error: 'Send JSON like {"question": "..."}.' }, { status: 400 });
+    }
     const result = await docs.lookup(question);
     if (result.refusal) return Response.json({ answer: null, refusal: result.refusal });
     const context = [
@@ -118,6 +122,8 @@ export default {
 };
 ```
 
+- **A bad request is a 400.** The worker answers malformed JSON, or a missing
+  or empty `question`, with a 400 before it retrieves anything.
 - **A refusal is an answer.** When nothing in the docs matches, `refusal`
   says why, and the worker says so rather than letting the model guess.
 - **A passage over the budget has no text.** The worker skips it. Fetch it by

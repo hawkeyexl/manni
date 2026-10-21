@@ -130,6 +130,8 @@ export async function runPublish(opts: PublishOptions = {}): Promise<PublishRepo
 /** The step lines and the file count, or the report as JSON. */
 export function renderPublish(report: PublishReport, format: "pretty" | "json"): string {
   if (format === "json") return JSON.stringify(report, null, 2);
+  // The asymmetry is deliberate. A step that ran prints its verb (`export:llms` as `export`) and the
+  // detail names the files. A skipped step names its target, since the verb alone would not say what was skipped.
   const lines = report.steps.map((s) => {
     if (s.status === "skipped") return `skipped   ${s.step.replace(/^export:/, "")}: ${s.detail}`;
     return `${s.step.replace(/:.*$/, "").padEnd(9)} ${s.detail}`;

@@ -51,14 +51,14 @@ rm -rf media/scratch-graph-serve
 cp -r test/graph/fixtures/provenance media/scratch-graph-serve
 cd media/scratch-graph-serve
 # No evals report in this demo; the warning is expected.
-sed -i 's/      evals: evals.json/      evals: null/' manni.config.yaml
+perl -pi -e 's/      evals: evals.json/      evals: null/' manni.config.yaml
 # A dependent for the impact section.
 printf '\nSee [Retry an upload](retry.md).\n' >> docs/other.md
 git init -q && git add -A && git commit -qm initial
 first=$(git rev-parse HEAD)
-sed -i "s/COMMIT/$first/" docs/retry.md
+perl -pi -e "s/COMMIT/$first/" docs/retry.md
 # The drift: the line the second pin rests on changes.
-sed -i 's/BACKOFF_MS = 500/BACKOFF_MS = 750/' src/upload.ts
+perl -pi -e 's/BACKOFF_MS = 500/BACKOFF_MS = 750/' src/upload.ts
 git add -A && git commit -qm drift
 
 cat > .mcp.json <<'EOF'

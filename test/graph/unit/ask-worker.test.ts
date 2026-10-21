@@ -25,6 +25,7 @@ describe("the page's Ask AI worker", () => {
       .trimStart()
       .replace("../../../../src/graph/runtime/index.js", "@hawkeyexl/manni/graph/runtime");
     const block = /```ts title="worker\.ts"\n([\s\S]*?)```/.exec(page)?.[1];
+    expect(block, 'the page has a ts block titled "worker.ts"').toBeDefined();
     expect(block).toBe(code);
   });
 });

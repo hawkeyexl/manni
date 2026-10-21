@@ -3,7 +3,7 @@
  * graph. Each description is the page's delivered `description`, and each
  * link takes the detected framework's URL style.
  */
-import { readdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { join, relative } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { runBuild } from "../../../src/graph/commands/build.js";
@@ -83,6 +83,20 @@ describe("graph export llms", () => {
     expect(llms(dir)).not.toContain("Draft");
   });
 
+  it.each([
+    [["docs/en/guide/setup.md"], "1 page in the graph is not on disk, so llms.txt leaves it out; run manni graph build."],
+    [
+      ["docs/en/guide/setup.md", "docs/en/guide/index.md"],
+      "2 pages in the graph are not on disk, so llms.txt leaves them out; run manni graph build.",
+    ],
+  ])("warns when a graph page is gone from disk: %j", async (gone, message) => {
+    const dir = await built();
+    for (const file of gone) rmSync(join(dir, file));
+    const result = await runExport({ cwd: dir, format: "llms" });
+    expect(result.warnings).toContain(message);
+    expect(llms(dir)).not.toContain("Set up the tool");
+  });
+
   it("writes one Docs section for one language, and no blockquote without a summary", async () => {
     const dir = await built((d) => {
       rmSync(join(d, "docs/de"), { recursive: true });
@@ -119,6 +133,17 @@ describe("graph export llms", () => {
     await runExport({ cwd: dir, format: "llms" });
     expect(llms(dir)).toContain(page);
     expect(llms(dir)).toContain(index);
+  });
+
+  it("detects the framework in site.dir, as manni site does", async () => {
+    const dir = await built((d) => {
+      rmSync(join(d, "package.json"));
+      mkdirSync(join(d, "web"));
+      framework(join(d, "web"), "vitepress");
+      config(d, (y) => `${y}\nsite:\n  dir: web\n`);
+    });
+    await runExport({ cwd: dir, format: "llms" });
+    expect(llms(dir)).toContain("(https://docs.example.com/docs/guide/setup.html)");
   });
 
   it("ends routes in a slash when no framework is detected", async () => {
