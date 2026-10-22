@@ -12,6 +12,7 @@ import { join } from "node:path";
 import { PassThrough } from "node:stream";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
+import { Ajv2020 } from "ajv/dist/2020.js";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { runServe } from "../../../src/graph/commands/serve.js";
 import { createMockEmbedder } from "../../../src/graph/embed/mock.js";
@@ -65,15 +66,29 @@ function graph(args: string[], input?: string): { stdout: string; stderr: string
   return { stdout: r.stdout ?? "", stderr: r.stderr ?? "", status: r.status ?? -1 };
 }
 
+const toolOf = new WeakMap<object, string>();
+/** Tools whose results, refusals among them, were validated against their outputSchema. */
+const validated = new Set<string>();
+let refusalsValidated = 0;
+
 async function call(name: string, args: Record<string, unknown>): Promise<ToolResult> {
-  return (await client.callTool({ name, arguments: args })) as ToolResult;
+  const r = (await client.callTool({ name, arguments: args })) as ToolResult;
+  toolOf.set(r, name);
+  return r;
 }
 
-/** The result in both forms, which must agree. */
-function both(r: ToolResult): Record<string, unknown> {
+/** The result in both forms, which must agree, and valid against the outputSchema tools/list declares. */
+async function both(r: ToolResult): Promise<Record<string, unknown>> {
   expect(r.content).toHaveLength(1);
   const text = r.content[0]?.text ?? "";
   expect(r.structuredContent).toEqual(JSON.parse(text));
+  const name = toolOf.get(r) ?? "";
+  const tool = (await client.listTools()).tools.find((t) => t.name === name);
+  expect(tool?.outputSchema, name).toBeDefined();
+  const validate = new Ajv2020({ allErrors: true, strict: false }).compile(tool?.outputSchema ?? {});
+  expect(validate(r.structuredContent), `${name}: ${JSON.stringify(validate.errors)}`).toBe(true);
+  validated.add(name);
+  if (r.structuredContent?.refusal !== undefined) refusalsValidated++;
   return r.structuredContent ?? {};
 }
 
@@ -127,14 +142,14 @@ describe("graph serve: tools/list", () => {
 
 describe("graph serve: tools/call", () => {
   it("lookup takes only the question and returns what graph lookup prints", async () => {
-    const result = both(await call("lookup", { question: QUESTION }));
+    const result = await both(await call("lookup", { question: QUESTION }));
     const cli = JSON.parse(graph(["lookup", QUESTION, "-f", "json"]).stdout) as unknown;
     expect(result).toEqual(cli);
     expect(result.language).toBe("en");
   });
 
   it("retrieve, traverse and impact return what their CLI twins print", async () => {
-    const retrieved = both(
+    const retrieved = await both(
       await call("retrieve", { question: QUESTION, lang: "en", depth: 2, maxChars: 20000, where: { tags: ["security", "keys"] } }),
     );
     expect(retrieved).toEqual(
@@ -146,33 +161,38 @@ describe("graph serve: tools/call", () => {
       ),
     );
 
-    const walked = both(await call("traverse", { node: ROTATE, depth: 2, maxChars: 20000 }));
+    const walked = await both(await call("traverse", { node: ROTATE, depth: 2, maxChars: 20000 }));
     expect(walked).toEqual(
       JSON.parse(graph(["traverse", ROTATE, "--context", "-d", "2", "--max-chars", "20000", "-f", "json"]).stdout),
     );
 
-    const impact = both(await call("impact", { node: ROTATE }));
+    const impact = await both(await call("impact", { node: ROTATE }));
     expect(impact).toEqual(JSON.parse(graph(["traverse", ROTATE, "--impact", "--context", "-f", "json"]).stdout));
   });
 
   it("answers a CLI usage error with a refusal, never isError", async () => {
     const lang = await call("retrieve", { question: QUESTION });
     expect(lang.isError ?? false).toBe(false);
-    expect(both(lang).refusal).toEqual({
+    expect((await both(lang)).refusal).toEqual({
       reason: "lang-required",
       detail: "This corpus has more than one localization (de, en) — pass --lang to choose one.",
     });
 
     const node = await call("traverse", { node: "urn:manni:graph:doc/nowhere.md" });
     expect(node.isError ?? false).toBe(false);
-    expect((both(node).refusal as { reason: string }).reason).toBe("unknown-node");
+    expect(((await both(node)).refusal as { reason: string }).reason).toBe("unknown-node");
 
     const scope = await call("impact", { node: ROTATE, variant: "nope" });
-    expect((both(scope).refusal as { reason: string; detail: string }).detail).toMatch(/^Unknown product variant: nope/);
+    expect(((await both(scope)).refusal as { reason: string; detail: string }).detail).toMatch(/^Unknown product variant: nope/);
 
     const fr = await call("retrieve", { question: QUESTION, lang: "fr" });
     expect(fr.isError ?? false).toBe(false);
-    expect(both(fr).refusal).toEqual({ reason: "unknown-scope", detail: 'No index for language "fr" — this corpus has de, en.' });
+    expect((await both(fr)).refusal).toEqual({ reason: "unknown-scope", detail: 'No index for language "fr" — this corpus has de, en.' });
+  });
+
+  it("validated every tool's results, refusals included, against its declared outputSchema", () => {
+    expect([...validated].sort()).toEqual(["impact", "lookup", "retrieve", "traverse"]);
+    expect(refusalsValidated).toBeGreaterThan(0);
   });
 
   it("rejects an argument its schema does not name, withhold among them", async () => {

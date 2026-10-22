@@ -106,9 +106,9 @@ docs/src/content/docs/meta/reference/taxonomy-schemas.mdx:
         integrity: sha256-0fba5f6acc323527366b1b58c24fe23c0f265ef62fb151a7abde3cf5a328f253
       source:
         file: src/meta/core/schema-registry.ts
-        lines: 530-541
+        lines: 535-546
         integrity: sha256-b609d7a86f241caa53f6c3ab9266149e6c0333c7496005e23ab3d94797659c1c
-        commit-sha: ac06e6b383628ad1b1e78539fc301e26df84e834
+        commit-sha: dcb3398b6e17901c248efa940a837bfea031c122
     - id: taxonomy-all-three-are-draft-2020-12
       claim:
         integrity: sha256-60affe9aa8ec9b7042306c95db31d5d2aec7e975e4799c3f9d358cc890b2edfc

@@ -385,9 +385,9 @@ docs/src/content/docs/meta/reference/cli.mdx:
         integrity: sha256-2c48681bb8650ec1edfb744182fbf26f69401e983b63a5e30949e1a8c7d0990d
       source:
         file: src/meta/core/schema-registry.ts
-        lines: 1281-1282
+        lines: 1286-1287
         integrity: sha256-f2998615a95c6555bad686de3c79775a92f9152fd789b7cde5171034efa1389a
-        commit-sha: ac06e6b383628ad1b1e78539fc301e26df84e834
+        commit-sha: dcb3398b6e17901c248efa940a837bfea031c122
     - id: vendor-records-a-sha256-digest
       claim:
         integrity: sha256-a34b902aebd6b2e24ffbb1fdbb4d80cc2534e41d205ee736ab528088e829ceef
@@ -1518,9 +1518,9 @@ docs/src/content/docs/meta/reference/cli.mdx:
         integrity: sha256-e27318d4c42686c307049654e9fde223f50b4f0f1a147c8b93e5289f667dbbd3
       source:
         file: src/meta/core/schema-registry.ts
-        lines: 1184-1186
+        lines: 1189-1191
         integrity: sha256-4b357a3881ddd2e2522fb9ba95b53cbb2b9a91d75a3453973dd560308068c91b
-        commit-sha: ac06e6b383628ad1b1e78539fc301e26df84e834
+        commit-sha: dcb3398b6e17901c248efa940a837bfea031c122
     - id: fill-quiet-hides-nothing-to-show
       claim:
         lines: 861
@@ -2260,18 +2260,18 @@ docs/src/content/docs/meta/reference/cli.mdx:
         integrity: sha256-84d45b3349a8f006fd17781e163d474863e2ffd4b42b214719604ecd8ad57f01
       source:
         file: src/meta/core/schema-registry.ts
-        lines: 1184-1186
+        lines: 1189-1191
         integrity: sha256-4b357a3881ddd2e2522fb9ba95b53cbb2b9a91d75a3453973dd560308068c91b
-        commit-sha: ac06e6b383628ad1b1e78539fc301e26df84e834
+        commit-sha: dcb3398b6e17901c248efa940a837bfea031c122
     - id: validate-offline-leaves-builtins-alone
       claim:
         lines: 87
         integrity: sha256-84d45b3349a8f006fd17781e163d474863e2ffd4b42b214719604ecd8ad57f01
       source:
         file: src/meta/core/schema-registry.ts
-        lines: 1360-1364
+        lines: 1365-1369
         integrity: sha256-7561c36d4320819e21ddc66059ccc85e8fb7bcdb638dbc68d86d4b21a8c4ef44
-        commit-sha: ac06e6b383628ad1b1e78539fc301e26df84e834
+        commit-sha: dcb3398b6e17901c248efa940a837bfea031c122
     - id: validate-baseline-default-path
       claim:
         lines: 88
