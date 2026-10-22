@@ -20,7 +20,9 @@ import type { InlineStatement } from "../shared/statements.js";
 
 /** A parsed `<src>` or `source`: a path or `~` ciphertext, and an optional line range. */
 export interface SourceRange {
-  /** Repo-root-relative posix path, or the `~` ciphertext when `encrypted`. */
+  /** The checkout `path` is in, by its `cite.repos` name; absent for the root. */
+  repo?: string;
+  /** Checkout-relative posix path, or the `~` ciphertext when `encrypted`. */
   path: string;
   /** `true` when `path` is an encrypted source (`~` and 82+ base64url characters) rather than a path. */
   encrypted: boolean;
@@ -42,7 +44,9 @@ export interface CitationClaim {
 
 /** The lines a claim rests on. */
 export interface CitationSource {
-  /** Root-relative posix path, or `~` and the path encrypted with the family key. */
+  /** The checkout `file` is in, by its `cite.repos` name; absent for the root. */
+  repo?: string;
+  /** Checkout-relative posix path, or `~` and the path encrypted with the family key. */
   file: string;
   /** File lines. Absent pins the whole file. */
   lines?: LineSpec;
@@ -52,7 +56,7 @@ export interface CitationSource {
   "commit-sha"?: string;
 }
 
-/** One entry of `citations`, as the schema (`manni:citations:1.0.0`) spells it. */
+/** One entry of `citations`, as the schema (`manni:citations:1.2.0`) spells it. */
 export interface Citation {
   id?: string;
   claim?: CitationClaim;
@@ -194,8 +198,10 @@ export interface ClaimEnd {
 
 /** The source end of a classified citation. */
 export interface SourceEnd {
-  /** `file` and `lines` as the entry spells them: `path`, `path:L`, `path:L1-L2`, the ciphertext for `path`. */
+  /** `file` and `lines` as the entry spells them: `path`, `path:L`, `path:L1-L2`, the ciphertext for `path`, after `repo:` for a repo entry. */
   src: string;
+  /** The checkout the source is in, by its `cite.repos` name; absent for the root. */
+  repo?: string;
   status: SourceStatus;
   /**
    * The path an encrypted source decrypted to. Never printed except by the
@@ -501,6 +507,11 @@ export interface CheckOptions {
   showDiff?: boolean;
   root?: string;
   /**
+   * `--repo`, already split: name -> checkout directory, cwd-relative. Each
+   * overrides `cite.repos` for its name (proposal 0100).
+   */
+  repos?: Record<string, string>;
+  /**
    * The git client every page is checked through. Defaults to one over the
    * root, used whenever git is on PATH and the root is inside a work tree; a
    * test hands in a fake.
@@ -623,6 +634,11 @@ export interface AddOptions {
   cwd?: string;
   stdinContent?: string;
   root?: string;
+  /**
+   * `--repo`, already split: name -> checkout directory, cwd-relative. Each
+   * overrides `cite.repos` for its name (proposal 0100).
+   */
+  repos?: Record<string, string>;
   /**
    * The git client HEAD and the source index are read through. Defaults to
    * one over the root; a test hands in a fake.
@@ -804,7 +820,7 @@ export interface UpdateRun {
 }
 
 export interface RemoveOptions
-  extends Omit<CheckOptions, "baseline" | "writeBaseline" | "checkSources" | "showDiff"> {
+  extends Omit<CheckOptions, "baseline" | "writeBaseline" | "checkSources" | "showDiff" | "repos"> {
   /**
    * `--only <id>`, repeatable: the entries to remove, each named by its id or
    * by its pointer (`/citations/N`). Required, and an empty list is a
@@ -873,6 +889,8 @@ export interface CiteConfig {
   allowEmpty?: boolean;
   respectGitignore?: boolean;
   root?: string;
+  /** `cite.repos`: name -> checkout directory, relative to the config file (proposal 0100). */
+  repos?: Record<string, string>;
   baseline?: string;
   checkSources?: boolean;
   severity?: Partial<Record<CiteRule, CiteSeverity>>;
@@ -908,6 +926,12 @@ export interface CiteRun {
   configSource?: string;
   /** Absolute root source paths resolve from. */
   root: string;
+  /**
+   * Each checkout an entry's `source.repo` may name, as an absolute
+   * directory: `cite.repos` against the config directory, overridden per
+   * name by `--repo` against cwd. `{}` when none is declared.
+   */
+  repos: Record<string, string>;
   /**
    * The family encryption key (proposal 0045): `MANNI_ENCRYPTION_KEY`, else
    * the config's top-level `encryptionKey:`. Absent when neither is set.

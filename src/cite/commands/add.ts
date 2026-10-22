@@ -180,6 +180,7 @@ export async function runAdd(opts: AddOptions): Promise<AddResult> {
     noConfig: opts.noConfig,
     inputs: [],
     root: opts.root,
+    ...(opts.repos === undefined ? {} : { repos: opts.repos }),
     onConfigLoaded: opts.onConfigLoaded,
     onNotice: opts.onNotice,
     env: opts.env,

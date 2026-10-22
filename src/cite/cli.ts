@@ -35,6 +35,7 @@ import { runCheck } from "./commands/check.js";
 import { runHistory } from "./commands/history.js";
 import { runRemove } from "./commands/remove.js";
 import { runUpdate } from "./commands/update.js";
+import { parseRepoFlags } from "./core/config.js";
 import { CiteError, asCiteError } from "./errors.js";
 import { spellSource } from "./core/range.js";
 import { shortCommit, shortLine, shortPin, shortSrc } from "./core/spell.js";
@@ -145,6 +146,8 @@ interface CheckCliOptions extends InputCliOptions {
   checkSources: boolean;
   showDiff?: boolean;
   reveal?: boolean;
+  /** `--repo <name=dir>`, repeatable; commander's default value is `[]`. */
+  repo: string[];
 }
 
 interface AddCliOptions {
@@ -158,6 +161,8 @@ interface AddCliOptions {
   dryRun?: boolean;
   as?: string;
   root?: string;
+  /** `--repo <name=dir>`, repeatable; commander's default value is `[]`. */
+  repo: string[];
   config?: string | boolean;
 }
 
@@ -183,6 +188,8 @@ interface UpdateCliOptions extends InputCliOptions {
   only: string[];
   dryRun?: boolean;
   format: string;
+  /** `--repo <name=dir>`, repeatable; commander's default value is `[]`. */
+  repo: string[];
 }
 
 /**
@@ -307,6 +314,12 @@ export function buildProgram(): Command {
       "--root <dir>",
       "directory src: paths resolve from (default: cite.root from config, else the git root, else the current directory)",
     )
+    .option(
+      "--repo <name=dir>",
+      "a checkout an entry's source.repo may name, as name=dir relative to the current directory; repeatable; overrides cite.repos for that name",
+      collect,
+      [],
+    )
     .option("--show-diff", "in pretty output, print the diff and commit subjects for changed")
     .option("--reveal", "in pretty output, print the decrypted path beside an encrypted source")
     .addHelpText(
@@ -354,6 +367,7 @@ export function buildProgram(): Command {
           // themselves are the pretty reporter's.
           showDiff: options.showDiff ? true : undefined,
           root: options.root,
+          repos: parseRepoFlags(options.repo, (message) => new CiteError(message)),
         });
 
         let text: string;
@@ -401,7 +415,7 @@ export function buildProgram(): Command {
     )
     .argument(
       "<src>",
-      "path, path:L or path:L1-L2 relative to --root, or an encrypted ~source with the same line forms",
+      "path, path:L or path:L1-L2 relative to --root, or repo:path with the same line forms for a checkout in cite.repos, or an encrypted ~source",
     )
     .option("--id <id>", "kebab-case id, unique on the page; required with --marker")
     .option("--marker", "write a cite <id> marker above the paragraph holding the page lines and pin the text it anchors")
@@ -414,6 +428,12 @@ export function buildProgram(): Command {
     .option("--dry-run", "print the diff; write nothing")
     .option("--as <format>", "force the page format")
     .option("--root <dir>", "directory source paths resolve from (as check)")
+    .option(
+      "--repo <name=dir>",
+      "a checkout an entry's source.repo may name, as name=dir relative to the current directory; repeatable; overrides cite.repos for that name",
+      collect,
+      [],
+    )
     .option("-c, --config <path>", "path to a manni config file")
     .option("--no-config", "ignore any discovered config file")
     .addHelpText(
@@ -454,6 +474,7 @@ export function buildProgram(): Command {
           onConfigLoaded: reportConfig(!usingStdin && !dryRun, cwd),
           stdinContent,
           root: options.root,
+          repos: parseRepoFlags(options.repo, (message) => new CiteError(message)),
           onNotice: notice,
           // Only on a terminal: off one, a missing key is a refusal, not a
           // question nobody can answer. With `-` stdin is the page, so no
@@ -504,6 +525,12 @@ export function buildProgram(): Command {
     .option("--no-gitignore", "update files .gitignore covers")
     .option("--no-check-sources", "refused: update needs the sources")
     .option("--root <dir>", "directory src: paths resolve from (as check)")
+    .option(
+      "--repo <name=dir>",
+      "a checkout an entry's source.repo may name, as name=dir relative to the current directory; repeatable; overrides cite.repos for that name",
+      collect,
+      [],
+    )
     .option("--accept", "re-mint changed and never-true entries at HEAD; prints old and new pins")
     .option(
       "--recommit",
@@ -562,6 +589,7 @@ export function buildProgram(): Command {
           respectGitignore: explicitFalse(options.gitignore),
           onNotice: notice,
           root: options.root,
+          repos: parseRepoFlags(options.repo, (message) => new CiteError(message)),
           accept: options.accept ? true : undefined,
           recommit: options.recommit ? true : undefined,
           only: options.only.length > 0 ? options.only : undefined,

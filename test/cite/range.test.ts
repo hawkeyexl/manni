@@ -19,6 +19,7 @@ import {
   spellLines,
   spellSource,
 } from "../../src/cite/core/range.js";
+import { shortSrc } from "../../src/cite/core/spell.js";
 import { CiteError } from "../../src/cite/errors.js";
 import type { SourceRange } from "../../src/cite/types.js";
 import { runValidate } from "../../src/meta/commands/validate.js";
@@ -199,7 +200,7 @@ describe("parseSrc", () => {
     expect(() => parseSrc("/abs:1")).toThrow(CiteError);
     expect(() => parseSrc("/abs:1")).toThrow(/^Invalid src "\/abs:1": /);
     expect(() => parseSrc("/abs:1")).toThrow(
-      'Invalid src "/abs:1": expected path, path:L, path:L1-L2, or an encrypted source (~ and at least 82 base64url characters) with the same line forms; the path is repo-root-relative, posix, and free of . and .. segments.',
+      'Invalid src "/abs:1": expected path, path:L, path:L1-L2, or an encrypted source (~ and at least 82 base64url characters) with the same line forms, each optionally prefixed with a repo name and a colon; the path is relative to its checkout, posix, and free of . and .. segments.',
     );
   });
 
@@ -218,6 +219,67 @@ describe("parseSrc", () => {
   });
 });
 
+describe("parseSrc with a repo prefix (proposal 0100)", () => {
+  it.each([
+    ["a", { path: "a", encrypted: false }],
+    ["a/b.ts", { path: "a/b.ts", encrypted: false }],
+    ["a/b.ts:2", { path: "a/b.ts", encrypted: false, start: 2, end: 2 }],
+    ["a/b.ts:1-3", { path: "a/b.ts", encrypted: false, start: 1, end: 3 }],
+    ["docs/release notes/v1.2.md:4-9", { path: "docs/release notes/v1.2.md", encrypted: false, start: 4, end: 9 }],
+    [".hidden/file", { path: ".hidden/file", encrypted: false }],
+    [TOKEN, { path: TOKEN, encrypted: true }],
+    [`${TOKEN}:2`, { path: TOKEN, encrypted: true, start: 2, end: 2 }],
+    [`${SHORTEST}:1-3`, { path: SHORTEST, encrypted: true, start: 1, end: 3 }],
+    // Two parts whose second is a line suffix stay a path and lines.
+    ["api:2", { path: "api", encrypted: false, start: 2, end: 2 }],
+    ["api:2-4", { path: "api", encrypted: false, start: 2, end: 4 }],
+  ])("keeps today's meaning of %j", (src, range) => {
+    expect(parseSrc(src)).toEqual(range);
+  });
+
+  it.each([
+    ["sdk:src/x.ts", { repo: "sdk", path: "src/x.ts", encrypted: false }],
+    ["sdk:src/x.ts:2", { repo: "sdk", path: "src/x.ts", encrypted: false, start: 2, end: 2 }],
+    ["sdk:src/x.ts:2-4", { repo: "sdk", path: "src/x.ts", encrypted: false, start: 2, end: 4 }],
+    ["my-sdk2:a", { repo: "my-sdk2", path: "a", encrypted: false }],
+    [`sdk:${TOKEN}:2`, { repo: "sdk", path: TOKEN, encrypted: true, start: 2, end: 2 }],
+    [`sdk:${TOKEN}`, { repo: "sdk", path: TOKEN, encrypted: true }],
+  ])("reads the repo out of %j and round-trips it", (src, range) => {
+    expect(parseSrc(src)).toEqual(range);
+    expect(formatSrc(parseSrc(src))).toBe(src);
+  });
+
+  it.each([
+    "C:/x",
+    "https://github.com/x/y",
+    "SDK:src/x.ts",
+    "sdk:../x",
+    "sdk:./x",
+    "sdk:a//b",
+    "sdk:",
+    "sdk:x:0",
+    "sdk:x:01",
+    "sdk:x:2:3",
+    "sdk:other:x:2",
+    ":x",
+    "-sdk:x",
+    "a.ts:0",
+    // A tail of digits and hyphens is lines, however malformed: line 0 is
+    // refused as it always was, never read as a file named `0` in repo `a`.
+    "a:0",
+    "a:01",
+    "a:1-",
+    "a:1-0",
+    "a:-",
+  ])("refuses %j", (src) => {
+    expect(() => parseSrc(src)).toThrow(/^Invalid src /);
+  });
+
+  it("refuses a backwards range after a prefix", () => {
+    expect(() => parseSrc("sdk:a:9-3")).toThrow('Invalid range "sdk:a:9-3": end line 3 is before start line 9.');
+  });
+});
+
 describe("formatSrc", () => {
   it("spells a whole-file range as the bare path", () => {
     expect(formatSrc({ path: "a/b.ts", encrypted: false })).toBe("a/b.ts");
@@ -230,6 +292,12 @@ describe("formatSrc", () => {
 
   it("spells a range as path:L1-L2", () => {
     expect(formatSrc({ path: "a/b.ts", encrypted: false, start: 1, end: 3 })).toBe("a/b.ts:1-3");
+  });
+
+  it("prints the repo before the path", () => {
+    expect(formatSrc({ repo: "sdk", path: "a/b.ts", encrypted: false })).toBe("sdk:a/b.ts");
+    expect(formatSrc({ repo: "sdk", path: "a/b.ts", encrypted: false, start: 2, end: 4 })).toBe("sdk:a/b.ts:2-4");
+    expect(formatSrc({ repo: "sdk", path: TOKEN, encrypted: true, start: 2 })).toBe(`sdk:${TOKEN}:2`);
   });
 
   it("passes an encrypted source through unchanged", () => {
@@ -334,6 +402,32 @@ describe("sourceRange and spellSource", () => {
     expect(spellSource({ file: "a/b.ts", lines: 2, integrity: PIN })).toBe("a/b.ts:2");
     expect(spellSource({ file: "a/b.ts", lines: "1-3", integrity: PIN })).toBe("a/b.ts:1-3");
     expect(spellSource({ file: TOKEN, lines: 2, integrity: PIN })).toBe(`${TOKEN}:2`);
+  });
+
+  it("carries an entry's repo into the range and the spelling", () => {
+    expect(sourceRange({ repo: "sdk", file: "a/b.ts", lines: 2, integrity: PIN })).toEqual({
+      repo: "sdk",
+      path: "a/b.ts",
+      encrypted: false,
+      start: 2,
+      end: 2,
+    });
+    expect(spellSource({ repo: "sdk", file: "a/b.ts", lines: "1-3", integrity: PIN })).toBe("sdk:a/b.ts:1-3");
+    expect(spellSource({ repo: "sdk", file: TOKEN, integrity: PIN })).toBe(`sdk:${TOKEN}`);
+  });
+});
+
+describe("shortSrc", () => {
+  it("abbreviates a ciphertext, after a repo prefix too", () => {
+    expect(shortSrc(`${TOKEN}:2`)).toBe(`${TOKEN.slice(0, 5)}…:2`);
+    expect(shortSrc(`sdk:${TOKEN}:2`)).toBe(`sdk:${TOKEN.slice(0, 5)}…:2`);
+    expect(shortSrc(`sdk:${TOKEN}`)).toBe(`sdk:${TOKEN.slice(0, 5)}…`);
+  });
+
+  it("spells a plain path in full, prefixed or not", () => {
+    expect(shortSrc("a/b.ts:2")).toBe("a/b.ts:2");
+    expect(shortSrc("sdk:a/b.ts:2")).toBe("sdk:a/b.ts:2");
+    expect(shortSrc("api:2")).toBe("api:2");
   });
 });
 

@@ -491,7 +491,7 @@ describe("manni cite (usage errors)", () => {
       writeFileSync(join(work, "manni.config.yaml"), `cite:\n  ${key}: false\n`, "utf8");
       usage(
         ["check", "--root", ".", "pages/current.md"],
-        `Unknown key "${key}" under cite: in manni.config.yaml. Supported keys: allowEmpty, respectGitignore, root, baseline, checkSources, severity.`,
+        `Unknown key "${key}" under cite: in manni.config.yaml. Supported keys: allowEmpty, respectGitignore, root, repos, baseline, checkSources, severity.`,
       );
     }
   });

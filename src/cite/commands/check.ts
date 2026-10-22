@@ -156,6 +156,7 @@ export async function prepareRun(
     inputs: opts.inputs,
     collection: opts.collection,
     root: opts.root,
+    ...(opts.repos === undefined ? {} : { repos: opts.repos }),
     onConfigLoaded: opts.onConfigLoaded,
     onNotice: opts.onNotice,
     env: opts.env,

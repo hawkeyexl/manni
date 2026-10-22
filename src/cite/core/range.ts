@@ -9,7 +9,9 @@
  * the two equal.
  *
  * The command line spells a source as one string, `path`, `path:L` or
- * `path:L1-L2` (`SRC_PATTERN`), and reports spell it that way too.
+ * `path:L1-L2` (`SRC_PATTERN`), and reports spell it that way too. A source in
+ * another checkout carries its repo name in front, `sdk:src/client.ts:2`
+ * (proposal 0100).
  */
 import { isEncryptedValue } from "../../shared/encryption.js";
 import { MAX_RANGE_LINES, lineSpec, parseLines } from "../../shared/pin.js";
@@ -23,29 +25,47 @@ export { lineSpec, parseLines, spellLines } from "../../shared/pin.js";
 export const FILE_PATTERN =
   /^(?:~[A-Za-z0-9_-]{82,}|(?!~)(?:(?!\.\.?(?:\/|$))[^/\\:\r\n\t]+)(?:\/(?:(?!\.\.?(?:\/|$))[^/\\:\r\n\t]+))*)$/;
 
-/** A source on the command line: a `file`, then an optional `:L` or `:L1-L2`. */
+/** A source on the command line after any repo prefix: a `file`, then an optional `:L` or `:L1-L2`. */
 export const SRC_PATTERN =
   /^(?:~[A-Za-z0-9_-]{82,}|(?!~)(?:(?!\.\.?(?:\/|:|$))[^/\\:\r\n\t]+)(?:\/(?:(?!\.\.?(?:\/|:|$))[^/\\:\r\n\t]+))*)(?::[1-9][0-9]*(?:-[1-9][0-9]*)?)?$/;
 
+/** A repo name, as `source.repo`, `cite.repos` and `--repo` spell it. */
+export const REPO_PATTERN = /^[a-z0-9][a-z0-9-]*$/;
+
 /**
- * Parse a command-line source. Throws `CiteError` on bad grammar or an end
- * line before the start. A one-line `path:L` comes back with `end` equal to
- * `start`, so a range's width is always `end - start + 1`.
+ * A tail that can only be meant as lines: digits and hyphens. A malformed one
+ * (`:0`, `:1-`) stays lines, so the grammar refuses it as it always has.
+ */
+const LINES_TAIL = /^[0-9-]*$/;
+
+/**
+ * Parse a command-line source, `[<repo>:]<path>[:<L>[-<L2>]]`. Throws
+ * `CiteError` on bad grammar or an end line before the start. A one-line
+ * `path:L` comes back with `end` equal to `start`, so a range's width is
+ * always `end - start + 1`.
+ *
+ * A path never holds a colon, so the first colon splits the string. When what
+ * follows it is digits and hyphens, the head is a path (`api:2` is line 2 of
+ * a file named `api`, as before repos existed); otherwise the head is a repo.
  */
 export function parseSrc(src: string): SourceRange {
-  if (!SRC_PATTERN.test(src)) {
+  const first = src.indexOf(":");
+  const repo = first !== -1 && !LINES_TAIL.test(src.slice(first + 1)) ? src.slice(0, first) : undefined;
+  const rest = repo === undefined ? src : src.slice(first + 1);
+  if ((repo !== undefined && !REPO_PATTERN.test(repo)) || !SRC_PATTERN.test(rest)) {
     throw new CiteError(
-      `Invalid src "${src}": expected path, path:L, path:L1-L2, or an encrypted source (~ and at least 82 base64url characters) with the same line forms; ` +
-        "the path is repo-root-relative, posix, and free of . and .. segments.",
+      `Invalid src "${src}": expected path, path:L, path:L1-L2, or an encrypted source (~ and at least 82 base64url characters) with the same line forms, each optionally prefixed with a repo name and a colon; ` +
+        "the path is relative to its checkout, posix, and free of . and .. segments.",
     );
   }
   // The grammar keeps `:` out of every path segment and out of the base64url
-  // alphabet, so the first one starts the line suffix.
-  const colon = src.indexOf(":");
-  const path = colon === -1 ? src : src.slice(0, colon);
+  // alphabet, so the first one after any repo starts the line suffix.
+  const colon = rest.indexOf(":");
+  const path = colon === -1 ? rest : rest.slice(0, colon);
   const range: SourceRange = { path, encrypted: isEncryptedValue(path) };
+  if (repo !== undefined) range.repo = repo;
   if (colon === -1) return range;
-  const [startText, endText] = src.slice(colon + 1).split("-");
+  const [startText, endText] = rest.slice(colon + 1).split("-");
   const start = Number(startText);
   const end = endText === undefined ? start : Number(endText);
   if (end < start) {
@@ -67,9 +87,10 @@ export function tooWide(lines: PageLines): string | undefined {
     : undefined;
 }
 
-/** The canonical spelling: `path:L` for one line, `path:L1-L2` otherwise. */
+/** The canonical spelling: `path:L` for one line, `path:L1-L2` otherwise, after `repo:` for a repo. */
 export function formatSrc(range: SourceRange): string {
-  const { path, start, end } = range;
+  const { start, end } = range;
+  const path = range.repo === undefined ? range.path : `${range.repo}:${range.path}`;
   if (start === undefined) return path;
   if (end === undefined || end === start) return `${path}:${start}`;
   return `${path}:${start}-${end}`;
@@ -78,6 +99,7 @@ export function formatSrc(range: SourceRange): string {
 /** An entry's source as a range. Its lines must already be valid (see `parseLines`). */
 export function sourceRange(source: CitationSource): SourceRange {
   const range: SourceRange = { path: source.file, encrypted: isEncryptedValue(source.file) };
+  if (source.repo !== undefined) range.repo = source.repo;
   if (source.lines === undefined) return range;
   const lines = parseLines(source.lines);
   if (lines !== undefined) {
@@ -87,7 +109,7 @@ export function sourceRange(source: CitationSource): SourceRange {
   return range;
 }
 
-/** An entry's source spelled as one string, `path:L1-L2`, the way the command line takes it. */
+/** An entry's source spelled as one string, `[repo:]path:L1-L2`, the way the command line takes it. */
 export function spellSource(source: CitationSource): string {
   return formatSrc(sourceRange(source));
 }

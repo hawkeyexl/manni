@@ -137,7 +137,15 @@ export {
 } from "./core/write.js";
 export type { EntryPath } from "./core/write.js";
 export { mintCitation } from "./core/mint.js";
-export { CITE_SECTION, DEFAULT_CITE_BASELINE_PATH, loadCiteConfig, parseCiteConfig, readCiteConfigFile, resolveCiteRun } from "./core/config.js";
+export {
+  CITE_SECTION,
+  DEFAULT_CITE_BASELINE_PATH,
+  loadCiteConfig,
+  parseCiteConfig,
+  parseRepoFlags,
+  readCiteConfigFile,
+  resolveCiteRun,
+} from "./core/config.js";
 export type { CiteRunOptions } from "./core/config.js";
 
 export { runCheck } from "./commands/check.js";
