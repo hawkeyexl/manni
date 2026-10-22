@@ -57,6 +57,8 @@ docevals   not set up    no page resolves any evals
                          Add a docevals: section, or declare evals in a page's frontmatter.
 term       not set up    no terms in any collection
                          Add a page with type: term to a collection.
+strategy   not set up    no strategy records in any collection
+                         Add a page with type: journey to a collection.
 graph      not set up    no graph: section
                          Run manni graph init to add a starter graph: section.
 a11y       not checked   needs a running site and a browser
@@ -87,6 +89,7 @@ manni would apply by default counts as set up.
 | `lint` | `lint:` exists. | `lint check` |
 | `docevals` | `docevals:` exists, or a page declares evals. A run that resolves no evals counts as not in play. | `docevals run`, deterministic evals only |
 | `term` | The collections hold at least one term. | `term check` |
+| `strategy` | The collections hold at least one record, a page of type `audience`, `persona` or `journey`. | `strategy check` |
 | `graph` | `graph:` exists. | `graph build` in memory, then `graph check` |
 | `tracevals` | `tracevals.runtime` exists. | Nothing on the command line. Under a Claude Code hook, a judgement of the turn that just ended. |
 
@@ -107,13 +110,14 @@ meta validate
 
 2 files checked, 1 passed, 1 failed, 1 error
 
-skipped  cite check     no page carries citations
-skipped  lint check     no lint: section
-skipped  docevals run   no page resolves any evals
-skipped  term check     no terms in any collection
-skipped  graph check    no graph: section
+skipped  cite check       no page carries citations
+skipped  lint check       no lint: section
+skipped  docevals run     no page resolves any evals
+skipped  term check       no terms in any collection
+skipped  strategy check   no strategy records in any collection
+skipped  graph check      no graph: section
 
-6 checks over 2 files: 1 failed, 5 skipped
+7 checks over 2 files: 1 failed, 6 skipped
 # exit 1
 ```
 
@@ -277,9 +281,10 @@ skipped  docevals run   no page resolves any evals
 # exit 1
 ```
 
-Two checks cover the whole set rather than single files. `term check` and
-`graph check` run on a bare `manni check` and not when you name files, because
-one page can move the glossary or the graph. `cite check` follows the same split.
+Three checks cover the whole set rather than single files. `term check`,
+`strategy check` and `graph check` run on a bare `manni check` and not when you
+name files, because one page can move the glossary, the strategy or the graph.
+`cite check` follows the same split.
 It checks the named pages, or every page with citations on a bare run.
 
 ## What stays its own step

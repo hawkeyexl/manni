@@ -45,6 +45,13 @@ function byCommand(run: FamilyCheckRun, command: string): CheckOutcome {
   return found;
 }
 
+/** The findings in `strategy check`'s own JSON report. */
+function strategyFindings(run: FamilyCheckRun): Record<string, unknown>[] {
+  const check = byCommand(run, "strategy check");
+  if (!("render" in check)) throw new Error(`strategy check did not run: ${check.message}`);
+  return (JSON.parse(check.render("json", false)) as { findings: Record<string, unknown>[] }).findings;
+}
+
 function edit(root: string, rel: string, change: (text: string) => string): void {
   const path = join(root, rel);
   writeFileSync(path, change(readFileSync(path, "utf8")));
@@ -67,6 +74,7 @@ describe.skipIf(!gitAvailable())("runFamilyCheck", () => {
       { command: "cite check", status: "skipped", message: "no page carries citations" },
       { command: "lint check", status: "skipped", message: "no lint: section" },
       { command: "term check", status: "skipped", message: "no terms in any collection" },
+      { command: "strategy check", status: "skipped", message: "no strategy records in any collection" },
       { command: "graph check", status: "skipped", message: "no graph: section" },
     ]);
     expect(exitCodeFor(run)).toBe(0);
@@ -150,12 +158,24 @@ describe.skipIf(!gitAvailable())("runFamilyCheck", () => {
       ["lint check", "pass"],
       ["docevals run", "pass"],
       ["term check", "pass"],
+      ["strategy check", "pass"],
       ["graph check", "pass"],
     ]);
     const meta = JSON.parse(renderJson(run)) as { checks: { command: string; report?: { results: { file: string }[] } }[] };
     const files = meta.checks.find((c) => c.command === "meta validate")?.report?.results.map((r) => r.file);
     expect(files).toContain("docs/limits.md");
     expect(files).not.toContain("docs/glossary/timeout.md");
+  });
+
+  it("strategy: a record that names no record of its parent's type fails the run", async () => {
+    dir = fixtureRepo("everything");
+    edit(dir, "docs/strategy/m1.md", (t) => t.replace("persona: maya", "persona: mya"));
+    const run = await runFamilyCheck({ cwd: dir, scope: { kind: "all" } });
+    expect(byCommand(run, "strategy check").status).toBe("fail");
+    expect(strategyFindings(run)).toContainEqual(
+      expect.objectContaining({ rule: "undefined-reference", file: "docs/strategy/m1.md", field: "persona" }),
+    );
+    expect(exitCodeFor(run)).toBe(1);
   });
 
   it("each report is the domain's own -f json output", async () => {
@@ -188,7 +208,9 @@ describe.skipIf(!gitAvailable())("runFamilyCheck", () => {
     expect(run.files).toEqual(["docs/page.md"]);
     expect(notices).toContain("Skipped 1 file outside every collection: README.md");
     // The set-wide checks are not part of a per-file scope.
-    expect(run.checks.map((c) => c.command)).not.toContain("term check");
+    for (const setWide of ["term check", "strategy check"]) {
+      expect(run.checks.map((c) => c.command)).not.toContain(setWide);
+    }
   });
 
   it("paths: nothing but non-members runs no check", async () => {
@@ -204,24 +226,24 @@ describe.skipIf(!gitAvailable())("runFamilyCheck", () => {
     expect(run).toEqual({ status: "pass", files: [], checks: [] });
   });
 
-  it("changed: the per-file checks on the changes, every citation and the glossary, never the graph", async () => {
+  it("changed: the per-file checks on the changes, every citation, the glossary and the strategy, never the graph", async () => {
     dir = fixtureRepo("everything");
     edit(dir, "docs/limits.md", (t) => t.replace(/^description:.*\n/m, ""));
     const run = await runFamilyCheck({ cwd: dir, scope: { kind: "changed" } });
     expect(run.files).toEqual(["docs/limits.md"]);
     expect(byCommand(run, "meta validate").status).toBe("fail");
-    for (const setWide of ["cite check", "term check"]) {
+    for (const setWide of ["cite check", "term check", "strategy check"]) {
       expect(run.checks.map((c) => c.command)).toContain(setWide);
     }
     expect(run.checks.map((c) => c.command)).not.toContain("graph check");
   });
 
-  it("changed: a source edit runs every citation, and leaves the glossary alone", async () => {
+  it("changed: a source edit runs every citation and the strategy, and leaves the glossary alone", async () => {
     dir = fixtureRepo("everything");
     edit(dir, "src/limits.ts", (t) => t.replace("FETCH_TIMEOUT_MS = 10_000", "FETCH_TIMEOUT_MS = 20_000"));
     const run = await runFamilyCheck({ cwd: dir, scope: { kind: "changed" } });
     expect(run.files).toEqual([]);
-    expect(run.checks.map((c) => c.command)).toEqual(["cite check"]);
+    expect(run.checks.map((c) => c.command)).toEqual(["cite check", "strategy check"]);
     expect(byCommand(run, "cite check").status).toBe("fail");
   });
 
@@ -230,7 +252,20 @@ describe.skipIf(!gitAvailable())("runFamilyCheck", () => {
     rmSync(join(dir, "docs/glossary/timeout.md"));
     const run = await runFamilyCheck({ cwd: dir, scope: { kind: "changed" } });
     expect(run.files).toEqual([]);
-    expect(run.checks.map((c) => c.command)).toEqual(["cite check", "term check"]);
+    expect(run.checks.map((c) => c.command)).toEqual(["cite check", "term check", "strategy check"]);
+  });
+
+  it("changed: a sidecar edit alone runs the strategy, which reads the sidecar's values", async () => {
+    dir = fixtureRepo("everything");
+    // A {page}.meta.yaml is neither a document nor a member, so no per-file check and no glossary runs.
+    edit(dir, "docs/limits.meta.yaml", (t) => t.replace("journeys: [m1]", "journeys: [m1, m9]"));
+    const run = await runFamilyCheck({ cwd: dir, scope: { kind: "changed" } });
+    expect(run.files).toEqual([]);
+    expect(run.checks.map((c) => c.command)).toEqual(["cite check", "strategy check"]);
+    expect(byCommand(run, "strategy check").status).toBe("fail");
+    expect(strategyFindings(run)).toContainEqual(
+      expect.objectContaining({ rule: "undefined-reference", file: "docs/limits.meta.yaml", field: "journeys" }),
+    );
   });
 
   it("no config is an operational error the hook answers with silence", async () => {
@@ -456,6 +491,7 @@ describe.skipIf(!gitAvailable())("renderSarif", () => {
             { level: "note", message: { text: "cite check skipped: no page carries citations." } },
             { level: "note", message: { text: "docevals run skipped: no page resolves any evals." } },
             { level: "note", message: { text: "term check skipped: no terms in any collection." } },
+            { level: "note", message: { text: "strategy check skipped: no strategy records in any collection." } },
             { level: "note", message: { text: "graph check skipped: no graph: section." } },
           ],
         },
@@ -486,7 +522,7 @@ describe.skipIf(!gitAvailable())("renderSarif", () => {
     for (const path of located) expect(existsSync(path), path).toBe(true);
   });
 
-  it("cite and term render SARIF, not pretty", async () => {
+  it("cite, term and strategy render SARIF, not pretty", async () => {
     dir = fixtureRepo("everything");
     const run = await runFamilyCheck({ cwd: dir, scope: { kind: "all" } });
     const log = sarifOf(renderSarif(run));
@@ -496,6 +532,7 @@ describe.skipIf(!gitAvailable())("renderSarif", () => {
       "manni/lint/",
       "manni/docevals/",
       "manni/term/",
+      "manni/strategy/",
       "manni/graph/",
       "manni/check/",
     ]);

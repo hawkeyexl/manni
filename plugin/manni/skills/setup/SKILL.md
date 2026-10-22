@@ -33,7 +33,7 @@ collections:
 | graph | The knowledge graph and its SHACL shapes | Run `manni graph init`. It appends a `graph:` section. |
 
 Run `manni docevals init` only when no config file exists. It refuses an existing one. With a config in place, write the `docevals:` section by hand.
-Citations and terms need no section. They are in play when the pages carry them.
+Citations, terms and strategy records need no section. They are in play when the pages carry them.
 
 5. Run `node "${CLAUDE_PLUGIN_ROOT}/hooks/manni.mjs" status` and show the user the table. Each domain that is not set up names what would set it up. Offer those, and add only what the user accepts.
 6. Run `node "${CLAUDE_PLUGIN_ROOT}/hooks/manni.mjs" check`. Report the result and use the `fix` skill for any error.

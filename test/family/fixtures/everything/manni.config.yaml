@@ -1,10 +1,15 @@
 # Every domain manni check runs is set up: a meta: override, citations, a
-# lint: section, docevals:, a term and graph:. The term page is covered by
-# the built-in default schemas alone, so meta validate leaves it out.
+# lint: section, docevals:, a term, strategy records and graph:. The term
+# page and the records are covered by the built-in default schemas alone, so
+# meta validate leaves them out. docs/limits.md names its audience, persona
+# and journey in its {page}.meta.yaml sidecar.
 collections:
   - name: site
     paths:
       - "docs/**/*.md"
+    externalMetadata:
+      - file: "{page}.meta.yaml"
+        keys: [audiences, personas, journeys]
 
 meta:
   overrides:

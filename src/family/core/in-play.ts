@@ -12,6 +12,7 @@
  * | lint | `lint:` exists |
  * | docevals | a page resolves evals, from `docevals:` or its own declarations |
  * | term | the collections hold a term |
+ * | strategy | the collections hold a record of type audience, persona or journey |
  * | graph | `graph:` exists |
  * | tracevals | `tracevals.runtime` exists; it judges the turn a Stop or SubagentStop hook ends |
  * | a11y | never run by `check`: it needs a running site |
@@ -59,7 +60,7 @@ export function nothingSetUpError(): FamilyError {
 }
 
 /** The domains `check` can run, in the order it runs and reports them. */
-export const DOMAINS = ["meta", "cite", "lint", "docevals", "term", "graph"] as const;
+export const DOMAINS = ["meta", "cite", "lint", "docevals", "term", "strategy", "graph"] as const;
 export type Domain = (typeof DOMAINS)[number];
 
 /** Each domain's check, as `check` names it. */
@@ -69,6 +70,7 @@ export const COMMANDS: Readonly<Record<Domain, string>> = {
   lint: "lint check",
   docevals: "docevals run",
   term: "term check",
+  strategy: "strategy check",
   graph: "graph check",
 };
 
@@ -79,6 +81,7 @@ export const NOT_SET_UP: Readonly<Record<Domain, string>> = {
   lint: "no lint: section",
   docevals: "no page resolves any evals",
   term: "no terms in any collection",
+  strategy: "no strategy records in any collection",
   graph: "no graph: section",
 };
 
@@ -92,6 +95,7 @@ export const NEXT: Readonly<Record<Domain, string>> = {
   lint: "Add a lint: section. manni lint templates lists the templates it can apply.",
   docevals: "Add a docevals: section, or declare evals in a page's frontmatter.",
   term: "Add a page with type: term to a collection.",
+  strategy: "Add a page with type: journey to a collection.",
   graph: "Run manni graph init to add a starter graph: section.",
 };
 

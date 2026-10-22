@@ -39,6 +39,7 @@ describe.skipIf(!gitAvailable())("runStatus", () => {
       { name: "lint", status: "in-play", reason: "lint: section" },
       { name: "docevals", status: "in-play", reason: "docevals: section" },
       { name: "term", status: "in-play", reason: "1 term" },
+      { name: "strategy", status: "in-play", reason: "1 audience, 1 persona, 1 journey" },
       { name: "graph", status: "in-play", reason: "graph: section" },
       { name: "a11y", status: "not-checked", reason: "needs a running site and a browser", next: "Run manni site preview, then manni a11y check." },
       { name: "test", status: "not-checked", reason: "runs the shell steps the pages carry", next: "Run manni test run with Doc Detective installed." },
@@ -91,7 +92,25 @@ describe.skipIf(!gitAvailable())("runStatus", () => {
         reason: "no terms in any collection",
         next: "Add a page with type: term to a collection.",
       },
+      {
+        name: "strategy",
+        status: "not-set-up",
+        reason: "no strategy records in any collection",
+        next: "Add a page with type: journey to a collection.",
+      },
     ]);
+  });
+
+  it("counts the strategy records by type, each in its own plural", async () => {
+    dir = fixtureRepo("everything");
+    const m1 = readFileSync(join(dir, "docs/strategy/m1.md"), "utf8");
+    writeFileSync(join(dir, "docs/strategy/m2.md"), m1.replace("id: m1", "id: m2"));
+    const report = await runStatus({ cwd: dir });
+    expect(report.domains.find((d) => d.name === "strategy")).toEqual({
+      name: "strategy",
+      status: "in-play",
+      reason: "1 audience, 1 persona, 2 journeys",
+    });
   });
 
   it("names graph init as the next step when graph: is absent", async () => {
@@ -304,10 +323,14 @@ describe("renderStatus", () => {
     ]);
     const everything: StatusReport = {
       ...report,
-      domains: ["cite", "term", "graph"].map((name) => ({ name, status: "in-play" as const, reason: "" })),
+      domains: ["cite", "term", "strategy", "graph"].map((name) => ({ name, status: "in-play" as const, reason: "" })),
     };
     expect(agentLines(everything).split("\n")[1]).toBe(
-      "Before you finish, manni check runs on every file you changed, plus every citation. It checks the glossary too when you changed a page. You get one repair pass.",
+      "Before you finish, manni check runs on every file you changed, plus every citation and the content strategy. It checks the glossary too when you changed a page. You get one repair pass.",
+    );
+    const strategyOnly: StatusReport = { ...report, domains: [{ name: "strategy", status: "in-play", reason: "" }] };
+    expect(agentLines(strategyOnly).split("\n")[1]).toBe(
+      "Before you finish, manni check runs on every file you changed, plus the content strategy. You get one repair pass.",
     );
     const graphOnly: StatusReport = { ...report, domains: [{ name: "graph", status: "in-play", reason: "" }] };
     expect(agentLines(graphOnly).split("\n")[1]).toBe(

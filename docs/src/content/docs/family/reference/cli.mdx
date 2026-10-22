@@ -118,6 +118,7 @@ in play. `status` prints the next step under the reason.
 | `lint` | `lint:` exists. | `lint check` | `no lint: section` | `Add a lint: section. manni lint templates lists the templates it can apply.` |
 | `docevals` | `docevals:` exists, or a page declares evals. A run that resolves no evals counts as not in play. | `docevals run`, with `--deterministic-only`, no generation and no execution | `no page resolves any evals` | `Add a docevals: section, or declare evals in a page's frontmatter.` |
 | `term` | The collections hold at least one term. | `term check` | `no terms in any collection` | `Add a page with type: term to a collection.` |
+| `strategy` | The collections hold at least one record, a page of type `audience`, `persona` or `journey`. | `strategy check` | `no strategy records in any collection` | `Add a page with type: journey to a collection.` |
 | `graph` | `graph:` exists. | `graph build` in memory, writing no file, then `graph check` | `no graph: section` | `Run manni graph init to add a starter graph: section.` |
 | `a11y` | Never. `check` does not run it, since it needs a built site and a browser. | none | `needs a running site and a browser` | `Run manni site preview, then manni a11y check.` |
 | `test` | Never. `check` does not run it, since Doc Detective runs the shell steps the pages carry. | none | `runs the shell steps the pages carry` | `Run manni test run with Doc Detective installed.` |
@@ -134,29 +135,32 @@ when you named it.
 | nothing | Every in-play check over every collection. This is the CI gate. | |
 | paths | `meta`, `cite`, `lint` and `docevals` on the documents among the paths that belong to a collection. | none |
 | a `PostToolUse` hook for `Edit`, `Write`, `MultiEdit` or `NotebookEdit` | `meta`, `cite`, `lint` and `docevals` on the edited file. | none |
-| a `Stop` hook | `meta`, `lint` and `docevals` on the working tree's changed members. | `cite`. `term` too, when a collection document changed or was removed. `graph` never runs here. |
+| a `Stop` hook | `meta`, `lint` and `docevals` on the working tree's changed members. | `cite` and `strategy`. `term` too, when a collection document changed or was removed. `graph` never runs here. |
 
 With paths, `cite check` runs on the named pages. On a bare run or at a `Stop`,
 it runs over every page that carries citations, since a source edit can drift
-any of them. `term check` and `graph check` always cover the whole set. Both
-run on a bare `check`, and neither runs when you name files. At a `Stop`,
-`term check` runs only when the session changed or removed a collection
-document, since it reads nothing else. `graph check` never runs at a `Stop`.
-It is the slowest whole-set check, and its findings span pages, so CI runs it
-through a bare `check`. A session that changed only source code runs
-`cite check` alone.
+any of them. `term check`, `strategy check` and `graph check` always cover the
+whole set. All three run on a bare `check`, and none runs when you name files.
+At a `Stop`, `term check` runs only when the session changed or removed a
+collection document, since it reads nothing else. `strategy check` runs on any
+change, as `cite check` does. A page's `personas:` and `journeys:` often sit in
+its `{page}.meta.yaml` sidecar, which is not a collection document.
+`graph check` never runs at a `Stop`. It is the slowest whole-set check, and
+its findings span pages, so CI runs it through a bare `check`. A session that
+changed only source code runs `cite check` and `strategy check`.
 
 The working tree's changed members are the files `git status` reports against
 `HEAD` that belong to a collection and have a supported document extension.
 That covers modified, added, renamed and untracked files. A deleted file is not
-among them, but a deletion still counts as a change, so `cite check` runs. A
-deleted or renamed collection document also runs `term check`.
-A clean tree runs nothing, including the whole-set checks.
+among them, but a deletion still counts as a change, so `cite check` and
+`strategy check` run. A deleted or renamed collection document also runs
+`term check`. A clean tree runs nothing, including the whole-set checks.
 
 Checks run, and print, in a fixed order. For a bare run and for paths it is
-`meta validate`, `cite check`, `lint check`, `docevals run`, `term check`, then
-`graph check`. At a `Stop` it is `meta validate`, `lint check`, `docevals run`,
-`cite check`, then `term check`, leaving out any that do not run.
+`meta validate`, `cite check`, `lint check`, `docevals run`, `term check`,
+`strategy check`, then `graph check`. At a `Stop` it is `meta validate`,
+`lint check`, `docevals run`, `cite check`, `term check`, then
+`strategy check`, leaving out any that do not run.
 
 ## Output
 
@@ -227,8 +231,9 @@ One object. Each `report` is that domain's own `-f json` output, unchanged.
 One SARIF 2.1.0 log. Each check that ran adds its domain's own `-f sarif` run,
 unchanged except for two keys:
 
-- `automationDetails.id` is `manni/<domain>/`, such as `manni/meta/`. meta, cite
-  and term share the driver `manni`, so the category is what tells them apart.
+- `automationDetails.id` is `manni/<domain>/`, such as `manni/meta/` or
+  `manni/strategy/`. meta, cite, term and strategy share the driver `manni`, so
+  the category is what tells them apart.
 - A run with no `invocations` gains `[{ "executionSuccessful": true }]`.
 
 A last run, driver `manni-check` and category `manni/check/`, holds no results.
@@ -271,6 +276,8 @@ docevals   not set up    no page resolves any evals
                          Add a docevals: section, or declare evals in a page's frontmatter.
 term       not set up    no terms in any collection
                          Add a page with type: term to a collection.
+strategy   not set up    no strategy records in any collection
+                         Add a page with type: journey to a collection.
 graph      not set up    no graph: section
                          Run manni graph init to add a starter graph: section.
 a11y       not checked   needs a running site and a browser
@@ -455,6 +462,8 @@ docevals   not set up    no page resolves any evals
                          Add a docevals: section, or declare evals in a page's frontmatter.
 term       not set up    no terms in any collection
                          Add a page with type: term to a collection.
+strategy   not set up    no strategy records in any collection
+                         Add a page with type: journey to a collection.
 graph      not set up    no graph: section
                          Run manni graph init to add a starter graph: section.
 a11y       not checked   needs a running site and a browser
@@ -472,13 +481,14 @@ meta validate
 
 2 files checked, 1 passed, 1 failed, 1 error
 
-skipped  cite check     no page carries citations
-skipped  lint check     no lint: section
-skipped  docevals run   no page resolves any evals
-skipped  term check     no terms in any collection
-skipped  graph check    no graph: section
+skipped  cite check       no page carries citations
+skipped  lint check       no lint: section
+skipped  docevals run     no page resolves any evals
+skipped  term check       no terms in any collection
+skipped  strategy check   no strategy records in any collection
+skipped  graph check      no graph: section
 
-6 checks over 2 files: 1 failed, 5 skipped
+7 checks over 2 files: 1 failed, 6 skipped
 # exit 1
 
 $ manni check docs/index.md
