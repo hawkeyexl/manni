@@ -1361,7 +1361,7 @@ docs/src/content/docs/meta/reference/query.mdx:
         file: src/meta/core/validator.ts
         lines: 528-531
         integrity: sha256-f797beba826e8408b6f921b4ef53bd36a9bec9061f63daf72664a3aee98842ef
-        commit-sha: ac06e6b383628ad1b1e78539fc301e26df84e834
+        commit-sha: cb74827009894c38f8646504ae9eb4a2745761a9
     - id: explicit-null-writes-a-literal-null
       claim:
         lines: 403

@@ -452,7 +452,7 @@ docs/src/content/docs/cite/fix/index.mdx:
         file: src/shared/statements.ts
         lines: 202-203
         integrity: sha256-efee60a1bf54f607832ae603af76609bd4a09710a283a6fddd0838ff4733884d
-        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
+        commit-sha: cb74827009894c38f8646504ae9eb4a2745761a9
     - id: marker-invalid-sample
       claim:
         lines: 412
@@ -469,7 +469,7 @@ docs/src/content/docs/cite/fix/index.mdx:
         file: src/shared/statements.ts
         lines: 196-199
         integrity: sha256-82c5a7d2e534316ea45d0dd776890aa34214e95a5138110ffe2c89dae0f2c90f
-        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
+        commit-sha: cb74827009894c38f8646504ae9eb4a2745761a9
     - id: marker-invalid-over-500
       claim:
         integrity: sha256-68be575bc3a7c42875ae70f55eadf53396ae7d204776aecb6de3f76ff7916704

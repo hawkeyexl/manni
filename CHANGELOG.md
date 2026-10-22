@@ -4,6 +4,19 @@
 4.13.1. Entries below that version are docmeta releases; the repository
 history is the same one.
 
+# [4.17.0](https://github.com/hawkeyexl/manni/compare/v4.16.0...v4.17.0) (2026-10-22)
+
+
+### Features
+
+* **graph:** export chunks, each passage with its provenance record (0090) ([#224](https://github.com/hawkeyexl/manni/issues/224)) ([0d820b1](https://github.com/hawkeyexl/manni/commit/0d820b1d84abfce2a260cafda7df4226c73c4644)), closes [#222](https://github.com/hawkeyexl/manni/issues/222)
+* **graph:** graph publish, the cited row and llms.txt (0090) ([#227](https://github.com/hawkeyexl/manni/issues/227)) ([2027322](https://github.com/hawkeyexl/manni/commit/20273228572da96c30b807edb06b6c3d9f750e77)), closes [#222](https://github.com/hawkeyexl/manni/issues/222)
+* **graph:** graph serve answers lookup, retrieve, traverse and impact over MCP (0090) ([#226](https://github.com/hawkeyexl/manni/issues/226)) ([3ade689](https://github.com/hawkeyexl/manni/commit/3ade6890016fab0ac4e4b432510ca63df900991b)), closes [#222](https://github.com/hawkeyexl/manni/issues/222)
+* **graph:** lookup, retrieve and createRetriever serve passages with their proof (0090) ([#225](https://github.com/hawkeyexl/manni/issues/225)) ([599d8d5](https://github.com/hawkeyexl/manni/commit/599d8d5baa7049dd502ca3d66f7cba8b66b9955f)), closes [#222](https://github.com/hawkeyexl/manni/issues/222)
+* **meta:** inline metadata statements pinned to the blocks they describe (0099) ([#223](https://github.com/hawkeyexl/manni/issues/223)) ([db834cd](https://github.com/hawkeyexl/manni/commit/db834cdfdee0b31eaa81bf0c2a69801ec866624d)), closes [#222](https://github.com/hawkeyexl/manni/issues/222)
+* **meta:** verification metadata, and a guide for tools that write it (0098) ([#222](https://github.com/hawkeyexl/manni/issues/222)) ([cb74827](https://github.com/hawkeyexl/manni/commit/cb74827009894c38f8646504ae9eb4a2745761a9))
+* **site:** site annotate joins each pin to its built block, as data (0095) ([#229](https://github.com/hawkeyexl/manni/issues/229)) ([6a890ff](https://github.com/hawkeyexl/manni/commit/6a890ff3738bec93fb412faf0977e22c6eccc7b4)), closes [#222](https://github.com/hawkeyexl/manni/issues/222)
+
 # [4.16.0](https://github.com/hawkeyexl/manni/compare/v4.15.0...v4.16.0) (2026-10-22)
 
 

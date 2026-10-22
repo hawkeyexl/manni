@@ -227,7 +227,7 @@ docs/src/content/docs/cite/index.mdx:
         file: src/cite/core/page.ts
         lines: 19
         integrity: sha256-b0783f89b3a06d255898d270f46658b9594c8a645d4ef50f7689ff8bcf902ed4
-        commit-sha: 77ca1cddd34b0dc3667d7b00c0ff08f4878680c3
+        commit-sha: cb74827009894c38f8646504ae9eb4a2745761a9
     - id: checks-both-ends
       claim:
         integrity: sha256-278c17058b2b02e15d4b9bff95037661c331d2295f6816870d0b8ea94fbe986b

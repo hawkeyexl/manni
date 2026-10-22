@@ -24,7 +24,7 @@ docs/src/content/docs/term/get-started/index.mdx:
         file: package.json
         lines: 50-52
         integrity: sha256-2de8e81748272b9a64ecbd0ef087b7b148d787302d6d51977510a7c17687ae12
-        commit-sha: a6e72e40489c2bc2022cbe0c242a137845229c2a
+        commit-sha: cb74827009894c38f8646504ae9eb4a2745761a9
     - id: term-page-every-format
       claim:
         lines: 17-18

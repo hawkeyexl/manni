@@ -32,7 +32,7 @@ docs/src/content/docs/meta/schemas/encrypted-fields.mdx:
         file: src/meta/commands/validate.ts
         lines: 463-470
         integrity: sha256-1973f37dd5436ece748c776b24dbfea838d2cad07428841d9036551a77a89caa
-        commit-sha: 6f1ff2e33d9cc6b0a72c5acc22a0290a71d3b0fe
+        commit-sha: cb74827009894c38f8646504ae9eb4a2745761a9
     - id: sarif-rule-id-for-encrypted-plain
       claim:
         lines: 197
@@ -115,7 +115,7 @@ docs/src/content/docs/meta/schemas/encrypted-fields.mdx:
         file: src/meta/commands/get.ts
         lines: 355-367
         integrity: sha256-03204dafd73504020bd69beb017402a08af67d0f86437ebadf79c3574719b66a
-        commit-sha: 6f1ff2e33d9cc6b0a72c5acc22a0290a71d3b0fe
+        commit-sha: cb74827009894c38f8646504ae9eb4a2745761a9
     - id: ciphertext-is-tilde-plus-82-chars
       claim:
         integrity: sha256-e8ae5d4ddb21d0e2004225929e2d9c5863d0e52bcc05bb9e2a307f06e0f89207
@@ -148,4 +148,4 @@ docs/src/content/docs/meta/schemas/encrypted-fields.mdx:
         file: src/meta/core/validator.ts
         lines: 683-688
         integrity: sha256-32ae7c90403fd1cddb487dfc93579f272e5dbfa59abee2f8f2d13b8f46e11be6
-        commit-sha: ac06e6b383628ad1b1e78539fc301e26df84e834
+        commit-sha: cb74827009894c38f8646504ae9eb4a2745761a9

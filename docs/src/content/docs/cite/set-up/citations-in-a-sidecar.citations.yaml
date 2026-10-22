@@ -93,7 +93,7 @@ docs/src/content/docs/cite/set-up/citations-in-a-sidecar.mdx:
         file: src/meta/commands/validate.ts
         lines: 1045-1054
         integrity: sha256-14227a995cb09b16ba9d2f16f1a4cdd0089e1106899cd2ebe69239864da10893
-        commit-sha: 6f1ff2e33d9cc6b0a72c5acc22a0290a71d3b0fe
+        commit-sha: cb74827009894c38f8646504ae9eb4a2745761a9
     - id: manifest-splice-read-back
       claim:
         integrity: sha256-8762e8641470d3e0d63a81ee1850e31d1569acad2e1b2f01a0193f9b79cdf0c0
