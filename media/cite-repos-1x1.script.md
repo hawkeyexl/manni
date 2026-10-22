@@ -3,10 +3,10 @@
 - **Type:** feature demo, terminal session. No narration; captions only
   (LinkedIn autoplays muted).
 - **Audience:** Maya, the docs engineer whose page rests on code in two
-  repositories (CUJ M5), and Devin, whose gate stays red until someone deletes
+  repositories (CUJ M5). Also Devin, whose gate stays red until someone deletes
   a pin that holds (CUJ D5). Phone-sized, muted.
 - **Target:** 43.5 s, five beats, one caption each.
-- **Objective:** the viewer sees one page that cites `api` and `sdk` fail
+- **Objective:** The viewer sees one page that cites `api` and `sdk` fail
   under either `--root`, then pass in one run once `cite.repos` names both
   checkouts. A later commit in `sdk` reports on the one sentence it made
   stale, printed as `sdk:src/client.ts:2`.
@@ -17,9 +17,9 @@
   `CiteReposDemo` composition in `media/remotion/src/Root.tsx`.
 - **Look:** `docs/content-strategy/design.md`. 1080×1080, 30 fps, title band
   112 px with `n / 5` counter, caption band 86 px, accent `#58a6ff` blue.
-  Never red, green, yellow or cyan: the frame already holds red `✗` and
-  summaries, green `✓`, cyan citation ids, and git's yellow SHA and red/green
-  diff lines.
+  Never red, green, yellow or cyan. The frame already holds red `✗` and
+  summaries and green `✓`. It also holds cyan citation ids, and git's yellow
+  SHA and red/green diff lines.
 - **Material.** `media/scratch-cite-repos/` (gitignored) holds three git
   checkouts side by side, `docs`, `api` and `sdk`, with a pinned author and
   pinned dates, so every SHA on screen reproduces. `api/lib/limits.ts` and
@@ -44,9 +44,9 @@ it could be before 0100: one `cite add --root` per checkout. Each root turns
 the other pin into `missing`, and the advice on that line deletes a citation
 that holds. That is the proposal's Problem section, reproduced.
 
-Beats 2 and 3 are the fix and its proof: one config key, one run, both pins
-`current`, and the repo name in the source column. Beats 4 and 5 show that the
-pin still does its job across the checkout boundary. A commit in `sdk` lands
+Beats 2 and 3 show the fix and its proof. One config key and one run bring
+both pins back `current`, and the source column names the repo. Beats 4 and 5
+show that the pin still does its job across the checkout boundary. A commit in `sdk` lands
 on exactly one sentence, and the finding names `sdk` and the baseline commit.
 `cite update --accept` and the `-f github` annotation from the worked example
 stay out of frame; 43.5 s of a 45 s ceiling is spent.
@@ -69,8 +69,9 @@ stay out of frame; 43.5 s of a 45 s ceiling is spent.
   line, captured with `2>&1` in the order a terminal shows it.
 - **Exit codes** are each run's real status (`*.exit`), printed by the typed
   `; echo $?`.
-- **Latency is replayed at 1x** (`capture-repos/latency.txt`): 518 ms and
-  546 ms for beat 1, 517 ms for beat 3, 53 ms for git, 768 ms for beat 5.
+- **Latency is replayed at 1x** (`capture-repos/latency.txt`). Beat 1 took
+  518 ms and 546 ms, and beat 3 took 517 ms. Git took 53 ms and beat 5 took
+  768 ms.
   Nothing is compressed.
 - **Font size is derived, not chosen** (`node capture-repos/cols.mjs 21`).
   23 px (75 columns) fits every beat but orphans `commit` from beat 5's
