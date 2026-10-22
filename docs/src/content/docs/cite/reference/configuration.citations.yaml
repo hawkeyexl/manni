@@ -91,7 +91,7 @@ docs/src/content/docs/cite/reference/configuration.mdx:
         file: src/meta/core/baseline.ts
         lines: 490-494
         integrity: sha256-93430fe764498fd976f09e4b233c40bd5c8231a1a10599bb6cfb7e18dbf7bb01
-        commit-sha: 03518fa2c75bdbeb46f732bbac3f8b35c92c16f2
+        commit-sha: cb74827009894c38f8646504ae9eb4a2745761a9
     - id: key-baseline-flags
       claim:
         lines: 93
@@ -100,7 +100,7 @@ docs/src/content/docs/cite/reference/configuration.mdx:
         file: src/meta/core/baseline.ts
         lines: 516-526
         integrity: sha256-c6a4b91ab11048ad58e6a8030343f1798445ea93d8d071923d77dc5f564e591b
-        commit-sha: 03518fa2c75bdbeb46f732bbac3f8b35c92c16f2
+        commit-sha: cb74827009894c38f8646504ae9eb4a2745761a9
     - id: key-check-sources
       claim:
         lines: 94
@@ -358,7 +358,7 @@ docs/src/content/docs/cite/reference/configuration.mdx:
         file: src/meta/core/baseline.ts
         lines: 490-494
         integrity: sha256-93430fe764498fd976f09e4b233c40bd5c8231a1a10599bb6cfb7e18dbf7bb01
-        commit-sha: 03518fa2c75bdbeb46f732bbac3f8b35c92c16f2
+        commit-sha: cb74827009894c38f8646504ae9eb4a2745761a9
     - id: rel-positional-cwd
       claim:
         lines: 194
@@ -385,7 +385,7 @@ docs/src/content/docs/cite/reference/configuration.mdx:
         file: src/meta/core/baseline.ts
         lines: 466-470
         integrity: sha256-0ce4eb7ffff3477e61e03f3b3fd6b34da5a65a4bc81b239f84832706d5eb2a2b
-        commit-sha: 03518fa2c75bdbeb46f732bbac3f8b35c92c16f2
+        commit-sha: cb74827009894c38f8646504ae9eb4a2745761a9
     - id: fingerprints-config-dir
       claim:
         integrity: sha256-9924707f21479f4ffb6babb0142f92f6c4cbe2342dd31205f61a7ad4aac0a9a5
@@ -457,7 +457,7 @@ docs/src/content/docs/cite/reference/configuration.mdx:
         file: src/cite/types.ts
         lines: 118-133
         integrity: sha256-1bf1aab98a95bb7bb18bf1173dffbebe5405ab244ae9d42c7d1fbf68fe99adcc
-        commit-sha: 6f1ff2e33d9cc6b0a72c5acc22a0290a71d3b0fe
+        commit-sha: cb74827009894c38f8646504ae9eb4a2745761a9
     - id: default-source-moved
       claim:
         lines: 271

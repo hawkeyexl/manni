@@ -55,7 +55,7 @@ docs/src/content/docs/meta/ci/exit-codes-and-annotations.mdx:
         file: src/meta/reporters/index.ts
         lines: 294
         integrity: sha256-484ab502761ab6f10654499678c217774f5ff4856ba6ceaba9a07a8f22a96d49
-        commit-sha: 6f1ff2e33d9cc6b0a72c5acc22a0290a71d3b0fe
+        commit-sha: cb74827009894c38f8646504ae9eb4a2745761a9
     - id: validate-has-five-report-formats
       claim:
         integrity: sha256-016f9994f9c9d63d98214d6e7052ad0c3b8714f15abea15e60a04dec71e56cce
@@ -79,7 +79,7 @@ docs/src/content/docs/meta/ci/exit-codes-and-annotations.mdx:
         file: src/meta/reporters/index.ts
         lines: 303-314
         integrity: sha256-96ed1375b03b05a524d20e67fe16600c5dae6b6e7dba967dc7678a0ad2bdb641
-        commit-sha: 6f1ff2e33d9cc6b0a72c5acc22a0290a71d3b0fe
+        commit-sha: cb74827009894c38f8646504ae9eb4a2745761a9
     - id: quiet-hides-passing-files
       claim:
         lines: 99-100
@@ -196,7 +196,7 @@ docs/src/content/docs/meta/ci/exit-codes-and-annotations.mdx:
         file: src/meta/core/validator.ts
         lines: 1071-1079
         integrity: sha256-7d405e798226afa451d2c0ff05a3e1807cb0fb448f8d8d295f1a329a45beaf2e
-        commit-sha: ac06e6b383628ad1b1e78539fc301e26df84e834
+        commit-sha: cb74827009894c38f8646504ae9eb4a2745761a9
     - id: github-file-param-always-present
       claim:
         lines: 210
@@ -205,7 +205,7 @@ docs/src/content/docs/meta/ci/exit-codes-and-annotations.mdx:
         file: src/meta/reporters/index.ts
         lines: 320
         integrity: sha256-f01660f4f66c7042ecb427cc0f978499afc45edb6a3f6b302f96eafc6967b325
-        commit-sha: 6f1ff2e33d9cc6b0a72c5acc22a0290a71d3b0fe
+        commit-sha: cb74827009894c38f8646504ae9eb4a2745761a9
     - id: github-line-param-only-when-known
       claim:
         lines: 211
@@ -214,7 +214,7 @@ docs/src/content/docs/meta/ci/exit-codes-and-annotations.mdx:
         file: src/meta/reporters/index.ts
         lines: 321
         integrity: sha256-6f7fddba54807036fe6792397e2805fdfc0d05e15ac3f8e2939b1705636c6d54
-        commit-sha: 6f1ff2e33d9cc6b0a72c5acc22a0290a71d3b0fe
+        commit-sha: cb74827009894c38f8646504ae9eb4a2745761a9
     - id: github-col-omitted-for-required
       claim:
         lines: 212-214
@@ -223,7 +223,7 @@ docs/src/content/docs/meta/ci/exit-codes-and-annotations.mdx:
         file: src/meta/core/validator.ts
         lines: 1071-1079
         integrity: sha256-7d405e798226afa451d2c0ff05a3e1807cb0fb448f8d8d295f1a329a45beaf2e
-        commit-sha: ac06e6b383628ad1b1e78539fc301e26df84e834
+        commit-sha: cb74827009894c38f8646504ae9eb4a2745761a9
     - id: root-field-label-is-root
       claim:
         lines: 218-219

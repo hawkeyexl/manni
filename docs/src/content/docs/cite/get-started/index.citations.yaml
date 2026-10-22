@@ -8,7 +8,7 @@ docs/src/content/docs/cite/get-started/index.mdx:
         file: package.json
         lines: 50-52
         integrity: sha256-2de8e81748272b9a64ecbd0ef087b7b148d787302d6d51977510a7c17687ae12
-        commit-sha: a6e72e40489c2bc2022cbe0c242a137845229c2a
+        commit-sha: cb74827009894c38f8646504ae9eb4a2745761a9
     - id: shallow-clone-history-unavailable
       claim:
         lines: 17-18
@@ -584,7 +584,7 @@ docs/src/content/docs/cite/get-started/index.mdx:
         file: src/shared/statements.ts
         lines: 183-223
         integrity: sha256-dee7812e305f4c87f03e04b8209dff9dbc76d2ebdda73c57523f9ca3680c6524
-        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
+        commit-sha: cb74827009894c38f8646504ae9eb4a2745761a9
     - id: marker-json-invalid
       claim:
         integrity: sha256-284cc6de94cf60a0d4ec94096930bcf2d6d1f2c4a7441f488d43adbc10d47c4a
@@ -657,7 +657,7 @@ docs/src/content/docs/cite/get-started/index.mdx:
         file: src/shared/statements.ts
         lines: 79-86
         integrity: sha256-b743b9d113b886d14e9ee0f01663073e8750229f1b3be5474d5dc74df0f9bb45
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: cb74827009894c38f8646504ae9eb4a2745761a9
     - id: add-message-sample
       claim:
         lines: 104-108

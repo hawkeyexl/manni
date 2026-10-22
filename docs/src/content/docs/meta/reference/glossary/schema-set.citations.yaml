@@ -7,4 +7,4 @@ docs/src/content/docs/meta/reference/glossary/schema-set.mdx:
         file: src/meta/core/validator.ts
         lines: 956-968
         integrity: sha256-be1e2cd1bb9dc568f24342cef79d986de1d4b2640e1addeb684f9ecf55668f09
-        commit-sha: ac06e6b383628ad1b1e78539fc301e26df84e834
+        commit-sha: cb74827009894c38f8646504ae9eb4a2745761a9

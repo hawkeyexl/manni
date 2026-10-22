@@ -225,7 +225,7 @@ docs/src/content/docs/term/reference/rules.mdx:
         file: src/meta/types.ts
         lines: 223-225
         integrity: sha256-77c298e1512b56d5ec2ada2912903d7d182c6f5de51068cac870ef9265497f0a
-        commit-sha: 6f1ff2e33d9cc6b0a72c5acc22a0290a71d3b0fe
+        commit-sha: cb74827009894c38f8646504ae9eb4a2745761a9
     - id: unused-term-off
       claim:
         integrity: sha256-7e048c5641adfd6f4e82af7836d1c8996594f424ee990bb255e6eba1c3d690a7

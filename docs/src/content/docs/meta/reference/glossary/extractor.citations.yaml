@@ -15,4 +15,4 @@ docs/src/content/docs/meta/reference/glossary/extractor.mdx:
         file: src/meta/commands/validate.ts
         lines: 1065-1071
         integrity: sha256-0c3b3d2a1bb415917787bfb33df3ea75db73cf65e5d1affa71105f10bd5faa9d
-        commit-sha: 6f1ff2e33d9cc6b0a72c5acc22a0290a71d3b0fe
+        commit-sha: cb74827009894c38f8646504ae9eb4a2745761a9
