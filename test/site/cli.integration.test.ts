@@ -178,7 +178,8 @@ describe("manni site annotate (proposal 0095)", () => {
   it("annotates the built site, prints the success line and exits 0", () => {
     const r = site(["annotate"]);
     expect(r.status).toBe(0);
-    expect(r.stderr).toBe("manni: Starlight in site/. Annotating site/dist from graph/chunks.json.\n");
+    expect(r.stderr.startsWith("manni: Starlight in site/. Annotating site/dist from graph/chunks.json.\n")).toBe(true);
+    expect(r.stderr).toContain("manni: site/src/content/docs/missing.md could not be read, so its pins are placed by line alone: ");
     expect(r.stdout.startsWith(SUCCESS)).toBe(true);
     expect(r.stdout).toContain("  plain/index.html: 1 pin not placed, because its text appears twice: repeat.\n");
   });
