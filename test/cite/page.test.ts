@@ -307,6 +307,31 @@ describe("readPage: entries", () => {
   });
 });
 
+describe("readPage: source.repo (proposal 0100)", () => {
+  it("reads an entry's repo into the citation", () => {
+    const page = readPage(
+      "p.md",
+      pageWith(`  - id: x\n    source:\n      repo: sdk\n      file: src/limits.ts\n      lines: 2\n      integrity: ${PIN}\n`),
+    );
+    expect(page.findings).toEqual([]);
+    expect(page.citations[0]?.citation.source).toEqual({
+      repo: "sdk",
+      file: "src/limits.ts",
+      lines: 2,
+      integrity: PIN,
+    });
+  });
+
+  it.each(["SDK", "-sdk", "sdk/x", "../sdk", ""])("calls repo %j entry-invalid", (repo) => {
+    const page = readPage(
+      "p.md",
+      pageWith(`  - id: x\n    source:\n      repo: "${repo}"\n      file: src/limits.ts\n      lines: 2\n      integrity: ${PIN}\n`),
+    );
+    expect(page.citations).toEqual([]);
+    expect(page.findings).toMatchObject([{ rule: "entry-invalid", line: 4, index: 0, id: "x" }]);
+  });
+});
+
 describe("readPage: markers", () => {
   it("resolves a marker to the entry it names, and anchors the paragraph after it", () => {
     const page = fixture("marker.md");

@@ -3,7 +3,7 @@
  *
  * Entries come from the frontmatter (via meta's extractor for the format), or
  * from `CheckPageOptions.citations` when a manifest owns them; either way each
- * one is validated against the registered `manni:citations:1.1.0` schema and
+ * one is validated against the registered `manni:citations:1.2.0` schema and
  * carries where it sits.
  * Markers are `cite <id> [<id>…]` comments in the body, resolved to the
  * entries they name, so each citation knows what anchors it. Every id one
@@ -16,7 +16,7 @@
 import { extname } from "node:path";
 import * as Ajv2020Ns from "ajv/dist/2020.js";
 import type { ValidateFunction } from "ajv/dist/2020.js";
-import citationsSchema from "../../meta/schemas/citations/1.1.0.json" with { type: "json" };
+import citationsSchema from "../../meta/schemas/citations/1.2.0.json" with { type: "json" };
 import {
   extractorForExtension,
   locateFrontmatter,
@@ -127,6 +127,7 @@ function toCitation(entry: Record<string, unknown>): Citation {
   if (typeof source["commit-sha"] === "string") {
     citation.source["commit-sha"] = source["commit-sha"];
   }
+  if (typeof source.repo === "string") citation.source.repo = source.repo;
   if (typeof entry.id === "string") citation.id = entry.id;
   if (isRecord(entry.claim)) {
     const claim = entry.claim;

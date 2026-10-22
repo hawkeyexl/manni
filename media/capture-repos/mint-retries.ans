@@ -1,0 +1,2 @@
+Using manni.config.yaml (.)
+pages/limits.md: added retries to frontmatter (claim at line 30, sha256-b4b4aac2…; source sdk:src/client.ts:2 "return retry(() => fetch(url), { attempts: 3 });", sha256-4bcf2ce6…, ce9ce76)

@@ -408,7 +408,13 @@ export async function classifyCitation(
   /** The new source as the entry spells sources: a ciphertext stays one. */
   const spellAt = (at: string, start?: number, end?: number): string => {
     const written = range.encrypted && opts.key !== undefined ? encryptSourcePath(at, opts.key) : at;
-    return formatSrc({ path: written, encrypted: range.encrypted, ...(start === undefined ? {} : { start, end }) });
+    return formatSrc({
+      path: written,
+      encrypted: range.encrypted,
+      // A move stays inside the entry's checkout, so it keeps the repo (0100).
+      ...(range.repo === undefined ? {} : { repo: range.repo }),
+      ...(start === undefined ? {} : { start, end }),
+    });
   };
 
   // A whole-file pin has nowhere to move to inside its file.

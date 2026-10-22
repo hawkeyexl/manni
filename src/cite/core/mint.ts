@@ -13,6 +13,7 @@
 import { ENCRYPTION_KEY_ENV } from "../../shared/encryption-key.js";
 import { CiteError } from "../errors.js";
 import type {
+  Checkout,
   Citation,
   CitationSource,
   MintOptions,
@@ -20,14 +21,18 @@ import type {
   SourceRange,
 } from "../types.js";
 import { historyOf } from "./classify.js";
+import { noGit } from "./git.js";
 import { hashLines, sliceLines, splitLines } from "./hash.js";
-import { parseSrc, rangeLines, tooWide } from "./range.js";
+import { formatSrc, parseSrc, rangeLines, tooWide } from "./range.js";
 import { buildSourceIndex, encryptSourcePath, readSource } from "./sources.js";
+
+/** What a mint needs beyond the range and the checkout it is read in. */
+export type MintSourceOptions = Omit<MintOptions, "root" | "src" | "gitClient" | "sourceIndex">;
 
 /** The schema's `commit-sha` pattern: seven to sixty-four lowercase hex digits. */
 const COMMIT_PATTERN = /^[0-9a-f]{7,64}$/;
 
-async function commitFor(opts: MintOptions): Promise<string | undefined> {
+async function commitFor(opts: MintSourceOptions, checkout: Checkout): Promise<string | undefined> {
   if (opts.commitSha === false) return undefined;
   if (typeof opts.commitSha === "string") {
     if (!COMMIT_PATTERN.test(opts.commitSha)) {
@@ -37,9 +42,8 @@ async function commitFor(opts: MintOptions): Promise<string | undefined> {
     }
     return opts.commitSha;
   }
-  const client = opts.gitClient;
-  if (client === undefined || !(await client.available())) return undefined;
-  return (await client.head()) ?? undefined;
+  if (!(await checkout.git.available())) return undefined;
+  return (await checkout.git.head()) ?? undefined;
 }
 
 /**
@@ -58,20 +62,20 @@ async function commitFor(opts: MintOptions): Promise<string | undefined> {
  * degrade to "history unavailable" rather than refuse (`git.ts`).
  */
 async function assertCommitHolds(
-  opts: MintOptions,
+  checkout: Checkout,
   commit: string,
   path: string,
   range: SourceRange,
   pin: string,
   key: string | undefined,
 ): Promise<void> {
-  const client = opts.gitClient;
-  if (client === undefined || !(await client.available())) return;
+  const client = checkout.git;
+  if (!(await client.available())) return;
   const history = await historyOf(client, commit, path, range, pin, key, undefined);
   if (history.kind !== "never-true") return;
-  // Named as the caller spelled it: an encrypted source stays a ciphertext.
+  // Named as the entry spells it: an encrypted source stays a ciphertext.
   throw new CiteError(
-    `${opts.src} is not committed: ${commit.slice(0, 7)} does not contain those lines. Commit the source, or use --no-commit-sha.`,
+    `${formatSrc(range)} is not committed: ${commit.slice(0, 7)} does not contain those lines. Commit the source, or use --no-commit-sha.`,
   );
 }
 
@@ -79,9 +83,17 @@ async function assertCommitHolds(
  * The refusal for a source that could not be read, naming it as the caller
  * spelled it: an encrypted source stays a ciphertext even on stderr.
  */
-function refusalFor(reason: MissingReason, path: string, encrypted: boolean): CiteError {
+function refusalFor(range: SourceRange, reason: MissingReason): CiteError {
+  const { path, encrypted, repo } = range;
   switch (reason) {
     case "untracked":
+      if (repo !== undefined) {
+        return new CiteError(
+          encrypted
+            ? `No tracked file matches ${path} in ${repo} (wrong cite.repos.${repo}?).`
+            : `Source not found: ${path} is not a tracked file in ${repo}.`,
+        );
+      }
       return new CiteError(
         encrypted
           ? `No tracked file matches ${path} (wrong --root?).`
@@ -92,17 +104,35 @@ function refusalFor(reason: MissingReason, path: string, encrypted: boolean): Ci
     case "undecryptable":
       return new CiteError(`${path} does not decrypt under the current key.`);
     case "unreadable":
+    // A checkout is resolved before a mint, so a mint never meets this one.
+    case "unknown-repo":
       return new CiteError(`Source not readable: ${path} could not be read.`);
   }
 }
 
 export async function mintCitation(opts: MintOptions): Promise<Citation> {
   const range = parseSrc(opts.src);
+  const git = opts.gitClient ?? noGit();
+  const index = opts.sourceIndex ?? (await buildSourceIndex(opts.root, { gitClient: opts.gitClient }));
+  return mintSource(range, { root: opts.root, index, git }, opts);
+}
+
+/**
+ * The same mint over a range already parsed, read in the checkout it names.
+ * A source spelled once is never parsed again, so a range that holds a repo
+ * keeps it (0100), and `repo` leads the written `source`.
+ */
+export async function mintSource(
+  range: SourceRange,
+  checkout: Checkout,
+  opts: MintSourceOptions,
+): Promise<Citation> {
+  const spelled = formatSrc(range);
   const wide =
     range.start === undefined || range.end === undefined
       ? undefined
       : tooWide({ start: range.start, end: range.end });
-  if (wide !== undefined) throw new CiteError(`Invalid range "${opts.src}": it ${wide}.`);
+  if (wide !== undefined) throw new CiteError(`Invalid range "${spelled}": it ${wide}.`);
   const { key } = opts;
   // A source that is already encrypted stays encrypted whatever `encrypt`
   // says: the check side keys every pin whose file is encrypted, so a plain
@@ -110,13 +140,11 @@ export async function mintCitation(opts: MintOptions): Promise<Citation> {
   const encrypt = opts.encrypt === true || range.encrypted;
   if (encrypt && !range.encrypted && key === undefined) {
     throw new CiteError(
-      `${opts.src} must be encrypted, and no encryption key is available. Run \`manni key set\`, or set ${ENCRYPTION_KEY_ENV}.`,
+      `${spelled} must be encrypted, and no encryption key is available. Run \`manni key set\`, or set ${ENCRYPTION_KEY_ENV}.`,
     );
   }
-  const index = opts.sourceIndex ?? (await buildSourceIndex(opts.root, { gitClient: opts.gitClient }));
-
-  const read = await readSource(opts.root, index, range, key);
-  if (read.kind === "missing") throw refusalFor(read.reason, range.path, range.encrypted);
+  const read = await readSource(checkout.root, checkout.index, range, key);
+  if (read.kind === "missing") throw refusalFor(range, read.reason);
 
   // The out-of-range error names the source as the caller spelled it, never a
   // decrypted path.
@@ -127,16 +155,17 @@ export async function mintCitation(opts: MintOptions): Promise<Citation> {
   const file =
     pinKey !== undefined && !range.encrypted ? encryptSourcePath(read.resolvedPath, pinKey) : range.path;
   const lines = rangeLines(range);
-  const commitSha = await commitFor(opts);
+  const commitSha = await commitFor(opts, checkout);
   const integrity = hashLines(joined, pinKey);
   if (commitSha !== undefined) {
-    await assertCommitHolds(opts, commitSha, read.resolvedPath, range, integrity, pinKey);
+    await assertCommitHolds(checkout, commitSha, read.resolvedPath, range, integrity, pinKey);
   }
 
   const source: CitationSource = { file, integrity };
-  // Field order is the order a reader scans a source in: which file, which
-  // lines, what they hashed to, and when that was taken.
+  // Field order is the order a reader scans a source in: which checkout,
+  // which file, which lines, what they hashed to, and when that was taken.
   const ordered: CitationSource = {
+    ...(range.repo === undefined ? {} : { repo: range.repo }),
     file: source.file,
     ...(lines === undefined ? {} : { lines }),
     integrity: source.integrity,

@@ -81,6 +81,10 @@ import manniStewardshipStrict120 from "../schemas/stewardship-strict/1.2.0.json"
 import manniCitations110 from "../schemas/citations/1.1.0.json" with { type: "json" };
 import manniCitationsStrict110 from "../schemas/citations-strict/1.1.0.json" with { type: "json" };
 import manniAiContext120 from "../schemas/ai-context/1.2.0.json" with { type: "json" };
+import manniCitations120 from "../schemas/citations/1.2.0.json" with { type: "json" };
+import manniCitationsStrict120 from "../schemas/citations-strict/1.2.0.json" with { type: "json" };
+import manniAiContextStrict110 from "../schemas/ai-context-strict/1.1.0.json" with { type: "json" };
+import manniAiContextStrict120 from "../schemas/ai-context-strict/1.2.0.json" with { type: "json" };
 import { errorMessage } from "../../shared/errors.js";
 
 export interface BuiltinInfo {
@@ -152,6 +156,10 @@ const BUILTINS = new Map<string, Record<string, unknown>>([
   ["manni:citations:1.1.0", manniCitations110],
   ["manni:citations-strict:1.1.0", manniCitationsStrict110],
   ["manni:ai-context:1.2.0", manniAiContext120],
+  ["manni:citations:1.2.0", manniCitations120],
+  ["manni:citations-strict:1.2.0", manniCitationsStrict120],
+  ["manni:ai-context-strict:1.1.0", manniAiContextStrict110],
+  ["manni:ai-context-strict:1.2.0", manniAiContextStrict120],
 ]);
 
 /**
@@ -167,6 +175,9 @@ export const ANNOTATION_ONLY_PREDECESSORS: ReadonlyMap<string, string> = new Map
   ["manni:stewardship:1.1.0", "manni:stewardship:1.0.0"],
   ["manni:stewardship-strict:1.1.0", "manni:stewardship-strict:1.0.0"],
   ["manni:ai-context:1.2.0", "manni:ai-context:1.1.0"],
+  ["manni:citations-strict:1.2.0", "manni:citations-strict:1.1.0"],
+  ["manni:ai-context-strict:1.1.0", "manni:ai-context-strict:1.0.0"],
+  ["manni:ai-context-strict:1.2.0", "manni:ai-context-strict:1.1.0"],
 ]);
 
 /**
@@ -183,6 +194,7 @@ export const OPTIONAL_FIELD_PREDECESSORS: ReadonlyMap<string, string> = new Map(
   ["manni:stewardship-strict:1.2.0", "manni:stewardship-strict:1.1.0"],
   ["manni:citations:1.1.0", "manni:citations:1.0.0"],
   ["manni:citations-strict:1.1.0", "manni:citations-strict:1.0.0"],
+  ["manni:citations:1.2.0", "manni:citations:1.1.0"],
 ]);
 
 /**
@@ -284,25 +296,12 @@ export interface RegisteredSchema {
 export type RegisteredSchemas = ReadonlyMap<string, RegisteredSchema>;
 
 /**
- * Built-in versions whose strict overlay keeps an earlier version, because
- * nothing the overlay narrows changed. ai-context 1.1.0 only widens
- * `sample-questions`, which the 1.0.0 overlay never constrains (proposal 0087),
- * and 1.2.0 only marks its answers out of delivered metadata (proposal 0090).
- */
-const STRICT_OVERLAY_OF: ReadonlyMap<string, string> = new Map([
-  ["manni:ai-context:1.1.0", "manni:ai-context-strict:1.0.0"],
-  ["manni:ai-context:1.2.0", "manni:ai-context-strict:1.0.0"],
-]);
-
-/**
  * The strict version's id for `id`, by the naming the manni overlays use:
- * `vendor:name:version` becomes `vendor:name-strict:version`, unless
- * `STRICT_OVERLAY_OF` pairs it with an earlier overlay. `undefined` for
- * anything that is not a three-segment id, a URL included.
+ * `vendor:name:version` becomes `vendor:name-strict:version`. Every version
+ * of a vocabulary with overlays ships its own at the same version.
+ * `undefined` for anything that is not a three-segment id, a URL included.
  */
 export function strictIdOf(id: string): string | undefined {
-  const paired = STRICT_OVERLAY_OF.get(id);
-  if (paired !== undefined) return paired;
   if (classifyRef(id).kind !== "builtin") return undefined;
   const parts = id.split(":");
   if (parts.length !== 3) return undefined;
@@ -415,6 +414,10 @@ const PUBLISHED_PATHS: readonly (readonly [string, string])[] = [
   ["citations/1.1.0.json", "manni:citations:1.1.0"],
   ["citations-strict/1.1.0.json", "manni:citations-strict:1.1.0"],
   ["ai-context/1.2.0.json", "manni:ai-context:1.2.0"],
+  ["citations/1.2.0.json", "manni:citations:1.2.0"],
+  ["citations-strict/1.2.0.json", "manni:citations-strict:1.2.0"],
+  ["ai-context-strict/1.1.0.json", "manni:ai-context-strict:1.1.0"],
+  ["ai-context-strict/1.2.0.json", "manni:ai-context-strict:1.2.0"],
 ];
 
 /** Where each built-in's reference page lives on the docs site. */
@@ -448,6 +451,8 @@ const GUIDE_SLUGS: ReadonlyMap<string, string> = new Map([
   ["manni:ai-context:1.1.0", "manni-ai-context"],
   ["manni:ai-context:1.2.0", "manni-ai-context"],
   ["manni:ai-context-strict:1.0.0", "manni-ai-context"],
+  ["manni:ai-context-strict:1.1.0", "manni-ai-context"],
+  ["manni:ai-context-strict:1.2.0", "manni-ai-context"],
   ["manni:artifact-evals:1.0.0", "manni-artifact-evals"],
   ["manni:artifact-evals:1.1.0", "manni-artifact-evals"],
   ["manni:artifact-evals-strict:1.0.0", "manni-artifact-evals"],
@@ -456,8 +461,10 @@ const GUIDE_SLUGS: ReadonlyMap<string, string> = new Map([
   ["manni:audience-strict:1.0.0", "manni-audience"],
   ["manni:citations:1.0.0", "manni-citations"],
   ["manni:citations:1.1.0", "manni-citations"],
+  ["manni:citations:1.2.0", "manni-citations"],
   ["manni:citations-strict:1.0.0", "manni-citations"],
   ["manni:citations-strict:1.1.0", "manni-citations"],
+  ["manni:citations-strict:1.2.0", "manni-citations"],
   ["manni:core:1.0.0", "manni-core"],
   ["manni:core-strict:1.0.0", "manni-core"],
   ["manni:evals:1.0.0", "manni-evals"],

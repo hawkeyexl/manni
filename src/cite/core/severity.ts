@@ -51,7 +51,7 @@ export const RULE_DESCRIPTIONS: Readonly<Record<CiteRule, string>> = {
   "source-moved-ambiguous": "The cited lines now occur in more than one place.",
   "source-changed": "The cited lines are not what they were.",
   "source-never-true": "The pin held at no commit in the source's history.",
-  "source-missing": "The path names no tracked file, or an encrypted source cannot be decrypted.",
+  "source-missing": "The path names no tracked file, names an undeclared repo, or an encrypted source cannot be decrypted.",
   "claim-moved": "The pinned page text sits at a different line.",
   "claim-moved-ambiguous": "The pinned page text now occurs in more than one place.",
   "claim-reanchored": "The pinned words are unchanged, and only the layout around them moved.",

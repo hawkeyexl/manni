@@ -52,6 +52,15 @@ export function encryptedNotice(count: number): string {
   return `${what} skipped: no encryption key. Set MANNI_ENCRYPTION_KEY or encryptionKey: to include them.`;
 }
 
+/** Said once when citations that name a repo were left out (proposal 0100). */
+export function repoNotice(labels: readonly string[]): string {
+  const what =
+    labels.length === 1
+      ? "1 citation that names a repo is"
+      : `${String(labels.length)} citations that name a repo are`;
+  return `cite history walks one repository, so ${what} left out: ${labels.join(", ")}.`;
+}
+
 /** Epoch seconds as ISO 8601 in UTC, to the second. */
 function isoOf(seconds: number): string {
   return new Date(seconds * 1000).toISOString().replace(/\.\d{3}Z$/, "Z");
@@ -97,6 +106,7 @@ export async function runHistory(opts: HistoryOptions): Promise<HistoryRun> {
 
   if (timeline.unread) opts.onNotice?.(unreadNotice((commits[start] ?? head).sha));
   if (timeline.encrypted > 0) opts.onNotice?.(encryptedNotice(timeline.encrypted));
+  if (timeline.repos.length > 0) opts.onNotice?.(repoNotice(timeline.repos));
 
   const releasesOf = await releaseFinder(realTop);
   const severity = resolveSeverity(run.config?.severity);

@@ -47,7 +47,7 @@ verified-by:
 import { Aside, Tabs, TabItem, CardGrid, LinkCard } from '@astrojs/starlight/components';
 
 {/* cite registry-forty-five-bundled-schemas */}
-manni meta bundles sixty-one schemas. You reference any of them by id, with no file
+manni meta bundles sixty-five schemas. You reference any of them by id, with no file
 to write, no URL to host, and no network call at validation time. This page is
 the registry: what each one constrains, whether it requires anything, and which
 are applied when you pass no flags at all. Each id links to its own page, with
@@ -109,7 +109,9 @@ installed.
 | [`manni:ai-context:1.2.0`](/manni/meta/reference/schemas/manni-ai-context/) | `provenance`, `meta-provenance`, `risks`, `sample-questions`, and the lines a sample question pins | nothing | **Yes** | [`ai-context/1.2.0.json`](/manni/schemas/ai-context/1.2.0.json) |
 | [`manni:ai-context:1.1.0`](/manni/meta/reference/schemas/manni-ai-context/#version-110) | `provenance`, `meta-provenance`, `risks`, `sample-questions`, and the lines a sample question pins | nothing | No | [`ai-context/1.1.0.json`](/manni/schemas/ai-context/1.1.0.json) |
 | [`manni:ai-context:1.0.0`](/manni/meta/reference/schemas/manni-ai-context/#version-100) | `provenance`, `meta-provenance`, `risks`, `sample-questions` | nothing | No | [`ai-context/1.0.0.json`](/manni/schemas/ai-context/1.0.0.json) |
-| [`manni:ai-context-strict:1.0.0`](/manni/meta/reference/schemas/manni-ai-context/#strict-overlay) | the form of `meta-provenance`, `risks` | nothing | No | [`ai-context-strict/1.0.0.json`](/manni/schemas/ai-context-strict/1.0.0.json) |
+| [`manni:ai-context-strict:1.2.0`](/manni/meta/reference/schemas/manni-ai-context/#strict-overlay) | the form of `meta-provenance`, `risks` | nothing | No | [`ai-context-strict/1.2.0.json`](/manni/schemas/ai-context-strict/1.2.0.json) |
+| [`manni:ai-context-strict:1.1.0`](/manni/meta/reference/schemas/manni-ai-context/#version-110) | the form of `meta-provenance`, `risks` | nothing | No | [`ai-context-strict/1.1.0.json`](/manni/schemas/ai-context-strict/1.1.0.json) |
+| [`manni:ai-context-strict:1.0.0`](/manni/meta/reference/schemas/manni-ai-context/#version-100) | the form of `meta-provenance`, `risks` | nothing | No | [`ai-context-strict/1.0.0.json`](/manni/schemas/ai-context-strict/1.0.0.json) |
 | [`manni:evals:1.0.0`](/manni/meta/reference/schemas/manni-evals/) | `evals`, `eval-suite`, `eval-skip` | nothing | **Yes** | [`evals/1.0.0.json`](/manni/schemas/evals/1.0.0.json) |
 | [`manni:evals-strict:1.0.0`](/manni/meta/reference/schemas/manni-evals/#strict-overlay) | the form of `evals`, `eval-suite` | nothing | No | [`evals-strict/1.0.0.json`](/manni/schemas/evals-strict/1.0.0.json) |
 | [`manni:artifact-evals:1.0.0`](/manni/meta/reference/schemas/manni-artifact-evals/#versions) | `metadata` | nothing | No | [`artifact-evals/1.0.0.json`](/manni/schemas/artifact-evals/1.0.0.json) |
@@ -118,19 +120,21 @@ installed.
 | [`manni:artifact-evals-strict:1.1.0`](/manni/meta/reference/schemas/manni-artifact-evals/#strict-overlay) | the form of `metadata` | nothing | No | [`artifact-evals-strict/1.1.0.json`](/manni/schemas/artifact-evals-strict/1.1.0.json) |
 | [`manni:graph:1.0.0`](/manni/meta/reference/schemas/manni-graph/) | `graph` | nothing | **Yes** | [`graph/1.0.0.json`](/manni/schemas/graph/1.0.0.json) |
 | [`manni:graph-strict:1.0.0`](/manni/meta/reference/schemas/manni-graph/#strict-overlay) | the form of `graph` | nothing | No | [`graph-strict/1.0.0.json`](/manni/schemas/graph-strict/1.0.0.json) |
-| [`manni:citations:1.1.0`](/manni/meta/reference/schemas/manni-citations/) | `citations`, and each entry's `last-verified` and `verified-by` | nothing | **Yes** | [`citations/1.1.0.json`](/manni/schemas/citations/1.1.0.json) |
+| [`manni:citations:1.2.0`](/manni/meta/reference/schemas/manni-citations/) | `citations`, and each entry's `last-verified`, `verified-by` and `source.repo` | nothing | **Yes** | [`citations/1.2.0.json`](/manni/schemas/citations/1.2.0.json) |
+| [`manni:citations:1.1.0`](/manni/meta/reference/schemas/manni-citations/#version-110) | `citations`, and each entry's `last-verified` and `verified-by` | nothing | No | [`citations/1.1.0.json`](/manni/schemas/citations/1.1.0.json) |
 | [`manni:citations:1.0.0`](/manni/meta/reference/schemas/manni-citations/#version-100) | `citations` | nothing | No | [`citations/1.0.0.json`](/manni/schemas/citations/1.0.0.json) |
-| [`manni:citations-strict:1.1.0`](/manni/meta/reference/schemas/manni-citations/#strict-overlay) | the form of `citations` | nothing | No | [`citations-strict/1.1.0.json`](/manni/schemas/citations-strict/1.1.0.json) |
+| [`manni:citations-strict:1.2.0`](/manni/meta/reference/schemas/manni-citations/#strict-overlay) | the form of `citations` | nothing | No | [`citations-strict/1.2.0.json`](/manni/schemas/citations-strict/1.2.0.json) |
+| [`manni:citations-strict:1.1.0`](/manni/meta/reference/schemas/manni-citations/#version-110) | the form of `citations` | nothing | No | [`citations-strict/1.1.0.json`](/manni/schemas/citations-strict/1.1.0.json) |
 | [`manni:citations-strict:1.0.0`](/manni/meta/reference/schemas/manni-citations/#version-100) | the form of `citations` | nothing | No | [`citations-strict/1.0.0.json`](/manni/schemas/citations-strict/1.0.0.json) |
 
 {/* cite registry-all-draft-2020-12-and-builtin-refs */}
-All sixty-one use [Draft
+All sixty-five use [Draft
 2020-12](/manni/meta/reference/schema-resolution/#dialects) and are [built-in
 references](/manni/meta/reference/schema-resolution/#reference-kinds). A typo in an
 id is reported as an unknown schema rather than a missing file.
 
 {/* cite registry-forty-four-allow-additional-properties */}
-Sixty of them allow additional properties. `agentskills:skill:1.0` is the
+Sixty-four of them allow additional properties. `agentskills:skill:1.0` is the
 one exception, and not out of strictness. The tooling that packages a skill for
 distribution *hard-errors* on a key outside the standard's six rather than
 ignoring it. A schema that tolerated unknown keys would pass exactly the file
@@ -177,6 +181,8 @@ https://hawkeyexl.github.io/manni/schemas/stewardship/1.0.0.json
 https://hawkeyexl.github.io/manni/schemas/stewardship-strict/1.0.0.json
 https://hawkeyexl.github.io/manni/schemas/stewardship/1.1.0.json
 https://hawkeyexl.github.io/manni/schemas/stewardship-strict/1.1.0.json
+https://hawkeyexl.github.io/manni/schemas/stewardship/1.2.0.json
+https://hawkeyexl.github.io/manni/schemas/stewardship-strict/1.2.0.json
 https://hawkeyexl.github.io/manni/schemas/audience/1.0.0.json
 https://hawkeyexl.github.io/manni/schemas/audience-strict/1.0.0.json
 https://hawkeyexl.github.io/manni/schemas/lifecycle/1.0.0.json
@@ -192,7 +198,9 @@ https://hawkeyexl.github.io/manni/schemas/terminology-strict/1.2.0.json
 https://hawkeyexl.github.io/manni/schemas/ai-context/1.0.0.json
 https://hawkeyexl.github.io/manni/schemas/ai-context-strict/1.0.0.json
 https://hawkeyexl.github.io/manni/schemas/ai-context/1.1.0.json
+https://hawkeyexl.github.io/manni/schemas/ai-context-strict/1.1.0.json
 https://hawkeyexl.github.io/manni/schemas/ai-context/1.2.0.json
+https://hawkeyexl.github.io/manni/schemas/ai-context-strict/1.2.0.json
 https://hawkeyexl.github.io/manni/schemas/evals/1.0.0.json
 https://hawkeyexl.github.io/manni/schemas/evals-strict/1.0.0.json
 https://hawkeyexl.github.io/manni/schemas/artifact-evals/1.0.0.json
@@ -201,6 +209,10 @@ https://hawkeyexl.github.io/manni/schemas/graph/1.0.0.json
 https://hawkeyexl.github.io/manni/schemas/graph-strict/1.0.0.json
 https://hawkeyexl.github.io/manni/schemas/citations/1.0.0.json
 https://hawkeyexl.github.io/manni/schemas/citations-strict/1.0.0.json
+https://hawkeyexl.github.io/manni/schemas/citations/1.1.0.json
+https://hawkeyexl.github.io/manni/schemas/citations-strict/1.1.0.json
+https://hawkeyexl.github.io/manni/schemas/citations/1.2.0.json
+https://hawkeyexl.github.io/manni/schemas/citations-strict/1.2.0.json
 https://hawkeyexl.github.io/manni/schemas/tgdp/1.1.json
 https://hawkeyexl.github.io/manni/schemas/tgdp-strict/1.1.json
 https://hawkeyexl.github.io/manni/schemas/artifact-evals/1.1.0.json
@@ -375,7 +387,7 @@ compose](/manni/meta/reference/taxonomy-schemas/#which-ones-compose).
 ## What runs when you pass no flags
 
 {/* cite registry-only-two-in-the-default-set */}
-Eleven of the sixty-one are in the default set, in this order:
+Eleven of the sixty-five are in the default set, in this order:
 
 ```text
 google:okf:0.1
@@ -388,7 +400,7 @@ manni:lifecycle:1.0.0
 manni:ai-context:1.2.0
 manni:evals:1.0.0
 manni:graph:1.0.0
-manni:citations:1.1.0
+manni:citations:1.2.0
 ```
 
 {/* cite registry-seven-action-safe-by-default */}

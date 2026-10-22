@@ -433,7 +433,7 @@ describe("the default schema set", () => {
     "manni:ai-context:1.2.0",
     "manni:evals:1.0.0",
     "manni:graph:1.0.0",
-    "manni:citations:1.1.0",
+    "manni:citations:1.2.0",
   ];
 
   it("is OKF, Seven-Action and the nine manni vocabularies", () => {

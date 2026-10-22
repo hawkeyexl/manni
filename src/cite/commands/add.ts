@@ -29,9 +29,9 @@ import {
   toFileLines,
 } from "../core/claims.js";
 import { resolveCiteRun } from "../core/config.js";
-import { GIT_UNAVAILABLE_COMMIT, gitClient } from "../core/git.js";
+import { GIT_UNAVAILABLE_COMMIT, checkoutNotice, gitClient } from "../core/git.js";
 import { sliceLines, splitLines } from "../core/hash.js";
-import { mintCitation } from "../core/mint.js";
+import { mintSource } from "../core/mint.js";
 import { bodyLineOf, readPage } from "../core/page.js";
 import {
   formatSrc,
@@ -44,8 +44,8 @@ import {
 } from "../core/range.js";
 import { misplacedMarkers } from "../core/reanchor.js";
 import { shiftedEntries, withClaimLines, type Shifted } from "../core/shift.js";
-import { readSource, sourceIndexFor } from "../core/sources.js";
-import { shortSrc, spellAt } from "../core/spell.js";
+import { readSource, resolveSourcePath, sourceIndexFor } from "../core/sources.js";
+import { listOf, shortSrc, spellAt } from "../core/spell.js";
 import { ManifestSet } from "../core/manifest.js";
 import { sidecarsFor, type PageSidecar } from "../core/sidecar.js";
 import {
@@ -68,15 +68,18 @@ import {
   unifiedDiff,
 } from "../core/write.js";
 import { CiteError } from "../errors.js";
+import { checkoutResolver } from "./check.js";
 import type {
   AddOptions,
   AddResult,
   Citation,
   CitationClaim,
+  Checkout,
+  CheckoutResolver,
   PageCitation,
   PageCitations,
   PageLines,
-  SourceIndex,
+  SourceRange,
 } from "../types.js";
 import { STDIN_REQUIRES_AS } from "../../shared/cli-options.js";
 
@@ -100,13 +103,11 @@ async function readPageFile(path: string, label: string): Promise<string> {
 
 /** The cited lines, joined as the hashing rule joins them. */
 async function citedText(
-  root: string,
-  index: SourceIndex,
-  src: string,
+  checkout: Checkout,
+  range: SourceRange,
   key: string | undefined,
 ): Promise<string> {
-  const range = parseSrc(src);
-  const source = await readSource(root, index, range, key);
+  const source = await readSource(checkout.root, checkout.index, range, key);
   // Minting already read this range, so a miss here is a race with the disk.
   if (source.kind === "missing") {
     throw new CiteError(`Source not readable: ${range.path} could not be read.`);
@@ -130,12 +131,13 @@ function entryName(entry: PageCitation): string {
  */
 function duplicateOf(
   page: PageCitations,
-  src: string,
+  range: SourceRange,
   pageLines: PageLines | undefined,
 ): PageCitation | undefined {
-  // opts.src is the caller's plain-path spelling; an existing entry encrypted
-  // under a key compares as its ciphertext and will never match here.
-  const wanted = formatSrc(parseSrc(src));
+  // The range is the caller's spelling with the checkout it resolved in, so
+  // one path in two repos is two sources. An existing entry encrypted under a
+  // key compares as its ciphertext and never matches a plain path.
+  const wanted = formatSrc(range);
   return page.citations.find((entry) => {
     const { citation } = entry;
     if (spellSource(citation.source) !== wanted) return false;
@@ -172,6 +174,60 @@ function emptyClaimRefusal(
   return only.trim() === "" ? `${at} is blank.` : `${at} is a fence line, not claim text.`;
 }
 
+/**
+ * The checkout a source is minted in (proposal 0100, decision 4). A prefixed
+ * source is looked up in its repo alone. A plain one is the root's whenever
+ * the root tracks it, and only otherwise is each declared repo asked, in
+ * declaration order. Refusals name an encrypted source by its ciphertext.
+ */
+async function chooseCheckout(
+  range: SourceRange,
+  root: Checkout,
+  checkouts: CheckoutResolver,
+  names: readonly string[],
+  key: string | undefined,
+): Promise<{ range: SourceRange; checkout: Checkout }> {
+  if (range.repo !== undefined) {
+    const { repo } = range;
+    const checkout = await checkouts(repo);
+    if (checkout === undefined) {
+      const declared = names.length === 0 ? "" : ` Declared: ${names.join(", ")}.`;
+      throw new CiteError(
+        `No repo named ${repo}. Declare it under cite.repos in manni.config.yaml, or pass --repo ${repo}=<dir>.${declared}`,
+      );
+    }
+    return { range, checkout };
+  }
+  // A source that does not decrypt, or that the root tracks, is the root's,
+  // and the mint gives today's answer for it.
+  const resolved = resolveSourcePath(range, key);
+  if ("reason" in resolved || root.index.has(resolved.path) || names.length === 0) {
+    return { range, checkout: root };
+  }
+  const hits: { name: string; checkout: Checkout }[] = [];
+  for (const name of names) {
+    const checkout = await checkouts(name);
+    if (checkout?.index.has(resolved.path) === true) hits.push({ name, checkout });
+  }
+  const [only] = hits;
+  if (only !== undefined && hits.length === 1) {
+    return { range: { ...range, repo: only.name }, checkout: only.checkout };
+  }
+  const shown = range.path;
+  if (hits.length > 1) {
+    const spellings = hits.map(({ name }) => formatSrc({ ...range, repo: name }));
+    throw new CiteError(
+      `${shown} is tracked in ${listOf(hits.map((hit) => hit.name))}. Spell the one you mean: ${listOf(spellings, "or")}.`,
+    );
+  }
+  const where = listOf(names, "or");
+  throw new CiteError(
+    range.encrypted
+      ? `No tracked file matches ${shown} under the root, or in ${where}.`
+      : `Source not found: ${shown} is not a tracked file under the root, or in ${where}.`,
+  );
+}
+
 export async function runAdd(opts: AddOptions): Promise<AddResult> {
   const cwd = resolve(opts.cwd ?? process.cwd());
   const run = await resolveCiteRun({
@@ -180,6 +236,7 @@ export async function runAdd(opts: AddOptions): Promise<AddResult> {
     noConfig: opts.noConfig,
     inputs: [],
     root: opts.root,
+    ...(opts.repos === undefined ? {} : { repos: opts.repos }),
     onConfigLoaded: opts.onConfigLoaded,
     onNotice: opts.onNotice,
     env: opts.env,
@@ -263,18 +320,6 @@ export async function runAdd(opts: AddOptions): Promise<AddResult> {
       );
     }
   }
-  // The same claim on the same source twice is one citation reported twice,
-  // and the second is what a re-run of a script writes.
-  const duplicate = marker ? undefined : duplicateOf(page, opts.src, pageLines);
-  if (duplicate !== undefined) {
-    const src = shortSrc(spellSource(duplicate.citation.source));
-    const what =
-      pageLines === undefined
-        ? `a bare pin for ${src}`
-        : `an entry for ${spellAt(pageLines)} and ${src}`;
-    throw new CiteError(`${label} already has ${what} (${entryName(duplicate)}).`);
-  }
-
   const lines = splitLines(content);
   if (pageLines !== undefined) {
     if (pageLines.end > lines.length) {
@@ -321,6 +366,27 @@ export async function runAdd(opts: AddOptions): Promise<AddResult> {
   // `git ls-files` and the commit is HEAD. Where it is not, a walk and none.
   const client = opts.gitClient ?? gitClient(root);
   const sourceIndex = await sourceIndexFor(root, client);
+  // Parsed once, here: the mint reads this range and never a printed one. It
+  // gains a repo when one declared checkout, and not the root, tracks it.
+  const { range: srcRange, checkout } = await chooseCheckout(
+    parseSrc(opts.src),
+    { root, index: sourceIndex, git: client },
+    checkoutResolver({ root, index: sourceIndex, git: client }, run.repos),
+    Object.keys(run.repos),
+    run.key,
+  );
+
+  // The same claim on the same source twice is one citation reported twice,
+  // and the second is what a re-run of a script writes.
+  const duplicate = marker ? undefined : duplicateOf(page, srcRange, pageLines);
+  if (duplicate !== undefined) {
+    const src = shortSrc(spellSource(duplicate.citation.source));
+    const what =
+      pageLines === undefined
+        ? `a bare pin for ${src}`
+        : `an entry for ${spellAt(pageLines)} and ${src}`;
+    throw new CiteError(`${label} already has ${what} (${entryName(duplicate)}).`);
+  }
 
   // The marker goes in before the claim is pinned, because what it anchors is
   // what the claim pins. Everything below counts lines in `body`, the page
@@ -433,17 +499,13 @@ export async function runAdd(opts: AddOptions): Promise<AddResult> {
   }
 
   const mint = (key: string | undefined, encrypt: boolean): Promise<Citation> =>
-    mintCitation({
-      root,
-      src: opts.src,
+    mintSource(srcRange, checkout, {
       ...(opts.id === undefined ? {} : { id: opts.id }),
       ...(claim === undefined ? {} : { claim }),
       ...(quote ? { quote: true } : {}),
       ...(opts.commitSha === false ? { commitSha: false as const } : {}),
       encrypt,
       ...(key === undefined ? {} : { key }),
-      gitClient: client,
-      sourceIndex,
     });
 
   // Encryption follows the key: an available one encrypts every add, with no
@@ -456,7 +518,7 @@ export async function runAdd(opts: AddOptions): Promise<AddResult> {
 
   if (quote && claimSpan !== undefined) {
     // The lines inside the fences are what the source has to match.
-    const cited = await citedText(root, sourceIndex, opts.src, run.key);
+    const cited = await citedText(checkout, srcRange, run.key);
     const inside = splitLines(body).slice(claimSpan.start, claimSpan.end - 1).join("\n");
     if (!blockMatches(inside, cited)) {
       throw new CiteError(`The block at ${at} does not reproduce ${opts.src}.`);
@@ -481,10 +543,9 @@ export async function runAdd(opts: AddOptions): Promise<AddResult> {
   // The first pinned source line, so the report shows what the range caught
   // and a mis-typed one is visible at write time. A whole file has no first
   // line worth naming, and an encrypted source is never spelled in the open.
-  const srcRange = parseSrc(opts.src);
   let sourceLine: string | undefined;
   if (srcRange.start !== undefined && !isEncryptedValue(citation.source.file)) {
-    const read = await readSource(root, sourceIndex, srcRange, undefined);
+    const read = await readSource(checkout.root, checkout.index, srcRange, undefined);
     if (read.kind === "ok") sourceLine = splitLines(read.text)[srcRange.start - 1];
   }
 
@@ -572,8 +633,8 @@ export async function runAdd(opts: AddOptions): Promise<AddResult> {
   }
   // A commit was wanted (no --no-commit-sha) and git had none to give. Said
   // once the add has succeeded, so a refused add says nothing about git.
-  if (opts.commitSha !== false && !(await client.available())) {
-    opts.onNotice?.(GIT_UNAVAILABLE_COMMIT);
+  if (opts.commitSha !== false && !(await checkout.git.available())) {
+    opts.onNotice?.(checkoutNotice(checkout.repo, GIT_UNAVAILABLE_COMMIT));
   }
   return result;
 }

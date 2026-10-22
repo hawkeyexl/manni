@@ -6,6 +6,8 @@ docs/src/content/docs/meta/reference/schemas/manni-ai-context.mdx:
   source-of-truth:
     - path: src/meta/schemas/ai-context/1.0.0.json
     - path: src/meta/schemas/ai-context-strict/1.0.0.json
+    - path: src/meta/schemas/ai-context-strict/1.1.0.json
+    - path: src/meta/schemas/ai-context-strict/1.2.0.json
     - path: src/meta/core/schema-registry.ts
   eval-suite: meta
   evals:
@@ -50,16 +52,25 @@ docs/src/content/docs/meta/reference/schemas/manni-ai-context.mdx:
       integrity: sha256-362c554ef37e93113f784c094fc18da139f52a29e2cd2e3336ed67d854a55474
     - generated-by: Claude Opus 5.5
       lines: 223-240
-      integrity: sha256-54b49b6e0ad5f1665d9bd67c23b3df4f5c229a98ca71423ec0b51afc6191ccd1
+      integrity: sha256-e712b17a98f20e1f300dabb9cdf0d3a1c7146e47a4934210245fc0c5e6c349f7
     - generated-by: Claude Opus 5.5
-      lines: 255-272
-      integrity: sha256-10e3e8537e1e5a4b78361ce6b2fe6512849165310d4c2e057ba188bf2bb0afb2
+      lines: 253-274
+      integrity: sha256-1d5b154f233bbde5ddc2dfe898fc0ccb84ebef7216983d4aecc0577a35660c47
     - generated-by: Claude Opus 5.5
-      lines: 274
-      integrity: sha256-80b1e7ec4c342ecb7e00b8ef7c1d1f0eea6f632dde51518756da5bdef0948fd9
-    - generated-by: Claude Opus 5.5
-      lines: 279-282
+      lines: 277-280
       integrity: sha256-18f091cb0301d61637de0e90f83d32076b83f3f111d3220ad155f1609251d5c2
+    - generated-by: Claude Opus 5.5
+      lines: 286-289
+      integrity: sha256-3ca380485c6c35b602a1199782611d3561965c6bd73660a3ade9fbea8a325f50
+    - generated-by: Claude Opus 5.5
+      lines: 293-295
+      integrity: sha256-eef9e8387f48a48492e4eda8ef89dbb12a2424d958fa8a2cbf3fe5203ab34eec
+    - generated-by: Claude Opus 5.5
+      lines: 307-310
+      integrity: sha256-4f567cfcae887582d0983a22f265f1cccf7f52def6b2b8d32d7a8a939f0dc913
+    - generated-by: Claude Opus 5.5
+      lines: 312-314
+      integrity: sha256-7d87b71cd7259b07027d7cadfd45a6fa5c5fa1bfd05acb6b41cff79127c8944f
   owner:
     - "@hawkeyexl"
   created: 2026-09-26

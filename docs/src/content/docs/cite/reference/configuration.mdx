@@ -1,6 +1,6 @@
 ---
 title: Configuration reference
-description: "Every key of the cite section in manni.config.yaml (allowEmpty, respectGitignore, root, baseline, checkSources, severity), with types, defaults, where the document set is declared, when git is used, discovery rules, the refused salt key, and the severity table."
+description: "Every key of the cite section in manni.config.yaml (allowEmpty, respectGitignore, root, repos, baseline, checkSources, severity), with types, defaults, where the document set is declared, when git is used, discovery rules, the refused salt key, and the severity table."
 sidebar:
   order: 2
 type: reference
@@ -27,7 +27,7 @@ sample-questions:
 graph:
   label: Configuration reference
   type: reference
-last-updated: 2026-10-21
+last-updated: 2026-10-22
 tags:
   - configuration
   - reference
@@ -138,6 +138,7 @@ manni.config.yaml: "exclude" is no longer a cite key. Document sets are declared
 | `allowEmpty` | `boolean` | `false` | `--allow-empty` | Treat an input set that resolves to zero files as success instead of an error (exit 2). |
 | `respectGitignore` | `boolean` | `true` | `--no-gitignore` | Skip files `.gitignore` covers when expanding directories and globs. `--no-gitignore` overrides it for one run. |
 | `root` | `string` | git root | `--root` | The directory `source.file` paths resolve from, relative to the config file. It may point outside the repository, at a second checkout. `--root` overrides it for one run. |
+| `repos` | mapping | none | `--repo` | Names each other checkout a citation may cite by `source.repo`. Each value is that checkout's directory, relative to the config file. See [more than one checkout](#more-than-one-checkout). |
 | `baseline` | `string` | none | `--baseline` | Path to a [citation baseline](/manni/cite/reference/cli/#baselines), relative to the config file. Setting it turns on `--baseline` for every run; `--no-baseline` suppresses it for one. A bare `--write-baseline` records into this same file. |
 | `checkSources` | `boolean` | `true` | `--no-check-sources` | Check citations against their sources. `false` runs the page-side rules only, including every claim end, and reports every source status as `skipped`, which is not a finding. `update` refuses it. `--no-check-sources` turns it off for one run. |
 | `severity` | mapping | the [defaults](#severity) | none | Per-rule severity: `error`, `warning`, `notice` or `off`. Only the rules named are changed. |
@@ -148,6 +149,41 @@ The section must be a YAML mapping; an empty `cite:` is the same as no keys.
 The booleans must be booleans, so a quoted `"false"` is rejected rather than
 read as on. A type error names the key and the type it wanted, and nothing
 else.
+
+### More than one checkout
+
+`root` is one checkout. When the pages cite code from several repositories,
+`repos` names the others. Each name maps to a directory:
+
+```yaml title="manni.config.yaml"
+cite:
+  root: ../code       # entries with no source.repo resolve here
+  repos:
+    api: ../api       # relative to this file's directory
+    sdk: ../sdk
+```
+
+An entry whose `source.repo` is `sdk` resolves in `../sdk` and nowhere else.
+An entry with no `repo` still resolves against the root, so adding `repos`
+changes no existing entry. A name is lowercase letters, digits and hyphens,
+starting with a letter or digit. Each value must be a string, and `repos`
+itself must be a mapping (exit 2 otherwise).
+
+`--repo <name=dir>` names a checkout for one run, relative to the working
+directory. It overrides `cite.repos` for that name only, adds a name the
+config lacks, and works with `--no-config`. So a laptop whose layout differs
+from CI's passes `--repo sdk=../../oss/sdk` and keeps the shared file.
+
+A run opens only the checkouts its pages cite. A job whose collection cites
+`api` alone never needs `sdk` checked out. A cited checkout whose directory is
+missing stops the run (exit 2). An entry naming a repo that no config or flag
+declares is `source-missing` on its sentence. `--no-check-sources` opens no
+checkout at all.
+
+Each checkout keeps its own tracked-file index and its own history. A notice
+about one checkout's git, such as a shallow clone, is said once per checkout
+and starts with its name, as in `manni: sdk: …`. The root's notices carry no
+prefix.
 
 ### Git is used when it is available
 
@@ -238,9 +274,9 @@ discovery and runs on the defaults alone. When a config governs the run,
 | Path | Relative to |
 |---|---|
 | a collection's `paths:` and `exclude:` | the config file's directory |
-| `root:` and `baseline:` | the config file's directory |
+| `root:`, `baseline:` and each `repos:` value | the config file's directory |
 | positional `[paths...]` | the working directory |
-| `--root` and `--baseline <path>` | the working directory |
+| `--root`, `--repo` and `--baseline <path>` | the working directory |
 
 {/* cite fingerprints-config-dir */}
 So `cd docs && manni cite check` reaches the same files, the same root and the
@@ -290,6 +326,29 @@ MANNI_ENCRYPTION_KEY="$ENCRYPTION_KEY" manni cite check --root ../code -f sarif 
 
 The public job passes the flag rather than setting `checkSources: false`. The
 private job reads the same file, and needs the sources.
+
+When the pages cite two code repositories, the private job checks out all
+three side by side. The file names the two code checkouts under `repos`:
+
+```yaml title="manni.config.yaml (public docs repository, two code checkouts)"
+collections:
+  - name: site
+    paths: ["src/content/docs/**/*.{md,mdx}"]
+cite:
+  repos:
+    api: ../api
+    sdk: ../sdk
+```
+
+```sh
+# Private CI: docs, api and sdk checked out side by side; from the docs checkout.
+MANNI_ENCRYPTION_KEY="$ENCRYPTION_KEY" manni cite check -f sarif > cite.sarif
+```
+
+The public job still runs `--no-check-sources`, which opens neither checkout.
+A repo's name is printed in plain text, even beside an encrypted path.
+[Public docs, private code](/manni/cite/set-up/public-docs-private-code/#more-than-one-private-checkout)
+says how to choose one.
 
 A single-repository setup needs none of that:
 

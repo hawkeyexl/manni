@@ -16,6 +16,7 @@ import { shouldColor } from "../shared/color.js";
 import { fail } from "../shared/run.js";
 import { notice } from "../shared/warn.js";
 import { COMMON_FORMAT_LIST } from "../meta/internal.js";
+import { parseRepoFlags } from "../cite/index.js";
 import { runKeyRotate } from "./commands/rotate.js";
 import { runKeySet } from "./commands/set.js";
 import { KeyError } from "./errors.js";
@@ -55,6 +56,8 @@ interface RotateCliOptions {
   /** `--no-gitignore`. */
   gitignore: boolean;
   root?: string;
+  /** `--repo <name=dir>`, repeatable; commander's default value is `[]`. */
+  repo: string[];
   dryRun?: boolean;
   /** `-f, --format <format>`. Always a string: the declaration has a default. */
   format: string;
@@ -133,6 +136,12 @@ export function buildProgram(): Command {
       "--root <dir>",
       "directory cited sources resolve from (default: cite.root from config, else the git root)",
     )
+    .option(
+      "--repo <name=dir>",
+      "a checkout an entry's source.repo may name, as name=dir relative to the current directory; repeatable; overrides cite.repos for that name",
+      collect,
+      [],
+    )
     .option("--dry-run", "print what would change; write nothing")
     .option("-f, --format <format>", `output: ${ROTATE_FORMATS.join(" | ")}`, "pretty")
     .addHelpText(
@@ -164,6 +173,7 @@ export function buildProgram(): Command {
           allowEmpty: options.allowEmpty ? true : undefined,
           respectGitignore: explicitFalse(options.gitignore),
           root: options.root,
+          repos: parseRepoFlags(options.repo, (m) => new KeyError(m)),
           dryRun: Boolean(options.dryRun),
           onNotice: notice,
         });

@@ -1,0 +1,11 @@
+A docs page that cites code in two repositories used to fail no matter where you pointed the check.
+
+`manni cite` pins a sentence to the source lines it rests on. Until now every pin resolved from one root. Point it at the API and the SDK pin went missing. Point it at the SDK and the API pin did. The advice on each line said to delete a citation that was fine.
+
+Now `cite.repos` in manni.config.yaml names each checkout. Every citation records which one it came from, and one `manni cite check` resolves each pin in its own repository. The output says where: `api:lib/limits.ts:2`, `sdk:src/client.ts:2`.
+
+Then a commit in the SDK changes the retry count from 3 to 5. Only the sentence about retries goes red, with the commit it changed since.
+
+Real output from three real git checkouts. Only the input is staged.
+
+npm i -g @hawkeyexl/manni · manni cite check

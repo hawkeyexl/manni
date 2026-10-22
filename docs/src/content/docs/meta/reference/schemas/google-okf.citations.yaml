@@ -93,18 +93,18 @@ docs/src/content/docs/meta/reference/schemas/google-okf.mdx:
         integrity: sha256-e7419a4b2f9762da33e7dd05d372c6f7af792e35698a40149d63c3044e577e19
       source:
         file: src/meta/core/schema-registry.ts
-        lines: 542-553
+        lines: 549-560
         integrity: sha256-b609d7a86f241caa53f6c3ab9266149e6c0333c7496005e23ab3d94797659c1c
-        commit-sha: cb74827009894c38f8646504ae9eb4a2745761a9
+        commit-sha: 7de49f7ecc82d73ec615c863e57ffd0a0a57b809
     - id: okf-ref-kind-is-builtin
       claim:
         lines: 26
         integrity: sha256-532bd9663597e021387396a0d71bc4ba7d4d902e8235e18167ce466f6bd8fbfa
       source:
         file: src/meta/core/schema-registry.ts
-        lines: 600-611
+        lines: 607-618
         integrity: sha256-d90a35561f5a1fe78578e6f93047d7b1f1ceaa64bee2989b9729aa62642840a7
-        commit-sha: cb74827009894c38f8646504ae9eb4a2745761a9
+        commit-sha: 7de49f7ecc82d73ec615c863e57ffd0a0a57b809
     - id: okf-allows-additional-properties
       claim:
         lines: 25
@@ -147,5 +147,5 @@ docs/src/content/docs/meta/reference/schemas/google-okf.mdx:
       source:
         file: src/meta/core/resolve-schema.ts
         lines: 30-53
-        integrity: sha256-548083d8d9b9bb2b0917f6d2f0e28ab045f370168ef0b7f77a35cb053c9247f2
-        commit-sha: cb74827009894c38f8646504ae9eb4a2745761a9
+        integrity: sha256-b73e72b44328cf0d194f9bd618bf3cb7ffad1c3dd067d5a4116da52bb8c4a712
+        commit-sha: da88b121073f9e8bffc3c135102e233b28f811c2
