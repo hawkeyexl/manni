@@ -457,6 +457,7 @@ spaces, and names the built page relative to the output.
 | A page with no built page (stdout) | `docs/src/content/docs/x.mdx: no built page at docs/dist/x/index.html.` | `0` |
 | A block with an error-severity pin (stdout) | `cite/index.html: 1 block drifted, because a source changed: fetch-timeout.` | `0` |
 | A unified framework with no stamps (a warning) | `manni: docs/dist carries no line stamps, so blocks are placed by text alone. Add @hawkeyexl/manni/site/rehype to the framework's rehype plugins.` | n/a |
+| A page source that cannot be read (a warning) | `manni: docs/src/content/docs/x.mdx could not be read, so its pins are placed by line alone: ENOENT: no such file or directory, open 'docs/src/content/docs/x.mdx'.` | n/a |
 | Chunks published outside git | `manni: chunks.json carries no commit, so pages get no data-manni-commit.` | n/a |
 | No built site | `manni: no built site at docs/dist. Run manni site build first, or pass --out.` | `2` |
 | No chunk artifact | `manni: docs/public/graph/chunks.json does not exist; run manni graph publish.` | `2` |
