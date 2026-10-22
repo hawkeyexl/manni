@@ -94,6 +94,7 @@ function readArtifact(path: string, label: string, shown: (p: string) => string)
   }
   const stale = new SiteError(`${label} was built from another graph; run manni graph publish.`);
   const graphFile = resolve(dirname(path), manifest.graphFile);
+  // No graph file to compare against: trust the rows' own hashes, checked below.
   if (existsSync(graphFile) && integrityOf(readFileSync(graphFile)) !== manifest.graph) throw stale;
   const rows: ChunkRow[] = [];
   for (const language of Object.values(manifest.languages)) {
@@ -110,11 +111,12 @@ function readArtifact(path: string, label: string, shown: (p: string) => string)
 }
 
 /** The body lines of a page source, rendered, for the text step. */
-function claimTexts(page: string): { bodyLine: number; text: (start: number, end: number) => string } {
+function claimTexts(page: string, label: string): { bodyLine: number; text: (start: number, end: number) => string } {
   let content: string;
   try {
     content = readFileSync(page, "utf8");
-  } catch {
+  } catch (e) {
+    warn(`${label} could not be read, so its pins are placed by line alone: ${errorMessage(e)}.`);
     return { bodyLine: 1, text: () => "" };
   }
   const format = formatOf(page);
@@ -198,7 +200,7 @@ export function runAnnotate(opts: AnnotateOptions): AnnotateReport {
           : routed !== undefined && existsSync(routed)
             ? routed
             : undefined;
-    const texts = claimTexts(source);
+    const texts = claimTexts(source, shown(source));
     const result = joinPage({
       html: html === undefined ? "" : readFileSync(html, "utf8"),
       file: source,

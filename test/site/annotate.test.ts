@@ -266,7 +266,7 @@ describe("the report", () => {
 
   it("announces the framework, the site and the artifact on stderr", () => {
     run();
-    expect(stderr.join("")).toBe("manni: Starlight in site/. Annotating site/dist from graph/chunks.json.\n");
+    expect(stderr[0]).toBe("manni: Starlight in site/. Annotating site/dist from graph/chunks.json.\n");
   });
 });
 
@@ -349,5 +349,27 @@ describe("a unified framework with no stamps", () => {
     writeFileSync(join(root, "site/dist/guide/index.html"), guide);
     run({ out: "site/dist" });
     expect(stderr.join("")).not.toContain("rehype");
+  });
+});
+
+describe("a source that cannot be read", () => {
+  it("says so once for the page, and still reports", () => {
+    rmSync(join(root, "site/src/content/docs/plain.md"));
+    const report = run();
+    expect(report.pages).toBeGreaterThan(0);
+    const said = stderr.join("").split("\n").filter((l) => l.includes("plain.md could not be read"));
+    expect(said).toHaveLength(1);
+    expect(said[0]).toMatch(
+      /^manni: site\/src\/content\/docs\/plain\.md could not be read, so its pins are placed by line alone: .+\.$/,
+    );
+  });
+});
+
+describe("escaping an attribute", () => {
+  it("writes < as &lt; in a stamped value", () => {
+    const rows = read("graph/chunks.en.jsonl").replace(/by-text/g, "a<b");
+    writeFileSync(join(root, "graph/chunks.en.jsonl"), rows);
+    run();
+    expect(read("site/dist/plain/index.html")).toContain('data-manni-pins="a&lt;b"');
   });
 });
