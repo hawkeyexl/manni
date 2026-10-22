@@ -5,7 +5,7 @@
   <shortdesc>Every meta statement form, in a DTD-valid DITA task.</shortdesc>
   <taskbody>
     <context>
-      <?manni meta sha256-2ebca111f1837894c9f80486886e446611416095a82e89a71cabe9d52e934e53 {"applies-to":["windows"]}?>
+      <?manni meta sha256-9231997d02bbd952afc3093249c708222e42bd345bd90413710d26949a35243e {"applies-to":["windows"]}?>
       <p>Close every editor first.</p>
     </context>
     <steps>

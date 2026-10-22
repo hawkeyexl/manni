@@ -35,7 +35,7 @@ export const ANALYZE_CACHE_DIR = ".manni/graph/analyze-cache";
  * development build does not read entries an older parse wrote under the
  * same package version.
  */
-const ENTRY_VERSION = 2;
+const ENTRY_VERSION = 3;
 
 function sha256(text: string): string {
   return createHash("sha256").update(text, "utf8").digest("hex");
