@@ -20,3 +20,10 @@ docs/src/content/docs/strategy/index.mdx:
       assertion: A reader can write the collection and the override that put a docset's records in play.
       type: capability
       grader: ai
+  provenance:
+    - generated-by: Claude Opus 5.5
+      lines: 2-230
+      integrity: sha256-66caf5d5eb656cb33d03956f3b3c7168b4f188b0abdefd401d6cf07a4087f525
+  owner:
+    - "@hawkeyexl"
+  created: 2026-10-22

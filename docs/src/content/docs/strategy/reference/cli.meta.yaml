@@ -18,3 +18,10 @@ docs/src/content/docs/strategy/reference/cli.mdx:
       assertion: A reader can match a manni strategy usage error to the invocation that caused it.
       type: capability
       grader: ai
+  provenance:
+    - generated-by: Claude Opus 5.5
+      lines: 2-361
+      integrity: sha256-72f1b7cde453564835354c865392f883b0c34be0e408a7037381fb7b1229196e
+  owner:
+    - "@hawkeyexl"
+  created: 2026-10-22

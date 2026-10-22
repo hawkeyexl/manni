@@ -21,3 +21,10 @@ docs/src/content/docs/strategy/reference/rules.mdx:
       assertion: A reader can say what edit clears a finding of any strategy check rule.
       type: capability
       grader: ai
+  provenance:
+    - generated-by: Claude Opus 5.5
+      lines: 2-151
+      integrity: sha256-6e16763ab3ecbd9c186a00c796dba5958299edb83f77d878fb6f3056c7d2f8ab
+  owner:
+    - "@hawkeyexl"
+  created: 2026-10-22

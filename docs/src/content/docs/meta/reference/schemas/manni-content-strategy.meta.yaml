@@ -21,3 +21,10 @@ docs/src/content/docs/meta/reference/schemas/manni-content-strategy.mdx:
       assertion: "A reader can say what the content-strategy strict overlay rejects that the open vocabulary accepts."
       type: capability
       grader: ai
+  provenance:
+    - generated-by: Claude Opus 5.5
+      lines: 2-207
+      integrity: sha256-6e374f986f044e104f116cd61f26e0809da57421a04c4ed647de7f55e59e192e
+  owner:
+    - "@hawkeyexl"
+  created: 2026-10-22
