@@ -217,11 +217,13 @@ describe.skipIf(!hasGit)("graph export chunks", () => {
     expect(row(rowsOf(dir), "urn:manni:graph:doc/docs/other.md").provenance.evals?.current).toBe(false);
   });
 
-  it("carries the block statements anchored inside the passage", () => {
+  it("carries the statements anchored inside the passage, a heading's at its heading", () => {
     expect(row(rowsOf(dir), LIMITS).provenance.statements).toEqual([
       { lines: "11-11", status: "unpinned", data: { "last-verified": "2026-10-18" } },
     ]);
-    expect(row(rowsOf(dir), BACKOFF).provenance.statements).toEqual([]);
+    expect(row(rowsOf(dir), BACKOFF).provenance.statements).toEqual([
+      { lines: "14-14", status: "unpinned", data: { "applies-to": ["windows"] } },
+    ]);
   });
 
   it("overlays heading statements on the page's delivered fields, and drops answer pins", () => {

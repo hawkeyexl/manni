@@ -79,7 +79,7 @@ export interface ProvenanceEvals {
   items: EvalItem[];
 }
 
-/** A block statement (proposal 0099) anchored inside the passage. */
+/** A statement (proposal 0099) anchored inside the passage: on a block, or on a section's heading. */
 export interface PassageStatement {
   /** Body lines, `N-M`. */
   lines: string;
@@ -140,4 +140,13 @@ export interface ChunksManifest {
   languages: Record<string, { file: string; rows: number; model: { id: string; dimensions: number } | null }>;
   pages: Record<string, { metadata: Record<string, unknown> }>;
   withheld: { id: string; page: string; because: WithholdReason[] }[];
+}
+
+/** A cite line spec, `N` or `N-M`, as a span; `undefined` when it is not one or runs backwards. */
+export function range(spec: string): { start: number; end: number } | undefined {
+  const m = /^(\d+)(?:-(\d+))?$/.exec(spec.trim());
+  if (m?.[1] === undefined) return undefined;
+  const start = Number(m[1]);
+  const end = m[2] === undefined ? start : Number(m[2]);
+  return end < start ? undefined : { start, end };
 }

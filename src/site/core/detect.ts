@@ -12,7 +12,7 @@ import { searchPath } from "../../shared/git-root.js";
 import { warn } from "../../shared/warn.js";
 import { SiteError } from "../errors.js";
 import type { Plan, PlannedStep, Verb } from "../types.js";
-import { loadSiteConfig } from "./config.js";
+import { loadSiteConfig, type SiteConfig } from "./config.js";
 
 export interface ResolveOptions {
   cwd: string;
@@ -50,6 +50,24 @@ interface Framework {
   /** `-a` means one `-a host:port`; `null` means the server takes no host. */
   hostFlag: "--host" | "--hostname" | "--bind" | "-a" | null;
   defaultPort: number;
+  /** Where the built site is and how a page maps into it; absent when the build is not local. */
+  layout?: (site: Site) => Layout;
+}
+
+/**
+ * A framework's built site (proposal 0095, decision 3). `<path>` is a page's
+ * path below `content`, without its extension, and an `index` page maps to
+ * its directory: `dir` serves `<path>/index.html`, `html` serves
+ * `<path>.html`. `unified` frameworks render through unified, so the rehype
+ * plugin can stamp their blocks.
+ */
+export interface Layout {
+  out: string;
+  content: string;
+  route: "dir" | "html";
+  /** Prepended to `<path>`: Docusaurus serves its docs under `docs/`. */
+  prefix?: string;
+  unified?: true;
 }
 
 const has = (dir: string, ...parts: string[]): boolean => existsSync(join(dir, ...parts));
@@ -113,6 +131,7 @@ function zensicalMarker(s: Site): string | null {
 }
 
 const sphinxSource = (s: Site): string => (has(s.dir, "conf.py") ? "." : "source");
+const vitepressRoot = (s: Site): string => (has(s.dir, ".vitepress") || !has(s.dir, "docs", ".vitepress") ? "." : "docs");
 
 /** Detected frameworks, in the order an ambiguity lists them. */
 const FRAMEWORKS: Framework[] = [
@@ -138,6 +157,7 @@ const FRAMEWORKS: Framework[] = [
     runner: "node",
     pkg: () => "astro",
     commands: () => node("astro", "dev", "build", "preview"),
+    layout: () => ({ out: "dist", content: "src/content/docs", route: "dir", unified: true }),
     hostFlag: "--host",
     defaultPort: 4321,
   },
@@ -151,6 +171,7 @@ const FRAMEWORKS: Framework[] = [
       build: { script: "build", argv: ["docusaurus", "build"] },
       preview: { script: "serve", argv: ["docusaurus", "serve"] },
     }),
+    layout: () => ({ out: "build", content: "docs", route: "dir", prefix: "docs/", unified: true }),
     hostFlag: "--host",
     defaultPort: 3000,
   },
@@ -159,8 +180,11 @@ const FRAMEWORKS: Framework[] = [
     marker: dep("vitepress"),
     runner: "node",
     pkg: () => "vitepress",
-    commands: (s) =>
-      node("vitepress", "docs:dev", "docs:build", "docs:preview", (has(s.dir, ".vitepress") || !has(s.dir, "docs", ".vitepress")) ? [] : ["docs"]),
+    commands: (s) => node("vitepress", "docs:dev", "docs:build", "docs:preview", vitepressRoot(s) === "." ? [] : ["docs"]),
+    layout: (s) => {
+      const src = vitepressRoot(s);
+      return { out: posix.join(src, ".vitepress", "dist"), content: src, route: "html" };
+    },
     hostFlag: "--host",
     defaultPort: 5173,
   },
@@ -170,6 +194,7 @@ const FRAMEWORKS: Framework[] = [
     runner: "node",
     pkg: () => "next",
     commands: next,
+    layout: () => ({ out: "out", content: "pages", route: "html", unified: true }),
     hostFlag: "--hostname",
     defaultPort: 3000,
   },
@@ -179,6 +204,7 @@ const FRAMEWORKS: Framework[] = [
     runner: "node",
     pkg: () => "next",
     commands: next,
+    layout: () => ({ out: "out", content: "content/docs", route: "html", prefix: "docs/", unified: true }),
     hostFlag: "--hostname",
     defaultPort: 3000,
   },
@@ -188,6 +214,7 @@ const FRAMEWORKS: Framework[] = [
     runner: "node",
     pkg: (s) => (s.deps.has("rspress") ? "rspress" : "@rspress/core"),
     commands: () => node("rspress", "dev", "build", "preview"),
+    layout: () => ({ out: "doc_build", content: "docs", route: "html", unified: true }),
     hostFlag: "--host",
     defaultPort: 3000,
   },
@@ -196,6 +223,7 @@ const FRAMEWORKS: Framework[] = [
     marker: (s) => (has(s.dir, "mkdocs.yml") && zensical(s) === null ? "mkdocs.yml" : null),
     runner: "python",
     commands: () => ({ start: { argv: ["mkdocs", "serve"] }, build: { argv: ["mkdocs", "build"] }, out: "site" }),
+    layout: () => ({ out: "site", content: "docs", route: "dir" }),
     hostFlag: "-a",
     defaultPort: 8000,
   },
@@ -204,6 +232,7 @@ const FRAMEWORKS: Framework[] = [
     marker: zensical,
     runner: "python",
     commands: () => ({ start: { argv: ["zensical", "serve"] }, build: { argv: ["zensical", "build"] }, out: "site" }),
+    layout: () => ({ out: "site", content: "docs", route: "dir" }),
     hostFlag: "-a",
     defaultPort: 8000,
   },
@@ -219,6 +248,7 @@ const FRAMEWORKS: Framework[] = [
         out: posix.join(src, "_build", "html"),
       };
     },
+    layout: (s) => ({ out: posix.join(sphinxSource(s), "_build", "html"), content: sphinxSource(s), route: "html" }),
     hostFlag: "--host",
     defaultPort: 8000,
   },
@@ -227,6 +257,7 @@ const FRAMEWORKS: Framework[] = [
     marker: (s) => ["hugo.toml", "hugo.yaml", "hugo.json"].find((f) => has(s.dir, f)) ?? null,
     runner: "path",
     commands: () => ({ start: { argv: ["hugo", "server"] }, build: { argv: ["hugo"] }, out: "public" }),
+    layout: () => ({ out: "public", content: "content", route: "dir" }),
     hostFlag: "--bind",
     defaultPort: 1313,
   },
@@ -238,6 +269,7 @@ const FRAMEWORKS: Framework[] = [
         : null,
     runner: "ruby",
     commands: () => ({ start: { argv: ["jekyll", "serve"] }, build: { argv: ["jekyll", "build"] }, out: "_site" }),
+    layout: () => ({ out: "_site", content: ".", route: "html" }),
     hostFlag: "--host",
     defaultPort: 4000,
   },
@@ -407,12 +439,92 @@ export function detectFramework(base: string): string | null {
   return null;
 }
 
-export function resolvePlan(verb: Verb, opts: ResolveOptions): Plan {
-  const config = loadSiteConfig(opts.cwd, opts.configPath);
-  const shown = (dir: string): string => {
-    const rel = relative(opts.cwd, dir).replace(/\\/g, "/");
+/**
+ * The site: `[dir]`, else `site.dir`, else the first folder searched that a
+ * framework marks. `site` is `null` when the search finds none, and
+ * `notFound` then says where it looked.
+ */
+function findSite(
+  config: SiteConfig,
+  cwd: string,
+  dir: string | undefined,
+  shown: (dir: string) => string,
+): { site: Site | null; base: string; notFound: string } {
+  const base = config.configDir ?? resolve(cwd);
+  const explicit = dir !== undefined ? resolve(cwd, dir) : config.dir;
+  if (explicit !== undefined) {
+    if (!isDirectory(explicit)) throw new SiteError(`${shown(explicit)} does not exist.`);
+    // Fern's site is the folder above `fern/`, wherever the user points.
+    const at = has(explicit, "fern.config.json") && !has(explicit, "fern", "fern.config.json") ? dirname(explicit) : explicit;
+    return { site: siteAt(at), base, notFound: "" };
+  }
+  const candidates = [base, join(base, "docs"), join(base, "website"), join(base, "site")];
+  for (const candidate of candidates) {
+    if (!isDirectory(candidate)) continue;
+    const site = siteAt(candidate);
+    if (FRAMEWORKS.some((fw) => fw.marker(site) !== null)) return { site, base, notFound: "" };
+  }
+  const names = candidates.map(shown);
+  return { site: null, base, notFound: `no docs site found in ${names.slice(0, -1).join(", ")} or ${names.at(-1) ?? ""}.` };
+}
+
+function matchesOf(site: Site): { fw: Framework; marker: string }[] {
+  return FRAMEWORKS.flatMap((fw) => {
+    const marker = fw.marker(site);
+    return marker === null ? [] : [{ fw, marker }];
+  });
+}
+
+const shownFrom =
+  (cwd: string) =>
+  (dir: string): string => {
+    const rel = relative(cwd, dir).replace(/\\/g, "/");
     return rel === "" ? "./" : `${rel}/`;
   };
+
+/** The site `manni site annotate` reads, and its framework's layout when one is detected. */
+export interface AnnotateSite {
+  /** Absolute. */
+  dir: string;
+  /** `docs/`, for messages. */
+  where: string;
+  framework: string | null;
+  layout: Layout | null;
+  config: SiteConfig;
+}
+
+/**
+ * Find the site to annotate (proposal 0095). A framework is needed only for
+ * its default output, so `--out` or `site.out` stands in for one.
+ */
+export function resolveAnnotateSite(opts: { cwd: string; dir?: string; configPath?: string; out?: string }): AnnotateSite {
+  const config = loadSiteConfig(opts.cwd, opts.configPath);
+  const shown = shownFrom(opts.cwd);
+  const outGiven = (opts.out ?? config.out) !== undefined;
+  const located = findSite(config, opts.cwd, opts.dir, shown);
+  if (located.site === null && !outGiven) {
+    throw new SiteError(`${located.notFound} Pass the site's directory, or pass --out.`);
+  }
+  const site = located.site ?? siteAt(located.base);
+  const where = shown(site.dir);
+  const matches = matchesOf(site);
+  if (matches.length > 1 && !outGiven) {
+    const list = matches.map((m) => `${m.fw.name} (${m.marker})`).join(", ");
+    throw new SiteError(`${where} holds more than one docs site: ${list}. Pass --out, or set site.out in ${CONFIG_NAME}.`);
+  }
+  const fw = matches.length === 1 ? matches[0]?.fw : undefined;
+  if (fw !== undefined && fw.layout === undefined) {
+    throw new SiteError(`${fw.name} builds on its own host, so there is no local site to annotate.`);
+  }
+  if (fw === undefined && !outGiven) {
+    throw new SiteError(`no docs framework detected in ${where}. Pass --out, or set site.out in ${CONFIG_NAME}.`);
+  }
+  return { dir: site.dir, where, framework: fw?.name ?? null, layout: fw?.layout?.(site) ?? null, config };
+}
+
+export function resolvePlan(verb: Verb, opts: ResolveOptions): Plan {
+  const config = loadSiteConfig(opts.cwd, opts.configPath);
+  const shown = shownFrom(opts.cwd);
 
   // The verb whose step takes --port and --host; `build` takes neither.
   const serving = verb === "build" ? null : verb;
@@ -432,43 +544,15 @@ export function resolvePlan(verb: Verb, opts: ResolveOptions): Plan {
   const key = `site.commands.${missing ?? verb} in ${CONFIG_NAME}`;
   const setIt = `Set ${key}.`;
 
-  // Find the site.
-  let site: Site | undefined;
-  const explicit = opts.dir !== undefined ? resolve(opts.cwd, opts.dir) : config.dir;
-  if (explicit !== undefined) {
-    if (!isDirectory(explicit)) throw new SiteError(`${shown(explicit)} does not exist.`);
-    // Fern's site is the folder above `fern/`, wherever the user points.
-    const dir = has(explicit, "fern.config.json") && !has(explicit, "fern", "fern.config.json") ? dirname(explicit) : explicit;
-    site = siteAt(dir);
-  } else {
-    const base = config.configDir ?? resolve(opts.cwd);
-    const candidates = [base, join(base, "docs"), join(base, "website"), join(base, "site")];
-    for (const dir of candidates) {
-      if (!isDirectory(dir)) continue;
-      const candidate = siteAt(dir);
-      if (FRAMEWORKS.some((fw) => fw.marker(candidate) !== null)) {
-        site = candidate;
-        break;
-      }
-    }
-    if (site === undefined) {
-      if (missing !== undefined) {
-        const names = candidates.map(shown);
-        throw new SiteError(
-          `no docs site found in ${names.slice(0, -1).join(", ")} or ${names.at(-1) ?? ""}. Pass the site's directory, or set ${key}.`,
-        );
-      }
-      site = siteAt(base);
-    }
+  const located = findSite(config, opts.cwd, opts.dir, shown);
+  if (located.site === null && missing !== undefined) {
+    throw new SiteError(`${located.notFound} Pass the site's directory, or set ${key}.`);
   }
-  const where = shown(site.dir);
-  const found = site;
+  const found = located.site ?? siteAt(located.base);
+  const where = shown(found.dir);
 
   // Which framework, only when some step needs one.
-  const matches = FRAMEWORKS.flatMap((fw) => {
-    const marker = fw.marker(found);
-    return marker === null ? [] : [{ fw, marker }];
-  });
+  const matches = matchesOf(found);
   let fw: Framework | undefined;
   if (missing !== undefined) {
     if (matches.length === 0) throw new SiteError(`no docs framework detected in ${where}. ${setIt}`);
@@ -479,7 +563,28 @@ export function resolvePlan(verb: Verb, opts: ResolveOptions): Plan {
     fw = matches[0]?.fw;
   }
 
-  const steps = needed.map((v): PlannedStep => {
+  const steps = needed.flatMap((v): PlannedStep[] => {
+    const step = planStep(v);
+    // Annotate joins the build it follows, before preview serves it (proposal 0095).
+    if (v !== "build" || !config.afterBuild) return [step];
+    return [
+      step,
+      {
+        announce: "",
+        display: "manni site annotate",
+        notFound: "",
+        step: {
+          kind: "annotate",
+          cwd: opts.cwd,
+          dir: found.dir,
+          ...(opts.configPath === undefined ? {} : { configPath: opts.configPath }),
+        },
+      },
+    ];
+  });
+  return { steps };
+
+  function planStep(v: Verb): PlannedStep {
     const override = config.commands[v];
     const isServe = v === serving;
     // Passthrough goes to the verb's own step: the serve step, for preview.
@@ -523,7 +628,7 @@ export function resolvePlan(verb: Verb, opts: ResolveOptions): Plan {
         notFound: "",
         step: {
           kind: "static",
-          root: join(found.dir, cmds.out),
+          root: join(found.dir, config.out ?? cmds.out),
           host: address.host ?? STATIC_HOST,
           port: address.port ?? fw.defaultPort,
           base: address.base,
@@ -554,8 +659,7 @@ export function resolvePlan(verb: Verb, opts: ResolveOptions): Plan {
       notFound: `${bin} not found on PATH. Install ${install}, or set site.commands.${v}.`,
       step: { kind: "exec", argv, cwd: found.dir },
     };
-  });
-  return { steps };
+  }
 }
 
 /**

@@ -1,0 +1,29 @@
+docs/src/content/docs/site/annotate/index.mdx:
+  citations:
+    - id: ties-never-broken
+      claim:
+        lines: 119-121
+        integrity: sha256-c90b1218540987e87bc6c60e3226bdf5843e12dd3e78cc85fb6f1fb5da68cf36
+      source:
+        file: src/site/core/annotate.ts
+        lines: 263-279
+        integrity: sha256-9622cad789f3b044fd1a6899cb176efa08393ecc9b19eff175bba3766e9c4aea
+        commit-sha: a7e2849f460608956508e22f9ad6498450783891
+    - id: stamps-removed
+      claim:
+        lines: 38-39
+        integrity: sha256-89d9784d787108a30500cac460d06f4293283639fd53452f4944ad40c8bbbc66
+      source:
+        file: src/site/core/annotate.ts
+        lines: 391-401
+        integrity: sha256-577d5c0a5cff736f021b470f04ead41ada64abf4187d1e76959aaaf04dfdaa8f
+        commit-sha: a7e2849f460608956508e22f9ad6498450783891
+    - id: start-never-annotates
+      claim:
+        lines: 67
+        integrity: sha256-d9d42a81fdd753d4de0a05a26fc05faec1a10e90db6a74dc6514af06e790638f
+      source:
+        file: src/site/core/detect.ts
+        lines: 568-569
+        integrity: sha256-d59ee1972aaed945e32205883a14cd8ebc93c0b59e8adc5231404e2f13756e6f
+        commit-sha: 41a677a71476ddcc1fd7e5aa8ce446edd3319469

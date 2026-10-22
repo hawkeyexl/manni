@@ -5,7 +5,7 @@ import { defineConfig } from "tsup";
  *
  * - the Node side (the `manni` and `docmeta` bins, the library) targets
  *   node24 and carries the shebang;
- * - `@hawkeyexl/manni/graph/runtime` and `/graph/embed` are built
+ * - `@hawkeyexl/manni/graph/runtime`, `/graph/embed` and `/site/rehype` are built
  *   `platform: "neutral"` with no banner, because the runtime must run in a
  *   browser (graph ADR 01018). The bundle-purity test
  *   (test/graph/integration/runtime-bundle.test.ts) enforces that contract — if
@@ -44,6 +44,9 @@ export default defineConfig([
     entry: {
       "graph/runtime": "src/graph/runtime/index.ts",
       "graph/embed": "src/graph/embed/index.ts",
+      // The line-stamp plugin (proposal 0095) runs inside a docs framework's
+      // build, so it carries the same contract: no Node built-in, no import.
+      "site/rehype": "src/site/rehype.ts",
     },
     format: ["esm"],
     target: "es2022",

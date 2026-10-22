@@ -23,6 +23,10 @@
       "types": "./dist/graph/embed.d.ts",
       "import": "./dist/graph/embed.js"
     },
+    "./site/rehype": {
+      "types": "./dist/site/rehype.d.ts",
+      "import": "./dist/site/rehype.js"
+    },
     "./package.json": "./package.json"
   },
   "files": [

@@ -141,6 +141,16 @@ a11y:
   # findings are fixed, never raise it.
   severity: notice
 
+# The docs site (proposals 0082 and 0095). Starlight in docs/ is detected, so
+# no command is named. `manni site build` and `manni site preview` annotate
+# the built pages after the build: each pinned block gains `data-manni-*`
+# attributes, and each page one provenance island. The chunks they read are
+# the ones `manni graph publish` writes beside `graph.out` below, so publish
+# first.
+site:
+  annotate:
+    after-build: true
+
 # The evals tool grading this site. A bare `manni docevals run` reads the
 # `site` collection above, the same pages a bare `manni meta validate` reads.
 # Each page's evals sit in its `{page}.meta.yaml` manifest, beside an
@@ -243,9 +253,11 @@ graph:
   # to dereference would be a promise nothing keeps.
   baseIri: https://example.com/manni-docs/
 
-  # Under .manni/, which is gitignored: the graph is a gate, not an artifact
-  # this repository ships.
-  out: .manni/graph/graph.ttl
+  # In the site's public folder, which is gitignored there: `manni graph
+  # publish` writes the graph, the chunks, the search index and llms.txt
+  # beside it, so the site serves the artifact of the commit it builds, and
+  # `manni site annotate` reads the same chunks.
+  out: docs/public/graph/graph.ttl
 
   # Published routes back to source files, so a link written the way a reader
   # sees it (/manni/graph/reference/cli/) resolves to the page that serves it.

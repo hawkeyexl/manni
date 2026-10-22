@@ -1,5 +1,8 @@
 import { defineConfig } from "astro/config";
 import starlight from "@astrojs/starlight";
+// `@hawkeyexl/manni/site/rehype` in a site that installs manni. This site is
+// manni's own, so it imports the plugin's source, which needs no build first.
+import manniLines from "../src/site/rehype.ts";
 
 /** Every element named `tagName` under `node`, depth first. */
 function elements(node, tagName, found = []) {
@@ -115,7 +118,7 @@ export default defineConfig({
   },
   // MDX inherits this list, so `.md` and `.mdx` pages both get it.
   markdown: {
-    rehypePlugins: [rehypeFocusableTables],
+    rehypePlugins: [rehypeFocusableTables, manniLines],
   },
   integrations: [
     starlight({
@@ -408,13 +411,15 @@ export default defineConfig({
           ],
         },
         // `site` runs the site every other domain checks (proposal 0082). A
-        // family resource like `key`, so an overview and a reference shelf.
+        // family resource like `key`, so an overview and a reference shelf,
+        // plus the one journey annotate needs (proposal 0095).
         {
           label: "site",
           collapsed: true,
           badge: BETA,
           items: [
             { label: "Overview", link: "/site/" },
+            { label: "Show readers what is proven", link: "/site/annotate/" },
             {
               label: "Reference",
               collapsed: true,

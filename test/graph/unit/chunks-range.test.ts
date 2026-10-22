@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { range } from "../../../src/graph/commands/chunks.js";
+import { range } from "../../../src/graph/runtime/chunks.js";
 
 describe("range", () => {
   it("reads a line and a span", () => {

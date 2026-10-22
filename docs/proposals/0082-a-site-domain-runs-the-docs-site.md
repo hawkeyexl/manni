@@ -1,6 +1,6 @@
 # 0082: A site domain runs the docs site: `manni site start`, `build` and `preview`
 
-- **Status:** Proposed
+- **Status:** Superseded in part by 0095
 - **Serves:** Three people, four journeys.
   - Maya · M26, "Run the docs site locally", a new journey. One command
     serves the site in any docs repository, whatever framework it runs on.

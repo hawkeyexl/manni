@@ -8,6 +8,7 @@ import { accessSync, constants, statSync } from "node:fs";
 import { delimiter, resolve } from "node:path";
 import { launcherCommandLine } from "../../shared/batch-launcher.js";
 import { notice } from "../../shared/warn.js";
+import { renderAnnotate, runAnnotate } from "../commands/annotate.js";
 import { SiteError } from "../errors.js";
 import type { Plan, PlannedStep, Step } from "../types.js";
 import { serveStatic } from "./static-server.js";
@@ -94,6 +95,13 @@ async function runStep(planned: PlannedStep): Promise<boolean> {
   if (step.kind === "static") {
     await serveStatic(step);
     return true;
+  }
+  if (step.kind === "annotate") {
+    const { cwd, dir, configPath } = step;
+    const report = runAnnotate({ cwd, dir, ...(configPath === undefined ? {} : { configPath }) });
+    process.stdout.write(`${renderAnnotate(report, "pretty")}
+`);
+    return false;
   }
   const child =
     step.kind === "exec"

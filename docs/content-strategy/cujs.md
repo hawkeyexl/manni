@@ -268,6 +268,14 @@ This is the backbone of the docevals section. It is the only journey that crosse
 
 **What success looks like.** The untested procedure claims nothing, and the tested one carries its own date. A reworded step is a warning, never a silent pass. Related journeys are M30 (verification for a page), M5 (pins to source) and S16 (how another tool writes a statement).
 
+### M32 · Let readers see which sentences are proven
+
+**Outcome.** A reader of the published site can tell a sentence pinned to code from the rest, and see when a check last proved a block. Maya's pins reach past CI, and the page looks the same until her theme chooses a mark.
+
+**Steps.** Maya's CI already runs `manni graph publish`, so the chunks hold each passage's pins, dates and statements. She adds `@hawkeyexl/manni/site/rehype` to the framework's rehype plugins, so each built block names its source lines. She sets `site.annotate.after-build: true`, and `manni site build` runs `manni site annotate` after the framework's build. Annotate joins each pin and statement to its block by lines, then by text, and never breaks a tie. Each placed block gains `data-manni-*` attributes, and each page one JSON island. The run prints how many pins it placed, and why each of the rest was not. Three lines of CSS turn `data-manni-state` into a mark. A script that wants detail reads the island. Annotate exits `0` whatever the pins say, so `manni cite check` stays the gate.
+
+**What success looks like.** Every placed block says which pins it carries and whether they hold, and no pin is guessed onto the wrong block. No `data-manni-src` stamp reaches the deployed site. Related journeys are M5 (pins to source), M26 (running the site), M30 and M31 (verification) and D13 (publishing the graph).
+
 ---
 
 ## Devin, Platform / CI Engineer

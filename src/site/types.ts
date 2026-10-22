@@ -3,12 +3,14 @@ export type Verb = "start" | "build" | "preview";
 
 /**
  * One thing the runner does. `exec` spawns argv directly, `shell` runs a
- * user-written command line through the shell, and `static` serves a
+ * user-written command line through the shell, `annotate` runs
+ * `manni site annotate` in process (proposal 0095), and `static` serves a
  * directory with the built-in server until the process is stopped.
  */
 export type Step =
   | { kind: "exec"; argv: string[]; cwd: string }
   | { kind: "shell"; command: string; cwd: string }
+  | { kind: "annotate"; cwd: string; dir: string; configPath?: string }
   | { kind: "static"; root: string; host: string; port: number; base: string };
 
 /**
