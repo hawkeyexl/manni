@@ -1427,7 +1427,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         file: src/meta/core/schema-registry.ts
         lines: 1197-1205
         integrity: sha256-0fdd2bc93eb0acbc84d62eaaf5f1c7ec2795441da58714327642a7d7ee77c36c
-        commit-sha: 7de49f7ecc82d73ec615c863e57ffd0a0a57b809
+        commit-sha: ddba7252337859626421b6060ae8952f93f61653
     - id: offline-flag-is-per-run
       claim:
         integrity: sha256-50cc1fbd993bc5e2a23e9cdb9373a16358550f893478fc626477be551f7abcc7

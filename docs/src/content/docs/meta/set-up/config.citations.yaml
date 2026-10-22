@@ -104,7 +104,7 @@ docs/src/content/docs/meta/set-up/config.mdx:
         file: src/meta/core/schema-registry.ts
         lines: 608
         integrity: sha256-73916bbbc37290e31b41fcefb00183d8f66b200197926e0860d5a1138e8b6204
-        commit-sha: 7de49f7ecc82d73ec615c863e57ffd0a0a57b809
+        commit-sha: ddba7252337859626421b6060ae8952f93f61653
     - id: schema-ref-can-be-a-local-file
       claim:
         lines: 147
@@ -113,7 +113,7 @@ docs/src/content/docs/meta/set-up/config.mdx:
         file: src/meta/core/schema-registry.ts
         lines: 617
         integrity: sha256-54d3ca5663d01b67211e96f23c07ea217f315568bb05c0fed1a575a471062a52
-        commit-sha: 7de49f7ecc82d73ec615c863e57ffd0a0a57b809
+        commit-sha: ddba7252337859626421b6060ae8952f93f61653
     - id: builtin-id-shape
       claim:
         lines: 146
@@ -122,7 +122,7 @@ docs/src/content/docs/meta/set-up/config.mdx:
         file: src/meta/core/schema-registry.ts
         lines: 605
         integrity: sha256-f5e3a939a781ffcfd02b1e0b1fc055d28d3a1ed1a39efbe53a978870587c0b1d
-        commit-sha: 7de49f7ecc82d73ec615c863e57ffd0a0a57b809
+        commit-sha: ddba7252337859626421b6060ae8952f93f61653
     - id: every-schema-in-the-set-is-applied
       claim:
         integrity: sha256-981a7d04d5bb404e8d68c177c9cf1de8f0b015d97b4bfaa854c4464b79fd7b15
@@ -155,9 +155,9 @@ docs/src/content/docs/meta/set-up/config.mdx:
         integrity: sha256-6db4d5d084e63d6301555a29399627c768a89ea90219446ce59f29e70f534908
       source:
         file: CHANGELOG.md
-        lines: 1148-1151
+        lines: 1155-1158
         integrity: sha256-45e8f8c4528f6e8164bb9f060cb05f911f235aec5b19ef2d7c4001423d3c47e5
-        commit-sha: c5e6491b5acbbc90621ada5b33239eb054b7453f
+        commit-sha: ddba7252337859626421b6060ae8952f93f61653
     - id: collection-flag-refuses-positional-paths
       claim:
         integrity: sha256-733c0b2524ed1903bd3560cdcfd64a88195eabb411d4f725708cc91cfbf30146
