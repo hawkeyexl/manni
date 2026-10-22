@@ -22,17 +22,15 @@ every passage that answers it, with the proof to quote it or flag it.
 
 You need two things in the repository the agent works in.
 
-**A chunk artifact.** Build the graph, then export the search index and the
-chunks beside it:
+**A chunk artifact.** One command builds the graph and writes it, the search
+index and the chunks into one directory:
 
 ```sh
-manni graph build
-manni graph export search
-manni graph export chunks
+manni graph publish
 ```
 
-`export chunks` writes `chunks.json` and one row file per language.
-[Publish the graph](/manni/graph/publish/) covers each target.
+The chunks are `chunks.json` and one row file per language.
+[Publish the graph](/manni/graph/publish/) covers each step.
 
 **The MCP SDK.** It is an optional peer of manni, so install it beside manni:
 
