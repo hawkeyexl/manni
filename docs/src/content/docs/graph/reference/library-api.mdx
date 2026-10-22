@@ -9,7 +9,7 @@ action: remember
 concepts:
   - search index
   - vector sidecar
-last-updated: 2026-10-18
+last-updated: 2026-10-21
 ---
 
 manni graph is a CLI first, and everything it does is reachable as a library. The
@@ -176,6 +176,102 @@ const bundle = await assemble(resolver, nodes, { trace, maxChars: 12000 });
 `sliceSection` is worth one line of its own. Heading text is not unique, so
 slicing a specific section node needs its occurrence. Without one it silently
 returns the first same-titled heading's body.
+
+### Served passages
+
+`createRetriever` serves the [chunk artifact](/manni/graph/reference/cli/#chunks)
+to a script, with each passage's proof. It returns data and calls no model
+besides the query embedder.
+
+```js
+import { createRetriever } from "@hawkeyexl/manni/graph/runtime";
+
+const docs = await createRetriever({ manifest: "/graph/chunks.json" });
+const result = await docs.lookup("How do I rotate the encryption key?");
+```
+
+| Option | Type | Default | Meaning |
+|---|---|---|---|
+| `manifest` | URL string, or a parsed manifest | required | `chunks.json`. The graph, the search index and the rows resolve from its directory. |
+| `store` | `VectorStore` | the static store over the rows' vectors | Pass `createHttpVectorStore(...)` for a hosted vector DB. |
+| `chunks` | `ChunkSource` | the chunk files the manifest names | Pass your own to read rows from a vector DB by id. |
+| `embed` | an embedder, or `false` | `graph/embed` with each language's model | `false` forces lexical entry. A model loads once, when a language that needs it is first queried. |
+| `fetch` | function | the global `fetch` | For hosts without one, or for tests. |
+
+The four verbs are the CLI's, over the same artifact, and they answer alike.
+
+| Member | Same as | Returns |
+|---|---|---|
+| `lookup(question)` | `graph lookup` | the [lookup result](/manni/graph/reference/cli/#the-lookup-result) |
+| `retrieve(question, { lang, variant, softwareSubject, depth, maxChars, mode, where, withhold })` | `graph retrieve` | a [bundle](/manni/graph/reference/cli/#the-bundle) |
+| `traverse(node, { depth, predicates, reverse, lang, variant, softwareSubject, limit, maxChars, where, withhold })` | `graph traverse --context` | a bundle |
+| `impact(node, { depth, lang, variant, softwareSubject, limit, maxChars, where, withhold })` | `graph traverse --impact --context` | a bundle |
+| `manifest` | n/a | the parsed manifest |
+
+Every option is optional. `where` is a list of `{ field, value }`, and every
+condition must hold, as with `--where`. `withhold` lists `drifted`, `failing`
+or both, as `--withhold` does. It tightens the floor the artifact was exported
+with, for that call, and never lowers it. `lookup` serves the exported floor.
+A refusal comes back in the result.
+Two errors throw instead:
+
+- `StaleArtifactError`, when the graph or a row was built from another graph
+  than the manifest names.
+- `ModelMismatchError`, when the embedder is not the model the queried
+  language's rows were embedded with. A language is checked only when it is
+  queried.
+
+Each language in `chunks.json` names its own model, and the question is
+embedded with the queried language's. A host that cannot load that model
+falls back to lexical entry. So does a language with no model, when another
+language has one. `trace.entry.fallback` then reads `"lexical"`. The default embedder loads from
+the `graph/embed` file beside the runtime, so a bundler that does not ship it
+gets the fallback.
+
+The rows are read lazily, one language at a time.
+
+#### The seams
+
+A host supplies two seams, and manni ships an implementation of each.
+
+```ts
+interface VectorStore {
+  query(q: { text: string; vector: number[] | null; k: number;
+             language: string | null; where: { field: string; value: string }[] }):
+    Promise<Array<{ id: string; score: number; row?: ChunkRow }>>;
+}
+interface ChunkSource {
+  get(ids: string[], language: string | null): Promise<ChunkRow[]>;
+}
+```
+
+- **`createStaticVectorStore(rows)`** ranks rows by cosine in memory, among
+  those that meet `where`. It needs no service.
+- **`createHttpVectorStore({ url, fetch })`** POSTs `{ text, vector, k,
+  language, where }` as JSON and expects `{ matches: [{ id, score, row }] }`.
+  `row` is optional. Without it, the id is read through the `ChunkSource`. An
+  id no row holds is dropped and traced. `vector` is `null` when the host did
+  not embed, so the server can embed instead.
+- **`createChunkFileSource(textOrUrl, { fetch })`** reads one
+  `chunks.<tag>.jsonl`, given as its text or its URL.
+- **`parseChunkRows(text)`** returns a JSONL file's rows, for ingestion into a
+  vector DB. **`parseChunksManifest(input)`** checks that a document is a
+  chunk manifest. Both throw on a document missing a field the cores read.
+
+The cores the verbs call, `lookup` and `retrieve`, take the context and the
+options in one object. A host with seams of its own can call them directly.
+
+| Area | Exports |
+|---|---|
+| The script surface | `createRetriever`, with `CreateRetrieverOptions`, `Retriever` and `RetrieverFetch` |
+| The cores | `lookup`, `retrieve`, with `RetrieverContext`, `EmbeddingModel`, `LookupOptions` and `RetrieveOptions` |
+| The seams | `VectorStore`, `VectorStoreQuery`, `VectorStoreMatch`, `ChunkSource`, `WhereCondition`, `createStaticVectorStore`, `createHttpVectorStore`, `createChunkFileSource` |
+| The artifact | `parseChunkRows`, `parseChunksManifest`, `ChunkRow`, `ChunksManifest`, `ProvenanceRecord` and its parts |
+| Results | `LookupResult`, `LookupMatch`, `LookupReached`, `LookupEdge`, `PassageBundle`, `PassageBlock`, `RetrievalTrace`, `WithheldNode`, `FilteredNode` |
+| Errors | `StaleArtifactError`, `ModelMismatchError` |
+
+`RefusalReason` gains `withheld`, `lang-required`, `unknown-node` and
+`unknown-scope`.
 
 ## The embedders
 

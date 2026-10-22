@@ -86,6 +86,10 @@
 # malformed `verified-by` or `last-verified` on purpose, so each one is a
 # standing alert for a file doing its job.
 #
+# `test/fixtures/statements/` (0099) joins them. Its pages break the
+# `manni:meta/statement-*` rules on purpose, and they lack the front matter
+# the default set asks for.
+#
 # `test/fixtures/get-parse-error/` is deliberately NOT excluded. Its unparseable
 # file is a real parse failure, which is exactly the explainable alert this
 # workflow exists to demonstrate — the same standing as `dd/malformed-yaml.md`.
@@ -162,6 +166,7 @@ jobs:
             --exclude "test/fixtures/term/**" \
             --exclude "test/fixtures/guidance/**" \
             --exclude "test/fixtures/verification/**" \
+            --exclude "test/fixtures/statements/**" \
             --allow-empty -f sarif > manni.sarif
           echo "results=$(jq '.runs[0].results | length' manni.sarif)" >> "$GITHUB_OUTPUT"
 
@@ -238,6 +243,7 @@ jobs:
             --exclude "test/fixtures/term-keyword/**" \
             --exclude "test/fixtures/term/**" \
             --exclude "test/fixtures/verification/**" \
+            --exclude "test/fixtures/statements/**" \
             --allow-empty -f junit > manni-junit.xml
 
       # GitHub renders no JUnit natively. A third-party reporter action would be

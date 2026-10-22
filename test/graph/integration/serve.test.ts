@@ -1,0 +1,320 @@
+/**
+ * `manni graph serve` (proposal 0090, PR 3): the MCP server over stdio,
+ * driven by the SDK's own client against the built CLI. Hermetic: the
+ * retrieval fixture, mock vectors, no network.
+ *
+ * Every tool answers through the same command core as its CLI twin, so each
+ * result is compared with what the CLI prints for the same inputs.
+ */
+import { spawnSync } from "node:child_process";
+import { appendFileSync, copyFileSync, readdirSync, readFileSync } from "node:fs";
+import { join } from "node:path";
+import { PassThrough } from "node:stream";
+import { Client } from "@modelcontextprotocol/sdk/client/index.js";
+import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
+import { Ajv2020 } from "ajv/dist/2020.js";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { runServe } from "../../../src/graph/commands/serve.js";
+import { createMockEmbedder } from "../../../src/graph/embed/mock.js";
+import type { QueryEmbedder } from "../../../src/graph/runtime/entry.js";
+import { GraphError } from "../../../src/graph/types.js";
+import { spawnText } from "../../helpers/spawn.js";
+import { removeTempRepo } from "../../helpers/temp-repo.js";
+import { INDEX, QUESTION, ROTATE, retrieveArtifact } from "../helpers/retrieve-artifact.js";
+
+const root = join(import.meta.dirname, "..", "..", "..");
+const cli = join(root, "dist", "cli.js");
+
+interface ToolResult {
+  isError?: boolean;
+  structuredContent?: Record<string, unknown>;
+  content: { type: string; text?: string }[];
+}
+
+let dir: string;
+let client: Client;
+let stderr = "";
+
+beforeAll(async () => {
+  dir = await retrieveArtifact();
+  const transport = new StdioClientTransport({
+    command: process.execPath,
+    args: [cli, "graph", "serve"],
+    cwd: dir,
+    stderr: "pipe",
+  });
+  transport.stderr?.on("data", (chunk: Buffer) => {
+    stderr += chunk.toString("utf8");
+  });
+  client = new Client({ name: "serve-test", version: "0.0.0" });
+  await client.connect(transport);
+}, 60_000);
+
+afterAll(async () => {
+  await client.close();
+  removeTempRepo(dir);
+});
+
+function graph(args: string[], input?: string): { stdout: string; stderr: string; status: number } {
+  const r = spawnText(
+    spawnSync(process.execPath, [cli, "graph", ...args], {
+      encoding: "utf8",
+      cwd: dir,
+      ...(input === undefined ? {} : { input }),
+    }),
+  );
+  return { stdout: r.stdout ?? "", stderr: r.stderr ?? "", status: r.status ?? -1 };
+}
+
+const toolOf = new WeakMap<object, string>();
+/** Tools whose results, refusals among them, were validated against their outputSchema. */
+const validated = new Set<string>();
+let refusalsValidated = 0;
+
+async function call(name: string, args: Record<string, unknown>): Promise<ToolResult> {
+  const r = (await client.callTool({ name, arguments: args })) as ToolResult;
+  toolOf.set(r, name);
+  return r;
+}
+
+/** The result in both forms, which must agree, and valid against the outputSchema tools/list declares. */
+async function both(r: ToolResult): Promise<Record<string, unknown>> {
+  expect(r.content).toHaveLength(1);
+  const text = r.content[0]?.text ?? "";
+  expect(r.structuredContent).toEqual(JSON.parse(text));
+  const name = toolOf.get(r) ?? "";
+  const tool = (await client.listTools()).tools.find((t) => t.name === name);
+  expect(tool?.outputSchema, name).toBeDefined();
+  const validate = new Ajv2020({ allErrors: true, strict: false }).compile(tool?.outputSchema ?? {});
+  expect(validate(r.structuredContent), `${name}: ${JSON.stringify(validate.errors)}`).toBe(true);
+  validated.add(name);
+  if (r.structuredContent?.refusal !== undefined) refusalsValidated++;
+  return r.structuredContent ?? {};
+}
+
+describe("graph serve: tools/list", () => {
+  it("lists the four tools in order, read-only and closed-world", async () => {
+    const { tools } = await client.listTools();
+    expect(tools.map((t) => t.name)).toEqual(["lookup", "retrieve", "traverse", "impact"]);
+    for (const tool of tools) {
+      expect(tool.annotations).toMatchObject({ readOnlyHint: true, openWorldHint: false });
+      expect(tool.inputSchema.additionalProperties).toBe(false);
+      expect(Object.keys(tool.inputSchema.properties ?? {})).not.toContain("withhold");
+      expect(tool.outputSchema).toBeDefined();
+      expect(tool.description).toBeTruthy();
+    }
+  });
+
+  it("gives each tool section 6's inputs", async () => {
+    const { tools } = await client.listTools();
+    const shape = Object.fromEntries(
+      tools.map((t) => [t.name, { props: Object.keys(t.inputSchema.properties ?? {}).sort(), required: t.inputSchema.required }]),
+    );
+    expect(shape).toEqual({
+      lookup: { props: ["question"], required: ["question"] },
+      retrieve: {
+        props: ["depth", "lang", "maxChars", "question", "softwareSubject", "variant", "where"],
+        required: ["question"],
+      },
+      traverse: {
+        props: ["depth", "lang", "limit", "maxChars", "node", "predicates", "reverse", "softwareSubject", "variant", "where"],
+        required: ["node"],
+      },
+      impact: {
+        props: ["depth", "lang", "limit", "maxChars", "node", "softwareSubject", "variant", "where"],
+        required: ["node"],
+      },
+    });
+    expect(tools[0]?.description).toMatch(/^Start here\. Pass the reader's question\./);
+  });
+
+  it("says on stderr what it serves, from where", () => {
+    expect(stderr).toBe(
+      `manni: serving lookup, retrieve, traverse and impact over stdio from ${INDEX}/chunks.json.\n`,
+    );
+  });
+
+  it("reports the package's version as its own", () => {
+    const pkg = JSON.parse(readFileSync(join(root, "package.json"), "utf8")) as { version: string };
+    expect(client.getServerVersion()).toMatchObject({ name: "manni-graph", version: pkg.version });
+  });
+});
+
+describe("graph serve: tools/call", () => {
+  it("lookup takes only the question and returns what graph lookup prints", async () => {
+    const result = await both(await call("lookup", { question: QUESTION }));
+    const cli = JSON.parse(graph(["lookup", QUESTION, "-f", "json"]).stdout) as unknown;
+    expect(result).toEqual(cli);
+    expect(result.language).toBe("en");
+  });
+
+  it("retrieve, traverse and impact return what their CLI twins print", async () => {
+    const retrieved = await both(
+      await call("retrieve", { question: QUESTION, lang: "en", depth: 2, maxChars: 20000, where: { tags: ["security", "keys"] } }),
+    );
+    expect(retrieved).toEqual(
+      JSON.parse(
+        graph([
+          "retrieve", QUESTION, "--lang", "en", "-d", "2", "--max-chars", "20000",
+          "--where", "tags=security", "--where", "tags=keys", "-f", "json",
+        ]).stdout,
+      ),
+    );
+
+    const walked = await both(await call("traverse", { node: ROTATE, depth: 2, maxChars: 20000 }));
+    expect(walked).toEqual(
+      JSON.parse(graph(["traverse", ROTATE, "--context", "-d", "2", "--max-chars", "20000", "-f", "json"]).stdout),
+    );
+
+    const impact = await both(await call("impact", { node: ROTATE }));
+    expect(impact).toEqual(JSON.parse(graph(["traverse", ROTATE, "--impact", "--context", "-f", "json"]).stdout));
+  });
+
+  it("answers a CLI usage error with a refusal, never isError", async () => {
+    const lang = await call("retrieve", { question: QUESTION });
+    expect(lang.isError ?? false).toBe(false);
+    expect((await both(lang)).refusal).toEqual({
+      reason: "lang-required",
+      detail: "This corpus has more than one localization (de, en) — pass --lang to choose one.",
+    });
+
+    const node = await call("traverse", { node: "urn:manni:graph:doc/nowhere.md" });
+    expect(node.isError ?? false).toBe(false);
+    expect(((await both(node)).refusal as { reason: string }).reason).toBe("unknown-node");
+
+    const scope = await call("impact", { node: ROTATE, variant: "nope" });
+    expect(((await both(scope)).refusal as { reason: string; detail: string }).detail).toMatch(/^Unknown product variant: nope/);
+
+    const fr = await call("retrieve", { question: QUESTION, lang: "fr" });
+    expect(fr.isError ?? false).toBe(false);
+    expect((await both(fr)).refusal).toEqual({ reason: "unknown-scope", detail: 'No index for language "fr" — this corpus has de, en.' });
+  });
+
+  it("validated every tool's results, refusals included, against its declared outputSchema", () => {
+    expect([...validated].sort()).toEqual(["impact", "lookup", "retrieve", "traverse"]);
+    expect(refusalsValidated).toBeGreaterThan(0);
+  });
+
+  it("rejects an argument its schema does not name, withhold among them", async () => {
+    for (const [name, args] of [
+      ["lookup", { question: QUESTION, withhold: ["drifted"] }],
+      ["lookup", { question: QUESTION, lang: "en" }],
+      ["retrieve", { question: QUESTION, withhold: ["drifted"] }],
+      ["traverse", { node: ROTATE, withhold: ["drifted"] }],
+      ["impact", { node: ROTATE, withhold: ["drifted"] }],
+    ] as const) {
+      const r = await call(name, args);
+      expect(r.isError, name).toBe(true);
+      expect(r.content[0]?.text).toMatch(/^Invalid arguments for (lookup|retrieve|traverse|impact): /);
+    }
+  });
+});
+
+describe("graph serve: the process", () => {
+  it("exits 0 when stdin closes", () => {
+    const r = graph(["serve"], "");
+    expect(r.status).toBe(0);
+    expect(r.stdout).toBe("");
+  });
+
+  it("refuses a missing artifact or one from another graph, exit 2", () => {
+    const missing = graph(["serve", "-i", "nowhere"], "");
+    expect(missing.status).toBe(2);
+    expect(missing.stderr).toBe("manni: nowhere/chunks.json does not exist; run manni graph publish.\n");
+
+    copyFileSync(join(dir, INDEX, "graph.ttl"), join(dir, "other.ttl"));
+    appendFileSync(join(dir, "other.ttl"), '\n<urn:x> <urn:y> "z" .\n', "utf8");
+    const stale = graph(["serve", "-g", "other.ttl", "-i", INDEX], "");
+    expect(stale.status).toBe(2);
+    expect(stale.stderr).toBe(`manni: ${INDEX}/chunks.json was built from another graph; run manni graph publish.\n`);
+  });
+
+  it("refuses a bad --withhold, exit 2", () => {
+    const r = graph(["serve", "--withhold", "stale"], "");
+    expect(r.status).toBe(2);
+    expect(r.stderr).toBe("manni: --withhold takes drifted or failing, and got stale.\n");
+  });
+
+  it("answers every call still in flight when stdin closes, then resolves", async () => {
+    // Both lookups block in the query embedder until stdin has closed.
+    const mock = createMockEmbedder();
+    let started = 0;
+    let bothStarted = (): void => undefined;
+    const inFlight = new Promise<void>((done) => (bothStarted = done));
+    let release = (): void => undefined;
+    const gate = new Promise<void>((done) => (release = done));
+    const embedder: QueryEmbedder = {
+      model: mock.model,
+      dtype: mock.dtype,
+      async embed(text) {
+        if (++started === 2) bothStarted();
+        await gate;
+        return mock.embed(text);
+      },
+    };
+    const stdin = new PassThrough();
+    const stdout = new PassThrough();
+    let out = "";
+    stdout.on("data", (chunk: Buffer) => (out += chunk.toString("utf8")));
+    const run = runServe({ cwd: dir, embedder }, { stdin, stdout });
+
+    const send = (message: object): boolean => stdin.write(`${JSON.stringify(message)}\n`);
+    send({
+      jsonrpc: "2.0",
+      id: 1,
+      method: "initialize",
+      params: { protocolVersion: "2025-06-18", capabilities: {}, clientInfo: { name: "serve-test", version: "0.0.0" } },
+    });
+    send({ jsonrpc: "2.0", method: "notifications/initialized" });
+    send({ jsonrpc: "2.0", id: 2, method: "tools/call", params: { name: "lookup", arguments: { question: QUESTION } } });
+    send({ jsonrpc: "2.0", id: 3, method: "tools/call", params: { name: "lookup", arguments: { question: "rotate" } } });
+    await inFlight;
+    stdin.end();
+    await new Promise((done) => setImmediate(done));
+    release();
+    await run;
+
+    const replies = out
+      .split("\n")
+      .filter((line) => line !== "")
+      .map((line) => JSON.parse(line) as { id?: number; result?: ToolResult });
+    // Concurrent calls answer in whichever order they finish.
+    expect(replies.map((r) => r.id ?? 0).sort((a, b) => a - b)).toEqual([1, 2, 3]);
+    for (const id of [2, 3]) {
+      const reply = replies.find((r) => r.id === id);
+      expect(reply?.result?.isError).toBeUndefined();
+      expect(reply?.result?.structuredContent).toHaveProperty("matches");
+    }
+  });
+
+  it("names the package to install when the SDK is missing", async () => {
+    const run = runServe(
+      { cwd: dir },
+      { loadSdk: () => Promise.reject(new Error("Cannot find package '@modelcontextprotocol/sdk'")) },
+    );
+    await expect(run).rejects.toThrow(GraphError);
+    await expect(run).rejects.toThrow(
+      "graph serve needs the optional @modelcontextprotocol/sdk package; run npm install @modelcontextprotocol/sdk.",
+    );
+  });
+});
+
+describe("graph serve: packaging", () => {
+  it("keeps the SDK an optional peer, imported by bare specifier", () => {
+    const pkg = JSON.parse(readFileSync(join(root, "package.json"), "utf8")) as {
+      dependencies?: Record<string, string>;
+      peerDependencies?: Record<string, string>;
+      peerDependenciesMeta?: Record<string, { optional?: boolean }>;
+    };
+    expect(pkg.dependencies?.["@modelcontextprotocol/sdk"]).toBeUndefined();
+    expect(pkg.peerDependencies?.["@modelcontextprotocol/sdk"]).toBeDefined();
+    expect(pkg.peerDependenciesMeta?.["@modelcontextprotocol/sdk"]?.optional).toBe(true);
+    // The Node build splits chunks, so the import lands in whichever one holds serve.
+    const built = readdirSync(join(root, "dist"))
+      .filter((f) => f.endsWith(".js"))
+      .map((f) => readFileSync(join(root, "dist", f), "utf8"))
+      .join("\n");
+    expect(built).toMatch(/import\(\s*["'`]@modelcontextprotocol\/sdk\/server\/mcp\.js["'`]\s*\)/);
+    expect(built).not.toMatch(/class McpServer\b/);
+  });
+});

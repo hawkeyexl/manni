@@ -21,9 +21,9 @@ docs/src/content/docs/meta/set-up/derived-metadata.mdx:
         integrity: sha256-a47a54d07a2541ef1b9e0aad108aa37ad9d1e49e21db4ac702caade8783ff568
       source:
         file: src/meta/commands/validate.ts
-        lines: 726-729
+        lines: 727-730
         integrity: sha256-04d27509eee57479898e277a34a58dae178496e1ca9cfd82c999ebc78b4a9937
-        commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
+        commit-sha: 6f1ff2e33d9cc6b0a72c5acc22a0290a71d3b0fe
     - id: fill-skips-managed-fields-visibly
       claim:
         integrity: sha256-557ab945dd0a17f7acc40b727408eb344ffca8e342960ebb989a92a91c17a62b
@@ -133,9 +133,9 @@ docs/src/content/docs/meta/set-up/derived-metadata.mdx:
         integrity: sha256-b667afac154ec987166a592cc959e77a1fe69d60d464710be085fd8fc5d48784
       source:
         file: src/meta/commands/derive.ts
-        lines: 1235-1240
+        lines: 1276-1281
         integrity: sha256-77b27b0712c4c796364fc555f68d55c5a55bdb99460af1efa045a9a389bceedc
-        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
+        commit-sha: 6c564f7df44b87dca596731bed4f88f274c3c887
     - id: gitlab-source-uses-glab-cli
       claim:
         integrity: sha256-a399ea787da201cbd5edf1dca1902f1c9dde90bbbe17b920d51c9c56db90f7d7
@@ -150,9 +150,9 @@ docs/src/content/docs/meta/set-up/derived-metadata.mdx:
         integrity: sha256-7cb7a136d5181a06b0a3cf1b7f07dd6b2d63da94b0f32fcd1df1518e8e8e593f
       source:
         file: src/meta/commands/derive.ts
-        lines: 270-271
+        lines: 280-281
         integrity: sha256-dea21b268082ac7ebf2b1141a110e8cd12fe3879660a3bdf8b5537800d40f311
-        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
+        commit-sha: 6f1ff2e33d9cc6b0a72c5acc22a0290a71d3b0fe
     - id: no-half-derived-source
       claim:
         lines: 481
@@ -185,9 +185,9 @@ docs/src/content/docs/meta/set-up/derived-metadata.mdx:
         integrity: sha256-baacb8ae19dbe4c4a663f069ceb59ad46f90d337509527e31da4e831020730f7
       source:
         file: src/meta/commands/derive.ts
-        lines: 359-361
+        lines: 369-371
         integrity: sha256-981fb645fedeb07aab26e9a09918ac55253af99e04e2707f20ad765f9c7cb139
-        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
+        commit-sha: 6f1ff2e33d9cc6b0a72c5acc22a0290a71d3b0fe
     - id: action-invokes-meta-validate
       claim:
         integrity: sha256-1a4d130c7fa9a7deedaff7ea2b163c831ea87d11cf01829476e1990c866f5701
@@ -201,9 +201,9 @@ docs/src/content/docs/meta/set-up/derived-metadata.mdx:
         integrity: sha256-1a4d130c7fa9a7deedaff7ea2b163c831ea87d11cf01829476e1990c866f5701
       source:
         file: src/meta/reporters/index.ts
-        lines: 317-324
+        lines: 319-326
         integrity: sha256-cf0e2e85c1d376d43fe901148e83d19f29abf955b357d4a9676e9f1e27d30bb5
-        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
+        commit-sha: 6f1ff2e33d9cc6b0a72c5acc22a0290a71d3b0fe
     - id: action-args-input-appends-arguments
       claim:
         integrity: sha256-1a4d130c7fa9a7deedaff7ea2b163c831ea87d11cf01829476e1990c866f5701
@@ -404,9 +404,9 @@ docs/src/content/docs/meta/set-up/derived-metadata.mdx:
         integrity: sha256-6509df9718a2f071984d19b38eded89e9facc8964efdfc1394dbab493c408b12
       source:
         file: src/meta/commands/get.ts
-        lines: 478-485
+        lines: 488-495
         integrity: sha256-7489fe22e00daebc9036cfb6ab77bc3efd8cead754b872a5da106c14d5585224
-        commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
+        commit-sha: 6f1ff2e33d9cc6b0a72c5acc22a0290a71d3b0fe
     - id: get-annotates-derived-origin-with-source
       claim:
         integrity: sha256-6509df9718a2f071984d19b38eded89e9facc8964efdfc1394dbab493c408b12
@@ -428,9 +428,9 @@ docs/src/content/docs/meta/set-up/derived-metadata.mdx:
         integrity: sha256-5bfa6c0aabdafeda7a19997aa19641635adfabcf1511d7896e962d53e6fe7204
       source:
         file: src/meta/commands/validate.ts
-        lines: 1182-1191
+        lines: 1199-1208
         integrity: sha256-9ffed96ae69df405b906c933649ad34eb38438f4e5193e955260c3777f6b2be4
-        commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
+        commit-sha: 6f1ff2e33d9cc6b0a72c5acc22a0290a71d3b0fe
     - id: stale-finding-carries-derived-stale-schema
       claim:
         integrity: sha256-5bfa6c0aabdafeda7a19997aa19641635adfabcf1511d7896e962d53e6fe7204
@@ -444,17 +444,17 @@ docs/src/content/docs/meta/set-up/derived-metadata.mdx:
         integrity: sha256-dfc6019abb06f803dcbb50fa8e9db50a82bfa873fdae7faa3694f336987f3531
       source:
         file: src/meta/commands/get.ts
-        lines: 263-264
+        lines: 271-272
         integrity: sha256-01dc420014f01a66e8deb9d0a62617a0775dea9fb9c729c60c4a18e3924d46c3
-        commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
+        commit-sha: 6f1ff2e33d9cc6b0a72c5acc22a0290a71d3b0fe
     - id: get-reads-evidence-without-writing
       claim:
         integrity: sha256-eb8117baac92a332ebe5ab9d88f99b62882e5d5250e31c3827c2641facc25b54
       source:
         file: src/meta/commands/get.ts
-        lines: 262-267
+        lines: 270-275
         integrity: sha256-d4e6049ef7ad90ea1b1e29576c595d4a7c7f701d62afc9e1307a391027fb0fb5
-        commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
+        commit-sha: 6f1ff2e33d9cc6b0a72c5acc22a0290a71d3b0fe
     - id: get-annotates-disagreement-with-evidence
       claim:
         integrity: sha256-eb8117baac92a332ebe5ab9d88f99b62882e5d5250e31c3827c2641facc25b54
@@ -468,9 +468,9 @@ docs/src/content/docs/meta/set-up/derived-metadata.mdx:
         integrity: sha256-cffe998a0ba42b923990cadd97e14e80495b05cb85d393b1b9cf628a9b17c396
       source:
         file: src/meta/commands/derive.ts
-        lines: 359-361
+        lines: 369-371
         integrity: sha256-981fb645fedeb07aab26e9a09918ac55253af99e04e2707f20ad765f9c7cb139
-        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
+        commit-sha: 6f1ff2e33d9cc6b0a72c5acc22a0290a71d3b0fe
     - id: dry-run-reports-without-writing
       claim:
         integrity: sha256-cffe998a0ba42b923990cadd97e14e80495b05cb85d393b1b9cf628a9b17c396
@@ -516,9 +516,9 @@ docs/src/content/docs/meta/set-up/derived-metadata.mdx:
         integrity: sha256-af07df8e40e48c15f5c7de717ddf4da5d09379cca6f594d24e2f455442063d12
       source:
         file: src/meta/commands/derive.ts
-        lines: 315-318
+        lines: 325-328
         integrity: sha256-d2aadf728a7ed73961cfd664e581c9a21cdc5751f171da1e23ae705b283b4cad
-        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
+        commit-sha: 6f1ff2e33d9cc6b0a72c5acc22a0290a71d3b0fe
     - id: derive-summary-line-counts-files-changes-fields
       claim:
         integrity: sha256-af07df8e40e48c15f5c7de717ddf4da5d09379cca6f594d24e2f455442063d12
@@ -578,9 +578,9 @@ docs/src/content/docs/meta/set-up/derived-metadata.mdx:
         integrity: sha256-5b8f6210b52cc11242e76894f76835f862b64f897ebe868593719a15bcdb29d7
       source:
         file: src/meta/commands/derive.ts
-        lines: 1254-1258
+        lines: 1295-1299
         integrity: sha256-653d473176df9471c4e167769cd167ef1e377d50592459021fa1bf7403fb3421
-        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
+        commit-sha: 6c564f7df44b87dca596731bed4f88f274c3c887
     - id: only-derive-fields-are-stamped-and-compared
       claim:
         lines: 70
@@ -659,9 +659,9 @@ docs/src/content/docs/meta/set-up/derived-metadata.mdx:
         integrity: sha256-ea0cb9883b2c019c41cc29945efafad462b8e2c2a351619284e19b804ce19abc
       source:
         file: src/meta/commands/validate.ts
-        lines: 720-729
+        lines: 721-730
         integrity: sha256-6f9df11dc130841f621a9207a00e82ce264cc4ac92855aad30d05ff540127df1
-        commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
+        commit-sha: 6f1ff2e33d9cc6b0a72c5acc22a0290a71d3b0fe
     - id: derive-collections-scopes-derive
       claim:
         integrity: sha256-072070c458eb6743a7476005e717fcd29cde5dae05f616acf6a0a85acfcfb271

@@ -44,6 +44,7 @@ import { sha256 } from "../judge/cache.js";
 import { isTurnBudgetSkip } from "../judge/budget.js";
 import { selfPreferenceOf } from "../judge/self-preference.js";
 import { errorMessage } from "../../shared/errors.js";
+import { integrityOf } from "../../meta/index.js";
 import { resolve } from "node:path";
 
 export interface RunProblem {
@@ -257,7 +258,10 @@ function stampSuites(
   const weightOf = new Map<string, number>();
   const locationOf = new Map<string, EvalLocation>();
   const assertionOf = new Map<string, string>();
+  // One hash per page, of the content every grader and the judge read.
+  const integrityOfPage = new Map<string, string>();
   for (const plan of plans) {
+    integrityOfPage.set(plan.page.file, integrityOf(Buffer.from(plan.page.content, "utf8")));
     for (const ev of plan.evals) {
       const key = resultKey(plan.page.file, ev.name);
       suiteOf.set(key, ev.suite);
@@ -276,6 +280,8 @@ function stampSuites(
     // A result with no plan entry has no declaring entry to point at, so it
     // names its page alone, as every result did before locations.
     r.location = locationOf.get(key) ?? { file: r.file };
+    const integrity = integrityOfPage.get(r.file);
+    if (integrity !== undefined) r.integrity = integrity;
     // What the eval asks for, on every result: a baseline can turn a fail
     // into a pass after this point, and one stamp site stays simple.
     r.guidance = {

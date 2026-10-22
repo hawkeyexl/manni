@@ -207,6 +207,12 @@ export interface FieldError {
    * what a rule is for does not make it a different finding.
    */
   guidance?: Guidance | null;
+  /**
+   * The inline `meta` statement a finding is about (proposal 0099): its file
+   * line, and the lines it anchors as `"53-54"`, or `null` when it anchors
+   * nothing. Absent on every finding about front matter.
+   */
+  statement?: { line: number; anchor: string | null };
 }
 
 /**

@@ -151,7 +151,18 @@ export interface GraphConfig {
      * found falls below it, a percentage; `null` sets no rate gate
      * (proposal 0087).
      */
-    questions: { top: number; severity: Severity | "off"; foundThreshold: number | null };
+    questions: {
+      top: number;
+      severity: Severity | "off";
+      foundThreshold: number | null;
+      /**
+       * Fails the run when the share of reviewed questions that
+       * `graph retrieve` cites falls below it, a percentage; `null` sets no
+       * gate (proposal 0090). It applies only when a chunk artifact sits
+       * beside the graph.
+       */
+      citedThreshold: number | null;
+    };
   };
   provenance: {
     /**
@@ -243,12 +254,51 @@ export interface GraphConfig {
       /** iiRDS version literal written to the package. Default "1.3". */
       version: "1.2" | "1.3";
     };
+    /** The chunk artifact (proposal 0090). */
+    chunks: {
+      /**
+       * A docevals JSON report, as the config names it, relative to
+       * `configDir`. It fills each provenance record's `evals`; `null` leaves
+       * every one `null`. `--evals` overrides it.
+       */
+      evals: string | null;
+    };
+    /**
+     * `llms.txt` (proposal 0090), or `null` when the section is absent.
+     * `graph export llms` needs `title` and `origin`, and `graph publish`
+     * writes the file only when the section exists.
+     */
+    llms: { title?: string; summary?: string; origin?: string } | null;
+  };
+  /**
+   * The optional sections `graph publish` runs a step for only when the
+   * config declares them: `embed` and `export.iirds`. Their keys all have
+   * defaults, so the resolved values cannot say whether a section was written.
+   */
+  declared: { embed: boolean; iirds: boolean };
+  /**
+   * The retrieval defaults the chunk manifest hands every host (proposal
+   * 0090). `withhold` is applied at export too: a passage it names is left
+   * out of the rows and listed in the manifest.
+   */
+  retrieve: {
+    seeds: number;
+    depth: number;
+    maxChars: number;
+    withhold: WithholdReason[];
   };
   /** Absolute path of the loaded config file. */
   configPath: string;
   /** Directory containing the config file; relative paths resolve against it. */
   configDir: string;
 }
+
+/**
+ * Why a passage is left out of what retrieval serves (proposal 0090):
+ * `drifted`, a pin at error severity, and `failing`, a current eval verdict
+ * that failed or errored.
+ */
+export type WithholdReason = "drifted" | "failing";
 
 /** The family config file; this tool reads its `graph:` key. */
 export const DEFAULT_CONFIG_FILENAME = "manni.config.yaml";
@@ -345,7 +395,12 @@ interface RawGraphConfig {
   build?: { derive?: DeriveSource[] };
   check?: {
     shapes?: string[];
-    questions?: { top?: number; severity?: Severity | "off"; foundThreshold?: number | null };
+    questions?: {
+      top?: number;
+      severity?: Severity | "off";
+      foundThreshold?: number | null;
+      citedThreshold?: number | null;
+    };
   };
   provenance?: { qualified?: boolean };
   stats?: { coverageThreshold?: number | Record<string, number> };
@@ -371,7 +426,10 @@ interface RawGraphConfig {
   };
   export?: {
     iirds?: { title?: string; creator?: string; version?: "1.2" | "1.3" };
+    chunks?: { evals?: string | null };
+    llms?: { title?: string; summary?: string; origin?: string };
   };
+  retrieve?: { seeds?: number; depth?: number; maxChars?: number; withhold?: WithholdReason[] };
 }
 
 /**
@@ -554,6 +612,7 @@ export function parseConfigSection(
         top: r.check?.questions?.top ?? 5,
         severity: r.check?.questions?.severity ?? "warning",
         foundThreshold: r.check?.questions?.foundThreshold ?? null,
+        citedThreshold: r.check?.questions?.citedThreshold ?? null,
       },
     },
     provenance: {
@@ -588,6 +647,15 @@ export function parseConfigSection(
         creator: r.export?.iirds?.creator,
         version: r.export?.iirds?.version ?? "1.3",
       },
+      chunks: { evals: r.export?.chunks?.evals ?? null },
+      llms: r.export?.llms ?? null,
+    },
+    declared: { embed: r.embed !== undefined, iirds: r.export?.iirds !== undefined },
+    retrieve: {
+      seeds: r.retrieve?.seeds ?? 3,
+      depth: r.retrieve?.depth ?? 1,
+      maxChars: r.retrieve?.maxChars ?? 12000,
+      withhold: r.retrieve?.withhold ?? [],
     },
     configPath: abs,
     configDir: dir,

@@ -256,13 +256,15 @@ export function renderPretty(
         e.file != null
           ? c.dim(`  (${e.file}${e.line != null ? `:${e.line}` : ""})`)
           : e.line != null
-            ? c.dim(`  (line ${e.line})`)
+            ? c.dim(`  (line ${e.line}${e.statement != null ? ", statement" : ""})`)
             : "";
       const level = isErrorSeverity(e)
         ? ""
         : `${e.severity === "notice" ? c.dim("notice") : c.yellow("warning")} `;
+      // A finding about a whole statement (0099) names the statement, not the page's root.
+      const label = e.statement != null && e.instancePath === "" ? "(statement)" : fieldLabel(e.instancePath);
       lines.push(
-        `    ${c.cyan(fieldLabel(e.instancePath))}  ${level}${e.message}${loc}  ${c.dim(
+        `    ${c.cyan(label)}  ${level}${e.message}${loc}  ${c.dim(
           `[${e.schema}]`,
         )}`,
       );

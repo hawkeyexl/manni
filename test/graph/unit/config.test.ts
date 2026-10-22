@@ -24,7 +24,7 @@ describe("parseConfig", () => {
       "provenance",
       "terms",
     ]);
-    // empty = use the shapes bundled with manni (shapes/graph/shapes-1.1.1.ttl)
+    // empty = use the shapes bundled with manni (shapes/graph/shapes-1.2.0.ttl)
     expect(c.check.shapes).toEqual([]);
     expect(c.fill.validateGraph).toBe(true);
     // Opinionated defaults (ADR 01009/01010), minus the switch 0051 §6
@@ -179,6 +179,67 @@ describe("parseConfig", () => {
     ).toThrow(GraphError);
   });
 
+  // Proposal 0090: the chunk artifact's evals report, and the retrieval
+  // defaults the manifest hands every host.
+  it("defaults export.chunks and retrieve", () => {
+    const c = parseConfig("", "/tmp/manni.config.yaml");
+    expect(c.export.chunks).toEqual({ evals: null });
+    expect(c.retrieve).toEqual({ seeds: 3, depth: 1, maxChars: 12000, withhold: [] });
+  });
+
+  it("parses export.chunks.evals, relative to the config, and every retrieve key", () => {
+    const c = parseConfig(
+      "export:\n  chunks:\n    evals: .manni/evals.json\nretrieve:\n  seeds: 5\n  depth: 0\n  maxChars: 20000\n  withhold: [drifted, failing]\n",
+      "/tmp/manni.config.yaml",
+    );
+    expect(c.export.chunks.evals).toBe(".manni/evals.json");
+    expect(c.retrieve).toEqual({ seeds: 5, depth: 0, maxChars: 20000, withhold: ["drifted", "failing"] });
+    expect(parseConfig("export:\n  chunks:\n    evals: null\n", "/tmp/manni.config.yaml").export.chunks.evals).toBeNull();
+  });
+
+  // Proposal 0090, PR 4: llms.txt, the cited gate, and which optional steps
+  // `graph publish` finds set up.
+  it("defaults export.llms to absent, citedThreshold to no gate, and no optional step declared", () => {
+    const c = parseConfig("", "/tmp/manni.config.yaml");
+    expect(c.export.llms).toBeNull();
+    expect(c.check.questions.citedThreshold).toBeNull();
+    expect(c.declared).toEqual({ embed: false, iirds: false });
+  });
+
+  it("parses export.llms, citedThreshold, and the embed and iirds sections as declared", () => {
+    const c = parseConfig(
+      "export:\n  iirds: {}\n  llms:\n    title: manni\n    summary: One CLI.\n    origin: https://hawkeyexl.github.io\nembed: {}\ncheck:\n  questions:\n    citedThreshold: 90\n",
+      "/tmp/manni.config.yaml",
+    );
+    expect(c.export.llms).toEqual({ title: "manni", summary: "One CLI.", origin: "https://hawkeyexl.github.io" });
+    expect(c.check.questions.citedThreshold).toBe(90);
+    expect(c.declared).toEqual({ embed: true, iirds: true });
+    expect(parseConfig("export:\n  llms: {}\n", "/tmp/manni.config.yaml").export.llms).toEqual({});
+  });
+
+  it.each([
+    "export:\n  llms:\n    title: ''\n",
+    "export:\n  llms:\n    origin: not a url\n",
+    "export:\n  llms:\n    bogus: 1\n",
+    "check:\n  questions:\n    citedThreshold: 101\n",
+    "check:\n  questions:\n    citedThreshold: high\n",
+  ])("rejects %j", (text) => {
+    expect(() => parseConfig(text, "/tmp/manni.config.yaml")).toThrow(GraphError);
+  });
+
+  it.each([
+    "export:\n  chunks:\n    evals: 3\n",
+    "export:\n  chunks:\n    bogus: true\n",
+    "retrieve:\n  seeds: 0\n",
+    "retrieve:\n  depth: -1\n",
+    "retrieve:\n  maxChars: 0\n",
+    "retrieve:\n  withhold: [stale]\n",
+    "retrieve:\n  withhold: drifted\n",
+    "retrieve:\n  bogus: 1\n",
+  ])("rejects %j", (text) => {
+    expect(() => parseConfig(text, "/tmp/manni.config.yaml")).toThrow(GraphError);
+  });
+
   it("normalizes baseIri with a trailing slash", () => {
     const c = parseConfig(
       "baseIri: https://example.com/graph\n",
@@ -243,7 +304,7 @@ describe("parseConfig", () => {
 
   it("defaults check.questions to the top 5, at warning", () => {
     const c = parseConfig("", "/tmp/manni.config.yaml");
-    expect(c.check.questions).toEqual({ top: 5, severity: "warning", foundThreshold: null });
+    expect(c.check.questions).toEqual({ top: 5, severity: "warning", foundThreshold: null, citedThreshold: null });
   });
 
   it("parses check.questions overrides", () => {
@@ -251,7 +312,7 @@ describe("parseConfig", () => {
       "check:\n  questions:\n    top: 1\n    severity: off\n",
       "/tmp/manni.config.yaml",
     );
-    expect(c.check.questions).toEqual({ top: 1, severity: "off", foundThreshold: null });
+    expect(c.check.questions).toEqual({ top: 1, severity: "off", foundThreshold: null, citedThreshold: null });
   });
 
   it("rejects a check.questions top below 1, a bad severity and an unknown key", () => {

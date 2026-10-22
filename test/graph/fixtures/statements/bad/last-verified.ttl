@@ -1,0 +1,8 @@
+@prefix graph: <https://hawkeyexl.github.io/manni/graph/ns#> .
+
+# graph:lastVerified is an xsd:date or an xsd:dateTime, and this one is prose.
+<https://example.com/graph/doc/page.md>
+  a graph:Document ;
+  graph:path "page.md" ;
+  graph:contentHash "0000000000000000000000000000000000000000000000000000000000000000" ;
+  graph:lastVerified "last week" .

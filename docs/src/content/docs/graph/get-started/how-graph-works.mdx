@@ -18,7 +18,7 @@ concepts:
   - section
   - harvest rule
   - near miss
-last-updated: 2026-10-20
+last-updated: 2026-10-21
 ---
 
 You have built a graph and asked it a question. This page is the model behind
@@ -30,8 +30,9 @@ ten minutes to spare; no concepts loses the one committing a team.
 
 ## Nothing is inferred from prose
 
-This is the load-bearing sentence. A triple exists because frontmatter, a link,
-a heading, an image, a code block or git history put it there. No model reads
+This is the load-bearing sentence. A triple exists because frontmatter, an inline
+statement, a link, a heading, an image, a code block or git history put it
+there. No model reads
 your pages during `build`, and no heuristic decides that a paragraph is
 "probably about authentication".
 
@@ -74,6 +75,8 @@ files it was given.
 |---|---|
 | Document | One per source file. Carries its path and a content hash. |
 | Section | One per heading, with its level, its order in the page, and its slug. |
+| Block | One per inline `meta` statement that is not on a heading, with its lines, its pin and its pin status. |
+| Verification | One per `verified-by` entry on a page, a section or a block. |
 | Concept | A SKOS concept, one per term in the termbase, and one per other distinct subject, tag or `graph` concept reference. |
 | Concept scheme | The set the concepts belong to. |
 | Product variant | Named by `applies-to`. |
@@ -88,6 +91,24 @@ Sections being nodes is what lets a link to `page.md#heading` be checked rather
 than merely counted. It is also why a renamed heading shows up as a broken
 section reference.
 
+**An inline statement describes part of a page.** A `meta` statement on a
+heading gives that section its fields. Its `graph` field types the section
+exactly as a `graph.sections` entry does. Any other statement mints a block,
+`page.md#install.2` for the second statement under that heading. A statement
+before the first heading mints `page.md#.1`. Its section, or the page, holds it
+through `dcterms:hasPart`.
+
+A statement's fields derive through the page's own front-matter mapping, with
+the section or block as subject. A section keeps its heading as its title, and
+a statement's language is its own `lang`. Each `verified-by` entry is a
+Verification node, such as `page.md#install.2/verified-by/1`. The `sections`
+source carries every statement triple, and the `frontmatter`, `tags` and
+`provenance` sources gate their fields as they do for the page.
+
+Blocks are graph data, not passages. `graph traverse` never steps into one, and
+search still indexes whole sections. `graph query` reads them, so a query can
+find every verified block whose text changed since its pin.
+
 ## What becomes an edge
 
 `build.derive` names the sources, and all eight are on by default:
@@ -95,7 +116,7 @@ section reference.
 | Source | What it contributes |
 |---|---|
 | `frontmatter` | Title, description, creator, dates, subjects, and the whole `graph:` block. |
-| `sections` | Headings, their nesting, and their order. |
+| `sections` | Headings, their nesting, their order, and the inline `meta` statements in the body. |
 | `links` | Internal references, resolved the way the site resolves them. |
 | `tags` | Page-level tags, as concepts. |
 | `images` | Images a page carries. |

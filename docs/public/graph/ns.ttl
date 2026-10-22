@@ -28,9 +28,9 @@ claimed to type — which is the inference manni graph's negative-scope decision
 to refuse.""" ;
     dcterms:license <https://spdx.org/licenses/MIT.html> ;
     dcterms:creator "hawkeyexl" ;
-    owl:versionInfo "1.2.0" ;
-    owl:versionIRI <https://hawkeyexl.github.io/manni/graph/ns/1.2.0> ;
-    owl:priorVersion <https://hawkeyexl.github.io/manni/graph/ns/1.1.0> ;
+    owl:versionInfo "1.3.0" ;
+    owl:versionIRI <https://hawkeyexl.github.io/manni/graph/ns/1.3.0> ;
+    owl:priorVersion <https://hawkeyexl.github.io/manni/graph/ns/1.2.0> ;
     vann:preferredNamespacePrefix "graph" ;
     vann:preferredNamespaceUri "https://hawkeyexl.github.io/manni/graph/ns#" ;
     rdfs:seeAlso <https://hawkeyexl.github.io/manni/graph/reference/vocabulary/> .
@@ -56,6 +56,28 @@ graph:Section
 slug that link anchors use. Sections nest through dcterms:hasPart and carry
 their own metadata explicitly — a Section inherits nothing from its
 Document.""" ;
+    rdfs:isDefinedBy <https://hawkeyexl.github.io/manni/graph/ns> .
+
+graph:Block
+    a rdfs:Class ;
+    rdfs:label "Block" ;
+    rdfs:comment """The paragraph, list or element an inline `meta` statement
+describes, as the statement anchors it. Its IRI is its section's, with the
+statement's 1-based order within that section: `#install.2`, or `#.1` before
+the first heading. Its section, or its Document before any heading, points to
+it with dcterms:hasPart.
+
+A Block is graph data, not a retrieval passage. Traversal does not step into
+one, and search indexes whole sections.""" ;
+    rdfs:isDefinedBy <https://hawkeyexl.github.io/manni/graph/ns> .
+
+graph:Verification
+    a rdfs:Class ;
+    rdfs:label "Verification" ;
+    rdfs:comment """One entry of a `verified-by` list: a tool, and the check it
+runs that proves its subject. Its IRI sits under its subject's fragment,
+`#/verified-by/1` for a Document and `#install/verified-by/1` for a Section,
+so no blank node is needed.""" ;
     rdfs:isDefinedBy <https://hawkeyexl.github.io/manni/graph/ns> .
 
 #
@@ -136,6 +158,89 @@ not find. Nothing here judges whether the Document answers it.""" ;
     rdfs:isDefinedBy <https://hawkeyexl.github.io/manni/graph/ns> .
 
 #
+# Inline statements and verification
+#
+
+graph:lines
+    a rdf:Property ;
+    rdfs:label "lines" ;
+    rdfs:comment """The file lines a Block's statement anchors, 1-based and
+inclusive: `53-54`, or `53` for one line. They are the lines its pin covers.""" ;
+    schema:domainIncludes graph:Block ;
+    schema:rangeIncludes xsd:string ;
+    skos:example "53-54" ;
+    rdfs:isDefinedBy <https://hawkeyexl.github.io/manni/graph/ns> .
+
+graph:pin
+    a rdf:Property ;
+    rdfs:label "pin" ;
+    rdfs:comment """The pin a Block's statement carries: a sha256 digest of the
+anchored lines, by the citations hashing rule, written `sha256-` and 64
+lowercase hex characters. Absent on an unpinned statement.""" ;
+    schema:domainIncludes graph:Block ;
+    schema:rangeIncludes xsd:string ;
+    rdfs:isDefinedBy <https://hawkeyexl.github.io/manni/graph/ns> .
+
+graph:pinStatus
+    a rdf:Property ;
+    rdfs:label "pin status" ;
+    rdfs:comment """How a Block's pin compared with its lines when the graph was
+built: `current` when they match, `changed` when the lines moved on, and
+`unpinned` when the statement carries no pin. It is what `manni meta validate`
+reports for the same statement.""" ;
+    schema:domainIncludes graph:Block ;
+    schema:rangeIncludes xsd:string ;
+    skos:example "current" ;
+    rdfs:isDefinedBy <https://hawkeyexl.github.io/manni/graph/ns> .
+
+graph:lastVerified
+    a rdf:Property ;
+    rdfs:label "last verified" ;
+    rdfs:comment """When a check last proved this node, from `last-verified`: an
+xsd:date or an xsd:dateTime. A Document takes it from its front matter, and a
+Section or Block from its inline statement.""" ;
+    schema:domainIncludes graph:Document, graph:Section, graph:Block ;
+    schema:rangeIncludes xsd:date, xsd:dateTime ;
+    rdfs:isDefinedBy <https://hawkeyexl.github.io/manni/graph/ns> .
+
+graph:verifiedBy
+    a rdf:Property ;
+    rdfs:label "verified by" ;
+    rdfs:comment """One entry of this node's `verified-by` list, as a
+graph:Verification. A Document, a Section and a Block use the same
+predicate.""" ;
+    schema:domainIncludes graph:Document, graph:Section, graph:Block ;
+    schema:rangeIncludes graph:Verification ;
+    rdfs:isDefinedBy <https://hawkeyexl.github.io/manni/graph/ns> .
+
+graph:tool
+    a rdf:Property ;
+    rdfs:label "tool" ;
+    rdfs:comment "The tool a Verification names, as `verified-by` spells it." ;
+    schema:domainIncludes graph:Verification ;
+    schema:rangeIncludes xsd:string ;
+    skos:example "doc-detective" ;
+    rdfs:isDefinedBy <https://hawkeyexl.github.io/manni/graph/ns> .
+
+graph:check
+    a rdf:Property ;
+    rdfs:label "check" ;
+    rdfs:comment "The tool's own id for the check a Verification names." ;
+    schema:domainIncludes graph:Verification ;
+    schema:rangeIncludes xsd:string ;
+    skos:example "cite-add-first-pin" ;
+    rdfs:isDefinedBy <https://hawkeyexl.github.io/manni/graph/ns> .
+
+graph:passed
+    a rdf:Property ;
+    rdfs:label "passed" ;
+    rdfs:comment """When the check a Verification names last passed: an
+xsd:date or an xsd:dateTime. The tool that runs the check writes it.""" ;
+    schema:domainIncludes graph:Verification ;
+    schema:rangeIncludes xsd:date, xsd:dateTime ;
+    rdfs:isDefinedBy <https://hawkeyexl.github.io/manni/graph/ns> .
+
+#
 # Findings
 #
 # These record what manni graph could not resolve. A finding is a statement about
@@ -207,9 +312,10 @@ graph:version
     a rdf:Property ;
     rdfs:label "version" ;
     rdfs:comment """Version string of a software agent — the manni release that
-built the graph, or a model that proposed metadata. Distinct from
-owl:versionInfo, which versions this vocabulary rather than an agent.""" ;
-    schema:domainIncludes prov:SoftwareAgent ;
+built the graph, a model that proposed metadata, or the tool a Verification
+names. Distinct from owl:versionInfo, which versions this
+vocabulary rather than an agent.""" ;
+    schema:domainIncludes prov:SoftwareAgent, graph:Verification ;
     schema:rangeIncludes xsd:string ;
     skos:example "0.1.0" ;
     rdfs:isDefinedBy <https://hawkeyexl.github.io/manni/graph/ns> .

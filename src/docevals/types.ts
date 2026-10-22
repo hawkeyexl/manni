@@ -95,6 +95,13 @@ export interface EvalResult {
    */
   location?: { file: string; line?: number };
   /**
+   * The page content this result judged, as `sha256-<hex>`: the SHA-256 of
+   * the whole file as the run read it, frontmatter included (proposal 0090).
+   * Every result for one page carries the same value. Stamped centrally by
+   * the engine, like `suite`.
+   */
+  integrity?: string;
+  /**
    * What the eval asks for (proposal 0089): `id` is the file that declares
    * it, `rule` its name, `description` its assertion, and `guide` the fix
    * page. Stamped centrally by the engine on every result, passing ones too.

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE task PUBLIC "-//OASIS//DTD DITA Task//EN" "task.dtd">
+<task id="a-comment-with-dashes">
+  <title>A comment with dashes</title>
+  <taskbody>
+    <steps>
+      <!-- meta {"concepts":["set--up"]} -->
+      <step>
+        <cmd>Run the installer.</cmd>
+      </step>
+    </steps>
+  </taskbody>
+</task>

@@ -1,0 +1,11 @@
+# Proposal 0099: inline meta statements reach the graph. heading-statement.md
+# and graph-sections.md spell one section's typing two ways, and page.md
+# carries block statements and the verification fields at every level.
+collections:
+  - name: statements
+    paths:
+      - "docs/**/*.md"
+
+graph:
+  baseIri: https://example.com/graph/
+  out: graph.ttl

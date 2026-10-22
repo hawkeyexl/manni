@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE task PUBLIC "-//OASIS//DTD DITA Task//EN" "task.dtd">
+<task id="install-the-tool">
+  <title>Install the tool</title>
+  <shortdesc>Every meta statement form, in a DTD-valid DITA task.</shortdesc>
+  <taskbody>
+    <context>
+      <?manni meta sha256-2ebca111f1837894c9f80486886e446611416095a82e89a71cabe9d52e934e53 {"applies-to":["windows"]}?>
+      <p>Close every editor first.</p>
+    </context>
+    <steps>
+      <step><?manni meta sha256-4fdb8f5970c21a3d5f455e82d58649883ef2c63a950201b0fde556e14ae0a93e {"verified-by":[{"tool":"doc-detective","check":"install-the-tool"}]}?>
+        <cmd>Run the installer.</cmd>
+        <info>It takes about a minute.</info>
+      </step>
+      <!-- meta sha256-44cfd2f061ef1c05656196fd3c3902d128f874b3ea71aeb4d6f654a220f7d70f {"concepts":["install"]} -->
+      <step>
+        <cmd>Restart the shell.</cmd>
+      </step>
+      <step>
+        <cmd><data name="manni-meta" value='sha256-2f30a424829bfbf6c7f919ef214133e92436a2fd8e7c640ce606b659b28fefe0 {"concepts":["install"]}'/>Run the tool once.</cmd>
+      </step>
+    </steps>
+  </taskbody>
+</task>

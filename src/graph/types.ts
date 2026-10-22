@@ -1,10 +1,19 @@
 /** Shared types for manni graph. */
 import { ToolError } from "../shared/errors.js";
 import type { DocFormat } from "./core/analyze.js";
+import type { RefusalReason } from "./runtime/assemble.js";
 
-/** Operational error: expected failure reported to the user, exit code 2. */
+/**
+ * Operational error: expected failure reported to the user, exit code 2.
+ *
+ * `refusal` marks a usage error that a served host answers instead of failing
+ * on: `graph serve` returns it as a refusal with the CLI's text (proposal 0090).
+ */
 export class GraphError extends ToolError {
-  constructor(message: string) {
+  constructor(
+    message: string,
+    readonly refusal?: RefusalReason,
+  ) {
     super(message);
     this.name = "GraphError";
   }
@@ -22,6 +31,22 @@ export interface Section {
   order: number;
   /** Slug of the enclosing section, or null when the parent is the document. */
   parentSlug: string | null;
+  /** File line of the heading's title, or null when the parser gives none. */
+  line: number | null;
+}
+
+/**
+ * An inline `meta` statement (proposal 0099), as `manni meta validate` reads
+ * it. Only a statement that anchors something and carries one JSON object is
+ * kept: an orphan or a bad payload is meta's finding, and derives nothing.
+ */
+export interface DocStatement {
+  /** The anchored file lines: the block, or a section's heading. */
+  anchor: { start: number; end: number };
+  scope: "block" | "section";
+  pin?: string;
+  status: "current" | "changed" | "unpinned";
+  data: Record<string, unknown>;
 }
 
 /** A link found in a document body. */
@@ -64,6 +89,8 @@ export interface DocModel {
   /** First H1 text, if any (used as title fallback). */
   firstH1?: string;
   sections: Section[];
+  /** The page's inline `meta` statements, in document order. */
+  statements?: DocStatement[];
   links: DocLink[];
   images: DocImage[];
   /** Distinct fenced code block languages, sorted. */

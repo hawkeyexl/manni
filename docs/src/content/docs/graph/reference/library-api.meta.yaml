@@ -94,13 +94,16 @@ docs/src/content/docs/graph/reference/library-api.mdx:
       lines: 143
       integrity: sha256-fe817694d0537daec3fda299acca0637efa7ffd085e7209a5a592bc032be45a7
     - generated-by: Claude Opus 5
-      lines: 144-167
-      integrity: sha256-4753f15a6f4ef213e0c2db70a9fa6666522944ae402c193de70874355627216d
+      lines: 144-165
+      integrity: sha256-9f6f061a993b80558e3acd4cb4a8fbd288678b8057ec07ebf9a2e115004e0eb5
+    - generated-by: Claude Opus 5
+      lines: 257
+      integrity: sha256-f9aa689242b68cb10622466280d7a56eef64e57b0affc9a056f11a174bcedda2
     - generated-by: Claude Opus 5.5
-      lines: 169
+      lines: 259
       integrity: sha256-0b82d166996b405f74b5cbc599314cb8bb20974cf11577859ffd19f85da3689f
     - generated-by: Claude Opus 5
-      lines: 170-186
+      lines: 260-276
       integrity: sha256-734ebd31e8dd8d1ea63b86f01975bc2853f0c7f09488875726086882cee72090
   owner:
     - "@hawkeyexl"

@@ -131,3 +131,7 @@ export { mergeWithMarks } from "./core/external-metadata.js";
 export { declaredAt } from "./core/declared-at.js";
 export type { DeclaredAt, LocatedMetadata } from "./core/declared-at.js";
 export type { PageMarks } from "./core/external-metadata.js";
+// `manni graph build` reads a page's inline `meta` statements (proposal 0099)
+// the way `manni meta validate` does, anchors and pin status included.
+export { readStatements } from "./core/statements.js";
+export type { PageStatement } from "./core/statements.js";

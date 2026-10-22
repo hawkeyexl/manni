@@ -1,0 +1,14 @@
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix graph: <https://hawkeyexl.github.io/manni/graph/ns#> .
+
+# graph:lines is `N` or `N-M`, and this one has no end.
+<https://example.com/graph/doc/page.md>
+  a graph:Document ;
+  graph:path "page.md" ;
+  graph:contentHash "0000000000000000000000000000000000000000000000000000000000000000" ;
+  dcterms:hasPart <https://example.com/graph/doc/page.md#.1> .
+
+<https://example.com/graph/doc/page.md#.1>
+  a graph:Block ;
+  graph:lines "53-" ;
+  graph:pinStatus "unpinned" .

@@ -164,6 +164,10 @@ export function renderDerivePretty(run: DeriveRun, opts: DeriveReportOptions = {
   if (run.dryRun) footer += " — dry run, nothing written";
 
   if (lines.length > 0) lines.push("");
+  // Inline statements (proposal 0099), counted apart from the fields.
+  if (s.statements !== undefined && !run.dryRun) {
+    lines.push(`pinned ${plural(s.statements.pinned, "statement")} in ${plural(s.statements.pages, "page")}.`);
+  }
   lines.push(s.errors > 0 ? c.yellow(footer) : footer);
   return lines.join("\n");
 }

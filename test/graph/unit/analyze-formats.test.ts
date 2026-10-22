@@ -29,7 +29,7 @@ describe("analyzeDoc — sections from lint's tree", () => {
     );
     expect(doc.format).toBe("html");
     expect(doc.sections).toEqual([
-      { slug: "GUID-A1B2-C3D4", title: "How it works", level: 1, order: 1, parentSlug: null },
+      { slug: "GUID-A1B2-C3D4", title: "How it works", level: 1, order: 1, parentSlug: null, line: 1 },
     ]);
   });
 
@@ -72,10 +72,10 @@ describe("analyzeDoc — sections from lint's tree", () => {
       ALL,
     );
     expect(doc.sections).toEqual([
-      { slug: "top", title: "Top", level: 1, order: 1, parentSlug: null },
-      { slug: "one", title: "One", level: 2, order: 1, parentSlug: "top" },
-      { slug: "deep", title: "Deep", level: 3, order: 1, parentSlug: "one" },
-      { slug: "two", title: "Two", level: 2, order: 2, parentSlug: "top" },
+      { slug: "top", title: "Top", level: 1, order: 1, parentSlug: null, line: 1 },
+      { slug: "one", title: "One", level: 2, order: 1, parentSlug: "top", line: 1 },
+      { slug: "deep", title: "Deep", level: 3, order: 1, parentSlug: "one", line: 1 },
+      { slug: "two", title: "Two", level: 2, order: 2, parentSlug: "top", line: 1 },
     ]);
     expect(doc.firstH1).toBe("Top");
   });
@@ -87,7 +87,7 @@ describe("analyzeDoc — sections from lint's tree", () => {
       ALL,
     );
     expect(doc.sections).toEqual([
-      { slug: "later", title: "Later", level: 2, order: 1, parentSlug: null },
+      { slug: "later", title: "Later", level: 2, order: 1, parentSlug: null, line: 1 },
     ]);
   });
 
@@ -102,7 +102,7 @@ describe("analyzeDoc — sections from lint's tree", () => {
     expect(doc.frontmatter).toEqual({ title: "From metadata" });
     expect(doc.firstH1).toBeUndefined();
     expect(doc.sections).toEqual([
-      { slug: "_section", title: "Section", level: 2, order: 1, parentSlug: null },
+      { slug: "_section", title: "Section", level: 2, order: 1, parentSlug: null, line: 5 },
     ]);
   });
 

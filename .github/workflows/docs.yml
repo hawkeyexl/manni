@@ -108,11 +108,32 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+        # `graph publish` records each passage's pins and dates, which it
+        # reads from history, as the citation step above does.
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v6
         with:
           node-version: 24
           cache: npm
-          cache-dependency-path: docs/package-lock.json
+          cache-dependency-path: |
+            package-lock.json
+            docs/package-lock.json
+      - name: Install and build manni
+        run: |
+          npm ci
+          npm run build
+      # The graph of the whole site: `graph publish` writes the graph, the
+      # chunks, the search index and llms.txt into docs/public, so the site
+      # serves the artifact of the commit it builds. `graph check` then gates
+      # what was published, so its cited row reads the new chunks. A failing
+      # check stops this job, and `deploy` needs it, so nothing deploys.
+      # llms.txt is also copied to the site root, where readers look for it.
+      - name: Publish and check the graph
+        run: |
+          node dist/cli.js graph publish --out docs/public/graph
+          node dist/cli.js graph check -g docs/public/graph/graph.ttl
+          cp docs/public/graph/llms.txt docs/public/llms.txt
       - name: Install docs dependencies
         run: npm ci
         working-directory: docs

@@ -1,0 +1,15 @@
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix graph: <https://hawkeyexl.github.io/manni/graph/ns#> .
+
+# graph:pin is `sha256-` and 64 lowercase hex characters, and this one is short.
+<https://example.com/graph/doc/page.md>
+  a graph:Document ;
+  graph:path "page.md" ;
+  graph:contentHash "0000000000000000000000000000000000000000000000000000000000000000" ;
+  dcterms:hasPart <https://example.com/graph/doc/page.md#.1> .
+
+<https://example.com/graph/doc/page.md#.1>
+  a graph:Block ;
+  graph:lines "53-54" ;
+  graph:pin "sha256-9c1e" ;
+  graph:pinStatus "current" .

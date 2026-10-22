@@ -30,6 +30,7 @@ import {
   isPublishedBuiltinUrl,
   loadSchema,
   publishedBuiltins,
+  strictIdOf,
 } from "../src/meta/core/schema-registry.js";
 import { SchemaCache } from "../src/meta/core/schema-cache.js";
 import { runValidate } from "../src/meta/commands/validate.js";
@@ -1259,6 +1260,20 @@ describe("ANNOTATION_ONLY_PREDECESSORS", () => {
     expect(ANNOTATION_ONLY_PREDECESSORS.size).toBeGreaterThan(0);
   });
 
+  it("carries ai-context 1.2.0 to 1.1.0, on the 1.0.0 strict overlay (proposal 0090)", () => {
+    expect(ANNOTATION_ONLY_PREDECESSORS.get("manni:ai-context:1.2.0")).toBe("manni:ai-context:1.1.0");
+    expect(baselineIdentity("manni:ai-context:1.2.0")).toBe("manni:ai-context:1.1.0");
+    expect(strictIdOf("manni:ai-context:1.2.0")).toBe("manni:ai-context-strict:1.0.0");
+  });
+
+  it("publishes ai-context 1.2.0 with answers marked out of graph output", async () => {
+    expect(publishedBuiltins().map((b) => b.id)).toContain("manni:ai-context:1.2.0");
+    const schema = (await loadSchema("manni:ai-context:1.2.0")) as {
+      $defs: { sampleQuestionObject: { properties: { answers: Record<string, unknown> } } };
+    };
+    expect(schema.$defs.sampleQuestionObject.properties.answers["x-manni-graph-output"]).toBe(false);
+  });
+
   it.each([...ANNOTATION_ONLY_PREDECESSORS])(
     "%s validates exactly as %s",
     async (successor, predecessor) => {
@@ -1307,8 +1322,9 @@ describe("OPTIONAL_FIELD_PREDECESSORS (proposal 0098)", () => {
   // A successor here only adds optional fields. On any document that carries
   // none of them it must report exactly what its predecessor reports, or the
   // entry hides a real change from every recorded baseline. Every markdown
-  // fixture without the added keys is such a document.
-  const ADDED = /^\s*-?\s*(last-verified|verified-by)\s*:/m;
+  // fixture without the added keys is such a document. An inline `meta`
+  // statement (proposal 0099) sets them as JSON keys, and counts too.
+  const ADDED = /^\s*-?\s*(last-verified|verified-by)\s*:|"(last-verified|verified-by)"\s*:/m;
   const fixtures = (dir: string): string[] =>
     readdirSync(dir, { withFileTypes: true }).flatMap((e) => {
       const p = join(dir, e.name);

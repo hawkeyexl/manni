@@ -1,0 +1,12 @@
+@prefix graph: <https://hawkeyexl.github.io/manni/graph/ns#> .
+
+# Every graph:Verification names a tool, and this one names only a check.
+<https://example.com/graph/doc/page.md>
+  a graph:Document ;
+  graph:path "page.md" ;
+  graph:contentHash "0000000000000000000000000000000000000000000000000000000000000000" ;
+  graph:verifiedBy <https://example.com/graph/doc/page.md#/verified-by/1> .
+
+<https://example.com/graph/doc/page.md#/verified-by/1>
+  a graph:Verification ;
+  graph:check "install-page" .
