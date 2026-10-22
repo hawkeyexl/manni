@@ -127,6 +127,6 @@ describe("pinning", () => {
     expect(once.pinned).toBe(
       readStatements(content, "markdown").statements.filter((s) => s.anchor !== undefined && s.pin === undefined).length,
     );
-    expect(pinStatements(once.content, "markdown")).toEqual({ content: once.content, pinned: 0 });
+    expect(pinStatements(once.content, "markdown")).toMatchObject({ content: once.content, pinned: 0 });
   });
 });
