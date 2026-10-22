@@ -1,5 +1,5 @@
 /**
- * The `strategy:` section (proposal 0100). Every key has a default, and the
+ * The `strategy:` section (proposal 0102). Every key has a default, and the
  * document set is `collections:`, so `paths` and `exclude` are refused by
  * name. A refusal never quotes a value back, except a severity level.
  */

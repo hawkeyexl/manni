@@ -239,6 +239,15 @@ export const SHALLOW_RECOMMIT =
 export const GIT_UNAVAILABLE_COMMIT = "git is not available here, so the citation records no commit.";
 
 /**
+ * A source-git notice as one checkout says it: bare for the root, after
+ * `<repo>: ` for a checkout `cite.repos` names (proposal 0100). A run says
+ * each string once, so each checkout says it once.
+ */
+export function checkoutNotice(repo: string | undefined, text: string): string {
+  return repo === undefined ? text : `${repo}: ${text}`;
+}
+
+/**
  * A client that answers "no git": `available()` false, everything else empty.
  * What a caller passes as `gitClient` to run without git where git is there.
  */

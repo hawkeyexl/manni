@@ -168,14 +168,15 @@ describe("fingerprint schema-ref canonicalization", () => {
 
 describe("fingerprint: annotation-only built-in versions", () => {
   // stewardship 1.1.0 only adds annotations. 1.2.0 and citations 1.1.0 only
-  // add optional fields (0098). The default set moved to each, and a baseline
-  // recorded under an earlier version must still suppress the same finding.
+  // add optional fields (0098), as citations 1.2.0 does (0100). The default
+  // set moved to each, and a baseline recorded under an earlier version must
+  // still suppress the same finding.
   const under = (schema: string) =>
     err({ schema, keyword: "type", instancePath: "/owner", subject: undefined });
 
-  it("the default set carries stewardship 1.2.0 and citations 1.1.0", () => {
+  it("the default set carries stewardship 1.2.0 and citations 1.2.0", () => {
     expect(DEFAULT_SCHEMAS).toContain("manni:stewardship:1.2.0");
-    expect(DEFAULT_SCHEMAS).toContain("manni:citations:1.1.0");
+    expect(DEFAULT_SCHEMAS).toContain("manni:citations:1.2.0");
   });
 
   it("the default set carries ai-context 1.2.0, annotation-only over 1.1.0 (0090)", () => {
@@ -198,8 +199,15 @@ describe("fingerprint: annotation-only built-in versions", () => {
     ["manni:citations:1.0.0", "manni:citations:1.1.0"],
     ["manni:citations:1.1.0", "manni:citations:1.0.0"],
     ["manni:citations-strict:1.0.0", "manni:citations-strict:1.1.0"],
+    ["manni:citations:1.0.0", "manni:citations:1.2.0"],
+    ["manni:citations:1.1.0", "manni:citations:1.2.0"],
+    ["manni:citations:1.2.0", "manni:citations:1.0.0"],
     ["manni:ai-context:1.1.0", "manni:ai-context:1.2.0"],
     ["manni:ai-context:1.2.0", "manni:ai-context:1.1.0"],
+    ["manni:citations-strict:1.1.0", "manni:citations-strict:1.2.0"],
+    ["manni:citations-strict:1.0.0", "manni:citations-strict:1.2.0"],
+    ["manni:ai-context-strict:1.0.0", "manni:ai-context-strict:1.2.0"],
+    ["manni:ai-context-strict:1.1.0", "manni:ai-context-strict:1.0.0"],
   ])("a baseline recorded under %s suppresses the finding under %s", (from, to) => {
     const recorded = buildBaseline([result("a.md", [under(from)])], "1.0.0");
     const applied = applyBaseline([result("a.md", [under(to)])], recorded);

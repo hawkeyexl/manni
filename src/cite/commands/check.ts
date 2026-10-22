@@ -31,7 +31,7 @@ import {
 import { toValidationResult } from "../core/adapt.js";
 import { checkCitations } from "../core/check-page.js";
 import { DEFAULT_CITE_BASELINE_PATH, resolveCiteRun } from "../core/config.js";
-import { GIT_UNAVAILABLE_HISTORY, gitClient } from "../core/git.js";
+import { GIT_UNAVAILABLE_HISTORY, checkoutNotice, gitClient } from "../core/git.js";
 import {
   duplicateJoinRefusal,
   ignoredManifestWarning,
@@ -40,13 +40,15 @@ import {
   type CitationSidecars,
   type PageSidecar,
 } from "../core/sidecar.js";
-import { createSourceCache, sourceIndexFor } from "../core/sources.js";
+import { createSourceCache, repoIndexFor, sourceIndexFor } from "../core/sources.js";
 import { warn } from "../../shared/warn.js";
 import { CiteError } from "../errors.js";
 import type {
   CheckOptions,
   CheckPageOptions,
   CheckRun,
+  Checkout,
+  CheckoutResolver,
   CiteRun,
   GitClient,
   PageCitationReport,
@@ -156,6 +158,7 @@ export async function prepareRun(
     inputs: opts.inputs,
     collection: opts.collection,
     root: opts.root,
+    ...(opts.repos === undefined ? {} : { repos: opts.repos }),
     onConfigLoaded: opts.onConfigLoaded,
     onNotice: opts.onNotice,
     env: opts.env,
@@ -227,7 +230,11 @@ export async function prepareRun(
     pageRoot: run.base,
     pageGitClient: pageGit,
   };
-  if (checkSources) pageOptions.sourceIndex = await sourceIndexFor(run.root, git);
+  if (checkSources) {
+    const index = await sourceIndexFor(run.root, git);
+    pageOptions.sourceIndex = index;
+    pageOptions.checkouts = checkoutResolver({ root: run.root, index, git }, run.repos);
+  }
 
   // The sidecar manifests, read once per run. Membership is every declared
   // collection's, whatever this run selected, so a page given by path still
@@ -276,6 +283,28 @@ export async function prepareRun(
     setupFor,
     scopedByFlags,
     ...(covered === undefined ? {} : { covered }),
+  };
+}
+
+/**
+ * The run's checkouts: the root as built, and each declared repo opened the
+ * first time an entry names it and kept for the rest of the run. A repo no
+ * entry names is never opened, so a job need check out only what its pages
+ * cite (proposal 0100).
+ */
+export function checkoutResolver(root: Checkout, repos: Readonly<Record<string, string>>): CheckoutResolver {
+  const opened = new Map<string, Promise<Checkout>>();
+  return (repo) => {
+    if (repo === undefined) return Promise.resolve(root);
+    const dir = Object.hasOwn(repos, repo) ? repos[repo] : undefined;
+    if (dir === undefined) return Promise.resolve(undefined);
+    let held = opened.get(repo);
+    if (held === undefined) {
+      const git = gitClient(dir);
+      held = repoIndexFor(repo, dir, git).then((index) => ({ root: dir, index, git, repo }));
+      opened.set(repo, held);
+    }
+    return held;
   };
 }
 
@@ -330,7 +359,7 @@ export function sayNotices(
 
 export async function runCheck(opts: CheckOptions): Promise<CheckRun> {
   const prepared = await prepareRun(opts, "checked", "check");
-  const { cwd, run, files, gitignoreSkipped, usingStdin, forced, pageOptions, git } = prepared;
+  const { cwd, run, files, gitignoreSkipped, usingStdin, forced, pageOptions } = prepared;
   await assertNoOrphans(prepared);
   const hits = joinHits();
   // A check writes nothing, so a source read for one page is still true for the next.
@@ -345,10 +374,21 @@ export async function runCheck(opts: CheckOptions): Promise<CheckRun> {
   if (usingStdin) await checkOne(STDIN_LABEL, opts.stdinContent ?? "");
   for (const file of files) await checkOne(file, await readTarget(run, file));
   assertNoOrphanJoins(prepared, hits);
-  // `--show-diff` wants history whatever the pages carry. With the sources
-  // off nothing is classified, so nothing wants git.
-  const wantsDiff = opts.showDiff === true && pageOptions.checkSources !== false && !(await git.available());
-  sayNotices(pages, opts.onNotice, wantsDiff ? [GIT_UNAVAILABLE_HISTORY] : []);
+  // `--show-diff` wants history whatever the pages carry, from the root and
+  // from each checkout an entry named. With the sources off nothing is
+  // classified, so nothing wants git.
+  const also: string[] = [];
+  const { checkouts } = pageOptions;
+  if (opts.showDiff === true && checkouts !== undefined) {
+    const named = pages.flatMap((page) => page.citations.map((c) => c.source.repo));
+    for (const repo of new Set([undefined, ...named])) {
+      const checkout = await checkouts(repo);
+      if (checkout !== undefined && !(await checkout.git.available())) {
+        also.push(checkoutNotice(repo, GIT_UNAVAILABLE_HISTORY));
+      }
+    }
+  }
+  sayNotices(pages, opts.onNotice, also);
 
   const results = pages.map(toValidationResult);
   // Fingerprints must not depend on where the command was run from, so they

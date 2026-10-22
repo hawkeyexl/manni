@@ -5,17 +5,17 @@ docs/src/content/docs/cite/reference/configuration.mdx:
         integrity: sha256-fc6cdea3fef62c129a4d169b8558d472409696e10a560743a7c80877e192d5ae
       source:
         file: src/cite/core/config.ts
-        lines: 308-314
+        lines: 363-369
         integrity: sha256-b150b31775d046124767d408d54b9051ecf245ea9eb430008e8ed8d2389b4ca9
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: da88b121073f9e8bffc3c135102e233b28f811c2
     - id: collection-paths-config-relative
       claim:
         integrity: sha256-697d6df0842dbdc4e3131655c962b599e4a9983920c38df8029270b018007fdb
       source:
         file: src/cite/core/config.ts
-        lines: 322-337
+        lines: 377-392
         integrity: sha256-68e6a8d538d09914a70b3208fdf5b954e86110e1318954e1066d139891416e9e
-        commit-sha: 2f97e64b93a057dc7e73ba992056caad9976037a
+        commit-sha: da88b121073f9e8bffc3c135102e233b28f811c2
     - id: collections-alone-is-cite-config
       claim:
         integrity: sha256-697d6df0842dbdc4e3131655c962b599e4a9983920c38df8029270b018007fdb
@@ -53,27 +53,27 @@ docs/src/content/docs/cite/reference/configuration.mdx:
         integrity: sha256-cdc669af18e1f370876a88f7794436736bab8f1b25453b4f4d0ecfc7599a97d9
       source:
         file: src/cite/core/config.ts
-        lines: 82-96
+        lines: 85-99
         integrity: sha256-fcd5fcefa57740f147a1f2ab70081d405245d87417f601462afaa53cb4b6baa0
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: da88b121073f9e8bffc3c135102e233b28f811c2
     - id: moved-keys-message
       claim:
         lines: 82-83
         integrity: sha256-6818bdaec3f234bfb273b911ed02d2dae5dd678eeca60e971db7a2da86d293da
       source:
         file: src/cite/core/config.ts
-        lines: 91-93
+        lines: 94-96
         integrity: sha256-13bc55fb881f9172bf7ec02ca4d07316af8acc0492b4cfeaa27632a9616e0758
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: da88b121073f9e8bffc3c135102e233b28f811c2
     - id: key-allow-empty
       claim:
         lines: 90
         integrity: sha256-08051f896d3aa510046e700c912d3c044f33de8c32299f22cc7d1f0d6734d8d2
       source:
         file: src/cite/commands/check.ts
-        lines: 189
+        lines: 192
         integrity: sha256-aeb65dc1134acf9d0fd86659c5db6a88017066d8d6a4c77e22b2db7872bd6b00
-        commit-sha: c4c8820ad03b39bd78625127e699a02af7e46588
+        commit-sha: da88b121073f9e8bffc3c135102e233b28f811c2
     - id: key-respect-gitignore
       claim:
         lines: 91
@@ -85,7 +85,7 @@ docs/src/content/docs/cite/reference/configuration.mdx:
         commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e
     - id: key-baseline
       claim:
-        lines: 93
+        lines: 94
         integrity: sha256-7b0eeb1464575d3e90779aff04256cb8cc9a372d91038f7161afe8bdf06b0dba
       source:
         file: src/meta/core/baseline.ts
@@ -94,7 +94,7 @@ docs/src/content/docs/cite/reference/configuration.mdx:
         commit-sha: cb74827009894c38f8646504ae9eb4a2745761a9
     - id: key-baseline-flags
       claim:
-        lines: 93
+        lines: 94
         integrity: sha256-7b0eeb1464575d3e90779aff04256cb8cc9a372d91038f7161afe8bdf06b0dba
       source:
         file: src/meta/core/baseline.ts
@@ -103,25 +103,25 @@ docs/src/content/docs/cite/reference/configuration.mdx:
         commit-sha: cb74827009894c38f8646504ae9eb4a2745761a9
     - id: key-check-sources
       claim:
-        lines: 94
+        lines: 95
         integrity: sha256-d31b9fe4c51ef69850638b7ebb055a82bfa12253c482f9c9f600794fa85a0a7f
       source:
         file: src/cite/commands/check.ts
-        lines: 166-169
+        lines: 169-172
         integrity: sha256-a31fd77eee37084a48640b7b2a2d20b298efd613710229c1c9f246dc16a7c5ca
-        commit-sha: c4c8820ad03b39bd78625127e699a02af7e46588
+        commit-sha: da88b121073f9e8bffc3c135102e233b28f811c2
     - id: key-check-sources-skipped
       claim:
-        lines: 94
+        lines: 95
         integrity: sha256-d31b9fe4c51ef69850638b7ebb055a82bfa12253c482f9c9f600794fa85a0a7f
       source:
         file: src/cite/core/check-page.ts
-        lines: 418-424
+        lines: 459-465
         integrity: sha256-3849602b3122eb1b1b5b858d50850009800c2d3de6fd03fd5c74c397e3736a23
-        commit-sha: b9712a2920c49c2b7e247108d80b629a4dc6ef9b
+        commit-sha: da88b121073f9e8bffc3c135102e233b28f811c2
     - id: key-severity
       claim:
-        lines: 95
+        lines: 96
         integrity: sha256-05cede8a3617c4b205539adf6c87f09481b3b6bf800ee6ff6220dba1ca8e487e
       source:
         file: src/cite/core/severity.ts
@@ -133,17 +133,17 @@ docs/src/content/docs/cite/reference/configuration.mdx:
         integrity: sha256-dfa0bb8bb5b77351724583ab211df1a296bed18e8f87aeb68229f744e928480f
       source:
         file: src/cite/core/config.ts
-        lines: 177-181
+        lines: 225-229
         integrity: sha256-6a82feaa292a72686b3eb1fbc020bc5c6bbf488f02f4ffd977ab1bae12b4d144
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: da88b121073f9e8bffc3c135102e233b28f811c2
     - id: booleans-type-error
       claim:
         integrity: sha256-dfa0bb8bb5b77351724583ab211df1a296bed18e8f87aeb68229f744e928480f
       source:
         file: src/cite/core/config.ts
-        lines: 131-138
+        lines: 134-141
         integrity: sha256-7c1ad9a90d40b8d88f33e57c573bac9b9cce0135315ca37b410753009bb12805
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: da88b121073f9e8bffc3c135102e233b28f811c2
     - id: git-ls-files-else-walk
       claim:
         integrity: sha256-a751c5fb51a46476d37c9d0f2d554edcb3dc7f7f0a0bbd7720baa5f311630447
@@ -165,17 +165,17 @@ docs/src/content/docs/cite/reference/configuration.mdx:
         integrity: sha256-a751c5fb51a46476d37c9d0f2d554edcb3dc7f7f0a0bbd7720baa5f311630447
       source:
         file: src/cite/core/sources.ts
-        lines: 163
+        lines: 176
         integrity: sha256-77702f30bfc199d991dacb9a334b9a6236b5f10b764fbe43ea57c82ff4ec3e4d
-        commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e
+        commit-sha: da88b121073f9e8bffc3c135102e233b28f811c2
     - id: add-records-head
       claim:
         integrity: sha256-a751c5fb51a46476d37c9d0f2d554edcb3dc7f7f0a0bbd7720baa5f311630447
       source:
         file: src/cite/core/mint.ts
-        lines: 30-43
-        integrity: sha256-7f71cfcac58fb14fd7a576c2a4488878c1ff48b5b565b4fcb3943951de655e4e
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        lines: 35-47
+        integrity: sha256-8d41bc92a312cf2daae636c59054724bf040cf873d399b7ebbfb0d2d698e03d8
+        commit-sha: bd425b806c4740aff85db1c07ee4be0dea0e87ca
     - id: history-never-true
       claim:
         integrity: sha256-a751c5fb51a46476d37c9d0f2d554edcb3dc7f7f0a0bbd7720baa5f311630447
@@ -186,7 +186,7 @@ docs/src/content/docs/cite/reference/configuration.mdx:
         commit-sha: b9712a2920c49c2b7e247108d80b629a4dc6ef9b
     - id: git-unavailable-messages
       claim:
-        lines: 118-119
+        lines: 154-155
         integrity: sha256-91ffc2448b18cf336da9132d52f1e3e7c2423b434e59a2d6d877e0612b56bdb9
       source:
         file: src/cite/core/git.ts
@@ -198,92 +198,92 @@ docs/src/content/docs/cite/reference/configuration.mdx:
         integrity: sha256-32e04d8b6c6640a44eca79f44945bfed9c60f4e4e25705ee6d4fb419f238661a
       source:
         file: src/cite/core/check-page.ts
-        lines: 351-359
-        integrity: sha256-53d91c1cb1a1fa3062274ebdf0f5a4c803856f2de9d5a4933ec7d41e15c479f6
-        commit-sha: b9712a2920c49c2b7e247108d80b629a4dc6ef9b
+        lines: 374-391
+        integrity: sha256-de68e986a675c3ffb4295148ab8b6579f3a321b448b6ed8b8d93f5bc0f3f5942
+        commit-sha: bd425b806c4740aff85db1c07ee4be0dea0e87ca
     - id: history-notice-show-diff
       claim:
         integrity: sha256-32e04d8b6c6640a44eca79f44945bfed9c60f4e4e25705ee6d4fb419f238661a
       source:
         file: src/cite/commands/check.ts
-        lines: 348-351
-        integrity: sha256-df9e2099e2cacae4348d2fafecabf6ffe16e6f7a0c74f462c0d0edd44d388b2a
-        commit-sha: c4c8820ad03b39bd78625127e699a02af7e46588
+        lines: 381-391
+        integrity: sha256-4d589793e1c4a7e40e0f361cc623748d0d1fced1b38afb75c895a83968581abe
+        commit-sha: bd425b806c4740aff85db1c07ee4be0dea0e87ca
     - id: history-notice-key-rotate
       claim:
         integrity: sha256-32e04d8b6c6640a44eca79f44945bfed9c60f4e4e25705ee6d4fb419f238661a
       source:
         file: src/key/commands/rotate.ts
-        lines: 597
+        lines: 634
         integrity: sha256-3b30a733a0353dc8e6e61975ff787ea3204ab57d2b8331fb96c59dbf932e4119
-        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
+        commit-sha: da88b121073f9e8bffc3c135102e233b28f811c2
     - id: commit-notice-add
       claim:
         integrity: sha256-32e04d8b6c6640a44eca79f44945bfed9c60f4e4e25705ee6d4fb419f238661a
       source:
         file: src/cite/commands/add.ts
-        lines: 573-577
-        integrity: sha256-4f0a1db07f3a9e3200d0bc75024211fcaac96bf009f3be07e4c917bce78d0589
-        commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
+        lines: 634-638
+        integrity: sha256-2e9e155a78a4e1571809ecb97cd125a13925a661c01306bd947a9c93cb8d8c4f
+        commit-sha: bd425b806c4740aff85db1c07ee4be0dea0e87ca
     - id: unknown-keys-error
       claim:
         integrity: sha256-37ca0fb41356b8c08b12aeb6216c5c73b58c1fd289843f4eb28a415aafbb0910
       source:
         file: src/cite/core/config.ts
-        lines: 110-123
+        lines: 113-126
         integrity: sha256-653795fbeaae5874701d3c2006682197919cd9326602737a2ab7deb9127f3499
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: da88b121073f9e8bffc3c135102e233b28f811c2
     - id: severity-unknown-rule-level
       claim:
         integrity: sha256-37ca0fb41356b8c08b12aeb6216c5c73b58c1fd289843f4eb28a415aafbb0910
       source:
         file: src/cite/core/config.ts
-        lines: 153-166
+        lines: 201-214
         integrity: sha256-2c6d7f9d7a47a4e47a0288c765378c5726f49b875af200b0a7270dcbfe6685f5
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: da88b121073f9e8bffc3c135102e233b28f811c2
     - id: severity-levels-set
       claim:
         integrity: sha256-37ca0fb41356b8c08b12aeb6216c5c73b58c1fd289843f4eb28a415aafbb0910
       source:
         file: src/cite/core/config.ts
-        lines: 64
+        lines: 67
         integrity: sha256-42830c20257a7b1f4257a47e112a906dd407dba266400cee408f587c9ba82b9d
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: da88b121073f9e8bffc3c135102e233b28f811c2
     - id: salt-refused-before-unknown
       claim:
         integrity: sha256-2ea5b409b3bbcd164f01b95a6582f98326d092683d9925ab14fd8e9ba7295d94
       source:
         file: src/cite/core/config.ts
-        lines: 182-185
+        lines: 230-233
         integrity: sha256-2909f67d7816ca628225187d2f9aaf8031669571cc13551b10298adb9f5c57c7
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: da88b121073f9e8bffc3c135102e233b28f811c2
     - id: salt-message
       claim:
-        lines: 153
+        lines: 189
         integrity: sha256-ee385e31b1f0c8bce0152934b0719200513e6a4e4a305cd98e524b8143a30b00
       source:
         file: src/cite/core/config.ts
-        lines: 56-58
+        lines: 59-61
         integrity: sha256-c9ff6c663ff0d46fb17b5f89c2f57dd8c9a7ef768a9b6079bae32c358f1261df
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: da88b121073f9e8bffc3c135102e233b28f811c2
     - id: values-never-echoed
       claim:
-        lines: 157-158
+        lines: 193-194
         integrity: sha256-83e927b3a1189d65b138760010fc541b19ff4aed0c0b87018ede2bf440f6e40a
       source:
         file: src/cite/core/config.ts
-        lines: 131-133
+        lines: 134-136
         integrity: sha256-141045bc381f58459b2873fd6ca9dbbe8196f46582250cea4048c7d6243e6d0c
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: da88b121073f9e8bffc3c135102e233b28f811c2
     - id: severity-level-quoted
       claim:
-        lines: 160
+        lines: 196
         integrity: sha256-a9f96a007bc6c6e6d2fe6b5c55bac314d3ee9218b8051b5231e3b6b558c03b27
       source:
         file: src/cite/core/config.ts
-        lines: 160-165
+        lines: 208-213
         integrity: sha256-888b281a66d5111f3a40705b0df7709564200237f8d7e4319ee2378d5ce3fa77
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: da88b121073f9e8bffc3c135102e233b28f811c2
     - id: discovery-filenames
       claim:
         integrity: sha256-1655a0e54d910d3de9fbb2a9e744fd4859bb531166932a05d7cfd61a972bec03
@@ -313,17 +313,17 @@ docs/src/content/docs/cite/reference/configuration.mdx:
         integrity: sha256-f69b4affd25ede614ddd795a6624864016e7ad9eb1fd889099e5b3036d630f19
       source:
         file: src/cite/core/config.ts
-        lines: 305-308
+        lines: 360-363
         integrity: sha256-d501a0dcd21a94bd629c6822f05b68f9123a6c4e521f90718f7f2048d11d29f7
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: da88b121073f9e8bffc3c135102e233b28f811c2
     - id: config-reported-pretty-only
       claim:
         integrity: sha256-f69b4affd25ede614ddd795a6624864016e7ad9eb1fd889099e5b3036d630f19
       source:
         file: src/cite/cli.ts
-        lines: 344
+        lines: 357
         integrity: sha256-69b334a1f042cccb2050c6fd91eb383ed6c01f4f3ad2fbf47557f707eaa8eb8c
-        commit-sha: b9712a2920c49c2b7e247108d80b629a4dc6ef9b
+        commit-sha: da88b121073f9e8bffc3c135102e233b28f811c2
     - id: machine-formats
       claim:
         integrity: sha256-f69b4affd25ede614ddd795a6624864016e7ad9eb1fd889099e5b3036d630f19
@@ -334,26 +334,26 @@ docs/src/content/docs/cite/reference/configuration.mdx:
         commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: rel-collection-paths
       claim:
-        lines: 192
+        lines: 228
         integrity: sha256-8c1d19f2af3d0319ad86dd5ffc2e9d5d1e3b154b15f3492f4ef40f9aac2b0020
       source:
         file: src/cite/core/config.ts
-        lines: 331-337
+        lines: 386-392
         integrity: sha256-6645471fc70a60e3b0ce86eb2d80cd138f747f553be3a56600733f83778d1e9f
-        commit-sha: 2f97e64b93a057dc7e73ba992056caad9976037a
+        commit-sha: da88b121073f9e8bffc3c135102e233b28f811c2
     - id: rel-root-config
       claim:
-        lines: 193
-        integrity: sha256-ad1ea713828531a524d01d4f1078fd3d48b4a1f0a725a666ffc1973a547bcf10
+        lines: 229
+        integrity: sha256-1f223d977d021bacd9cb67ae205fb82820ed9c332b6e4f86d0c8d3945e1bf807
       source:
         file: src/cite/core/config.ts
-        lines: 342-343
+        lines: 397-398
         integrity: sha256-92b7578788122426fa2ccb7f289a02fdf175650ae6220ea7df87d3c67fc7faa5
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: da88b121073f9e8bffc3c135102e233b28f811c2
     - id: rel-baseline-config
       claim:
-        lines: 193
-        integrity: sha256-ad1ea713828531a524d01d4f1078fd3d48b4a1f0a725a666ffc1973a547bcf10
+        lines: 229
+        integrity: sha256-1f223d977d021bacd9cb67ae205fb82820ed9c332b6e4f86d0c8d3945e1bf807
       source:
         file: src/meta/core/baseline.ts
         lines: 490-494
@@ -361,26 +361,26 @@ docs/src/content/docs/cite/reference/configuration.mdx:
         commit-sha: cb74827009894c38f8646504ae9eb4a2745761a9
     - id: rel-positional-cwd
       claim:
-        lines: 194
+        lines: 230
         integrity: sha256-a6ff001cb94ff5525674b8c7f922b921f5c417e99fdcebefa7bdae19885bac59
       source:
         file: src/cite/core/config.ts
-        lines: 331-337
+        lines: 386-392
         integrity: sha256-6645471fc70a60e3b0ce86eb2d80cd138f747f553be3a56600733f83778d1e9f
-        commit-sha: 2f97e64b93a057dc7e73ba992056caad9976037a
+        commit-sha: da88b121073f9e8bffc3c135102e233b28f811c2
     - id: rel-root-flag-cwd
       claim:
-        lines: 195
-        integrity: sha256-4a0d0b09de4c24fd5e9bc27f7d835c4556d81e77317f81aa53e30551ba2e43a2
+        lines: 231
+        integrity: sha256-a6187256fd3505e30515bc5dd4ab31f4c65d24a674997f363d7768ecab934b9e
       source:
         file: src/cite/core/config.ts
-        lines: 340-341
+        lines: 395-396
         integrity: sha256-a1f6b21f77dd8761beb95058447307436d1ed57c747b4959ce1e4b178cf695ea
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: da88b121073f9e8bffc3c135102e233b28f811c2
     - id: rel-baseline-flag-cwd
       claim:
-        lines: 195
-        integrity: sha256-4a0d0b09de4c24fd5e9bc27f7d835c4556d81e77317f81aa53e30551ba2e43a2
+        lines: 231
+        integrity: sha256-a6187256fd3505e30515bc5dd4ab31f4c65d24a674997f363d7768ecab934b9e
       source:
         file: src/meta/core/baseline.ts
         lines: 466-470
@@ -391,9 +391,9 @@ docs/src/content/docs/cite/reference/configuration.mdx:
         integrity: sha256-9924707f21479f4ffb6babb0142f92f6c4cbe2342dd31205f61a7ad4aac0a9a5
       source:
         file: src/cite/commands/check.ts
-        lines: 354-356
+        lines: 394-396
         integrity: sha256-8aaab865086d96a731433becc46559e3e1299ac52160f7d74765554664ace732
-        commit-sha: c4c8820ad03b39bd78625127e699a02af7e46588
+        commit-sha: da88b121073f9e8bffc3c135102e233b28f811c2
     - id: env-key-wins
       claim:
         integrity: sha256-8a44e634704e00d6e35a37b49441f79c1912905e7d55e2b5012677a067c8cab8
@@ -407,60 +407,60 @@ docs/src/content/docs/cite/reference/configuration.mdx:
         integrity: sha256-8a44e634704e00d6e35a37b49441f79c1912905e7d55e2b5012677a067c8cab8
       source:
         file: src/cite/commands/add.ts
-        lines: 449-455
+        lines: 511-517
         integrity: sha256-38e382c7d00ac5ed995437d77ccd64b63eef323ddaef18f95486cd4537a6ef31
-        commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
+        commit-sha: da88b121073f9e8bffc3c135102e233b28f811c2
     - id: check-decrypts
       claim:
         integrity: sha256-8a44e634704e00d6e35a37b49441f79c1912905e7d55e2b5012677a067c8cab8
       source:
         file: src/cite/core/sources.ts
-        lines: 138-142
+        lines: 151-155
         integrity: sha256-2c0c9a63afa68420cbc2df40f972efbd33c14064f8c370a0f715199f16a1b5e4
-        commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e
+        commit-sha: da88b121073f9e8bffc3c135102e233b28f811c2
     - id: rotate-frontmatter
       claim:
         integrity: sha256-8a44e634704e00d6e35a37b49441f79c1912905e7d55e2b5012677a067c8cab8
       source:
         file: src/key/commands/rotate.ts
-        lines: 567-575
-        integrity: sha256-45ae91fa7bef22fdf92de7b56b7dc31388bb02e670f8351101e474ad5f4bfebd
-        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
+        lines: 597-612
+        integrity: sha256-0e9b128feb17df3556f5c7944866221885f9e8b3dbd50633f673b876332a7dec
+        commit-sha: bd425b806c4740aff85db1c07ee4be0dea0e87ca
     - id: rotate-manifest
       claim:
         integrity: sha256-8a44e634704e00d6e35a37b49441f79c1912905e7d55e2b5012677a067c8cab8
       source:
         file: src/key/commands/rotate.ts
-        lines: 211-217
+        lines: 232-238
         integrity: sha256-721b3db08284b7c87c7ee859c9df38f6a3bf1e859708c512afbe722345af5677
-        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
+        commit-sha: da88b121073f9e8bffc3c135102e233b28f811c2
     - id: exit-code-errors-only
       claim:
         integrity: sha256-f095ba949ddf8352526dd7989dcc22ba76c78e63804ad82f33f8df0d90073b4a
       source:
         file: src/cite/cli.ts
-        lines: 387-389
+        lines: 401-403
         integrity: sha256-42f037380b39026477e3aefbac0ae3d2c2c9313cf89892466286592059657b49
-        commit-sha: b9712a2920c49c2b7e247108d80b629a4dc6ef9b
+        commit-sha: da88b121073f9e8bffc3c135102e233b28f811c2
     - id: severity-off-dropped
       claim:
         integrity: sha256-f095ba949ddf8352526dd7989dcc22ba76c78e63804ad82f33f8df0d90073b4a
       source:
         file: src/cite/core/adapt.ts
-        lines: 248-249
+        lines: 255-256
         integrity: sha256-4a0c6351558f7e298199d08c30e17c24bd5f5dbe190edbde1b31abc11ebe1e03
-        commit-sha: b9712a2920c49c2b7e247108d80b629a4dc6ef9b
+        commit-sha: da88b121073f9e8bffc3c135102e233b28f811c2
     - id: fourteen-rules
       claim:
         integrity: sha256-5738d7044b5e172c39ca695d29a9e580427ffd5a47ed6c322bbcc46d0e79d86d
       source:
         file: src/cite/types.ts
-        lines: 118-133
-        integrity: sha256-1bf1aab98a95bb7bb18bf1173dffbebe5405ab244ae9d42c7d1fbf68fe99adcc
-        commit-sha: cb74827009894c38f8646504ae9eb4a2745761a9
+        lines: 140-157
+        integrity: sha256-67a1e009955436df5b21d01ab7c8aae7d2f4eddb1040ef7e7ae9b86bba8bfff6
+        commit-sha: bd425b806c4740aff85db1c07ee4be0dea0e87ca
     - id: default-source-moved
       claim:
-        lines: 271
+        lines: 330
         integrity: sha256-8124e80360bf47324ac98dcc549182607c80c0638bba0967cac8bfcc5c58cd27
       source:
         file: src/cite/core/severity.ts
@@ -469,7 +469,7 @@ docs/src/content/docs/cite/reference/configuration.mdx:
         commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: default-source-moved-ambiguous
       claim:
-        lines: 272
+        lines: 331
         integrity: sha256-8cf861d715db4d30caa733439b1ea296183c2fca96e9f37463c0d3b31037660f
       source:
         file: src/cite/core/severity.ts
@@ -478,7 +478,7 @@ docs/src/content/docs/cite/reference/configuration.mdx:
         commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: default-source-changed
       claim:
-        lines: 273
+        lines: 332
         integrity: sha256-168fdbe08669d3b097382e21d6818b8851791cc1d64489954f12df7e73dd0c17
       source:
         file: src/cite/core/severity.ts
@@ -487,7 +487,7 @@ docs/src/content/docs/cite/reference/configuration.mdx:
         commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: default-source-never-true
       claim:
-        lines: 274
+        lines: 333
         integrity: sha256-181a54bae4c0aa18ca6b6caf84a4b2d56744a2d631448d14963cc44240bb24c5
       source:
         file: src/cite/core/severity.ts
@@ -496,7 +496,7 @@ docs/src/content/docs/cite/reference/configuration.mdx:
         commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: default-source-missing
       claim:
-        lines: 275
+        lines: 334
         integrity: sha256-e7eadc492b7c44c9f688b0a3a733b559f4c73658e7f34a2410b04c92a2f73ea2
       source:
         file: src/cite/core/severity.ts
@@ -505,7 +505,7 @@ docs/src/content/docs/cite/reference/configuration.mdx:
         commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: default-claim-moved
       claim:
-        lines: 276
+        lines: 335
         integrity: sha256-ad390617b2e44f240fe038e54a3d4d9e898244dfd32c03a4eb2ec20f1d14c27b
       source:
         file: src/cite/core/severity.ts
@@ -514,7 +514,7 @@ docs/src/content/docs/cite/reference/configuration.mdx:
         commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: default-claim-moved-ambiguous
       claim:
-        lines: 277
+        lines: 336
         integrity: sha256-c835ce83b665f74a354e46b7ba13d4933e461557bf0befc0c1e1e96d9d413105
       source:
         file: src/cite/core/severity.ts
@@ -523,7 +523,7 @@ docs/src/content/docs/cite/reference/configuration.mdx:
         commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: default-marker-orphan
       claim:
-        lines: 280
+        lines: 339
         integrity: sha256-ceb8f6b19b3c150b5cd395802faeb40287ff2be298379ed605f1512cefdfb83c
       source:
         file: src/cite/core/severity.ts
@@ -532,7 +532,7 @@ docs/src/content/docs/cite/reference/configuration.mdx:
         commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: default-marker-invalid
       claim:
-        lines: 281
+        lines: 340
         integrity: sha256-99df0a09e88f6746c6441675c12baaf6fac2c508b3acc7891d6c26b2349f0cdb
       source:
         file: src/cite/core/severity.ts
@@ -541,7 +541,7 @@ docs/src/content/docs/cite/reference/configuration.mdx:
         commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: default-marker-repeated
       claim:
-        lines: 282
+        lines: 341
         integrity: sha256-0b06a1412c7e9c9913c50ee6298bfdb99d6200f8fc61c0ba464016417c949caf
       source:
         file: src/cite/core/severity.ts
@@ -550,7 +550,7 @@ docs/src/content/docs/cite/reference/configuration.mdx:
         commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: default-anchor-invalid
       claim:
-        lines: 284
+        lines: 343
         integrity: sha256-29ba32cfb8b9d48921fb3f6c9a3db4dbb516332aa936e8ccb30e810dc7d2d0ba
       source:
         file: src/cite/core/severity.ts
@@ -559,7 +559,7 @@ docs/src/content/docs/cite/reference/configuration.mdx:
         commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: default-entry-invalid
       claim:
-        lines: 285
+        lines: 344
         integrity: sha256-7b442a51280ce153dc75a8abe4ebb3a4eb36ebf3b7910f3076bf269c6cc5c6ce
       source:
         file: src/cite/core/severity.ts
@@ -568,7 +568,7 @@ docs/src/content/docs/cite/reference/configuration.mdx:
         commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: default-quote-drift
       claim:
-        lines: 286
+        lines: 345
         integrity: sha256-515cb8bb16e82019b68bb64c0ff8f65a3c9bbe41a0f7676f521d3774c9d83896
       source:
         file: src/cite/core/severity.ts
@@ -580,9 +580,9 @@ docs/src/content/docs/cite/reference/configuration.mdx:
         integrity: sha256-b106b076e141f208eef8d8bc229bb773f3b5a03316755de2a01b86779d286f84
       source:
         file: src/cite/core/check-page.ts
-        lines: 55-63
+        lines: 57-65
         integrity: sha256-5f104c9c5eb3348472b8cebd1b7f4909e81ff4ecd2c8d1f491b72e2dfbd59df0
-        commit-sha: b9712a2920c49c2b7e247108d80b629a4dc6ef9b
+        commit-sha: da88b121073f9e8bffc3c135102e233b28f811c2
     - id: render-pretty-marks
       claim:
         integrity: sha256-b106b076e141f208eef8d8bc229bb773f3b5a03316755de2a01b86779d286f84
@@ -617,7 +617,7 @@ docs/src/content/docs/cite/reference/configuration.mdx:
         commit-sha: a13745cefe15407b4f1c5cb2ba70d5638605c04b
     - id: default-claim-changed
       claim:
-        lines: 278-286
+        lines: 337-345
         integrity: sha256-5d55326296b0727a97b4e840bd55a2d25a712c4b070bcb15addf648d9aa17d60
       source:
         file: src/cite/core/severity.ts
@@ -653,18 +653,18 @@ docs/src/content/docs/cite/reference/configuration.mdx:
         integrity: sha256-fc6cdea3fef62c129a4d169b8558d472409696e10a560743a7c80877e192d5ae
       source:
         file: src/cite/core/config.ts
-        lines: 339-355
+        lines: 394-410
         integrity: sha256-a6e26129050788788a675eb318e2c760e7c8c891ba304922c379d509ba376a8e
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: da88b121073f9e8bffc3c135102e233b28f811c2
     - id: key-root
       claim:
         lines: 92
         integrity: sha256-cd2cf30dc7647cd761718e7127d0fc54f83e049c5607909da2d1f0e678a8679a
       source:
         file: src/cite/core/config.ts
-        lines: 339-355
+        lines: 394-410
         integrity: sha256-a6e26129050788788a675eb318e2c760e7c8c891ba304922c379d509ba376a8e
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: da88b121073f9e8bffc3c135102e233b28f811c2
     - id: page-manifest-beside-page
       claim:
         integrity: sha256-59fc3d01f1daa14d9b1cc572880a07a5fc642aee421ad6e553420d4234d9c9bd
@@ -678,6 +678,6 @@ docs/src/content/docs/cite/reference/configuration.mdx:
         integrity: sha256-32e04d8b6c6640a44eca79f44945bfed9c60f4e4e25705ee6d4fb419f238661a
       source:
         file: src/cite/commands/update.ts
-        lines: 1573
-        integrity: sha256-0aa71e969195e434337d7794c81120661bd384ae738b6039f18cf5dfd3004cc2
-        commit-sha: b9712a2920c49c2b7e247108d80b629a4dc6ef9b
+        lines: 1607-1609
+        integrity: sha256-a72f6e4dccba8aa92f8c7f17eeed54649d4e1142dce160698b1a13abbface56a
+        commit-sha: bd425b806c4740aff85db1c07ee4be0dea0e87ca

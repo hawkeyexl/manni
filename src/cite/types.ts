@@ -9,6 +9,7 @@
  * to anchor an entry's claim.
  */
 import type { ValidationResult } from "../meta/index.js";
+import type { ClassifyOptions } from "./core/classify.js";
 import type { CollectionConfig } from "../shared/collections.js";
 import type { ConfigFile } from "../shared/config-file.js";
 import type { KeySource } from "../shared/encryption-key.js";
@@ -20,7 +21,9 @@ import type { InlineStatement } from "../shared/statements.js";
 
 /** A parsed `<src>` or `source`: a path or `~` ciphertext, and an optional line range. */
 export interface SourceRange {
-  /** Repo-root-relative posix path, or the `~` ciphertext when `encrypted`. */
+  /** The checkout `path` is in, by its `cite.repos` name; absent for the root. */
+  repo?: string;
+  /** Checkout-relative posix path, or the `~` ciphertext when `encrypted`. */
   path: string;
   /** `true` when `path` is an encrypted source (`~` and 82+ base64url characters) rather than a path. */
   encrypted: boolean;
@@ -42,7 +45,9 @@ export interface CitationClaim {
 
 /** The lines a claim rests on. */
 export interface CitationSource {
-  /** Root-relative posix path, or `~` and the path encrypted with the family key. */
+  /** The checkout `file` is in, by its `cite.repos` name; absent for the root. */
+  repo?: string;
+  /** Checkout-relative posix path, or `~` and the path encrypted with the family key. */
   file: string;
   /** File lines. Absent pins the whole file. */
   lines?: LineSpec;
@@ -52,7 +57,7 @@ export interface CitationSource {
   "commit-sha"?: string;
 }
 
-/** One entry of `citations`, as the schema (`manni:citations:1.0.0`) spells it. */
+/** One entry of `citations`, as the schema (`manni:citations:1.2.0`) spells it. */
 export interface Citation {
   id?: string;
   claim?: CitationClaim;
@@ -121,11 +126,12 @@ export interface MarkerEnd {
 }
 
 /**
- * Why a source could not be read: not a tracked file under the root, an
+ * Why a source could not be read: not a tracked file in its checkout, an
  * encrypted source with no key to decrypt it, one that does not decrypt under
- * the key there is, or a tracked file that could not be read.
+ * the key there is, a tracked file that could not be read, or a `source.repo`
+ * no `cite.repos` or `--repo` declares.
  */
-export type MissingReason = "untracked" | "no-key" | "undecryptable" | "unreadable";
+export type MissingReason = "untracked" | "no-key" | "undecryptable" | "unreadable" | "unknown-repo";
 
 /**
  * Every rule a finding can carry, stated once. The union and the default
@@ -194,8 +200,10 @@ export interface ClaimEnd {
 
 /** The source end of a classified citation. */
 export interface SourceEnd {
-  /** `file` and `lines` as the entry spells them: `path`, `path:L`, `path:L1-L2`, the ciphertext for `path`. */
+  /** `file` and `lines` as the entry spells them: `path`, `path:L`, `path:L1-L2`, the ciphertext for `path`, after `repo:` for a repo entry. */
   src: string;
+  /** The checkout the source is in, by its `cite.repos` name; absent for the root. */
+  repo?: string;
   status: SourceStatus;
   /**
    * The path an encrypted source decrypted to. Never printed except by the
@@ -381,6 +389,20 @@ export interface SourceIndex {
  */
 export type SourceCache = Map<string, Promise<{ text: string; lines: readonly string[] } | undefined>>;
 
+/**
+ * One checkout a source resolves in: its directory, its tracked files and its
+ * git, the triple `classifyCitation` takes. `repo` is its `cite.repos` name,
+ * absent for the root (proposal 0100).
+ */
+export type Checkout = Pick<ClassifyOptions, "root" | "index" | "git"> & { repo?: string };
+
+/**
+ * The checkout an entry's `source.repo` names: the root for none, `undefined`
+ * for a name nothing declares. A declared checkout is opened on first use and
+ * kept, and one whose directory is missing rejects with a `CiteError`.
+ */
+export type CheckoutResolver = (repo: string | undefined) => Promise<Checkout | undefined>;
+
 export interface CheckPageOptions {
   /** Absolute directory source paths resolve from. */
   root: string;
@@ -409,6 +431,11 @@ export interface CheckPageOptions {
   /** How many commits the claim history walk reads. Defaults to `MAX_PAGE_COMMITS`. */
   pageCommitCap?: number;
   sourceIndex?: SourceIndex;
+  /**
+   * The checkouts an entry's `source.repo` may name. Absent, an entry with no
+   * repo resolves under `root` and every repo is undeclared.
+   */
+  checkouts?: CheckoutResolver;
   /** Source files already read this run (`createSourceCache`); absent, each citation reads its own. */
   sourceCache?: SourceCache;
   /**
@@ -500,6 +527,11 @@ export interface CheckOptions {
    */
   showDiff?: boolean;
   root?: string;
+  /**
+   * `--repo`, already split: name -> checkout directory, cwd-relative. Each
+   * overrides `cite.repos` for its name (proposal 0100).
+   */
+  repos?: Record<string, string>;
   /**
    * The git client every page is checked through. Defaults to one over the
    * root, used whenever git is on PATH and the root is inside a work tree; a
@@ -623,6 +655,11 @@ export interface AddOptions {
   cwd?: string;
   stdinContent?: string;
   root?: string;
+  /**
+   * `--repo`, already split: name -> checkout directory, cwd-relative. Each
+   * overrides `cite.repos` for its name (proposal 0100).
+   */
+  repos?: Record<string, string>;
   /**
    * The git client HEAD and the source index are read through. Defaults to
    * one over the root; a test hands in a fake.
@@ -804,7 +841,7 @@ export interface UpdateRun {
 }
 
 export interface RemoveOptions
-  extends Omit<CheckOptions, "baseline" | "writeBaseline" | "checkSources" | "showDiff"> {
+  extends Omit<CheckOptions, "baseline" | "writeBaseline" | "checkSources" | "showDiff" | "repos"> {
   /**
    * `--only <id>`, repeatable: the entries to remove, each named by its id or
    * by its pointer (`/citations/N`). Required, and an empty list is a
@@ -873,6 +910,8 @@ export interface CiteConfig {
   allowEmpty?: boolean;
   respectGitignore?: boolean;
   root?: string;
+  /** `cite.repos`: name -> checkout directory, relative to the config file (proposal 0100). */
+  repos?: Record<string, string>;
   baseline?: string;
   checkSources?: boolean;
   severity?: Partial<Record<CiteRule, CiteSeverity>>;
@@ -908,6 +947,12 @@ export interface CiteRun {
   configSource?: string;
   /** Absolute root source paths resolve from. */
   root: string;
+  /**
+   * Each checkout an entry's `source.repo` may name, as an absolute
+   * directory: `cite.repos` against the config directory, overridden per
+   * name by `--repo` against cwd. `{}` when none is declared.
+   */
+  repos: Record<string, string>;
   /**
    * The family encryption key (proposal 0045): `MANNI_ENCRYPTION_KEY`, else
    * the config's top-level `encryptionKey:`. Absent when neither is set.

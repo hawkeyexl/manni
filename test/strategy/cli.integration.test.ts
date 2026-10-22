@@ -1,6 +1,6 @@
 /**
  * `manni strategy …` against the built `dist/cli.js`: the grammar, the flags it
- * shares with meta and term, the ladder of proposal 0100, and every usage
+ * shares with meta and term, the ladder of proposal 0102, and every usage
  * error with its exact stderr line and exit code.
  *
  * Every run works in a throwaway copy of `test/fixtures/strategy`, because

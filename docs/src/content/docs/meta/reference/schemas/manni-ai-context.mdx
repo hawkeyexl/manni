@@ -20,7 +20,7 @@ sample-questions:
 graph:
   label: "manni ai-context vocabulary"
   type: reference
-last-updated: 2026-10-21
+last-updated: 2026-10-22
 resource: https://hawkeyexl.github.io/manni/schemas/ai-context/1.2.0.json
 tags:
   - schema
@@ -267,9 +267,9 @@ mark, which fires because `--no-config` gives the page no manifest.
 
 ## Strict overlay
 
-**Strict overlay id:** `manni:ai-context-strict:1.0.0`
+**Strict overlay id:** `manni:ai-context-strict:1.2.0`
 
-Published at `https://hawkeyexl.github.io/manni/schemas/ai-context-strict/1.0.0.json`.
+Published at `https://hawkeyexl.github.io/manni/schemas/ai-context-strict/1.2.0.json`.
 The overlay holds only what strict adds. It narrows the form of a value that is
 present and requires no key. A page with none of the vocabulary's fields
 still passes it.
@@ -283,8 +283,6 @@ still passes it.
 
 `provenance` is the same in both. `manni meta derive` writes a commit
 trailer's name there as git records it, such as `Claude Opus 5.5`.
-`sample-questions` is the same in both too, which is why this 1.0.0 overlay
-pairs with `manni:ai-context:1.2.0` and `manni:ai-context:1.1.0`.
 
 `strict: true` stacks it right after the vocabulary, with every other
 default's overlay beside its own base:
@@ -300,7 +298,7 @@ vocabulary:
 ```yaml
 meta:
   schemas:
-    - manni:ai-context-strict:1.0.0
+    - manni:ai-context-strict:1.2.0
 ```
 
 Each schema is checked on its own, and a finding names the one that produced
@@ -315,10 +313,10 @@ risks: [privileged, needs-vpn]
 ```
 
 ```text
-$ manni meta validate page.md --no-config -s manni:core:1.0.0 -s manni:ai-context:1.2.0 -s manni:ai-context-strict:1.0.0
+$ manni meta validate page.md --no-config -s manni:core:1.0.0 -s manni:ai-context:1.2.0 -s manni:ai-context-strict:1.2.0
 ✗ page.md
-    /risks/1  must be one of: "cost-incurring", "destructive", "irreversible", "privileged", "open-world", "read-only", "idempotent"  (line 4)  [manni:ai-context-strict:1.0.0]
-      manni:ai-context-strict:1.0.0 risks: One of the seven named flags.
+    /risks/1  must be one of: "cost-incurring", "destructive", "irreversible", "privileged", "open-world", "read-only", "idempotent"  (line 4)  [manni:ai-context-strict:1.2.0]
+      manni:ai-context-strict:1.2.0 risks: One of the seven named flags.
       Guide: https://hawkeyexl.github.io/manni/meta/reference/schemas/manni-ai-context/
 
 1 file checked, 0 passed, 1 failed, 1 error
@@ -330,13 +328,16 @@ The open vocabulary accepts `needs-vpn`, so the overlay alone fails the page.
 
 **Built-in id:** `manni:ai-context:1.1.0`
 
-Published at `https://hawkeyexl.github.io/manni/schemas/ai-context/1.1.0.json`.
+**Strict overlay id:** `manni:ai-context-strict:1.1.0`
+
+Published at `https://hawkeyexl.github.io/manni/schemas/ai-context/1.1.0.json`
+and `https://hawkeyexl.github.io/manni/schemas/ai-context-strict/1.1.0.json`.
 Version 1.2.0 validates exactly as 1.1.0 does. The two differ in one mark.
 Version 1.1.0 leaves `answers` unmarked, so delivered metadata keeps the pins.
 
-The id still resolves, and a page that names it keeps it. A set listing 1.1.0
-replaces 1.2.0 in the default set. Under `strict: true`, both pair with the
-1.0.0 overlay.
+Both ids still resolve, and a page that names one keeps it. A set listing
+1.1.0 replaces 1.2.0 in the default set. Under `strict: true`, 1.1.0 pairs
+with the 1.1.0 overlay.
 
 ```yaml
 meta:
@@ -348,10 +349,14 @@ meta:
 
 **Built-in id:** `manni:ai-context:1.0.0`
 
-Published at `https://hawkeyexl.github.io/manni/schemas/ai-context/1.0.0.json`.
+**Strict overlay id:** `manni:ai-context-strict:1.0.0`
+
+Published at `https://hawkeyexl.github.io/manni/schemas/ai-context/1.0.0.json`
+and `https://hawkeyexl.github.io/manni/schemas/ai-context-strict/1.0.0.json`.
 It defines the same four fields, and a sample question is a string only. A
-config that lists it replaces 1.2.0 in the default set. A page held to it that
-pins an answer fails:
+config that lists it replaces 1.2.0 in the default set. Under `strict: true`,
+the 1.0.0 overlay replaces the 1.2.0 overlay too. A page held to it that pins
+an answer fails:
 
 ```text
 $ manni meta validate old.md --no-config -s manni:core:1.0.0 -s manni:ai-context:1.0.0

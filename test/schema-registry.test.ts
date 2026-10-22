@@ -1260,10 +1260,15 @@ describe("ANNOTATION_ONLY_PREDECESSORS", () => {
     expect(ANNOTATION_ONLY_PREDECESSORS.size).toBeGreaterThan(0);
   });
 
-  it("carries ai-context 1.2.0 to 1.1.0, on the 1.0.0 strict overlay (proposal 0090)", () => {
+  it("carries ai-context 1.2.0 to 1.1.0 (proposal 0090)", () => {
     expect(ANNOTATION_ONLY_PREDECESSORS.get("manni:ai-context:1.2.0")).toBe("manni:ai-context:1.1.0");
     expect(baselineIdentity("manni:ai-context:1.2.0")).toBe("manni:ai-context:1.1.0");
-    expect(strictIdOf("manni:ai-context:1.2.0")).toBe("manni:ai-context-strict:1.0.0");
+  });
+
+  it("carries each lockstep strict overlay back to the overlay its rules came from", () => {
+    expect(baselineIdentity("manni:ai-context-strict:1.2.0")).toBe("manni:ai-context-strict:1.0.0");
+    expect(baselineIdentity("manni:ai-context-strict:1.1.0")).toBe("manni:ai-context-strict:1.0.0");
+    expect(baselineIdentity("manni:citations-strict:1.2.0")).toBe("manni:citations-strict:1.0.0");
   });
 
   it("publishes ai-context 1.2.0 with answers marked out of graph output", async () => {
@@ -1289,8 +1294,36 @@ describe("ANNOTATION_ONLY_PREDECESSORS", () => {
       expect(ids.has(successor)).toBe(true);
       expect(ids.has(predecessor)).toBe(true);
       expect(predecessor).not.toBe(successor);
-      expect(ANNOTATION_ONLY_PREDECESSORS.has(predecessor)).toBe(false);
     }
+  });
+});
+
+describe("strict overlays move in lockstep with their vocabularies", () => {
+  // Every version of a manni vocabulary that has any overlay ships its own
+  // overlay at the same version, and strictIdOf names it by the naming rule.
+  // Nothing pairs a newer vocabulary with an older overlay.
+  const ids = listBuiltins().map((b) => b.id);
+  const registered = new Set(ids);
+  const withOverlay = new Set(
+    ids.flatMap((id) => {
+      const [vendor, name] = id.split(":");
+      return vendor === "manni" && name?.endsWith("-strict") === true
+        ? [`${vendor}:${name.slice(0, -"-strict".length)}`]
+        : [];
+    }),
+  );
+  const versions = ids.filter((id) => withOverlay.has(id.split(":").slice(0, 2).join(":")));
+
+  it("finds the manni vocabularies that have overlays", () => {
+    expect(withOverlay.has("manni:citations")).toBe(true);
+    expect(withOverlay.has("manni:ai-context")).toBe(true);
+  });
+
+  it.each(versions)("%s has a strict overlay at its own version", (id) => {
+    const [vendor, name, version] = id.split(":");
+    const expected = `${vendor ?? ""}:${name ?? ""}-strict:${version ?? ""}`;
+    expect(strictIdOf(id)).toBe(expected);
+    expect(registered.has(expected), `${expected} is not a built-in`).toBe(true);
   });
 });
 
@@ -1324,7 +1357,8 @@ describe("OPTIONAL_FIELD_PREDECESSORS (proposal 0098)", () => {
   // entry hides a real change from every recorded baseline. Every markdown
   // fixture without the added keys is such a document. An inline `meta`
   // statement (proposal 0099) sets them as JSON keys, and counts too.
-  const ADDED = /^\s*-?\s*(last-verified|verified-by)\s*:|"(last-verified|verified-by)"\s*:/m;
+  // citations 1.2.0 adds `source.repo` (proposal 0100).
+  const ADDED = /^\s*-?\s*(last-verified|verified-by|repo)\s*:|"(last-verified|verified-by|repo)"\s*:/m;
   const fixtures = (dir: string): string[] =>
     readdirSync(dir, { withFileTypes: true }).flatMap((e) => {
       const p = join(dir, e.name);
@@ -1345,12 +1379,13 @@ describe("OPTIONAL_FIELD_PREDECESSORS (proposal 0098)", () => {
     }));
   };
 
-  it("covers the 0098 versions, over a real corpus", () => {
+  it("covers the 0098 and 0100 versions, over a real corpus", () => {
     expect([...OPTIONAL_FIELD_PREDECESSORS]).toEqual([
       ["manni:stewardship:1.2.0", "manni:stewardship:1.1.0"],
       ["manni:stewardship-strict:1.2.0", "manni:stewardship-strict:1.1.0"],
       ["manni:citations:1.1.0", "manni:citations:1.0.0"],
       ["manni:citations-strict:1.1.0", "manni:citations-strict:1.0.0"],
+      ["manni:citations:1.2.0", "manni:citations:1.1.0"],
     ]);
     expect(documents.length).toBeGreaterThan(50);
   });
@@ -1376,6 +1411,7 @@ describe("OPTIONAL_FIELD_PREDECESSORS (proposal 0098)", () => {
     expect(baselineIdentity("manni:stewardship:1.2.0")).toBe("manni:stewardship:1.0.0");
     expect(baselineIdentity("manni:stewardship-strict:1.2.0")).toBe("manni:stewardship-strict:1.0.0");
     expect(baselineIdentity("manni:citations:1.1.0")).toBe("manni:citations:1.0.0");
+    expect(baselineIdentity("manni:citations:1.2.0")).toBe("manni:citations:1.0.0");
     expect(baselineIdentity("manni:core:1.0.0")).toBe("manni:core:1.0.0");
   });
 });

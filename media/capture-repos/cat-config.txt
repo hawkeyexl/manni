@@ -1,0 +1,4 @@
+cite:
+  repos:
+    api: ../api
+    sdk: ../sdk

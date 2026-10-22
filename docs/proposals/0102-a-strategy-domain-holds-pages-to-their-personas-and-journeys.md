@@ -1,4 +1,4 @@
-# 0100: A strategy domain holds pages to their personas and journeys
+# 0102: A strategy domain holds pages to their personas and journeys
 
 - **Status:** Implemented (#232)
 - **Serves:** Two people.
@@ -772,7 +772,7 @@ node dist/cli.js meta validate && node dist/cli.js term check && node dist/cli.j
 node dist/cli.js term write -f vale -o .vale/styles --check
 npm run docs:check-docevals && npm run docs:check-graph
 node dist/cli.js graph publish --collection site && node dist/cli.js graph check
-vale docs/proposals/0100-a-strategy-domain-holds-pages-to-their-personas-and-journeys.md docs/content-strategy docs/src/content/docs/strategy
+vale docs/proposals/0102-a-strategy-domain-holds-pages-to-their-personas-and-journeys.md docs/content-strategy docs/src/content/docs/strategy
 ```
 
 `meta validate` now covers the records. `docs:check-docevals` grades them

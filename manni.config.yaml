@@ -56,7 +56,7 @@ collections:
       # bookkeeping sits beside it and never reaches the published site.
       - file: "{page}.meta.yaml"
   # The content strategy, one record per audience, persona and journey
-  # (proposal 0100). `manni strategy check` holds every page's audiences:,
+  # (proposal 0102). `manni strategy check` holds every page's audiences:,
   # personas: and journeys: to these records. They are not published, so the
   # Docs workflow's `graph publish --collection site` leaves them out.
   - name: strategy

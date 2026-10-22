@@ -31,7 +31,7 @@ sample-questions:
 graph:
   label: Fix a failing check
   type: troubleshooting
-last-updated: 2026-10-21
+last-updated: 2026-10-22
 tags:
   - troubleshooting
   - citations
@@ -115,7 +115,7 @@ the entry's own line, in the manifest when a sidecar owns it.
 | [`source-moved-ambiguous`](#source-moved-ambiguous) | error | The cited lines now occur in more than one place. | Widen the range, then `update --accept --only <id>` |
 | [`source-changed`](#source-changed) | error | The cited lines are not what they were. | Read `--show-diff`, fix the sentence, then `update --accept --only <id>` |
 | [`source-never-true`](#source-never-true) | error | The pin held at no commit in the source's history. | Check the sentence, then `update --accept --only <id>` |
-| [`source-missing`](#source-missing) | error | The path names no tracked file, or an encrypted source cannot be decrypted. | Re-add against the new path; or fix `--root` or the key |
+| [`source-missing`](#source-missing) | error | The path names no tracked file, names an undeclared repo, or an encrypted source cannot be decrypted. | Re-add against the new path; or fix `--root` or the key |
 | [`claim-moved`](#claim-moved) | notice | The pinned page text sits at a different line. | `manni cite update` |
 | [`claim-moved-ambiguous`](#claim-moved-ambiguous) | warning | The pinned page text now occurs in more than one place. | Re-add over a range that occurs once |
 | [`claim-reanchored`](#claim-reanchored) | notice | The pinned words are unchanged, and only the layout around them moved. | `manni cite update` |
@@ -321,6 +321,24 @@ parentheses names the cause:
 - **`no tracked file matches; wrong --root?`.** The path decrypted, and no
   tracked file under the root has it. Point `--root` at the code checkout, or
   add the citation again against the new path.
+- **`no tracked file matches in sdk; wrong cite.repos.sdk?`.** The entry names
+  the `sdk` checkout, and no tracked file there has the decrypted path. Point
+  `cite.repos.sdk` at the sdk checkout, or add the citation again against the
+  new path.
+
+An entry whose `source.repo` names a checkout the run does not know is
+missing too. The status names the repo:
+
+```
+    ✗ retries   :28 current   sdk:src/client.ts:2 missing (no repo named sdk is declared)
+      Declare sdk under cite.repos in manni.config.yaml, or pass --repo sdk=<dir>.
+```
+
+The pages cite a second code checkout that this run has not been told about.
+Add the name under `cite.repos`, with the checkout's directory relative to the
+config file. Or pass `--repo sdk=../sdk` for one run, which is how CI usually
+supplies it. See
+[more than one checkout](/manni/cite/reference/configuration/#more-than-one-checkout).
 
 ## Claim-end rules
 
@@ -633,8 +651,8 @@ Don't guess and re-push. Run the exact check on your machine.
 <Aside type="tip" title="Check the same pages CI does">
   With the pages declared as a collection under `collections:` in
   `manni.config.yaml`, a bare `npx @hawkeyexl/manni cite check` from the repo
-  root checks the same pages CI does. If the sources live in another checkout, CI passes `--root`; do
-  the same. Keep the config in the run: without it, a page whose citations
+  root checks the same pages CI does. If the sources live in another checkout, CI passes `--root`
+  or `--repo`; do the same. Keep the config in the run: without it, a page whose citations
   live in a sidecar looks as though it had none.
 </Aside>
 
@@ -644,7 +662,7 @@ Don't guess and re-push. Run the exact check on your machine.
 | --- | --- |
 | `0` | No findings, or only warnings and notices. The check is green. |
 | `1` | At least one error-severity finding that is not in the baseline. This is the red check you came here to fix. For `update`, that a citation was skipped. |
-| `2` | An operational error. The check could not run. No inputs and no config, an unknown format, `update` under `--no-check-sources`, or a URL manifest that owns `citations`. The message is on stderr, prefixed `manni:`. |
+| `2` | An operational error. The check could not run. No inputs and no config, an unknown format, `update` under `--no-check-sources`, or a URL manifest that owns `citations`. Or a checkout the pages cite whose directory is missing, as `Repo directory not found`. The message is on stderr, prefixed `manni:`. |
 
 A `1` means fix the page or the pin. A `2` means fix the setup, or escalate
 to whoever configured the check.

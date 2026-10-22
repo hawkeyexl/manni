@@ -8,6 +8,8 @@ docs/src/content/docs/meta/reference/schemas/manni-citations.mdx:
     - path: src/meta/schemas/citations-strict/1.0.0.json
     - path: src/meta/schemas/citations/1.1.0.json
     - path: src/meta/schemas/citations-strict/1.1.0.json
+    - path: src/meta/schemas/citations/1.2.0.json
+    - path: src/meta/schemas/citations-strict/1.2.0.json
     - path: src/meta/core/schema-registry.ts
   eval-suite: meta
   evals:
@@ -21,47 +23,44 @@ docs/src/content/docs/meta/reference/schemas/manni-citations.mdx:
       grader: ai
   provenance:
     - generated-by: Claude Opus 5.5
-      lines: 5-21
-      integrity: sha256-aeea50f0d517ab6257bcc70864ca9fa4ad7a05575d481fd383dd36c11f21ca6d
+      lines: 2-21
+      integrity: sha256-f3cd9c23b4005d2bce6c1488b226eec8aedeb51d95f0c37975f9a8d3331ecda0
     - generated-by: Claude Opus 5.5
       lines: 29-30
       integrity: sha256-e35de401b3128816c9416d0bbf980ca3a437ccbab4b8108139bbec2b40458165
     - generated-by: Claude Opus 5.5
-      lines: 36-42
-      integrity: sha256-8d97960e04f335a41213d86d673ac566d9418461189aecb8daefdb985a45c743
+      lines: 36-72
+      integrity: sha256-1836fc9d809ae7768d2abd8e077cce2c0e6a91850a67bce67e4462e0602c054d
     - generated-by: Claude Opus 5.5
-      lines: 44-71
-      integrity: sha256-d1b4f014bd5a5e464f2d85804486fb9060e5a27289b2d162d72d1994222150fe
-    - generated-by: Claude Opus 5.5
-      lines: 75-110
+      lines: 76-111
       integrity: sha256-77d649a3ee82af85b6f2e849398e33f65d15b77d9f830fa9655ea9064d84e750
     - generated-by: Claude Opus 5.5
-      lines: 122-187
+      lines: 123-188
       integrity: sha256-8e7c693e64be13c720f321adf56d05710d172f2bc01c5c1116dcea61e252742e
     - generated-by: Claude Opus 5.5
-      lines: 210-227
-      integrity: sha256-5e0d5b64db7a5627a78ab1d9694063282c0513d10c70e738aa1de340f1a1a46b
+      lines: 211-232
+      integrity: sha256-75155f60611120f42b371d37b7449c2e128ec776a8024d9ca6c2e0cd228690cb
     - generated-by: Claude Opus 5.5
-      lines: 229
-      integrity: sha256-80b1e7ec4c342ecb7e00b8ef7c1d1f0eea6f632dde51518756da5bdef0948fd9
+      lines: 234-294
+      integrity: sha256-ae097377e5a0acbd931a2307adde74a8050fcdcc94a6d58b9717afe962ef0ad7
     - generated-by: Claude Opus 5.5
-      lines: 235-281
-      integrity: sha256-68c99008932787cf806ffb750b5ab6930baa60b68239d09d5d2db75af02c60e8
+      lines: 308-335
+      integrity: sha256-1cafbeadf1fd60727698805250222ce6b1e1b3236131a96db8b1d7bb799d2346
     - generated-by: Claude Opus 5.5
-      lines: 286-293
-      integrity: sha256-00ea4d6cd286243469940f90f4a58d07a6ebc7f9f2718ceb73e085e32cd09cf9
+      lines: 337-338
+      integrity: sha256-198c74aba04261bac22df94d29576b58d47780cae5ed91637e73f7eedac21108
     - generated-by: Claude Opus 5.5
-      lines: 307-309
-      integrity: sha256-4ef9021fb32a169a48899d263959b826877cee7489aff983f32700dce76bc99c
+      lines: 340
+      integrity: sha256-0611e239ff7234d3920912370207ae38af1c6061818a2ba5c9d277f16f460cad
     - generated-by: Claude Opus 5.5
-      lines: 311-330
-      integrity: sha256-122f93370dd3300a0bd4f11e3a7b61dd3ec322a63cf1712117537fd459cacd41
+      lines: 343-368
+      integrity: sha256-a15f70ebe562493045ff14316dab4ae43dc6ae51807f283a258fc64d33e7307b
     - generated-by: Claude Opus 5.5
-      lines: 332
-      integrity: sha256-d600ad5ea52ffb0e0a602945b9ff4ec463719771af43ee0d35ef91a55f68d95e
+      lines: 378-379
+      integrity: sha256-3845d238891e4028bb4b4c908b968bb82c473052c364ac9ee94f28fd2b6fccf7
     - generated-by: Claude Opus 5.5
-      lines: 342-346
-      integrity: sha256-e82367c2ae7eed60bef7bf0a0eb2860d64a6e6e2d1a75ae617ef049e170c6bae
+      lines: 382-384
+      integrity: sha256-a521e513efbdd485f65953fb13523734d98447694defd26da8afbed7cde633eb
   owner:
     - "@hawkeyexl"
   created: 2026-09-26

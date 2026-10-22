@@ -1,4 +1,4 @@
-# Demo beat sheet for manni strategy (proposal 0100)
+# Demo beat sheet for manni strategy (proposal 0102)
 
 - **Type:** feature demo, terminal session. No narration; captions only
   (LinkedIn autoplays muted).

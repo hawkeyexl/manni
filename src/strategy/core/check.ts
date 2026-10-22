@@ -1,5 +1,5 @@
 /**
- * `strategy check`'s rules (proposal 0100). Pure: it reads records and
+ * `strategy check`'s rules (proposal 0102). Pure: it reads records and
  * references and returns findings, so the command core owns every file and
  * the rules are tested on sets built inline.
  *

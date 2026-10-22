@@ -1,0 +1,2 @@
+Using manni.config.yaml (.)
+pages/limits.md: added timeout to frontmatter (claim at line 18, sha256-8c00bfdf…; source api:lib/limits.ts:2 "timeoutMs: 30_000,", sha256-4ba04f0f…, b0daa71)

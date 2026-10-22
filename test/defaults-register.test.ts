@@ -63,13 +63,13 @@ const STRICT_DEFAULTS = [
   "manni:lifecycle:1.0.0",
   "manni:lifecycle-strict:1.0.0",
   "manni:ai-context:1.2.0",
-  "manni:ai-context-strict:1.0.0",
+  "manni:ai-context-strict:1.2.0",
   "manni:evals:1.0.0",
   "manni:evals-strict:1.0.0",
   "manni:graph:1.0.0",
   "manni:graph-strict:1.0.0",
-  "manni:citations:1.1.0",
-  "manni:citations-strict:1.1.0",
+  "manni:citations:1.2.0",
+  "manni:citations-strict:1.2.0",
 ];
 
 /** A registered-schema table, for resolver cases that need no files. */
@@ -96,7 +96,7 @@ describe("the default set (0070)", () => {
       "manni:ai-context:1.2.0",
       "manni:evals:1.0.0",
       "manni:graph:1.0.0",
-      "manni:citations:1.1.0",
+      "manni:citations:1.2.0",
     ]);
   });
 });

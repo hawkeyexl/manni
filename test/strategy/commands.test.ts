@@ -1,5 +1,5 @@
 /**
- * The `manni strategy` command cores and reporters (proposal 0100), against
+ * The `manni strategy` command cores and reporters (proposal 0102), against
  * small trees written per test and the sidecar fixture.
  */
 import { execSync, spawnSync } from "node:child_process";

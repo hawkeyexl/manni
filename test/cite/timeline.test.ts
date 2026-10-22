@@ -281,6 +281,60 @@ describe.skipIf(!gitAvailable())("cite history (0092)", { timeout: 90_000 }, () 
     expect(withKey.run.summary).toMatchObject({ citations: 2, windows: 0, skipped: { encrypted: 0 } });
   });
 
+  describe("citations that name a repo (0100)", () => {
+    const PIN = `sha256-${"0".repeat(64)}`;
+    /** A page: the root entry `root`, then entries in other checkouts, each `{ id?, repo, file }`. */
+    function repoPage(text: string, others: readonly { id?: string; repo: string; file: string }[]): string {
+      const lines = ["---", "citations:"];
+      lines.push("  - id: root", "    source:", '      file: "src/r.ts"', "      lines: 1-2", `      integrity: ${hashRange(text, { start: 1, end: 2 })}`);
+      for (const o of others) {
+        if (o.id !== undefined) lines.push(`  - id: ${o.id}`);
+        lines.push(`  ${o.id === undefined ? "- " : "  "}source:`, `      repo: ${o.repo}`, `      file: ${o.file}`, "      lines: 2", `      integrity: ${PIN}`);
+      }
+      lines.push("---", "Pinned prose.", "");
+      return lines.join("\n");
+    }
+
+    /** Declares both repos at directories that are not there, so opening either would throw. */
+    function repoStory(others: Parameters<typeof repoPage>[1]): string {
+      const text = source("R");
+      const repo = makeTempRepo({
+        files: {
+          "manni.config.yaml": `${CONFIG}cite:\n  repos:\n    sdk: gone/sdk\n    api: gone/api\n`,
+          "src/r.ts": text,
+          "docs/page.md": repoPage(text, others),
+        },
+      });
+      dirs.push(repo);
+      commit(repo, "pin", { authorDate: at(0) });
+      writeFile(repo, "src/r.ts", source("R", (n) => (n === 1 ? "export const R_1 = 100;" : undefined)));
+      commit(repo, "change r", { authorDate: at(1) });
+      return repo;
+    }
+
+    it("walks the root entry as before, leaves the repo entries out, and names them once, sorted", async () => {
+      const repo = repoStory([
+        { id: "sdk-retries", repo: "sdk", file: "src/client.ts" },
+        { repo: "api", file: "lib/limits.ts" },
+      ]);
+      const { run, notices } = await history(repo, { noConfig: false });
+
+      expect([...windowsOf(run).keys()]).toEqual(["root"]);
+      expect(windowsOf(run).get("root")).toMatchObject({ rule: "source-changed", closed: null });
+      expect(notices).toEqual([
+        "cite history walks one repository, so 2 citations that name a repo are left out: api:lib/limits.ts:2, sdk-retries.",
+      ]);
+    });
+
+    it("says it in the singular, naming an id-less entry by its source", async () => {
+      const repo = repoStory([{ repo: "sdk", file: "src/client.ts" }]);
+      const { notices } = await history(repo, { noConfig: false });
+      expect(notices).toEqual([
+        "cite history walks one repository, so 1 citation that names a repo is left out: sdk:src/client.ts:2.",
+      ]);
+    });
+  });
+
   it("refuses stdin, a path outside git, an empty repository and a shallow clone", async () => {
     const { repo } = story();
     await expect(history(repo, { inputs: ["-"] })).rejects.toThrow(

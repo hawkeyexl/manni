@@ -20,8 +20,14 @@ docs/src/content/docs/cite/set-up/index.mdx:
       grader: ai
   provenance:
     - generated-by: Claude Fable 5.1
-      lines: 2-65
-      integrity: sha256-fa66286cb96e3d17a7e20b0d317df0e7511ce0d0b377861a8f338d2b2669a061
+      lines: 2-43
+      integrity: sha256-10951b40809ca197cd3396975168af5ee9a0c5fdc61cba1ef5f97f7038b90086
+    - generated-by: Claude Opus 5.5
+      lines: 44
+      integrity: sha256-7c4f1c500d5d74a677fae5d5d2fc2a691c7c8c5b668827af950cd530891efb71
+    - generated-by: Claude Fable 5.1
+      lines: 45-65
+      integrity: sha256-128b49370537d3c35dc15874f07532f0f1e5dd682ab1a95dadf0394b623b2b07
     - generated-by: Claude Opus 5.5
       lines: 66-68
       integrity: sha256-250b5b518d5ce8fe9ea27a2d9eb28948dcb3f6d79f1a8fef7ef2f0f79268c0e6

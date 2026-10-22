@@ -39,14 +39,13 @@ import {
   type NoUnit,
 } from "../core/claims.js";
 import { arrivalOf, historyOf } from "../core/classify.js";
-import { GIT_UNAVAILABLE_COMMIT, SHALLOW_RECOMMIT } from "../core/git.js";
+import { GIT_UNAVAILABLE_COMMIT, SHALLOW_RECOMMIT, checkoutNotice } from "../core/git.js";
 import { splitLines } from "../core/hash.js";
 import { claimWords, sharesSentence, wordShare } from "../core/history.js";
-import { mintCitation } from "../core/mint.js";
+import { mintSource } from "../core/mint.js";
 import { ManifestSet } from "../core/manifest.js";
 import { readPage } from "../core/page.js";
 import {
-  formatSrc,
   lineSpec,
   parseLines,
   parseSrc,
@@ -65,10 +64,12 @@ import { anchoredLines, markerIndent, offsetOfLine } from "../core/statements.js
 import { spliceEntryField, unifiedDiff } from "../core/write.js";
 import { CiteError } from "../errors.js";
 import type {
+  Checkout,
   Citation,
   CitationResult,
   CiteRule,
   ClaimEnd,
+  GitClient,
   LineSpec,
   ManifestChange,
   PageCitation,
@@ -846,6 +847,12 @@ class WrittenFiles {
 }
 
 /**
+ * `--recommit` without git: the refusal when the root has none, and the
+ * notice, after the repo, for a checkout `cite.repos` names that has none.
+ */
+const RECOMMIT_NEEDS_GIT = "--recommit needs git to verify recorded commits, and git is not available here.";
+
+/**
  * Citations counted as a summary counts them: an entry whose marker moved and
  * whose claim was re-pinned is one citation, not two.
  */
@@ -867,11 +874,23 @@ export async function runUpdate(opts: UpdateOptions): Promise<UpdateRun> {
   const only = opts.only !== undefined && opts.only.length > 0 ? new Set(opts.only) : undefined;
   const accept = opts.accept === true;
   const recommit = opts.recommit === true;
-  if (recommit && !(await git.available())) {
-    throw new CiteError(
-      "--recommit needs git to verify recorded commits, and git is not available here.",
-    );
-  }
+  if (recommit && !(await git.available())) throw new CiteError(RECOMMIT_NEEDS_GIT);
+  /**
+   * What the run says once, after the pages, beyond what `check` said: the
+   * notices one checkout earned, each prefixed with its repo (0100).
+   */
+  const also = new Set<string>();
+
+  /**
+   * The checkout an entry's source resolves in (0100). `check` already
+   * opened it: an entry whose repo nothing declares is `missing`, which
+   * nothing here re-mints, and `update` refuses to run without the sources.
+   */
+  const checkoutFor = async (result: CitationResult): Promise<Checkout> => {
+    const checkout = await pageOptions.checkouts?.(result.citation.source.repo);
+    if (checkout === undefined) throw new CiteError(`No checkout for ${result.source.src}.`);
+    return checkout;
+  };
 
   /**
    * Whether `commit` is outside the history of `head`. Only a client that can
@@ -879,7 +898,7 @@ export async function runUpdate(opts: UpdateOptions): Promise<UpdateRun> {
    * clone lacks commits that are in the history, so it cannot tell them from
    * a squash merge's orphans.
    */
-  const outsideHistory = async (commit: string, head: string): Promise<boolean> => {
+  const outsideHistory = async (git: GitClient, commit: string, head: string): Promise<boolean> => {
     if (git.shallow === undefined || git.isAncestor === undefined) return false;
     if (await git.shallow()) return false;
     return !(await git.isAncestor(commit, head));
@@ -911,6 +930,14 @@ export async function runUpdate(opts: UpdateOptions): Promise<UpdateRun> {
     const recorded = result.citation.source["commit-sha"];
     const path = result.source.resolvedPath;
     if (recorded === undefined || path === undefined) return undefined;
+    // The entry's own checkout. The root without git stopped the run above; a
+    // repo without git leaves its entries as they are, and says so once.
+    const checkout = await checkoutFor(result);
+    const { git } = checkout;
+    if (!(await git.available())) {
+      also.add(checkoutNotice(checkout.repo, RECOMMIT_NEEDS_GIT));
+      return undefined;
+    }
     const head = await git.head();
     if (head === null || head === recorded) return undefined;
     const range = sourceRange(result.citation.source);
@@ -920,7 +947,7 @@ export async function runUpdate(opts: UpdateOptions): Promise<UpdateRun> {
     // containment is one `git show` per commit and path. A commit outside the
     // history is re-recorded whatever it holds, so its file is never read.
     let because: RecommitReason;
-    if (await outsideHistory(recorded, head)) because = "not-in-history";
+    if (await outsideHistory(git, recorded, head)) because = "not-in-history";
     else {
       const was = await historyOf(git, recorded, path, range, pin, key, undefined);
       if (was.kind !== "never-true") return undefined;
@@ -1023,6 +1050,8 @@ export async function runUpdate(opts: UpdateOptions): Promise<UpdateRun> {
       const went = parseSrc(to).path;
       const crossFile = went !== result.citation.source.file;
       if (at !== undefined || result.citation.source.lines === undefined) {
+        // Resolved outside the try: a checkout that will not open stops the run.
+        const checkout = await checkoutFor(result);
         try {
           if (crossFile) {
             // Nothing to re-mint: the window hashed to the pin the entry
@@ -1040,15 +1069,11 @@ export async function runUpdate(opts: UpdateOptions): Promise<UpdateRun> {
             // A pin whose `lines` were rewritten under an older `commit-sha`
             // names a range that commit may not even reach, and the next
             // command to ask for history reads it as a claim that never held.
-            const minted = await mintCitation({
-              root: run.root,
-              src: to,
+            // The entry's own range, at the lines it moved to.
+            const target = { ...sourceRange(result.citation.source), start: at.start, end: at.end };
+            const minted = await mintSource(target, checkout, {
               ...(run.key === undefined ? {} : { key: run.key }),
               ...(recorded === undefined ? { commitSha: false as const } : {}),
-              gitClient: git,
-              ...(pageOptions.sourceIndex === undefined
-                ? {}
-                : { sourceIndex: pageOptions.sourceIndex }),
             });
             const commit = minted.source["commit-sha"];
             // An entry that records a commit needs one to advance to. Without
@@ -1208,28 +1233,24 @@ export async function runUpdate(opts: UpdateOptions): Promise<UpdateRun> {
       // Where the in-range search found the old first and last line. Accepting
       // the recorded range instead would hash a span the sentence never rested
       // on: an insertion inside a cited range pushes its end out of it.
-      const stored = parseSrc(result.source.src);
+      const stored = sourceRange(result.citation.source);
       const span =
         result.source.newLines === undefined ? undefined : parseLines(result.source.newLines);
       const at =
         span === undefined || (span.start === stored.start && span.end === stored.end)
           ? undefined
           : { ...stored, start: span.start, end: span.end };
+      // Resolved outside the try: a checkout that will not open stops the run.
+      const checkout = await checkoutFor(result);
       try {
         // The source as the entry spells it: an encrypted one stays encrypted,
         // under the key it decrypted with, and mint keys the pin accordingly.
         // HEAD is recorded only where the entry already records a commit.
-        const minted = await mintCitation({
-          root: run.root,
-          src: at === undefined ? result.source.src : formatSrc(at),
+        const minted = await mintSource(at ?? stored, checkout, {
           ...(run.key === undefined ? {} : { key: run.key }),
           ...(result.citation.source["commit-sha"] === undefined
             ? { commitSha: false as const }
             : {}),
-          gitClient: git,
-          ...(pageOptions.sourceIndex === undefined
-            ? {}
-            : { sourceIndex: pageOptions.sourceIndex }),
         });
         out.push({
           kind: "source-accepted",
@@ -1564,21 +1585,43 @@ export async function runUpdate(opts: UpdateOptions): Promise<UpdateRun> {
       },
     });
   } else for (const changed of manifests.changed()) record(changed);
+  // Each checkout answers for itself, and says each notice once, after its
+  // repo (0100); the root's checkout is the run's own git, so the root says
+  // its notices bare, as before. Pages and reports are pushed in step, one
+  // each per page.
+  const checkouts = async (repos: Iterable<string | undefined>): Promise<Checkout[]> => {
+    const out: Checkout[] = [];
+    for (const repo of new Set(repos)) {
+      const checkout = await pageOptions.checkouts?.(repo);
+      if (checkout !== undefined) out.push(checkout);
+    }
+    return out;
+  };
   // A re-mint records HEAD when git has one. Where git is not there the entry
-  // is re-pinned without a commit, and the run says so once.
-  const reminted = pages.some((page) =>
-    page.rewritten.some((r) => r.reason === "accepted" && r.end === "source"),
+  // is re-pinned without a commit, and the run says so once per checkout.
+  const reminted = pages.flatMap((page, i) =>
+    page.rewritten
+      .filter((r) => r.reason === "accepted" && r.end === "source")
+      .map((r) => reports[i]?.citations.find((c) => c.origin.index === r.index)?.citation.source.repo),
   );
-  const also: string[] = [];
-  if (reminted && !(await git.available())) also.push(GIT_UNAVAILABLE_COMMIT);
+  for (const checkout of await checkouts(reminted)) {
+    if (!(await checkout.git.available())) also.add(checkoutNotice(checkout.repo, GIT_UNAVAILABLE_COMMIT));
+  }
   // A shallow clone ran only the containment test, and says so whatever it
   // found, because what it could not check is the point. The guard is the
   // one `outsideHistory` uses, so the notice fires exactly when that test
-  // would have run and could not.
-  if (recommit && git.shallow !== undefined && git.isAncestor !== undefined && (await git.shallow())) {
-    also.push(SHALLOW_RECOMMIT);
+  // would have run and could not. The root says it as before; each checkout
+  // an entry names says it for itself.
+  if (recommit) {
+    const named = reports.flatMap((page) => page.citations.map((c) => c.citation.source.repo));
+    for (const checkout of await checkouts([undefined, ...named])) {
+      const { git: held } = checkout;
+      if (held.shallow !== undefined && held.isAncestor !== undefined && (await held.shallow())) {
+        also.add(checkoutNotice(checkout.repo, SHALLOW_RECOMMIT));
+      }
+    }
   }
-  sayNotices(reports, opts.onNotice, also);
+  sayNotices(reports, opts.onNotice, [...also]);
 
   const rewritten = pages.reduce((n, page) => n + citationsIn(page.rewritten), 0);
   // A refused claim counts as skipped: `--accept` was asked for it and the

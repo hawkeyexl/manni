@@ -14,6 +14,7 @@
  */
 import type {
   CheckPageOptions,
+  Checkout,
   CitationFinding,
   CitationResult,
   CiteRule,
@@ -37,6 +38,7 @@ import {
   GIT_UNAVAILABLE_HISTORY,
   PAGE_HISTORY_UNAVAILABLE,
   SOURCE_HISTORY_UNAVAILABLE,
+  checkoutNotice,
   gitClient,
 } from "./git.js";
 import { claimHistory, refineClaim } from "./history.js";
@@ -241,16 +243,21 @@ export async function checkCitations(
   const index = checkSources
     ? (opts.sourceIndex ?? (await buildSourceIndex(opts.root, { gitClient: client })))
     : undefined;
+  // The root is the checkout an entry with no `source.repo` resolves in; a
+  // repo entry resolves in the one its name opens, and nowhere else (0100).
+  const rootCheckout: Checkout | undefined =
+    index === undefined ? undefined : { root: opts.root, index, git: client };
+  const checkoutOf = async (repo: string | undefined): Promise<Checkout | undefined> =>
+    repo === undefined ? rootCheckout : opts.checkouts?.(repo);
   const classifyOpts =
     index === undefined
       ? undefined
       : ({
-          root: opts.root,
-          index,
-          git: client,
           ...(opts.key === undefined ? {} : { key: opts.key }),
           ...(opts.sourceCache === undefined ? {} : { cache: opts.sourceCache }),
-        } satisfies Parameters<typeof classifyCitation>[1]);
+        } satisfies Omit<Parameters<typeof classifyCitation>[1], keyof Checkout>);
+  /** The checkout each entry resolved in, by repo, for the notices below. */
+  const used = new Map<string | undefined, Checkout>();
 
   // A quote is judged page-side even with the sources off, so this stands
   // whether or not there is an index; `quoteFindings` reads a source only
@@ -276,10 +283,21 @@ export async function checkCitations(
       { page: read, entry, claim: claimEnd(read, entry, lines, split), lines },
       { path: read.file, git: pageGit, ...(opts.pageCommitCap === undefined ? {} : { cap: opts.pageCommitCap }), ...(opts.owned === undefined ? {} : { manifest: opts.owned.file }) },
     );
-    const source: SourceEnd =
-      classifyOpts === undefined
-        ? skippedSource(entry)
-        : await classifyCitation(entry, classifyOpts);
+    const repo = entry.citation.source.repo;
+    const checkout = classifyOpts === undefined ? undefined : await checkoutOf(repo);
+    if (checkout !== undefined) used.set(repo, checkout);
+    let source: SourceEnd;
+    if (classifyOpts === undefined) source = skippedSource(entry);
+    else if (checkout === undefined) source = unknownRepo(entry);
+    else {
+      source = await classifyCitation(entry, {
+        ...classifyOpts,
+        root: checkout.root,
+        index: checkout.index,
+        git: checkout.git,
+      });
+    }
+    if (repo !== undefined) source.repo = repo;
     const result: CitationResult = {
       citation: entry.citation,
       origin: entry.origin,
@@ -290,7 +308,9 @@ export async function checkCitations(
     };
     results.push(result);
 
-    for (const found of await quoteFindings(quoteInput, entry, result)) {
+    const quoteFrom =
+      checkout === undefined ? quoteInput : { ...quoteInput, root: checkout.root, index: checkout.index };
+    for (const found of await quoteFindings(quoteFrom, entry, result)) {
       const level = severity[found.rule];
       if (level === "off") continue;
       const finding: CitationFinding = {
@@ -348,13 +368,25 @@ export async function checkCitations(
   // read it through, says why its verdicts are plainer. With the sources off
   // nothing is classified, but a claim end still is, and it still wants the
   // page's past.
-  const wantsSourceHistory =
-    checkSources &&
-    (read.citations.some(({ citation }) => citation.source["commit-sha"] !== undefined) ||
-      results.some((r) => r.source.status !== "current"));
+  //
+  // Each checkout says so for itself, prefixed with its repo, so a run hears
+  // once per checkout that lacks git; the root's stays bare (0100).
+  const wantsSourceHistory = checkSources
+    ? new Set(
+        results
+          .filter((r) => r.citation.source["commit-sha"] !== undefined || r.source.status !== "current")
+          .map((r) => r.citation.source.repo),
+      )
+    : new Set<string | undefined>();
+  let rootSaid = false;
+  for (const repo of wantsSourceHistory) {
+    const checkout = used.get(repo);
+    if (checkout === undefined || (await checkout.git.available())) continue;
+    notices.push(checkoutNotice(repo, GIT_UNAVAILABLE_HISTORY));
+    if (repo === undefined) rootSaid = true;
+  }
   const wantsClaimHistory = results.some((r) => r.claim?.status === "changed");
-  if (wantsSourceHistory && !(await client.available())) notices.push(GIT_UNAVAILABLE_HISTORY);
-  else if (wantsClaimHistory && !(await pageGit.available())) {
+  if (!rootSaid && wantsClaimHistory && !(await pageGit.available())) {
     notices.push(GIT_UNAVAILABLE_HISTORY);
   }
   // A claim whose walk ran out of commits: the rest of the history would have
@@ -365,9 +397,10 @@ export async function checkCitations(
 
   // A source whose walk ran out of commits: the rest of the history would
   // have told a pin that never held from one that changed (0097).
-  if (results.some((r) => r.source.historyAvailable === false)) {
-    notices.push(SOURCE_HISTORY_UNAVAILABLE);
-  }
+  const cutShort = new Set(
+    results.filter((r) => r.source.historyAvailable === false).map((r) => r.citation.source.repo),
+  );
+  for (const repo of cutShort) notices.push(checkoutNotice(repo, SOURCE_HISTORY_UNAVAILABLE));
   // Two forms, because "the file" is the wrong noun for a scan across the
   // files a commit touched. A run raises each at most once, and both when it
   // hit both.
@@ -413,6 +446,14 @@ async function withClaimHistory(
   const input = { page: now.page, entry: now.entry, claim, ...read };
   const history = await claimHistory(input);
   return refineClaim({ ...input, lines: now.lines, history });
+}
+
+/** An entry whose `source.repo` nothing declares: `missing`, and never read (0100). */
+function unknownRepo(entry: PageCitation): SourceEnd {
+  const { source } = entry.citation;
+  const out: SourceEnd = { src: spellSource(source), status: "missing", missingReason: "unknown-repo" };
+  if (source["commit-sha"] !== undefined) out.commitSha = source["commit-sha"];
+  return out;
 }
 
 /** With `--no-check-sources` no file is read, so every source end is `skipped`. */

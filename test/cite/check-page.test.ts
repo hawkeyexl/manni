@@ -391,6 +391,34 @@ describe("checkCitations", () => {
     expect(sourceStatuses(report)).toEqual(["current"]);
   });
 
+  it("with no checkouts given, a repo entry is undeclared and a root entry resolves as before (0100)", async () => {
+    const report = await page(
+      inline(
+        [
+          "  - id: local",
+          "    source:",
+          "      file: src/limits.ts",
+          "      lines: 2",
+          `      integrity: ${PIN_L2}`,
+          "  - id: remote",
+          "    source:",
+          "      repo: sdk",
+          "      file: src/limits.ts",
+          "      lines: 2",
+          `      integrity: ${PIN_L2}`,
+        ],
+        ["Body."],
+      ),
+    );
+    expect(report.citations.map((c) => [c.source.src, c.source.repo, c.source.status, c.source.missingReason])).toEqual([
+      ["src/limits.ts:2", undefined, "current", undefined],
+      ["sdk:src/limits.ts:2", "sdk", "missing", "unknown-repo"],
+    ]);
+    expect(messages(report)).toEqual([
+      "missing (no repo named sdk is declared). Declare sdk under cite.repos in manni.config.yaml, or pass --repo sdk=<dir>.",
+    ]);
+  });
+
   it("takes a prebuilt source index, and judges the claim end regardless", async () => {
     const report = await check("current.md", {
       sourceIndex: { files: () => [], has: () => false },

@@ -28,7 +28,7 @@ The `family/` section is an eleventh, and it is not a domain. It documents the t
 
 The `test/` section is the twelfth, and the eleventh domain. It serves Devin (D17), who gates the docs' procedure tests with the family's contract. It also serves Maya, who runs the same tests on her machine and reads the failing page and line. Proposal 0085 added the domain. It runs Doc Detective, so it is not a fold-in and brought no strategy of its own. Its content set is after `tracevals/`.
 
-The `strategy/` section is the thirteenth, and the twelfth domain. It serves Sara (S17), who holds the pages to the audiences, personas and journeys she keeps as records. It also serves Theo (T1), who fixes the check that names his page. Proposal 0100 added the domain. Its records are this folder's `audiences/`, `personas/` and `journeys/`. Its content set is last, after `test/`.
+The `strategy/` section is the thirteenth, and the twelfth domain. It serves Sara (S17), who holds the pages to the audiences, personas and journeys she keeps as records. It also serves Theo (T1), who fixes the check that names his page. Proposal 0102 added the domain. Its records are this folder's `audiences/`, `personas/` and `journeys/`. Its content set is last, after `test/`.
 
 ---
 

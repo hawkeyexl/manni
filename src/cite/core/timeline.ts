@@ -94,6 +94,8 @@ export interface Timeline {
   citations: number;
   /** Encrypted citations skipped for want of a key. */
   encrypted: number;
+  /** Citations left out because they name a repo (proposal 0100): each by id, else its spelled source, sorted. */
+  repos: string[];
   /** Set when an older commit's config did not load: the walk read nothing before `start`. */
   unread: boolean;
 }
@@ -190,6 +192,7 @@ export async function buildTimeline(input: TimelineInput): Promise<Timeline> {
       windows: walk.windows(),
       citations: walk.seen.size,
       encrypted: walk.encrypted.size,
+      repos: [...walk.repos].sort(),
       unread,
     };
   } finally {
@@ -208,6 +211,7 @@ interface PageEntries {
 class Walk {
   readonly seen = new Set<string>();
   readonly encrypted = new Set<string>();
+  readonly repos = new Set<string>();
   private readonly open = new Map<string, OpenWindow>();
   private closed: TimelineWindow[] = [];
   private readonly states = new Map<string, PinState>();
@@ -236,6 +240,7 @@ class Walk {
     this.pages.clear();
     this.seen.clear();
     this.encrypted.clear();
+    this.repos.clear();
     this.configBlob = null;
   }
 
@@ -410,6 +415,12 @@ class Walk {
         const id = entry.citation.id ?? `/citations/${String(entry.origin.index)}`;
         const key = `${page.label}\0${id}`;
         if (present.has(key)) continue;
+        // The walk reads one repository's history, so an entry in another
+        // checkout is left out before anything opens it.
+        if (source.repo !== undefined) {
+          this.repos.add(entry.citation.id ?? spellSource(source));
+          continue;
+        }
         const range = sourceRange(source);
         const resolved = resolveSourcePath(range, this.input.key);
         if ("reason" in resolved && resolved.reason === "no-key") {

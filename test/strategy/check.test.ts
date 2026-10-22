@@ -1,5 +1,5 @@
 /**
- * `strategy check`'s rules (proposal 0100) on sets built inline: each rule
+ * `strategy check`'s rules (proposal 0102) on sets built inline: each rule
  * fires, the gates hold, and the messages say what to do.
  */
 import { describe, expect, it } from "vitest";

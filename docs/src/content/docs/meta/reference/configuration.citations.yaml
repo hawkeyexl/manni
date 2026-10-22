@@ -1425,9 +1425,9 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         integrity: sha256-a0445253f21233dd09149c4dcbb9ca1f871514f2a509d21ee22874f7f3acf86b
       source:
         file: src/meta/core/schema-registry.ts
-        lines: 1198-1206
+        lines: 1197-1205
         integrity: sha256-0fdd2bc93eb0acbc84d62eaaf5f1c7ec2795441da58714327642a7d7ee77c36c
-        commit-sha: bfd040c52b77a44f328fd41ea0b6d454972a39d5
+        commit-sha: 7de49f7ecc82d73ec615c863e57ffd0a0a57b809
     - id: offline-flag-is-per-run
       claim:
         integrity: sha256-50cc1fbd993bc5e2a23e9cdb9373a16358550f893478fc626477be551f7abcc7
@@ -2445,17 +2445,17 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         integrity: sha256-3b544fbcb4903b372ecb6730e1430664a7fdd3fee32b4031540f6d20088577eb
       source:
         file: src/shared/cli-options.ts
-        lines: 93-101
+        lines: 75-83
         integrity: sha256-9a9e584e1117c7f7d84771e3a767679c4d89baf00eb6a4fb3ae3d83e2af9bd6d
-        commit-sha: bfd040c52b77a44f328fd41ea0b6d454972a39d5
+        commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
     - id: config-line-goes-to-stderr-for-machine-formats
       claim:
         integrity: sha256-be9a9b8e487200d377443bfaadcd51ac07163746a9c77b1be6210ed2a15bfc82
       source:
         file: src/shared/cli-options.ts
-        lines: 97-101
+        lines: 79-83
         integrity: sha256-27039292aaddb055cb3f2b71bcb12fbb0b62cec484939453bf9b536b1fde028e
-        commit-sha: bfd040c52b77a44f328fd41ea0b6d454972a39d5
+        commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
     - id: first-config-found-wins-and-none-are-merged
       claim:
         integrity: sha256-6ffa97e9c04a3fedb2b5804231a3409843488a67aee369168115882f91a239c2

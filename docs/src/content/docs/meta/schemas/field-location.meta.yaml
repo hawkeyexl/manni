@@ -58,8 +58,8 @@ docs/src/content/docs/meta/schemas/field-location.mdx:
       lines: 474-475
       integrity: sha256-b15151b08980db04588786556f4a9b6a3ef83f72a4921bdc0b9e7e7290ab77a5
     - generated-by: Claude Opus 5.5
-      lines: 478
-      integrity: sha256-d874f3580c4ae12526718d4b40d682986cdb8bf7162f6cf279fa5bf6797c79f0
+      lines: 477-478
+      integrity: sha256-c6a2092569cf7ee5a3e5e9317a5db2ec82d8059399367115b154d99e6682b7ff
     - generated-by: Claude Opus 5
       lines: 485-499
       integrity: sha256-45df1d179bed465870ab26a19e55bf1ad51bc56ed2d116ebfce1137a556ec2a4

@@ -1,7 +1,7 @@
 /**
  * The `strategy` domain's commander program. Mounted by `src/cli.ts` under
  * `manni strategy`; no entry point of its own. The verbs are `list`, `get` and
- * `check` (proposal 0100), and there is no default subcommand.
+ * `check` (proposal 0102), and there is no default subcommand.
  *
  * Follows clig.dev as the family does: primary output to stdout, diagnostics
  * to stderr, colour only on a TTY and never under `NO_COLOR`/`--no-color`,

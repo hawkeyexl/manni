@@ -1,0 +1,9 @@
+Using manni.config.yaml (.)
+[31m✗[39m pages/limits.md
+    [32m✓[39m [36mtimeout[39m   :28 current   api:lib/limits.ts:2 current
+    [31m✗[39m [36mretries[39m   :30 current   sdk:src/client.ts:2 changed since ce9ce76, 1 commit
+      Check the sentence against the source, then run manni cite update --accept --only retries.
+      [2mmanni:cite source-changed: The cited lines are not what they were.[22m
+      [2mGuide: https://hawkeyexl.github.io/manni/cite/fix/#source-changed[22m
+
+[31m1 file checked, 0 passed, 1 failed, 1 finding[39m

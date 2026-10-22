@@ -1,5 +1,5 @@
 /**
- * The strategy domain's barrel (proposal 0100). The umbrella mounts
+ * The strategy domain's barrel (proposal 0102). The umbrella mounts
  * `buildProgram`; nothing outside the domain imports anything else.
  */
 export { buildProgram } from "./cli.js";

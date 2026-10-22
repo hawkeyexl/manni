@@ -1,4 +1,4 @@
-/** Rule ids, default levels and guidance for `strategy check` (proposal 0100). */
+/** Rule ids, default levels and guidance for `strategy check` (proposal 0102). */
 import type { Guidance } from "../../shared/guidance.js";
 import { STRATEGY_RULES, type StrategyRule, type StrategySeverity } from "../types.js";
 

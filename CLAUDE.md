@@ -144,7 +144,7 @@ Key layers:
   - `src/site/cli.ts`: thin commander wrapper exported as `buildProgram()`
     and mounted by `src/cli.ts`. No entry point of its own.
 - `src/strategy/`: the content-strategy domain, `manni strategy list`, `get`
-  and `check` (proposal 0100). A record is a page declaring `type: audience`,
+  and `check` (proposal 0102). A record is a page declaring `type: audience`,
   `type: persona` or `type: journey`, and `check` holds each page's
   `audiences:`, `personas:` and `journeys:` to the records.
   - `src/strategy/core/`: the `strategy:` config loader, the set loader, which

@@ -1,0 +1,6 @@
+Using manni.config.yaml (.)
+[32m✓[39m pages/limits.md
+    [32m✓[39m [36mtimeout[39m   :28 current   api:lib/limits.ts:2 current
+    [32m✓[39m [36mretries[39m   :30 current   sdk:src/client.ts:2 current
+
+[32m1 file checked, 1 passed, 0 failed, 0 findings[39m

@@ -83,9 +83,9 @@ docs/src/content/docs/meta/schemas/versioning.mdx:
         integrity: sha256-8d4b7b7cfd020313de01f1ed856cbc929ad665e5c342a0186293651320621f29
       source:
         file: src/meta/core/schema-registry.ts
-        lines: 606
+        lines: 605
         integrity: sha256-f5e3a939a781ffcfd02b1e0b1fc055d28d3a1ed1a39efbe53a978870587c0b1d
-        commit-sha: bfd040c52b77a44f328fd41ea0b6d454972a39d5
+        commit-sha: 7de49f7ecc82d73ec615c863e57ffd0a0a57b809
     - id: builtin-forks-to-a-local-copy
       claim:
         integrity: sha256-7888cd94054ec3a216d12730105adcf31bd6554656a19299f1d93869a7938395
@@ -107,9 +107,9 @@ docs/src/content/docs/meta/schemas/versioning.mdx:
         integrity: sha256-a411f26526e82221c19b6812a11d0e064fa4cdc98f9e3afe8e35814a5895ad66
       source:
         file: src/meta/core/schema-registry.ts
-        lines: 93-143
+        lines: 95-145
         integrity: sha256-b70ffb8c7c31cf749ddc88c0c2f42d247087fa2bc804f8efa873264a6215c179
-        commit-sha: bfd040c52b77a44f328fd41ea0b6d454972a39d5
+        commit-sha: 7de49f7ecc82d73ec615c863e57ffd0a0a57b809
     - id: alter-adds-the-key-and-backfills
       claim:
         lines: 128

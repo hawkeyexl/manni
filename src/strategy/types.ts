@@ -1,6 +1,6 @@
 /**
  * The strategy domain's records, references, findings and config (proposal
- * 0100). A record is a page declaring `type: audience`, `type: persona` or
+ * 0102). A record is a page declaring `type: audience`, `type: persona` or
  * `type: journey`. A reference is a value of a page's `audiences:`,
  * `personas:` or `journeys:`, read through meta's merged view so a value in a
  * `{page}.meta.yaml` counts.

@@ -192,7 +192,10 @@ export function removeLine(content: string, line: number): string {
  * absent optional left out rather than written as `null`.
  */
 export function entryObject(citation: Citation): Record<string, unknown> {
-  const source: Record<string, unknown> = { file: citation.source.file };
+  const source: Record<string, unknown> = {};
+  // Which checkout first, then which file in it (0100).
+  if (citation.source.repo !== undefined) source.repo = citation.source.repo;
+  source.file = citation.source.file;
   if (citation.source.lines !== undefined) source.lines = citation.source.lines;
   source.integrity = citation.source.integrity;
   if (citation.source["commit-sha"] !== undefined) {

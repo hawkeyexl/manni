@@ -20,15 +20,17 @@ export function shortCommit(commit: string): string {
 }
 
 /**
- * `~AQx7…:2`: an encrypted source, abbreviated, with its line suffix kept. A
- * plain path is spelled in full, because that is what a reader has to find.
+ * `~AQx7…:2`, `sdk:~AQx7…:2`: an encrypted source, abbreviated, with its repo
+ * and line suffix kept. A plain path is spelled in full, because that is what
+ * a reader has to find.
  */
 export function shortSrc(src: string): string {
-  if (!src.startsWith("~")) return src;
-  const colon = src.indexOf(":");
-  const token = colon === -1 ? src : src.slice(0, colon);
-  const lines = colon === -1 ? "" : src.slice(colon);
-  return token.length <= 5 ? src : `${token.slice(0, 5)}…${lines}`;
+  const m = /^((?:[a-z0-9][a-z0-9-]*:)?)(~[^:]*)(.*)$/.exec(src);
+  const repo = m?.[1];
+  const token = m?.[2];
+  const lines = m?.[3];
+  if (repo === undefined || token === undefined || lines === undefined || token.length <= 5) return src;
+  return `${repo}${token.slice(0, 5)}…${lines}`;
 }
 
 /** The widest a quoted line of a file is printed at. */
@@ -55,8 +57,8 @@ export function spellAt(lines: PageLines): string {
     : `lines ${String(lines.start)}-${String(lines.end)}`;
 }
 
-/** `a`, `a and b`, `a, b and c`: a list as a sentence reads it. */
-export function listOf(values: readonly string[]): string {
+/** `a`, `a and b`, `a, b and c`: a list as a sentence reads it, or with `or`. */
+export function listOf(values: readonly string[], conjunction: "and" | "or" = "and"): string {
   if (values.length <= 1) return values.join("");
-  return `${values.slice(0, -1).join(", ")} and ${values[values.length - 1] ?? ""}`;
+  return `${values.slice(0, -1).join(", ")} ${conjunction} ${values[values.length - 1] ?? ""}`;
 }

@@ -1,0 +1,29 @@
+WEBVTT
+
+NOTE Captions are burned into cite-repos-1x1.mp4 (LinkedIn autoplays muted). This sidecar carries the same text for players and for hosts that accept a caption track. Silent video: there is no narration and no sound, and the terminal text is in the transcript.
+
+1
+00:00:00.000 --> 00:00:14.600
+One root per run
+The page cites api and sdk. Either --root fails the other pin, exit 1.
+
+2
+00:00:14.600 --> 00:00:19.933
+Name each checkout
+One key in manni.config.yaml. cite.repos names each checkout.
+
+3
+00:00:19.933 --> 00:00:27.500
+One run, both pins
+Each pin resolves in its own checkout, printed as api: and sdk:. Exit 0.
+
+4
+00:00:27.500 --> 00:00:33.867
+The SDK changes
+A commit in sdk moves the pinned line from 3 attempts to 5.
+
+5
+00:00:33.867 --> 00:00:43.467
+The stale sentence
+Only retries reports, in sdk, with the commit it changed since. Exit 1.
+

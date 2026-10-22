@@ -111,10 +111,23 @@ function isEnoent(error: unknown): boolean {
  * refusal reads the same on each.
  */
 export async function sourceIndexFor(root: string, client: GitClient): Promise<SourceIndex> {
+  return indexOr(root, client, `Root directory not found: ${root}. Fix --root, or cite.root in manni.config.yaml.`);
+}
+
+/** The same, for the checkout `cite.repos` or `--repo` names `name` (proposal 0100). */
+export async function repoIndexFor(name: string, dir: string, client: GitClient): Promise<SourceIndex> {
+  return indexOr(
+    dir,
+    client,
+    `Repo directory not found: ${dir} (${name}). Fix --repo ${name}=<dir>, or cite.repos.${name} in manni.config.yaml.`,
+  );
+}
+
+async function indexOr(dir: string, client: GitClient, notFound: string): Promise<SourceIndex> {
   try {
-    return await buildSourceIndex(root, { gitClient: client });
+    return await buildSourceIndex(dir, { gitClient: client });
   } catch (error) {
-    if (isEnoent(error)) throw new CiteError(`Root directory not found: ${root}. Fix --root, or cite.root in manni.config.yaml.`);
+    if (isEnoent(error)) throw new CiteError(notFound);
     throw error;
   }
 }

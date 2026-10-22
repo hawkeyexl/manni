@@ -7,7 +7,8 @@
  * shared loader parses and `resolveCiteRun` selects from. Unknown keys, rules
  * or levels are errors that name the supported keys and never echo a value.
  * Root resolution: `--root` (cwd-relative) > `cite.root` > git root > cwd,
- * with a notice on the last fallback. The encryption key is the family's, not
+ * with a notice on the last fallback. Repos (proposal 0100): `--repo`
+ * (cwd-relative) > `cite.repos` (config-dir relative), per name. The encryption key is the family's, not
  * a `cite:` key: `MANNI_ENCRYPTION_KEY` > the top-level `encryptionKey:` >
  * none, resolved in src/shared/encryption-key.ts (proposal 0045).
  */
@@ -31,6 +32,7 @@ import {
   type CiteSeverity,
   type LoadedCiteConfig,
 } from "../types.js";
+import { REPO_PATTERN } from "./range.js";
 import { isCiteRule } from "./severity.js";
 
 export const CITE_SECTION = "cite";
@@ -42,6 +44,7 @@ const CONFIG_KEYS: readonly (keyof CiteConfig)[] = [
   "allowEmpty",
   "respectGitignore",
   "root",
+  "repos",
   "baseline",
   "checkSources",
   "severity",
@@ -146,6 +149,51 @@ function isMapping(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
+/** How a bad repo name is described, after what the name is. */
+const REPO_NAME_RULE = "must be lowercase letters, digits and hyphens, starting with a letter or digit";
+
+/**
+ * `cite.repos`: a name each entry's `source.repo` may give, mapped to that
+ * checkout's directory as written (proposal 0100). A value is never echoed.
+ */
+function parseRepos(value: unknown, source: string): Record<string, string> {
+  if (!isMapping(value)) throw wrongType("repos", "a mapping", source);
+  const repos: Record<string, string> = {};
+  for (const [name, dir] of Object.entries(value)) {
+    if (!REPO_PATTERN.test(name)) {
+      throw new CiteError(`cite.repos key "${name}" in ${source} ${REPO_NAME_RULE}.`);
+    }
+    repos[name] = asString(dir, `repos.${name}`, source);
+  }
+  return repos;
+}
+
+/**
+ * Split the repeatable `--repo <name=dir>` into name -> dir, the directory as
+ * typed. The first `=` splits, so a directory may hold one; nothing splits on
+ * a comma. `toError` is the calling tool's error class, so a bad value exits 2
+ * from whichever domain took the flag.
+ */
+export function parseRepoFlags(
+  values: readonly string[],
+  toError: (message: string) => Error,
+): Record<string, string> {
+  const repos: Record<string, string> = {};
+  for (const value of values) {
+    const eq = value.indexOf("=");
+    const name = eq === -1 ? "" : value.slice(0, eq);
+    const dir = eq === -1 ? "" : value.slice(eq + 1);
+    if (name === "" || dir === "") {
+      const hint = REPO_PATTERN.test(value) ? `${value}=../${value}` : `<name>=${value}`;
+      throw toError(`--repo "${value}" is not name=dir. Use --repo ${hint}.`);
+    }
+    if (!REPO_PATTERN.test(name)) throw toError(`--repo name "${name}" ${REPO_NAME_RULE}.`);
+    if (Object.hasOwn(repos, name)) throw toError(`--repo names ${name} twice.`);
+    repos[name] = dir;
+  }
+  return repos;
+}
+
 function parseSeverity(
   value: unknown,
   source: string,
@@ -189,6 +237,7 @@ export function parseCiteConfig(raw: unknown, source: string): CiteConfig {
   if (raw.respectGitignore !== undefined)
     config.respectGitignore = asBoolean(raw.respectGitignore, "respectGitignore", source);
   if (raw.root !== undefined) config.root = asString(raw.root, "root", source);
+  if (raw.repos !== undefined) config.repos = parseRepos(raw.repos, source);
   if (raw.baseline !== undefined)
     config.baseline = asString(raw.baseline, "baseline", source);
   if (raw.checkSources !== undefined)
@@ -263,6 +312,12 @@ export interface CiteRunOptions {
   collection?: string[];
   /** `--root`, cwd-relative. */
   root?: string;
+  /**
+   * `--repo`, already split (see `parseRepoFlags`): name -> directory,
+   * cwd-relative. Each overrides `cite.repos` for its name, and survives
+   * `--no-config`.
+   */
+  repos?: Record<string, string>;
   onConfigLoaded?: (info: { path: string; dir: string }) => void;
   /** Told once when the root fell back to cwd. */
   onNotice?: (message: string) => void;
@@ -354,6 +409,15 @@ export async function resolveCiteRun(opts: CiteRunOptions): Promise<CiteRun> {
     }
   }
 
+  // Config repos sit next to the config; a typed `--repo` is cwd-relative and
+  // wins per name. Nothing is opened here: a checkout opens when an entry
+  // names it.
+  const repos: Record<string, string> = {};
+  if (loaded && config?.repos !== undefined) {
+    for (const [name, dir] of Object.entries(config.repos)) repos[name] = resolve(loaded.dir, dir);
+  }
+  for (const [name, dir] of Object.entries(opts.repos ?? {})) repos[name] = resolve(cwd, dir);
+
   // The family key, from the environment or the file's top level. A
   // malformed one is refused here, before any page is read.
   const { key, source: keySource } = resolveEncryptionKey({
@@ -370,6 +434,7 @@ export async function resolveCiteRun(opts: CiteRunOptions): Promise<CiteRun> {
     fromCollections,
     ...(loaded ? { configDir: loaded.dir, configPath: loaded.path, configSource: loaded.source } : {}),
     root,
+    repos,
     key,
     keySource,
     ...(file === null ? {} : { configFile: file }),

@@ -90,7 +90,7 @@
 # `manni:meta/statement-*` rules on purpose, and they lack the front matter
 # the default set asks for.
 #
-# `test/fixtures/strategy/` (0100) joins them. Its records and pages are
+# `test/fixtures/strategy/` (0102) joins them. Its records and pages are
 # shaped for `manni strategy`, whose tests pin their line numbers, so the
 # default set reads them as missing a type or a description.
 #

@@ -1,6 +1,6 @@
 /**
  * The `strategy:` section of manni.config.yaml, and the run resolution every
- * command shares (proposal 0100). Its keys mirror `term:`'s, and so do its
+ * command shares (proposal 0102). Its keys mirror `term:`'s, and so do its
  * refusals: unknown keys, rules or levels are errors that name what is
  * supported and never echo a value. The document set is the family
  * `collections:`, so `paths` and `exclude` are refused by name.

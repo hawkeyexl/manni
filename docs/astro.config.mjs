@@ -431,7 +431,7 @@ export default defineConfig({
           ],
         },
         // `strategy` holds the pages to their audiences, personas and journeys
-        // (proposal 0100). Its record format is meta's built-in
+        // (proposal 0102). Its record format is meta's built-in
         // `manni:content-strategy:1.0.0`, so an overview and a reference shelf.
         {
           label: "strategy",

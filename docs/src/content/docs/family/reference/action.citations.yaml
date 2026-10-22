@@ -31,7 +31,7 @@ docs/src/content/docs/family/reference/action.mdx:
         file: .github/workflows/release.yml
         lines: 387-392
         integrity: sha256-f2845979a3c00e5548d128022fc6b68cacc02e6991447670bc1fc1b382d5868f
-        commit-sha: 250e13dffb33ec5ca55b4cf92e1a1cd8cd8571af
+        commit-sha: 59f85447f0b8f5be3d56c5f528cb8dd0257724bf
     - id: action-stops-at-nine-inputs
       claim:
         lines: 279-284

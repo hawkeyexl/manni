@@ -8,6 +8,7 @@ import { parse as parseYaml } from "yaml";
 import {
   loadCiteConfig,
   parseCiteConfig,
+  parseRepoFlags,
   resolveCiteRun,
 } from "../../src/cite/core/config.js";
 import { CiteError } from "../../src/cite/errors.js";
@@ -51,6 +52,9 @@ describe("parseCiteConfig", () => {
         "allowEmpty: true",
         "respectGitignore: false",
         "root: ../src",
+        "repos:",
+        "  api: ../api",
+        "  my-sdk2: ../sdk",
         "baseline: .cite-baseline.json",
         "checkSources: false",
         "severity:",
@@ -64,6 +68,7 @@ describe("parseCiteConfig", () => {
       allowEmpty: true,
       respectGitignore: false,
       root: "../src",
+      repos: { api: "../api", "my-sdk2": "../sdk" },
       baseline: ".cite-baseline.json",
       checkSources: false,
       severity: {
@@ -89,7 +94,7 @@ describe("parseCiteConfig", () => {
   it("rejects an unknown key, naming it and the supported keys", () => {
     expect(() => parse("allowEmtpy: true\n")).toThrow(CiteError);
     expect(() => parse("allowEmtpy: true\n")).toThrow(
-      /^Unknown key "allowEmtpy" under cite: in c\.yaml\. Supported keys: allowEmpty, respectGitignore, root, baseline, checkSources, severity\.$/,
+      /^Unknown key "allowEmtpy" under cite: in c\.yaml\. Supported keys: allowEmpty, respectGitignore, root, repos, baseline, checkSources, severity\.$/,
     );
   });
 
@@ -105,7 +110,7 @@ describe("parseCiteConfig", () => {
 
   it("calls obfuscate what it now is, an unknown key", () => {
     expect(messageOf("obfuscate: true\n")).toBe(
-      'Unknown key "obfuscate" under cite: in c.yaml. Supported keys: allowEmpty, respectGitignore, root, baseline, checkSources, severity.',
+      'Unknown key "obfuscate" under cite: in c.yaml. Supported keys: allowEmpty, respectGitignore, root, repos, baseline, checkSources, severity.',
     );
   });
 
@@ -114,7 +119,7 @@ describe("parseCiteConfig", () => {
     // deprecation message: it is a typo like any other.
     for (const key of ["git", "sources"]) {
       expect(messageOf(`${key}: false\n`)).toBe(
-        `Unknown key "${key}" under cite: in c.yaml. Supported keys: allowEmpty, respectGitignore, root, baseline, checkSources, severity.`,
+        `Unknown key "${key}" under cite: in c.yaml. Supported keys: allowEmpty, respectGitignore, root, repos, baseline, checkSources, severity.`,
       );
     }
   });
@@ -234,6 +239,77 @@ describe("parseCiteConfig", () => {
     expect(messageOf(`root: [${secret}]\n`)).not.toContain(secret);
     expect(messageOf(`checkSources: ${secret}\n`)).not.toContain(secret);
     expect(messageOf(`severity: ${secret}\n`)).not.toContain(secret);
+  });
+});
+
+describe("cite.repos (proposal 0100)", () => {
+  function messageOf(yaml: string): string {
+    try {
+      parse(yaml);
+    } catch (err) {
+      return (err as Error).message;
+    }
+    return "";
+  }
+
+  it("refuses a repos that is not a mapping, never echoing it", () => {
+    expect(() => parse("repos: ../sdk\n")).toThrow(CiteError);
+    expect(messageOf("repos: ../sdk\n")).toBe("cite.repos in c.yaml must be a mapping.");
+    expect(messageOf("repos: [../sdk]\n")).toBe("cite.repos in c.yaml must be a mapping.");
+  });
+
+  it.each(["SDK", "-sdk", "my_sdk", "sdk.js"])("refuses the key %j", (key) => {
+    expect(messageOf(`repos:\n  ${key}: ../sdk\n`)).toBe(
+      `cite.repos key "${key}" in c.yaml must be lowercase letters, digits and hyphens, starting with a letter or digit.`,
+    );
+  });
+
+  it("refuses a value that is not a string, never echoing it", () => {
+    expect(messageOf("repos:\n  sdk: 42\n")).toBe("cite.repos.sdk in c.yaml must be a string.");
+    expect(messageOf("repos:\n  sdk: [../sdk]\n")).toBe("cite.repos.sdk in c.yaml must be a string.");
+  });
+
+  it("takes an empty mapping as no repos", () => {
+    expect(parse("repos: {}\n")).toEqual({ repos: {} });
+  });
+});
+
+describe("parseRepoFlags (--repo)", () => {
+  const split = (values: string[]) => parseRepoFlags(values, (message) => new CiteError(message));
+  const messageOf = (values: string[]): string => {
+    try {
+      split(values);
+    } catch (err) {
+      return (err as Error).message;
+    }
+    return "";
+  };
+
+  it("maps each name=dir to its directory as typed", () => {
+    expect(split([])).toEqual({});
+    expect(split(["api=../api", "sdk=../../oss/sdk"])).toEqual({ api: "../api", sdk: "../../oss/sdk" });
+  });
+
+  it("splits on the first = only, and never on a comma", () => {
+    expect(split(["sdk=../a=b,c"])).toEqual({ sdk: "../a=b,c" });
+  });
+
+  it("refuses a value that is not name=dir, with the fix", () => {
+    expect(() => split(["sdk"])).toThrow(CiteError);
+    expect(messageOf(["sdk"])).toBe('--repo "sdk" is not name=dir. Use --repo sdk=../sdk.');
+    expect(messageOf(["../sdk"])).toBe('--repo "../sdk" is not name=dir. Use --repo <name>=../sdk.');
+    expect(messageOf(["sdk="])).toBe('--repo "sdk=" is not name=dir. Use --repo <name>=sdk=.');
+    expect(messageOf(["=../sdk"])).toBe('--repo "=../sdk" is not name=dir. Use --repo <name>==../sdk.');
+  });
+
+  it("refuses a bad name", () => {
+    expect(messageOf(["SDK=../sdk"])).toBe(
+      '--repo name "SDK" must be lowercase letters, digits and hyphens, starting with a letter or digit.',
+    );
+  });
+
+  it("refuses a name given twice", () => {
+    expect(messageOf(["sdk=../a", "sdk=../b"])).toBe("--repo names sdk twice.");
   });
 });
 
@@ -624,6 +700,43 @@ describe("resolveCiteRun", () => {
     expect(run.configPath).toBe(join(root, "docs", "manni.config.yaml"));
     expect(run.config).toEqual({});
     expect(run.key).toBe(CONFIG_KEY);
+  });
+
+  it("resolves cite.repos against the config directory, and --repo against cwd, the flag winning per name", async () => {
+    const root = await tree({
+      ".git/HEAD": "ref: refs/heads/main\n",
+      "manni.config.yaml": "cite:\n  repos:\n    api: ../api\n    sdk: ../sdk\n",
+      "docs/.keep": "",
+    });
+    const cwd = join(root, "docs");
+    const fromConfig = await resolveCiteRun({ cwd, inputs: [], env: {} });
+    expect(fromConfig.repos).toEqual({ api: resolve(root, "../api"), sdk: resolve(root, "../sdk") });
+    const flagged = await resolveCiteRun({
+      cwd,
+      inputs: [],
+      repos: { sdk: "../../oss/sdk", web: "../web" },
+      env: {},
+    });
+    expect(flagged.repos).toEqual({
+      api: resolve(root, "../api"),
+      sdk: resolve(cwd, "../../oss/sdk"),
+      web: resolve(cwd, "../web"),
+    });
+  });
+
+  it("--no-config drops cite.repos and keeps --repo", async () => {
+    const root = await tree({
+      ".git/HEAD": "ref: refs/heads/main\n",
+      "manni.config.yaml": "cite:\n  repos:\n    api: ../api\n",
+    });
+    const run = await resolveCiteRun({ cwd: root, inputs: [], noConfig: true, repos: { sdk: "../sdk" }, env: {} });
+    expect(run.repos).toEqual({ sdk: resolve(root, "../sdk") });
+  });
+
+  it("has no repos when neither the config nor the flag names one", async () => {
+    const root = await tree({ ".git/HEAD": "ref: refs/heads/main\n" });
+    const run = await resolveCiteRun({ cwd: root, inputs: [], env: {} });
+    expect(run.repos).toEqual({});
   });
 
   it("refuses a malformed key in the environment, never echoing it", async () => {

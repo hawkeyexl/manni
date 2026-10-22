@@ -4,6 +4,13 @@
 4.13.1. Entries below that version are docmeta releases; the repository
 history is the same one.
 
+## [4.17.1](https://github.com/hawkeyexl/manni/compare/v4.17.0...v4.17.1) (2026-10-22)
+
+
+### Bug Fixes
+
+* **meta:** a statement's pin ignores every statement inside its lines (0101) ([#233](https://github.com/hawkeyexl/manni/issues/233)) ([c5e6491](https://github.com/hawkeyexl/manni/commit/c5e6491b5acbbc90621ada5b33239eb054b7453f))
+
 # [4.17.0](https://github.com/hawkeyexl/manni/compare/v4.16.0...v4.17.0) (2026-10-22)
 
 
