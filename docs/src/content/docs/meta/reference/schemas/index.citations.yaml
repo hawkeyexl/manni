@@ -5,9 +5,9 @@ docs/src/content/docs/meta/reference/schemas/index.mdx:
         integrity: sha256-a0a2488e8805d5692a5b269515a8aa743e4bbf06bb2b5f52393b70b35400e589
       source:
         file: src/meta/core/schema-registry.ts
-        lines: 607-618
+        lines: 615-626
         integrity: sha256-d90a35561f5a1fe78578e6f93047d7b1f1ceaa64bee2989b9729aa62642840a7
-        commit-sha: ddba7252337859626421b6060ae8952f93f61653
+        commit-sha: 3b3bdbd8dff6c0f51159e9a906f10da7e0fc047d
     - id: registry-schema-key-is-stripped
       claim:
         integrity: sha256-f80f5e8a93f3aa9a205e341ade1f8b80f7b6d15b849c6b1e1680695390b36fb8
@@ -50,7 +50,7 @@ docs/src/content/docs/meta/reference/schemas/index.mdx:
         commit-sha: ddba7252337859626421b6060ae8952f93f61653
     - id: registry-diataxis-and-tgdp-are-alternatives
       claim:
-        lines: 336-339
+        lines: 340-343
         integrity: sha256-4275f183a4f490f20bfa6d197b22dfddaaa318725209e156b2f5127fb97aec87
       source:
         file: src/meta/schemas/diataxis/1.0.json
@@ -59,7 +59,7 @@ docs/src/content/docs/meta/reference/schemas/index.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: registry-okf-tags-are-strings-only
       claim:
-        lines: 317-320
+        lines: 321-324
         integrity: sha256-babeae49761d92995abdce11458b3f499309b8203adcbbfdcb062dc169239345
       source:
         file: src/meta/schemas/okf/0.1.json
@@ -108,7 +108,7 @@ docs/src/content/docs/meta/reference/schemas/index.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: registry-published-bytes-are-immutable
       claim:
-        lines: 237-241
+        lines: 241-245
         integrity: sha256-4d33c489f7e168c260c7eeb1ef6d5be77d7020cb5151cdf578236824ac048a92
       source:
         file: scripts/check-builtin-schemas.mjs
@@ -128,12 +128,12 @@ docs/src/content/docs/meta/reference/schemas/index.mdx:
         integrity: sha256-ee72b7a1965a07029c6b6acadb6e8f3b0c1c71f86ad2bfea5d47829bc622739a
       source:
         file: src/meta/core/schema-registry.ts
-        lines: 329-349
+        lines: 333-353
         integrity: sha256-fdaa4ee1034e1ac5ef6f0a81c43aace4e79a3eb219a3e858dbd209d261a05ca3
-        commit-sha: ddba7252337859626421b6060ae8952f93f61653
+        commit-sha: 3b3bdbd8dff6c0f51159e9a906f10da7e0fc047d
     - id: registry-id-is-not-the-url
       claim:
-        lines: 199-201
+        lines: 203-205
         integrity: sha256-b57b439fe9d35677c0872da582b4662d9868546d687cf94145587ed5429567db
       source:
         file: src/meta/schemas/okf/0.1.json
@@ -142,40 +142,40 @@ docs/src/content/docs/meta/reference/schemas/index.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: registry-id-is-what-reports-name
       claim:
-        lines: 203-208
+        lines: 207-212
         integrity: sha256-de5734268390174d8a16fabe9a722d8be4203d8ae510d1658fe8a83d963c9535
       source:
         file: src/meta/core/schema-registry.ts
-        lines: 549-560
+        lines: 557-568
         integrity: sha256-b609d7a86f241caa53f6c3ab9266149e6c0333c7496005e23ab3d94797659c1c
-        commit-sha: ddba7252337859626421b6060ae8952f93f61653
+        commit-sha: 3b3bdbd8dff6c0f51159e9a906f10da7e0fc047d
     - id: registry-a-published-url-costs-nothing
       claim:
         integrity: sha256-f7fd161825c5c39c42cde5ef6297bc931d861f5b56afce5b72fd47c5b2d2275c
       source:
         file: src/meta/core/schema-registry.ts
-        lines: 1385-1401
+        lines: 1393-1409
         integrity: sha256-6387e5cfc4d77a90804dd002a85ee75b98fce2485d9344bf0b551c3eb75ee3a6
-        commit-sha: ddba7252337859626421b6060ae8952f93f61653
+        commit-sha: 3b3bdbd8dff6c0f51159e9a906f10da7e0fc047d
     - id: registry-published-urls-have-three-jobs
       claim:
         integrity: sha256-b820e612256c12fd82adb39c32efd54678440233b384bc386867b9d016b16803
       source:
         file: src/meta/core/schema-registry.ts
-        lines: 329-349
+        lines: 333-353
         integrity: sha256-fdaa4ee1034e1ac5ef6f0a81c43aace4e79a3eb219a3e858dbd209d261a05ca3
-        commit-sha: ddba7252337859626421b6060ae8952f93f61653
+        commit-sha: 3b3bdbd8dff6c0f51159e9a906f10da7e0fc047d
     - id: registry-both-published-bases-resolve
       claim:
         integrity: sha256-e8b2a3709b7f6ad71a9e4234e460cb27b7fdb9bea55096e4f2de8498cebf565f
       source:
         file: src/meta/core/schema-registry.ts
-        lines: 330-340
+        lines: 334-344
         integrity: sha256-60af905979768f1e62ebac6a209d05276bfcb1c6ed1332ff0fb846d4114018a6
-        commit-sha: ddba7252337859626421b6060ae8952f93f61653
+        commit-sha: 3b3bdbd8dff6c0f51159e9a906f10da7e0fc047d
     - id: registry-forty-four-allow-additional-properties
       claim:
-        integrity: sha256-9597e49ff52a0a2dd3a64587906210d501de7c92c1320397cfada52860bdff5d
+        integrity: sha256-bc10a74d4d3d09429bd8f6eeaec14dc94e9362a7ef26a8296c0bf00e83aa3c63
       source:
         file: src/meta/schemas/agent-skills/1.0.json
         lines: 8
@@ -183,12 +183,12 @@ docs/src/content/docs/meta/reference/schemas/index.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: registry-all-draft-2020-12-and-builtin-refs
       claim:
-        integrity: sha256-b0361c713835c07bb1b10785020abcaf52f442fd9bed49394f5dd31716e3743b
+        integrity: sha256-c08f854dbbd5a32f8a18b2561b51ad1c16cade093693c7d04fc5be2258aa59cd
       source:
         file: src/meta/core/schema-registry.ts
-        lines: 599-605
+        lines: 607-613
         integrity: sha256-4da98acbf2269002e21c5e9cbeddefff319b763e81f8845510bfbf932304df32
-        commit-sha: ddba7252337859626421b6060ae8952f93f61653
+        commit-sha: 3b3bdbd8dff6c0f51159e9a906f10da7e0fc047d
     - id: registry-schemas-prints-the-same-list
       claim:
         integrity: sha256-ac63f186dfd0d93000e2e59569020f3f3211f31ea8b8d480997f0141107f7dac
@@ -199,15 +199,15 @@ docs/src/content/docs/meta/reference/schemas/index.mdx:
         commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: registry-forty-five-bundled-schemas
       claim:
-        integrity: sha256-78c18bcc189c98a3b4272c393dd7f43ad792f5547ff5b37235b1d6e4e5aae86c
+        integrity: sha256-45007337c5744991c3790a6068d510992b8508446c6dba8a1347883e1277a726
       source:
         file: src/meta/core/schema-registry.ts
         lines: 96-163
-        integrity: sha256-0d95755bc9e0fa7501c0bb39e426176cd4f8bd4981268e3ff3b96fe591e92aa2
-        commit-sha: ddba7252337859626421b6060ae8952f93f61653
+        integrity: sha256-eb24b321c70ecda7a736b46383b5d229fff513f2dccaacda3d633d156e7e2f1f
+        commit-sha: 3b3bdbd8dff6c0f51159e9a906f10da7e0fc047d
     - id: registry-manni-core-is-the-only-vocabulary-that-requires
       claim:
-        integrity: sha256-27ab2a77db0951ee1e4ac80d89f0d8c1a8a91faa629f45a54e16258dfb1b422d
+        integrity: sha256-a614a9146a02c39e4c191973dadb8bb5a85c212c9e899fd3c449a3e85613e871
       source:
         file: src/meta/schemas/core/1.0.0.json
         lines: 7-10
@@ -422,7 +422,7 @@ docs/src/content/docs/meta/reference/schemas/index.mdx:
         commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: registry-only-two-in-the-default-set
       claim:
-        integrity: sha256-b31bd8a1329d51bbb97a659c4028535360078cfcb5417718a8fe1f6e779657b9
+        integrity: sha256-97c86d5568ad1bbae2dec05c27b92fe96c2686bd3f2dc59bc6fd6d3204f29005
       source:
         file: src/meta/core/resolve-schema.ts
         lines: 41-53
