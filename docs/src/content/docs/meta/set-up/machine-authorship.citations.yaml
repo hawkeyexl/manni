@@ -237,9 +237,9 @@ docs/src/content/docs/meta/set-up/machine-authorship.mdx:
         integrity: sha256-9a10f8f6c8089e8b096b4ecbf8ded6e3cb641a8abecc3d1aed02c66933925591
       source:
         file: src/meta/commands/derive.ts
-        lines: 1259-1263
+        lines: 1257-1261
         integrity: sha256-23091d49e18dd2928de54e89dea34b96be8da2b0f377118476b2005e4ffb2467
-        commit-sha: 6f1ff2e33d9cc6b0a72c5acc22a0290a71d3b0fe
+        commit-sha: 6c564f7df44b87dca596731bed4f88f274c3c887
     - id: generated-by-attributes-all-uncommitted-lines
       claim:
         lines: 168
@@ -298,9 +298,9 @@ docs/src/content/docs/meta/set-up/machine-authorship.mdx:
         integrity: sha256-fbee9db97ce3be6c8e17907d789ab2a03e335aa9144a2197024a45b650d7e94d
       source:
         file: src/meta/commands/derive.ts
-        lines: 1273-1283
+        lines: 1271-1281
         integrity: sha256-5cf746e8c301c1b265485e38af387ea6680e7a5ceda8f051e7e742495e2e95ce
-        commit-sha: 6f1ff2e33d9cc6b0a72c5acc22a0290a71d3b0fe
+        commit-sha: 6c564f7df44b87dca596731bed4f88f274c3c887
     - id: provenance-is-a-builtin-managed-field
       claim:
         integrity: sha256-92982e12f04c9402446c8dd938e937450b3b3b8ea38ef90848a3732522591286

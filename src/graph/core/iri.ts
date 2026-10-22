@@ -50,7 +50,10 @@ export function mintDocIri(base: string, relPath: string): string {
   return `${base}doc/${path}`;
 }
 
-/** `{docIri}#{slug}` — the slug comes pre-disambiguated from analysis. */
+/**
+ * `{docIri}#{slug}` — the slug comes pre-disambiguated from analysis.
+ * Mints any `#fragment` node of a document, sections and blocks alike.
+ */
 export function mintSectionIri(docIri: string, slugValue: string): string {
   return `${docIri}#${slugValue}`;
 }

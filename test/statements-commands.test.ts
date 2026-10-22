@@ -85,7 +85,7 @@ describe("meta derive pins statements", () => {
     const pinned = readFileSync(page, "utf8");
     // Drop every pin, so derive has the four to write back.
     const bare = pinned.replace(/sha256-[0-9a-f]{64} /g, "");
-    expect(pinStatements(bare, "xml")).toEqual({ content: pinned, pinned: 4 });
+    expect(pinStatements(bare, "xml")).toMatchObject({ content: pinned, pinned: 4 });
   });
 });
 

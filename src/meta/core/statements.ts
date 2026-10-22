@@ -645,15 +645,19 @@ export function readStatements(content: string, format: string): StatementRead {
  * something, and how many it wrote. A changed pin is never rewritten: removing
  * it and running `derive` is how a person accepts an edit.
  */
-export function pinStatements(content: string, format: string): { content: string; pinned: number } {
+export function pinStatements(
+  content: string,
+  format: string,
+): { content: string; pinned: number; findings: FieldError[] } {
   const lines = splitLines(content);
-  const edits = readStatements(content, format)
-    .statements.filter((s) => s.pin === undefined && s.anchor !== undefined)
-    .map((s) => ({ at: s.token.pinAt, text: `${pinOf(anchoredText(content, lines, s.anchor as PageLines, s.token))} ` }))
+  const read = readStatements(content, format);
+  const edits = read.statements
+    .filter((s): s is PageStatement & { anchor: PageLines } => s.pin === undefined && s.anchor !== undefined)
+    .map((s) => ({ at: s.token.pinAt, text: `${pinOf(anchoredText(content, lines, s.anchor, s.token))} ` }))
     .sort((a, b) => b.at - a.at);
   let out = content;
   for (const e of edits) out = out.slice(0, e.at) + e.text + out.slice(e.at);
-  return { content: out, pinned: edits.length };
+  return { content: out, pinned: edits.length, findings: read.findings };
 }
 
 // ---------------------------------------------------------------------------
