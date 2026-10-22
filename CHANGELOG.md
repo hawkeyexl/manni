@@ -4,6 +4,19 @@
 4.13.1. Entries below that version are docmeta releases; the repository
 history is the same one.
 
+# [4.15.0](https://github.com/hawkeyexl/manni/compare/v4.14.0...v4.15.0) (2026-10-21)
+
+
+### Bug Fixes
+
+* **cite:** a pin's source end survives squash merges (0097) ([#220](https://github.com/hawkeyexl/manni/issues/220)) ([b9712a2](https://github.com/hawkeyexl/manni/commit/b9712a2920c49c2b7e247108d80b629a4dc6ef9b)), closes [#221](https://github.com/hawkeyexl/manni/issues/221)
+* **docevals:** report missing judge examples as a notice, not a warning ([#218](https://github.com/hawkeyexl/manni/issues/218)) ([ac7876a](https://github.com/hawkeyexl/manni/commit/ac7876a94856ffb643feb94bee18c15fab86d95e))
+
+
+### Features
+
+* **cite:** manni cite history, how long each pin stood stale (0092) ([#221](https://github.com/hawkeyexl/manni/issues/221)) ([37e4699](https://github.com/hawkeyexl/manni/commit/37e469983251cfdc5d44759c166a4b415191a46f)), closes [#220](https://github.com/hawkeyexl/manni/issues/220)
+
 # [4.14.0](https://github.com/hawkeyexl/manni/compare/v4.13.0...v4.14.0) (2026-10-20)
 
 
