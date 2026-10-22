@@ -888,7 +888,7 @@ export async function runUpdate(opts: UpdateOptions): Promise<UpdateRun> {
    */
   const checkoutFor = async (result: CitationResult): Promise<Checkout> => {
     const checkout = await pageOptions.checkouts?.(result.citation.source.repo);
-    if (checkout === undefined) throw new Error(`No checkout for ${result.source.src}.`);
+    if (checkout === undefined) throw new CiteError(`No checkout for ${result.source.src}.`);
     return checkout;
   };
 
