@@ -112,6 +112,9 @@ export default defineConfig({
     "/meta/reference/claude-subagent-schema":
       "/manni/meta/reference/schemas/anthropic-claude-subagent/",
     "/tracevals/conformance": "/manni/tracevals/runtime/",
+    // The Action runs `manni check` by default, so its page moved from the
+    // metadata tool's shelf to the family's.
+    "/meta/reference/action": "/manni/family/reference/action/",
   },
   // MDX inherits this list, so `.md` and `.mdx` pages both get it.
   markdown: {

@@ -25,6 +25,7 @@ on:
       - test/fixtures/missing-type.md
       - test/fixtures/requires-type.schema.json
       - test/fixtures/extra.schema.json
+      - test/family/fixtures/meta-and-lint/**
   workflow_dispatch:
 
 jobs:
@@ -55,6 +56,10 @@ jobs:
       - id: pack
         run: echo "tarball=./$(npm pack --silent)" >> "$GITHUB_OUTPUT"
 
+      # These three cases are the metadata check alone, so each names
+      # `command: meta validate`. The Action's default is `check`, which the
+      # `family` job below covers.
+      #
       # The happy path: a clean document exits 0 and reports it.
       #
       # Both cases use fixtures this job owns, deliberately. Pointing the clean
@@ -65,6 +70,7 @@ jobs:
       - id: clean
         uses: ./
         with:
+          command: meta validate
           version: ${{ steps.pack.outputs.tarball }}
           paths: test/fixtures/action-smoke-clean.md
           schema: ./test/fixtures/requires-type.schema.json
@@ -80,6 +86,7 @@ jobs:
         uses: ./
         continue-on-error: true
         with:
+          command: meta validate
           version: ${{ steps.pack.outputs.tarball }}
           paths: test/fixtures/missing-type.md
           schema: ./test/fixtures/requires-type.schema.json
@@ -98,6 +105,7 @@ jobs:
         uses: ./
         continue-on-error: true
         with:
+          command: meta validate
           version: ${{ steps.pack.outputs.tarball }}
           paths: test/fixtures/missing-type.md
           schema: |
@@ -108,3 +116,142 @@ jobs:
         run: |
           [ "${{ steps.two-schemas.outputs.exit-code }}" = "1" ] \
             || { echo "expected 1, got '${{ steps.two-schemas.outputs.exit-code }}' — the second schema line was dropped"; exit 1; }
+
+  # The default command, `check`, on a real runner. `check` discovers
+  # manni.config.yaml from the working directory, and a composite step always
+  # runs at the workspace root. So this repository is checked out into
+  # `manni/`, and the meta-and-lint fixture is copied to the root as the
+  # repository under test. Its docs/index.md passes meta and lint, and
+  # docs/limits.md fails both.
+  family:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          path: manni
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: manni/package-lock.json
+      - run: npm ci
+        working-directory: manni
+      - run: npm run build
+        working-directory: manni
+      - id: pack
+        working-directory: manni
+        run: echo "tarball=./manni/$(npm pack --silent)" >> "$GITHUB_OUTPUT"
+      - name: Make the fixture the repository under test
+        run: |
+          cp -r manni/test/family/fixtures/meta-and-lint/. .
+          git init -q
+          git add README.md manni.config.yaml templates.yaml docs
+          git -c user.name=smoke -c user.email=smoke@example.com commit -qm fixture
+
+      # No `command`: the Action runs `manni check --format github`.
+      - id: check-clean
+        uses: ./manni
+        with:
+          version: ${{ steps.pack.outputs.tarball }}
+          paths: docs/index.md
+      - name: A bare check on a passing page reports exit-code 0
+        run: |
+          [ "${{ steps.check-clean.outputs.exit-code }}" = "0" ] \
+            || { echo "expected 0, got '${{ steps.check-clean.outputs.exit-code }}'"; exit 1; }
+
+      - id: check-failing
+        uses: ./manni
+        continue-on-error: true
+        with:
+          version: ${{ steps.pack.outputs.tarball }}
+          paths: docs/limits.md
+      - name: A bare check on a failing page reports exit-code 1
+        run: |
+          [ "${{ steps.check-failing.outputs.exit-code }}" = "1" ] \
+            || { echo "expected 1, got '${{ steps.check-failing.outputs.exit-code }}'"; exit 1; }
+
+      # The code-scanning recipe: SARIF in a file that upload-sarif can read.
+      - id: check-sarif
+        uses: ./manni
+        continue-on-error: true
+        with:
+          version: ${{ steps.pack.outputs.tarball }}
+          format: sarif
+          output-file: manni.sarif
+      - name: output-file holds a SARIF 2.1.0 log
+        run: |
+          [ -s manni.sarif ] || { echo "manni.sarif is missing or empty"; exit 1; }
+          jq -e '.version == "2.1.0"' manni.sarif
+
+      # `command: meta validate` restores the Action's old default.
+      - id: meta-failing
+        uses: ./manni
+        continue-on-error: true
+        with:
+          command: meta validate
+          version: ${{ steps.pack.outputs.tarball }}
+          paths: docs/limits.md
+      - name: meta validate on a failing page reports exit-code 1
+        run: |
+          [ "${{ steps.meta-failing.outputs.exit-code }}" = "1" ] \
+            || { echo "expected 1, got '${{ steps.meta-failing.outputs.exit-code }}'"; exit 1; }
+
+      # Whether GitHub delivers `format: ""` as an empty string or falls back
+      # to the input's default is the runner's call, not the script's. This
+      # case tells them apart. `manni status --format github` exits 2, since
+      # status has no github format, so exit 0 is reachable only when the
+      # Action passed no `--format` at all.
+      - id: status
+        uses: ./manni
+        continue-on-error: true
+        with:
+          command: status
+          format: ""
+          version: ${{ steps.pack.outputs.tarball }}
+      - name: format "" omits --format, so status exits 0
+        run: |
+          [ "${{ steps.status.outputs.exit-code }}" = "0" ] \
+            || { echo "expected 0, got '${{ steps.status.outputs.exit-code }}': format \"\" did not omit --format"; exit 1; }
+
+  # This repository under its own Action: no inputs but the tarball, so the
+  # run is the default `check` over manni's own config. It needs the full
+  # history because cite and graph read it, and the checkout sits at the
+  # workspace root because `check` discovers manni.config.yaml from there.
+  dogfood:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - id: pack
+        run: echo "tarball=./$(npm pack --silent)" >> "$GITHUB_OUTPUT"
+
+      - id: dogfood
+        uses: ./
+        with:
+          version: ${{ steps.pack.outputs.tarball }}
+      - name: A bare check on this repository reports exit-code 0
+        run: |
+          [ "${{ steps.dogfood.outputs.exit-code }}" = "0" ] \
+            || { echo "expected 0, got '${{ steps.dogfood.outputs.exit-code }}'"; exit 1; }
+
+      # The same run as SARIF in a file, as the code-scanning recipe writes it.
+      # It is not uploaded.
+      - id: dogfood-sarif
+        uses: ./
+        with:
+          version: ${{ steps.pack.outputs.tarball }}
+          format: sarif
+          output-file: manni.sarif
+      - name: output-file holds a SARIF 2.1.0 log
+        run: |
+          [ "${{ steps.dogfood-sarif.outputs.exit-code }}" = "0" ] \
+            || { echo "expected 0, got '${{ steps.dogfood-sarif.outputs.exit-code }}'"; exit 1; }
+          [ -s manni.sarif ] || { echo "manni.sarif is missing or empty"; exit 1; }
+          jq -e '.version == "2.1.0"' manni.sarif

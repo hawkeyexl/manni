@@ -4,14 +4,16 @@
 # compiled JavaScript that GitHub runs directly, which means committing a built
 # `dist/` and keeping it in step with every release — a second build pipeline,
 # and the usual way an action ends up running last week's code. Shelling out to
-# `npx @hawkeyexl/manni@<version> meta` keeps the npm package as the single artifact, so there
-# is exactly one thing to version.
+# `npx @hawkeyexl/manni@<version> <command>` keeps the npm package as the single
+# artifact, so there is exactly one thing to version.
 #
-# Seven inputs, and no more. Enumerating every CLI flag would create a second CLI
+# Nine inputs, and no more. Enumerating every CLI flag would create a second CLI
 # surface with nothing like `docs:check-cli` guarding it against drift; `args`
-# is the documented way to reach anything not listed here.
+# is the documented way to reach anything not listed here. `command` and
+# `output-file` are Action plumbing, not CLI flags: one picks the words after
+# `manni`, the other where its stdout goes.
 name: manni
-description: Validate document metadata against JSON Schema
+description: "Run manni in CI: every check a repository has set up, or any one manni command"
 author: hawkeyexl
 
 branding:
@@ -19,22 +21,39 @@ branding:
   color: blue
 
 inputs:
+  command:
+    description: >-
+      The manni command to run, as you would type it after `manni`, such as
+      `check`, `meta validate` or `cite check`. Unset, the Action runs `check`,
+      which runs every check this repository has set up.
+    required: false
+    default: check
   paths:
     description: >-
-      Files, directories, or globs to validate. Space-separated, or one per line
-      — use lines for any path containing a space. Defaults to `paths:` in your
-      config.
+      Files, directories, or globs, passed to the command. Space-separated, or
+      one per line. Use lines for any path containing a space. Unset, the
+      command reads its collections from your config.
     required: false
   schema:
-    description: Schema ref. One per line for several; each becomes its own `-s`.
+    description: >-
+      Schema ref, one per line; each becomes its own `-s`. For commands that
+      take `-s`, such as `meta validate`.
     required: false
   config:
     description: Path to a manni config file.
     required: false
   format:
-    description: "Output format: pretty, json, github, sarif, or junit."
+    description: >-
+      Output format, passed as `--format`. Set it to an empty string to pass
+      no `--format`, for a command that has none.
     required: false
     default: github
+  output-file:
+    description: >-
+      Write manni's report to this file instead of the job log. Its directory
+      is created when missing. Use it with `format: sarif` to feed
+      github/codeql-action/upload-sarif.
+    required: false
   version:
     description: >-
       npm version range for the CLI. Defaults to `latest`, the newest published
@@ -57,9 +76,10 @@ inputs:
 outputs:
   exit-code:
     description: >-
-      manni's exit code — 0 clean, 1 validation failures, 2 operational error.
-      Only useful with `continue-on-error: true`; otherwise a non-zero code has
-      already failed the job.
+      manni's exit code. 0 clean, 1 an error-level finding, 2 the command could
+      not run or was not a valid manni command. Only useful with
+      `continue-on-error: true`; otherwise a non-zero code has already failed
+      the job.
     value: ${{ steps.manni.outputs.exit-code }}
 
 runs:
@@ -80,10 +100,12 @@ runs:
         # Through the environment rather than interpolated into the run script:
         # `${{ }}` is substituted before bash sees the line, so a path
         # containing a quote would otherwise be a shell injection.
+        MANNI_COMMAND: ${{ inputs.command }}
         MANNI_PATHS: ${{ inputs.paths }}
         MANNI_SCHEMA: ${{ inputs.schema }}
         MANNI_CONFIG: ${{ inputs.config }}
         MANNI_FORMAT: ${{ inputs.format }}
+        MANNI_OUTPUT_FILE: ${{ inputs.output-file }}
         MANNI_VERSION: ${{ inputs.version }}
         MANNI_ARGS: ${{ inputs.args }}
       run: |
@@ -137,6 +159,16 @@ runs:
           esac
         }
 
+        # The command words, split on whitespace and never shell-evaluated:
+        # `$(…)` or `;` in the value reaches manni as a literal word, and
+        # `set -f` above keeps a `*` from globbing. The CLI judges the words
+        # with its own messages and exit 2, so nothing here second-guesses
+        # them. An unset input already arrives as `check`, from the input's
+        # `default:`. The fallback below covers an explicit `command: ""`.
+        # shellcheck disable=SC2206
+        words=($MANNI_COMMAND)
+        [ ${#words[@]} -gt 0 ] || words=(check)
+
         argv=()
         # `${a[@]+"${a[@]}"}`, not a bare `"${a[@]}"`, everywhere an array
         # that may be empty is expanded below.
@@ -155,13 +187,15 @@ runs:
         split_input "$MANNI_PATHS" "paths"
         argv+=(${split_out[@]+"${split_out[@]}"})
         # One `-s` per line: a schema ref can contain spaces, so lines are the
-        # only separator that cannot collide with a legitimate value.
+        # only separator that cannot collide with a legitimate value. Passed
+        # for any command; a verb without `-s` rejects it itself.
         if [ -n "$MANNI_SCHEMA" ]; then
           while IFS= read -r ref; do
             [ -n "$ref" ] && argv+=(-s "$ref")
           done <<< "$MANNI_SCHEMA"
         fi
         [ -n "$MANNI_CONFIG" ] && argv+=(-c "$MANNI_CONFIG")
+        # An empty `format` omits the flag, for a command that has none.
         [ -n "$MANNI_FORMAT" ] && argv+=(--format "$MANNI_FORMAT")
         split_input "$MANNI_ARGS" "args"
         argv+=(${split_out[@]+"${split_out[@]}"})
@@ -170,10 +204,32 @@ runs:
         # consumer what actually ran. Neither `${argv[*]}` nor `${argv[@]}`
         # would: echo rejoins on single spaces either way, so a path
         # containing a space logs identically to two separate paths.
-        printf 'manni meta validate'
+        printf 'manni'
+        printf ' %q' "${words[@]}"
         [ ${#argv[@]} -gt 0 ] && printf ' %q' ${argv[@]+"${argv[@]}"}
+        [ -n "$MANNI_OUTPUT_FILE" ] && printf ' > %q' "$MANNI_OUTPUT_FILE"
         echo
-        npx --yes "@hawkeyexl/manni@${MANNI_VERSION}" meta validate ${argv[@]+"${argv[@]}"}
-        code=$?
+
+        # stdin is `/dev/null`. On a runner stdin is never a TTY, so
+        # `manni check` reads it for a Claude Code hook envelope and waits on
+        # a silent pipe. The redirect gives it EOF at once, every run.
+        manni=(npx --yes "@hawkeyexl/manni@${MANNI_VERSION}" "${words[@]}" ${argv[@]+"${argv[@]}"})
+        if [ -n "$MANNI_OUTPUT_FILE" ]; then
+          # The github format is workflow commands, which annotate only from
+          # the job log. In a file they are inert text.
+          if [ "$MANNI_FORMAT" = github ]; then
+            echo "::warning::output-file sends the github format's workflow commands to $MANNI_OUTPUT_FILE, so no annotations appear. Pick another format to write a file." >&2
+          fi
+          mkdir -p "$(dirname "$MANNI_OUTPUT_FILE")"
+          "${manni[@]}" < /dev/null > "$MANNI_OUTPUT_FILE"
+          code=$?
+          # A run that failed before printing leaves a zero-byte file, and
+          # upload-sarif rejects one. Removing it lets `hashFiles()` skip the
+          # upload instead.
+          [ -s "$MANNI_OUTPUT_FILE" ] || rm -f "$MANNI_OUTPUT_FILE"
+        else
+          "${manni[@]}" < /dev/null
+          code=$?
+        fi
         echo "exit-code=${code}" >> "$GITHUB_OUTPUT"
         exit "$code"
