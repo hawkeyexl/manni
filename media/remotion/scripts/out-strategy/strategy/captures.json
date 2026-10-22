@@ -1,0 +1,14 @@
+{
+    "cat strategy/journeys/m1.md": "---\ntype: journey\nid: m1\ntitle: Stand up metadata validation for my repo\npersona: maya\n---\n",
+    "cat docs/guide.md": "---\ntitle: Guide\naudiences: [docs-engineers]\npersonas: [m1]\n---\n# Guide\n",
+    "checkBefore": "\u001b[1mdocs/guide.md:4\u001b[22m\n  \u001b[31merror  \u001b[39m manni:strategy/undefined-reference  personas: \"m1\" is a journey, not a persona.\n                                              Did you mean its persona, \"maya\"?\n                                              \u001b[2mmanni:strategy undefined-reference: A page's audiences:, personas: or journeys:, or a record's audience: or persona:, names no record of that type.\u001b[22m\n                                              \u001b[2mGuide: https://hawkeyexl.github.io/manni/strategy/reference/rules/#undefined-reference\u001b[22m\n\u001b[1mstrategy/journeys/m2.md:3\u001b[22m\n  \u001b[33mwarning\u001b[39m manni:strategy/unserved-journey     no page names this journey in journeys:.\n                                              Name it on the pages that serve it.\n                                              \u001b[2mmanni:strategy unserved-journey: No page names the journey in journeys:. Records do not count.\u001b[22m\n                                              \u001b[2mGuide: https://hawkeyexl.github.io/manni/strategy/reference/rules/#unserved-journey\u001b[22m\n\n1 error, 1 warning in 4 records\n",
+    "diff": "\u001b[1mdiff --git a/docs/guide.md b/docs/guide.md\u001b[m\n\u001b[1mindex cca6606..6c75186 100644\u001b[m\n\u001b[1m--- a/docs/guide.md\u001b[m\n\u001b[1m+++ b/docs/guide.md\u001b[m\n\u001b[36m@@ -1,6 +1,7 @@\u001b[m\n ---\u001b[m\n title: Guide\u001b[m\n audiences: [docs-engineers]\u001b[m\n\u001b[31m-personas: [m1]\u001b[m\n\u001b[32m+\u001b[m\u001b[32mpersonas: [maya]\u001b[m\n\u001b[32m+\u001b[m\u001b[32mjourneys: [m1, m2]\u001b[m\n ---\u001b[m\n # Guide\u001b[m\n",
+    "checkAfter": "\u001b[32m✓\u001b[39m 4 records, 10 references, no findings\n",
+    "list": "record            pages  title\ndocs-engineers        2  Docs-as-code teams\n  maya                2  Maya, Documentation Engineer\n    m1                2  Stand up metadata validation for my repo\n    m2                1  Tighten the standard without breaking the build\n1 audience, 1 persona, 2 journeys\n",
+    "exits": {
+        "checkBefore": "1",
+        "diff": "0",
+        "checkAfter": "0",
+        "list": "0"
+    }
+}

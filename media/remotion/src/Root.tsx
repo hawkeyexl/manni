@@ -23,6 +23,7 @@ import { beats as tbxBeats, totalFrames as tbxTotalFrames, TYPING_MS as tbxTypin
 import { beats as conceptsBeats, totalFrames as conceptsTotalFrames, TYPING_MS as conceptsTypingMs } from "./concepts/beats";
 import { beats as graphFormatsBeats, totalFrames as graphFormatsTotalFrames, TYPING_MS as graphFormatsTypingMs } from "./graph-formats/beats";
 import { beats as findingsBeats, totalFrames as findingsTotalFrames, TYPING_MS as findingsTypingMs } from "./findings/beats";
+import { beats as strategyBeats, totalFrames as strategyTotalFrames, TYPING_MS as strategyTypingMs } from "./strategy/beats";
 
 /** sidecar-url-1x1: 23 px / 75 columns, derived in media/sidecar-url-1x1.script.md. */
 const DemoUrl: React.FC = () => <DemoView beats={urlBeats} fontPx={23} linePx={32} cols={75} />;
@@ -115,6 +116,17 @@ const DemoTbx: React.FC = () => <DemoView beats={tbxBeats} fontPx={22} linePx={3
  * (media/capture-concepts/cols.mjs). Ligatures off: a terminal prints `--` and `//` as two glyphs.
  */
 const DemoConcepts: React.FC = () => <DemoView beats={conceptsBeats} fontPx={23} linePx={32} cols={75} typingMs={conceptsTypingMs} ligatures={false} />;
+
+/**
+ * strategy-check-1x1: 19 px / 91 columns for beat 2, derived in media/strategy-check-1x1.script.md
+ * (media/capture-strategy/cols.mjs). 19 px is the largest size whose columns keep both
+ * findings on one row each under strategy check's 46-column gutter. Its Guide URLs
+ * break after a "/". Beats 1, 3 and 4 carry their own sizes (src/strategy/beats.ts).
+ * Ligatures off: the records' `---` fences would draw as one rule.
+ */
+const DemoStrategy: React.FC = () => (
+  <DemoView beats={strategyBeats} fontPx={19} linePx={27} cols={91} typingMs={strategyTypingMs} ligatures={false} breakAfter="/" />
+);
 
 export const Root: React.FC = () => (
   <>
@@ -293,6 +305,14 @@ export const Root: React.FC = () => (
       height={1080}
       fps={FPS}
       durationInFrames={conceptsTotalFrames}
+    />
+    <Composition
+      id="StrategyCheckDemo"
+      component={DemoStrategy}
+      width={1080}
+      height={1080}
+      fps={FPS}
+      durationInFrames={strategyTotalFrames}
     />
   </>
 );

@@ -42,6 +42,12 @@ export interface DemoProps {
    * those sequences turns ligatures off. Default on, as the earlier videos rendered.
    */
   ligatures?: boolean;
+  /**
+   * Characters a token too wide for its row may break after, such as "/" for
+   * a URL under a deep gutter. Without one, such a token hard-breaks at the
+   * column, as a terminal would. Default none, as the earlier videos rendered.
+   */
+  breakAfter?: string;
 }
 
 // ---- Screen model -----------------------------------------------------------
@@ -119,7 +125,7 @@ function merge(chars: Span[]): Span[] {
 }
 
 /** Wrap one logical line into display rows. Bytes are untouched: only row breaks are added. */
-function wrapLine(line: Line, cols: number): Line[] {
+function wrapLine(line: Line, cols: number, breakAfter = ""): Line[] {
   const text = line.spans.map((s) => s.text).join("");
   if (!Number.isFinite(cols) || text.length <= cols) return [line];
   const indent = (/^ */.exec(text) ?? [""])[0];
@@ -133,10 +139,14 @@ function wrapLine(line: Line, cols: number): Line[] {
     if (text.length - start <= width) break;
     const limit = start + width;
     let k = text.lastIndexOf(" ", limit);
-    // No space to break at: a hard break, as a terminal would do. Not reached by
-    // these captures (checked in media/capture-url/cols4.mjs); kept so a future
-    // line cannot overflow the frame silently.
-    if (k <= start + (first ? indent.length : 0)) k = limit;
+    // No space to break at: break after the last breakAfter character in reach,
+    // or else a hard break, as a terminal would do. Kept so a line cannot
+    // overflow the frame silently (media/capture-url/cols4.mjs).
+    const floor = start + (first ? indent.length : 0);
+    if (k <= floor) {
+      const s = Math.max(-1, ...[...breakAfter].map((ch) => text.lastIndexOf(ch, limit - 1)));
+      k = s > floor ? s + 1 : limit;
+    }
     let end = k;
     while (end > start && text[end - 1] === " ") end--;
     const row = merge(chars.slice(start, end));
@@ -151,7 +161,8 @@ function wrapLine(line: Line, cols: number): Line[] {
   return rows;
 }
 
-const wrapScreen = (lines: Line[], cols: number): Line[] => lines.flatMap((l) => wrapLine(l, cols));
+const wrapScreen = (lines: Line[], cols: number, breakAfter?: string): Line[] =>
+  lines.flatMap((l) => wrapLine(l, cols, breakAfter));
 
 /** Mark the logical lines a beat's caption is about. Chrome only: spans are untouched. */
 function markLines(lines: Line[], highlight: string[] | undefined): Line[] {
@@ -207,16 +218,22 @@ interface BeatViewProps extends DemoProps {
   finals: Line[][];
 }
 
-const BeatView: React.FC<BeatViewProps> = ({ beats, index, finals, fontPx, linePx, cols, typingMs = TYPING_MS, ligatures = true }) => {
+const BeatView: React.FC<BeatViewProps> = (props) => {
+  const { beats, index, finals, typingMs = TYPING_MS, ligatures = true, breakAfter } = props;
   const frame = useCurrentFrame();
   const beat = beats[index];
-  const lines = wrapScreen(markLines(screenAt(beat, frame, index > 0 ? finals[index - 1] : [], typingMs), beat.highlight), cols);
+  const { fontPx, linePx, cols } = beat.type ?? props;
+  const lines = wrapScreen(
+    markLines(screenAt(beat, frame, index > 0 ? finals[index - 1] : [], typingMs), beat.highlight),
+    cols,
+    breakAfter,
+  );
 
   // A continuing beat must not move the text block, so a chain shares one layout
   // row count: the final row count of the last beat in the chain, plus the prompt.
   let j = index;
   while (j + 1 < beats.length && beats[j + 1].continues) j++;
-  const rows = wrapScreen(finals[j], cols).length + 1;
+  const rows = wrapScreen(finals[j], cols, breakAfter).length + 1;
   const top = Math.max(TERMINAL_INSET, Math.round((TERMINAL_HEIGHT - rows * linePx) / 2));
 
   return (
