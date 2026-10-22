@@ -7,7 +7,7 @@
  * (`fixtures/repos-repo.ts`), because only git can say what a checkout
  * tracks and what its history holds.
  */
-import { afterEach, describe, expect, it } from "vitest";
+import { afterAll, afterEach, describe, expect, it } from "vitest";
 import { execFileSync } from "node:child_process";
 import { copyFileSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
@@ -37,6 +37,7 @@ import {
   SDK_CLIENT_TEXT,
   citedPage,
   editLine,
+  removeReposTemplates,
   reposRepo,
   track,
   type ReposRepo,
@@ -46,6 +47,7 @@ const dirs: string[] = [];
 afterEach(() => {
   for (const dir of dirs.splice(0)) removeTempRepo(dir);
 });
+afterAll(removeReposTemplates);
 
 function made(opts: Parameters<typeof reposRepo>[0] = {}): ReposRepo {
   const repos = reposRepo(opts);

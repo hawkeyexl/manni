@@ -33,6 +33,7 @@ import {
   SDK_CLIENT,
   SDK_CLIENT_TEXT,
   editLine,
+  removeReposTemplates,
   reposRepo,
   track,
   type ReposRepo,
@@ -47,6 +48,8 @@ import type { Command } from "commander";
 import { buildProgram as buildCite, colorFor, splitPageArgument } from "../../src/cite/cli.js";
 import { STDIN_LINES_MARKER, normalizeStdinArgv } from "../../src/shared/run.js";
 import { buildProgram as buildUmbrella } from "../../src/cli.js";
+
+afterAll(removeReposTemplates);
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(here, "..", "..");

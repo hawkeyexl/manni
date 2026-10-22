@@ -8,11 +8,11 @@
  * so the third pin holds only where its repo says it is.
  */
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, realpathSync } from "node:fs";
+import { cpSync, mkdtempSync, realpathSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { hashLines, hashRange } from "../../../src/cite/core/hash.js";
-import { commitAll, writeFile } from "../../helpers/temp-repo.js";
+import { commitAll, removeTempRepo, writeFile } from "../../helpers/temp-repo.js";
 
 export const API_LIMITS = "lib/limits.ts";
 export const API_LIMITS_TEXT = "export const limits = {\n  timeoutMs: 30_000,\n};\n";
@@ -90,9 +90,46 @@ export function makeCheckout(dir: string, files: Record<string, string>, opts: {
 export const API_FILES = { [API_LIMITS]: API_LIMITS_TEXT, "README.md": readme(24) };
 export const SDK_FILES = { [SDK_CLIENT]: SDK_CLIENT_TEXT, "README.md": readme(22) };
 
+/** A fresh temp directory, symlink-resolved as git reports it. */
+function tempDir(): string {
+  return realpathSync(mkdtempSync(join(tmpdir(), "manni-cite-repos-")));
+}
+
+/**
+ * The three checkouts are built once per test file and copied for each test.
+ * A copy keeps every commit, so `minted` holds. Building them spawns git
+ * some twenty times, which a busy Windows runner made slower than a test's
+ * timeout. `removeReposTemplates` clears them in `afterAll`.
+ */
+const templates = new Map<string, ReposRepo>();
+
 /** `docs`, `api` and `sdk`, with the page minted against the other two. */
 export function reposRepo(opts: { sdkGit?: boolean } = {}): ReposRepo {
-  const dir = realpathSync(mkdtempSync(join(tmpdir(), "manni-cite-repos-")));
+  const key = opts.sdkGit === false ? "no-sdk-git" : "git";
+  let template = templates.get(key);
+  if (template === undefined) {
+    template = buildReposRepo(tempDir(), opts);
+    templates.set(key, template);
+  }
+  const dir = tempDir();
+  cpSync(template.dir, dir, { recursive: true });
+  return {
+    dir,
+    docs: join(dir, "docs"),
+    api: join(dir, "api"),
+    sdk: join(dir, "sdk"),
+    minted: { ...template.minted },
+    entries: template.entries.map((entry) => ({ ...entry })),
+  };
+}
+
+/** Remove the templates `reposRepo` copies from. Call it in `afterAll`. */
+export function removeReposTemplates(): void {
+  for (const template of templates.values()) removeTempRepo(template.dir);
+  templates.clear();
+}
+
+function buildReposRepo(dir: string, opts: { sdkGit?: boolean }): ReposRepo {
   const docs = join(dir, "docs");
   const api = join(dir, "api");
   const sdk = join(dir, "sdk");

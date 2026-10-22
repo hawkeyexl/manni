@@ -10,7 +10,7 @@
  * frontmatter, and what the result reports is file lines *after* the append.
  * Those three are different numbers, so each is asserted separately.
  */
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   copyFileSync,
   existsSync,
@@ -43,10 +43,13 @@ import {
   SDK_CLIENT,
   makeCheckout,
   readme,
+  removeReposTemplates,
   reposRepo,
   track,
   type ReposRepo,
 } from "./fixtures/repos-repo.js";
+
+afterAll(removeReposTemplates);
 
 const here = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(here, "..", "fixtures", "cite");
