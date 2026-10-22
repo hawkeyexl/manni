@@ -52,7 +52,7 @@ docs/src/content/docs/cite/set-up/citations-in-a-sidecar.mdx:
         file: src/cite/core/adapt.ts
         lines: 229-234
         integrity: sha256-3a5cf6ccc13912714cbdc82ac361679283dafd985e7d9b6a0920e28b5199f1a7
-        commit-sha: da88b121073f9e8bffc3c135102e233b28f811c2
+        commit-sha: ddba7252337859626421b6060ae8952f93f61653
     - id: github-annotates-manifest
       claim:
         integrity: sha256-61a11c5018754b3f2d307d40b3fba67bf1fed5a1f69d6504c519485ee212ff81
@@ -68,7 +68,7 @@ docs/src/content/docs/cite/set-up/citations-in-a-sidecar.mdx:
         file: src/cite/core/adapt.ts
         lines: 329
         integrity: sha256-16c9304298a87e3fe04b2518f4a8d721fd1a1ef10bee2635b11c48c085a629da
-        commit-sha: da88b121073f9e8bffc3c135102e233b28f811c2
+        commit-sha: ddba7252337859626421b6060ae8952f93f61653
     - id: pretty-row-ends-only
       claim:
         lines: 232-236
@@ -85,7 +85,7 @@ docs/src/content/docs/cite/set-up/citations-in-a-sidecar.mdx:
         file: src/cite/core/page.ts
         lines: 274-279
         integrity: sha256-da065ce67f2390268d84dc781987cace6b21280c5cdcbc7624c1042a4d38c8d5
-        commit-sha: da88b121073f9e8bffc3c135102e233b28f811c2
+        commit-sha: ddba7252337859626421b6060ae8952f93f61653
     - id: half-moved-meta-external-owned
       claim:
         integrity: sha256-5f4cc11e7561e3276100645eaebc39195a189f35e0ed3700a52f795aa2b0250f
@@ -109,7 +109,7 @@ docs/src/content/docs/cite/set-up/citations-in-a-sidecar.mdx:
         file: src/key/commands/rotate.ts
         lines: 679-687
         integrity: sha256-fe2227915efe3c7c919dc89e93892674f7e50a3bde71341db677b811b6861f44
-        commit-sha: da88b121073f9e8bffc3c135102e233b28f811c2
+        commit-sha: ddba7252337859626421b6060ae8952f93f61653
     - id: add-placement-follows-config
       claim:
         integrity: sha256-2d63a4da3009bf1f5e17b9a23d05e2b37eb277f97f10a1b67586bf22f8a72185
@@ -117,7 +117,7 @@ docs/src/content/docs/cite/set-up/citations-in-a-sidecar.mdx:
         file: src/cite/commands/add.ts
         lines: 552-557
         integrity: sha256-ff987f589d06254e69ecf44d2527ba5f2109ff3b61a441a615850c2294db1bdc
-        commit-sha: da88b121073f9e8bffc3c135102e233b28f811c2
+        commit-sha: ddba7252337859626421b6060ae8952f93f61653
     - id: add-manifest-page-untouched
       claim:
         integrity: sha256-2977cf6675401bbcfea1fabe5d3ad2010064dfa709ec9b1639c746b214bcc7ff
@@ -125,7 +125,7 @@ docs/src/content/docs/cite/set-up/citations-in-a-sidecar.mdx:
         file: src/cite/commands/add.ts
         lines: 582-587
         integrity: sha256-a9f66060a0b6e07b3220f2b2e49f7c7140e3a1aa79c7962efb05b08c4808904e
-        commit-sha: da88b121073f9e8bffc3c135102e233b28f811c2
+        commit-sha: ddba7252337859626421b6060ae8952f93f61653
     - id: update-writes-manifest-once
       claim:
         integrity: sha256-7d71b96f86296b130361168ab9c1b767db29471688a6687c270e431713685c18
@@ -133,7 +133,7 @@ docs/src/content/docs/cite/set-up/citations-in-a-sidecar.mdx:
         file: src/cite/commands/update.ts
         lines: 721-726
         integrity: sha256-e7c169217007c2d82bd2df48d345ebd4777a2792dba26ced5cd7b0715a6bde4b
-        commit-sha: da88b121073f9e8bffc3c135102e233b28f811c2
+        commit-sha: ddba7252337859626421b6060ae8952f93f61653
     - id: join-field-key
       claim:
         integrity: sha256-1f472d3fbeb438cba35b11f8eae962e80d4b011dab546cf12675616995715fc0
@@ -149,7 +149,7 @@ docs/src/content/docs/cite/set-up/citations-in-a-sidecar.mdx:
         file: src/cite/commands/check.ts
         lines: 121-127
         integrity: sha256-506b89248ce5b18857a526760333cd21d7b58af58e2a191e623d565270d0b9d1
-        commit-sha: da88b121073f9e8bffc3c135102e233b28f811c2
+        commit-sha: ddba7252337859626421b6060ae8952f93f61653
     - id: refusal-url-manifest
       claim:
         lines: 380
@@ -176,7 +176,7 @@ docs/src/content/docs/cite/set-up/citations-in-a-sidecar.mdx:
         file: src/cite/commands/add.ts
         lines: 264-269
         integrity: sha256-4adf11aca6f35daa21236bc43dec45cfc6ad4652ffeca3ef815a6293c6942ad4
-        commit-sha: da88b121073f9e8bffc3c135102e233b28f811c2
+        commit-sha: ddba7252337859626421b6060ae8952f93f61653
     - id: orphan-whole-collection
       claim:
         lines: 396-397
@@ -185,7 +185,7 @@ docs/src/content/docs/cite/set-up/citations-in-a-sidecar.mdx:
         file: src/cite/commands/check.ts
         lines: 320-324
         integrity: sha256-4e6250b5a5a8d5c1a9ddd794eb44e4b3998ac34979dee798af600c75cb781cab
-        commit-sha: da88b121073f9e8bffc3c135102e233b28f811c2
+        commit-sha: ddba7252337859626421b6060ae8952f93f61653
     - id: page-placeholder-refuses-join
       claim:
         integrity: sha256-428b360d38cb84522d7c52b017e3972dfcb3700495b2de0e01091387bd2b6644

@@ -4,6 +4,13 @@
 4.13.1. Entries below that version are docmeta releases; the repository
 history is the same one.
 
+# [4.18.0](https://github.com/hawkeyexl/manni/compare/v4.17.1...v4.18.0) (2026-10-22)
+
+
+### Features
+
+* **cite:** cite sources from more than one checkout with cite.repos (0100) ([#231](https://github.com/hawkeyexl/manni/issues/231)) ([ddba725](https://github.com/hawkeyexl/manni/commit/ddba7252337859626421b6060ae8952f93f61653))
+
 ## [4.17.1](https://github.com/hawkeyexl/manni/compare/v4.17.0...v4.17.1) (2026-10-22)
 
 
