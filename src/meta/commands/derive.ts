@@ -125,7 +125,7 @@ import {
   type MetaManifestOp,
 } from "../core/manifest-writes.js";
 import { lineSpec, parseLines } from "../../shared/pin.js";
-import { pinStatements, readStatements } from "../core/statements.js";
+import { pinStatements } from "../core/statements.js";
 import {
   compareDerived,
   DERIVABLE_FIELDS,
@@ -1203,15 +1203,13 @@ export async function runDerive(opts: DeriveOptions): Promise<DeriveRun> {
     const doc = loaded.get(result.file);
     if (doc === undefined) continue;
     const content = dryRun ? doc.content : await readFile(doc.absPath, "utf8");
-    const { content: next, pinned } = pinStatements(content, doc.format);
+    const { content: next, pinned, findings } = pinStatements(content, doc.format);
     if (pinned === 0) continue;
     statementsPinned += pinned;
     statementPages++;
     result.changed = true;
     if (check) {
-      const unpinned = readStatements(content, doc.format).findings.filter(
-        (f) => f.keyword === "statement-unpinned",
-      );
+      const unpinned = findings.filter((f) => f.keyword === "statement-unpinned");
       result.findings = [...(result.findings ?? []), ...unpinned];
     }
     if (!dryRun) await writeFileAtomic(doc.absPath, next);
