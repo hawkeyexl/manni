@@ -27,6 +27,8 @@ export interface PublishOptions {
   out?: string;
   /** `--evals`: overrides `graph.export.chunks.evals`. */
   evals?: string;
+  /** `--collection`, repeatable: the collections the build reads (default: every one). */
+  collection?: string[];
   cwd?: string;
   /** Each step's warnings and notices, as they are said. */
   say?: (kind: "warning" | "notice", message: string) => void;
@@ -96,7 +98,8 @@ export async function runPublish(opts: PublishOptions = {}): Promise<PublishRepo
   const names = (r: ExportResult): string => r.files.map(shown).join(", ");
 
   await run("build", async () => {
-    const r = await runBuild({ ...source, out: graph });
+    // Only the build reads documents; every later step reads what it built.
+    const r = await runBuild({ ...source, ...(opts.collection === undefined ? {} : { collection: opts.collection }), out: graph });
     return { detail: `${shown(r.outPath)}: ${plural(r.docs, "page")}, ${plural(r.quads, "triple")}`, files: [r.outPath], warnings: r.warnings };
   });
   await exported("search", (r) => `${names(r)}: ${String(r.nodes)} ${r.nodes === 1 ? "entry" : "entries"}`, outDir);
