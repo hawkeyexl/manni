@@ -11,7 +11,7 @@
  */
 import { Command } from "commander";
 import pkg from "../../package.json" with { type: "json" };
-import { collect, readStdin, splitList } from "../shared/cli-options.js";
+import { readStdin, splitList, withInputs as withSharedInputs } from "../shared/cli-options.js";
 import { shouldColor } from "../shared/color.js";
 import { fail } from "../shared/run.js";
 import { notice } from "../shared/warn.js";
@@ -121,17 +121,9 @@ async function coreOptions(paths: string[], options: InputCliOptions): Promise<T
   };
 }
 
-/** The shared input flags, declared once so every verb spells them alike. */
+/** The shared input flags, with term's noun for an empty set. */
 function withInputs(command: Command): Command {
-  return command
-    .option("--as <format>", "input format for stdin (-)")
-    .option("--ext <list>", "comma-separated extensions for directory walks")
-    .option("--exclude <glob>", "glob to exclude; repeatable", collect, [])
-    .option("--collection <name>", "configured collection to read; repeatable", collect, [])
-    .option("--allow-empty", "treat a missing path, no matched files or no terms as success")
-    .option("--no-gitignore", "read files .gitignore covers")
-    .option("-c, --config <path>", "path to a manni config file")
-    .option("--no-color", "disable colored output");
+  return withSharedInputs(command, "no terms");
 }
 
 function print(text: string): void {

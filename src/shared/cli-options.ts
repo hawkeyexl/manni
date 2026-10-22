@@ -10,10 +10,28 @@
  * that says it must not.
  */
 import { basename, relative } from "node:path";
+import type { Command } from "commander";
 
 /** Accumulate a repeatable option (`--exclude a --exclude b`). */
 export function collect(value: string, prev: string[]): string[] {
   return prev.concat([value]);
+}
+
+/**
+ * The input flags of a verb that reads a document set, declared once so every
+ * verb of `term` and `strategy` spells them alike. `nothing` names what an
+ * empty set lacks in `--allow-empty`'s help: `"no terms"`, `"no records"`.
+ */
+export function withInputs(command: Command, nothing: string): Command {
+  return command
+    .option("--as <format>", "input format for stdin (-)")
+    .option("--ext <list>", "comma-separated extensions for directory walks")
+    .option("--exclude <glob>", "glob to exclude; repeatable", collect, [])
+    .option("--collection <name>", "configured collection to read; repeatable", collect, [])
+    .option("--allow-empty", `treat a missing path, no matched files or ${nothing} as success`)
+    .option("--no-gitignore", "read files .gitignore covers")
+    .option("-c, --config <path>", "path to a manni config file")
+    .option("--no-color", "disable colored output");
 }
 
 /** Split a comma-separated option value, dropping blanks. */

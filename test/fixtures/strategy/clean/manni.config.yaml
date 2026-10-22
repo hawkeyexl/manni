@@ -1,0 +1,8 @@
+# A strategy set whose every reference resolves: `manni strategy check` exits 0.
+collections:
+  - name: site
+    paths:
+      - "docs/**/*.md"
+  - name: strategy
+    paths:
+      - "strategy/**/*.md"
