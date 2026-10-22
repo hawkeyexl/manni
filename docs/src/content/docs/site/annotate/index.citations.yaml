@@ -6,18 +6,18 @@ docs/src/content/docs/site/annotate/index.mdx:
         integrity: sha256-c90b1218540987e87bc6c60e3226bdf5843e12dd3e78cc85fb6f1fb5da68cf36
       source:
         file: src/site/core/annotate.ts
-        lines: 262-278
+        lines: 259-275
         integrity: sha256-9622cad789f3b044fd1a6899cb176efa08393ecc9b19eff175bba3766e9c4aea
-        commit-sha: 41a677a71476ddcc1fd7e5aa8ce446edd3319469
+        commit-sha: 51ffb88f2cc94339ea7c636f6ddb6af226cef0a3
     - id: stamps-removed
       claim:
         lines: 38-39
         integrity: sha256-89d9784d787108a30500cac460d06f4293283639fd53452f4944ad40c8bbbc66
       source:
         file: src/site/core/annotate.ts
-        lines: 389-399
+        lines: 386-396
         integrity: sha256-577d5c0a5cff736f021b470f04ead41ada64abf4187d1e76959aaaf04dfdaa8f
-        commit-sha: 41a677a71476ddcc1fd7e5aa8ce446edd3319469
+        commit-sha: 51ffb88f2cc94339ea7c636f6ddb6af226cef0a3
     - id: start-never-annotates
       claim:
         lines: 67
