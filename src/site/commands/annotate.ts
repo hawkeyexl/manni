@@ -111,7 +111,7 @@ function readArtifact(path: string, label: string, shown: (p: string) => string)
 }
 
 /** The body lines of a page source, rendered, for the text step. */
-function claimTexts(page: string, label: string): { bodyLine: number; text: (start: number, end: number) => string } {
+export function claimTexts(page: string, label: string): { bodyLine: number; text: (start: number, end: number) => string } {
   let content: string;
   try {
     content = readFileSync(page, "utf8");
@@ -122,7 +122,15 @@ function claimTexts(page: string, label: string): { bodyLine: number; text: (sta
   const format = formatOf(page);
   const bodyLine = format === "html" || format === "xml" ? 1 : bodyLineOf(content, locateFrontmatter(content)?.closeEnd ?? 0);
   const lines = content.split(/\r?\n/);
-  return { bodyLine, text: (start, end) => renderedText(lines.slice(start + bodyLine - 2, end + bodyLine - 1)) };
+  return {
+    bodyLine,
+    text: (start, end) => {
+      // A malformed range reads as no text, not as a slice from the end of the file.
+      const from = Math.max(0, start + bodyLine - 2);
+      const to = Math.min(lines.length, end + bodyLine - 1);
+      return to <= from ? "" : renderedText(lines.slice(from, to));
+    },
+  };
 }
 
 export function runAnnotate(opts: AnnotateOptions): AnnotateReport {
@@ -221,6 +229,8 @@ export function runAnnotate(opts: AnnotateOptions): AnnotateReport {
       }
       continue;
     }
+    // Two source pages can build to one HTML file. The first writes it, so the second's
+    // pins and statements count in the totals but not in the placed counts.
     if (joined.has(html)) continue;
     joined.add(html);
     writeFileSync(html, result.html, "utf8");
