@@ -115,7 +115,11 @@ export interface PageStatement {
 export interface StatementRead {
   statements: PageStatement[];
   findings: FieldError[];
-  /** Where every statement on the page sits, in document order, for cutting them out of a pin. */
+  /**
+   * Where every statement on the page sits, in document order, for cutting
+   * them out of a pin. Internal: `pinStatements` reads it, and the package
+   * does not export `StatementRead`.
+   */
   spans: Span[];
 }
 
@@ -277,15 +281,18 @@ interface Span {
   end: number;
 }
 
+// ponytail: one page's line starts, kept for the next call. Pages are read one
+// at a time, so the anchored text of every statement on a page reuses one scan.
+let starts: { content: string; at: number[] } | undefined;
+
 /** The file offset line `line` starts at. */
 function lineOffset(content: string, line: number): number {
-  let at = 0;
-  for (let n = 1; n < line; n++) {
-    const nl = content.indexOf("\n", at);
-    if (nl === -1) return content.length;
-    at = nl + 1;
+  if (starts?.content !== content) {
+    const at = [0];
+    for (let nl = content.indexOf("\n"); nl !== -1; nl = content.indexOf("\n", nl + 1)) at.push(nl + 1);
+    starts = { content, at };
   }
-  return at;
+  return starts.at[line - 1] ?? content.length;
 }
 
 /**

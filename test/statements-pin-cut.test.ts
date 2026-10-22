@@ -120,3 +120,35 @@ describe("a first-child statement", () => {
     expect(pinIn(blank)).toBe(pinOf(["  <step>", "    <cmd>Run it.</cmd>", "", "  </step>"]));
   });
 });
+
+// In a line format a statement on its own line is a marker line and ends the
+// block, so a statement lands inside another's anchor only by sharing a line
+// with its text.
+describe("a statement inside another's anchor, in a line format", () => {
+  /** The statement whose payload holds `needle`, read as `format`. */
+  const find = (content: string, format: string, needle: string): PageStatement | undefined =>
+    readStatements(content, format).statements.find((s) => s.token.payload.includes(needle));
+  /** A verifier's write: the inner statement gains a key, its pin kept. */
+  const write = (content: string): string => content.replace('{"concepts":["inner"]}', '{"concepts":["inner"],"last-verified":"2026-10-22"}');
+
+  it.each([
+    [
+      "markdown",
+      "a paragraph holding a statement inside its text",
+      ['<!-- meta {"concepts":["outer"]} -->', 'Run the installer <!-- meta {"concepts":["inner"]} --> and wait.', ""],
+      ["Run the installer  and wait."],
+    ],
+    [
+      "html",
+      "a block holding a statement inside its text",
+      ['<!-- meta {"concepts":["outer"]} -->', '<p>Hello <!-- meta {"concepts":["inner"]} --> world.</p>', ""],
+      ["<p>Hello  world.</p>"],
+    ],
+  ])("cuts it in %s, %s", (format, _, lines, hashed) => {
+    const pinned = pinStatements(lines.join("\n"), format).content;
+    expect(find(pinned, format, "outer")?.pin).toBe(pinOf(hashed));
+    const written = write(pinned);
+    expect(written).not.toBe(pinned);
+    expect(find(written, format, "outer")?.status).toBe("current");
+  });
+});
