@@ -57,8 +57,8 @@ export function spellAt(lines: PageLines): string {
     : `lines ${String(lines.start)}-${String(lines.end)}`;
 }
 
-/** `a`, `a and b`, `a, b and c`: a list as a sentence reads it. */
-export function listOf(values: readonly string[]): string {
+/** `a`, `a and b`, `a, b and c`: a list as a sentence reads it, or with `or`. */
+export function listOf(values: readonly string[], conjunction: "and" | "or" = "and"): string {
   if (values.length <= 1) return values.join("");
-  return `${values.slice(0, -1).join(", ")} and ${values[values.length - 1] ?? ""}`;
+  return `${values.slice(0, -1).join(", ")} ${conjunction} ${values[values.length - 1] ?? ""}`;
 }

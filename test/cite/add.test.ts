@@ -34,7 +34,19 @@ import { shortPin, shortSrc } from "../../src/cite/core/spell.js";
 import { decryptSourcePath, encryptSourcePath } from "../../src/cite/core/sources.js";
 import { CiteError } from "../../src/cite/errors.js";
 import type { AddOptions, AddResult } from "../../src/cite/types.js";
-import { gitAvailable } from "../helpers/temp-repo.js";
+import { gitAvailable, removeTempRepo } from "../helpers/temp-repo.js";
+import {
+  API_LIMITS,
+  API_LIMITS_TEXT,
+  NEW_PAGE,
+  NEW_PAGE_TEXT,
+  SDK_CLIENT,
+  makeCheckout,
+  readme,
+  reposRepo,
+  track,
+  type ReposRepo,
+} from "./fixtures/repos-repo.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(here, "..", "fixtures", "cite");
@@ -1907,4 +1919,201 @@ describe("runAdd: a paragraph a misplaced marker splits", () => {
     expect(result.written).toBe(true);
     expect(result.content).toContain(["{/* cite retries */}", "Retries default to 3.", ""].join("\n"));
   });
+});
+
+/**
+ * Proposal 0100, decision 4: a plain path is the root's when the root tracks
+ * it, and otherwise the one declared repo that does. A prefixed path is looked
+ * up in its repo alone.
+ */
+describe.skipIf(!gitAvailable())("runAdd across checkouts", () => {
+  const made: string[] = [];
+  afterEach(() => {
+    for (const dir of made.splice(0)) removeTempRepo(dir);
+  });
+  function repos(opts: Parameters<typeof reposRepo>[0] = {}): ReposRepo {
+    const r = reposRepo(opts);
+    made.push(r.dir);
+    writeFileSync(join(r.docs, NEW_PAGE), NEW_PAGE_TEXT, "utf8");
+    return r;
+  }
+  function addIn(
+    r: ReposRepo,
+    over: Partial<AddOptions> & { src: string },
+  ): Promise<AddResult> {
+    return runAdd({
+      cwd: r.docs,
+      root: r.docs,
+      noConfig: true,
+      commitSha: false,
+      env: {},
+      page: NEW_PAGE,
+      pageLines: { start: 5, end: 5 },
+      repos: { api: r.api, sdk: r.sdk },
+      ...over,
+    });
+  }
+  /** A third checkout, `web`, beside the fixture's two. */
+  function web(r: ReposRepo, files: Record<string, string>): string {
+    const dir = join(r.dir, "web");
+    makeCheckout(dir, files);
+    return dir;
+  }
+
+  it("keeps a path the root tracks in the root, with no repo", async () => {
+    const r = repos();
+    const result = await addIn(r, { src: "README.md:3" });
+    expect(result.citation.source).toEqual({
+      file: "README.md",
+      lines: 3,
+      integrity: hashRange(readme(20), { start: 3, end: 3 }),
+    });
+  });
+
+  it("takes the one repo that tracks a plain path, and writes repo first", async () => {
+    const r = repos();
+    const result = await addIn(r, { src: "lib/limits.ts:2", id: "timeout" });
+    expect(Object.keys(result.citation.source)).toEqual(["repo", "file", "lines", "integrity"]);
+    expect(result.citation.source).toMatchObject({
+      repo: "api",
+      file: API_LIMITS,
+      integrity: hashRange(API_LIMITS_TEXT, { start: 2, end: 2 }),
+    });
+    expect(result.sourceLine).toBe("  timeoutMs: 30_000,");
+    expect(addMessage(result)).toContain(`source api:${API_LIMITS}:2 "timeoutMs: 30_000,"`);
+    expect(await check(r)).toEqual(["current/current"]);
+  });
+
+  it("refuses a plain path two repos track, naming each spelling", async () => {
+    const r = repos();
+    track(r.api, { "docs/guide.md": "one\ntwo\n" });
+    track(r.sdk, { "docs/guide.md": "uno\ndos\n" });
+    expect(await refusal(addIn(r, { src: "docs/guide.md:2" }))).toBe(
+      "docs/guide.md is tracked in api and sdk. Spell the one you mean: api:docs/guide.md:2 or sdk:docs/guide.md:2.",
+    );
+    expect(readFileSync(join(r.docs, NEW_PAGE), "utf8")).toBe(NEW_PAGE_TEXT);
+  });
+
+  it("lists three repos with commas", async () => {
+    const r = repos();
+    const files = { "docs/guide.md": "one\ntwo\n" };
+    track(r.api, files);
+    track(r.sdk, files);
+    const w = web(r, files);
+    expect(await refusal(addIn(r, { src: "docs/guide.md", repos: { api: r.api, sdk: r.sdk, web: w } }))).toBe(
+      "docs/guide.md is tracked in api, sdk and web. Spell the one you mean: api:docs/guide.md, sdk:docs/guide.md or web:docs/guide.md.",
+    );
+  });
+
+  it("says where it looked when nothing tracks a plain path", async () => {
+    const r = repos();
+    expect(await refusal(addIn(r, { src: "lib/x.ts:1" }))).toBe(
+      "Source not found: lib/x.ts is not a tracked file under the root, or in api or sdk.",
+    );
+    const w = web(r, { "a.txt": "a\n" });
+    expect(await refusal(addIn(r, { src: "lib/x.ts", repos: { api: r.api, sdk: r.sdk, web: w } }))).toBe(
+      "Source not found: lib/x.ts is not a tracked file under the root, or in api, sdk or web.",
+    );
+  });
+
+  it("refuses as today when no repo is declared", async () => {
+    const r = repos();
+    expect(await refusal(addIn(r, { src: "lib/limits.ts:2", repos: {} }))).toBe(
+      "Source not found: lib/limits.ts is not a tracked file under the root.",
+    );
+  });
+
+  it("looks a prefixed path up in its repo alone", async () => {
+    const r = repos();
+    const result = await addIn(r, { src: "sdk:README.md:3" });
+    expect(result.citation.source).toEqual({
+      repo: "sdk",
+      file: "README.md",
+      lines: 3,
+      integrity: hashRange(readme(22), { start: 3, end: 3 }),
+    });
+  });
+
+  it("refuses an undeclared prefix, naming what is declared", async () => {
+    const r = repos();
+    expect(await refusal(addIn(r, { src: "apii:lib/limits.ts:2" }))).toBe(
+      "No repo named apii. Declare it under cite.repos in manni.config.yaml, or pass --repo apii=<dir>. Declared: api, sdk.",
+    );
+    expect(await refusal(addIn(r, { src: "apii:lib/limits.ts:2", repos: {} }))).toBe(
+      "No repo named apii. Declare it under cite.repos in manni.config.yaml, or pass --repo apii=<dir>.",
+    );
+  });
+
+  it("refuses a prefixed path its repo does not track", async () => {
+    const r = repos();
+    expect(await refusal(addIn(r, { src: `api:${SDK_CLIENT}:2` }))).toBe(
+      `Source not found: ${SDK_CLIENT} is not a tracked file in api.`,
+    );
+  });
+
+  it("finds an encrypted plain source in a repo, and never names its path", async () => {
+    const r = repos();
+    const env = { MANNI_ENCRYPTION_KEY: KEY };
+    const token = encryptSourcePath(API_LIMITS, KEY);
+    const result = await addIn(r, { src: `${token}:2`, env, dryRun: true });
+    expect(result.citation.source).toMatchObject({ repo: "api", file: token, lines: 2 });
+
+    const gone = encryptSourcePath("lib/x.ts", KEY);
+    const missing = await refusal(addIn(r, { src: `${gone}:1`, env }));
+    expect(missing).toBe(`No tracked file matches ${gone} under the root, or in api or sdk.`);
+    expect(missing).not.toContain("lib/");
+
+    track(r.api, { "docs/guide.md": "one\ntwo\n" });
+    track(r.sdk, { "docs/guide.md": "one\ntwo\n" });
+    const both = encryptSourcePath("docs/guide.md", KEY);
+    const ambiguous = await refusal(addIn(r, { src: `${both}:2`, env }));
+    expect(ambiguous).toBe(
+      `${both} is tracked in api and sdk. Spell the one you mean: api:${both}:2 or sdk:${both}:2.`,
+    );
+    expect(ambiguous).not.toContain("docs/guide.md");
+  });
+
+  it("detects the repo on the plain path before --encrypt encrypts it", async () => {
+    const r = repos();
+    const result = await addIn(r, {
+      src: `${API_LIMITS}:2`,
+      encrypt: true,
+      env: { MANNI_ENCRYPTION_KEY: KEY },
+    });
+    const { source } = result.citation;
+    expect(source.repo).toBe("api");
+    expect(decryptSourcePath(source.file, KEY)).toBe(API_LIMITS);
+  });
+
+  it("counts the same path in two repos as two sources", async () => {
+    const r = repos();
+    // Each write grows the frontmatter, so the sentence's file line moves.
+    const first = await addIn(r, { src: "api:README.md:3", id: "api-node" });
+    const second = await addIn(r, { src: "sdk:README.md:3", id: "sdk-node", pageLines: first.claimLines });
+    expect(second.written).toBe(true);
+    const at = second.claimLines?.start ?? 0;
+    expect(await refusal(addIn(r, { src: "api:README.md:3", pageLines: { start: at, end: at } }))).toBe(
+      `pages/new.md already has an entry for line ${String(at)} and api:README.md:3 (api-node).`,
+    );
+  });
+
+  it("says a repo checkout without git records no commit under its name", async () => {
+    const r = repos({ sdkGit: false });
+    const notices: string[] = [];
+    await addIn(r, { src: `${SDK_CLIENT}:2`, commitSha: undefined, onNotice: (m) => notices.push(m) });
+    expect(notices).toEqual([`sdk: ${NO_COMMIT}`]);
+  });
+
+  /** The page's ends as `check` sees them, with the repos the add used. */
+  async function check(r: ReposRepo): Promise<string[]> {
+    const run = await runCheck({
+      cwd: r.docs,
+      root: r.docs,
+      env: {},
+      noConfig: true,
+      inputs: [NEW_PAGE],
+      repos: { api: r.api, sdk: r.sdk },
+    });
+    return run.pages[0]?.citations.map((c) => `${c.claim?.status ?? "none"}/${c.source.status}`) ?? [];
+  }
 });

@@ -26,9 +26,18 @@ import {
   story as historyStory,
   type Story,
 } from "./fixtures/history-repo.js";
-import { reposRepo } from "./fixtures/repos-repo.js";
+import {
+  API_LIMITS_TEXT,
+  NEW_PAGE,
+  NEW_PAGE_TEXT,
+  SDK_CLIENT_TEXT,
+  reposRepo,
+  track,
+  type ReposRepo,
+} from "./fixtures/repos-repo.js";
 import { DEFAULT_CITE_BASELINE_PATH } from "../../src/cite/core/config.js";
-import { hashRange } from "../../src/cite/core/hash.js";
+import { hashLines, hashRange } from "../../src/cite/core/hash.js";
+import { shortPin } from "../../src/cite/core/spell.js";
 import { encryptSourcePath } from "../../src/cite/core/sources.js";
 import { supportedExtensions } from "../../src/meta/index.js";
 import { commit as commitAt, commitAll, gitAvailable, makeTempRepo, removeTempRepo } from "../helpers/temp-repo.js";
@@ -914,6 +923,64 @@ describe.skipIf(!gitAvailable())("manni cite check across checkouts (0100)", () 
     const out = run(["cite", "check", "--no-config", "--repo", "api=../api", "--repo", "sdk=../gone", "pages/limits.md"], { cwd: r.docs });
     expect(out.stderr).toBe(
       `manni: Repo directory not found: ${join(r.dir, "gone")} (sdk). Fix --repo sdk=<dir>, or cite.repos.sdk in manni.config.yaml.\n`,
+    );
+    expect(out.stdout).toBe("");
+    expect(out.status).toBe(2);
+  }, 60000);
+});
+
+describe.skipIf(!gitAvailable())("manni cite add across checkouts (0100)", () => {
+  let dir: string | undefined;
+  afterEach(() => {
+    removeTempRepo(dir);
+    dir = undefined;
+  });
+  const REPOS = ["--no-config", "--repo", "api=../api", "--repo", "sdk=../sdk"];
+  /** The fixture checkouts, with an uncited page at `pages/new.md`. */
+  function repos(): ReposRepo {
+    const r = reposRepo();
+    dir = r.dir;
+    writeFileSync(join(r.docs, NEW_PAGE), NEW_PAGE_TEXT, "utf8");
+    return r;
+  }
+  const claimPin = shortPin(hashLines("Requests time out after 30 seconds."));
+
+  it("prints the repo a plain path was found in", () => {
+    const r = repos();
+    const out = run(["cite", "add", ...REPOS, "--id", "timeout", `${NEW_PAGE}:5`, "lib/limits.ts:2"], { cwd: r.docs });
+    expect(out.stdout).toBe(
+      `${NEW_PAGE}: added timeout to frontmatter (claim at line 16, ${claimPin}; source api:lib/limits.ts:2 "timeoutMs: 30_000,", ${shortPin(hashRange(API_LIMITS_TEXT, { start: 2, end: 2 }))}, ${r.minted.api.slice(0, 7)})\n`,
+    );
+    expect(out.stderr).toBe("");
+    expect(out.status).toBe(0);
+  }, 60000);
+
+  it("adds a prefixed source in the checkout --repo names", () => {
+    const r = repos();
+    const out = run(["cite", "add", ...REPOS, "--id", "retries", `${NEW_PAGE}:5`, "sdk:src/client.ts:2"], { cwd: r.docs });
+    expect(out.stdout).toBe(
+      `${NEW_PAGE}: added retries to frontmatter (claim at line 16, ${claimPin}; source sdk:src/client.ts:2 "return retry(() => fetch(url), { attempts: 3 });", ${shortPin(hashRange(SDK_CLIENT_TEXT, { start: 2, end: 2 }))}, ${r.minted.sdk.slice(0, 7)})\n`,
+    );
+    expect(out.status).toBe(0);
+  }, 60000);
+
+  it("refuses a plain path two repos track, with exit 2", () => {
+    const r = repos();
+    track(r.api, { "docs/guide.md": "a\nb\n" });
+    track(r.sdk, { "docs/guide.md": "a\nb\n" });
+    const out = run(["cite", "add", ...REPOS, `${NEW_PAGE}:5`, "docs/guide.md:2"], { cwd: r.docs });
+    expect(out.stderr).toBe(
+      "manni: docs/guide.md is tracked in api and sdk. Spell the one you mean: api:docs/guide.md:2 or sdk:docs/guide.md:2.\n",
+    );
+    expect(out.stdout).toBe("");
+    expect(out.status).toBe(2);
+  }, 60000);
+
+  it("refuses an undeclared prefix, with exit 2", () => {
+    const r = repos();
+    const out = run(["cite", "add", ...REPOS, `${NEW_PAGE}:5`, "apii:lib/limits.ts:2"], { cwd: r.docs });
+    expect(out.stderr).toBe(
+      "manni: No repo named apii. Declare it under cite.repos in manni.config.yaml, or pass --repo apii=<dir>. Declared: api, sdk.\n",
     );
     expect(out.stdout).toBe("");
     expect(out.status).toBe(2);

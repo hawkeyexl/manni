@@ -140,3 +140,13 @@ export function editLine(checkout: string, rel: string, original: string, line: 
   writeFile(checkout, rel, lines.join("\n"));
   return commitAll(checkout, `edit ${rel}:${String(line)}`);
 }
+
+/** A page with no citations yet, its one sentence at file line 5, for `add`. */
+export const NEW_PAGE = "pages/new.md";
+export const NEW_PAGE_TEXT = "---\ntitle: New\n---\n\nRequests time out after 30 seconds.\n";
+
+/** Write these files into a checkout and commit them, so its index tracks them. Returns the new HEAD. */
+export function track(checkout: string, files: Record<string, string>): string {
+  for (const [rel, text] of Object.entries(files)) writeFile(checkout, rel, text);
+  return commitAll(checkout, `track ${Object.keys(files).join(", ")}`);
+}
