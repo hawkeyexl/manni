@@ -34,6 +34,8 @@ export interface PublicClaimEnd {
 
 export interface PublicSourceEnd {
   src: string;
+  /** The checkout the source is in, by its `cite.repos` name; present only for a repo entry. */
+  repo?: string;
   status: string;
   newLines?: string;
   newSrc?: string;
@@ -63,7 +65,11 @@ export function publicCitation(result: CitationResult): PublicCitationResult {
   };
   if (result.origin.line !== undefined) origin.line = result.origin.line;
 
-  const source: PublicSourceEnd = { src: result.source.src, status: result.source.status };
+  const source: PublicSourceEnd = {
+    src: result.source.src,
+    ...(result.source.repo === undefined ? {} : { repo: result.source.repo }),
+    status: result.source.status,
+  };
   if (result.source.newLines !== undefined) source.newLines = result.source.newLines;
   if (result.source.newSrc !== undefined) source.newSrc = result.source.newSrc;
   if (result.source.candidates !== undefined) source.candidates = result.source.candidates;

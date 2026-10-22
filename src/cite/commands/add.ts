@@ -31,7 +31,7 @@ import {
 import { resolveCiteRun } from "../core/config.js";
 import { GIT_UNAVAILABLE_COMMIT, gitClient } from "../core/git.js";
 import { sliceLines, splitLines } from "../core/hash.js";
-import { mintCitation } from "../core/mint.js";
+import { mintSource } from "../core/mint.js";
 import { bodyLineOf, readPage } from "../core/page.js";
 import {
   formatSrc,
@@ -433,18 +433,16 @@ export async function runAdd(opts: AddOptions): Promise<AddResult> {
     elsewhere = otherClaimSpans(lines, pageLines, pin, page.bodyLine);
   }
 
+  // Parsed once, here: the mint reads this range and never a printed one.
+  const srcRange = parseSrc(opts.src);
   const mint = (key: string | undefined, encrypt: boolean): Promise<Citation> =>
-    mintCitation({
-      root,
-      src: opts.src,
+    mintSource(srcRange, { root, index: sourceIndex, git: client }, {
       ...(opts.id === undefined ? {} : { id: opts.id }),
       ...(claim === undefined ? {} : { claim }),
       ...(quote ? { quote: true } : {}),
       ...(opts.commitSha === false ? { commitSha: false as const } : {}),
       encrypt,
       ...(key === undefined ? {} : { key }),
-      gitClient: client,
-      sourceIndex,
     });
 
   // Encryption follows the key: an available one encrypts every add, with no
@@ -482,7 +480,6 @@ export async function runAdd(opts: AddOptions): Promise<AddResult> {
   // The first pinned source line, so the report shows what the range caught
   // and a mis-typed one is visible at write time. A whole file has no first
   // line worth naming, and an encrypted source is never spelled in the open.
-  const srcRange = parseSrc(opts.src);
   let sourceLine: string | undefined;
   if (srcRange.start !== undefined && !isEncryptedValue(citation.source.file)) {
     const read = await readSource(root, sourceIndex, srcRange, undefined);

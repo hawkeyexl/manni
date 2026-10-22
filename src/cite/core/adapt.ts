@@ -65,9 +65,14 @@ function sourceFile(src: string): string {
 
 /**
  * Why an encrypted source is missing, in words that never name the path. A
- * plain path names its own file, so the bare status says the rest.
+ * plain path names its own file, so the bare status says the rest, unless
+ * the repo it names is one nothing declares.
  */
 function missingMessage(source: SourceEnd): string {
+  const { repo } = source;
+  if (source.missingReason === "unknown-repo") {
+    return `missing (no repo named ${repo ?? "?"} is declared)`;
+  }
   if (!citesEncrypted(source.src)) return "missing";
   switch (source.missingReason) {
     case "no-key":
@@ -75,7 +80,9 @@ function missingMessage(source: SourceEnd): string {
     case "undecryptable":
       return "missing (does not decrypt under the current key)";
     case "untracked":
-      return "missing (no tracked file matches; wrong --root?)";
+      return repo === undefined
+        ? "missing (no tracked file matches; wrong --root?)"
+        : `missing (no tracked file matches in ${repo}; wrong cite.repos.${repo}?)`;
     case "unreadable":
     case undefined:
       return "missing";
@@ -362,6 +369,11 @@ export function withRemedy(message: string, remedy: string | undefined): string 
 
 /** What to do about a missing source: the cause in its message decides. */
 function missingRemedy(result: CitationResult): string {
+  const { repo } = result.source;
+  if (result.source.missingReason === "unknown-repo") {
+    const name = repo ?? "<name>";
+    return `Declare ${name} under cite.repos in manni.config.yaml, or pass --repo ${name}=<dir>.`;
+  }
   if (citesEncrypted(result.source.src)) {
     switch (result.source.missingReason) {
       case "no-key":
@@ -369,7 +381,9 @@ function missingRemedy(result: CitationResult): string {
       case "undecryptable":
         return "Use the key the source was encrypted with. After a key rotation, update the secret too.";
       case "untracked":
-        return "Point --root at the code checkout, or re-add the citation against the new path.";
+        return repo === undefined
+          ? "Point --root at the code checkout, or re-add the citation against the new path."
+          : `Point cite.repos.${repo} at the ${repo} checkout, or re-add the citation against the new path.`;
       case "unreadable":
       case undefined:
         break;

@@ -42,11 +42,10 @@ import { arrivalOf, historyOf } from "../core/classify.js";
 import { GIT_UNAVAILABLE_COMMIT, SHALLOW_RECOMMIT } from "../core/git.js";
 import { splitLines } from "../core/hash.js";
 import { claimWords, sharesSentence, wordShare } from "../core/history.js";
-import { mintCitation } from "../core/mint.js";
+import { mintSource } from "../core/mint.js";
 import { ManifestSet } from "../core/manifest.js";
 import { readPage } from "../core/page.js";
 import {
-  formatSrc,
   lineSpec,
   parseLines,
   parseSrc,
@@ -65,6 +64,7 @@ import { anchoredLines, markerIndent, offsetOfLine } from "../core/statements.js
 import { spliceEntryField, unifiedDiff } from "../core/write.js";
 import { CiteError } from "../errors.js";
 import type {
+  Checkout,
   Citation,
   CitationResult,
   CiteRule,
@@ -874,6 +874,17 @@ export async function runUpdate(opts: UpdateOptions): Promise<UpdateRun> {
   }
 
   /**
+   * The checkout an entry's source resolves in (0100). `check` already
+   * opened it: an entry whose repo nothing declares is `missing`, which
+   * nothing here re-mints, and `update` refuses to run without the sources.
+   */
+  const checkoutFor = async (result: CitationResult): Promise<Checkout> => {
+    const checkout = await pageOptions.checkouts?.(result.citation.source.repo);
+    if (checkout === undefined) throw new Error(`No checkout for ${result.source.src}.`);
+    return checkout;
+  };
+
+  /**
    * Whether `commit` is outside the history of `head`. Only a client that can
    * answer both questions, in a clone that is not shallow, says yes. A shallow
    * clone lacks commits that are in the history, so it cannot tell them from
@@ -1023,6 +1034,8 @@ export async function runUpdate(opts: UpdateOptions): Promise<UpdateRun> {
       const went = parseSrc(to).path;
       const crossFile = went !== result.citation.source.file;
       if (at !== undefined || result.citation.source.lines === undefined) {
+        // Resolved outside the try: a checkout that will not open stops the run.
+        const checkout = await checkoutFor(result);
         try {
           if (crossFile) {
             // Nothing to re-mint: the window hashed to the pin the entry
@@ -1040,15 +1053,11 @@ export async function runUpdate(opts: UpdateOptions): Promise<UpdateRun> {
             // A pin whose `lines` were rewritten under an older `commit-sha`
             // names a range that commit may not even reach, and the next
             // command to ask for history reads it as a claim that never held.
-            const minted = await mintCitation({
-              root: run.root,
-              src: to,
+            // The entry's own range, at the lines it moved to.
+            const target = { ...sourceRange(result.citation.source), start: at.start, end: at.end };
+            const minted = await mintSource(target, checkout, {
               ...(run.key === undefined ? {} : { key: run.key }),
               ...(recorded === undefined ? { commitSha: false as const } : {}),
-              gitClient: git,
-              ...(pageOptions.sourceIndex === undefined
-                ? {}
-                : { sourceIndex: pageOptions.sourceIndex }),
             });
             const commit = minted.source["commit-sha"];
             // An entry that records a commit needs one to advance to. Without
@@ -1208,28 +1217,24 @@ export async function runUpdate(opts: UpdateOptions): Promise<UpdateRun> {
       // Where the in-range search found the old first and last line. Accepting
       // the recorded range instead would hash a span the sentence never rested
       // on: an insertion inside a cited range pushes its end out of it.
-      const stored = parseSrc(result.source.src);
+      const stored = sourceRange(result.citation.source);
       const span =
         result.source.newLines === undefined ? undefined : parseLines(result.source.newLines);
       const at =
         span === undefined || (span.start === stored.start && span.end === stored.end)
           ? undefined
           : { ...stored, start: span.start, end: span.end };
+      // Resolved outside the try: a checkout that will not open stops the run.
+      const checkout = await checkoutFor(result);
       try {
         // The source as the entry spells it: an encrypted one stays encrypted,
         // under the key it decrypted with, and mint keys the pin accordingly.
         // HEAD is recorded only where the entry already records a commit.
-        const minted = await mintCitation({
-          root: run.root,
-          src: at === undefined ? result.source.src : formatSrc(at),
+        const minted = await mintSource(at ?? stored, checkout, {
           ...(run.key === undefined ? {} : { key: run.key }),
           ...(result.citation.source["commit-sha"] === undefined
             ? { commitSha: false as const }
             : {}),
-          gitClient: git,
-          ...(pageOptions.sourceIndex === undefined
-            ? {}
-            : { sourceIndex: pageOptions.sourceIndex }),
         });
         out.push({
           kind: "source-accepted",

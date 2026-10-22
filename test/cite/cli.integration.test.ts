@@ -26,6 +26,7 @@ import {
   story as historyStory,
   type Story,
 } from "./fixtures/history-repo.js";
+import { reposRepo } from "./fixtures/repos-repo.js";
 import { DEFAULT_CITE_BASELINE_PATH } from "../../src/cite/core/config.js";
 import { hashRange } from "../../src/cite/core/hash.js";
 import { encryptSourcePath } from "../../src/cite/core/sources.js";
@@ -884,6 +885,38 @@ describe.skipIf(!gitAvailable())("manni cite check --show-diff", () => {
     expect(r.stdout).toMatch(/^ {8}-export const B = 2;$/m);
     expect(r.stdout).toMatch(/^ {8}\+export const B = 3;$/m);
     // Two commits and a CLI spawn: past the 5 s default on a slow Windows runner.
+  }, 60000);
+});
+
+describe.skipIf(!gitAvailable())("manni cite check across checkouts (0100)", () => {
+  let dir: string | undefined;
+  afterEach(() => {
+    removeTempRepo(dir);
+    dir = undefined;
+  });
+
+  it("checks each entry in the checkout --repo names, and prints the prefixed source", () => {
+    const r = reposRepo();
+    dir = r.dir;
+    const out = run(["cite", "check", "--no-config", "--repo", "api=../api", "--repo", "sdk=../sdk", "pages/limits.md"], { cwd: r.docs });
+    expect(out.stdout.split("\n").slice(0, 4)).toEqual([
+      "✓ pages/limits.md",
+      "    ✓ timeout   :37 current   api:lib/limits.ts:2 current",
+      "    ✓ retries   :39 current   sdk:src/client.ts:2 current",
+      "    ✓ node      :41 current   api:README.md:3 current",
+    ]);
+    expect(out.status).toBe(0);
+  }, 60000);
+
+  it("stops with exit 2 when a cited checkout's directory is missing", () => {
+    const r = reposRepo();
+    dir = r.dir;
+    const out = run(["cite", "check", "--no-config", "--repo", "api=../api", "--repo", "sdk=../gone", "pages/limits.md"], { cwd: r.docs });
+    expect(out.stderr).toBe(
+      `manni: Repo directory not found: ${join(r.dir, "gone")} (sdk). Fix --repo sdk=<dir>, or cite.repos.sdk in manni.config.yaml.\n`,
+    );
+    expect(out.stdout).toBe("");
+    expect(out.status).toBe(2);
   }, 60000);
 });
 

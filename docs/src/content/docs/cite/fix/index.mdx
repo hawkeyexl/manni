@@ -115,7 +115,7 @@ the entry's own line, in the manifest when a sidecar owns it.
 | [`source-moved-ambiguous`](#source-moved-ambiguous) | error | The cited lines now occur in more than one place. | Widen the range, then `update --accept --only <id>` |
 | [`source-changed`](#source-changed) | error | The cited lines are not what they were. | Read `--show-diff`, fix the sentence, then `update --accept --only <id>` |
 | [`source-never-true`](#source-never-true) | error | The pin held at no commit in the source's history. | Check the sentence, then `update --accept --only <id>` |
-| [`source-missing`](#source-missing) | error | The path names no tracked file, or an encrypted source cannot be decrypted. | Re-add against the new path; or fix `--root` or the key |
+| [`source-missing`](#source-missing) | error | The path names no tracked file, names an undeclared repo, or an encrypted source cannot be decrypted. | Re-add against the new path; or fix `--root` or the key |
 | [`claim-moved`](#claim-moved) | notice | The pinned page text sits at a different line. | `manni cite update` |
 | [`claim-moved-ambiguous`](#claim-moved-ambiguous) | warning | The pinned page text now occurs in more than one place. | Re-add over a range that occurs once |
 | [`claim-reanchored`](#claim-reanchored) | notice | The pinned words are unchanged, and only the layout around them moved. | `manni cite update` |

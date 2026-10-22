@@ -9,6 +9,7 @@
  * to anchor an entry's claim.
  */
 import type { ValidationResult } from "../meta/index.js";
+import type { ClassifyOptions } from "./core/classify.js";
 import type { CollectionConfig } from "../shared/collections.js";
 import type { ConfigFile } from "../shared/config-file.js";
 import type { KeySource } from "../shared/encryption-key.js";
@@ -125,11 +126,12 @@ export interface MarkerEnd {
 }
 
 /**
- * Why a source could not be read: not a tracked file under the root, an
+ * Why a source could not be read: not a tracked file in its checkout, an
  * encrypted source with no key to decrypt it, one that does not decrypt under
- * the key there is, or a tracked file that could not be read.
+ * the key there is, a tracked file that could not be read, or a `source.repo`
+ * no `cite.repos` or `--repo` declares.
  */
-export type MissingReason = "untracked" | "no-key" | "undecryptable" | "unreadable";
+export type MissingReason = "untracked" | "no-key" | "undecryptable" | "unreadable" | "unknown-repo";
 
 /**
  * Every rule a finding can carry, stated once. The union and the default
@@ -387,6 +389,20 @@ export interface SourceIndex {
  */
 export type SourceCache = Map<string, Promise<{ text: string; lines: readonly string[] } | undefined>>;
 
+/**
+ * One checkout a source resolves in: its directory, its tracked files and its
+ * git, the triple `classifyCitation` takes. `repo` is its `cite.repos` name,
+ * absent for the root (proposal 0100).
+ */
+export type Checkout = Pick<ClassifyOptions, "root" | "index" | "git"> & { repo?: string };
+
+/**
+ * The checkout an entry's `source.repo` names: the root for none, `undefined`
+ * for a name nothing declares. A declared checkout is opened on first use and
+ * kept, and one whose directory is missing rejects with a `CiteError`.
+ */
+export type CheckoutResolver = (repo: string | undefined) => Promise<Checkout | undefined>;
+
 export interface CheckPageOptions {
   /** Absolute directory source paths resolve from. */
   root: string;
@@ -415,6 +431,11 @@ export interface CheckPageOptions {
   /** How many commits the claim history walk reads. Defaults to `MAX_PAGE_COMMITS`. */
   pageCommitCap?: number;
   sourceIndex?: SourceIndex;
+  /**
+   * The checkouts an entry's `source.repo` may name. Absent, an entry with no
+   * repo resolves under `root` and every repo is undeclared.
+   */
+  checkouts?: CheckoutResolver;
   /** Source files already read this run (`createSourceCache`); absent, each citation reads its own. */
   sourceCache?: SourceCache;
   /**
