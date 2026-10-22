@@ -210,6 +210,14 @@ jobs:
   # guessing; npm serving it while the remote has no version tag is a
   # genuinely half-published release. Both print the command that finishes the
   # job by hand, version already substituted.
+  #
+  # Lag is only the likely story when `release` succeeded. When it failed and
+  # npm never serves the version, the publish most likely failed too. 4.17.0
+  # did: its tag was pushed, then `npm publish` hit ENEEDAUTH during an npm
+  # outage, and this job blamed lag for twenty minutes. That message prints no
+  # tag command, because the version will not appear. The next release rolls
+  # forward past it. The wait itself stays, because 2.0.0 failed after it
+  # published.
   major-tag:
     needs: release
     # `release` is skipped when the guard declined the release commit or a
@@ -255,6 +263,8 @@ jobs:
           # exception.
           VERSION_BEFORE: ${{ needs.release.outputs.version-before }}
           VERSION_AFTER: ${{ needs.release.outputs.version-after }}
+          # `success` or `failure`: the job's gate rules out the other two.
+          RELEASE_RESULT: ${{ needs.release.result }}
         run: |
           set -euo pipefail
           if [ -z "$VERSION_BEFORE" ]; then
@@ -343,6 +353,16 @@ jobs:
             tagged=yes
           else
             tagged=no
+          fi
+
+          if [ "$served" != yes ] && [ "$RELEASE_RESULT" = failure ]; then
+            if [ "$tagged" = yes ]; then
+              echo "::error::npm did not serve $name@$version within $budget_minutes minutes, and the release job failed, so its publish most likely failed too. $major still points where it did. The release job's log names the error."
+              echo "The v$version tag is on the remote with no package behind it. The next feat: or fix: merge releases the version after it, and this job moves $major then. Confirm with: npm view $name@$version version"
+            else
+              echo "::error::npm did not serve $name@$version within $budget_minutes minutes, and the release job failed before it pushed the v$version tag, so nothing was published. $major still points where it did. The release job's log names the error."
+            fi
+            exit 1
           fi
 
           if [ "$served" != yes ]; then
