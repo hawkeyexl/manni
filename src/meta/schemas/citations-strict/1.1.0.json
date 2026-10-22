@@ -45,6 +45,7 @@
             }
           },
           "verified-by": {
+            "type": "array",
             "uniqueItems": true,
             "description": "Strict refuses the same entry twice in one list. Two entries may share a `tool` when they name different checks."
           }
