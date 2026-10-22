@@ -248,10 +248,12 @@ docevals:
 # manni.config.yaml, with a deliberately broken link and section reference, so
 # it is never this section's business.
 graph:
-  # An example.com base rather than the site's own. These pages are not
-  # published as linked data; the graph is a gate, and a base IRI that promised
-  # to dereference would be a promise nothing keeps.
-  baseIri: https://example.com/manni-docs/
+  # The site's own host, under id/ so no node IRI is ever a page's URL. The
+  # graph is published with the site (graph.jsonld, chunks.json, and every
+  # data-manni-node annotate writes), so its nodes must name a host this
+  # project controls. They do not dereference: the IRIs identify, and the
+  # pages and chunk rows carry the content.
+  baseIri: https://hawkeyexl.github.io/manni/id/
 
   # In the site's public folder, which is gitignored there: `manni graph
   # publish` writes the graph, the chunks, the search index and llms.txt

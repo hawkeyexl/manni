@@ -18,11 +18,16 @@
 import { execFile } from "node:child_process";
 import { readFile } from "node:fs/promises";
 import { promisify } from "node:util";
+import { parse } from "yaml";
 
 const run = promisify(execFile);
 const CLI = "dist/cli.js";
 const SECTION = "docs/src/content/docs/graph";
-const DOC_PREFIX = "https://example.com/manni-docs/doc/";
+// From the config, not a copy of it: document nodes hang off `graph.baseIri`,
+// normalized as the graph config does (a trailing `/` unless it ends `/` or `:`).
+const { graph } = parse(await readFile("manni.config.yaml", "utf8"));
+const base = /[/:]$/.test(graph.baseIri) ? graph.baseIri : `${graph.baseIri}/`;
+const DOC_PREFIX = `${base}doc/`;
 
 /** Run the built CLI, echo its output, and return it. Exits on failure. */
 async function cli(args) {
