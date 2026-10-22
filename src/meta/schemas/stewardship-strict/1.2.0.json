@@ -56,6 +56,7 @@
       "description": "Strict holds the review date to an RFC 3339 full date or date-time. A year or month alone fails, and so does a timestamp without seconds."
     },
     "verified-by": {
+      "type": "array",
       "uniqueItems": true,
       "description": "Strict refuses the same entry twice in one list. Two entries may share a `tool` when they name different checks."
     },
