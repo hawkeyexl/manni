@@ -1,6 +1,6 @@
 # 0100: Citations from more than one checkout, with `cite.repos`
 
-- **Status:** Proposed
+- **Status:** Implemented (#231)
 - **Serves:** Three citation journeys in `../content-strategy/cujs.md`.
   - Maya · M5, "Pin a claim and catch it going stale". One page can rest on
     code in two repositories.
