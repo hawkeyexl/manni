@@ -1,0 +1,261 @@
+---
+title: Retrieve from a script
+description: Call createRetriever from a worker or a page, so a site's Ask AI answers from passages that carry their pins, dates and eval verdicts.
+type: how-to
+id: graph-retrieve-from-a-script
+language: en
+lifecycle: published
+action: develop
+last-updated: 2026-10-21
+---
+
+import RetrievePrototype from "../../../../components/RetrievePrototype.astro";
+
+An "Ask AI" box on a docs site needs passages to answer from. A vendor that
+crawls the pages chunks them its own way, and knows nothing the docs repo
+proves. `createRetriever` serves the passages manni published instead, each
+with its proof. It returns data and calls no model, so the answer stays with
+the model you choose.
+
+This is Maya's page. The outcome: her site's Ask AI quotes current
+sentences, flags drifted ones, and cites the page each came from.
+
+## Before you start
+
+**A published artifact.** `manni graph publish` writes `chunks.json`, its
+rows, the graph and the search index into one directory. Point it at the
+site's public folder, and the site serves the artifact of the commit it
+builds:
+
+```sh
+manni graph publish --out docs/public/graph && manni graph check -g docs/public/graph/graph.ttl
+```
+
+[Publish the graph](/manni/graph/publish/) covers each step.
+
+**The package.** Install manni where the script runs. The runtime is one
+file with no dependencies and no Node APIs, so it runs in a browser, a
+worker or Node:
+
+```sh
+npm install @hawkeyexl/manni
+```
+
+## Ask one question
+
+`createRetriever` reads `chunks.json`, and `lookup` takes the question:
+
+```js
+import { createRetriever } from "@hawkeyexl/manni/graph/runtime";
+
+const docs = await createRetriever({ manifest: "/graph/chunks.json" });
+const result = await docs.lookup("How does cite check decide a pin moved?");
+```
+
+The graph, the search index and the rows resolve from the manifest's
+directory. The rows load once, the first time their language is queried.
+
+The result holds three sections, and nothing is dropped from any of them:
+
+- **`matches`**: every ranked passage, with its lexical, vector and fused
+  scores.
+- **`traversal`**: every passage reached by following links outward from the
+  matches, with each edge followed.
+- **`impact`**: every passage that depends on the matches, with each edge.
+
+Each passage carries `iri`, `title`, `page`, `lines`, `text` and its
+`provenance` record. A section has a character budget. A passage past it keeps
+everything but its text, which is `null` with `truncated: true`. The
+[lookup result](/manni/graph/reference/cli/#the-lookup-result) lists every key.
+
+## Build the Ask AI worker
+
+manni retrieves, and your model answers. This worker takes a question, asks
+`lookup`, and hands the passages to the model with the role each one plays:
+
+```ts title="worker.ts"
+import { createRetriever, type LookupResult } from "@hawkeyexl/manni/graph/runtime";
+
+interface Passage {
+  id: string;
+  role: "answer" | "background" | "dependent";
+  title: string;
+  text: string;
+  unverified: boolean;
+}
+
+interface Env {
+  MODEL: { answer(input: { question: string; context: Passage[] }): Promise<string> };
+}
+
+const docs = await createRetriever({ manifest: "https://hawkeyexl.github.io/manni/graph/chunks.json" });
+
+function passages(
+  result: LookupResult,
+  section: "matches" | "traversal" | "impact",
+  role: Passage["role"],
+): Passage[] {
+  return result[section].passages.flatMap((p) =>
+    p.text === null
+      ? []
+      : [{ id: p.iri, role, title: p.title, text: p.text, unverified: p.provenance.pins.error > 0 }],
+  );
+}
+
+export default {
+  async fetch(request: Request, env: Env): Promise<Response> {
+    const body: unknown = await request.json().catch(() => null);
+    const question = typeof body === "object" && body !== null && "question" in body ? body.question : null;
+    if (typeof question !== "string" || question === "") {
+      return Response.json({ error: 'Send JSON like {"question": "..."}.' }, { status: 400 });
+    }
+    const result = await docs.lookup(question);
+    if (result.refusal) return Response.json({ answer: null, refusal: result.refusal });
+    const context = [
+      ...passages(result, "matches", "answer"),
+      ...passages(result, "traversal", "background"),
+      ...passages(result, "impact", "dependent"),
+    ];
+    const answer = await env.MODEL.answer({ question, context }); // your model, your backend
+    return Response.json({ answer, citations: result.citations });
+  },
+};
+```
+
+- **A bad request is a 400.** The worker answers malformed JSON, or a missing
+  or empty `question`, with a 400 before it retrieves anything.
+- **A refusal is an answer.** When nothing in the docs matches, `refusal`
+  says why, and the worker says so rather than letting the model guess.
+- **A passage over the budget has no text.** The worker skips it. Fetch it by
+  its `iri` from the rows when you need the words.
+- **`citations`** names the source of each passage, so the answer can link
+  to it.
+
+`MODEL` stands for whatever backend you call. manni never sees the prompt or
+the answer.
+
+## Use the proof
+
+Every passage carries a provenance record. The worker reads one field of it,
+and these are the others an Ask AI tends to use.
+
+| Field | What it tells the answer |
+|---|---|
+| `pins.error` | Sentences whose cited source changed. Flag them, or leave them out. |
+| `pins.current`, `pins.total` | How much of the passage is pinned to source, and still holds. |
+| `dates.lastUpdated.day` | The day the page last changed, safe across a squash merge. |
+| `dates.lastVerified` | The day a check last proved the page, as the page records it. |
+| `evals.current`, `evals.fail` | Whether the eval verdicts describe this text, and how many failed. |
+
+`pins` and `dates` come from git when the artifact was published. `evals` is
+`null` unless `graph.export.chunks.evals` names a docevals report.
+[The provenance record](/manni/graph/reference/cli/#the-provenance-record)
+defines each field.
+
+The steerable calls, `retrieve`, `traverse` and `impact`, return a bundle
+instead. Each passage in a bundle carries `role`: `match`, `context` or
+`dependent`. In a lookup result, the section is the role.
+
+## Use a hosted vector DB
+
+The rows are self-contained, so a vector DB ingests them as they are. Each
+row's `id` is its graph node IRI:
+
+```js
+import { parseChunkRows } from "@hawkeyexl/manni/graph/runtime";
+
+const text = await (await fetch("https://docs.example.com/graph/chunks.en.jsonl")).text();
+for (const row of parseChunkRows(text)) await db.upsert(row.id, row.vector, row);
+```
+
+Then pass a store that queries your DB instead of the rows' vectors. Every
+other line of the worker stays the same:
+
+```js
+import { createRetriever, createHttpVectorStore } from "@hawkeyexl/manni/graph/runtime";
+
+const docs = await createRetriever({
+  manifest: "https://docs.example.com/graph/chunks.json",
+  store: createHttpVectorStore({ url: "https://docs.example.com/api/vectors" }),
+});
+```
+
+### The HTTP store protocol
+
+The store POSTs one JSON object per query, and your server answers with the
+matches.
+
+```json
+{ "text": "How does cite check decide a pin moved?",
+  "vector": [0.0132, -0.0871],
+  "k": 3,
+  "language": "en",
+  "where": [] }
+```
+
+```json
+{ "matches": [ { "id": "https://docs.example.com/cite/#how-a-pin-is-classified", "score": 0.81 } ] }
+```
+
+| Request key | Meaning |
+|---|---|
+| `text` | The question. |
+| `vector` | The question's embedding, or `null` when the script did not embed. Embed on the server then. |
+| `k` | How many matches to return. |
+| `language` | The localization to search, or `null` for every language. |
+| `where` | Metadata conditions, `{ field, value }`, that every match must meet. |
+
+A match may carry its `row`, which is then used as it is. Without one, the
+id is read from the rows. An id no row holds is dropped and traced. The
+[library API reference](/manni/graph/reference/library-api/#the-seams) has
+both seams.
+
+## Mind the model download
+
+`chunks.json` names a model per language, under `languages.<tag>.model`. A
+question is embedded with its language's model, so the vectors compare. The
+first query in a language with a model downloads that model's weights. The
+small models the [configuration reference](/manni/graph/reference/configuration/#embed)
+lists run from about 23 MB.
+
+Two ways to skip the download:
+
+- **`embed: false`** ranks by lexical match alone.
+- **A hosted store** receives `vector: null` and embeds on the server.
+
+When the model cannot load, entry falls back to lexical, and
+`trace.entry.fallback` reads `"lexical"`. A language with no model is lexical
+from the start. That is this site's case, since it configures no
+`graph.embed`.
+
+## Raise the floor for one call
+
+`graph.retrieve.withhold` leaves drifted or failing passages out of the
+published rows, so no host holds their text. `retrieve`, `traverse` and
+`impact` also take `withhold`, which tightens that floor for one call:
+
+```js
+const bundle = await docs.retrieve("How do I rotate the key?", { withhold: ["drifted"] });
+```
+
+It never lowers the floor, because rows left out at export are not in the
+artifact. `lookup` takes only the question and serves the published floor.
+Each passage left out is named in `trace.withheld`.
+
+## When it throws
+
+A refusal comes back in the result. Two errors throw instead:
+
+- **`StaleArtifactError`**: the graph or a row was built from another graph
+  than `chunks.json` names. Publish again.
+- **`ModelMismatchError`**: the embedder you passed is not the model the
+  queried language was embedded with.
+
+## Try it on this site
+
+The box below is a prototype on this site, built from
+`createRetriever().lookup()` in lexical mode. It is not part of manni, and the
+package does not export it. The first search downloads this site's artifact,
+several megabytes, so it takes a moment.
+
+<RetrievePrototype />

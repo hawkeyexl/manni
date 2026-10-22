@@ -73,44 +73,7 @@ export function runTraverse(opts: TraverseOptions): TraverseReport {
   const store = loadGraph(resolve(cwd, opts.graph ?? config.out));
   const quads = storeToQuads(store);
   const graph = GraphIndex.fromQuads(quads, Object.fromEntries(PREFIXES));
-
-  const node = expandTerm(opts.node);
-  if (!graph.has(node)) {
-    throw new GraphError(
-      `Node not found in the graph: ${opts.node} — check the IRI, or run \`manni graph build\` first.`,
-    );
-  }
-  if (opts.variant && !resolveVariant(graph, opts.variant)) {
-    throw new GraphError(
-      `Unknown product variant: ${opts.variant} — no iirds:ProductVariant matches that IRI, title, or slug.`,
-    );
-  }
-  // An unresolvable scope filter silently disables itself in the walker, which
-  // would hand back exactly the nodes the filter was meant to exclude. Fail
-  // loudly instead — same contract as --variant above.
-  if (opts.subject && !resolveSubject(graph, opts.subject)) {
-    throw new GraphError(
-      `Unknown software subject: ${opts.subject} — expected one of ` +
-        `${Object.keys(SOFTWARE_SUBJECT_IRIS).sort().join(", ")}, or a full IRI.`,
-    );
-  }
-
-  const predicates = opts.predicates?.map(expandTerm);
-  // A misspelt predicate matches no edge, so the walk returns the seed alone
-  // and looks like an answer. Same contract as --variant: fail loudly.
-  if (predicates && predicates.length > 0) {
-    const used = new Set<string>();
-    for (const quad of quads) {
-      if (quad.o.kind === "iri") used.add(quad.p);
-    }
-    predicates.forEach((predicate, i) => {
-      if (!used.has(predicate)) {
-        throw new GraphError(
-          `Unknown predicate: ${opts.predicates?.[i] ?? predicate}. No edge in the graph uses it.`,
-        );
-      }
-    });
-  }
+  const { node, predicates } = checkTraverseInputs(graph, quads, opts);
   const direction: Direction = opts.reverse ? "in" : "out";
   const result = opts.impact
     ? impact(graph, node, {
@@ -142,6 +105,68 @@ export function runTraverse(opts: TraverseOptions): TraverseReport {
     }),
     trace: result.trace,
   };
+}
+
+/**
+ * The start node and predicates, expanded, with every input the walker would
+ * silently ignore refused first. `traverse --context` checks through it too,
+ * so both forms of the verb refuse alike.
+ */
+export function checkTraverseInputs(
+  graph: GraphIndex,
+  quads: ReturnType<typeof storeToQuads>,
+  opts: Pick<TraverseOptions, "node" | "variant" | "subject" | "predicates">,
+): { node: string; predicates: string[] | undefined } {
+  const node = expandTerm(opts.node);
+  if (!graph.has(node)) {
+    throw new GraphError(
+      `Node not found in the graph: ${opts.node} — check the IRI, or run \`manni graph build\` first.`,
+      "unknown-node",
+    );
+  }
+  checkScope(graph, opts);
+
+  const predicates = opts.predicates?.map(expandTerm);
+  // A misspelt predicate matches no edge, so the walk returns the seed alone
+  // and looks like an answer. Same contract as --variant: fail loudly.
+  if (predicates && predicates.length > 0) {
+    const used = new Set<string>();
+    for (const quad of quads) {
+      if (quad.o.kind === "iri") used.add(quad.p);
+    }
+    predicates.forEach((predicate, i) => {
+      if (!used.has(predicate)) {
+        throw new GraphError(
+          `Unknown predicate: ${opts.predicates?.[i] ?? predicate}. No edge in the graph uses it.`,
+          "unknown-scope",
+        );
+      }
+    });
+  }
+  return { node, predicates };
+}
+
+/** Refuse a variant or software subject the graph cannot resolve. `retrieve` refuses through it too. */
+export function checkScope(
+  graph: GraphIndex,
+  opts: Pick<TraverseOptions, "variant" | "subject">,
+): void {
+  if (opts.variant && !resolveVariant(graph, opts.variant)) {
+    throw new GraphError(
+      `Unknown product variant: ${opts.variant} — no iirds:ProductVariant matches that IRI, title, or slug.`,
+      "unknown-scope",
+    );
+  }
+  // An unresolvable scope filter silently disables itself in the walker, which
+  // would hand back exactly the nodes the filter was meant to exclude. Fail
+  // loudly instead — same contract as --variant above.
+  if (opts.subject && !resolveSubject(graph, opts.subject)) {
+    throw new GraphError(
+      `Unknown software subject: ${opts.subject} — expected one of ` +
+        `${Object.keys(SOFTWARE_SUBJECT_IRIS).sort().join(", ")}, or a full IRI.`,
+      "unknown-scope",
+    );
+  }
 }
 
 export function renderTraverse(

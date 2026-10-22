@@ -84,6 +84,6 @@ describe("manni graph export questions", () => {
   it("lists questions among the targets an unknown one names", () => {
     const r = run(["export", "bogus"], fixture);
     expect(r.status).toBe(2);
-    expect(r.stderr).toContain('Unknown export target "bogus". Use jsonld | iirds | search | questions | chunks.');
+    expect(r.stderr).toContain('Unknown export target "bogus". Use jsonld | iirds | search | questions | chunks | llms.');
   });
 });

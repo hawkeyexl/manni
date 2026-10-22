@@ -37,10 +37,21 @@ function built(feature: string, config?: (yaml: string) => string): string {
 const severity = (knob: string) => (y: string) =>
   y.replace("      top: 1", `      top: 1\n      severity: ${knob}`);
 
-/** The finding lines of a pretty report, without the summary. */
+/**
+ * The finding lines of a pretty report, without the summary. These fixtures
+ * publish no chunk artifact, so the cited row's notice is left out here, and
+ * cited.test.ts covers it.
+ */
 function findings(stdout: string): string[] {
-  return stdout.split("\n").filter((l) => /^(error|warning|notice): /.test(l));
+  return stdout
+    .split("\n")
+    .filter((l) => /^(error|warning|notice): /.test(l) && !l.includes(CITED_SKIPPED));
 }
+
+const CITED_SKIPPED = "the cited row did not run";
+/** A JSON report's findings, without the cited row's notice. */
+const own = <T extends Record<string, unknown>>(fs: T[]): T[] =>
+  fs.filter((f) => !String(f.message).startsWith(CITED_SKIPPED));
 
 const DOC = "https://example.com/graph/doc";
 
@@ -55,7 +66,7 @@ describe("a pinned answer", () => {
     expect(r.stdout).toContain(
       `\n  at ${DOC}/docs/retry.md graph:sampleQuestion\n`,
     );
-    expect(r.stdout).toContain("0 errors, 1 warning, 0 notices");
+    expect(r.stdout).toContain("0 errors, 1 warning, 1 notice");
   });
 
   it("keeps 0086's finding shape in JSON", () => {
@@ -63,7 +74,7 @@ describe("a pinned answer", () => {
     const report = JSON.parse(run(["check", "-f", "json"], cwd).stdout) as {
       findings: Record<string, unknown>[];
     };
-    expect(report.findings).toEqual([
+    expect(own(report.findings)).toEqual([
       {
         severity: "warning",
         message:

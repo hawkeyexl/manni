@@ -109,7 +109,7 @@ describe("sample questions", () => {
         "docs/retry.md",
       ),
     );
-    expect(r.stdout).toContain("0 errors, 5 warnings, 0 notices");
+    expect(r.stdout).toContain("0 errors, 5 warnings, 1 notice");
   });
 
   it("keeps the finding shape in JSON, with no SHACL severity", () => {

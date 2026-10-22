@@ -49,9 +49,10 @@ import type {
   PinSummary,
   ProvenanceEvals,
   ProvenanceRecord,
-  WithholdReason,
 } from "../runtime/chunks.js";
 import { GraphIndex } from "../runtime/graph.js";
+// The floor is applied at export here and again at query in the runtime: one rule.
+import { withholds } from "../runtime/retrieve.js";
 import { documentSectionOrder, sectionLines, sectionOccurrences } from "../runtime/resolve.js";
 import { GraphError, type DocModel } from "../types.js";
 import { bodyOf, sectionSpans } from "./questions.js";
@@ -89,6 +90,8 @@ export interface ChunksResult {
   withheld: number;
   warnings: string[];
   notices: string[];
+  /** The manifest and each language's rows, absolute. */
+  files: string[];
 }
 
 /** One passage before it becomes a row. */
@@ -273,13 +276,8 @@ export async function exportChunks(opts: ChunksOptions): Promise<ChunksResult> {
   };
   const manifestPath = join(opts.outDir, CHUNKS_MANIFEST);
   writeFileSync(manifestPath, `${canonicalJson(manifest, 2)}\n`, "utf8");
-  return { manifestPath, rows: kept.length, withheld: withheld.length, warnings, notices };
-}
-
-/** Whether a record falls under one withhold reason. Stale verdicts never count. */
-function withholds(record: ProvenanceRecord, reason: WithholdReason): boolean {
-  if (reason === "drifted") return record.pins.error > 0;
-  return record.evals !== null && record.evals.current && record.evals.fail + record.evals.error > 0;
+  const files = [manifestPath, ...Object.values(languages).map((l) => join(opts.outDir, l.file))];
+  return { manifestPath, rows: kept.length, withheld: withheld.length, warnings, notices, files };
 }
 
 function languageOf(graph: GraphIndex, doc: string): string {

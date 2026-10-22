@@ -244,6 +244,14 @@ This is the backbone of the docevals section. It is the only journey that crosse
 
 **What success looks like.** A `found` row that only reviewed questions move, and a red run when it falls under the threshold. No pin points at lines that no longer hold its answer. manni says whether a question finds its lines, and never judges the answer. Related journeys are M18 (the graph), M20 (filling what nobody wrote) and D12 (the gate).
 
+### M29 · Ground a site's Ask AI in the docs' proof
+
+**Outcome.** The docs site's "Ask AI" answers from the passages manni published, not from a vendor's re-crawl. Each passage it uses carries its proof, so the answer quotes what still holds and flags what drifted.
+
+**Steps.** Maya's site already runs `manni graph publish --out docs/public/graph`, then `manni graph check` on what it published, in CI, so the site serves `chunks.json` from the commit it builds. Her team writes a small worker. It calls `createRetriever` from `@hawkeyexl/manni/graph/runtime` and passes the reader's question to `lookup`. The result holds the ranked matches, what they link to, and what depends on them. She hands those passages to the model the team already uses, with the role each plays. A passage whose pins report an error is flagged. manni calls no model. When the team moves to a hosted vector DB, they ingest the published rows as they are and pass `createHttpVectorStore`. Every other line of the worker stays the same. She learns what a first vector query downloads, and that `embed: false` skips it. A refusal comes back as an answer, so the box says the docs do not cover a question rather than inventing one.
+
+**What success looks like.** An answer that cites pages by the ids the docs repo knows, and never quotes a drifted sentence as verified. Related journeys are D13 (publishing the graph), D19 (the same passages over MCP) and M27 (the questions that test retrieval).
+
 ### M30 · Show readers when a check last proved a page
 
 **Outcome.** Each page that a procedure test covers says when that test last passed. Readers and agents see a date that means "this still works", beside the date the text last changed.
@@ -364,7 +372,7 @@ This is the highest-stakes journey in the section. It is the only one where a pl
 
 **Outcome.** The graph leaves CI as an artifact other systems consume. That is linked data for an ingester, iiRDS for a content delivery portal, or a search index the docs site loads in the browser.
 
-**Steps.** `manni graph export jsonld` writes linked data, `export iirds` writes a conformant package, and `export search` writes the index the `@hawkeyexl/manni/graph/runtime` bundle reads client-side. `manni graph embed` adds vector sidecars for semantic search, per language. He pins what the artifact carries by marking fields in the schema rather than post-processing the output. He publishes on the same run that gated it, so what ships is what passed.
+**Steps.** `manni graph publish` writes every artifact he set up into one directory with one command. One target at a time, `manni graph export jsonld` writes linked data, `export iirds` writes a conformant package, and `export search` writes the index the `@hawkeyexl/manni/graph/runtime` bundle reads client-side. `manni graph embed` adds vector sidecars for semantic search, per language. He pins what the artifact carries by marking fields in the schema rather than post-processing the output. He publishes on the same run that gated it, so what ships is what passed.
 
 **What success looks like.** A RAG ingester and the docs site's own search read one artifact, produced by the build that already ran.
 
@@ -413,6 +421,16 @@ This is the highest-stakes journey in the section. It is the only one where a pl
 **Steps.** His trigger is a question the gate cannot answer. A reader filed a bug against a release, and someone asks how long the page was wrong. Or the team ramped in with `--baseline`, and nobody knows how old the forgiven pins are. He adds a weekly job that checks out the full history and runs `manni cite history -f json`. He learns that a window opens where `cite check` would have reported a stale source. It closes at the re-pin, the restored source or the removed entry, and a moved pin opens none. He reads `summary.staleSeconds` as the total, and `summary.releases` as the tags that shipped a stale pin. He learns the number is an upper bound, which is why the report says "stale" and never "wrong". The job never fails on what it finds, because `cite check` stays the gate. When a reader's bug names one page, Maya runs the same verb on that page and reads the window and the release. A long history gets `--newer-than 90d`.
 
 **What success looks like.** A dashboard number that falls to zero once the gate is on, and a one-line answer to "which releases shipped this page stale?"
+
+---
+
+### D19 · Serve the docs to an agent with their proof
+
+**Outcome.** An agent that answers from the docs, or edits them, reads each passage with its proof. It knows which sentences are verified before it quotes them.
+
+**Steps.** Devin builds the graph and exports the chunk artifact on the checkout the agent reads. He installs the optional MCP SDK beside manni. He registers `manni graph serve` in the client's MCP config. The agent calls `lookup` with one question and gets three complete sections: the ranked matches, what they link to, and what depends on them. Each passage carries its pins, dates and eval verdicts. He sets `--withhold drifted` so no agent call serves a passage whose pin broke, and no tool argument can lower that floor. A refusal comes back as an answer with a reason, never as an error.
+
+**What success looks like.** The agent quotes current sentences, flags drifted ones, and names the pages a change affects. Related journeys are D13 (publishing the graph) and M24 (an agent that reads the docs while writing them).
 
 ---
 
