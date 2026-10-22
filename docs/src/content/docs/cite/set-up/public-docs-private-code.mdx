@@ -30,7 +30,7 @@ sample-questions:
 graph:
   label: Public docs, private code
   type: task
-last-updated: 2026-10-21
+last-updated: 2026-10-22
 tags:
   - encryption
   - security
@@ -137,6 +137,7 @@ the entry, and the rest of the entry is plain text:
 | `claim` | Yes, as lines and a plain hash | The claim's lines and pin are over the page, which is public anyway. |
 | `source.commit-sha` | Yes, in full | A commit hash reveals nothing about the repository's contents, but it does let a reader with access line it up with history. |
 | `source.lines` | Yes | `~AQm4…` with `lines: 5` says line 5. Combined with a stable ciphertext, that is how a reader sees a file move. |
+| `source.repo` | Yes, in full | The name your config gives a second checkout. See [more than one private checkout](#more-than-one-private-checkout). |
 | `source.file` | No | The ciphertext, and only the ciphertext. |
 | `source.integrity` | Keyed | A reader cannot hash a guess at the line and compare, because the pin is an HMAC under the key. |
 
@@ -407,6 +408,127 @@ before a pin held, so `source-never-true` and the diff degrade to
 `changed (history unavailable)`. [Run it in CI](/manni/cite/ci/#full-history)
 explains.
 
+## More than one private checkout
+
+`--root` reaches one checkout. When the pages cite two private repositories,
+name the second one, or both, under `cite.repos`. Each entry then records the
+checkout its source is in, as `source.repo`, and resolves there alone. Entries
+with no `repo` still resolve against the root.
+
+<Steps>
+
+1. **Name each checkout.** Each value is a directory relative to the config
+   file. The CI job below checks the three repositories out side by side, so
+   both sit one level up:
+
+   ```yaml title="manni.config.yaml (public docs repo)"
+   collections:
+     - name: site
+       paths: ["src/content/docs/**/*.{md,mdx}"]
+       externalMetadata:
+         - file: docs-citations.yaml
+           keys: [citations]
+   cite:
+     repos:
+       private: ../api
+       private-2: ../sdk
+   ```
+
+2. **Mint with the name in front of the path.** The prefix says which
+   checkout holds the file, and every report prints the same prefix:
+
+   ```sh
+   MANNI_ENCRYPTION_KEY=… manni cite add src/content/docs/limits.md:17 private-2:src/client.ts:2 --id retries
+   ```
+
+   The entry gets `repo: private-2`, and its `file` is encrypted as before.
+   Without the prefix, `add` looks for the path under the root first. When
+   the root does not track it and exactly one checkout does, the entry gets
+   that checkout's name. When several do, `add` refuses and spells each
+   choice:
+
+   ```
+   manni: README.md is tracked in private and private-2. Spell the one you mean: private:README.md:3 or private-2:README.md:3.
+   ```
+
+3. **Run the private job without `--root`.** `cite.repos` says where each
+   checkout is. A local layout that differs from CI's overrides one name for
+   the run, as `--repo private-2=../../oss/sdk`:
+
+   ```sh
+   MANNI_ENCRYPTION_KEY=… manni cite check
+   ```
+
+   ```
+   ✓ src/content/docs/limits.md   docs-citations.yaml
+       ✓ timeout   :9 current    private:~AQm4…:2 current
+       ✓ retries   :12 current   private-2:~AR0x…:2 current
+
+   1 file checked, 1 passed, 0 failed, 0 findings
+   ```
+
+   The public job is unchanged. `--no-check-sources` opens no checkout at all.
+
+</Steps>
+
+A run opens only the checkouts its pages cite. So a job whose collection cites
+`private` alone can skip checking out the other. A cited checkout whose
+directory is missing stops the run (exit 2):
+
+```
+manni: Repo directory not found: /home/runner/work/docs/sdk (private-2). Fix --repo private-2=<dir>, or cite.repos.private-2 in manni.config.yaml.
+```
+
+<Aside type="caution" title="The name is public">
+  A repo's name is printed in plain text beside the encrypted path. It
+  reaches public CI logs, SARIF uploads and the site's data. The ciphertext
+  already says that a private source exists, and the name adds only what you
+  chose. So choose a name that names nothing, such as `private`, rather than
+  the repository's own name.
+</Aside>
+
+In GitHub Actions the private job checks out each repository at its own
+`path`, each with full history:
+
+```yaml title=".github/workflows/citations.yml (the private job)"
+  private:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          path: docs
+      - uses: actions/checkout@v7
+        with:
+          repository: your-org/api
+          token: ${{ secrets.CODE_READ_TOKEN }}
+          path: api
+          fetch-depth: 0
+      - uses: actions/checkout@v7
+        with:
+          repository: your-org/sdk
+          token: ${{ secrets.CODE_READ_TOKEN }}
+          path: sdk
+          fetch-depth: 0
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+      - working-directory: docs
+        env:
+          MANNI_ENCRYPTION_KEY: ${{ secrets.MANNI_ENCRYPTION_KEY }}
+        run: npx -y @hawkeyexl/manni cite check -f sarif > ../cite.sarif
+```
+
+Each checkout keeps its own history, so each can be shallow on its own. The
+notice names the checkout it is about:
+
+```
+manni: private-2: the source history ends before the pin held; use fetch-depth: 0 to tell never-true from changed
+```
+
+Rotate the key with every checkout in reach. `manni key rotate` reads
+`cite.repos` as `check` does, and takes `--repo` too.
+
 ## When an encrypted source does not resolve
 
 {/* cite missing-says-why */}
@@ -419,7 +541,7 @@ of the three it was:
     ✓ fetch-timeout   :9 current    lib/limits.ts:4 current
     ✗ retries         :12 current   ~AQm4…:5 missing (no encryption key is available to decrypt it)
       Set MANNI_ENCRYPTION_KEY, or encryptionKey: at the top of manni.config.yaml.
-      manni:cite source-missing: The path names no tracked file, or an encrypted source cannot be decrypted.
+      manni:cite source-missing: The path names no tracked file, names an undeclared repo, or an encrypted source cannot be decrypted.
       Guide: https://hawkeyexl.github.io/manni/cite/fix/#source-missing
 
 1 file checked, 0 passed, 1 failed, 1 finding
@@ -430,6 +552,7 @@ of the three it was:
 | `missing (no encryption key is available to decrypt it)` | The job has no key. | Set `MANNI_ENCRYPTION_KEY` from the secret, or run the page-side rules alone with `--no-check-sources`. |
 | `missing (does not decrypt under the current key)` | The key is not the one the source was encrypted under, or the ciphertext was edited by hand. | Use the key the pages were encrypted under. After a rotation, update the secret to the new key. |
 | `missing (no tracked file matches; wrong --root?)` | The path decrypted, and no tracked file under the root has it. | Point `--root` at the code checkout. If the file was renamed, add the citation again. |
+| `missing (no tracked file matches in private-2; wrong cite.repos.private-2?)` | The path decrypted, and no tracked file in that checkout has it. | Point `cite.repos.private-2` at that checkout. If the file was renamed, add the citation again. |
 
 {/* cite tracked-files-or-walk */}
 {/* cite realpath-containment */}
@@ -463,10 +586,12 @@ path follows. Without git, the root is walked, and symlinks are not followed.
     against the local build, exposed as `manni cite` / `npx @hawkeyexl/manni cite` via `npm link`
     (see .github/workflows/docs-as-tests.yml), over committed fixtures.
     Run with `npx doc-detective`. Config: .doc-detective.json. */}
-{/* test {"testId":"cite-public-private","description":"The public job, the missing key, and the private job with --reveal, over the committed encrypted fixture."} */}
+{/* test {"testId":"cite-public-private","description":"The public job, the missing key, the private job with --reveal, and sources in two named checkouts, over committed fixtures."} */}
 {/* step {"description":"The public job: --no-check-sources skips the source end, and exits 0.","runShell":{"command":"npx @hawkeyexl/manni cite check --no-config --root test/fixtures/cite --no-check-sources test/fixtures/cite/pages/encrypted.md","exitCodes":[0],"stdio":"/~AR0x…:2 skipped/"}} */}
 {/* step {"description":"The public job still checks the claim end, because the claim is page-side: a reworded sentence is a finding with no key and no code.","runShell":{"command":"npx @hawkeyexl/manni cite check --no-config --root test/fixtures/cite --no-check-sources test/fixtures/cite/pages/claim-changed.md","exitCodes":[0],"stdio":"/fetch-timeout\s+:15 changed\s+src/limits.ts:2 skipped/"}} */}
 {/* step {"description":"Without the key, an encrypted source is missing, an error, and the finding says why.","runShell":{"command":"npx @hawkeyexl/manni cite check --no-config --root test/fixtures/cite test/fixtures/cite/pages/encrypted.md","exitCodes":[1],"stdio":"missing (no encryption key is available to decrypt it)"}} */}
 {/* step {"description":"An encrypted source pinned sha256- rather than hmac-sha256- is entry-invalid, and the message names the prefix.","runShell":{"command":"npx @hawkeyexl/manni cite check --no-config --root test/fixtures/cite test/fixtures/cite/pages/hmac-mismatch.md","exitCodes":[1],"stdio":"an encrypted source is pinned with hmac-sha256-, not sha256-."}} */}
 {/* step {"description":"With the key in the environment the private job passes, and --reveal prints the decrypted path beside the ciphertext. The key is the fixture's fixed test key, never a real one.","runShell":{"command":"MANNI_ENCRYPTION_KEY=cite-fixture-key-0123456789abcdef npx @hawkeyexl/manni cite check --no-config --root test/fixtures/cite --reveal test/fixtures/cite/pages/encrypted.md","exitCodes":[0],"stdio":"/~AR0x…:2 \\(src\\/limits\\.ts\\) current/"}} */}
+{/* step {"description":"Sources in two named checkouts: each entry resolves in the checkout its repo names, and the source is printed with that name in front.","runShell":{"command":"npx @hawkeyexl/manni cite check --no-config --repo api=test/fixtures/cite-repos/api --repo sdk=test/fixtures/cite-repos/sdk test/fixtures/cite-repos/docs/pages/limits.md","exitCodes":[0],"stdio":"api:lib/limits.ts:2 current"}} */}
+{/* step {"description":"An entry naming a repo that no config or flag declares is source-missing, and the status says which name.","runShell":{"command":"npx @hawkeyexl/manni cite check --no-config --repo api=test/fixtures/cite-repos/api test/fixtures/cite-repos/docs/pages/limits.md","exitCodes":[1],"stdio":"missing (no repo named sdk is declared)"}} */}
 {/* test end */}

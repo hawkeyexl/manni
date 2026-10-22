@@ -63,12 +63,13 @@ import { Aside } from '@astrojs/starlight/components';
 A citation pins a sentence on a page to the source lines it was written from.
 Both ends are pinned the same way, by a line range and a hash. This page is
 the vocabulary as the tool ships it. The schema it implements is the built-in
-`manni:citations:1.1.0`, which pins the claim and encrypts `source.file` as a
-value. `manni meta schemas` lists it with the family's other vocabularies, and
+`manni:citations:1.2.0`, which pins the claim, encrypts `source.file` as a
+value, and names the checkout a source is in. `manni meta schemas` lists it with the family's other vocabularies, and
 manni cite checks each entry against the same file. The vocabulary's own
 reference page is
-[`manni:citations:1.1.0`](/manni/meta/reference/schemas/manni-citations/). It
-also documents the strict overlay, `manni:citations-strict:1.1.0`.
+[`manni:citations:1.2.0`](/manni/meta/reference/schemas/manni-citations/). It
+also documents the strict overlay, `manni:citations-strict:1.1.0`, which 1.2.0
+reuses.
 
 ## Where citations live
 
@@ -134,6 +135,7 @@ block is the other end, and both carry a line range and a hash.
 | `claim.lines` | `L` or `"L1-L2"` | yes, unless a marker names the entry | Lines of the page **body**. See [Body lines and file lines](#body-lines-and-file-lines). |
 | `claim.integrity` | `sha256-` and 64 lowercase hex digits | yes, inside `claim` | The claimed lines hashed under [the one rule](#the-hashing-rule). With a marker, the lines the marker anchors. Always plain, never keyed, because the page is public. |
 | `source` | block | yes | The lines the claim rests on. |
+| `source.repo` | `^[a-z0-9][a-z0-9-]*$` | no | The checkout `file` is in, by a name [`cite.repos`](/manni/cite/reference/configuration/#more-than-one-checkout) or `--repo` maps to a directory. Absent, `file` is in the root. See [sources in other checkouts](#sources-in-other-checkouts). |
 | `source.file` | root-relative posix path, or `~` and 82 or more base64url characters | yes | The file. A `~` value is the path encrypted with the family key. See [the file grammar](#the-file-grammar). |
 | `source.lines` | `L` or `"L1-L2"` | no | File lines, 1-based and inclusive. Absent pins the whole file. Readable even when `file` is encrypted. |
 | `source.integrity` | `sha256-` or `hmac-sha256-`, and 64 lowercase hex digits | yes | The pin. `hmac-sha256-` exactly when `file` is encrypted, so the page carries no verifier for a guessed private line. |
@@ -185,7 +187,8 @@ path/to/file.ts
 
 {/* cite file-grammar-schema */}
 A path is relative to the
-[root](/manni/cite/reference/cli/#where-sources-resolve-from), posix-separated,
+[root](/manni/cite/reference/cli/#where-sources-resolve-from), or to the
+checkout `source.repo` names. It is posix-separated,
 and free of `.` and `..` segments. Segments may hold spaces and dots, so
 `docs/release notes/v1.2.md` is a file. The grammar rejects a leading `/`, a
 drive letter, a backslash, an empty segment and a URL. It also rejects a
@@ -208,7 +211,46 @@ numbers. `lines: "9-3"` is refused by `add` and is `entry-invalid` on a page.
 {/* cite src-one-string */}
 On the command line and in every report, a source is still spelled as one
 string: `lib/limits.ts`, `lib/limits.ts:2` or `lib/limits.ts:1-3`. That is a
-spelling of the two fields, not a third field.
+spelling of the two fields, not a third field. An entry with a `repo` is
+spelled with the name in front, as `sdk:src/client.ts:2`.
+
+The one string reads `[<repo>:]<path>[:<L>[-<L2>]]`. A path holds no colon,
+and a tail of digits and hyphens is read as lines. So the parts read one way.
+
+- One part is a path.
+- Two parts are a path and lines when the second is digits and hyphens.
+  Otherwise they are a repo and a path.
+- Three parts are a repo, a path and lines.
+
+So `api:2` is line 2 of a root file named `api`, not a file named `2` in the
+`api` checkout. A whole-file pin of a file named `2` at the top of a checkout
+cannot be spelled.
+
+### Sources in other checkouts
+
+The root is one checkout. A page that cites code from a second repository
+gives the entry a `repo`, and the config maps that name to a directory:
+
+```yaml title="docs/limits.md (frontmatter)"
+citations:
+  - id: retries
+    claim:
+      lines: 5
+      integrity: sha256-c315c7eabc99ccdde43c763146f93b4a3b25ae7d0b08d5f5be67c918ca446a03
+    source:
+      repo: sdk
+      file: src/client.ts
+      lines: 2
+      integrity: sha256-4bcf2ce6f6f0c00258d3ee02a4e5f3a104f732fb9839b38e5ebb7a95b6af5e68
+```
+
+`file`, `lines` and the pin read exactly as they do for the root, inside that
+checkout. Every read stays there, including the move search, the baseline
+walk and `commit-sha`. `update` never changes `repo`, so pointing a pin at
+another repository is a `remove` and an `add`.
+[`cite.repos`](/manni/cite/reference/configuration/#more-than-one-checkout)
+declares the names, and an entry naming an undeclared one is
+`source-missing`.
 
 ### Encrypted sources
 
@@ -604,7 +646,7 @@ under the row, then the rule line and a Guide link to the
 | <span id="source-moved-ambiguous">`source-moved-ambiguous`</span> | Two or more windows hash to the pin, in one file or across several; the tool will not guess which. Widen the range. | `moved, 2 candidates (lib/config/limits.ts:4, vendor/limits.ts:4). Widen source.lines until the range occurs once, then run manni cite update --accept --only fetch-timeout.` | `error` |
 | <span id="source-changed">`source-changed`</span> | No window hashes to the pin. With a [baseline](#the-sources-baseline): since when, and how many commits touched the path. The message names the span the old first and last line now cover, when each sits exactly once and in order. Where the history ends before the pin held: `history unavailable`, plus one run notice about `fetch-depth: 0`. Where git is not available, the recorded commit or none, plus one run notice. | `changed since 3f9c2a1, 2 commits; now at lines 200-215. Check the sentence against the source, then run manni cite update --accept --only fetch-timeout.` | `error` |
 | <span id="source-never-true">`source-never-true`</span> | No window of the range's length anywhere in the file hashed to the pin at any commit in the source's history. Asserted only when the walk reached the file's first commit, in a clone that is not shallow. No span is offered, because the pinned lines never had a home. | `never true: the pin held at no commit in the history of lib/limits.ts. Check the sentence against the source, then run manni cite update --accept --only fetch-timeout.` | `error` |
-| <span id="source-missing">`source-missing`</span> | The path is not a tracked file under the root (without git, not a file under it), or an encrypted source cannot be decrypted. It is reached only once no file a commit touched holds the pin. | `missing. Run manni cite remove --only fetch-timeout, then manni cite add against the file's new path.` For an encrypted source the status is one of `missing (no encryption key is available to decrypt it)`, `missing (does not decrypt under the current key)` or `missing (no tracked file matches; wrong --root?)`, then what to do about that cause. | `error` |
+| <span id="source-missing">`source-missing`</span> | The path is not a tracked file under its checkout (without git, not a file under it). Or the entry names an undeclared repo, or an encrypted source cannot be decrypted. It is reached only once no file a commit touched holds the pin. | `missing. Run manni cite remove --only fetch-timeout, then manni cite add against the file's new path.` For an encrypted source the status is one of `missing (no encryption key is available to decrypt it)`, `missing (does not decrypt under the current key)` or `missing (no tracked file matches; wrong --root?)`, then what to do about that cause. An undeclared repo reads `missing (no repo named sdk is declared)`. An encrypted source in a repo that matches no tracked file reads `missing (no tracked file matches in sdk; wrong cite.repos.sdk?)`. | `error` |
 
 {/* cite move-search-order move-search-first-line move-window-2000 move-search-band move-budget-64mib move-budget-truncated range-limit-either-end */}
 The move search runs whenever the pin does not hold, and history decides only

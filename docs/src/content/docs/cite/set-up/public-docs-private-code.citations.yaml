@@ -83,7 +83,7 @@ docs/src/content/docs/cite/set-up/public-docs-private-code.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: unignored-warning-message
       claim:
-        lines: 105
+        lines: 106
         integrity: sha256-0a3b271d9e75f7582d4157bf3a7c6d6ee6556cd12be549ac685090b8b415e520
       source:
         file: src/shared/encryption-key.ts
@@ -148,7 +148,7 @@ docs/src/content/docs/cite/set-up/public-docs-private-code.mdx:
         commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: rotate-env-message
       claim:
-        lines: 138
+        lines: 139
         integrity: sha256-93fdfcbbbc16dddfabab1102665b43281f88378391f8f648df385d508e964935
       source:
         file: src/key/reporters/pretty.ts
@@ -165,7 +165,7 @@ docs/src/content/docs/cite/set-up/public-docs-private-code.mdx:
         commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: reveal-pretty-only
       claim:
-        lines: 151-153
+        lines: 152-154
         integrity: sha256-486364a5af89b169895c5be5d370d1c63cd10d3ae281f13f08b102beb887a482
       source:
         file: src/cite/reporters/pretty.ts
@@ -174,7 +174,7 @@ docs/src/content/docs/cite/set-up/public-docs-private-code.mdx:
         commit-sha: b9712a2920c49c2b7e247108d80b629a4dc6ef9b
     - id: output-rule-test
       claim:
-        lines: 155-159
+        lines: 156-160
         integrity: sha256-065cb2684ab3a1f3e15f7787da448df8ca0e58a21b26b9e4c8b0d869fbdffec1
       source:
         file: test/cite/reporters.test.ts
@@ -200,7 +200,7 @@ docs/src/content/docs/cite/set-up/public-docs-private-code.mdx:
         commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
     - id: url-manifest-refused
       claim:
-        lines: 190
+        lines: 191
         integrity: sha256-f1cfea2e6f24bdc432e0171c2be07edddff6d118c039afafa5175dd3df5626af
       source:
         file: src/cite/core/sidecar.ts
@@ -209,7 +209,7 @@ docs/src/content/docs/cite/set-up/public-docs-private-code.mdx:
         commit-sha: c4c8820ad03b39bd78625127e699a02af7e46588
     - id: key-set-256-bits
       claim:
-        lines: 195
+        lines: 196
         integrity: sha256-7906b63add3bc068abdd52293124190dbe16eea2cc3b25decfa9c3fd1e3eb181
       source:
         file: src/shared/encryption.ts
@@ -218,7 +218,7 @@ docs/src/content/docs/cite/set-up/public-docs-private-code.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: same-file-same-ciphertext
       claim:
-        lines: 227
+        lines: 228
         integrity: sha256-c04a3d968cabd0ec367ac298c2919932dda7ca0c6248a6a6627f6cc3dafe7829
       source:
         file: src/shared/encryption.ts
@@ -245,7 +245,7 @@ docs/src/content/docs/cite/set-up/public-docs-private-code.mdx:
         commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
     - id: encrypt-refusal-message
       claim:
-        lines: 236
+        lines: 237
         integrity: sha256-ed83d0ec16a27b315ff18db07d69d8d2328bdcbebe610be5f00e46892680b088
       source:
         file: src/shared/prompt.ts
@@ -254,7 +254,7 @@ docs/src/content/docs/cite/set-up/public-docs-private-code.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: terminal-offers-key
       claim:
-        lines: 239
+        lines: 240
         integrity: sha256-0a2aa3b8e63816c85457e4c1ce82a6f5a32478050217e9eaa3eb0742ba379d53
       source:
         file: src/shared/prompt.ts
@@ -339,7 +339,7 @@ docs/src/content/docs/cite/set-up/public-docs-private-code.mdx:
         commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e
     - id: claim-current-row-mark
       claim:
-        lines: 261-262
+        lines: 262-263
         integrity: sha256-67d452a939980549a1c22e37457215ae7429de652262e830f489278cd0c48775
       source:
         file: src/cite/reporters/pretty.ts
@@ -357,7 +357,7 @@ docs/src/content/docs/cite/set-up/public-docs-private-code.mdx:
         commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e
     - id: source-missing-is-error
       claim:
-        lines: 267-268
+        lines: 268-269
         integrity: sha256-33660fa5ccd0df575dc1fbb63241945036da493fec5df20f3d77422fb2a74f2c
       source:
         file: src/cite/core/severity.ts
@@ -375,7 +375,7 @@ docs/src/content/docs/cite/set-up/public-docs-private-code.mdx:
         commit-sha: c4c8820ad03b39bd78625127e699a02af7e46588
     - id: output-rule-findings-test
       claim:
-        lines: 157-158
+        lines: 158-159
         integrity: sha256-ca54b9b6e0d1bacfe54cb6ae993a0848b1ecb8fb9738b87bf708a4573b41c4bf
       source:
         file: test/cite/adapt.test.ts
@@ -384,7 +384,7 @@ docs/src/content/docs/cite/set-up/public-docs-private-code.mdx:
         commit-sha: b9712a2920c49c2b7e247108d80b629a4dc6ef9b
     - id: manifest-splice-citations
       claim:
-        lines: 189-190
+        lines: 190-191
         integrity: sha256-faf026456f3fcee2d46dda16c951f9b0f0d920c44f5f5e96f99275e4bb6a95b7
       source:
         file: src/cite/core/manifest.ts

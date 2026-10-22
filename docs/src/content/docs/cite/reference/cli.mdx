@@ -33,7 +33,7 @@ sample-questions:
 graph:
   label: CLI reference
   type: reference
-last-updated: 2026-10-21
+last-updated: 2026-10-22
 tags:
   - cli
   - reference
@@ -170,6 +170,7 @@ were edited reads `claim-changed`, and says since when.
 | `--no-baseline` | n/a | off | Ignore a baseline supplied by config `baseline:` for this run. |
 | `--no-check-sources` | n/a | on | Run the page-side rules only. Every source-side status is `skipped`, which is not a finding. For a public docs checkout that does not have the code beside it. Overrides config `checkSources:`. |
 | `--root` | `<dir>` | n/a | The directory `source.file` paths resolve from, relative to the working directory. It may point at another checkout. Without it: config `root:`, else the nearest git root above the working directory, else the working directory with a notice on stderr. See [where sources resolve from](#where-sources-resolve-from). |
+| `--repo` | `<name=dir>` | `[]` | A checkout an entry's `source.repo` may name, as `name=dir` relative to the working directory. Repeatable, one pair per occurrence, never comma-separated. It overrides config `cite.repos` for that name only, and works with `--no-config`. A pair without `=`, a bad name or a repeated name is an error (exit 2). |
 | `--show-diff` | n/a | off | In `pretty` output, print the commit subjects and the diff since the baseline under each `source-changed`, `claim-changed` and `claim-reanchored` row. A source's baseline is its `commit-sha`, and a claim's is the newest commit whose page held the pin. A claim with no baseline gets the page lines it covers now. Every block is capped at 60 lines, and the row says how many were left out. |
 | `--reveal` | n/a | off | In `pretty` output, print the decrypted path beside an encrypted source. Nothing else ever prints it; see the [output rule](/manni/cite/reference/citations/#the-output-rule). |
 
@@ -213,6 +214,9 @@ exactly as the entry spelled it:
 
 1 file checked, 0 passed, 1 failed, 6 findings (2 warnings) (3 notices)
 ```
+
+A source in another checkout carries its repo in front, as
+`sdk:src/client.ts:2`, in this format and every other.
 
 Under a row with a finding, the first line says what to do. Two dim lines
 follow: the rule with what it means, and a Guide link to its section of the
@@ -311,7 +315,8 @@ A claim end carries two of the members the source end has. `commitSha` is the
 baseline, as the full hash, and `historyAvailable` is `false` where the walk
 hit a shallow boundary or its cap. On a source end `commitSha` is the entry's
 recorded value. A source end adds `baselineSha`, the full hash its verdict was
-read against, whenever its history found one. A claim `status` may read `reanchored`, and
+read against, whenever its history found one. A source end whose entry names a
+checkout adds `repo`, and its `src` carries the same prefix. A claim `status` may read `reanchored`, and
 a reanchored claim with its own lines adds `newLines`, as a moved one does.
 The diff, the commit subjects and the page text are in no machine format.
 
@@ -455,7 +460,7 @@ The failure's message leaves out the annotation's guidance lines.
 |---|---|
 | `0` | No file holds an error-severity finding the baseline does not already record. A warning and a notice never move the exit code. So a run of `source-moved` or `marker-misplaced` citations exits 0, and so does one of `claim-reanchored` citations at its default. |
 | `1` | At least one file holds an unbaselined error-severity finding: a `source-changed`, `source-never-true`, `source-missing` or `source-moved-ambiguous` end, or a `marker-orphan`, `marker-invalid`, `anchor-invalid`, `entry-invalid` or `quote-drift` finding. Those are the rules whose default severity is `error`, and `severity:` can change the set. |
-| `2` | Operational or usage error. No inputs and no config, no files matched, an unknown `--format` or `--as`, or stdin without `--as`. Also a missing `-c` file, a missing `--baseline` file, a `--root` that does not exist, or a config key the tool does not know. So is a Markdown or MDX page whose opening frontmatter fence has no close, because its citations can't be read. |
+| `2` | Operational or usage error. No inputs and no config, no files matched, an unknown `--format` or `--as`, or stdin without `--as`. Also a missing `-c` file, a missing `--baseline` file, or a `--root` that does not exist. Also a cited repo directory that does not exist, a malformed `--repo`, or a config key the tool does not know. So is a Markdown or MDX page whose opening frontmatter fence has no close, because its citations can't be read. |
 
 Only an `error` moves the exit code. So a job that fails on `claim-changed` at
 `error` fails on fewer claims than it did, and never on more. A rewrap or a
@@ -505,6 +510,14 @@ live in the docs repository, so SARIF locations resolve, and the sources are
 reached through `--root ../code`. See [Public docs, private
 code](/manni/cite/set-up/public-docs-private-code/).
 
+An entry with `source.repo` resolves in that checkout instead, under the same
+two rules. Config `cite.repos` maps each name to a directory, relative to the
+config file, and `--repo name=dir` maps one for a run, relative to the working
+directory. `--repo` wins for its name. A run opens only the checkouts its
+entries name, and a missing one stops it (exit 2). An entry naming a repo
+nobody declared is `source-missing`. See
+[more than one checkout](/manni/cite/reference/configuration/#more-than-one-checkout).
+
 ### Examples
 
 ```sh
@@ -517,6 +530,7 @@ manni cite check --show-diff docs/limits.md         # see what changed, and sinc
 manni cite check --baseline                         # fail only on new findings
 manni cite check --no-check-sources docs/           # public docs repo: page-side rules only
 MANNI_ENCRYPTION_KEY=$SECRET manni cite check --root ../code --reveal docs/
+manni cite check --repo sdk=../../oss/sdk           # a local layout that differs from cite.repos
 cat page.md | manni cite check - --as markdown      # read from stdin
 ```
 
@@ -549,7 +563,7 @@ manni cite add <page>[:L|:L1-L2] <src> [options]
 | Argument | Description |
 |---|---|
 | `<page>[:L\|:L1-L2]` | The page to cite from, relative to the working directory, and the claim's lines as an editor numbers them. Only a trailing `:L` or `:L1-L2` is read as lines, so a path that carries a colon keeps it. Without lines, the entry is a bare pin. `-` reads the page from stdin and writes the rewritten page to stdout, with the report on stderr; that needs `--as`, and `-:L` carries lines. |
-| `<src>` | The source: `path`, `path:L` or `path:L1-L2`, relative to the [root](#where-sources-resolve-from), or an encrypted `~source` with the same line forms. A bare path pins the whole file. `L2` before `L1`, a range longer than 5,000 lines and a line past the end of the file are refused (exit 2). So is a path that is not a tracked file under the root, and an encrypted source that the current key can't decrypt. |
+| `<src>` | The source: `path`, `path:L` or `path:L1-L2`, relative to the [root](#where-sources-resolve-from). Or `repo:path` with the same line forms, for a checkout in `cite.repos` or `--repo`. Or an encrypted `~source` with the same line forms. A bare path pins the whole file. `L2` before `L1`, a range longer than 5,000 lines and a line past the end of the file are refused (exit 2). So is a path that no checkout tracks, and an encrypted source that the current key can't decrypt. A plain path the root lacks is looked up in each declared repo. When one repo tracks it the entry gets that `repo`, and when several do `add` refuses. |
 
 ### Options
 
@@ -563,7 +577,8 @@ manni cite add <page>[:L|:L1-L2] <src> [options]
 | `--dry-run` | n/a | off | Print the unified diff of the page and write nothing. The report line goes to stderr. |
 | `--as` | `<format>` | n/a | Force the page's [format](/manni/meta/reference/formats/). Required with `-`. |
 | `--root` | `<dir>` | n/a | The directory `<src>` resolves from, exactly as on [`check`](#where-sources-resolve-from). |
-| `-c, --config` | `<path>` | discovered | Path to a [config file](/manni/cite/reference/configuration/), read for `root`, the encryption key, and the citations manifest each collection declares. |
+| `--repo` | `<name=dir>` | `[]` | A checkout `<src>` may name with a `repo:` prefix, or `add` may find a plain path in, as `name=dir`. Repeatable, exactly as on [`check`](#cite-check). |
+| `-c, --config` | `<path>` | discovered | Path to a [config file](/manni/cite/reference/configuration/), read for `root`, `repos`, the encryption key, and the citations manifest each collection declares. |
 | `--no-config` | n/a | off | Ignore any discovered config file. The entry goes to frontmatter. |
 
 {/* cite bare-pin-no-marker-quote */}
@@ -578,7 +593,7 @@ each needs page lines.
 | Code | Meaning |
 |---|---|
 | `0` | The citation was written, or printed under `--dry-run`. The report line says what was added, where, and which line each end is pinned at. |
-| `2` | A refusal. The page or the source cannot be read, or a `--root` does not exist, or a range is invalid or out of range. Or the page lines are in the frontmatter, or they hold no text, or no block reproduces the range. Or the source is not a tracked file under the root. Or the id is taken, the entry duplicates one the page has, or the flags do not compose on this page's format. Or `--encrypt` needs a key and none is available or created. Nothing is written. |
+| `2` | A refusal. The page or the source cannot be read, or a `--root` does not exist, or a range is invalid or out of range. Or the page lines are in the frontmatter, or they hold no text, or no block reproduces the range. Or no checkout tracks the source, or several repos track a plain path, or a `repo:` prefix names no declared repo. Or the id is taken, the entry duplicates one the page has, or the flags do not compose on this page's format. Or `--encrypt` needs a key and none is available or created. Nothing is written. |
 
 There is no exit `1`. `add` either writes a citation it has verified, or it
 does not write.
@@ -602,6 +617,7 @@ manni cite add docs/limits.md:30 lib/limits.ts:9 --id backoff --marker    # join
 manni cite add docs/limits.md:14-18 lib/limits.ts:1-3 --quote      # the block that reproduces it
 manni cite add docs/limits.md:9 lib/limits.ts:2 --dry-run          # preview the diff
 MANNI_ENCRYPTION_KEY=$KEY manni cite add docs/limits.md:9 lib/limits.ts:2 --root ../code
+manni cite add docs/limits.md:17 sdk:src/client.ts:2 --id retries # a source in the sdk checkout
 cat page.md | manni cite add -:9 lib/limits.ts:2 --as markdown > out.md
 ```
 
@@ -716,6 +732,7 @@ working tree so the rewrite is easy to review.
 | `--no-gitignore` | n/a | on | Update files `.gitignore` covers as well. Overrides config `respectGitignore:`. |
 | `--no-check-sources` | n/a | on | Refused. `update` needs the sources to know where an entry moved to. |
 | `--root` | `<dir>` | n/a | The directory `source.file` paths resolve from, exactly as on [`check`](#where-sources-resolve-from). |
+| `--repo` | `<name=dir>` | `[]` | A checkout an entry's `source.repo` may name, exactly as on [`check`](#cite-check). `update` never changes an entry's `repo`. |
 | `--accept` | n/a | off | Re-mint every changed and never-true end at `HEAD`: a new `integrity`, and a new `commit-sha` where the source had one. For a source the report prints the old and the new pin. For a claim it prints the text it re-pinned, so the acceptance is visible in the log as well as in the diff. A claim whose target line shares no sentence with the claim at its baseline is refused, reported, and exits 1, unless `--only` names it. |
 | `--recommit` | n/a | off | Re-record `commit-sha` to the commit where the pinned lines arrived on the history of `HEAD`. It acts on entries whose recorded commit does not contain the lines they pin, or is outside that history. Only that one field changes: `file`, `lines` and `integrity` are left as they are. It reads only entries whose source is current, and re-records only where `HEAD` holds the pinned lines. A commit that holds them at other line numbers counts as holding them, so a pin whose lines drifted is left alone. In a full clone, a commit git cannot read is outside the history, so it is re-recorded. A shallow clone cannot tell, so it leaves such a commit alone and says so once on stderr. Needs git (exit 2 without it). |
 | `--only` | `<id>` | n/a | Limit the rewrite to entries with this id. Repeatable. An entry without an id cannot be named, so give a bare pin an `--id` when you want to reach it this way. A marker's move still shifts the claim lines below it, whichever entries own them. |
@@ -1051,6 +1068,13 @@ the page was wrong. The output says "stale", never "wrong", and
 
 `history` is a report, not a gate. It exits `0` whatever it finds, so a
 scheduled job can keep its output. `manni check` does not run it.
+
+`history` walks one repository. An entry with `source.repo` is left out, and
+one notice on stderr names each one left out:
+
+```
+manni: cite history walks one repository, so 2 citations that name a repo are left out: retries, timeout.
+```
 
 <Aside type="note" title="It needs the full history">
 A shallow clone is refused, because the walk would start at its oldest commit.

@@ -50,7 +50,7 @@ docs/src/content/docs/meta/reference/schemas/index.mdx:
         commit-sha: cb74827009894c38f8646504ae9eb4a2745761a9
     - id: registry-diataxis-and-tgdp-are-alternatives
       claim:
-        lines: 324-327
+        lines: 325-328
         integrity: sha256-4275f183a4f490f20bfa6d197b22dfddaaa318725209e156b2f5127fb97aec87
       source:
         file: src/meta/schemas/diataxis/1.0.json
@@ -59,7 +59,7 @@ docs/src/content/docs/meta/reference/schemas/index.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: registry-okf-tags-are-strings-only
       claim:
-        lines: 305-308
+        lines: 306-309
         integrity: sha256-babeae49761d92995abdce11458b3f499309b8203adcbbfdcb062dc169239345
       source:
         file: src/meta/schemas/okf/0.1.json
@@ -108,7 +108,7 @@ docs/src/content/docs/meta/reference/schemas/index.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: registry-published-bytes-are-immutable
       claim:
-        lines: 225-229
+        lines: 226-230
         integrity: sha256-4d33c489f7e168c260c7eeb1ef6d5be77d7020cb5151cdf578236824ac048a92
       source:
         file: scripts/check-builtin-schemas.mjs
@@ -133,7 +133,7 @@ docs/src/content/docs/meta/reference/schemas/index.mdx:
         commit-sha: cb74827009894c38f8646504ae9eb4a2745761a9
     - id: registry-id-is-not-the-url
       claim:
-        lines: 187-189
+        lines: 188-190
         integrity: sha256-b57b439fe9d35677c0872da582b4662d9868546d687cf94145587ed5429567db
       source:
         file: src/meta/schemas/okf/0.1.json
