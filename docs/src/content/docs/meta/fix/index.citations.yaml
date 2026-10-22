@@ -115,9 +115,9 @@ docs/src/content/docs/meta/fix/index.mdx:
         integrity: sha256-f192b317320b2529418915bf19d31db20775947c576c4aedd182153424cb13a1
       source:
         file: src/meta/core/schema-registry.ts
-        lines: 1251-1257
+        lines: 1315-1321
         integrity: sha256-32f532eec4d87ee764584428f50c80c02ce2af2b1bd3f803c01ccec9ae0daf6d
-        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
+        commit-sha: 4a7ea91f8bb783a7a85c129bdf3d8fd96c0a2083
     - id: moved-text-is-never-a-finding
       claim:
         integrity: sha256-2a92270a056121c9517f9f40032ce7b62e09aacc74668d10a25ea220748cdc48
@@ -179,9 +179,9 @@ docs/src/content/docs/meta/fix/index.mdx:
         integrity: sha256-aaa718e4387400f40c085ef29f7d77eab6d31f497b2f9ab4fca7422a7393bed7
       source:
         file: src/meta/commands/validate.ts
-        lines: 245
+        lines: 246
         integrity: sha256-8f9a593b5a19e02ab19d9c188e11f60930c4d5f7d4e7a4dd35dc8d021de14d4d
-        commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
+        commit-sha: 6f1ff2e33d9cc6b0a72c5acc22a0290a71d3b0fe
     - id: frontmatter-must-be-first
       claim:
         lines: 183-185
@@ -230,8 +230,8 @@ docs/src/content/docs/meta/fix/index.mdx:
       source:
         file: src/meta/reporters/index.ts
         lines: 255-260
-        integrity: sha256-5853c37ec4c5eed5dc3fde3ec2bc35b37a54760519a4ef8038a7db1ee9abe80a
-        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
+        integrity: sha256-695047aada3c42563cdfc5a922c155afeb54f5f563689cc11400ec9f3873799b
+        commit-sha: 6f1ff2e33d9cc6b0a72c5acc22a0290a71d3b0fe
     - id: four-machine-readable-formats
       claim:
         lines: 56-59
@@ -247,9 +247,9 @@ docs/src/content/docs/meta/fix/index.mdx:
         integrity: sha256-ba6d5521e46c76ca558a37ffac0cfc262546d2af706de80cd6c4b518e02b7900
       source:
         file: src/meta/reporters/index.ts
-        lines: 331
+        lines: 333
         integrity: sha256-1ddc16c9efef4d12a6e9b575d67101a877c34cb0b1cc36ebb412bba1ca881e4b
-        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
+        commit-sha: 6f1ff2e33d9cc6b0a72c5acc22a0290a71d3b0fe
     - id: line-part-present-only-when-located
       claim:
         lines: 42
@@ -257,8 +257,8 @@ docs/src/content/docs/meta/fix/index.mdx:
       source:
         file: src/meta/reporters/index.ts
         lines: 255-260
-        integrity: sha256-5853c37ec4c5eed5dc3fde3ec2bc35b37a54760519a4ef8038a7db1ee9abe80a
-        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
+        integrity: sha256-695047aada3c42563cdfc5a922c155afeb54f5f563689cc11400ec9f3873799b
+        commit-sha: 6f1ff2e33d9cc6b0a72c5acc22a0290a71d3b0fe
     - id: field-part-is-json-pointer-or-root
       claim:
         lines: 39
@@ -275,8 +275,8 @@ docs/src/content/docs/meta/fix/index.mdx:
       source:
         file: src/meta/reporters/index.ts
         lines: 265-266
-        integrity: sha256-5c04230352d43cff5b2855ff9f1236decf91cf1c92be1cbcb248f88a7f2f3f1f
-        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
+        integrity: sha256-08786204d3673ac30c7144f16a6c46e216b2b70844732168245bbd988deb4f79
+        commit-sha: 6f1ff2e33d9cc6b0a72c5acc22a0290a71d3b0fe
     - id: pretty-is-the-default-format
       claim:
         integrity: sha256-bcf94d8c1638f84635db4504c94a64bb4c39bbe603cc80397a62f3870f9949be

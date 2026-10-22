@@ -1,0 +1,167 @@
+---
+title: Show readers what is proven
+description: "Join each pin and statement to the built page with manni site annotate, so a theme can show readers which sentences rest on code and when a check proved them."
+id: "site-annotate"
+type: "how-to"
+keywords: ["site annotate", "provenance", "data attributes", "rehype plugin", "pins on the live site", "site.annotate.after-build"]
+language: en
+audiences: ["docs-engineers", "ci-engineers"]
+intent: "Write each page's pins and verifications into the built site as data, then show them to readers with a theme's CSS or script."
+lifecycle: published
+applies-to: ["domain:site"]
+prerequisites: ["site", "graph-publish"]
+next-steps: ["site-reference-cli"]
+related-pages: ["cite", "graph-retrieve-from-a-script"]
+risks: ["idempotent"]
+sample-questions: ["How do I show readers which sentences are pinned to source?", "What does manni site annotate add to a built page?", "Why was a pin not placed on its block?"]
+graph: { label: "Show readers what is proven", type: task }
+tags:
+  - docs-site
+  - provenance
+  - cite
+  - build
+action: develop
+last-updated: 2026-10-22
+---
+
+import ProvenancePrototype from "../../../../components/ProvenancePrototype.astro";
+
+`manni cite check` proves each pinned sentence in CI, and a reader of the
+published page sees none of it. `manni site annotate` closes that gap. After
+the framework builds the site, it joins each pin and each statement to the
+exact block it describes. It writes the result into the page as data, and the
+page looks exactly as it did. A theme decides what readers see.
+
+This is Maya's page. The outcome is a built site whose blocks say which pins
+they carry and whether those pins still hold. A theme can then mark a proven
+sentence with three lines of CSS.
+
+## Before you start
+
+- **A graph section.** `manni graph publish` writes the chunk artifact
+  annotate reads. Each passage's record holds its pins, its dates and its
+  statements. [Publish the graph](/manni/graph/publish/) covers it.
+- **A built site.** `manni site build` builds it, or the framework's own
+  build does.
+
+## Stamp the lines
+
+The join is exact when each built block names the source lines it came from.
+The rehype plugin `@hawkeyexl/manni/site/rehype` writes that name, as a
+`data-manni-src` stamp, for any framework that renders through unified. That
+covers Starlight, Docusaurus, Nextra, Fumadocs and Rspress. Add it to the
+framework's rehype plugins. In Starlight that is `astro.config.mjs`:
+
+```js title="astro.config.mjs"
+import manniLines from "@hawkeyexl/manni/site/rehype";
+
+export default defineConfig({
+  markdown: { rehypePlugins: [manniLines] },
+});
+```
+
+Annotate removes every stamp after the join, so none reaches the deployed
+site. Load the plugin only where annotate runs.
+
+## Annotate the build
+
+Publish the graph, build the site, then annotate it:
+
+```console
+$ manni graph publish
+$ manni site build
+$ manni site annotate
+manni: Starlight in docs/. Annotating docs/dist from docs/public/graph/chunks.json.
+docs/dist: 258 pages annotated. 4163 of 4202 pins placed, 39 listed on their page only. 2 blocks carry a verification.
+  cite/fix/index.html: 1 pin not placed, because its text appears twice: decode-sample-changed.
+```
+
+Those are this site's numbers. Annotate exits `0` whatever the pins say, so
+gate on `manni cite check` before it. A pin that is not placed stays in the
+page's island, and the line under the count says why.
+
+To annotate on every build, set one key. `manni site build` and
+`manni site preview` then run annotate after a successful build:
+
+```yaml title="manni.config.yaml"
+site:
+  annotate:
+    after-build: true
+```
+
+`manni site start` never annotates, because a dev server writes no output.
+
+## What a page gains
+
+Each placed block gains attributes. Values are plain strings, and lists are
+space-separated, so CSS alone can select any of them.
+
+| Attribute | On | Value |
+|---|---|---|
+| `data-manni-node` | a placed block, or a heading | The node IRI of the passage holding the block's pin, or with no pin the heading or `graph:Block` its statement names. |
+| `data-manni-pins` | a block with placed pins | Space-separated citation ids. A citation with no id appears as `#<n>`. |
+| `data-manni-state` | a block with placed pins | `current` when no pin on it has an error-severity finding, otherwise `drifted`. |
+| `data-manni-verified` | a block or heading whose statement sets `last-verified` | The day or timestamp, as written. |
+| `data-manni-verified-by` | the same, for `verified-by` | Space-separated tool names. |
+| `data-manni-statement` | a block or heading with a statement | `current`, `changed` or `unpinned`. |
+| `data-manni-applies-to` | a heading whose statement sets `applies-to` | Space-separated values. |
+| `data-manni-commit` | `<main>` | The docs commit, absent outside git. |
+| `data-manni-last-verified` | `<main>` | The page's `last-verified`, when set. |
+
+Each page also gains one island before `</body>`, a
+`<script type="application/json" id="manni-provenance">`. It holds
+`{ page, commit, worktree, dates, records }`. The records are the page's
+provenance records from `chunks.json`, unchanged. A browser never runs it, so
+a strict content security policy allows it.
+
+Annotate writes no mark, stylesheet or script. Apart from the attributes and
+the island, every byte of the page is the framework's.
+
+## Show the marks
+
+Three lines of CSS turn the attributes into marks:
+
+```css
+[data-manni-state="current"]::after { content: " ✓"; color: var(--sl-color-green); }
+[data-manni-state="drifted"]::after { content: " ✗"; color: var(--sl-color-red); }
+[data-manni-verified]::before { content: "Verified " attr(data-manni-verified) " · "; font-size: 0.8em; }
+```
+
+A script that wants detail reads the island and looks up the block's node:
+
+```js
+const prov = JSON.parse(document.getElementById("manni-provenance").textContent);
+const block = document.querySelector("[data-manni-pins]");
+const record = prov.records.find((r) => r.node === block.dataset.manniNode);
+```
+
+Each record lists its pins under `pins.items`, with each source, commit and
+finding. An encrypted source stays its ciphertext token, so render it as a
+private source.
+
+## How well the join works
+
+A claim is joined by lines first. With no stamped block, its rendered text has
+to match exactly one block, or one run of adjacent blocks. A text that appears
+twice is never placed, because a wrong proof is worse than none.
+
+| Framework | Join | On this site |
+|---|---|---|
+| Starlight, Docusaurus, Nextra, Fumadocs, Rspress | Lines, then text | 4163 of 4202 pins, 99.1% |
+| VitePress, MkDocs, Zensical, Sphinx, Hugo, Jekyll | Text alone | About four in five, in the 0095 measurement |
+| Mintlify, Fern | None. They build on their own hosts. | n/a |
+
+Code blocks and repeated table rows are the usual misses. Expressive Code
+renders its own `<pre>`, so a code block is placed by its text. A row whose
+text repeats elsewhere on the page is listed rather than guessed.
+
+Outside git, `manni graph publish` records no commit. Annotate still runs, it
+writes no `data-manni-commit`, and it says so once.
+
+## Prototype
+
+This page carries the marks below, drawn by a prototype component on this site
+from the attributes and the island alone. It is not part of manni, and the
+package does not export it. No other page on this site shows marks.
+
+<ProvenancePrototype />

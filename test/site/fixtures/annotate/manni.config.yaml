@@ -1,0 +1,7 @@
+# A Starlight-shaped site, built, and the chunk artifact `graph publish`
+# would write for it. `graph/` holds the artifact from a git checkout, and
+# `graph-no-git/` the same artifact from a directory git cannot read.
+site:
+  dir: site
+graph:
+  out: graph/graph.ttl

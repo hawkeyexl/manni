@@ -50,13 +50,14 @@ describe("analyzeDoc — headings", () => {
     );
     expect(doc.firstH1).toBe("Title");
     expect(doc.sections).toEqual([
-      { slug: "title", title: "Title", level: 1, order: 1, parentSlug: null },
+      { slug: "title", title: "Title", level: 1, order: 1, parentSlug: null, line: 1 },
       {
         slug: "install",
         title: "Install",
         level: 2,
         order: 1,
         parentSlug: "title",
+        line: 3,
       },
       {
         slug: "usage",
@@ -64,6 +65,7 @@ describe("analyzeDoc — headings", () => {
         level: 2,
         order: 2,
         parentSlug: "title",
+        line: 7,
       },
       {
         slug: "advanced",
@@ -71,6 +73,7 @@ describe("analyzeDoc — headings", () => {
         level: 3,
         order: 1,
         parentSlug: "usage",
+        line: 9,
       },
     ]);
   });

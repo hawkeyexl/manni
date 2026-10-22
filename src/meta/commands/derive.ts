@@ -125,6 +125,7 @@ import {
   type MetaManifestOp,
 } from "../core/manifest-writes.js";
 import { lineSpec, parseLines } from "../../shared/pin.js";
+import { pinStatements } from "../core/statements.js";
 import {
   compareDerived,
   DERIVABLE_FIELDS,
@@ -250,6 +251,12 @@ export interface DeriveSummary {
    * `provenance`.
    */
   ranges?: number;
+  /**
+   * Inline `meta` statements pinned (proposal 0099), or that would be under
+   * `dryRun` and `check`, and the pages they sit on. Present only when there
+   * were any.
+   */
+  statements?: { pinned: number; pages: number };
   stale: number;
   unset: number;
   unknown: number;
@@ -266,6 +273,9 @@ export interface DeriveRun {
   /** Where the run stood, for the SARIF reporter under `check`. See `ValidateRun.frame`. */
   frame: FingerprintContext;
 }
+
+/** Why every source is unavailable when no repository holds the pages. */
+const NO_REPOSITORY = "no git repository contains the documents";
 
 /** The hint `assertSourcesAvailable` appends: this command's own way out. */
 const SOURCE_HINT = "narrow --sources or --fields";
@@ -665,13 +675,19 @@ export async function runDerive(opts: DeriveOptions): Promise<DeriveRun> {
       machines: machinesOf(config?.derive),
       ...(generatedBy !== undefined ? { generatedBy } : {}),
     });
-    assertSourcesAvailable(derived.sources, SOURCE_HINT);
+    // Outside any repository the sources have nothing to read, and the run
+    // still pins its pages' inline statements, which read no git (proposal
+    // 0099). The fields go unanswered and the reason is said once; any other
+    // unavailable source still refuses the run.
+    const unanswered = Object.values(derived.sources).filter((s) => !s.available);
+    const outside = unanswered.length > 0 && unanswered.every((s) => s.reason === NO_REPOSITORY);
+    if (!outside) assertSourcesAvailable(derived.sources, SOURCE_HINT);
     // A source that answered, with a caveat worth one line: a repository with
     // no CODEOWNERS file derives null owners rather than failing.
     if (!sourcesNoted) {
       sourcesNoted = true;
       for (const [name, status] of Object.entries(derived.sources)) {
-        if (status.available && status.reason !== undefined) {
+        if (status.reason !== undefined && (status.available || outside)) {
           opts.onNotice?.(`${name}: ${status.reason}`);
         }
       }
@@ -1177,6 +1193,28 @@ export async function runDerive(opts: DeriveOptions): Promise<DeriveRun> {
     }
   }
 
+  // Inline `meta` statements (proposal 0099): pin every unpinned one that
+  // anchors something, over the page as this run left it. A changed pin is
+  // never rewritten. Nothing here reads git, so it runs outside a repository
+  // too. Under `--check` an unpinned statement is a finding instead.
+  let statementsPinned = 0;
+  let statementPages = 0;
+  for (const result of results) {
+    const doc = loaded.get(result.file);
+    if (doc === undefined) continue;
+    const content = dryRun ? doc.content : await readFile(doc.absPath, "utf8");
+    const { content: next, pinned, findings } = pinStatements(content, doc.format);
+    if (pinned === 0) continue;
+    statementsPinned += pinned;
+    statementPages++;
+    result.changed = true;
+    if (check) {
+      const unpinned = findings.filter((f) => f.keyword === "statement-unpinned");
+      result.findings = [...(result.findings ?? []), ...unpinned];
+    }
+    if (!dryRun) await writeFileAtomic(doc.absPath, next);
+  }
+
   // W1 and W2 (0047): a value its schema prefers in external metadata that
   // went to the page, or would have. One line per collection, not per page.
   if (flagged.length > 0) {
@@ -1189,7 +1227,10 @@ export async function runDerive(opts: DeriveOptions): Promise<DeriveRun> {
     for (const line of externalWriteWarnings(landed, dryRun)) warn(line);
   }
 
-  const summary = summarize(results);
+  const summary: DeriveSummary = {
+    ...summarize(results),
+    ...(statementsPinned > 0 ? { statements: { pinned: statementsPinned, pages: statementPages } } : {}),
+  };
   return {
     results,
     summary: runFields.includes(PROVENANCE_FIELD) ? { ...summary, ranges: countRanges(results) } : summary,

@@ -244,6 +244,38 @@ This is the backbone of the docevals section. It is the only journey that crosse
 
 **What success looks like.** A `found` row that only reviewed questions move, and a red run when it falls under the threshold. No pin points at lines that no longer hold its answer. manni says whether a question finds its lines, and never judges the answer. Related journeys are M18 (the graph), M20 (filling what nobody wrote) and D12 (the gate).
 
+### M29 · Ground a site's Ask AI in the docs' proof
+
+**Outcome.** The docs site's "Ask AI" answers from the passages manni published, not from a vendor's re-crawl. Each passage it uses carries its proof, so the answer quotes what still holds and flags what drifted.
+
+**Steps.** Maya's site already runs `manni graph publish --out docs/public/graph`, then `manni graph check` on what it published, in CI, so the site serves `chunks.json` from the commit it builds. Her team writes a small worker. It calls `createRetriever` from `@hawkeyexl/manni/graph/runtime` and passes the reader's question to `lookup`. The result holds the ranked matches, what they link to, and what depends on them. She hands those passages to the model the team already uses, with the role each plays. A passage whose pins report an error is flagged. manni calls no model. When the team moves to a hosted vector DB, they ingest the published rows as they are and pass `createHttpVectorStore`. Every other line of the worker stays the same. She learns what a first vector query downloads, and that `embed: false` skips it. A refusal comes back as an answer, so the box says the docs do not cover a question rather than inventing one.
+
+**What success looks like.** An answer that cites pages by the ids the docs repo knows, and never quotes a drifted sentence as verified. Related journeys are D13 (publishing the graph), D19 (the same passages over MCP) and M27 (the questions that test retrieval).
+
+### M30 · Show readers when a check last proved a page
+
+**Outcome.** Each page that a procedure test covers says when that test last passed. Readers and agents see a date that means "this still works", beside the date the text last changed.
+
+**Steps.** Maya's pages already carry Doc Detective tests, and `manni test run` runs them in CI. She adds one `verified-by` entry to each page's front matter, naming `doc-detective` as the `tool` and the test's id as the `check`. On a pass, Doc Detective fills in that entry's `passed` and `version`. It sets `last-verified` once every listed check has passed. A failing test leaves both alone, so the date ages, and the age is the signal. A link checker or a sample runner gets an entry of its own, and `last-verified` waits for the slowest of them. `manni meta validate` checks the form of every value the tools write, in the same job. manni writes none of it.
+
+**What success looks like.** A page's `last-verified` moves only when every check that covers it passes. No key on the page names a tool. Related journeys are M5 (pins), D17 (the test gate) and S16 (how another tool writes these fields).
+
+### M31 · Pin a fact to the sentence it is about
+
+**Outcome.** A fact about one procedure, paragraph or section sits beside it in the page's source. It is validated like front matter, and an edit to the text it describes is noticed.
+
+**Steps.** Maya's page has two procedures, and only one has a Doc Detective test. She writes one `meta` statement above the tested procedure, in the page's own comment syntax. It holds a JSON object with a `verified-by` entry naming the test. `manni meta validate` checks each field against the page's own schemas, and a field the page's schemas do not define fails. `manni meta derive` pins the statement to the block below it, or Doc Detective pins it on its next pass. When she rewords a step, `validate` warns that the pinned block changed. On a heading, a statement describes the whole section, and can type it for the graph. She keeps bookkeeping and anything large in the manifest, and cite markers for pins to source.
+
+**What success looks like.** The untested procedure claims nothing, and the tested one carries its own date. A reworded step is a warning, never a silent pass. Related journeys are M30 (verification for a page), M5 (pins to source) and S16 (how another tool writes a statement).
+
+### M32 · Let readers see which sentences are proven
+
+**Outcome.** A reader of the published site can tell a sentence pinned to code from the rest, and see when a check last proved a block. Maya's pins reach past CI, and the page looks the same until her theme chooses a mark.
+
+**Steps.** Maya's CI already runs `manni graph publish`, so the chunks hold each passage's pins, dates and statements. She adds `@hawkeyexl/manni/site/rehype` to the framework's rehype plugins, so each built block names its source lines. She sets `site.annotate.after-build: true`, and `manni site build` runs `manni site annotate` after the framework's build. Annotate joins each pin and statement to its block by lines, then by text, and never breaks a tie. Each placed block gains `data-manni-*` attributes, and each page one JSON island. The run prints how many pins it placed, and why each of the rest was not. Three lines of CSS turn `data-manni-state` into a mark. A script that wants detail reads the island. Annotate exits `0` whatever the pins say, so `manni cite check` stays the gate.
+
+**What success looks like.** Every placed block says which pins it carries and whether they hold, and no pin is guessed onto the wrong block. No `data-manni-src` stamp reaches the deployed site. Related journeys are M5 (pins to source), M26 (running the site), M30 and M31 (verification) and D13 (publishing the graph).
+
 ---
 
 ## Devin, Platform / CI Engineer
@@ -348,7 +380,7 @@ This is the highest-stakes journey in the section. It is the only one where a pl
 
 **Outcome.** The graph leaves CI as an artifact other systems consume. That is linked data for an ingester, iiRDS for a content delivery portal, or a search index the docs site loads in the browser.
 
-**Steps.** `manni graph export jsonld` writes linked data, `export iirds` writes a conformant package, and `export search` writes the index the `@hawkeyexl/manni/graph/runtime` bundle reads client-side. `manni graph embed` adds vector sidecars for semantic search, per language. He pins what the artifact carries by marking fields in the schema rather than post-processing the output. He publishes on the same run that gated it, so what ships is what passed.
+**Steps.** `manni graph publish` writes every artifact he set up into one directory with one command. One target at a time, `manni graph export jsonld` writes linked data, `export iirds` writes a conformant package, and `export search` writes the index the `@hawkeyexl/manni/graph/runtime` bundle reads client-side. `manni graph embed` adds vector sidecars for semantic search, per language. He pins what the artifact carries by marking fields in the schema rather than post-processing the output. He publishes on the same run that gated it, so what ships is what passed.
 
 **What success looks like.** A RAG ingester and the docs site's own search read one artifact, produced by the build that already ran.
 
@@ -397,6 +429,16 @@ This is the highest-stakes journey in the section. It is the only one where a pl
 **Steps.** His trigger is a question the gate cannot answer. A reader filed a bug against a release, and someone asks how long the page was wrong. Or the team ramped in with `--baseline`, and nobody knows how old the forgiven pins are. He adds a weekly job that checks out the full history and runs `manni cite history -f json`. He learns that a window opens where `cite check` would have reported a stale source. It closes at the re-pin, the restored source or the removed entry, and a moved pin opens none. He reads `summary.staleSeconds` as the total, and `summary.releases` as the tags that shipped a stale pin. He learns the number is an upper bound, which is why the report says "stale" and never "wrong". The job never fails on what it finds, because `cite check` stays the gate. When a reader's bug names one page, Maya runs the same verb on that page and reads the window and the release. A long history gets `--newer-than 90d`.
 
 **What success looks like.** A dashboard number that falls to zero once the gate is on, and a one-line answer to "which releases shipped this page stale?"
+
+---
+
+### D19 · Serve the docs to an agent with their proof
+
+**Outcome.** An agent that answers from the docs, or edits them, reads each passage with its proof. It knows which sentences are verified before it quotes them.
+
+**Steps.** Devin builds the graph and exports the chunk artifact on the checkout the agent reads. He installs the optional MCP SDK beside manni. He registers `manni graph serve` in the client's MCP config. The agent calls `lookup` with one question and gets three complete sections: the ranked matches, what they link to, and what depends on them. Each passage carries its pins, dates and eval verdicts. He sets `--withhold drifted` so no agent call serves a passage whose pin broke, and no tool argument can lower that floor. A refusal comes back as an answer with a reason, never as an error.
+
+**What success looks like.** The agent quotes current sentences, flags drifted ones, and names the pages a change affects. Related journeys are D13 (publishing the graph) and M24 (an agent that reads the docs while writing them).
 
 ---
 
@@ -532,6 +574,16 @@ Sara needs to ship a stricter version of the schema without immediately breaking
 **Steps.** She starts from what the pages say, not from a blank glossary. The graph already reads `concepts:`, `keywords:` and `graph:` blocks, and `manni term check` names each concept no term defines. She runs `manni term fill --offline --dry-run` to see what is missing, then `manni term fill` with a provider, so a model drafts each definition. `--crawl` proposes the terms no metadata named. She reads every draft, rewrites the wrong ones, and deletes each `meta-provenance` entry she has reviewed. `manni term check` then holds the set to the rules a thesaurus needs. Related links hold both ways, broader terms list their narrower ones, and each term has a place. She writes a branch of terms, such as `Audience`, and marks the `audiences` field `x-manni-term` with `under`, so `manni meta validate` rejects a reader type the termbase lacks. She maps terms to outside vocabularies with `exact-matches` and its siblings. She hands the scheme out as SKOS with `manni term write -f skos-ttl`, or as TBX for translation. Each page declares `sample-questions`, and `manni graph check` reports a page its own question does not find. `keyword-candidate` names the next concept, which the next `term fill --crawl` picks up. `hierarchy-outside-termbase` names an edge to move onto its term page.
 
 **What success looks like.** One node per concept however a page spells it, and a termbase with no unreviewed drafts. A graph check that finds every page for its own question. Related journeys are S6 (the term pages), M18 (the graph) and D12 (the graph gate).
+
+---
+
+### S16 · Let another tool write metadata the family reads
+
+**Outcome.** A tool Sara does not own writes values into her pages, and every manni tool reads them as one shared fact. Nothing the tool writes breaks validation, a merge or a derived field.
+
+**Steps.** A tool author, or Sara wiring one in, reads the vocabulary first. `manni meta schemas show` prints each field's type and description, and the schema carries its `x-manni-location` mark. A `page` field goes in front matter, and an `external` one in the manifest the collection names. A measured fact goes in its field's companion, such as `verified-by` beside `last-verified`, and a value proposed for review goes in `meta-provenance`. The tool never writes a derived or managed field, such as `last-updated` or a citation's hashes. It writes dates as UTC days or RFC 3339 with a timezone, and only on success. It writes without churn, keeping the block's style and key order. Then it runs `manni meta validate` in the same job and fails on exit 1.
+
+**What success looks like.** A second tool's write lands as a small, idempotent diff that passes validation. No key on any page is named for one tool. Related journeys are S1 (the standard), M30 (verification) and M20 (proposals under `meta-provenance`).
 
 ---
 

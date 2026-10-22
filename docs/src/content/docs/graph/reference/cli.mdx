@@ -6,7 +6,7 @@ id: graph-reference-cli
 language: en
 lifecycle: published
 action: remember
-last-updated: 2026-10-20
+last-updated: 2026-10-22
 ---
 
 {/* The command, argument, and option tables on this page are drift-checked
@@ -14,7 +14,7 @@ last-updated: 2026-10-20
     docs:check-cli), enforced in CI. Keep flags, arguments, and defaults in
     sync with the code; descriptions are free-form. */}
 
-Eleven commands under one domain, and one subcommand under `shapes`. Every flag below is verified against
+Fifteen commands under one domain, and one subcommand under `shapes`. Every flag below is verified against
 `src/graph/cli.ts`, and the exit codes are exercised by the inline tests at the
 foot of this page.
 
@@ -44,7 +44,7 @@ relative links resolve from the working directory. It has no git history.
 It belongs to no collection, so no external-metadata manifest supplies its fields.
 
 The other verbs read the **built graph** rather than the documents: `check`,
-`query`, `stats`, `search`, `traverse`, `embed` and `export` all load the
+`query`, `stats`, `search`, `traverse`, `lookup`, `retrieve`, `embed` and `export` all load the
 Turtle file at `graph.out`, or the one `-g` names. Build first, then ask.
 `shapes` reads neither. It reads the shapes files `check` runs.
 
@@ -188,15 +188,15 @@ manni graph check [options]
 $ manni graph check -c test/graph/fixtures/dd/violations.config.yaml
 error: violations/alpha.md, violations/beta.md, violations/gamma.md: "Alpha" and "Beta" form a broader cycle, so each is its own ancestor. Remove one `broader` or `narrower` value on the cycle.
   at https://example.com/dd/concept/alpha skos:broader
-  manni:graph-shapes:1.1.1 Concept-broader: A more general concept. A concept is never its own ancestor.
+  manni:graph-shapes:1.2.0 Concept-broader: A more general concept. A concept is never its own ancestor.
   Guide: https://hawkeyexl.github.io/manni/graph/fix/
 error: violations/alpha.md, violations/beta.md, violations/gamma.md: A concept is related to a concept that is also broader than it. Remove one link: from `related-concepts` or `related-terms`, or from `broader` or `narrower`.
   at https://example.com/dd/concept/alpha skos:related
-  manni:graph-shapes:1.1.1 Concept-related: A concept on the same level as this one. It is never also an ancestor or a descendant.
+  manni:graph-shapes:1.2.0 Concept-related: A concept on the same level as this one. It is never also an ancestor or a descendant.
   Guide: https://hawkeyexl.github.io/manni/graph/fix/
 error: violations/alpha.md: The page lists a variant in both `applies-to` and `not-applicable-to`. Keep it only in the one that is true.
   at https://example.com/dd/doc/violations/alpha.md graph:notApplicableToVariant
-  manni:graph-shapes:1.1.1 Document-notApplicableToVariant: The product variants the page does not apply to. A variant cannot be in both lists.
+  manni:graph-shapes:1.2.0 Document-notApplicableToVariant: The product variants the page does not apply to. A variant cannot be in both lists.
   Guide: https://hawkeyexl.github.io/manni/graph/fix/
 
 3 errors, 0 warnings, 0 notices
@@ -227,7 +227,7 @@ lines as an object, or `null` when no shape judged it.
   "path": "https://hawkeyexl.github.io/manni/graph/ns#notApplicableToVariant",
   "docs": ["violations/alpha.md"],
   "guidance": {
-    "id": "manni:graph-shapes:1.1.1",
+    "id": "manni:graph-shapes:1.2.0",
     "rule": "Document-notApplicableToVariant",
     "description": "The product variants the page does not apply to. A variant cannot be in both lists.",
     "guide": "https://hawkeyexl.github.io/manni/graph/fix/"
@@ -279,7 +279,7 @@ published graph is still asked. A page in the graph that is no longer on disk
 is skipped, and one warning names how many and says to rebuild.
 
 A question can pin the body lines that answer it, as
-[`manni:ai-context:1.1.0`](/manni/meta/reference/schemas/manni-ai-context/)
+[`manni:ai-context:1.2.0`](/manni/meta/reference/schemas/manni-ai-context/)
 describes. A pinned question must find the part of the page that holds those
 lines. That is a section whose own text covers them, from its heading to the
 next heading of any rank. Text before the first heading belongs to the page
@@ -422,6 +422,39 @@ annotations, as plain text. The JSON report gains a `questions` key beside
 Stored per CI run, that object is the time series. manni keeps no history of
 its own.
 
+### Cited by graph retrieve
+
+When a chunk artifact sits beside the graph, `check` also asks each reviewed
+question through [`graph retrieve`](#graph-retrieve), in the question's own
+language. A question is cited when the bundle cites a node that answers it.
+For a question with no pin, that is its page or any of its sections. For a
+pinned one, it is a node whose own text holds each answer.
+
+```console
+$ manni graph publish && manni graph check
+questions  4: 4 reviewed, 0 drafted, on 4 pages
+  found    3 of 4 reviewed in the top 5 (75%), 3 first (75%)
+  cited    2 of 4 reviewed by graph retrieve (50%), 1 withheld
+  answers  0 pinned, 0 not reviewed: 0 current, 0 moved, 0 changed; 4 not pinned
+```
+
+The JSON `questions` object gains `cited` and `withheld`, both counts of
+reviewed questions. The row's denominator is `found.reviewed.of`.
+
+| Finding | Severity | Message |
+|---|---|---|
+| Not cited | `questions.severity` | `"<question>" is not cited by graph retrieve, which cites <page> § <section> first.` |
+| Not cited, withheld | `questions.severity` | `"<question>" is not cited by graph retrieve, because graph.retrieve.withhold left out § <section> as drifted.` |
+| Cited outside its language | error | `"<question>" asks in de, and graph retrieve cites <page>, which is en.` |
+| Under `citedThreshold` | error | `2 of 4 reviewed questions are cited by graph retrieve (50%), under the 75% that graph.check.questions.citedThreshold asks for.` |
+| No chunk artifact | notice | `the cited row did not run: no chunk artifact; run manni graph publish.` |
+| An artifact from another graph | notice | `the cited row did not run: .manni/graph/chunks.json was built from another graph; run manni graph publish.` |
+
+A withheld answer that is a whole page is named by its path. When the bundle
+cites nothing, the first message ends `which cites nothing for it.` The row
+never runs without an artifact, so `citedThreshold` gates only a published
+graph.
+
 ### Options
 
 | Option | Argument | Default | Description |
@@ -478,11 +511,12 @@ manni graph shapes [options]
 
 ```console
 $ manni graph shapes
-manni:graph-shapes:1.1.1  (bundled)
+manni:graph-shapes:1.2.0  (bundled)
   Guide: https://hawkeyexl.github.io/manni/graph/fix/
   ActivityShape          prov:Activity                      A generation, fill or build run that manni records. manni writes it.
   AssociationShape       prov:Association                   The role an agent played in an activity. manni writes it.
   AttributionShape       prov:Attribution                   The role an author played on a page. manni writes it.
+  BlockShape             graph:Block                        A paragraph, list or element that an inline meta statement describes.
   ConceptShape           skos:Concept                       A concept of the glossary, named by a term page, a graph label, a tag or a concepts entry.
   DocumentShape          graph:Document                     A page of the docset, as its frontmatter, links, headings and history describe it.
   FilledFieldEntryShape  objects of graph:filledFieldEntry  One field a graph fill run filled, with the model's confidence. manni writes it from meta-provenance.
@@ -490,8 +524,9 @@ manni:graph-shapes:1.1.1  (bundled)
   PersonShape            prov:Person                        A person credited as an author of a page.
   ProductVariantShape    iirds:ProductVariant               A product variant that pages name in applies-to or not-applicable-to.
   SchemeShape            skos:ConceptScheme                 The glossary that holds every concept of the docset. manni writes it.
-  SectionShape           graph:Section                      A heading of a page, typed through graph.sections.
+  SectionShape           graph:Section                      A heading of a page, typed through graph.sections or a meta statement on the heading.
   SoftwareAgentShape     prov:SoftwareAgent                 A model or tool that wrote or filled part of a page, or built the graph.
+  VerificationShape      graph:Verification                 One verified-by entry: a tool, and the check it runs.
 ```
 
 Each file opens with its id and where it came from: `(bundled)`, or the path as
@@ -536,7 +571,7 @@ manni graph shapes show <shape> [options]
 
 ```console
 $ manni graph shapes show ConceptShape
-ConceptShape  manni:graph-shapes:1.1.1  skos:Concept, closed
+ConceptShape  manni:graph-shapes:1.2.0  skos:Concept, closed
   A concept of the glossary, named by a term page, a graph label, a tag or a concepts entry.
   Guide: https://hawkeyexl.github.io/manni/graph/fix/
 
@@ -588,7 +623,7 @@ and `graph.*` keys nest under `graph:`.
 ```console
 $ manni graph shapes show ConceptShape -f markdown
 ---
-# ConceptShape, manni:graph-shapes:1.1.1
+# ConceptShape, manni:graph-shapes:1.2.0
 # Guide: https://hawkeyexl.github.io/manni/graph/fix/
 graph:
   # Other names readers use for the concept. Search matches them too.
@@ -630,7 +665,7 @@ Each of these exits 2.
 | Case | stderr |
 |---|---|
 | No shape named | `error: missing required argument 'shape'` |
-| A shape the files do not hold | `manni: Unknown shape "Document". Available: ActivityShape, AssociationShape, AttributionShape, ConceptShape, DocumentShape, FilledFieldEntryShape, OrganizationShape, PersonShape, ProductVariantShape, SchemeShape, SectionShape, SoftwareAgentShape.` |
+| A shape the files do not hold | `manni: Unknown shape "Document". Available: ActivityShape, AssociationShape, AttributionShape, BlockShape, ConceptShape, DocumentShape, FilledFieldEntryShape, OrganizationShape, PersonShape, ProductVariantShape, SchemeShape, SectionShape, SoftwareAgentShape, VerificationShape.` |
 | A shape named when the files define no node shapes | `manni: Unknown shape "Document". The shapes in effect define no node shapes.` |
 | `-f markdown` on a shape with no frontmatter keys | `manni: ActivityShape has no frontmatter keys. manni writes every value it checks.` |
 | `-f markdown` on `graph shapes` | `manni: Unknown --format "markdown". Use pretty \| json.` |
@@ -964,6 +999,339 @@ $ manni graph traverse -c test/graph/fixtures/dd/docs.config.yaml \
 | `--software-subject` | `<subject>` | no filter | Scope filter on a software subject. An unknown one is **exit 2**. |
 | `--lang` | `<tag>` | no filter | Scope filter on a BCP-47 language tag, matched in any case. |
 | `--limit` | `<n>` | unbounded | Stop after this many nodes. A whole number, at least 1. |
+| `--context` | n/a | off | Return the passages the walk reaches, with their text and proof, as a [bundle](#the-bundle). It reads the [chunk artifact](#chunks) beside the graph. |
+| `--max-chars` | `<n>` | config `retrieve.maxChars` | The character budget for the passages. Valid only with `--context`. |
+| `--withhold` | `<list>` | none | Also leave out passages that are `drifted` or `failing`, comma-separated and given once. Valid only with `--context`. |
+| `--where` | `<field=value>` | none | Serve only passages whose row `metadata` field holds the value, as [`graph retrieve`](#graph-retrieve) does. Repeatable, and every condition must hold. Valid only with `--context`. |
+| `-f, --format` | `<pretty\|json>` | `pretty` | Output format. |
+
+Without `--context`, the output is the walk above, unchanged. With it, the
+node the walk starts from has the role `match`. A node reached outward is
+`context`, and one reached under `--impact` or `--reverse` is `dependent`.
+
+```console
+$ manni graph traverse urn:manni:graph:doc/docs/en/rotate.md --context
+rotate.md                              match
+rotate.md § Rotate the encryption key  context, depth 1
+setup.md                               context, depth 1
+
+3 passages, in en. Pass -f json for the text and trace.
+```
+
+`--max-chars`, `--withhold` or `--where` without `--context` is **exit 2**,
+with `manni: --max-chars needs --context.`, and likewise for the other two. A
+malformed `--where` is **exit 2**, with the message `graph retrieve` prints.
+
+## `graph lookup`
+
+Answers a question from the chunk artifact. It takes only the question and
+where the artifact is. Every retrieval setting comes from
+[`graph.retrieve`](/manni/graph/reference/configuration/#retrieve).
+
+```sh
+manni graph lookup <question> [options]
+```
+
+It runs three operations and returns each one in full:
+
+- **Matches.** Every ranked match, with its lexical, vector and fused scores.
+  The top `retrieve.seeds` passages are the matches.
+- **Traversal.** Every passage reached outward from the matches, to
+  `retrieve.depth` hops, with every edge it followed.
+- **Impact.** Every passage that depends on the matches, three hops inward,
+  with every edge.
+
+It enters every localization and keeps the one whose best match scores
+highest, so it never asks for a language. The lexical score decides, since
+the words a question shares with a page say which language it is in. The
+question is then embedded with that language's model alone. Nothing is dropped from a section.
+The budget, `retrieve.maxChars`, applies to each section's text on its own. A
+passage past it keeps its node, edges and record, and its `text` is `null`.
+
+```console
+$ manni graph lookup "How do I rotate the encryption key?"
+Matches
+1  rotate.md                                lexical 134.9, vector 0.09
+2  ci.md § Run in CI                        lexical 60.5, vector 0.14
+3  rotate.md § Rotate the encryption key    lexical 170.5, vector -0.49
+Traversal, depth 1
+   setup.md                                 from #1 via dcterms:references
+   rotate.md § Rotate the key with the CLI  from #3 via dcterms:hasPart
+   rotate.md § What rotation re-encrypts    from #3 via dcterms:hasPart
+Impact, depth 3
+   ci.md                                    depth 1, hasPart #2
+   release.md                               depth 2, references ci.md
+
+3 matches, 3 reached outward, 2 depend on them, in en. Pass -f json for the text, edges and trace.
+```
+
+Under each passage, the pretty output adds its proof when there is any. That
+means a `pins` line, a `dates` line and an `evals` line.
+
+### Arguments
+
+| Argument | Description |
+|---|---|
+| `<question>` | The question, in quotes. Required. |
+
+### Options
+
+| Option | Argument | Default | Description |
+|---|---|---|---|
+| `-c, --config` | `<path>` | discovered | Path to `manni.config.yaml`. |
+| `--no-config` | n/a | off | Ignore any discovered config file. |
+| `-g, --graph` | `<path>` | config `out` | The built Turtle file. The artifact must have been built from it. |
+| `-i, --index` | `<dir>` | beside the graph | The directory holding `chunks.json`, its rows and the search index. |
+| `-f, --format` | `<pretty\|json>` | `pretty` | Output format. `json` prints the lookup result. |
+
+### The lookup result
+
+| Key | Meaning |
+|---|---|
+| `question`, `language` | The question, and the language chosen. |
+| `matches.passages[]` | Every match in rank order: `iri`, `title`, `page`, `lines`, `rank`, `score`, `text`, `truncated` and `provenance`. `score` is `{ lexical, vector, fused }`, with `null` where a path did not run or did not rank the passage. |
+| `traversal.passages[]`, `impact.passages[]` | Every passage reached outward or inward, with `depth` in place of `rank`. A passage reached by both walks appears in both. A match never repeats in either. |
+| `traversal.edges[]`, `impact.edges[]` | Every edge followed, as `{ from, predicate, to }` in the graph's own direction. |
+| `*.truncated` | `true` when a passage in the section lost its text to the budget. |
+| `pages` | `{ "<page>": { metadata } }`: the delivered fields of each page served, once per page. |
+| `citations` | `{ iri, title, sourceUrl }` for each passage served with its text. |
+| `trace` | The [trace](#the-bundle), whose `entry` adds `languages`, each language's best score, and `chosen`. |
+| `refusal` | Present only when nothing matched, or every match was withheld. Every section is then empty. |
+
+A passage in `passages` is a passage the chunk artifact holds. A node with no
+passage, such as a concept, appears only in `edges`.
+
+`matches` plus `traversal` is what `graph retrieve` returns for the chosen
+language without a budget. `impact` is everything `graph traverse --impact`
+reaches from each match, less the matches.
+
+## `graph retrieve`
+
+Retrieves passages for a question, with control over language, scope, depth
+and budget. It prints its bundle's rows, without lookup's section headings.
+
+```sh
+manni graph retrieve <question> [options]
+```
+
+```console
+$ manni graph retrieve "How do I rotate the encryption key?" --lang en --where tags=keys
+rotate.md                                match
+rotate.md § Rotate the encryption key    match
+rotate.md § Rotate the key with the CLI  match
+rotate.md § What rotation re-encrypts    context, depth 1
+
+4 passages, in en. Pass -f json for the text and trace.
+```
+
+The top `--seeds` ranked passages are the matches. The walk goes outward from
+them, `--depth` hops, and the bundle holds what fits in `--max-chars`, in that
+order.
+
+### Arguments
+
+| Argument | Description |
+|---|---|
+| `<question>` | The question, in quotes. Required. |
+
+### Options
+
+| Option | Argument | Default | Description |
+|---|---|---|---|
+| `-c, --config` | `<path>` | discovered | Path to `manni.config.yaml`. |
+| `--no-config` | n/a | off | Ignore any discovered config file. |
+| `-g, --graph` | `<path>` | config `out` | The built Turtle file. The artifact must have been built from it. |
+| `-i, --index` | `<dir>` | beside the graph | The directory holding `chunks.json`, its rows and the search index. |
+| `-f, --format` | `<pretty\|json>` | `pretty` | Output format. `json` prints the bundle. |
+| `--lang` | `<tag>` | the only localization | The localization, matched in any case. Required when the corpus has more than one. |
+| `--variant` | `<variant>` | no filter | Scope filter on a product variant IRI, title, or slug. An unknown one is **exit 2**. |
+| `--software-subject` | `<subject>` | no filter | Scope filter on a software subject. An unknown one is **exit 2**. |
+| `--mode` | `<mode>` | `hybrid` when the language's rows carry vectors, else lexical | Which legs rank the question: `lexical`, `hybrid` or `vector`. |
+| `--seeds` | `<n>` | config `retrieve.seeds` | How many ranked passages the walk starts from. A whole number, at least 1. |
+| `-d, --depth` | `<n>` | config `retrieve.depth` | Hops out from each match. `0` serves the matches alone. |
+| `--max-chars` | `<n>` | config `retrieve.maxChars` | The character budget. A passage that does not fit is left out, and `truncated` says so. |
+| `--withhold` | `<list>` | none | Also leave out passages that are `drifted` or `failing`, comma-separated and given once. It only tightens the floor the export applied. |
+| `--where` | `<field=value>` | none | Serve only passages whose row `metadata` field holds the value. A list field matches when it contains it. Repeatable, one condition per occurrence, and every condition must hold. |
+
+A candidate `--where` rejects gives its place to the next one. A withheld
+match keeps its place and is left out, so every match withheld is a refusal.
+
+### The bundle
+
+`graph retrieve -f json` and `graph traverse --context -f json` print a
+bundle.
+
+| Key | Meaning |
+|---|---|
+| `question`, `node` | The question on `retrieve`, or the node on `traverse`. |
+| `language` | The language served, or `null`. |
+| `context[]` | Each passage: `iri`, `title`, `text`, `sourceUrl`, `depth`, `page`, `provenance` and `role`. `role` is `match`, `context` or `dependent`. |
+| `citations[]` | `{ iri, title, sourceUrl }` for each passage in `context`. |
+| `pages` | `{ "<page>": { metadata } }`: the delivered fields of each cited page, once per page. |
+| `truncated` | `true` when the budget left a passage out. |
+| `refusal` | `{ reason, detail }`, present when nothing could be served. |
+| `trace.entry` | `{ candidates }`, the ranked candidates that became matches. `fallback` is `"lexical"` when the vector path was wanted and could not run, or when the language has no model and another has one. |
+| `trace.hops`, `trace.exclusions`, `trace.resolutions` | Every edge walked, every node a scope filter excluded, and every row looked up. A candidate no row holds is a resolution with `ok: false`. |
+| `trace.withheld` | `{ node, because, at }` for each passage the floor left out. `at` is `export` or `query`. Always present. |
+| `trace.filtered` | `{ node, field }` for each passage `--where` left out, with the first field it failed. The vector store applies `--where` itself, so a row it never returns is not listed. Always present. |
+
+A refusal is an answer, and it exits 0. Its `reason` is one of these:
+
+| Reason | When |
+|---|---|
+| `no-route` | Nothing matched, or nothing was reachable from the node. |
+| `no-content` | Every passage was over the budget. |
+| `withheld` | Every match was withheld. |
+| `lang-required` | The corpus has several localizations and none was named. The CLI makes this exit 2 instead. `lookup` never gives it. |
+| `unknown-node` | The start node is not in the graph. The CLI makes this exit 2 instead. |
+| `unknown-scope` | A variant, subject or language names nothing. The CLI makes this exit 2 instead. |
+
+### Usage errors
+
+Each is **exit 2**, on stderr.
+
+| Case | Message |
+|---|---|
+| No artifact | `manni: .manni/graph/chunks.json does not exist; run manni graph publish.` |
+| An artifact from another graph | `manni: .manni/graph/chunks.json was built from another graph; run manni graph publish.` |
+| The query model differs from the language's rows' | `manni: chunks.json was embedded with <id>, and this run loads <id>; run manni graph publish again.` |
+| Several localizations, no `--lang` | `manni: This corpus has more than one localization (de, en) — pass --lang to choose one.` |
+| A bad `--withhold` value | `manni: --withhold takes drifted or failing, and got stale.` |
+| A malformed `--where` | `manni: --where takes field=value, and got audience.` |
+
+## `graph serve`
+
+Serves the chunk artifact to an agent over the Model Context Protocol (MCP),
+as JSON-RPC on stdio. It serves until stdin closes, then exits 0.
+[Serve the docs to an agent](/manni/graph/serve/) walks through registering it.
+
+```sh
+manni graph serve [options]
+```
+
+```console
+$ manni graph serve
+manni: serving lookup, retrieve, traverse and impact over stdio from .manni/graph/chunks.json.
+```
+
+That line goes to stderr, because stdout carries the protocol. The server
+needs the optional `@modelcontextprotocol/sdk` peer. It opens the artifact
+once, at start, and answers every call from it.
+
+### Options
+
+| Option | Argument | Default | Description |
+|---|---|---|---|
+| `-c, --config` | `<path>` | discovered | Path to `manni.config.yaml`. |
+| `--no-config` | n/a | off | Ignore any discovered config file. |
+| `-g, --graph` | `<path>` | config `out` | The built Turtle file. The artifact must have been built from it. |
+| `-i, --index` | `<dir>` | beside the graph | The directory holding `chunks.json`, its rows and the search index. |
+| `--withhold` | `<list>` | none | Also leave out passages that are `drifted` or `failing` on every call, comma-separated and given once. No tool argument can loosen it. |
+
+### The tools
+
+`tools/list` gives four tools, in this order. Each is read-only and
+closed-world, and each runs the same core as its CLI twin.
+
+| Tool | Required | Optional | Returns | CLI twin |
+|---|---|---|---|---|
+| `lookup` | `question` | none | the [lookup result](#the-lookup-result) | `graph lookup` |
+| `retrieve` | `question` | `lang`, `variant`, `softwareSubject`, `depth`, `maxChars`, `where` | the [bundle](#the-bundle) | `graph retrieve` |
+| `traverse` | `node` | `depth`, `predicates`, `reverse`, `lang`, `variant`, `softwareSubject`, `limit`, `maxChars`, `where` | the bundle | `graph traverse --context` |
+| `impact` | `node` | `depth` (default 3), `lang`, `variant`, `softwareSubject`, `limit`, `maxChars`, `where` | the bundle | `graph traverse --impact --context` |
+
+`where` is an object of field to value, such as `{ "tags": "keys" }`. A list
+of values asks for each one, as a repeated `--where` does. Every input schema
+sets `additionalProperties: false`, and none names `withhold`.
+
+Each call returns its result as `structuredContent`, and again as one text
+block holding the same JSON. Each tool declares an `outputSchema` for it.
+
+### Errors over MCP
+
+| Case | What the agent gets |
+|---|---|
+| A refusal | The result with its `refusal`, and `isError: false`. |
+| A CLI usage error, such as an unknown node or no `lang` | A refusal with the CLI's text in `detail`, and `isError: false`. |
+| An argument the schema does not name, or a value of the wrong type | `isError: true`, with `Invalid arguments for <tool>: <why>.` |
+
+A usage error takes the reason that fits it. An unknown node is
+`unknown-node`, and a missing `lang` is `lang-required`. An unknown variant,
+subject, language or predicate is `unknown-scope`.
+
+### Usage errors
+
+Each is **exit 2**, on stderr, before anything is served.
+
+| Case | Message |
+|---|---|
+| No SDK | `manni: graph serve needs the optional @modelcontextprotocol/sdk package; run npm install @modelcontextprotocol/sdk.` |
+| No artifact | `manni: .manni/graph/chunks.json does not exist; run manni graph publish.` |
+| An artifact from another graph | `manni: .manni/graph/chunks.json was built from another graph; run manni graph publish.` |
+| A bad `--withhold` value | `manni: --withhold takes drifted or failing, and got stale.` |
+
+## `graph publish`
+
+Builds the graph and writes everything serving needs into one directory. It
+runs each step's own command in-process, in the order each step's input
+exists.
+
+```sh
+manni graph publish [options]
+```
+
+```console
+$ manni graph publish --out docs/public/graph
+build     graph.ttl: 256 pages, 20577 triples
+export    search.en.json, localizations.json: 2920 entries
+skipped   embed: no graph.embed section
+export    graph.jsonld: 3003 nodes
+export    chunks.json, chunks.en.jsonl: 2359 chunks, 0 withheld
+export    llms.txt: 256 pages
+skipped   iirds: no graph.export.iirds section
+Published 7 files to docs/public/graph/.
+```
+
+| Step | Runs when | What it writes |
+|---|---|---|
+| `build` | always | The graph, under the file name config `out` gives it. |
+| `export:search` | always | The search index and its manifest. |
+| `embed` | a `graph.embed` section exists | One vector sidecar per language. |
+| `export:jsonld` | always | `graph.jsonld`, which `createRetriever` reads. |
+| `export:chunks` | always | `chunks.json` and its rows. See [Chunks](#chunks). |
+| `export:llms` | a `graph.export.llms` section exists | `llms.txt`. See [llms.txt](#llmstxt). |
+| `export:iirds` | a `graph.export.iirds` section exists | The iiRDS package. |
+
+A step that is not set up prints a `skipped` line and never fails the run.
+Each step's warnings and notices go to stderr as that step says them. The
+first step that fails stops the run with **exit 2**:
+
+```text
+manni: graph publish stopped at export:llms: graph export llms needs graph.export.llms.origin, the site's scheme and host.
+```
+
+`publish` does not gate. Run `graph check` on what it published, so the cited
+row reads the new chunks:
+`manni graph publish --out site/graph && manni graph check -g site/graph/graph.ttl`.
+
+With `-f json` it prints the steps:
+
+```json
+{ "out": "docs/public/graph",
+  "steps": [ { "step": "build", "status": "ran", "detail": "graph.ttl: 256 pages, 20577 triples", "files": ["graph.ttl"] },
+             { "step": "embed", "status": "skipped", "detail": "no graph.embed section", "files": [] } ] }
+```
+
+`files` names each file relative to `out`.
+
+### Options
+
+| Option | Argument | Default | Description |
+|---|---|---|---|
+| `-c, --config` | `<path>` | discovered | Path to `manni.config.yaml`. |
+| `--no-config` | n/a | off | Ignore any discovered config file. |
+| `-o, --out` | `<dir>` | the directory of config `out` | The directory for every artifact. |
+| `--evals` | `<path>` | config `export.chunks.evals` | A docevals JSON report for the chunks step. |
 | `-f, --format` | `<pretty\|json>` | `pretty` | Output format. |
 
 ## `graph embed`
@@ -1011,6 +1379,8 @@ Wrote 32 nodes to .tmp/dd/graph.jsonld
 | `iirds` | A conformant iiRDS package, for a content delivery portal. RDF/XML is written inside it. |
 | `search` | The browser search index and its manifest, read client-side by `@hawkeyexl/manni/graph/runtime`. |
 | `questions` | The question set as JSON Lines, for an eval tool. See [The question set](#the-question-set). |
+| `chunks` | The passages a retrieval host serves, each with its provenance record. See [Chunks](#chunks). |
+| `llms` | `llms.txt`, one link and description per page. See [llms.txt](#llmstxt). |
 
 An unknown target is **exit 2**, with the allowed set named.
 
@@ -1018,7 +1388,7 @@ An unknown target is **exit 2**, with the allowed set named.
 
 | Argument | Description |
 |---|---|
-| `<target>` | What to write: `jsonld`, `iirds`, `search`, or `questions`. Required. |
+| `<target>` | What to write: `jsonld`, `iirds`, `search`, `questions`, `chunks`, or `llms`. Required. |
 
 ### Options
 
@@ -1027,7 +1397,8 @@ An unknown target is **exit 2**, with the allowed set named.
 | `-c, --config` | `<path>` | discovered | Path to `manni.config.yaml`. |
 | `--no-config` | n/a | off | Ignore any discovered config file. |
 | `-g, --graph` | `<path>` | config `out` | The built Turtle file to read. |
-| `-o, --out` | `<path>` | the graph path with the target's extension; `questions.jsonl` beside the graph for `questions` | Where to write. |
+| `-o, --out` | `<path>` | the graph path with the target's extension; `questions.jsonl` beside the graph for `questions`; `llms.txt` beside the graph for `llms`; the graph's directory for `search` and `chunks` | Where to write. For `search` and `chunks` it names a directory, because each writes more than one file. |
+| `--evals` | `<path>` | config `export.chunks.evals` | A docevals JSON report, as `manni docevals run -f json` writes it. It fills each chunk record's `evals`. Any target but `chunks` refuses it with **exit 2**. |
 
 ### The question set
 
@@ -1102,6 +1473,171 @@ dataset = EvaluationDataset(goldens=goldens)
 jq -c 'select(.reviewed) | {vars: {question: .question}, metadata: {id: .id}}' graph/questions.jsonl > tests.jsonl
 ```
 
+### Chunks
+
+`export chunks` writes the passages a retrieval host serves, and the proof
+behind each one. A passage is a section's text, from its heading to the next
+heading of the same or higher rank. Each document's whole body is a passage
+too. A passage is keyed by its graph node IRI.
+
+```console
+$ manni graph export chunks --evals .manni/evals.json
+Wrote 214 chunks to graph/chunks.json
+```
+
+It writes into one directory: `-o` names it, and the graph's directory is the
+default.
+
+| File | What it holds |
+|---|---|
+| `chunks.json` | The manifest. It says what the rows were built from, and holds the retrieval defaults. |
+| `chunks.<tag>.jsonl` | One JSON line per passage, one file per language. |
+
+Two exports of the same inputs are byte-identical. Keys are sorted, rows are
+sorted by `id`, and nothing reads the wall clock.
+
+#### The manifest
+
+| Key | Meaning |
+|---|---|
+| `format` | Always `"manni-graph-chunks"`. |
+| `version` | Always `1`. |
+| `graph` | The `sha256-` digest of the graph's JSON-LD, the bytes `graph export jsonld` writes. |
+| `graphFile` | That JSON-LD file's name. |
+| `searchIndex` | The search index's localization manifest, as `graph export search` names it. |
+| `commit` | The docs commit, or `null` outside git. |
+| `worktree` | `clean` or `modified`, or `null` outside git. |
+| `retrieve` | The resolved [`graph.retrieve`](/manni/graph/reference/configuration/#retrieve) keys, the retrieval defaults every host reads. |
+| `evals` | `{ report, digest }`: the report as the config or `--evals` names it, and its digest. `null` with no report. |
+| `languages` | `{ "<tag>": { file, rows, model } }`: each language's rows file, how many rows it holds, and its model. `model` is `{ id, dimensions }` of the embedding model that language's vectors come from, or `null` with no vector sidecar. [`graph.embed.byLanguage`](/manni/graph/reference/configuration/#embed) can give each language its own. |
+| `pages` | `{ "<page>": { metadata } }`: each page's delivered fields. |
+| `withheld` | `[{ id, page, because }]`: the passages `graph.retrieve.withhold` left out, and which reasons matched. |
+
+#### A row
+
+| Field | Meaning |
+|---|---|
+| `id` | The passage's graph node IRI. |
+| `graph` | The manifest's `graph` digest. |
+| `page` | The page the passage comes from. |
+| `lines` | The passage's body lines, `N-M`. |
+| `language` | The page's language tag. |
+| `title` | The heading, or the page's title for a whole body. |
+| `text` | The passage, as the page reads at export time. |
+| `vector` | The node's vector. Present only when a sidecar from `manni graph embed` holds one for that node. |
+| `metadata` | The page's delivered fields. The delivered fields of every heading `meta` statement from the page down to this section overlay them, the nearest winning field by field. |
+| `provenance` | The passage's provenance record. |
+
+#### The provenance record
+
+A record is self-contained. Copied out of its row, it still says what it
+describes.
+
+| Field | Meaning |
+|---|---|
+| `node`, `page`, `lines` | What the record describes. |
+| `commit`, `worktree` | As in the manifest. Both are `null` outside git. |
+| `pins` | The cite pins whose claim overlaps the passage. |
+| `dates` | The page's derived and verified dates. |
+| `evals` | The page's docevals verdicts, or `null` when no report is configured or the report holds none for the page. |
+| `statements` | `[{ lines, status, data }]`: the `meta` statements anchored inside the passage, with their delivered fields. A heading statement sits at its heading's lines. |
+
+`pins` is `{ total, current, notice, warning, error, items }`. Each pin is
+counted once, at its worst finding. The findings use cite's own rules at the
+severity `cite.severity` sets, and they are computed outside git too. Each item
+is `{ id, claim, source, commit, findings, lastVerified, verifiedBy }`. A
+finding is `{ rule, severity }`, and an empty list means the pin is current.
+
+`dates` holds `created` and `lastUpdated`, each `{ day, stamp }`. `day` is the
+UTC day `manni meta derive` would stamp. It is `null` outside git, or for a body
+change not yet committed. `stamp` compares that day with the page's own field:
+`current`, `stale` or `absent`. When `day` is `null`, so is `stamp`, since
+there is no day to compare. Beside them, `lastVerified` is the page's
+`last-verified` as written, or `null`. `verifiedBy` holds its `verified-by`
+entries, or `[]`.
+
+`evals` is `{ report, current, pass, fail, needsReview, skipped, error, items }`.
+`report` is the report's digest. `current` says whether the page still has the
+bytes the report's `integrity` names. Each item is
+`{ name, suite, grader, outcome }`, plus `confidence` when the judge gave one.
+
+#### What the metadata carries
+
+A field reaches the manifest's `pages[].metadata`, a row's `metadata` and a
+statement's `data` unless its schema marks it. The marks are
+`x-manni-graph-output: false` and `x-manni-location: external`, read at every
+depth. So a `sample-questions` item keeps its question and loses its `answers`
+pins, which `manni:ai-context:1.2.0` marks. JSON-LD, iiRDS and the search index
+keep the graph build's rule, which reads top-level fields only.
+
+#### Withheld passages
+
+[`graph.retrieve.withhold`](/manni/graph/reference/configuration/#retrieve)
+leaves passages out of the rows and lists them under the manifest's `withheld`.
+`drifted` matches a passage with a pin at `error` severity. `failing` matches a
+current eval verdict that failed or errored. A stale verdict never counts.
+
+#### Messages
+
+Each goes to stderr, prefixed `manni: `. Only the three marked **exit 2** stop
+the export. The rest leave the exit code at 0.
+
+| Message | Kind |
+|---|---|
+| `no vector sidecar, so chunks carry no vectors and retrieval is lexical only; configure graph.embed to add them.` | warning |
+| `<N> chunks withheld by graph.retrieve.withhold (drifted); chunks.json lists them.` | notice |
+| `no docevals report is configured, so records carry no eval verdicts.` | warning |
+| `graph.export.chunks.evals names .manni/evals.json, which does not exist.` | **exit 2** |
+| `.manni/evals.json is not a docevals JSON report; write one with manni docevals run -f json.` | **exit 2** |
+| `.manni/evals.json records no page integrity, so every verdict reads stale; write it again with manni docevals run -f json.` | warning |
+| `4 pages changed since .manni/evals.json was written, so their verdicts read stale.` | warning |
+| `3 pages in .manni/evals.json are not in the graph, so their verdicts are left out.` | warning |
+| `git cannot read this directory (<git's reason>), so records carry no commit and no derived dates.` | notice, said once |
+| `2 pages differ from 26dad159, so their records describe uncommitted text.` | warning |
+| `--evals applies only to graph export chunks.` | **exit 2** |
+
+Outside git the export still succeeds. Its records carry pins and evals, with
+no commit and no derived dates.
+
+### llms.txt
+
+`export llms` writes `llms.txt` beside the graph, or to the file `-o` names.
+It needs [`graph.export.llms`](/manni/graph/reference/configuration/#export)
+with a `title` and an `origin`.
+
+```text
+# manni
+
+> One CLI for docs-as-code.
+
+## Docs
+
+- [manni cite](https://hawkeyexl.github.io/manni/cite/): Pin a sentence to the source lines it rests on.
+```
+
+The H1 is `title`, and the blockquote is `summary` when it is set. A corpus in
+one language gets one `## Docs` section. A corpus in several gets one section
+per language tag. Within a section, pages are in path order.
+
+Each description is the page's own `description` as delivered, so a field
+marked `x-manni-graph-output: false` stays out. Each link is `origin` plus the
+page's route, from the nearest [route](/manni/graph/reference/configuration/)
+whose `root` holds it. An index file names its directory. The route takes the
+URL style of the framework `manni site` detects.
+
+| Framework | A page's route |
+|---|---|
+| Starlight, MkDocs, Zensical, Hugo, or none detected | `/guide/setup/` |
+| Docusaurus, Nextra, Fumadocs, Mintlify, Fern | `/guide/setup` |
+| VitePress, Rspress, Sphinx, Jekyll | `/guide/setup.html` |
+
+| Message | Kind |
+|---|---|
+| `graph export llms needs graph.export.llms.title.` | **exit 2** |
+| `graph export llms needs graph.export.llms.origin, the site's scheme and host.` | **exit 2** |
+| `2 pages in the graph are not on disk, so llms.txt leaves them out; run manni graph build.` | warning |
+| `2 pages are under no route, so llms.txt leaves them out.` | warning |
+
 ## Exit codes
 
 | Code | Meaning |
@@ -1114,7 +1650,7 @@ jq -c 'select(.reviewed) | {vars: {question: .question}, metadata: {id: .id}}' g
     against the committed fixture corpus under test/graph/fixtures/dd/.
     Config: .doc-detective.json. */}
 
-{/* step {"description":"The CLI lists all eleven commands.","runShell":{"command":"manni graph --help","exitCodes":[0],"stdio":"/init[\\s\\S]*build[\\s\\S]*check[\\s\\S]*shapes[\\s\\S]*fill[\\s\\S]*query[\\s\\S]*stats[\\s\\S]*search[\\s\\S]*traverse[\\s\\S]*embed[\\s\\S]*export/"}} */}
+{/* step {"description":"The CLI lists all fifteen commands.","runShell":{"command":"manni graph --help","exitCodes":[0],"stdio":"/init[\\s\\S]*build[\\s\\S]*check[\\s\\S]*shapes[\\s\\S]*fill[\\s\\S]*query[\\s\\S]*stats[\\s\\S]*search[\\s\\S]*traverse[\\s\\S]*lookup[\\s\\S]*retrieve[\\s\\S]*serve[\\s\\S]*embed[\\s\\S]*export[\\s\\S]*publish/"}} */}
 
 {/* step {"description":"There is no default subcommand: the domain owns verbs.","runShell":{"command":"manni graph test/graph/fixtures/dd/docs","exitCodes":[2]}} */}
 
@@ -1162,13 +1698,23 @@ jq -c 'select(.reviewed) | {vars: {question: .question}, metadata: {id: .id}}' g
 
 {/* step {"description":"An unknown export target is exit 2, with the allowed set named.","runShell":{"command":"manni graph export turtle -c test/graph/fixtures/dd/docs.config.yaml","exitCodes":[2],"stdio":"Unknown export target \"turtle\""}} */}
 
+{/* step {"description":"export chunks writes the passages and their manifest.","runShell":{"command":"manni graph export chunks -c test/graph/fixtures/dd/docs.config.yaml","exitCodes":[0],"stdio":"/Wrote \\d+ chunks/"}} */}
+
+{/* step {"description":"export llms needs a title from graph.export.llms.","runShell":{"command":"manni graph export llms -c test/graph/fixtures/dd/docs.config.yaml","exitCodes":[2],"stdio":"graph export llms needs graph.export.llms.title."}} */}
+
+{/* step {"description":"publish runs what is set up and skips the rest.","runShell":{"command":"manni graph publish -c test/graph/fixtures/dd/docs.config.yaml","exitCodes":[0],"stdio":"/skipped   embed: no graph.embed section[\\s\\S]*Published \\d+ files to/"}} */}
+
+{/* step {"description":"--evals belongs to chunks alone.","runShell":{"command":"manni graph export jsonld --evals evals.json -c test/graph/fixtures/dd/docs.config.yaml","exitCodes":[2],"stdio":"--evals applies only to graph export chunks."}} */}
+
 {/* step {"description":"export search writes the browser index and its manifest.","runShell":{"command":"manni graph export search -c test/graph/fixtures/dd/docs.config.yaml","exitCodes":[0],"stdio":"Wrote"}} */}
 
 {/* step {"description":"search ranks nodes from that index.","runShell":{"command":"manni graph search installation -c test/graph/fixtures/dd/docs.config.yaml","exitCodes":[0],"stdio":"1 result (lexical)"}} */}
 
+{/* step {"description":"serve refuses to start without a chunk artifact.","runShell":{"command":"manni graph serve -c test/graph/fixtures/dd/docs.config.yaml -i nowhere","exitCodes":[2],"stdio":"nowhere/chunks.json does not exist; run manni graph publish."}} */}
+
 {/* step {"description":"--collection cannot be combined with positional paths.","runShell":{"command":"manni graph build -c test/graph/fixtures/dd/docs.config.yaml --collection dd test/graph/fixtures/dd/docs","exitCodes":[2],"stdio":"cannot be combined with paths"}} */}
 
-{/* step {"description":"shapes lists the node shapes check runs, by file.","runShell":{"command":"manni graph shapes -c test/graph/fixtures/dd/docs.config.yaml","exitCodes":[0],"stdio":"manni:graph-shapes:1.1.1  (bundled)"}} */}
+{/* step {"description":"shapes lists the node shapes check runs, by file.","runShell":{"command":"manni graph shapes -c test/graph/fixtures/dd/docs.config.yaml","exitCodes":[0],"stdio":"manni:graph-shapes:1.2.0  (bundled)"}} */}
 
 {/* step {"description":"shapes show prints every property a shape checks.","runShell":{"command":"manni graph shapes show DocumentShape -c test/graph/fixtures/dd/docs.config.yaml","exitCodes":[0],"stdio":"Document-language"}} */}
 

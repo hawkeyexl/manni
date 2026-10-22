@@ -1,0 +1,32 @@
+<!doctype html>
+<html>
+<head>
+<title>Statements in HTML</title>
+<meta name="description" content="Every meta statement case, in HTML.">
+</head>
+<body>
+<!-- meta sha256-08c6207c848535f9a57134fc2b4226601054fff973b27e024029cb38f4372dbe {"last-verified":"2026-10-21"} -->
+<p>A paragraph whose pin is current.</p>
+
+<!-- meta {"concepts":["install"]} -->
+<p>An unpinned paragraph.</p>
+
+<!-- meta sha256-d3e2f94a4efecbe92c2dbdda14a7b7d8e1136c59b05a2edbadefae5de003c411 {"last-verified":"2026-10-21"} -->
+<p>A paragraph edited after it was pinned.</p>
+
+<p>A paragraph with a statement
+<!-- meta {"concepts":["install"]} -->
+inside it.</p>
+
+<!-- cite stacked-entry -->
+<!-- meta {"concepts":["install"]} -->
+<p>A paragraph under a stacked cite marker and meta statement.</p>
+
+<!-- meta {"concepts": ["install"} -->
+<p>A paragraph under a payload that is not JSON.</p>
+
+<!-- meta {"verifed-by":[]} -->
+<p>A paragraph under an unknown field.</p>
+</body>
+</html>
+<!-- meta {"concepts":["install"]} -->

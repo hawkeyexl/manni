@@ -16,7 +16,7 @@ next-steps: ["term-reference-rules", "meta-schemas-term-values", "graph-question
 concepts: ["concept scheme", "meta-provenance", "x-manni-term", "concept mapping", "sample question", "golden set"]
 sample-questions: ["How do I turn the concepts my pages name into a termbase?", "How do the termbase and the knowledge graph share one set of concepts?", "In what order do I build a vocabulary, a taxonomy and a graph with manni?"]
 graph: { label: "From tags to a knowledge graph", type: learning }
-last-updated: 2026-10-20
+last-updated: 2026-10-21
 tags:
   - terminology
   - knowledge-graph
@@ -124,7 +124,7 @@ and a label resolves to a term by its label, its id, then an alt-label.
 $ manni graph check
 warning: docs/api/payments.md, docs/api/retries.md: Pages spell this concept two ways: "Idempotency key" and "idempotency key". Use one spelling on every page that names it.
   at https://example.com/graph/concept/idempotency-key skos:prefLabel
-  manni:graph-shapes:1.1.1 Concept-prefLabel-collision: One name per language, so search and the glossary agree on a spelling.
+  manni:graph-shapes:1.2.0 Concept-prefLabel-collision: One name per language, so search and the glossary agree on a spelling.
   Guide: https://hawkeyexl.github.io/manni/graph/fix/
 
 questions  2: 2 reviewed, 0 drafted, on 2 pages
@@ -535,7 +535,7 @@ questions find their pages.
 
 Finding a page proves little when the page is long. A question can also pin
 the body lines that answer it, under
-[`manni:ai-context:1.1.0`](/manni/meta/reference/schemas/manni-ai-context/).
+[`manni:ai-context:1.2.0`](/manni/meta/reference/schemas/manni-ai-context/).
 `graph fill` pairs each question with those lines, and drafts more until a
 page has `perPage`:
 

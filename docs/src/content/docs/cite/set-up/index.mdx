@@ -28,7 +28,7 @@ sample-questions:
 graph:
   label: Set up citations in one repository
   type: task
-last-updated: 2026-10-20
+last-updated: 2026-10-21
 tags:
   - setup
   - configuration
@@ -48,6 +48,9 @@ related-pages:
   - /manni/meta/reference/configuration/
 prerequisites:
   - cite-get-started
+verified-by:
+  - tool: doc-detective
+    check: cite-set-up-index
 ---
 
 import { Steps, Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';
@@ -166,6 +169,7 @@ Every transcript below is real output from the built tool.
    lines](/manni/cite/reference/citations/#body-lines-and-file-lines) states
    the rule once.
 
+   {/* meta sha256-4cd5bef54420bc0265ca2df87aa5e1e8a018548c5e4765ee1d2a0931c8b99e9c {"verified-by":[{"tool":"doc-detective","check":"cite-set-up-index"}]} */}
 4. **Run the first check.** With the collection declared, no arguments are
    needed:
 
@@ -214,6 +218,7 @@ model](/manni/meta/reference/cli/#shared-input-model), which `check` and
 `update` both follow. `add` is the exception, because it takes one page and
 one source rather than a set.
 
+{/* meta sha256-a1fca7b0fc5cdae6f7761bc63845d643467374b135326583c8951171de93d287 {"graph":{"type":"concept","applies-to":["domain:cite"],"about-product-lifecycle":["integration"]}} */}
 ## Choose an anchor
 
 An entry anchors its sentence in one of two ways. **Claim lines** name the

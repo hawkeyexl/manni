@@ -13,6 +13,11 @@ applies-to: ["domain:tracevals"]
 sample-questions: ["How do I read the JSON report?", "What counts as a regression?"]
 graph: { label: "Consume results programmatically", type: task }
 last-updated: 2026-09-16
+verified-by:
+  - tool: doc-detective
+    check: json-report-keys
+  - tool: doc-detective
+    check: batch-report-keys
 ---
 
 import { Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';

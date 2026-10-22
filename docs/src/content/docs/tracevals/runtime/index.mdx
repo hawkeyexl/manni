@@ -13,6 +13,17 @@ applies-to: ["domain:tracevals"]
 sample-questions: ["How do I make an agent follow my CLAUDE.md?", "Which files does tracevals check an agent against?", "What does the agent see when it breaks a rule?", "Does tracevals check that the agent built what I asked for?", "Are the steps of a skill checked in order?", "Does tracevals check the system prompt?"]
 graph: { label: "Catch a broken rule before the agent hands back", type: task }
 last-updated: 2026-10-11
+verified-by:
+  - tool: doc-detective
+    check: runtime-system-prompt
+  - tool: doc-detective
+    check: runtime-check
+  - tool: doc-detective
+    check: runtime-requests
+  - tool: doc-detective
+    check: runtime-quiet-turns
+  - tool: doc-detective
+    check: runtime-prepare
 ---
 
 import { Steps, Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';

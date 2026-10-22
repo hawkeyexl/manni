@@ -33,7 +33,19 @@ export interface Citation {
   sourceUrl: string;
 }
 
-export type RefusalReason = "no-route" | "no-content";
+/**
+ * Why nothing was served. `assemble` gives the first two; the served cores
+ * (proposal 0090) add a trust floor that left out every match, a corpus with
+ * several languages and none named (never from `lookup`), a start node the
+ * graph lacks, and a scope filter that names nothing.
+ */
+export type RefusalReason =
+  | "no-route"
+  | "no-content"
+  | "withheld"
+  | "lang-required"
+  | "unknown-node"
+  | "unknown-scope";
 
 export interface Refusal {
   reason: RefusalReason;

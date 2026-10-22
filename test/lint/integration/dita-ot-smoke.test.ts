@@ -116,4 +116,18 @@ describe.skipIf(!available)("dita-ot, against the real toolkit", () => {
     },
     TIMEOUT,
   );
+
+  it(
+    "builds topics carrying meta statements in every DITA form clean (proposal 0099)",
+    async () => {
+      const statements = resolve(here, "..", "..", "fixtures", "statements", "dita");
+      const results = await runDitaOtValidate({
+        targets: [join(statements, "statements.ditamap")],
+        cwd: statements,
+        home: home ?? undefined,
+      });
+      expect(results[0]?.messages ?? []).toEqual([]);
+    },
+    TIMEOUT,
+  );
 });

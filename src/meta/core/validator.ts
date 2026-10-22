@@ -188,6 +188,9 @@ function registerLocationKeyword(ajv: InstanceType<AjvCtor>): void {
       _parent?: unknown,
       cxt?: { instancePath: string },
     ): boolean => {
+      if (deliveryRecorder !== undefined && isFieldLocation(schema)) {
+        recordAt(deliveryRecorder.location, cxt?.instancePath ?? "", schema);
+      }
       if (locationRecorder !== undefined && isFieldLocation(schema)) {
         const key = topLevelKey(cxt?.instancePath ?? "");
         if (key !== undefined) {
@@ -215,6 +218,24 @@ function isLocationShapeError(err: unknown): boolean {
 let graphOutputRecorder: Map<string, Set<boolean>> | undefined;
 
 /**
+ * Where both output marks record what they say at **every** depth, while
+ * `deliveryExclusions` is running: instance pointer to the values seen. The
+ * delivery rule (proposal 0090) reads marks wherever they sit, unlike the
+ * graph build, which reads top-level ones only. `undefined` the rest of the
+ * time, for the same reason and with the same safety as `markRecorder`.
+ */
+let deliveryRecorder:
+  | { output: Map<string, Set<boolean>>; location: Map<string, Set<FieldLocation>> }
+  | undefined;
+
+/** Record one mark's value at one instance pointer. */
+function recordAt<T>(into: Map<string, Set<T>>, pointer: string, value: T): void {
+  const seen = into.get(pointer);
+  if (seen) seen.add(value);
+  else into.set(pointer, new Set([value]));
+}
+
+/**
  * `x-manni-graph-output` (proposal 0051 §5), on every Ajv meta builds. Like
  * `x-manni-location`, it never fails a value; it says where it was evaluated,
  * so a mark counts wherever Ajv's resolution takes the validator. Only a mark
@@ -234,6 +255,9 @@ function registerGraphOutputKeyword(ajv: InstanceType<AjvCtor>): void {
       _parent?: unknown,
       cxt?: { instancePath: string },
     ): boolean => {
+      if (deliveryRecorder !== undefined && typeof schema === "boolean") {
+        recordAt(deliveryRecorder.output, cxt?.instancePath ?? "", schema);
+      }
       if (graphOutputRecorder !== undefined && typeof schema === "boolean") {
         const key = topLevelKey(cxt?.instancePath ?? "");
         if (key !== undefined) {
@@ -826,6 +850,46 @@ export class Validator {
   }
 
   /**
+   * The instance pointers of every value in `data`, at any depth, that the
+   * delivery rule keeps out of agent-facing output (proposal 0090, decision
+   * 12): its schema marks it `x-manni-graph-output: false` or
+   * `x-manni-location: external`. Each mark is resolved per pointer as
+   * `graphOutputPreferences` resolves it per key: a later ref's mark wins, and
+   * a ref whose evaluated branches say both values gives no answer. Pointers
+   * are Ajv's, escaped per RFC 6901, and in no particular order.
+   */
+  async deliveryExclusions(data: Record<string, unknown>, refs: string[]): Promise<string[]> {
+    const { [FILE_SCHEMA_KEY]: _omit, ...subject } = data;
+    void _omit;
+    const output = new Map<string, boolean>();
+    const location = new Map<string, FieldLocation>();
+    for (const ref of refs) {
+      const fn = await this.compile(ref);
+      const seen = { output: new Map<string, Set<boolean>>(), location: new Map<string, Set<FieldLocation>>() };
+      deliveryRecorder = seen;
+      try {
+        fn(subject);
+      } finally {
+        deliveryRecorder = undefined;
+      }
+      for (const [pointer, values] of seen.output) {
+        const [value, ...others] = [...values];
+        if (value !== undefined && others.length === 0) output.set(pointer, value);
+      }
+      for (const [pointer, values] of seen.location) {
+        const [value, ...others] = [...values];
+        if (value !== undefined && others.length === 0) location.set(pointer, value);
+      }
+    }
+    const out = new Set<string>();
+    for (const [pointer, value] of output) if (!value) out.add(pointer);
+    for (const [pointer, value] of location) if (value === "external") out.add(pointer);
+    // The root is the page itself, never a field.
+    out.delete("");
+    return [...out];
+  }
+
+  /**
    * Every place a schema in `refs` marks `x-manni-term` on `data`, at any
    * depth, in the order the validator evaluated them, each with the value it
    * was evaluated at.
@@ -927,7 +991,7 @@ function isWrapper(e: ErrorObject): boolean {
  * schema forbids outright. Every other message is Ajv's own, because a
  * pattern or a format is its own exact statement of the rule.
  */
-function messageFor(e: DefinedError, fallback: string): string {
+export function messageFor(e: DefinedError, fallback: string): string {
   // Ajv raises this for a `false` subschema, and it is not in `DefinedError`.
   if ((e as ErrorObject).keyword === "false schema") return "must not be present";
   switch (e.keyword) {

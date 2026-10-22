@@ -76,6 +76,11 @@ import manniTerminologyStrict110 from "../schemas/terminology-strict/1.1.0.json"
 import manniTerminology120 from "../schemas/terminology/1.2.0.json" with { type: "json" };
 import manniTerminologyStrict120 from "../schemas/terminology-strict/1.2.0.json" with { type: "json" };
 import manniAiContext110 from "../schemas/ai-context/1.1.0.json" with { type: "json" };
+import manniStewardship120 from "../schemas/stewardship/1.2.0.json" with { type: "json" };
+import manniStewardshipStrict120 from "../schemas/stewardship-strict/1.2.0.json" with { type: "json" };
+import manniCitations110 from "../schemas/citations/1.1.0.json" with { type: "json" };
+import manniCitationsStrict110 from "../schemas/citations-strict/1.1.0.json" with { type: "json" };
+import manniAiContext120 from "../schemas/ai-context/1.2.0.json" with { type: "json" };
 import { errorMessage } from "../../shared/errors.js";
 
 export interface BuiltinInfo {
@@ -142,6 +147,11 @@ const BUILTINS = new Map<string, Record<string, unknown>>([
   ["manni:terminology:1.2.0", manniTerminology120],
   ["manni:terminology-strict:1.2.0", manniTerminologyStrict120],
   ["manni:ai-context:1.1.0", manniAiContext110],
+  ["manni:stewardship:1.2.0", manniStewardship120],
+  ["manni:stewardship-strict:1.2.0", manniStewardshipStrict120],
+  ["manni:citations:1.1.0", manniCitations110],
+  ["manni:citations-strict:1.1.0", manniCitationsStrict110],
+  ["manni:ai-context:1.2.0", manniAiContext120],
 ]);
 
 /**
@@ -156,7 +166,49 @@ const BUILTINS = new Map<string, Record<string, unknown>>([
 export const ANNOTATION_ONLY_PREDECESSORS: ReadonlyMap<string, string> = new Map([
   ["manni:stewardship:1.1.0", "manni:stewardship:1.0.0"],
   ["manni:stewardship-strict:1.1.0", "manni:stewardship-strict:1.0.0"],
+  ["manni:ai-context:1.2.0", "manni:ai-context:1.1.0"],
 ]);
+
+/**
+ * Built-in versions that only add optional fields, each mapped to the
+ * predecessor they extend (proposal 0098). A document that carries none of
+ * the added fields gets the same findings under both, so a finding hashes as
+ * its predecessor's and a recorded baseline carries across the move. A
+ * finding on an added field never existed under the predecessor, so sharing
+ * its identity suppresses nothing it should not. The test suite holds every
+ * entry to identical findings over the fixture corpus.
+ */
+export const OPTIONAL_FIELD_PREDECESSORS: ReadonlyMap<string, string> = new Map([
+  ["manni:stewardship:1.2.0", "manni:stewardship:1.1.0"],
+  ["manni:stewardship-strict:1.2.0", "manni:stewardship-strict:1.1.0"],
+  ["manni:citations:1.1.0", "manni:citations:1.0.0"],
+  ["manni:citations-strict:1.1.0", "manni:citations-strict:1.0.0"],
+]);
+
+/**
+ * The id a baseline fingerprint hashes for `ref`: its earliest predecessor,
+ * followed through both maps, so 1.2.0 and 1.1.0 both hash as 1.0.0.
+ */
+export function baselineIdentity(
+  ref: string,
+  maps: readonly ReadonlyMap<string, string>[] = [ANNOTATION_ONLY_PREDECESSORS, OPTIONAL_FIELD_PREDECESSORS],
+): string {
+  let id = ref;
+  const seen = new Set<string>();
+  for (;;) {
+    if (seen.has(id)) {
+      throw new Error(`predecessor cycle: ${[...seen, id].join(" -> ")}`);
+    }
+    seen.add(id);
+    let next: string | undefined;
+    for (const map of maps) {
+      next = map.get(id);
+      if (next !== undefined) break;
+    }
+    if (next === undefined) return id;
+    id = next;
+  }
+}
 
 /**
  * Refuse a built-in id whose first segment is `check`.
@@ -234,10 +286,12 @@ export type RegisteredSchemas = ReadonlyMap<string, RegisteredSchema>;
 /**
  * Built-in versions whose strict overlay keeps an earlier version, because
  * nothing the overlay narrows changed. ai-context 1.1.0 only widens
- * `sample-questions`, which the 1.0.0 overlay never constrains (proposal 0087).
+ * `sample-questions`, which the 1.0.0 overlay never constrains (proposal 0087),
+ * and 1.2.0 only marks its answers out of delivered metadata (proposal 0090).
  */
 const STRICT_OVERLAY_OF: ReadonlyMap<string, string> = new Map([
   ["manni:ai-context:1.1.0", "manni:ai-context-strict:1.0.0"],
+  ["manni:ai-context:1.2.0", "manni:ai-context-strict:1.0.0"],
 ]);
 
 /**
@@ -356,6 +410,11 @@ const PUBLISHED_PATHS: readonly (readonly [string, string])[] = [
   ["terminology/1.2.0.json", "manni:terminology:1.2.0"],
   ["terminology-strict/1.2.0.json", "manni:terminology-strict:1.2.0"],
   ["ai-context/1.1.0.json", "manni:ai-context:1.1.0"],
+  ["stewardship/1.2.0.json", "manni:stewardship:1.2.0"],
+  ["stewardship-strict/1.2.0.json", "manni:stewardship-strict:1.2.0"],
+  ["citations/1.1.0.json", "manni:citations:1.1.0"],
+  ["citations-strict/1.1.0.json", "manni:citations-strict:1.1.0"],
+  ["ai-context/1.2.0.json", "manni:ai-context:1.2.0"],
 ];
 
 /** Where each built-in's reference page lives on the docs site. */
@@ -387,6 +446,7 @@ const GUIDE_SLUGS: ReadonlyMap<string, string> = new Map([
   ["jekyll:page:4.4", "jekyll-page"],
   ["manni:ai-context:1.0.0", "manni-ai-context"],
   ["manni:ai-context:1.1.0", "manni-ai-context"],
+  ["manni:ai-context:1.2.0", "manni-ai-context"],
   ["manni:ai-context-strict:1.0.0", "manni-ai-context"],
   ["manni:artifact-evals:1.0.0", "manni-artifact-evals"],
   ["manni:artifact-evals:1.1.0", "manni-artifact-evals"],
@@ -395,7 +455,9 @@ const GUIDE_SLUGS: ReadonlyMap<string, string> = new Map([
   ["manni:audience:1.0.0", "manni-audience"],
   ["manni:audience-strict:1.0.0", "manni-audience"],
   ["manni:citations:1.0.0", "manni-citations"],
+  ["manni:citations:1.1.0", "manni-citations"],
   ["manni:citations-strict:1.0.0", "manni-citations"],
+  ["manni:citations-strict:1.1.0", "manni-citations"],
   ["manni:core:1.0.0", "manni-core"],
   ["manni:core-strict:1.0.0", "manni-core"],
   ["manni:evals:1.0.0", "manni-evals"],
@@ -406,8 +468,10 @@ const GUIDE_SLUGS: ReadonlyMap<string, string> = new Map([
   ["manni:lifecycle-strict:1.0.0", "manni-lifecycle"],
   ["manni:stewardship:1.0.0", "manni-stewardship"],
   ["manni:stewardship:1.1.0", "manni-stewardship"],
+  ["manni:stewardship:1.2.0", "manni-stewardship"],
   ["manni:stewardship-strict:1.0.0", "manni-stewardship"],
   ["manni:stewardship-strict:1.1.0", "manni-stewardship"],
+  ["manni:stewardship-strict:1.2.0", "manni-stewardship"],
   ["manni:structure:1.0.0", "manni-structure"],
   ["manni:structure-strict:1.0.0", "manni-structure"],
   ["manni:terminology:1.0.0", "manni-terminology"],

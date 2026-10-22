@@ -38,10 +38,21 @@ function built(feature: string, config?: (yaml: string) => string): string {
 const threshold = (value: string) => (y: string) =>
   y.replace("      top: 1", `      top: 1\n      foundThreshold: ${value}`);
 
-/** The finding lines of a pretty report, without the summary. */
+/**
+ * The finding lines of a pretty report, without the summary. These fixtures
+ * publish no chunk artifact, so the cited row's notice is left out here, and
+ * cited.test.ts covers it.
+ */
 function findings(stdout: string): string[] {
-  return stdout.split("\n").filter((l) => /^(error|warning|notice): /.test(l));
+  return stdout
+    .split("\n")
+    .filter((l) => /^(error|warning|notice): /.test(l) && !l.includes(CITED_SKIPPED));
 }
+
+const CITED_SKIPPED = "the cited row did not run";
+/** A JSON report's findings, without the cited row's notice. */
+const own = <T extends Record<string, unknown>>(fs: T[]): T[] =>
+  fs.filter((f) => !String(f.message).startsWith(CITED_SKIPPED));
 
 /** The health summary of a pretty report: from `questions` to the blank line after it. */
 function summary(stdout: string): string[] {
@@ -67,7 +78,7 @@ describe("a golden-set file question", () => {
     const report = JSON.parse(run(["check", "-f", "json"], built("cross-page")).stdout) as {
       findings: Record<string, unknown>[];
     };
-    expect(report.findings).toEqual([
+    expect(own(report.findings)).toEqual([
       {
         severity: "warning",
         message:
@@ -161,12 +172,14 @@ describe("set health", () => {
     expect(r.stdout.split("\n")).toEqual([
       'warning: questions.yaml: "After rotating the key, how do I check nothing broke?" does not find docs/rotate.md § Rotate in the top 1 (it ranks 4; first is docs/validate.md § Check the result)',
       "  at questions.yaml:3",
+      "notice: (no page): the cited row did not run: no chunk artifact; run manni graph publish.",
+      "  at questions",
       "",
       "questions  1: 1 reviewed, 0 drafted, in questions.yaml",
       "  found    0 of 1 reviewed in the top 1 (0%), 0 first (0%)",
       "  answers  2 pinned, 0 not reviewed: 2 current, 0 moved, 0 changed; 0 not pinned",
       "",
-      "0 errors, 1 warning, 0 notices",
+      "0 errors, 1 warning, 1 notice",
       "",
     ]);
   });
@@ -204,6 +217,7 @@ describe("set health", () => {
     const lines = r.stdout.trimEnd().split("\n");
     expect(lines[0]).toMatch(/^::warning file=questions\.yaml::/);
     expect(lines.slice(1)).toEqual([
+      "::notice::the cited row did not run: no chunk artifact; run manni graph publish. (questions)",
       "",
       "questions  1: 1 reviewed, 0 drafted, in questions.yaml",
       "  found    0 of 1 reviewed in the top 1 (0%), 0 first (0%)",

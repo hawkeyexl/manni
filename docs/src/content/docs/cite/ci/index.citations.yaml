@@ -73,9 +73,9 @@ docs/src/content/docs/cite/ci/index.mdx:
         integrity: sha256-c54eb90aaa7d8df62cc348f1c7ea770c7dbc797cfadac585d30d2250f7bc57a0
       source:
         file: src/cite/types.ts
-        lines: 117-132
+        lines: 118-133
         integrity: sha256-1bf1aab98a95bb7bb18bf1173dffbebe5405ab244ae9d42c7d1fbf68fe99adcc
-        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
+        commit-sha: 6f1ff2e33d9cc6b0a72c5acc22a0290a71d3b0fe
     - id: severity-levels-off
       claim:
         integrity: sha256-c54eb90aaa7d8df62cc348f1c7ea770c7dbc797cfadac585d30d2250f7bc57a0
@@ -379,9 +379,9 @@ docs/src/content/docs/cite/ci/index.mdx:
         integrity: sha256-24118de2cfcc2b1fede02e9de654df41a97caf87390a15047f9049d30a67bca6
       source:
         file: src/meta/core/baseline.ts
-        lines: 549-556
+        lines: 550-557
         integrity: sha256-682f1eea272dfee261c52f994deb35b70f02439eb6c069c83de302b3dcdc2fa6
-        commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
+        commit-sha: 03518fa2c75bdbeb46f732bbac3f8b35c92c16f2
     - id: write-baseline-default-path
       claim:
         lines: 277-279
@@ -485,6 +485,6 @@ docs/src/content/docs/cite/ci/index.mdx:
         integrity: sha256-fa525c86f41fe0acc0c766353de7e0934a9383f25010b14e145536f9958bd3a9
       source:
         file: src/meta/core/baseline.ts
-        lines: 549-555
+        lines: 550-556
         integrity: sha256-9bd2fc45d80ca86284dfbbf0d4811799bd6d19467d3d823e5edd9d2b2d576e73
-        commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
+        commit-sha: 03518fa2c75bdbeb46f732bbac3f8b35c92c16f2

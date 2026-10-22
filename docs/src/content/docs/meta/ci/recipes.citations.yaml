@@ -45,9 +45,9 @@ docs/src/content/docs/meta/ci/recipes.mdx:
         integrity: sha256-3219f33ff597c89ce4d5ecf4eae156536902e01c392bc0b3198016462ff8b762
       source:
         file: src/meta/commands/validate.ts
-        lines: 1217-1227
+        lines: 1234-1244
         integrity: sha256-705564be93671f57572066f8b5c65e89e68fc6228453bf1746a821f580d13aa1
-        commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
+        commit-sha: 6f1ff2e33d9cc6b0a72c5acc22a0290a71d3b0fe
     - id: recipes-operational-error-exits-2
       claim:
         lines: 11-12
@@ -63,9 +63,9 @@ docs/src/content/docs/meta/ci/recipes.mdx:
         integrity: sha256-dd013d4ba2a723499cee6d883c35f02b58e50ab68483c1f208a29e70faac1e8b
       source:
         file: src/meta/reporters/index.ts
-        lines: 314-335
+        lines: 316-337
         integrity: sha256-2f7b91cc687ca83e4e49b32ee16f32c1b693d3d283dce6c1cb75793823c255ac
-        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
+        commit-sha: 6f1ff2e33d9cc6b0a72c5acc22a0290a71d3b0fe
     - id: manni-rebases-paths-onto-the-git-root
       claim:
         lines: 86-87
@@ -90,9 +90,9 @@ docs/src/content/docs/meta/ci/recipes.mdx:
         integrity: sha256-7586e9ec2cbcc07983fac21ddfb24918a8b187dc1fd1297d476a9100ca3e83cd
       source:
         file: package.json
-        lines: 46-48
+        lines: 50-52
         integrity: sha256-2de8e81748272b9a64ecbd0ef087b7b148d787302d6d51977510a7c17687ae12
-        commit-sha: 922dea44962f188cfa8119a67aa5c744ce824710
+        commit-sha: a6e72e40489c2bc2022cbe0c242a137845229c2a
     - id: cite-hook-checks-staged-pages
       claim:
         integrity: sha256-a0542930798b64c6850202ea0ea7e170a89469a24a7ecb8bd3c00d4e93aa98f4

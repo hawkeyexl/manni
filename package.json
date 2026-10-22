@@ -23,6 +23,10 @@
       "types": "./dist/graph/embed.d.ts",
       "import": "./dist/graph/embed.js"
     },
+    "./site/rehype": {
+      "types": "./dist/site/rehype.d.ts",
+      "import": "./dist/site/rehype.js"
+    },
     "./package.json": "./package.json"
   },
   "files": [
@@ -131,6 +135,7 @@
     "@commitlint/config-conventional": "^21.2.2",
     "@comunica/query-sparql-rdfjs-lite": "^5.3.0",
     "@eslint/js": "^10.0.1",
+    "@modelcontextprotocol/sdk": "^1.32.1",
     "@rdfjs/types": "^2.0.1",
     "@semantic-release/changelog": "^6.0.3",
     "@semantic-release/commit-analyzer": "^13.0.1",
@@ -158,10 +163,14 @@
   },
   "peerDependencies": {
     "@huggingface/transformers": ">=4",
+    "@modelcontextprotocol/sdk": "^1.32.1",
     "node-llama-cpp": "^3.19.0"
   },
   "peerDependenciesMeta": {
     "@huggingface/transformers": {
+      "optional": true
+    },
+    "@modelcontextprotocol/sdk": {
       "optional": true
     },
     "node-llama-cpp": {

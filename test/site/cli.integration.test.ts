@@ -5,7 +5,7 @@
  * framework is installed; the one detected case runs a fake `hugo` from PATH.
  */
 import { spawnSync } from "node:child_process";
-import { chmodSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { chmodSync, cpSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { delimiter, dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -50,10 +50,10 @@ afterEach(() => {
 });
 
 describe("manni site", () => {
-  it("lists the three verbs in help", () => {
+  it("lists the four verbs in help", () => {
     const r = site(["--help"]);
     expect(r.status).toBe(0);
-    for (const verb of ["start", "build", "preview"]) expect(r.stdout).toMatch(new RegExp(`^\\s+${verb}\\b`, "m"));
+    for (const verb of ["start", "build", "preview", "annotate"]) expect(r.stdout).toMatch(new RegExp(`^\\s+${verb}\\b`, "m"));
   });
 
   it("shows usage and exits 2 with no verb, as key does", () => {
@@ -157,5 +157,101 @@ describe("manni site", () => {
     expect(r.stderr).toContain("manni: Hugo in ./. Running hugo\n");
     expect(r.stdout).toContain("fake hugo");
     expect(r.status).toBe(0);
+  });
+});
+
+describe("manni site annotate (proposal 0095)", () => {
+  const SUCCESS =
+    "site/dist: 2 pages annotated. 5 of 8 pins placed, 3 listed on their page only. 2 blocks carry a verification.\n";
+
+  beforeEach(() => {
+    cpSync(join(here, "fixtures", "annotate"), work, { recursive: true });
+  });
+
+  const yamlQuote = (v: string): string => `'${v.replaceAll("'", "''")}'`;
+
+  /** The fixture's config, plus `extra` under `site:`. */
+  const siteConfig = (extra: string): void => {
+    writeFileSync(join(work, "manni.config.yaml"), `site:\n  dir: site\n${extra}graph:\n  out: graph/graph.ttl\n`);
+  };
+
+  it("annotates the built site, prints the success line and exits 0", () => {
+    const r = site(["annotate"]);
+    expect(r.status).toBe(0);
+    expect(r.stderr.startsWith("manni: Starlight in site/. Annotating site/dist from graph/chunks.json.\n")).toBe(true);
+    expect(r.stderr).toContain("manni: site/src/content/docs/missing.md could not be read, so its pins are placed by line alone: ");
+    expect(r.stdout.startsWith(SUCCESS)).toBe(true);
+    expect(r.stdout).toContain("  plain/index.html: 1 pin not placed, because its text appears twice: repeat.\n");
+  });
+
+  it("prints the JSON report with -f json", () => {
+    const r = site(["annotate", "-f", "json"]);
+    expect(r.status).toBe(0);
+    const report = JSON.parse(r.stdout) as Record<string, unknown>;
+    expect(Object.keys(report)).toEqual(["out", "pages", "pins", "statements", "unplaced", "drifted"]);
+  });
+
+  it("takes every option at once", () => {
+    const r = site(["annotate", "site", "--out", "site/dist", "--chunks", "graph/chunks.json", "-f", "json", "-c", "manni.config.yaml"]);
+    expect(r.status).toBe(0);
+    expect((JSON.parse(r.stdout) as { pages: number }).pages).toBe(2);
+  });
+
+  it("exits 2 on an unknown format", () => {
+    const r = site(["annotate", "-f", "sarif"]);
+    expect(r.status).toBe(2);
+    expect(r.stderr).toBe('manni: Unknown --format "sarif". Use pretty or json.\n');
+  });
+
+  it("exits 2 with no built site", () => {
+    rmSync(join(work, "site", "dist"), { recursive: true });
+    const r = site(["annotate"]);
+    expect(r.status).toBe(2);
+    expect(r.stderr).toBe("manni: no built site at site/dist. Run manni site build first, or pass --out.\n");
+  });
+
+  it("exits 2 with no chunk artifact", () => {
+    rmSync(join(work, "graph"), { recursive: true });
+    const r = site(["annotate"]);
+    expect(r.status).toBe(2);
+    expect(r.stderr).toBe("manni: graph/chunks.json does not exist; run manni graph publish.\n");
+  });
+
+  it("exits 2 on a wrong after-build type", () => {
+    siteConfig("  annotate:\n    after-build: yes please\n");
+    const r = site(["annotate"]);
+    expect(r.status).toBe(2);
+    expect(r.stderr).toBe("manni: manni.config.yaml: site.annotate.after-build must be a boolean.\n");
+  });
+
+  it("annotates after site build when after-build is true", () => {
+    siteConfig(`  commands:\n    build: ${yamlQuote(nodeLine("console.log('built')"))}\n  annotate:\n    after-build: true\n`);
+    const r = site(["build"]);
+    expect(r.status).toBe(0);
+    expect(r.stdout).toMatch(new RegExp(`built\\n${SUCCESS.replace(/\./g, "\\.")}`));
+  });
+
+  it("annotates before preview serves", () => {
+    siteConfig(
+      `  commands:\n    build: ${yamlQuote(nodeLine("console.log('built')"))}\n    preview: ${yamlQuote(nodeLine("console.log('served')"))}\n  annotate:\n    after-build: true\n`,
+    );
+    const r = site(["preview"]);
+    expect(r.status).toBe(0);
+    expect(r.stdout.indexOf("pages annotated")).toBeGreaterThan(r.stdout.indexOf("built"));
+    expect(r.stdout.indexOf("served")).toBeGreaterThan(r.stdout.indexOf("pages annotated"));
+  });
+
+  it("never annotates start", () => {
+    siteConfig(`  commands:\n    start: ${yamlQuote(nodeLine("console.log('dev')"))}\n  annotate:\n    after-build: true\n`);
+    const r = site(["start"]);
+    expect(r.status).toBe(0);
+    expect(r.stdout).not.toContain("annotated");
+  });
+
+  it("does not annotate a failed build", () => {
+    siteConfig(`  commands:\n    build: ${yamlQuote(nodeLine("process.exit(3)"))}\n  annotate:\n    after-build: true\n`);
+    const r = site(["build"]);
+    expect(r.status).toBe(2);
+    expect(r.stdout).not.toContain("annotated");
   });
 });

@@ -21,6 +21,7 @@ const DCTERMS_TITLE = `${NS.dcterms}title`;
 const DCTERMS_HAS_PART = `${NS.dcterms}hasPart`;
 const GRAPH_LEVEL = `${NS.graph}level`;
 const GRAPH_ORDER = `${NS.graph}order`;
+const GRAPH_BLOCK = `${NS.graph}Block`;
 
 export interface ResolvedContent {
   iri: string;
@@ -260,6 +261,8 @@ export function documentSectionOrder(
     graph
       .out(iri, DCTERMS_HAS_PART)
       .map((e) => e.target)
+      // A statement's graph:Block is a part too (proposal 0099), not a section.
+      .filter((target) => !graph.types(target).includes(GRAPH_BLOCK))
       .sort((a, b) => {
         const oa = Number.parseInt(graph.literal(a, GRAPH_ORDER) ?? "", 10);
         const ob = Number.parseInt(graph.literal(b, GRAPH_ORDER) ?? "", 10);
@@ -403,6 +406,24 @@ export function sectionOwnLines(
 ): { start: number; end: number } | undefined {
   const span = locate(markdown.split(/\r?\n/), title, level, occurrence, true);
   return span === undefined ? undefined : { start: span.start + 1, end: span.end };
+}
+
+/**
+ * The file lines `sliceSection` returns, 1-based and inclusive: the heading
+ * through its subsections, less the trailing blank lines `sliceSection`
+ * trims. A chunk's `lines` come from here, so they cover its text exactly.
+ */
+export function sectionLines(
+  markdown: string,
+  title: string,
+  level?: number,
+  occurrence = 0,
+): { start: number; end: number } | undefined {
+  const text = sliceSection(markdown, title, level, occurrence);
+  if (text === undefined) return undefined;
+  const span = locate(markdown.split(/\r?\n/), title, level, occurrence, false);
+  if (span === undefined) return undefined;
+  return { start: span.start + 1, end: span.start + text.split("\n").length };
 }
 
 function slice(

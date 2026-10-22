@@ -1,0 +1,28 @@
+docs/src/content/docs/test/record-last-verified.mdx:
+  personas:
+    - maya
+    - devin
+  journeys:
+    - m30
+    - d17
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: src/meta/schemas/stewardship/1.2.0.json
+  eval-suite: test
+  evals:
+    - id: declare-a-check
+      assertion: A reader can add a verified-by entry that names a page's Doc Detective test.
+      type: capability
+      grader: ai
+    - id: oldest-pass
+      assertion: A reader can say why last-verified is the oldest pass among the entries.
+      type: capability
+      grader: ai
+  owner:
+    - "@hawkeyexl"
+  created: 2026-10-21
+  provenance:
+    - generated-by: Claude Opus 5.5
+      lines: 2-99
+      integrity: sha256-4c5e2d77bd8838eebd44c334e31df8c9aeaeddf0b9a36a077643f5aeb9f69a52

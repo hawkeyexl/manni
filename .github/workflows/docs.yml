@@ -108,17 +108,44 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+        # `graph publish` records each passage's pins and dates, which it
+        # reads from history, as the citation step above does.
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v6
         with:
           node-version: 24
           cache: npm
-          cache-dependency-path: docs/package-lock.json
+          cache-dependency-path: |
+            package-lock.json
+            docs/package-lock.json
+      - name: Install and build manni
+        run: |
+          npm ci
+          npm run build
+      # The graph of the whole site: `graph publish` writes the graph, the
+      # chunks, the search index and llms.txt into docs/public/graph, beside
+      # the repo config's `graph.out`, so the site serves the artifact of the
+      # commit it builds. `graph check` then gates what was published, so its
+      # cited row reads the new chunks. A failing check stops this job, and
+      # `deploy` needs it, so nothing deploys. llms.txt is also copied to the
+      # site root, where readers look for it.
+      - name: Publish and check the graph
+        run: |
+          node dist/cli.js graph publish
+          node dist/cli.js graph check
+          cp docs/public/graph/llms.txt docs/public/llms.txt
       - name: Install docs dependencies
         run: npm ci
         working-directory: docs
-      - name: Build docs site
-        run: npm run build
-        working-directory: docs
+      # `manni site build` (proposals 0082 and 0095) runs Starlight's build,
+      # then annotates the built pages from the chunks published above, because
+      # the repo config sets `site.annotate.after-build`. Each pinned block
+      # gains `data-manni-*` attributes and each page one provenance island.
+      # The page looks the same; the line stamps the rehype plugin wrote are
+      # removed.
+      - name: Build and annotate the docs site
+        run: node dist/cli.js site build
 
       # Reads the rendered HTML, so it has to follow the build. It catches the
       # quiet half of a broken link: an href whose page exists but whose anchor
@@ -149,6 +176,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+        # `graph publish` below reads each pin's history, as the build job does.
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v6
         with:
           node-version: 24
@@ -162,9 +192,13 @@ jobs:
       - name: Install docs dependencies
         run: npm ci
         working-directory: docs
+      # The chunks `site preview` annotates the build from, so the crawl
+      # below checks the pages as they deploy.
+      - name: Publish the graph
+        run: node dist/cli.js graph publish
 
       # `manni site preview` (proposal 0082) dogfoods the site domain: it
-      # detects Starlight in docs/, builds the site, then runs `astro preview`
+      # detects Starlight in docs/, builds and annotates the site, then runs `astro preview`
       # on the host and port the `site` collection's url: names. No separate
       # build step, because preview always builds first. `astro preview`
       # serves docs/dist under the site's `base`, so the pages answer at

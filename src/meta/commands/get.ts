@@ -55,6 +55,7 @@ import {
 } from "../core/derive/types.js";
 import { lazyKey } from "../core/encrypted.js";
 import { STDIN_REQUIRES_AS } from "../../shared/cli-options.js";
+import { readStatements, statementView, type StatementView } from "../core/statements.js";
 
 export interface GetOptions {
   fields: string[];
@@ -168,6 +169,13 @@ export interface GetFileResult {
    * nothing was derived.
    */
   provenance?: { bodyLine: number; current?: boolean };
+  /**
+   * The page's inline `meta` statements (proposal 0099), in page order, each
+   * with its anchor, pin status and fields. Never merged into `values`:
+   * `--fields` selects page fields only. Absent when the page has none, and
+   * on a file that did not parse.
+   */
+  statements?: StatementView[];
 }
 
 export async function runGet(opts: GetOptions): Promise<GetFileResult[]> {
@@ -359,11 +367,13 @@ export async function runGet(opts: GetOptions): Promise<GetFileResult[]> {
     }
     carried.set(label, carries);
     const bodyLine = bodyLines.get(label);
+    const statements = readStatements(content, extractor.name).statements.map(statementView);
     out.push({
       file: label,
       present: extracted.present,
       values,
       ...(bodyLine !== undefined ? { provenance: { bodyLine } } : {}),
+      ...(statements.length > 0 ? { statements } : {}),
     });
   };
 

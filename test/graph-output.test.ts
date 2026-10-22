@@ -190,6 +190,19 @@ describe("x-manni-graph-output in manni:stewardship (proposal 0074)", () => {
   });
 });
 
+describe("x-manni-graph-output in manni:ai-context:1.2.0 (proposal 0090)", () => {
+  it("marks answers inside a question, and leaves sample-questions in the graph", async () => {
+    const data = {
+      "sample-questions": [
+        "How do I retry?",
+        { question: "How many retries?", answers: [{ lines: "41-43" }] },
+      ],
+    };
+    // The mark sits below the top level, which the graph build never reads.
+    expect(await prefs(new Validator(), data, ["manni:ai-context:1.2.0"])).toEqual({});
+  });
+});
+
 describe("manni:stewardship-strict:1.1.0 (proposal 0074)", () => {
   it("is the 1.0.0 overlay under the 1.1.0 id", async () => {
     const read = async (v: string) =>

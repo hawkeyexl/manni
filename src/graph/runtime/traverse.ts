@@ -28,6 +28,16 @@ const DCTERMS_TITLE = `${NS.dcterms}title`;
 const DCTERMS_REFERENCES = `${NS.dcterms}references`;
 const DCTERMS_LANGUAGE = `${NS.dcterms}language`;
 
+/**
+ * Block and verification nodes (proposal 0099) are graph data, not passages:
+ * a walk never steps into one. `graph query` still sees them all.
+ */
+const STATEMENT_DATA = new Set([`${NS.graph}Block`, `${NS.graph}Verification`]);
+
+function isStatementData(graph: GraphIndex, iri: string): boolean {
+  return graph.types(iri).some((t) => STATEMENT_DATA.has(t));
+}
+
 /** A section IRI's document, or the IRI itself when it has no fragment. */
 function documentOf(iri: string): string {
   const hash = iri.indexOf("#");
@@ -262,6 +272,7 @@ export function traverse(
       )) {
         if (allowed && !allowed.has(predicate)) continue;
         if (!followTypes && predicate === RDF_TYPE) continue;
+        if (isStatementData(graph, target)) continue;
         // The hop is recorded before filtering: the trace shows the edge was
         // walked even when the target is then scope-excluded.
         trace.hops.push({ from, predicate, to: target, depth, direction: dir });

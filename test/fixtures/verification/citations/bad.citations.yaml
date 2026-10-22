@@ -1,0 +1,16 @@
+bad.md:
+  citations:
+    - id: no-tool
+      source:
+        file: src/cite/core/config.ts
+        integrity: sha256-1111111111111111111111111111111111111111111111111111111111111111
+      verified-by:
+        - check: config-paths
+    - id: no-timezone
+      source:
+        file: src/cite/core/config.ts
+        integrity: sha256-1111111111111111111111111111111111111111111111111111111111111111
+      last-verified: 2026-10-21T14:02:11
+      verified-by:
+        - tool: sample-runner
+          passed: 2026-10-21T14:02:11

@@ -16,6 +16,7 @@ import type { LineSpec, PageLines } from "../shared/pin.js";
 import type { Guidance } from "../shared/guidance.js";
 import type { Confirm } from "../shared/prompt.js";
 import type { Severity } from "../shared/severity.js";
+import type { InlineStatement } from "../shared/statements.js";
 
 /** A parsed `<src>` or `source`: a path or `~` ciphertext, and an optional line range. */
 export interface SourceRange {
@@ -445,40 +446,7 @@ export interface MintOptions {
   sourceIndex?: SourceIndex;
 }
 
-/**
- * One replacement against a fixed text: the bytes `[start, end)` become
- * `text`. A writer that has a position from a parse hands back an edit rather
- * than a rewritten page, so several of them can be collected against that one
- * parse and applied together (`applyEdits`). Nothing is then read out of a
- * text that has already been written to.
- */
-export interface TextEdit {
-  start: number;
-  end: number;
-  text: string;
-}
-
-/** One marker found in a page body: `cite <id>` in the format's comment syntax. */
-export interface InlineStatement {
-  /** File line of the marker. */
-  line: number;
-  /** File line of the anchored text: the rest of the marker's line, else the paragraph or block that follows. */
-  anchorLine?: number;
-  /**
-   * The ids the marker names, in the order written, or why the marker is not
-   * read. A payload of one id is what proposal 0044 shipped; 0056 widened it
-   * to a space-separated list, and every id in the list anchors the same text.
-   */
-  payload:
-    | { kind: "ref"; ids: [string, ...string[]] }
-    | { kind: "bad"; reason: string; json?: boolean };
-  /** The marker text between the delimiters, trimmed. */
-  raw: string;
-  /** Character offsets of the whole marker in the file, for rewriting. */
-  start: number;
-  end: number;
-}
-
+export type { InlineStatement, TextEdit } from "../shared/statements.js";
 /** A validated citation with where it sits and the marker that names it, before classification. */
 export interface PageCitation {
   citation: Citation;

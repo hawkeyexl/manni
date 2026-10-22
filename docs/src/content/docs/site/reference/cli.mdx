@@ -1,18 +1,18 @@
 ---
 title: CLI reference
-description: "Every manni site command, argument and flag (start, build and preview), with the frameworks detected, the site: config keys, every message and the exit codes."
+description: "Every manni site command, argument and flag (start, build, preview and annotate), with the frameworks detected, the site: config keys, every message and the exit codes."
 id: "site-reference-cli"
 type: "reference"
-keywords: ["site start", "site build", "site preview", "frameworks", "site.commands", "exit codes"]
+keywords: ["site start", "site build", "site preview", "site annotate", "frameworks", "site.commands", "site.out", "exit codes"]
 language: en
 audiences: ["docs-engineers", "ci-engineers"]
-intent: "Look up every argument, flag, detected framework, config key, message and exit code of manni site start, build and preview."
+intent: "Look up every argument, flag, detected framework, config key, message and exit code of manni site start, build, preview and annotate."
 lifecycle: published
 applies-to: ["domain:site"]
 risks: ["idempotent"]
 sample-questions: ["What flags do manni site start and manni site preview accept?", "Which frameworks does manni site detect, and what does it run for each?", "Why did manni site exit 2?"]
 graph: { label: "CLI reference", type: reference }
-last-updated: 2026-10-11
+last-updated: 2026-10-22
 tags:
   - cli
   - reference
@@ -34,10 +34,12 @@ related-pages:
     docs:check-cli), enforced in CI. Keep flags, arguments, and defaults in
     sync with the code; descriptions are free-form. */}
 
-manni site exposes three verbs, [`start`](#site-start), [`build`](#site-build)
-and [`preview`](#site-preview). Each one finds the site, detects its framework,
-and runs the framework's own command with inherited stdio. `site` has no
-default subcommand. A bare `manni site` prints usage and exits `2`.
+manni site exposes four verbs. [`start`](#site-start), [`build`](#site-build)
+and [`preview`](#site-preview) find the site, detect its framework, and run
+the framework's own command with inherited stdio.
+[`annotate`](#site-annotate) joins the graph's pins and statements to the
+built pages, as data. `site` has no default subcommand. A bare `manni site`
+prints usage and exits `2`.
 
 ```sh
 manni site [options] <command> [command options] [dir] [-- <args...>]
@@ -90,7 +92,9 @@ manni site start [dir] [options] [-- <args...>]
 Run the framework's production build once. A build that fails exits `2`, and
 the framework's own output above the last line says why. Mintlify and Fern
 have no local build, so `build` stops with exit `2` there. `build` takes no
-`--port` or `--host`, because nothing is served.
+`--port` or `--host`, because nothing is served. With
+[`site.annotate.after-build`](#configuration) set to `true`, a successful
+build is followed by [`annotate`](#site-annotate), and a failed one is not.
 
 ```sh
 manni site build [dir] [options] [-- <args...>]
@@ -114,7 +118,8 @@ Run `build`, then serve the output until Ctrl-C or SIGTERM stops it. It always
 builds first, so it never serves stale output. A build that fails exits `2`
 before anything is served. The serve step is the framework's own preview
 command, or the [built-in server](#the-built-in-server) for a framework that
-has none.
+has none. With `site.annotate.after-build` set to `true`, `preview` annotates
+the build before it serves it.
 
 ```sh
 manni site preview [dir] [options] [-- <args...>]
@@ -134,6 +139,138 @@ manni site preview [dir] [options] [-- <args...>]
 | `--host` | `<host>` | none | The host the output is served on. Without it, the host of a local collection `url:`, else the framework's default. |
 | `-c, --config` | `<file>` | discovered | Path to a manni config file. |
 
+## `site annotate`
+
+Join the chunk artifact `manni graph publish` writes to the built site, and
+write the result into each built page as data. Each placed block gains
+[`data-manni-*` attributes](#what-a-page-gains), and each page gains one JSON
+island. Nothing visible changes: annotate writes no mark, stylesheet or
+script. It is not a gate. It exits `0` whatever the pins say, and `2` when it
+cannot run. [Show readers what is proven](/manni/site/annotate/) walks
+through it.
+
+```sh
+manni site annotate [dir] [options]
+```
+
+### Arguments
+
+| Argument | Required | Description |
+|---|---|---|
+| `[dir]` | no | The site's directory. Omitted: `site.dir`, else [found by search](#how-the-site-is-found). |
+
+### Options
+
+| Option | Argument | Default | Description |
+|---|---|---|---|
+| `--out` | `<dir>` | none | The built site, relative to the working directory. Without it, `site.out`, else the framework's output from [the table below](#output-and-routes). |
+| `--chunks` | `<file>` | none | The chunk manifest. Without it, `chunks.json` in the directory of `graph.out`, where `manni graph publish` writes it. |
+| `-f, --format` | `<format>` | `pretty` | `pretty` or `json`. |
+| `-c, --config` | `<file>` | discovered | Path to a manni config file. |
+
+A framework is needed only for its default output and its routes. With
+`--out` or `site.out`, a site no framework marks is annotated too.
+
+### The join
+
+Each pin's claim lines, and each statement's lines, are joined to the built
+HTML in two steps.
+
+1. **Lines.** A block stamped by `@hawkeyexl/manni/site/rehype` whose lines
+   overlap the claim. The innermost stamped blocks win, so a claim over two
+   list items lands on the items, not on the list.
+2. **Text.** With no stamped block, the claim rendered as plain text. Either
+   one block holds it, or one run of adjacent blocks makes it up. Inside a
+   longer claim, a block shorter than 12 characters does not count.
+
+A claim whose text appears twice is not placed, and the report says so. A tie
+is never broken by document order. Statements join by lines alone. Every
+`data-manni-src` stamp is removed afterwards, from every page. So annotate
+once per build: a second run over the same build finds no stamps, and places
+by text alone.
+
+Add the plugin to the framework's rehype plugins. For Starlight that is
+`astro.config.mjs`:
+
+```js
+import manniLines from "@hawkeyexl/manni/site/rehype";
+
+export default defineConfig({
+  markdown: { rehypePlugins: [manniLines] },
+});
+```
+
+### Output and routes
+
+A page with no stamps is found by its route. `<path>` is the page's path below
+the content directory, without its extension, and an `index` page maps to its
+directory.
+
+| Framework | Output | Content | Route | Lines step |
+|---|---|---|---|---|
+| Starlight | `dist` | `src/content/docs` | `<path>/index.html` | the rehype plugin |
+| Docusaurus | `build` | `docs` | `docs/<path>/index.html` | the rehype plugin |
+| Nextra | `out` | `pages` | `<path>.html` | the rehype plugin |
+| Fumadocs | `out` | `content/docs` | `docs/<path>.html` | the rehype plugin |
+| Rspress | `doc_build` | `docs` | `<path>.html` | the rehype plugin |
+| VitePress | `.vitepress/dist` under its root | its root | `<path>.html` | none, text only |
+| MkDocs, Zensical | `site` | `docs` | `<path>/index.html` | none, text only |
+| Sphinx | `<src>/_build/html` | `<src>` | `<path>.html` | none, text only |
+| Hugo | `public` | `content` | `<path>/index.html` | none, text only |
+| Jekyll | `_site` | the site's directory | `<path>.html` | none, text only |
+
+Mintlify and Fern build on their own hosts, so there is no local site to
+annotate. Nextra and Fumadocs write static pages only with
+`output: "export"` in `next.config`.
+
+### What a page gains
+
+| Attribute | On | Value |
+|---|---|---|
+| `data-manni-node` | a placed block, or a heading | The graph node IRI of the section, or of the `graph:Block` a block statement mints. |
+| `data-manni-pins` | a block with placed pins | Space-separated citation ids. A citation with no id appears as `#<n>`, its place in the page's citations. |
+| `data-manni-state` | a block with placed pins | `current` when no pin on it has an error-severity finding, otherwise `drifted`. |
+| `data-manni-verified` | a block or heading whose statement sets `last-verified` | The day or timestamp, as written. |
+| `data-manni-verified-by` | a block or heading whose statement sets `verified-by` | Space-separated `verified-by[].tool` values. |
+| `data-manni-statement` | a block or heading with a statement | `current`, `changed` or `unpinned`. |
+| `data-manni-applies-to` | a heading whose statement's section sets `applies-to` | Space-separated values. |
+| `data-manni-commit` | `<main>`, or `<body>` without one | The docs commit. Absent outside git. |
+| `data-manni-last-verified` | `<main>`, or `<body>` without one | The page's `last-verified`, when set. |
+
+The island is one `<script type="application/json" id="manni-provenance">`,
+before `</body>`. It holds `{ page, commit, worktree, dates, records }`.
+`records` are the page's provenance records from the chunk rows, unchanged, in
+`lines` order. A browser never runs it, so a strict content security policy
+allows it. An encrypted source stays its ciphertext token.
+
+### Output
+
+`pretty` prints one line, then one line per page that has something to say:
+
+```text
+docs/dist: 258 pages annotated. 4163 of 4202 pins placed, 39 listed on their page only. 2 blocks carry a verification.
+  cite/fix/index.html: 1 pin not placed, because its text appears twice: decode-sample-changed.
+```
+
+`json` prints one object:
+
+```json
+{
+  "out": "docs/dist",
+  "pages": 258,
+  "pins": { "total": 4202, "placed": 4163 },
+  "statements": { "total": 2, "placed": 2 },
+  "unplaced": [
+    { "page": "cite/fix/index.html", "kind": "pin", "ids": ["decode-sample-changed"], "reason": "repeated-text" }
+  ],
+  "drifted": []
+}
+```
+
+`reason` is `repeated-text`, `no-block` or `no-page`. `page` is the built page
+relative to the output, or the source page when it has no built page. A
+statement's `ids` are its lines.
+
 ## Arguments after `--`
 
 Everything after `--` is appended verbatim to the command manni runs, after
@@ -147,11 +284,14 @@ arguments after `--` is refused there, exit `2`.
 ```console
 $ manni site preview -- --open
 manni: Starlight in docs/. Running npm run build
+manni: Starlight in docs/. Annotating docs/dist from docs/public/graph/chunks.json.
+docs/dist: 258 pages annotated. 4163 of 4202 pins placed, 39 listed on their page only. 2 blocks carry a verification.
 manni: Starlight in docs/. Running npm run preview -- --host 127.0.0.1 --port 4321 --open
 ```
 
-There is no `-f, --format`. These verbs print no report, so the framework's
-own output is the output.
+`start`, `build` and `preview` have no `-f, --format`. They print no report,
+so the framework's own output is the output. `annotate` takes no arguments
+after `--`, because it runs no framework command.
 
 ## How the site is found
 
@@ -198,9 +338,9 @@ directory's `package.json`.
 - **Python and Ruby.** MkDocs, Zensical and Sphinx run under `uv run` when a
   `uv.lock` is present, or `poetry run` for a `poetry.lock`. Jekyll runs under
   `bundle exec`.
-- **Output directories.** The built-in server reads the framework's default
-  output directory. A custom `site_dir` or `publishDir` needs
-  `site.commands.preview`.
+- **Output directories.** The built-in server reads `site.out`, else the
+  framework's default output directory. A custom `site_dir` or `publishDir`
+  needs `site.out`.
 
 ## The port and host
 
@@ -234,8 +374,8 @@ manni.
 
 ## Configuration
 
-Every key under `site:` is optional. This repository's own config has no
-`site:` section, because detection finds Starlight in `docs/`.
+Every key under `site:` is optional. This repository's own config sets only
+`annotate.after-build`, because detection finds Starlight in `docs/`.
 
 ```yaml title="manni.config.yaml"
 site:
@@ -246,6 +386,11 @@ site:
     start: pnpm dev --port 4000
     build: pnpm build
     preview: npx serve dist -l 4000
+  # The built site, relative to `dir`.
+  out: dist
+  annotate:
+    # `build` and `preview` run `annotate` after a successful build.
+    after-build: true
 ```
 
 | Key | Type | Default | Description |
@@ -254,6 +399,8 @@ site:
 | `site.commands.start` | string | detected | Replaces the dev-server command. |
 | `site.commands.build` | string | detected | Replaces the build command. `preview` runs it too. |
 | `site.commands.preview` | string | detected | Replaces the serve step of `preview`. The build still runs first. |
+| `site.out` | string | the framework's output | The built site, relative to `site.dir`. `annotate` and the built-in server read it. |
+| `site.annotate.after-build` | boolean | `false` | When `true`, `build` and `preview` run `annotate` after a successful build. `start` never annotates. |
 
 A set command replaces the detected one for its verb, and the others stay
 detected. When every command a verb needs is set, detection is skipped. So a
@@ -264,7 +411,7 @@ refused, exit `2`.
 ## Messages and exit codes
 
 Every diagnostic goes to stderr, prefixed `manni:`. Stdout carries the
-framework's own output and the built-in server's URL.
+framework's own output, the built-in server's URL and the report of `annotate`.
 
 | When | Line | Exit |
 |---|---|---|
@@ -292,9 +439,36 @@ framework's own output and the built-in server's URL.
 | Arguments after `--` for the built-in server | `manni: MkDocs previews through manni's built-in server, which takes no extra arguments. Drop the arguments after --.` | `2` |
 | A `-c` file that does not exist | `manni: Config file not found: "ci/manni.config.yaml".` | `2` |
 | `[dir]` does not exist | `manni: website/ does not exist.` | `2` |
-| An unknown config key | ``manni.config.yaml: `site:` has unknown key "framework". Supported keys: dir, commands.`` | `2` |
+| An unknown config key | ``manni.config.yaml: `site:` has unknown key "framework". Supported keys: dir, commands, out, annotate.`` | `2` |
 | A config value of the wrong type | `manni.config.yaml: site.commands.start must be a string.` | `2` |
 | An empty configured command | `manni.config.yaml: site.commands.build must not be empty.` | `2` |
+| A wrong `after-build` type | `manni.config.yaml: site.annotate.after-build must be a boolean.` | `2` |
+
+`annotate` prints these. A line under the success line is indented by two
+spaces, and names the built page relative to the output.
+
+| When | Line | Exit |
+|---|---|---|
+| Before the join | `manni: Starlight in docs/. Annotating docs/dist from docs/public/graph/chunks.json.` | n/a |
+| Annotated (stdout) | `docs/dist: 258 pages annotated. 4163 of 4202 pins placed, 39 listed on their page only. 2 blocks carry a verification.` | `0` |
+| A pin's text appears twice (stdout) | `cite/fix/index.html: 1 pin not placed, because its text appears twice: decode-sample-changed.` | `0` |
+| No block holds a pin's text (stdout) | `key/ci/index.html: 1 pin not placed, because no block holds its text: no-key-message.` | `0` |
+| No block holds a statement's lines (stdout) | `cite/set-up/index.html: 1 statement not placed, because no block holds lines 53-54.` | `0` |
+| A page with no built page (stdout) | `docs/src/content/docs/x.mdx: no built page at docs/dist/x/index.html.` | `0` |
+| A block with an error-severity pin (stdout) | `cite/index.html: 1 block drifted, because a source changed: fetch-timeout.` | `0` |
+| A unified framework with no stamps (a warning) | `manni: docs/dist carries no line stamps, so blocks are placed by text alone. Add @hawkeyexl/manni/site/rehype to the framework's rehype plugins.` | n/a |
+| A page source that cannot be read (a warning) | `manni: docs/src/content/docs/x.mdx could not be read, so its pins are placed by line alone: ENOENT: no such file or directory, open 'docs/src/content/docs/x.mdx'.` | n/a |
+| Chunks published outside git | `manni: chunks.json carries no commit, so pages get no data-manni-commit.` | n/a |
+| No built site | `manni: no built site at docs/dist. Run manni site build first, or pass --out.` | `2` |
+| No chunk artifact | `manni: docs/public/graph/chunks.json does not exist; run manni graph publish.` | `2` |
+| Not a chunk manifest | `manni: notes.json is not a chunk manifest; run manni graph publish.` | `2` |
+| An artifact from another graph | `manni: docs/public/graph/chunks.json was built from another graph; run manni graph publish.` | `2` |
+| A Nextra or Fumadocs server build | `manni: docs/out does not exist. Nextra writes static pages only with output: "export" in next.config.` | `2` |
+| Mintlify or Fern | `manni: Mintlify builds on its own host, so there is no local site to annotate.` | `2` |
+| No site found, and no `--out` | `manni: no docs site found in ./, docs/, website/ or site/. Pass the site's directory, or pass --out.` | `2` |
+| No framework, and no `--out` | `manni: no docs framework detected in website/. Pass --out, or set site.out in manni.config.yaml.` | `2` |
+| Two frameworks, and no `--out` | `manni: docs/ holds more than one docs site: Docusaurus (@docusaurus/core), MkDocs (mkdocs.yml). Pass --out, or set site.out in manni.config.yaml.` | `2` |
+| An unknown `--format` | `manni: Unknown --format "sarif". Use pretty or json.` | `2` |
 
 A hint that names `site.commands.<verb>` names the verb that ran. The current
 directory shows as `./`, as in `Starlight in ./.` for a site at the root. Two
@@ -307,7 +481,7 @@ operational error, and the framework has already printed why.
 
 | Code | Meaning |
 |---|---|
-| `0` | The build succeeded, or a signal stopped the server. |
+| `0` | The build succeeded, a signal stopped the server, or `annotate` ran, whatever the pins say. |
 | `2` | Nothing to run, a usage error, or the command manni ran failed. |
 
 ## Examples
@@ -319,13 +493,17 @@ In this repository unless noted.
 $ manni site start
 manni: Starlight in docs/. Running npm run dev -- --host 127.0.0.1 --port 4321
 
-# A production build only
+# A production build, annotated, because site.annotate.after-build is true here
 $ manni site build
 manni: Starlight in docs/. Running npm run build
+manni: Starlight in docs/. Annotating docs/dist from docs/public/graph/chunks.json.
+docs/dist: 258 pages annotated. 4163 of 4202 pins placed, 39 listed on their page only. 2 blocks carry a verification.
 
-# Build, then serve; a11y check in another terminal needs no flags
+# Build, annotate, then serve; a11y check in another terminal needs no flags
 $ manni site preview
 manni: Starlight in docs/. Running npm run build
+manni: Starlight in docs/. Annotating docs/dist from docs/public/graph/chunks.json.
+docs/dist: 258 pages annotated. 4163 of 4202 pins placed, 39 listed on their page only. 2 blocks carry a verification.
 manni: Starlight in docs/. Running npm run preview -- --host 127.0.0.1 --port 4321
 
 # A directory named, and a port chosen (a Docusaurus repository)
@@ -340,6 +518,17 @@ http://127.0.0.1:8000/
 # A configured command (site.commands.start: pnpm dev --port 4000)
 $ manni site start
 manni: Running site.commands.start in docs/: pnpm dev --port 4000
+
+# Join the graph's pins to the built site, after manni graph publish
+$ manni site annotate
+manni: Starlight in docs/. Annotating docs/dist from docs/public/graph/chunks.json.
+docs/dist: 258 pages annotated. 4163 of 4202 pins placed, 39 listed on their page only. 2 blocks carry a verification.
+
+# The unplaced pins whose text repeats, for a script
+$ manni site annotate -f json | jq '.unplaced[] | select(.reason == "repeated-text")'
+
+# Every annotate option at once
+$ manni site annotate docs --out docs/dist --chunks docs/public/graph/chunks.json -f json -c manni.config.yaml
 
 # Everything at once
 $ manni site preview docs -c ci/manni.config.yaml --host 0.0.0.0 --port 4000 -- --open

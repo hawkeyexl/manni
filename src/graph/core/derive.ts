@@ -5,6 +5,7 @@
  */
 import type { DocModel } from "../types.js";
 import type { TermLabel } from "../../shared/term-labels.js";
+import { spellLines } from "../../shared/pin.js";
 import { canonicalLanguage, termIndex } from "./concepts.js";
 import type { DeriveSource } from "./config.js";
 import type { GitHistory } from "./git.js";
@@ -356,6 +357,45 @@ export function deriveGraph(docs: DocModel[], options: DeriveOptions): Quad[] {
     }
   };
 
+  /** Verification nodes minted per subject, so two statements on one section never share one. */
+  const verifications = new Map<string, number>();
+
+  /**
+   * `last-verified` and `verified-by` (proposal 0098), on a document, a section
+   * or a block alike (proposal 0099). Each `verified-by` entry is one
+   * graph:Verification. It gets an IRI under the subject's fragment, never a
+   * blank node: `<doc>#/verified-by/1`, `<doc>#slug/verified-by/1`,
+   * `<doc>#slug.2/verified-by/1`. A slug never holds a `/`, so none collide.
+   */
+  const emitVerification = (subject: string, fields: Record<string, unknown>) => {
+    const last = asString(fields["last-verified"]);
+    if (last) add(subject, `${NS.graph}lastVerified`, dateTerm(last));
+    const prefix = subject.includes("#") ? subject : `${subject}#`;
+    for (const entry of recordEntries(fields["verified-by"])) {
+      const n = (verifications.get(subject) ?? 0) + 1;
+      verifications.set(subject, n);
+      const node = `${prefix}/verified-by/${String(n)}`;
+      add(subject, `${NS.graph}verifiedBy`, iri(node));
+      add(node, RDF_TYPE, iri(`${NS.graph}Verification`));
+      const tool = asString(entry["tool"]);
+      if (tool) add(node, `${NS.graph}tool`, lit(tool));
+      const check = asString(entry["check"]);
+      if (check) add(node, `${NS.graph}check`, lit(check));
+      const version = asString(entry["version"]);
+      if (version) add(node, `${NS.graph}version`, lit(version));
+      const passed = asString(entry["passed"]);
+      if (passed) add(node, `${NS.graph}passed`, dateTerm(passed));
+    }
+  };
+
+  /**
+   * A node under `subject`: `<doc>#<suffix>` for a document, and
+   * `<subject>.<suffix>` for a section or block, which already has a fragment.
+   * github-slugger never emits a dot, so none collides with a heading slug.
+   */
+  const partIri = (subject: string, suffix: string): string =>
+    subject.includes("#") ? `${subject}.${suffix}` : `${subject}#${suffix}`;
+
   const docByPath = new Map(docs.map((d) => [normalizeDocPath(d.path), d]));
   const prov = sources.has("provenance");
 
@@ -384,7 +424,7 @@ export function deriveGraph(docs: DocModel[], options: DeriveOptions): Quad[] {
     name: string,
   ): void => {
     if (!qualified) return;
-    const node = `${docIri}#prov.attribution.${conceptSlug(name)}`;
+    const node = partIri(docIri, `prov.attribution.${conceptSlug(name)}`);
     add(docIri, `${NS.prov}qualifiedAttribution`, iri(node));
     add(node, RDF_TYPE, iri(`${NS.prov}Attribution`));
     add(node, `${NS.prov}agent`, iri(agentIri));
@@ -444,84 +484,87 @@ export function deriveGraph(docs: DocModel[], options: DeriveOptions): Quad[] {
       add(docIri, predicate, iri(targetIri));
       if (inverse) add(targetIri, inverse, iri(docIri));
     } else {
-      add(docIri, `${NS.graph}brokenLink`, lit(raw));
+      // On the document even when a statement wrote it: a broken link is the
+      // page's to fix, and only a Document carries graph:brokenLink.
+      add(mintDocIri(baseIri, doc.path), `${NS.graph}brokenLink`, lit(raw));
     }
   };
 
-  for (const doc of docs) {
-    const docIri = mintDocIri(baseIri, doc.path);
-    const fm = doc.frontmatter;
+  /**
+   * The front-matter mapping. A page's front matter derives onto its document
+   * through it, and an inline `meta` statement's fields derive onto its
+   * section or block through it too (proposal 0099, decisions 10a and 10c),
+   * so the levels cannot drift. A section keeps its heading as its title, and
+   * only a document falls back to its first H1. `language` is what the node
+   * itself declares, and `labels` is the language its concepts and questions
+   * are read in. Returns which dates it wrote, so git fills only the gaps.
+   */
+  const deriveFields = (
+    subject: string,
+    doc: DocModel,
+    fm: Record<string, unknown>,
+    level: "document" | "section" | "block",
+    language: string | undefined,
+    labels: string | undefined,
+  ): { created: boolean; modified: boolean } => {
     const block = graphBlock(fm);
-    // `block` is the `graph` block as written (block-only facts: sections,
-    // provenance, the SKOS hierarchy); `harvested` folds in the page-level
-    // fallbacks.
+    // `block` is the `graph` block as written (block-only facts: provenance,
+    // the SKOS hierarchy); `harvested` folds in the page-level fallbacks.
     const harvested = resolveGraph(block, fm);
-    // The page's own key outranks the route it sits under (ADR 01037): a
-    // single English page inside a translated tree can correct its label,
-    // and a corpus that declares nothing keeps deriving nothing.
-    const pageLanguage = canonicalLanguage(
-      asString(fmValue(fm, ["lang", "language"])) ?? doc.routeLanguage,
-    );
-    let createdEmitted = false;
-    let modifiedEmitted = false;
-
-    add(docIri, RDF_TYPE, iri(`${NS.graph}Document`));
-    if (prov) add(docIri, RDF_TYPE, iri(`${NS.prov}Entity`));
-    add(docIri, `${NS.graph}path`, lit(normalizeDocPath(doc.path)));
-    // Intrinsic like path, not gated behind a derive source (ADR 01036): a hash
-    // present only sometimes cannot tell "unchanged" from "not stamped", which
-    // is the whole question it exists to answer.
-    add(docIri, `${NS.graph}contentHash`, lit(doc.contentHash));
+    const blockLabel = block ? asString(block["label"]) : undefined;
+    let created = false;
+    let modified = false;
 
     if (sources.has("frontmatter")) {
-      const title = asString(fmValue(fm, ["title"])) ?? doc.firstH1;
-      if (title) add(docIri, `${NS.dcterms}title`, lit(title));
+      const title =
+        level === "section"
+          ? undefined
+          : (asString(fmValue(fm, ["title"])) ??
+            (level === "document" ? doc.firstH1 : undefined));
+      if (title) add(subject, `${NS.dcterms}title`, lit(title));
 
       const description = asString(fmValue(fm, ["description"]));
-      if (description)
-        add(docIri, `${NS.dcterms}description`, lit(description));
+      if (description) add(subject, `${NS.dcterms}description`, lit(description));
 
       for (const author of asPersonNames(fmValue(fm, ["author", "authors"]))) {
         if (prov) {
-          attributeAuthor(docIri, author);
+          attributeAuthor(subject, author);
         } else {
-          add(docIri, `${NS.dcterms}creator`, lit(author));
+          add(subject, `${NS.dcterms}creator`, lit(author));
         }
       }
 
       // Stewardship's spelling first (`created`, `last-updated`), then the
       // aliases other generators write. One value per predicate: the first
       // key present wins and the rest are ignored.
-      const created = asString(fmValue(fm, ["created", "date"]));
-      if (created) {
-        add(docIri, `${NS.dcterms}created`, dateTerm(created));
-        if (prov) add(docIri, `${NS.prov}generatedAtTime`, dateTerm(created));
-        createdEmitted = true;
+      const createdOn = asString(fmValue(fm, ["created", "date"]));
+      if (createdOn) {
+        add(subject, `${NS.dcterms}created`, dateTerm(createdOn));
+        if (prov) add(subject, `${NS.prov}generatedAtTime`, dateTerm(createdOn));
+        created = true;
       }
 
-      const modified = asString(
+      const modifiedOn = asString(
         fmValue(fm, ["last-updated", "updated", "lastmod", "modified"]),
       );
-      if (modified) {
-        add(docIri, `${NS.dcterms}modified`, dateTerm(modified));
-        modifiedEmitted = true;
+      if (modifiedOn) {
+        add(subject, `${NS.dcterms}modified`, dateTerm(modifiedOn));
+        modified = true;
       }
 
       // Written in its canonical spelling: tags are case-insensitive, and
       // `en-us` beside `en-US` would otherwise split one locale into two
       // indexes and miss a `--lang` filter typed the other way.
-      if (pageLanguage) add(docIri, `${NS.dcterms}language`, lit(pageLanguage));
+      if (language) add(subject, `${NS.dcterms}language`, lit(language));
 
       // ai-context's questions this page should be found for (proposal 0086
       // §7), in the page's language. Only the text: an item's answer pins and
       // review state are test data `check` reads from the source (0087).
       for (const { question } of readSampleQuestions(fmValue(fm, ["sample-questions"]))) {
         add(
-          docIri,
+          subject,
           `${NS.graph}sampleQuestion`,
-          pageLanguage
-            ? { kind: "literal", value: question, language: pageLanguage }
-            : lit(question),
+          labels ? { kind: "literal", value: question, language: labels } : lit(question),
         );
       }
 
@@ -533,7 +576,7 @@ export function deriveGraph(docs: DocModel[], options: DeriveOptions): Quad[] {
       for (const raw of asStringArray(fmValue(fm, ["translation-of"]))) {
         provTargetEdge(
           doc,
-          docIri,
+          subject,
           raw,
           `${NS.schema}translationOfWork`,
           `${NS.schema}workTranslation`,
@@ -542,25 +585,22 @@ export function deriveGraph(docs: DocModel[], options: DeriveOptions): Quad[] {
 
       // The graph block: the SKOS hierarchy has no page-level twin, so it reads
       // the block as written (frontmatter key `graph`, RDF prefix `graph:`).
-      const blockLabel = block ? asString(block["label"]) : undefined;
-      if (block) {
-        if (blockLabel) {
-          const topic = concept(blockLabel, pageLanguage);
-          add(docIri, `${NS.foaf}primaryTopic`, iri(topic));
-          for (const alt of asStringArray(block["alt-labels"])) {
-            add(topic, `${NS.skos}altLabel`, lit(alt));
-          }
-          // Frontmatter key → SKOS predicate. `related-concepts` is spelled for
-          // what it points at (in step with the page-level `related-pages`);
-          // the predicate it emits is still plain skos:related.
-          for (const [key, predicate] of [
-            ["broader", "broader"],
-            ["narrower", "narrower"],
-            ["related-concepts", "related"],
-          ] as const) {
-            for (const value of asStringArray(block[key])) {
-              hierarchy(topic, predicate, concept(value, pageLanguage));
-            }
+      if (block && blockLabel) {
+        const topic = concept(blockLabel, labels);
+        add(subject, `${NS.foaf}primaryTopic`, iri(topic));
+        for (const alt of asStringArray(block["alt-labels"])) {
+          add(topic, `${NS.skos}altLabel`, lit(alt));
+        }
+        // Frontmatter key → SKOS predicate. `related-concepts` is spelled for
+        // what it points at (in step with the page-level `related-pages`);
+        // the predicate it emits is still plain skos:related.
+        for (const [key, predicate] of [
+          ["broader", "broader"],
+          ["narrower", "narrower"],
+          ["related-concepts", "related"],
+        ] as const) {
+          for (const value of asStringArray(block[key])) {
+            hierarchy(topic, predicate, concept(value, labels));
           }
         }
       }
@@ -573,15 +613,16 @@ export function deriveGraph(docs: DocModel[], options: DeriveOptions): Quad[] {
         const label = asString(fm["label"]);
         const termId =
           (id !== undefined && terms.groups.has(id) ? id : undefined) ??
-          (label === undefined ? undefined : terms.resolve(label, pageLanguage));
+          (label === undefined ? undefined : terms.resolve(label, labels));
         if (termId !== undefined) {
-          add(docIri, `${NS.foaf}primaryTopic`, iri(mintTermConceptIri(baseIri, termId)));
+          add(subject, `${NS.foaf}primaryTopic`, iri(mintTermConceptIri(baseIri, termId)));
         }
       }
 
       // iiRDS Core + Software typing (ADR 01012), over the harvested block so a
       // page typed only at the top level still types its document (ADR 01024).
-      emitIirdsTyping(docIri, harvested);
+      emitIirdsTyping(subject, harvested);
+      emitVerification(subject, fm);
     }
 
     if (sources.has("tags")) {
@@ -589,14 +630,135 @@ export function deriveGraph(docs: DocModel[], options: DeriveOptions): Quad[] {
       // tag harvest (`tags`/`keywords`), and the concepts fact — where
       // `graph.concepts` beats the page-level `concepts` outright rather than
       // adding to it (ADR 01024).
-      const labels = [
+      const tagged = [
         ...asStringArray(fmValue(fm, ["tags", "keywords"])),
         ...asStringArray(harvested["concepts"]),
       ];
-      for (const label of labels) {
-        add(docIri, `${NS.dcterms}subject`, iri(concept(label, pageLanguage)));
+      for (const label of tagged) {
+        add(subject, `${NS.dcterms}subject`, iri(concept(label, labels)));
       }
     }
+
+    if (prov) {
+      // graph.derived-from / graph.revision-of: doc-relative path,
+      // repo-relative path, or URL — one shared resolution. `derived-from` is block-only
+      // (document lineage is curated by hand); `revision-of` harvests the
+      // page-level `supersedes` when the block is silent (ADR 01024).
+      for (const raw of block ? asStringArray(block["derived-from"]) : []) {
+        provTargetEdge(doc, subject, raw, `${NS.prov}wasDerivedFrom`);
+      }
+      for (const raw of asStringArray(harvested["revision-of"])) {
+        provTargetEdge(doc, subject, raw, `${NS.prov}wasRevisionOf`);
+      }
+
+      // Whole-page generation. There is no page-level `generated-by` any more
+      // (proposal 0046): the machines that wrote a page are the DISTINCT
+      // `generated-by` values across its page-level `provenance` entries, each
+      // of which pins a line range. The activity stays one per page, so a
+      // single-model page emits exactly what it always did. Its fragment uses
+      // a "." separator, which github-slugger can never produce — heading
+      // slugs cannot collide with provenance fragments.
+      const machines = [
+        ...new Set(
+          recordEntries(fmValue(fm, ["provenance"])).flatMap((e) => {
+            const m = asString(e["generated-by"]);
+            return m === undefined ? [] : [m];
+          }),
+        ),
+      ].sort(byCodeUnit);
+      if (machines.length > 0) {
+        const activity = partIri(subject, "prov.generation");
+        add(subject, `${NS.prov}wasGeneratedBy`, iri(activity));
+        add(activity, RDF_TYPE, iri(`${NS.prov}Activity`));
+        for (const machine of machines) {
+          const model = agentNode(machine, "SoftwareAgent");
+          add(activity, `${NS.prov}wasAssociatedWith`, iri(model));
+          qualifyAssociation(activity, model, ROLE.generator);
+        }
+      }
+
+      // Page-level `meta-provenance` (written by `manni graph fill`): one
+      // activity PER MODEL so multiple fills by different models keep truthful
+      // attribution. Only the doc's own topic concept is prov:generated —
+      // shared subject/tag concepts are never attributed, or one doc's LLM
+      // would taint every doc using the same tag.
+      for (const entry of recordEntries(fmValue(fm, ["meta-provenance"]))) {
+        const model = asString(entry["generated-by"]);
+        if (!model) continue;
+        // A pointer names a value anywhere on the page, so only the ones under
+        // `/graph/` are graph's business. The filled field is the first segment
+        // after it: `/graph/sections/install/type` attributes `sections`, the
+        // field a reviewer would look at. First pointer wins on confidence,
+        // which 0046 keys by the whole pointer rather than by the field.
+        const pointers = asStringArray(entry["fields"]);
+        const confidence = asRecord(entry["confidence"]);
+        const filled = new Map<string, string>();
+        for (const pointer of pointers) {
+          if (!pointer.startsWith("/graph/")) continue;
+          const field = pointerSegments(pointer)[1];
+          if (field === undefined || field === "") continue;
+          if (!filled.has(field)) filled.set(field, pointer);
+        }
+        if (filled.size === 0) continue;
+        const activity = partIri(subject, `prov.graph-fill.${conceptSlug(model)}`);
+        const modelAgent = agentNode(model, "SoftwareAgent");
+        add(activity, RDF_TYPE, iri(`${NS.prov}Activity`));
+        add(activity, `${NS.prov}wasAssociatedWith`, iri(modelAgent));
+        qualifyAssociation(activity, modelAgent, ROLE.generator);
+        // Each filled field is reified as an entry node carrying its name and
+        // (when fill recorded one) the model's confidence — a plain,
+        // blank-node-free per-field audit edge (ADR 01015).
+        for (const [field, pointer] of filled) {
+          const fieldNode = `${activity}.field.${field}`;
+          add(activity, `${NS.graph}filledFieldEntry`, iri(fieldNode));
+          add(fieldNode, `${NS.graph}filledField`, lit(field));
+          const c = confidence[pointer];
+          if (typeof c === "number") {
+            add(
+              fieldNode,
+              `${NS.graph}confidence`,
+              typedLit(String(Math.round(c * 100) / 100), `${NS.xsd}decimal`),
+            );
+          }
+        }
+        if (blockLabel && filled.has("label")) {
+          const id = terms.resolve(blockLabel, labels);
+          add(
+            activity,
+            `${NS.prov}generated`,
+            iri(
+              id === undefined
+                ? mintConceptIri(baseIri, blockLabel)
+                : mintTermConceptIri(baseIri, id),
+            ),
+          );
+        }
+      }
+    }
+    return { created, modified };
+  };
+
+  for (const doc of docs) {
+    const docIri = mintDocIri(baseIri, doc.path);
+    const fm = doc.frontmatter;
+    // The `graph` block as written, for the section typing it carries.
+    const block = graphBlock(fm);
+    // The page's own key outranks the route it sits under (ADR 01037): a
+    // single English page inside a translated tree can correct its label,
+    // and a corpus that declares nothing keeps deriving nothing.
+    const pageLanguage = canonicalLanguage(
+      asString(fmValue(fm, ["lang", "language"])) ?? doc.routeLanguage,
+    );
+
+    add(docIri, RDF_TYPE, iri(`${NS.graph}Document`));
+    if (prov) add(docIri, RDF_TYPE, iri(`${NS.prov}Entity`));
+    add(docIri, `${NS.graph}path`, lit(normalizeDocPath(doc.path)));
+    // Intrinsic like path, not gated behind a derive source (ADR 01036): a hash
+    // present only sometimes cannot tell "unchanged" from "not stamped", which
+    // is the whole question it exists to answer.
+    add(docIri, `${NS.graph}contentHash`, lit(doc.contentHash));
+
+    const dated = deriveFields(docIri, doc, fm, "document", pageLanguage, pageLanguage);
 
     if (sources.has("sections")) {
       // graph.sections: slug-keyed iiRDS typing attached to section nodes
@@ -636,6 +798,39 @@ export function deriveGraph(docs: DocModel[], options: DeriveOptions): Quad[] {
         if (!sectionSlugs.has(slug)) {
           add(docIri, `${NS.graph}brokenSectionRef`, lit(slug));
         }
+      }
+
+      // Inline `meta` statements (proposal 0099). One on a heading describes
+      // that section. Any other mints a graph:Block, `<doc>#<slug>.<n>`, the
+      // nth statement in its section, or `<doc>#.<n>` before any heading. A
+      // heading statement whose heading graph does not find is a block. Its
+      // fields derive as front matter does (decisions 10a and 10c), and nothing
+      // is copied from the page (ADR 01013), not even its language.
+      const headed = doc.sections.filter((s) => s.line !== null);
+      const blocksIn = new Map<string, number>();
+      for (const statement of doc.statements ?? []) {
+        const { start, end } = statement.anchor;
+        const own = canonicalLanguage(asString(fmValue(statement.data, ["lang", "language"])));
+        const heading =
+          statement.scope === "section"
+            ? headed.find((s) => s.line !== null && s.line >= start && s.line <= end)
+            : undefined;
+        if (heading) {
+          const secIri = mintSectionIri(docIri, heading.slug);
+          deriveFields(secIri, doc, statement.data, "section", own, own ?? pageLanguage);
+          continue;
+        }
+        const owner = headed.filter((s) => s.line !== null && s.line <= start).at(-1);
+        const slug = owner?.slug ?? "";
+        const n = (blocksIn.get(slug) ?? 0) + 1;
+        blocksIn.set(slug, n);
+        const blockIri = mintSectionIri(docIri, `${slug}.${String(n)}`);
+        add(owner ? mintSectionIri(docIri, slug) : docIri, `${NS.dcterms}hasPart`, iri(blockIri));
+        add(blockIri, RDF_TYPE, iri(`${NS.graph}Block`));
+        add(blockIri, `${NS.graph}lines`, lit(spellLines(statement.anchor)));
+        if (statement.pin !== undefined) add(blockIri, `${NS.graph}pin`, lit(statement.pin));
+        add(blockIri, `${NS.graph}pinStatus`, lit(statement.status));
+        deriveFields(blockIri, doc, statement.data, "block", own, own ?? pageLanguage);
       }
     }
 
@@ -686,27 +881,16 @@ export function deriveGraph(docs: DocModel[], options: DeriveOptions): Quad[] {
     }
 
     if (prov) {
-      // graph.derived-from / graph.revision-of: doc-relative path,
-      // repo-relative path, or URL — one shared resolution. `derived-from` is block-only
-      // (document lineage is curated by hand); `revision-of` harvests the
-      // page-level `supersedes` when the block is silent (ADR 01024).
-      for (const raw of block ? asStringArray(block["derived-from"]) : []) {
-        provTargetEdge(doc, docIri, raw, `${NS.prov}wasDerivedFrom`);
-      }
-      for (const raw of asStringArray(harvested["revision-of"])) {
-        provTargetEdge(doc, docIri, raw, `${NS.prov}wasRevisionOf`);
-      }
-
       // Per-file git history (provenance.git): frontmatter always wins on
       // dates; authors merge; renames become revision edges to the
       // historical-path entities.
       const gitFile = options.gitHistory?.files.get(normalizeDocPath(doc.path));
       if (gitFile) {
-        if (!createdEmitted && gitFile.created) {
+        if (!dated.created && gitFile.created) {
           add(docIri, `${NS.dcterms}created`, dateTerm(gitFile.created));
           add(docIri, `${NS.prov}generatedAtTime`, dateTerm(gitFile.created));
         }
-        if (!modifiedEmitted && gitFile.modified) {
+        if (!dated.modified && gitFile.modified) {
           add(docIri, `${NS.dcterms}modified`, dateTerm(gitFile.modified));
         }
         for (const author of gitFile.authors) {
@@ -716,91 +900,6 @@ export function deriveGraph(docs: DocModel[], options: DeriveOptions): Quad[] {
           const oldIri = mintDocIri(baseIri, oldPath);
           add(docIri, `${NS.prov}wasRevisionOf`, iri(oldIri));
           add(oldIri, RDF_TYPE, iri(`${NS.prov}Entity`));
-        }
-      }
-
-      // Whole-page generation. There is no page-level `generated-by` any more
-      // (proposal 0046): the machines that wrote a page are the DISTINCT
-      // `generated-by` values across its page-level `provenance` entries, each
-      // of which pins a line range. The activity stays one per page, so a
-      // single-model page emits exactly what it always did. Its fragment uses
-      // a "." separator, which github-slugger can never produce — heading
-      // slugs cannot collide with provenance fragments.
-      const machines = [
-        ...new Set(
-          recordEntries(fmValue(fm, ["provenance"])).flatMap((e) => {
-            const m = asString(e["generated-by"]);
-            return m === undefined ? [] : [m];
-          }),
-        ),
-      ].sort(byCodeUnit);
-      if (machines.length > 0) {
-        const activity = `${docIri}#prov.generation`;
-        add(docIri, `${NS.prov}wasGeneratedBy`, iri(activity));
-        add(activity, RDF_TYPE, iri(`${NS.prov}Activity`));
-        for (const machine of machines) {
-          const model = agentNode(machine, "SoftwareAgent");
-          add(activity, `${NS.prov}wasAssociatedWith`, iri(model));
-          qualifyAssociation(activity, model, ROLE.generator);
-        }
-      }
-
-      // Page-level `meta-provenance` (written by `manni graph fill`): one
-      // activity PER MODEL so multiple fills by different models keep truthful
-      // attribution. Only the doc's own topic concept is prov:generated —
-      // shared subject/tag concepts are never attributed, or one doc's LLM
-      // would taint every doc using the same tag.
-      for (const entry of recordEntries(fmValue(fm, ["meta-provenance"]))) {
-        const model = asString(entry["generated-by"]);
-        if (!model) continue;
-        // A pointer names a value anywhere on the page, so only the ones under
-        // `/graph/` are graph's business. The filled field is the first segment
-        // after it: `/graph/sections/install/type` attributes `sections`, the
-        // field a reviewer would look at. First pointer wins on confidence,
-        // which 0046 keys by the whole pointer rather than by the field.
-        const pointers = asStringArray(entry["fields"]);
-        const confidence = asRecord(entry["confidence"]);
-        const filled = new Map<string, string>();
-        for (const pointer of pointers) {
-          if (!pointer.startsWith("/graph/")) continue;
-          const field = pointerSegments(pointer)[1];
-          if (field === undefined || field === "") continue;
-          if (!filled.has(field)) filled.set(field, pointer);
-        }
-        if (filled.size === 0) continue;
-        const activity = `${docIri}#prov.graph-fill.${conceptSlug(model)}`;
-        const modelAgent = agentNode(model, "SoftwareAgent");
-        add(activity, RDF_TYPE, iri(`${NS.prov}Activity`));
-        add(activity, `${NS.prov}wasAssociatedWith`, iri(modelAgent));
-        qualifyAssociation(activity, modelAgent, ROLE.generator);
-        // Each filled field is reified as an entry node carrying its name and
-        // (when fill recorded one) the model's confidence — a plain,
-        // blank-node-free per-field audit edge (ADR 01015).
-        for (const [field, pointer] of filled) {
-          const fieldNode = `${activity}.field.${field}`;
-          add(activity, `${NS.graph}filledFieldEntry`, iri(fieldNode));
-          add(fieldNode, `${NS.graph}filledField`, lit(field));
-          const c = confidence[pointer];
-          if (typeof c === "number") {
-            add(
-              fieldNode,
-              `${NS.graph}confidence`,
-              typedLit(String(Math.round(c * 100) / 100), `${NS.xsd}decimal`),
-            );
-          }
-        }
-        const label = block ? asString(block["label"]) : undefined;
-        if (label && filled.has("label")) {
-          const id = terms.resolve(label, pageLanguage);
-          add(
-            activity,
-            `${NS.prov}generated`,
-            iri(
-              id === undefined
-                ? mintConceptIri(baseIri, label)
-                : mintTermConceptIri(baseIri, id),
-            ),
-          );
         }
       }
     }

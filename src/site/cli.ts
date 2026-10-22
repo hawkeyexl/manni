@@ -2,17 +2,30 @@
  * The `site` domain's commander program. Mounted by `src/cli.ts` under
  * `manni site`; no entry point of its own. Like `key` (proposal 0045), `site`
  * is a family resource with verbs: the site every other domain checks
- * (proposal 0082). Three verbs, no default subcommand.
+ * (proposal 0082). Four verbs, no default subcommand.
  *
- * These verbs print no report: the framework's output is the output, on the
- * inherited stdio. manni's own lines are diagnostics on stderr. Exit `0` done,
- * `2` operational/usage, and never `1`, because nothing here is a finding.
+ * `start`, `build` and `preview` print no report: the framework's output is
+ * the output, on the inherited stdio. `annotate` (proposal 0095) prints its
+ * own. manni's own lines are diagnostics on stderr. Exit `0` done, `2`
+ * operational/usage, and never `1`, because nothing here is a finding.
  */
 import { Command } from "commander";
 import pkg from "../../package.json" with { type: "json" };
 import { fail } from "../shared/run.js";
+import { ANNOTATE_FORMATS, renderAnnotate, runAnnotate, type AnnotateFormat } from "./commands/annotate.js";
 import { runSite } from "./commands/run.js";
+import { SiteError } from "./errors.js";
 import type { Verb } from "./types.js";
+
+/** What commander hands `annotate`'s action. */
+interface AnnotateCliOptions {
+  out?: string;
+  chunks?: string;
+  format: string;
+  config?: string;
+}
+
+const isAnnotateFormat = (value: string): value is AnnotateFormat => (ANNOTATE_FORMATS as readonly string[]).includes(value);
 
 /** What commander hands each verb's action. */
 interface SiteCliOptions {
@@ -101,6 +114,35 @@ export function buildProgram(): Command {
   verb("build", "Build the docs site", false);
   verb("preview", "Build the docs site, then serve the output", true);
 
+  program
+    .command("annotate")
+    .description("Join the graph's pins and statements to the built site, as data attributes")
+    .argument("[dir]", "the site's directory (default: site.dir, else found by search)")
+    .option("--out <dir>", "the built site to annotate (default: site.out, else the framework's output)")
+    .option("--chunks <file>", "the chunk manifest graph publish writes (default: chunks.json beside graph.out)")
+    .option("-f, --format <format>", `output: ${ANNOTATE_FORMATS.join(" | ")}`, "pretty")
+    .option("-c, --config <file>", "path to a manni config file")
+    .action((dir: string | undefined, options: AnnotateCliOptions) => {
+      try {
+        const format = options.format;
+        if (!isAnnotateFormat(format)) {
+          throw new SiteError(`Unknown --format "${format}". Use ${ANNOTATE_FORMATS.join(" or ")}.`);
+        }
+        const report = runAnnotate({
+          cwd: process.cwd(),
+          ...(dir === undefined ? {} : { dir }),
+          ...(options.config === undefined ? {} : { configPath: options.config }),
+          ...(options.out === undefined ? {} : { out: options.out }),
+          ...(options.chunks === undefined ? {} : { chunks: options.chunks }),
+        });
+        process.stdout.write(`${renderAnnotate(report, format)}
+`);
+        process.exitCode = 0;
+      } catch (err) {
+        fail(err);
+      }
+    });
+
   program.addHelpText(
     "after",
     [
@@ -110,6 +152,7 @@ export function buildProgram(): Command {
       "  manni site build",
       "  manni site preview --port 4000        # build, then serve the output",
       "  manni site start website -- --open    # arguments after -- go to the framework",
+      "  manni site annotate                   # join the graph's pins to the built site",
     ].join("\n"),
   );
 

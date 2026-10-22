@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE task PUBLIC "-//OASIS//DTD DITA Task//EN" "task.dtd">
+<task id="an-edited-step">
+  <title>An edited step</title>
+  <taskbody>
+    <steps>
+      <step><?manni meta sha256-4fdb8f5970c21a3d5f455e82d58649883ef2c63a950201b0fde556e14ae0a93e {"last-verified":"2026-10-21","verified-by":[{"tool":"doc-detective","check":"an-edited-step","passed":"2026-10-21"}]}?>
+        <cmd>Run the installer as an administrator.</cmd>
+        <info>It takes about a minute.</info>
+      </step>
+    </steps>
+  </taskbody>
+</task>

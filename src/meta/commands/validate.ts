@@ -81,6 +81,7 @@ import {
   resolveElements,
 } from "../core/resolve-schema.js";
 import { Validator } from "../core/validator.js";
+import { readStatements, statementFieldFindings } from "../core/statements.js";
 import { documentSchemaMessage, schemaLoadOptions } from "../core/schema-registry.js";
 import { runChecks, type CheckEntry } from "../core/checks.js";
 import {
@@ -824,11 +825,20 @@ export async function runValidate(
         skippedDefaultOnly.add(label);
         return;
       }
-      results.push(
-        parseErrorResult(label, extractor.name, errorMessage(err), "parse"),
+      const failed = parseErrorResult(label, extractor.name, errorMessage(err), "parse");
+      // An XML comment holding `--` is what the parser refused, so the
+      // statement that put it there is named beside the parse error (0099).
+      failed.errors.push(
+        ...readStatements(content, extractor.name).findings.filter(
+          (f) => f.keyword === "statement-xml-comment-dashes",
+        ),
       );
+      results.push(failed);
       return;
     }
+    // Inline `meta` statements (proposal 0099), read beside the page's own
+    // metadata and never merged into it.
+    const statements = readStatements(content, extractor.name);
     // The external-metadata merge sits between extraction and everything downstream,
     // so schema resolution, validation, and the corpus checks all see the one
     // object the document and its manifest entry make together.
@@ -1002,6 +1012,13 @@ export async function runValidate(
           extracted.colFor,
           merged.locate,
         )),
+        ...statements.findings,
+        ...(await statementFieldFindings(statements.statements, {
+          validator,
+          schemas: schemaSet,
+          page: own,
+          lineFor: extracted.lineFor,
+        })),
       ];
     } catch (err) {
       // A schema the *document* chose failing to load — unparseable, missing,

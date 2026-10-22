@@ -1,6 +1,6 @@
 docs/src/content/docs/meta/reference/schemas/manni-stewardship.mdx:
   personas: ["sara"]
-  journeys: ["s1"]
+  journeys: ["s1", "s16"]
   visibility: public
   review-interval: P180D
   source-of-truth:
@@ -8,6 +8,8 @@ docs/src/content/docs/meta/reference/schemas/manni-stewardship.mdx:
     - path: src/meta/schemas/stewardship-strict/1.0.0.json
     - path: src/meta/schemas/stewardship/1.1.0.json
     - path: src/meta/schemas/stewardship-strict/1.1.0.json
+    - path: src/meta/schemas/stewardship/1.2.0.json
+    - path: src/meta/schemas/stewardship-strict/1.2.0.json
     - path: src/meta/core/schema-registry.ts
   eval-suite: meta
   evals:
@@ -21,29 +23,26 @@ docs/src/content/docs/meta/reference/schemas/manni-stewardship.mdx:
       grader: ai
   provenance:
     - generated-by: Claude Opus 5.5
-      lines: 2-15
-      integrity: sha256-a5237f51d3dd7762519de08931983491d8b0194f6ec968f8a659139fcc64a763
+      lines: 2-17
+      integrity: sha256-c958fd323375550b0066cf51c715618f4c7a8e59c20d25b497fea2c1ba862512
     - generated-by: Claude Opus 5.5
-      lines: 23-24
+      lines: 25-26
       integrity: sha256-e35de401b3128816c9416d0bbf980ca3a437ccbab4b8108139bbec2b40458165
     - generated-by: Claude Opus 5.5
-      lines: 30-135
-      integrity: sha256-8020367cb0e4ef918e950d71771aabe23673c2263467b9b9b4a80cbb290e0ad6
+      lines: 32-204
+      integrity: sha256-845c8e79da6bc592e2791167284b184befdf0384c4da33bac113f974980732db
     - generated-by: Claude Opus 5.5
-      lines: 139-236
-      integrity: sha256-7b7117f48341db9d63bd0ceb22d6fea009e0eb21ff031f2e79992543ea2869fe
+      lines: 206-317
+      integrity: sha256-0eee59947784a6bba6bd13ddce016ee2da5081c96fd616039c0d934e6a330937
     - generated-by: Claude Opus 5.5
-      lines: 249-273
-      integrity: sha256-1da54b4ebeae02d2c39f7547ca46ffccc7af8c72d6f30b23b7aecaf53270bc2c
+      lines: 330-355
+      integrity: sha256-16f3a9a460fd591e01a0e7287c9ed1257124fa90d2658c4e9d43da1c26789c3a
     - generated-by: Claude Opus 5.5
-      lines: 276
-      integrity: sha256-a36a2dc8ddfdc29e5307280af0b83fa89e8120057836701bf681ef22218bf2ff
+      lines: 357-358
+      integrity: sha256-85df2ea01a1e0b2d0aef29d2d59132612b320a02b6d0f65f612472125555bfd6
     - generated-by: Claude Opus 5.5
-      lines: 279-297
-      integrity: sha256-8f2d0eeccc144273f9d1ab2637df8ef4f2274eff9c83d3caac5092ad3358cdec
-    - generated-by: Claude Opus 5.5
-      lines: 304-308
-      integrity: sha256-6a664097b1d85ebdb8f6ed99f1646022638d6b5e138a82030b8afc3075b5a63d
+      lines: 360-411
+      integrity: sha256-4e0cd946971e5d11bc33408bd885e4374d7b87231e11d49094af14d98c12daa7
   owner:
     - "@hawkeyexl"
   created: 2026-09-26

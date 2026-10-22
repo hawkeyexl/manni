@@ -36,7 +36,7 @@ sample-questions:
 graph:
   label: Keep maintainer metadata out of delivered pages
   type: task
-last-updated: 2026-10-19
+last-updated: 2026-10-22
 tags:
   - field-location
   - x-manni-location
@@ -51,6 +51,9 @@ related-pages:
   - meta-reference-schema-resolution
   - meta-reference-cli
   - meta-schemas-versioning
+verified-by:
+  - tool: doc-detective
+    check: field-location
 ---
 
 import { Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';
@@ -520,15 +523,15 @@ mark every field this way:
 | Built-in | `page` | `external` |
 |---|---|---|
 | [`manni:core:1.0.0`](/manni/meta/reference/schemas/manni-core/) | `title`, `description`, `id`, `type`, `keywords`, `language` | |
-| [`manni:stewardship:1.1.0`](/manni/meta/reference/schemas/manni-stewardship/) | `last-updated` | `authors`, `owner`, `stakeholders`, `reviewed-by`, `created`, `last-reviewed`, `review-interval`, `verified-against`, `source-of-truth` |
+| [`manni:stewardship:1.2.0`](/manni/meta/reference/schemas/manni-stewardship/) | `last-updated`, `last-verified`, `verified-by` | `authors`, `owner`, `stakeholders`, `reviewed-by`, `created`, `last-reviewed`, `review-interval`, `verified-against`, `source-of-truth` |
 | [`manni:audience:1.0.0`](/manni/meta/reference/schemas/manni-audience/) | `audiences`, `intent` | `personas`, `journeys`, `visibility` |
 | [`manni:lifecycle:1.0.0`](/manni/meta/reference/schemas/manni-lifecycle/) | `lifecycle`, `replaced-by` | `supersedes`, `remove-by` |
 | [`manni:structure:1.0.0`](/manni/meta/reference/schemas/manni-structure/) | `applies-to`, `not-applicable-to`, `concepts`, `prerequisites`, `next-steps`, `related-pages` | |
-| [`manni:ai-context:1.1.0`](/manni/meta/reference/schemas/manni-ai-context/) | `risks`, `sample-questions` | `provenance`, `meta-provenance` |
+| [`manni:ai-context:1.2.0`](/manni/meta/reference/schemas/manni-ai-context/) | `risks`, `sample-questions` | `provenance`, `meta-provenance` |
 | [`manni:evals:1.0.0`](/manni/meta/reference/schemas/manni-evals/) | | `evals`, `eval-suite`, `eval-skip` |
 | [`manni:graph:1.0.0`](/manni/meta/reference/schemas/manni-graph/) | `graph` | |
 | [`manni:artifact-evals:1.1.0`](/manni/meta/reference/schemas/manni-artifact-evals/) | | `metadata` |
-| [`manni:citations:1.0.0`](/manni/meta/reference/schemas/manni-citations/) | | `citations` |
+| [`manni:citations:1.1.0`](/manni/meta/reference/schemas/manni-citations/) | | `citations` |
 | [`manni:terminology:1.2.0`](/manni/meta/reference/schemas/manni-terminology/) | `label`, `definition`, `abstract`, `alt-labels`, `hidden-labels`, `broader`, `narrower`, `related-terms`, `see`, `scope-note`, `notation`, the five match fields, and every TBX data category, `concept-entry`, `designations` and `tbx-markup` | |
 
 All but terminology and artifact-evals are in the built-in default set. A run

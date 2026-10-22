@@ -824,12 +824,15 @@ describe("the repository's own manni.config.yaml", () => {
       "core", "audience", "structure", "stewardship", "lifecycle",
       "ai-context", "evals", "graph", "citations",
     ].flatMap((family) => {
-      // Stewardship's default is 1.1.0, which adds the graph output marks (0074).
-      const v = family === "stewardship" ? "1.1.0" : "1.0.0";
-      // ai-context 1.1.0 lets a question pin its answer (0087), and keeps the
-      // 1.0.0 overlay, which never constrains sample-questions.
+      // Stewardship's default is 1.2.0, which adds the graph output marks
+      // (0074) and the verification fields (0098). Citations' is 1.1.0, which
+      // adds the verification fields to an entry (0098).
+      const v = family === "stewardship" ? "1.2.0" : family === "citations" ? "1.1.0" : "1.0.0";
+      // ai-context 1.1.0 lets a question pin its answer (0087), and 1.2.0
+      // keeps those pins out of delivered metadata (0090). Both keep the 1.0.0
+      // overlay, which never constrains sample-questions.
       if (family === "ai-context") {
-        return ["manni:ai-context:1.1.0", "manni:ai-context-strict:1.0.0"];
+        return ["manni:ai-context:1.2.0", "manni:ai-context-strict:1.0.0"];
       }
       return [`manni:${family}:${v}`, `manni:${family}-strict:${v}`];
     }),

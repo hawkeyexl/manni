@@ -167,14 +167,22 @@ describe("fingerprint schema-ref canonicalization", () => {
 });
 
 describe("fingerprint: annotation-only built-in versions", () => {
-  // stewardship 1.1.0 only adds annotations, and the default set moved to it.
-  // A baseline recorded under 1.0.0 must still suppress the same finding.
-  const steward = DEFAULT_SCHEMAS.find((id) => id.startsWith("manni:stewardship:"));
+  // stewardship 1.1.0 only adds annotations. 1.2.0 and citations 1.1.0 only
+  // add optional fields (0098). The default set moved to each, and a baseline
+  // recorded under an earlier version must still suppress the same finding.
   const under = (schema: string) =>
     err({ schema, keyword: "type", instancePath: "/owner", subject: undefined });
 
-  it("the default set carries stewardship 1.1.0", () => {
-    expect(steward).toBe("manni:stewardship:1.1.0");
+  it("the default set carries stewardship 1.2.0 and citations 1.1.0", () => {
+    expect(DEFAULT_SCHEMAS).toContain("manni:stewardship:1.2.0");
+    expect(DEFAULT_SCHEMAS).toContain("manni:citations:1.1.0");
+  });
+
+  it("the default set carries ai-context 1.2.0, annotation-only over 1.1.0 (0090)", () => {
+    expect(DEFAULT_SCHEMAS).toContain("manni:ai-context:1.2.0");
+    expect(fingerprint(under("manni:ai-context:1.2.0"))).toBe(
+      fingerprint(under("manni:ai-context:1.1.0")),
+    );
   });
 
   it.each([
@@ -182,6 +190,16 @@ describe("fingerprint: annotation-only built-in versions", () => {
     ["manni:stewardship:1.1.0", "manni:stewardship:1.0.0"],
     ["manni:stewardship-strict:1.0.0", "manni:stewardship-strict:1.1.0"],
     ["manni:stewardship-strict:1.1.0", "manni:stewardship-strict:1.0.0"],
+    ["manni:stewardship:1.0.0", "manni:stewardship:1.2.0"],
+    ["manni:stewardship:1.1.0", "manni:stewardship:1.2.0"],
+    ["manni:stewardship:1.2.0", "manni:stewardship:1.0.0"],
+    ["manni:stewardship-strict:1.0.0", "manni:stewardship-strict:1.2.0"],
+    ["manni:stewardship-strict:1.1.0", "manni:stewardship-strict:1.2.0"],
+    ["manni:citations:1.0.0", "manni:citations:1.1.0"],
+    ["manni:citations:1.1.0", "manni:citations:1.0.0"],
+    ["manni:citations-strict:1.0.0", "manni:citations-strict:1.1.0"],
+    ["manni:ai-context:1.1.0", "manni:ai-context:1.2.0"],
+    ["manni:ai-context:1.2.0", "manni:ai-context:1.1.0"],
   ])("a baseline recorded under %s suppresses the finding under %s", (from, to) => {
     const recorded = buildBaseline([result("a.md", [under(from)])], "1.0.0");
     const applied = applyBaseline([result("a.md", [under(to)])], recorded);

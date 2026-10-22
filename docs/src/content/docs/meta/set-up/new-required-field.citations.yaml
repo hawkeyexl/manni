@@ -55,36 +55,36 @@ docs/src/content/docs/meta/set-up/new-required-field.mdx:
         integrity: sha256-fd8070ad2181e96ae9dfb3b26e7734e391074db771d3e62ed9a92e7a529e7c31
       source:
         file: src/meta/core/baseline.ts
-        lines: 155-161
-        integrity: sha256-d617164db29101a12f74a5c2f4b2a64bd63a52a3943f225cb427117a7f1b5c5e
-        commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
+        lines: 156-162
+        integrity: sha256-7627161c9b00828bf791ccde547d05c906b0a9a1c5456bf99bddb595cec9c6a0
+        commit-sha: 03518fa2c75bdbeb46f732bbac3f8b35c92c16f2
     - id: renamed-file-loses-its-baseline-entry
       claim:
         lines: 137
         integrity: sha256-84324717bc9804b57d9bbd02d06fa853948f4ec18b4f220293a84b22d0df8b92
       source:
         file: src/meta/core/baseline.ts
-        lines: 347-348
+        lines: 348-349
         integrity: sha256-b9cd28d92223a730275819e50fc9d952ab6ed7e5a89b88ee7fd713f76f3b46fd
-        commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
+        commit-sha: 03518fa2c75bdbeb46f732bbac3f8b35c92c16f2
     - id: baseline-count-printed-every-run
       claim:
         lines: 127
         integrity: sha256-c5a9faac7e4fc9ded6414c4885dbe6df7a4121d058fd24c298c06b2877483b7e
       source:
         file: src/meta/reporters/index.ts
-        lines: 295-297
+        lines: 297-299
         integrity: sha256-613ff887c2f368bb7e79c0882524de376e7abf681d716f6437416d839beec4e6
-        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
+        commit-sha: 6f1ff2e33d9cc6b0a72c5acc22a0290a71d3b0fe
     - id: rerecord-drops-entries-that-no-longer-occur
       claim:
         lines: 116
         integrity: sha256-c8a7c6596869cb84e2dd95e7c21cd67a14825993a0cc8547eaab69057eda8149
       source:
         file: src/meta/core/baseline.ts
-        lines: 308-314
+        lines: 309-315
         integrity: sha256-c14fe40dc9705f10783750bbe70e2317cf372724cefbfb2e647e2168de17f85f
-        commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
+        commit-sha: 03518fa2c75bdbeb46f732bbac3f8b35c92c16f2
     - id: stale-baseline-entries-reported-in-summary
       claim:
         lines: 110
@@ -100,26 +100,26 @@ docs/src/content/docs/meta/set-up/new-required-field.mdx:
         integrity: sha256-5eef7cf1e59a73974a17c95e9bf8e52d488a14b70c7959f1495a03d64dee4049
       source:
         file: src/meta/core/baseline.ts
-        lines: 365-370
+        lines: 366-371
         integrity: sha256-a3c938928370f6881ed6788272c2fbe3a3375abe8f4f62dd2436469f53462431
-        commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
+        commit-sha: 03518fa2c75bdbeb46f732bbac3f8b35c92c16f2
     - id: configured-baseline-path-is-relative-to-config-dir
       claim:
         lines: 101
         integrity: sha256-94dd907d433bbe5e071c0794a0f23db8c875a43a9c28f63777f1cd1feabf7369
       source:
         file: src/meta/core/baseline.ts
-        lines: 489-492
+        lines: 490-493
         integrity: sha256-732261141cd555ba8043100c1d72dbbcd2b2f8a340429d5eb910e04fdf5e1742
-        commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
+        commit-sha: 03518fa2c75bdbeb46f732bbac3f8b35c92c16f2
     - id: configured-baseline-applies-without-a-flag
       claim:
         integrity: sha256-be8733ecd60bb4542c3922a3ddf75192528034df3f92d5ad0edf762988c08ef3
       source:
         file: src/meta/core/baseline.ts
-        lines: 524
+        lines: 525
         integrity: sha256-fb8c10e1c03f87fd5a768db64ae873c8e239aaab81fc70e6a44504b3d3a16610
-        commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
+        commit-sha: 03518fa2c75bdbeb46f732bbac3f8b35c92c16f2
     - id: pretty-marks-per-file-baselined-count
       claim:
         integrity: sha256-be8733ecd60bb4542c3922a3ddf75192528034df3f92d5ad0edf762988c08ef3
@@ -133,9 +133,9 @@ docs/src/content/docs/meta/set-up/new-required-field.mdx:
         integrity: sha256-be8733ecd60bb4542c3922a3ddf75192528034df3f92d5ad0edf762988c08ef3
       source:
         file: src/meta/reporters/index.ts
-        lines: 292-294
+        lines: 294-296
         integrity: sha256-7aa6d0c460018b932f918f7a590a376d89c4a592b7c383d2d71d1c4e9f2c8393
-        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
+        commit-sha: 6f1ff2e33d9cc6b0a72c5acc22a0290a71d3b0fe
     - id: summary-reports-baselined-finding-count
       claim:
         integrity: sha256-be8733ecd60bb4542c3922a3ddf75192528034df3f92d5ad0edf762988c08ef3
@@ -150,18 +150,18 @@ docs/src/content/docs/meta/set-up/new-required-field.mdx:
         integrity: sha256-ec8c719b8281de2057f4a0b1308e7ce853a34270a04d8d7aabcd9bcb48f64ff1
       source:
         file: src/meta/core/baseline.ts
-        lines: 552-555
+        lines: 553-556
         integrity: sha256-f63bd89f0306f6bcc4beea434daa0c0a977e97638cfa0d9e948f510a7e1cce2b
-        commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
+        commit-sha: 03518fa2c75bdbeb46f732bbac3f8b35c92c16f2
     - id: write-baseline-removed-count-reports-forgiven
       claim:
         lines: 62
         integrity: sha256-ec8c719b8281de2057f4a0b1308e7ce853a34270a04d8d7aabcd9bcb48f64ff1
       source:
         file: src/meta/core/baseline.ts
-        lines: 401-405
+        lines: 402-406
         integrity: sha256-ed7b3262b5804d0322be0110d734e92f3558bee90a0d46386bd7130e9a73796a
-        commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
+        commit-sha: 03518fa2c75bdbeb46f732bbac3f8b35c92c16f2
     - id: write-baseline-reports-added-and-removed
       claim:
         integrity: sha256-85eac28ac1ac50b95b1ca107e97a7461183ce7e5c1fbb7f234df1c21af9f8c3e
@@ -175,9 +175,9 @@ docs/src/content/docs/meta/set-up/new-required-field.mdx:
         integrity: sha256-85eac28ac1ac50b95b1ca107e97a7461183ce7e5c1fbb7f234df1c21af9f8c3e
       source:
         file: src/meta/core/baseline.ts
-        lines: 549-556
+        lines: 550-557
         integrity: sha256-682f1eea272dfee261c52f994deb35b70f02439eb6c069c83de302b3dcdc2fa6
-        commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
+        commit-sha: 03518fa2c75bdbeb46f732bbac3f8b35c92c16f2
     - id: validate-exits-one-when-a-file-fails
       claim:
         integrity: sha256-07bccf807e8c81c94a70ed9f15ddadef1182ecf59b557ead8b43f76bb0b13221
@@ -209,15 +209,15 @@ docs/src/content/docs/meta/set-up/new-required-field.mdx:
         integrity: sha256-6b7aa20db3fefb84763be63c608c7c83ca03bd0b7385a8371afb91db3c41f05e
       source:
         file: src/meta/core/baseline.ts
-        lines: 354-361
+        lines: 355-362
         integrity: sha256-90fb5198245b6bbb156f91a0b33b4a7ffddcdd1348885f0ce70f795c44e40556
-        commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
+        commit-sha: 03518fa2c75bdbeb46f732bbac3f8b35c92c16f2
     - id: baseline-does-not-relax-the-schema
       claim:
         lines: 9
         integrity: sha256-6b7aa20db3fefb84763be63c608c7c83ca03bd0b7385a8371afb91db3c41f05e
       source:
         file: src/meta/core/baseline.ts
-        lines: 348
+        lines: 349
         integrity: sha256-22b11a27b2aeaf2f4650da9b50e648483400a133da310fcd9b85b3dbbf33773d
-        commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
+        commit-sha: 03518fa2c75bdbeb46f732bbac3f8b35c92c16f2

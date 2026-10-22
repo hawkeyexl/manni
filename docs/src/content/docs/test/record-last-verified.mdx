@@ -1,0 +1,151 @@
+---
+title: Record when a page was last verified
+description: "Declare the Doc Detective tests that verify a page in verified-by, and let each passing run record its date in last-verified for readers and agents."
+sidebar:
+  label: Record when a page was last verified
+  order: 2
+type: how-to
+id: test-record-last-verified
+keywords:
+  - last-verified
+  - verified-by
+  - Doc Detective
+  - write-back
+  - procedure tests
+language: en
+audiences:
+  - docs-engineers
+  - ci-engineers
+intent: Show readers and agents when a passing test last proved a page, with verified-by and last-verified.
+lifecycle: published
+applies-to:
+  - domain:test
+next-steps:
+  - meta-integrate-write-metadata-from-a-tool
+  - meta-reference-schemas-manni-stewardship
+concepts:
+  - metadata
+risks:
+  - read-only
+sample-questions:
+  - How do I show when a page's procedure last passed its test?
+  - What does Doc Detective write to a page when its test passes?
+  - Why is last-verified older than the newest pass?
+graph:
+  label: Record when a page was last verified
+  type: task
+last-updated: 2026-10-21
+tags:
+  - testing
+  - doc-detective
+  - verification
+  - metadata
+action: develop
+prerequisites:
+  - test
+related-pages:
+  - test-reference-cli
+  - meta-integrate-write-metadata-from-a-tool
+verified-by:
+  - tool: doc-detective
+    check: test-record-last-verified
+---
+
+`manni test run` proves that a page's procedure works, and the proof ends
+with the job. A reader sees `last-updated`, which says when the text changed.
+It does not say whether the text still works. Two stewardship fields carry
+that second date, and the tool that runs the test writes them.
+
+- `verified-by` lists the checks that verify the page. You write each entry.
+- `last-verified` is the date by which every listed check had passed. The
+  tools write it.
+
+The [stewardship vocabulary](/manni/meta/reference/schemas/manni-stewardship/#verification)
+defines both. manni validates them and carries them into a graph, and writes
+neither.
+
+## Declare the test
+
+Each page that carries Doc Detective tests names them in `verified-by`. Use
+`doc-detective` as the `tool`, and the test's `testId` as the `check`. For a
+page whose test reads `"testId":"cite-set-up"`, the front matter is:
+
+```yaml
+---
+title: Set up cite
+description: "Pin your first sentence to its source and gate it in CI."
+last-updated: 2026-10-17
+verified-by:
+  - tool: doc-detective
+    check: cite-set-up
+---
+```
+
+A page with several tests lists one entry per test. Two entries may share a
+`tool` when they name different checks.
+
+## Let the passing run write the date
+
+CI runs the tests with `manni test run`, as the
+[overview](/manni/test/#run-it-in-ci) sets up. When the test passes, Doc
+Detective finds the entry that names it. It fills in `passed` and its own
+`version`, and sets `last-verified`, since every listed check has now passed:
+
+```diff
+ last-updated: 2026-10-17
++last-verified: 2026-10-21
+ verified-by:
+   - tool: doc-detective
+     check: cite-set-up
++    version: 4.27.0
++    passed: 2026-10-21
+```
+
+A run that fails, warns or skips the test writes nothing. The date ages, and
+the age is the signal a reader sees. Doc Detective never touches another
+tool's entry.
+
+Commit the write the way the job commits any other change. A pull request
+that carries the diff, or a bot commit on the default branch, both work.
+
+## Add a second check
+
+A link checker gets an entry of its own:
+
+```yaml
+verified-by:
+  - tool: doc-detective
+    check: cite-set-up
+    version: 4.27.0
+    passed: 2026-10-21
+  - tool: lychee
+```
+
+Its writer sets `passed` on that entry when the link check passes.
+`last-verified` stays at the oldest pass, because that is the day by which
+every listed check had passed. One lagging check holds it back, so the date
+never claims more than the checks proved.
+
+## Validate the write
+
+Run `manni meta validate` in the same job, after the write. It fails on a date
+with no timezone, a month alone, or an entry with no `tool`:
+
+```sh
+manni meta validate test/fixtures/verification/two-entries.md
+```
+
+```text
+✓ test/fixtures/verification/two-entries.md
+
+1 file checked, 1 passed, 0 failed, 0 errors
+```
+
+[Write manni metadata from another
+tool](/manni/meta/integrate/write-metadata-from-a-tool/) gives the rules any
+writer follows, for a tool you wire in yourself.
+
+{/* test {"testId":"test-record-last-verified","description":"A page with two verifier entries validates, and an entry with no tool fails."} */}
+{/* step {"description":"Two entries, one a timestamp, pass the default set.","runShell":{"command":"npx @hawkeyexl/manni meta validate test/fixtures/verification/two-entries.md","exitCodes":[0],"stdio":"1 file checked, 1 passed, 0 failed, 0 errors"}} */}
+{/* step {"description":"An entry with no tool fails, and the guidance names tool.","runShell":{"command":"npx @hawkeyexl/manni meta validate test/fixtures/verification/bad-missing-tool.md","exitCodes":[1],"stdio":"Each entry names the verifier in tool."}} */}
+{/* test end */}

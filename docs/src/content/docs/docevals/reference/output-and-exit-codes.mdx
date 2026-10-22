@@ -2,7 +2,7 @@
 title: Output and exit codes
 description: The pretty, json, markdown, github, sarif, junit, and html report shapes, and what each exit code means.
 type: reference
-last-updated: 2026-10-21
+last-updated: 2026-10-22
 ---
 
 Verified against `src/docevals/reporters/` and `src/docevals/types.ts`, with samples captured from real runs against
@@ -240,6 +240,7 @@ One object, for programmatic consumers.
       "suite": "reference",
       "weight": 1,
       "location": { "file": "docs/actions/goTo.mdx", "line": 7 },
+      "integrity": "sha256-901110ea1cc5b000881c5cadc6ed2435eb8c0390cfb56e7fb337df0017b2fdbb",
       "guidance": {
         "id": "docs/actions/goTo.mdx",
         "rule": "no-todo-markers",
@@ -285,6 +286,7 @@ passing `names-an-action`.
 | `selfPreference` | `{axis, model}` when the model that judged the eval also produced what it graded (`axis: "content"`) or proposed the eval (`axis: "criterion"`). Absent otherwise. See [Self-preference](/manni/docevals/judge/#self-preference). |
 | `suite`, `weight` | The suite the result reports under, and its weight in that suite's rate. |
 | `location` | `{ file, line? }`, where the page declares the eval. See [below](#location). |
+| `integrity` | `sha256-` and the hex SHA-256 of the page file as the run read it, frontmatter included. Every result for one page carries the same value, so a later reader can tell whether the page still has those bytes. |
 | `guidance` | `{ id, rule, description, guide }`, what the eval asks for. Present on every result, passing ones too. See [below](#guidance). |
 | `baselined` | Count of findings a [baseline](#baseline) suppressed on this eval. Present only when a baseline was in effect, so its absence means "no baseline", not "nothing was forgiven". |
 | `skipReason`, `durationMs` | |

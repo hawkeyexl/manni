@@ -1,25 +1,26 @@
 ---
 title: manni stewardship vocabulary
-description: "The manni:stewardship:1.1.0 schema for attribution, ownership and review: who wrote a page, who answers for it, its own dates, and what it was verified against."
+description: "The manni:stewardship:1.2.0 schema for attribution, ownership and review: who wrote a page, who answers for it, its own dates, and which checks verify it."
 sidebar:
-  label: "manni:stewardship:1.1.0"
+  label: "manni:stewardship:1.2.0"
 type: reference
 id: meta-reference-schemas-manni-stewardship
-keywords: ["stewardship", "manni:stewardship:1.1.0", "owner", "review", "strict overlay"]
+keywords: ["stewardship", "manni:stewardship:1.2.0", "owner", "review", "strict overlay"]
 language: en
 audiences: ["schema-authors"]
-intent: "Record who wrote a page, who answers for it, its dates, and what it was verified against, with manni:stewardship:1.1.0."
+intent: "Record who wrote a page, who answers for it, its dates, and what it was verified against, with manni:stewardship:1.2.0."
 lifecycle: published
 applies-to: ["domain:meta"]
 concepts: ["schema"]
 sample-questions:
-  - "Which fields does manni:stewardship:1.1.0 define?"
+  - "Which fields does manni:stewardship:1.2.0 define?"
   - "Which stewardship fields can derive stamp?"
+  - "How do I record which checks verify a page?"
   - "What does the stewardship strict overlay narrow?"
 graph:
   label: "manni stewardship vocabulary"
   type: reference
-last-updated: 2026-10-20
+last-updated: 2026-10-21
 tags:
   - metadata
   - schema
@@ -42,18 +43,20 @@ prerequisites:
   - meta-schemas-field-location
 ---
 
-**Built-in id:** `manni:stewardship:1.1.0`
+**Built-in id:** `manni:stewardship:1.2.0`
 
-Published at `https://hawkeyexl.github.io/manni/schemas/stewardship/1.1.0.json`.
+Published at `https://hawkeyexl.github.io/manni/schemas/stewardship/1.2.0.json`.
 A `$schema` that names this URL resolves to the bundled copy, with no network
 call.
 
-**The question it answers: is this page cared for?** Every field is a fact a
+**The question it answers: is this page cared for?** Most fields are facts a
 person asserts about the document, though version control approximates some of
 them. That covers who wrote the page, who owns it, and who to consult. It also
-covers when the page was written, when it last changed, when it was last
-verified, and against what. Adopt it when a docs set has owners and a review
-habit, and you want both recorded where a check can see them.
+covers when the page was written, when it last changed, and what it was
+verified against. Two fields are facts a check measures instead. They say
+which checks verify the page and when every one of them last passed. Adopt it
+when a docs set has owners and a review habit, and you want both recorded
+where a check can see them.
 
 ## Use it
 
@@ -84,11 +87,14 @@ meta:
 | `last-updated` | W3CDTF date | `page` | When the content last changed in a way a reader notices. Not every commit that touched the file |
 | `last-reviewed` | W3CDTF date | `external` | When the last review happened. Freshness tooling reads this field |
 | `review-interval` | ISO 8601 duration | `external` | How often review is due, such as `P90D` or `P1Y`. Machines can compare these, unlike `90d` |
+| `last-verified` | day, or RFC 3339 timestamp with a timezone | `page` | The date by which every check in `verified-by` had passed. The verifying tool writes it |
+| `verified-by` | non-empty list of entries | `page` | The checks that verify the page. The author lists them, and each tool fills in its own |
 | `verified-against` | string, object, or list of them | `external` | The product version or spec the content was checked against, such as `operator 1.4.2` or `{name: operator, version: 1.4.2}` |
 | `source-of-truth` | string, object, or list of them | `external` | Where the facts live, as a repo path or an API spec. A drift check compares the page against it |
 
-No field is required. Every list field takes one string or a non-empty list
-without duplicates. Three fields also take objects. `authors` accepts the
+No field is required. Every list field but `verified-by` takes one string or
+a non-empty list without duplicates. `verified-by` is always a list of
+entries, described [below](#verification). Three fields also take objects. `authors` accepts the
 person objects that MyST and Docusaurus define. `verified-against` and
 `source-of-truth` accept an object with any keys, so an anchor can be
 structured for a checker instead of written for a reader. Every form still
@@ -98,10 +104,70 @@ The Location column is the `x-manni-location` mark each field carries. `page`
 means the value belongs in the document's own metadata and reaches delivered
 output. `external` means it belongs in the collection's external-metadata
 manifest. A field is `page` when an agent fetching the page acts on it.
-`last-updated` is the one stewardship field an agent uses, to judge whether a
-page is fresh enough to trust. The rest name people and review cadence. See
+An agent uses `last-updated` to judge whether a page is fresh enough to trust.
+It uses `last-verified` and `verified-by` to judge whether the page still works.
+The rest name people and review cadence. See
 [field location](/manni/meta/schemas/field-location/) for how the marks are
 used.
+
+## Verification
+
+`verified-by` lists the checks that verify the page, one entry per check. An
+entry is a closed object with four keys.
+
+| Entry key | Type | Required | Written by | Notes |
+|---|---|---|---|---|
+| `tool` | non-empty string | **yes** | the author | The verifier's package name, such as `doc-detective`, or a URL |
+| `check` | non-empty string | no | the author | The verifier's own id for the test, spec or rule. Without one, the tool verifies the whole page however it does |
+| `version` | non-empty string | no | the tool | The verifier's version on the last pass |
+| `passed` | day, or RFC 3339 timestamp with a timezone | no | the tool | When this check last passed |
+
+`last-verified` is the oldest `passed` across the entries. A tool sets it only
+once every entry has passed at least once, in the same write as its own entry.
+One lagging check holds it back, so the date never claims more than every
+check proved. A failed check leaves its entry and the date alone, and the
+date's age is the signal.
+
+A date is a day, `2026-10-21`, or a timestamp with seconds and a timezone,
+`2026-10-21T14:02:11Z`. A month alone fails, and so does a local time with no
+offset.
+
+```yaml
+---
+title: Set up cite
+description: Pin your first sentence to its source and gate it in CI.
+last-updated: 2026-10-17
+last-verified: 2026-10-21
+verified-by:
+  - tool: doc-detective
+    check: cite-set-up
+    version: 4.27.0
+    passed: 2026-10-21
+  - tool: lychee
+    passed: 2026-10-22
+---
+```
+
+manni writes neither field. It defines them, validates their form, and
+carries them into a graph. The tool that runs a check writes its result.
+[Write manni metadata from another
+tool](/manni/meta/integrate/write-metadata-from-a-tool/) gives the rules every
+writer follows. [Record when a page was last
+verified](/manni/test/record-last-verified/) walks through Doc Detective's
+write.
+
+A tool that writes a local time fails at that line, and the guidance quotes
+the date rule:
+
+```text
+$ manni meta validate page.md --no-config -s manni:core:1.0.0 -s manni:stewardship:1.2.0
+✗ page.md
+    /verified-by/0/passed  must match pattern "^[0-9]{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12][0-9]|3[01])(?:T(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9](?:\.[0-9]+)?(?:Z|[+-](?:[01][0-9]|2[0-3]):[0-5][0-9]))?$"  (line 10)  [manni:stewardship:1.2.0]
+      manni:stewardship:1.2.0 verified-by/passed: A day such as 2026-10-21, or a timestamp with a timezone such as 2026-10-21T14:02:11Z.
+      Guide: https://hawkeyexl.github.io/manni/meta/reference/schemas/manni-stewardship/
+
+1 file checked, 0 passed, 1 failed, 1 error
+```
 
 ## Graph output
 
@@ -109,7 +175,8 @@ used.
 Those three fields name people, so `manni graph build` leaves them out of a
 published graph. That covers its Turtle, its JSON-LD, its iiRDS package and
 its search index. Every other stewardship field has no mark, so a graph
-carries it.
+carries it. That includes `last-verified` and `verified-by`, which name tools,
+not people.
 
 The mark governs output only. Validation, location and strict all treat the
 three fields as they treat any other. `graph build` reads the mark from the
@@ -120,7 +187,8 @@ mark wins.
 ## Additional properties
 
 Allowed. The root is open, so a generator's keys and the other vocabularies'
-keys pass beside stewardship's. Stewardship checks only the ten keys it claims.
+keys pass beside stewardship's. Stewardship checks only the twelve keys it
+claims. A `verified-by` entry is closed, so a misspelt key inside one fails.
 
 ## Example
 
@@ -174,12 +242,12 @@ last-updated: 2026-08-20
 ```
 
 ```text
-$ manni meta validate page.md --no-config -s manni:core:1.0.0 -s manni:stewardship:1.1.0
+$ manni meta validate page.md --no-config -s manni:core:1.0.0 -s manni:stewardship:1.2.0
 ✗ page.md
-    /authors  must not be empty  (line 4)  [manni:stewardship:1.1.0]
-      manni:stewardship:1.1.0 authors: Who wrote the page: a name, a list of names, or the structured person objects MyST and Docusaurus define.
+    /authors  must not be empty  (line 4)  [manni:stewardship:1.2.0]
+      manni:stewardship:1.2.0 authors: Who wrote the page: a name, a list of names, or the structured person objects MyST and Docusaurus define.
       Guide: https://hawkeyexl.github.io/manni/meta/reference/schemas/manni-stewardship/
-    /authors  warning "authors" is stored in the page; manni:stewardship:1.1.0 prefers external metadata, and --no-config leaves it no manifest.  (line 4)  [location:external]
+    /authors  warning "authors" is stored in the page; manni:stewardship:1.2.0 prefers external metadata, and --no-config leaves it no manifest.  (line 4)  [location:external]
 
 1 file checked, 0 passed, 1 failed, 1 error, 1 warning
 ```
@@ -251,6 +319,19 @@ until someone is named. An empty `""` or `{}` fails too.
   `Invalid Date`, and the page never comes due. The check is not
   calendar-exact, so February 31 passes. No date is compared to another
   either, so a `last-updated` older than its `created` validates.
+- **`last-verified` is the oldest pass, not the newest.** The newest would
+  let a passing link check vouch for a page whose procedure broke. The oldest
+  never claims more than every listed check proved.
+- **A measured fact is attributed in `verified-by`.** `meta-provenance`
+  records values a model proposed that no person has reviewed yet. A check's
+  result is neither proposed nor reviewed, so it gets its own companion field,
+  as a review has `reviewed-by`.
+- **The checks are listed, not keyed by tool.** The author's declaration is a
+  `verified-by` entry rather than a key under a tool's name. Any tool finds its
+  work by the entries that name it, so a page carries no tool-specific keys.
+- **No rule judges a verification's age.** Nothing flags an old
+  `last-verified`, or one that disagrees with its entries. The tools own that
+  arithmetic, and the date's age is shown rather than judged.
 - **The field is `stakeholders` rather than `sme`.** It is broader than a
   subject-matter expert on purpose. The product owner and the support lead
   have a stake in the page being right, without being its technical
@@ -259,9 +340,9 @@ until someone is named. An empty `""` or `{}` fails too.
 
 ## Strict overlay
 
-**Strict overlay id:** `manni:stewardship-strict:1.1.0`
+**Strict overlay id:** `manni:stewardship-strict:1.2.0`
 
-Published at `https://hawkeyexl.github.io/manni/schemas/stewardship-strict/1.1.0.json`.
+Published at `https://hawkeyexl.github.io/manni/schemas/stewardship-strict/1.2.0.json`.
 The overlay holds only what strict adds. It narrows the form of a value that is
 present and requires no key, so a page with no stewardship fields still passes
 it.
@@ -274,9 +355,10 @@ it.
 | `created`, `last-updated`, `last-reviewed` | An RFC 3339 full date, or a date-time with seconds and an offset. A year or month alone fails |
 | `verified-against` | An object entry carries `name` and `version`, alone or in a list. The version's format stays free, and a string entry is unchanged |
 | `source-of-truth` | An object entry carries `path` or `url`, alone or in a list. A string entry is one id, path or URL on one line with no surrounding space |
+| `verified-by` | No entry repeats. Two entries may share a `tool` when they name different checks |
 
-`review-interval` is the same in both, because its ISO 8601 pattern is already
-strict.
+`review-interval` and `last-verified` are the same in both, because their
+patterns are already strict.
 
 `strict: true` stacks it right after the vocabulary, with every other
 default's overlay beside its own base:
@@ -292,7 +374,7 @@ vocabulary:
 ```yaml
 meta:
   schemas:
-    - manni:stewardship-strict:1.1.0
+    - manni:stewardship-strict:1.2.0
 ```
 
 Each schema is checked on its own, and a finding names the one that produced
@@ -311,21 +393,44 @@ last-updated: 2026-08-20
 ```
 
 ```text
-$ manni meta validate page.md --no-config -s manni:stewardship:1.1.0 -s manni:stewardship-strict:1.1.0
+$ manni meta validate page.md --no-config -s manni:stewardship:1.2.0 -s manni:stewardship-strict:1.2.0
 ✗ page.md
-    /authors  must be array  (line 4)  [manni:stewardship-strict:1.1.0]
-      manni:stewardship-strict:1.1.0 authors: Strict takes authors as a list of unique entries.
+    /authors  must be array  (line 4)  [manni:stewardship-strict:1.2.0]
+      manni:stewardship-strict:1.2.0 authors: Strict takes authors as a list of unique entries.
       Guide: https://hawkeyexl.github.io/manni/meta/reference/schemas/manni-stewardship/
-    /verified-against  must have required property 'version'  (line 5)  [manni:stewardship-strict:1.1.0]
-      manni:stewardship-strict:1.1.0
+    /verified-against  must have required property 'version'  (line 5)  [manni:stewardship-strict:1.2.0]
+      manni:stewardship-strict:1.2.0
       Guide: https://hawkeyexl.github.io/manni/meta/reference/schemas/manni-stewardship/
-    /authors  warning "authors" is stored in the page; manni:stewardship:1.1.0 prefers external metadata, and --no-config leaves it no manifest.  (line 4)  [location:external]
-    /verified-against  warning "verified-against" is stored in the page; manni:stewardship:1.1.0 prefers external metadata, and --no-config leaves it no manifest.  (line 5)  [location:external]
+    /authors  warning "authors" is stored in the page; manni:stewardship:1.2.0 prefers external metadata, and --no-config leaves it no manifest.  (line 4)  [location:external]
+    /verified-against  warning "verified-against" is stored in the page; manni:stewardship:1.2.0 prefers external metadata, and --no-config leaves it no manifest.  (line 5)  [location:external]
 
 1 file checked, 0 passed, 1 failed, 2 errors, 2 warnings
 ```
 
 The open vocabulary accepts both values, so the overlay alone fails the page.
+
+## Version 1.1.0
+
+**Built-in id:** `manni:stewardship:1.1.0`
+
+**Strict overlay id:** `manni:stewardship-strict:1.1.0`
+
+Published at `https://hawkeyexl.github.io/manni/schemas/stewardship/1.1.0.json`
+and `https://hawkeyexl.github.io/manni/schemas/stewardship-strict/1.1.0.json`.
+Version 1.1.0 claims ten fields, every one but `last-verified` and
+`verified-by`. It validates each of the ten as 1.2.0 does, and carries the
+same graph output marks. A page judged under it passes `verified-by` and
+`last-verified` through unchecked.
+
+Both ids still resolve, and a page that names one keeps it. Version 1.2.0 is
+the one in the default set. A set listing 1.1.0 replaces 1.2.0 there, and
+under `strict: true` the 1.1.0 overlay replaces the 1.2.0 overlay too.
+
+```yaml
+meta:
+  schemas:
+    - manni:stewardship:1.1.0
+```
 
 ## Version 1.0.0
 
@@ -335,14 +440,13 @@ The open vocabulary accepts both values, so the overlay alone fails the page.
 
 Published at `https://hawkeyexl.github.io/manni/schemas/stewardship/1.0.0.json`
 and `https://hawkeyexl.github.io/manni/schemas/stewardship-strict/1.0.0.json`.
-Version 1.0.0 claims the same ten fields and validates every value as 1.1.0
-does. It carries no `x-manni-graph-output` mark, so a published graph built
-under it keeps `owner`, `stakeholders` and `reviewed-by`.
+Version 1.0.0 claims the same ten fields as 1.1.0 and validates every value as
+1.1.0 does. It carries no `x-manni-graph-output` mark, so a published graph
+built under it keeps `owner`, `stakeholders` and `reviewed-by`.
 
-Both ids still resolve, and a page that names one keeps it. Version 1.1.0 is
-the one in the default set. A set that should mark nothing lists 1.0.0, which
-replaces 1.1.0 there. Under `strict: true`, the 1.0.0 overlay replaces the
-1.1.0 overlay too.
+Both ids still resolve, and a page that names one keeps it. A set that should
+mark nothing lists 1.0.0, which replaces 1.2.0 there. Under `strict: true`,
+the 1.0.0 overlay replaces the 1.2.0 overlay too.
 
 ```yaml
 meta:

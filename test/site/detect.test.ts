@@ -531,3 +531,24 @@ describe("refusals", () => {
     );
   });
 });
+
+describe("site.out and site.annotate.after-build (proposal 0095)", () => {
+  it("serves site.out with the built-in server", () => {
+    const dir = site("mkdocs", { files: { "manni.config.yaml": "site:\n  out: build/html\n" } });
+    expect(steps("preview", dir)[1]).toMatchObject({ kind: "static", root: join(dir, "build", "html") });
+  });
+
+  it("annotates after the build when after-build is true, and before preview serves", () => {
+    const dir = site("mkdocs", { files: { "manni.config.yaml": "site:\n  annotate:\n    after-build: true\n" } });
+    expect(steps("build", dir).map((s) => s.kind)).toEqual(["exec", "annotate"]);
+    expect(steps("preview", dir).map((s) => s.kind)).toEqual(["exec", "annotate", "static"]);
+    expect(steps("build", dir)[1]).toEqual({ kind: "annotate", cwd: dir, dir });
+  });
+
+  it("never annotates start, nor build when after-build is unset", () => {
+    const on = site("mkdocs", { files: { "manni.config.yaml": "site:\n  annotate:\n    after-build: true\n" } });
+    expect(steps("start", on).map((s) => s.kind)).toEqual(["exec"]);
+    rmSync(join(on, "manni.config.yaml"));
+    expect(steps("build", on).map((s) => s.kind)).toEqual(["exec"]);
+  });
+});

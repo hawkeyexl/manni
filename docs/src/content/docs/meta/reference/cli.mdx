@@ -29,7 +29,7 @@ sample-questions:
 graph:
   label: CLI reference
   type: reference
-last-updated: 2026-10-20
+last-updated: 2026-10-22
 tags:
   - cli
   - command-reference
@@ -50,6 +50,9 @@ related-pages:
   - /manni/meta/reference/formats/
   - /manni/meta/reference/output-and-exit-codes/
   - /manni/meta/reference/configuration/
+verified-by:
+  - tool: doc-detective
+    check: cli-reference
 ---
 
 import { Tabs, TabItem, Aside } from '@astrojs/starlight/components';
@@ -220,6 +223,38 @@ answer, such as a shallow clone or a `gh` that is not logged in, is exit 2
 naming the fix. It is never a skipped check. `--no-derive` opts out for one
 run.
 
+`validate` also reads every [`meta` statement](/manni/meta/set-up/inline-statements/)
+in the pages it reads. Each field a statement sets is checked against the
+page's resolved schema set, without `required`. A statement never merges
+into the page's metadata. Each statement finding has the rule id
+`manni:meta/<rule>`, and its pointer reads `(statement)` when it is about the
+whole statement:
+
+```
+    (statement)  notice the meta statement at line 11 has no pin; run manni meta derive to pin it to the block below.  (line 11, statement)  [manni:meta]
+      manni:meta statement-unpinned: A statement without a pin cannot tell when its block changes.
+      Guide: https://hawkeyexl.github.io/manni/meta/set-up/inline-statements/
+    /verified-by/0/passed  must match pattern "…"  (line 42, statement)  [manni:stewardship:1.2.0]
+```
+
+| Rule | Severity | Message |
+|---|---|---|
+| `statement-invalid` | error | `the meta statement at line 52 is not one JSON object: <the JSON parser's reason>.` |
+| `statement-unknown-field` | error | `the meta statement at line 52 sets "verifed-by", which none of this page's schemas define.` |
+| `statement-external-field` | error | `the meta statement at line 52 sets "personas", which lives in the manifest (x-manni-location: external); set it there.` |
+| `statement-orphan` | error | `the meta statement at line 52 anchors nothing: no paragraph or block follows it.` In XML and DITA, `the meta statement at line 52 anchors nothing: no element follows it, and it is not an element's first child.` |
+| `statement-misplaced` | warning | `the meta statement at line 52 sits inside a paragraph; move it above the paragraph's first line.` |
+| `statement-changed` | warning | `the block under the meta statement at line 52 changed since it was pinned, so its last-verified may no longer hold. Run its checks again, or remove the pin and run manni meta derive.` The clause about `last-verified` appears only when the statement sets it. |
+| `statement-unpinned` | notice | `the meta statement at line 52 has no pin; run manni meta derive to pin it to the block below.` |
+| `statement-line-form-paren` | error | `the meta statement at line 52 uses a line comment form, and its payload contains ")"; use <!-- --> or {/* */}.` |
+| `statement-graph-not-section` | error | `the meta statement at line 52 sets "graph", which only a statement on a heading may set; move it above the section's heading.` |
+| `statement-conflicts-sections` | error | `the statement on heading "Install on Windows" (line 30) and graph.sections.install-on-windows (line 6) both set graph.type; keep one.` |
+| `statement-xml-comment-dashes` | error | `the meta statement at line 52 is an XML comment, and its payload contains "--", which XML forbids in a comment; use <?manni meta …?>.` |
+
+Only an error moves the exit code to `1`. In `json`, each statement finding
+carries `statement: { "line": 52, "anchor": "53-54" }`, and `anchor` is
+`null` on an orphan. Reading statements needs no git.
+
 ### Baselines
 
 A baseline records the violations that exist today so that a run fails only on
@@ -278,10 +313,13 @@ Three things do change a fingerprint, and each is recovered with one
   stable `subject`, so a violation of the edited rule keeps its fingerprint. A
   violation that moves to a *different* keyword does not.
 
-Moving to a built-in version that only adds annotations keeps every
-fingerprint. That version hashes as the one before it, so
-`manni:stewardship:1.1.0` and its strict overlay fingerprint as their 1.0.0
-counterparts.
+Moving to a built-in version that only adds annotations or optional fields
+keeps every fingerprint. That version hashes as the earliest one before it.
+So `manni:stewardship:1.1.0` and `manni:stewardship:1.2.0` fingerprint as
+`manni:stewardship:1.0.0`, and `manni:citations:1.1.0` as
+`manni:citations:1.0.0`. `manni:ai-context:1.2.0` fingerprints as
+`manni:ai-context:1.1.0`. Their strict overlays carry across the same way. A
+baseline recorded under the earlier version needs no rewrite.
 
 {/* cite schema-ref-measured-from-the-config-dir */}
 {/* cite baseline-path-measured-from-the-config-dir */}
@@ -510,6 +548,35 @@ than the absence of one. They carry no `error` and leave the exit code at `0`.
 Objects for files that parsed are unchanged, so a consumer that never looks at
 `error` sees exactly what it saw before. `--quiet` never hides a file carrying
 one.
+
+A page's [`meta` statements](/manni/meta/set-up/inline-statements/) print
+under its fields, one line each. A statement is never a field, so
+`--fields` and the `[fields]` positional select page fields only, and `get`
+still needs at least one.
+
+```console
+$ manni meta get title page.md
+page.md: title=Install manni (asserted)
+page.md: statement at line 46 (lines 47, section install-on-windows, current) {"applies-to":["windows"],"graph":{"type":"task"}}
+page.md: statement at line 54 (anchors nothing, unpinned) {"concepts":["install"]}
+```
+
+In `json`, a page with statements gains a `statements` list, and a page with
+none has no such key:
+
+```json
+"statements": [
+  { "line": 52, "anchor": "53-54", "scope": "block", "section": "pin-your-first-sentence",
+    "pin": "sha256-…", "status": "current",
+    "data": { "last-verified": "2026-10-21", "verified-by": [ { "tool": "doc-detective", "check": "cite-add-first-pin", "version": "4.27.0", "passed": "2026-10-21" } ] } }
+]
+```
+
+`anchor` is the lines the statement describes, or `null` when it anchors
+nothing. `scope` is `block` or `section`. `section` is the slug of the section
+the statement sits in or describes, and is empty before the first heading. `status` is `current`,
+`changed` or `unpinned`, and `pin` is absent when there is none. `data` is
+`null` when the payload is not one JSON object.
 
 ### Examples
 
@@ -1068,6 +1135,14 @@ body lines a machine wrote, as ranges pinned by an integrity hash. It has its
 own option and positional form, below, and its own
 [journey](/manni/meta/set-up/machine-authorship/).
 
+`derive` also pins every unpinned
+[`meta` statement](/manni/meta/set-up/inline-statements/) that anchors
+something, whatever the managed fields are. It never rewrites a pin that
+differs from its block, so a second run changes nothing. Pinning a statement
+reads no git. Outside any git repository, `derive` still pins statements,
+and its git-derived fields go unanswered with one notice line:
+`git: no git repository contains the documents`.
+
 ```sh
 manni meta derive [paths...] [options]
 ```
@@ -1230,6 +1305,19 @@ docs/faq.md  current
 2 files, 1 changed, 2 fields written
 ```
 
+A run that pinned any statements says so on its own line, above the summary.
+The counts are singular or plural to match:
+
+```
+pinned 10 statements in 1 page.
+1 file, 1 changed, 0 fields written
+```
+
+Under `--check`, each unpinned statement is a `statement-unpinned` finding
+and the run exits `1`. In `json`, `summary` gains
+`statements: { "pinned": 10, "pages": 1 }`, present only when it counts at
+least one statement.
+
 {/* cite derive-exit-0-applied-or-nothing */}
 {/* cite derive-exit-1-unreadable-or-unwritable */}
 {/* cite derive-exit-2-settled-in-run */}
@@ -1238,7 +1326,8 @@ could not be read or written, with or without `--check`. That covers an
 unparseable document, a read-only format, and `provenance` on a page whose
 metadata is not fenced. Under `--check` alone, it also means the run filed a finding, for a
 managed field that is stale or unset. For `provenance` that is a range that
-changed, is stale or is unset. A range that only moved passes. Exit `2` is usage or operational, including every
+changed, is stale or is unset. A range that only moved passes. An unpinned
+statement is a finding too. Exit `2` is usage or operational, including every
 source that could not answer.
 
 ### Examples

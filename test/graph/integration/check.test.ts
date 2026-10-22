@@ -267,7 +267,7 @@ describe("manni graph check, for the page's author", () => {
       [
         "error: l10n-invalid/install.md: Set `lang` to a language tag such as `de` or `pt-BR`, not a language name.",
         "  at https://example.com/dd/doc/l10n-invalid/install.md dcterms:language",
-        "  manni:graph-shapes:1.1.1 Document-language: The language the page is written in. Search, filters and per-language indexes group pages by it.",
+        "  manni:graph-shapes:1.2.0 Document-language: The language the page is written in. Search, filters and per-language indexes group pages by it.",
         "  Guide: https://hawkeyexl.github.io/manni/graph/fix/",
         "",
         "1 error, 0 warnings, 0 notices",
@@ -338,7 +338,7 @@ describe("manni graph check, for the page's author", () => {
   it("appends the guidance lines to each GitHub annotation", () => {
     const { stdout } = run(["check", "-g", l10nInvalidGraph, "-c", "l10n-invalid.config.yaml", "-f", "github"], dd);
     expect(stdout.trim()).toBe(
-      "::error file=l10n-invalid/install.md::Set `lang` to a language tag such as `de` or `pt-BR`, not a language name. (https://example.com/dd/doc/l10n-invalid/install.md)%0Amanni:graph-shapes:1.1.1 Document-language: The language the page is written in. Search, filters and per-language indexes group pages by it.%0AGuide: https://hawkeyexl.github.io/manni/graph/fix/",
+      "::error file=l10n-invalid/install.md::Set `lang` to a language tag such as `de` or `pt-BR`, not a language name. (https://example.com/dd/doc/l10n-invalid/install.md)%0Amanni:graph-shapes:1.2.0 Document-language: The language the page is written in. Search, filters and per-language indexes group pages by it.%0AGuide: https://hawkeyexl.github.io/manni/graph/fix/",
     );
   });
 

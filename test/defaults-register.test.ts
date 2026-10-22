@@ -58,18 +58,18 @@ const STRICT_DEFAULTS = [
   "manni:audience-strict:1.0.0",
   "manni:structure:1.0.0",
   "manni:structure-strict:1.0.0",
-  "manni:stewardship:1.1.0",
-  "manni:stewardship-strict:1.1.0",
+  "manni:stewardship:1.2.0",
+  "manni:stewardship-strict:1.2.0",
   "manni:lifecycle:1.0.0",
   "manni:lifecycle-strict:1.0.0",
-  "manni:ai-context:1.1.0",
+  "manni:ai-context:1.2.0",
   "manni:ai-context-strict:1.0.0",
   "manni:evals:1.0.0",
   "manni:evals-strict:1.0.0",
   "manni:graph:1.0.0",
   "manni:graph-strict:1.0.0",
-  "manni:citations:1.0.0",
-  "manni:citations-strict:1.0.0",
+  "manni:citations:1.1.0",
+  "manni:citations-strict:1.1.0",
 ];
 
 /** A registered-schema table, for resolver cases that need no files. */
@@ -91,12 +91,12 @@ describe("the default set (0070)", () => {
       "manni:core:1.0.0",
       "manni:audience:1.0.0",
       "manni:structure:1.0.0",
-      "manni:stewardship:1.1.0",
+      "manni:stewardship:1.2.0",
       "manni:lifecycle:1.0.0",
-      "manni:ai-context:1.1.0",
+      "manni:ai-context:1.2.0",
       "manni:evals:1.0.0",
       "manni:graph:1.0.0",
-      "manni:citations:1.0.0",
+      "manni:citations:1.1.0",
     ]);
   });
 });
@@ -190,7 +190,7 @@ describe("precedence after 0070", () => {
   it("a listed version of a default vocabulary replaces the default's version", () => {
     const r = resolveFor({ schemas: ["manni:stewardship:1.0.0"] });
     expect(r.schemas).toContain("manni:stewardship:1.0.0");
-    expect(r.schemas).not.toContain("manni:stewardship:1.1.0");
+    expect(r.schemas).not.toContain("manni:stewardship:1.2.0");
     expect(r.schemas).toHaveLength(DEFAULT_SCHEMAS.length);
   });
 
@@ -198,8 +198,8 @@ describe("precedence after 0070", () => {
     const r = resolveFor({ strict: true, schemas: ["manni:stewardship:1.0.0"] });
     expect(r.schemas).toContain("manni:stewardship:1.0.0");
     expect(r.schemas).toContain("manni:stewardship-strict:1.0.0");
-    expect(r.schemas).not.toContain("manni:stewardship:1.1.0");
-    expect(r.schemas).not.toContain("manni:stewardship-strict:1.1.0");
+    expect(r.schemas).not.toContain("manni:stewardship:1.2.0");
+    expect(r.schemas).not.toContain("manni:stewardship-strict:1.2.0");
     expect(r.schemas).toHaveLength(STRICT_DEFAULTS.length);
   });
 
@@ -297,7 +297,7 @@ describe("the ladder (0070)", () => {
   it("5. a pinned stewardship 1.0.0 reports each stewardship error once", async () => {
     const { results } = await runValidate({ inputs: ["bad-owner.md"], cwd: PINNED_STEWARDSHIP });
     const r = results[0];
-    expect(r?.schemas).not.toContain("manni:stewardship:1.1.0");
+    expect(r?.schemas).not.toContain("manni:stewardship:1.2.0");
     const errors = failing(r);
     expect(errors.length).toBeGreaterThan(0);
     expect(errors.every((e) => e.startsWith("manni:stewardship:1.0.0 "))).toBe(true);

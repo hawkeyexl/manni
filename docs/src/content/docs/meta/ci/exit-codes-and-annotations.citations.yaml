@@ -53,9 +53,9 @@ docs/src/content/docs/meta/ci/exit-codes-and-annotations.mdx:
         integrity: sha256-b4f0072a5bff7b9ce9449c99245e0204c43f7ad71a57d9a9ae1e68e86cc98d78
       source:
         file: src/meta/reporters/index.ts
-        lines: 292
+        lines: 294
         integrity: sha256-484ab502761ab6f10654499678c217774f5ff4856ba6ceaba9a07a8f22a96d49
-        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
+        commit-sha: 6f1ff2e33d9cc6b0a72c5acc22a0290a71d3b0fe
     - id: validate-has-five-report-formats
       claim:
         integrity: sha256-016f9994f9c9d63d98214d6e7052ad0c3b8714f15abea15e60a04dec71e56cce
@@ -77,9 +77,9 @@ docs/src/content/docs/meta/ci/exit-codes-and-annotations.mdx:
         integrity: sha256-50b9379d0cc20436c7d0a13b00a56a71a7be2860652e8b4e11564ec55ead1b8a
       source:
         file: src/meta/reporters/index.ts
-        lines: 301-312
+        lines: 303-314
         integrity: sha256-96ed1375b03b05a524d20e67fe16600c5dae6b6e7dba967dc7678a0ad2bdb641
-        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
+        commit-sha: 6f1ff2e33d9cc6b0a72c5acc22a0290a71d3b0fe
     - id: quiet-hides-passing-files
       claim:
         lines: 99-100
@@ -194,36 +194,36 @@ docs/src/content/docs/meta/ci/exit-codes-and-annotations.mdx:
         integrity: sha256-c82bb03d21e4ade3765e2c740d20e63dc8c5d9008ed46ce83512d43699828311
       source:
         file: src/meta/core/validator.ts
-        lines: 1007-1015
+        lines: 1071-1079
         integrity: sha256-7d405e798226afa451d2c0ff05a3e1807cb0fb448f8d8d295f1a329a45beaf2e
-        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
+        commit-sha: ac06e6b383628ad1b1e78539fc301e26df84e834
     - id: github-file-param-always-present
       claim:
         lines: 210
         integrity: sha256-0cbc156f88264131bf0d1295f23c8976191565df28a2a66141db1af2455f7fbb
       source:
         file: src/meta/reporters/index.ts
-        lines: 318
+        lines: 320
         integrity: sha256-f01660f4f66c7042ecb427cc0f978499afc45edb6a3f6b302f96eafc6967b325
-        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
+        commit-sha: 6f1ff2e33d9cc6b0a72c5acc22a0290a71d3b0fe
     - id: github-line-param-only-when-known
       claim:
         lines: 211
         integrity: sha256-edb2384117b89857036f29ae14cc627519af8bafa8c0eb38b032dc2ad463fc46
       source:
         file: src/meta/reporters/index.ts
-        lines: 319
+        lines: 321
         integrity: sha256-6f7fddba54807036fe6792397e2805fdfc0d05e15ac3f8e2939b1705636c6d54
-        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
+        commit-sha: 6f1ff2e33d9cc6b0a72c5acc22a0290a71d3b0fe
     - id: github-col-omitted-for-required
       claim:
         lines: 212-214
         integrity: sha256-e5833376821caa374c3d698d6eee36bb13eb5f53aaeaf156277b33aae30d44b1
       source:
         file: src/meta/core/validator.ts
-        lines: 1007-1015
+        lines: 1071-1079
         integrity: sha256-7d405e798226afa451d2c0ff05a3e1807cb0fb448f8d8d295f1a329a45beaf2e
-        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
+        commit-sha: ac06e6b383628ad1b1e78539fc301e26df84e834
     - id: root-field-label-is-root
       claim:
         lines: 218-219

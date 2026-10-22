@@ -1,0 +1,12 @@
+duplicate.md:
+  citations:
+    - id: twice-verified
+      source:
+        file: src/cite/core/config.ts
+        integrity: sha256-1111111111111111111111111111111111111111111111111111111111111111
+        commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e
+      verified-by:
+        - tool: sample-runner
+          check: config-paths
+        - tool: sample-runner
+          check: config-paths

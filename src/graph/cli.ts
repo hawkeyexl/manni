@@ -19,7 +19,7 @@ import {
 } from "../shared/cli-options.js";
 import { shouldColor } from "../shared/color.js";
 import { fail } from "../shared/run.js";
-import { warn } from "../shared/warn.js";
+import { noticeOnce, warn } from "../shared/warn.js";
 import { GraphError } from "./types.js";
 import { LOCAL_FLAG_HELP } from "../shared/providers.js";
 import { ALL_FILL_FIELDS, type FillField } from "./core/config.js";
@@ -64,6 +64,17 @@ import {
 } from "./commands/search.js";
 import { renderStats, runStats } from "./commands/stats.js";
 import { renderTraverse, runTraverse } from "./commands/traverse.js";
+import {
+  renderBundle,
+  renderLookup,
+  runLookup,
+  runRetrieve,
+  runTraverseContext,
+} from "./commands/retrieve.js";
+import { runServe } from "./commands/serve.js";
+import { renderPublish, runPublish } from "./commands/publish.js";
+import type { WithholdReason } from "./runtime/chunks.js";
+import type { RetrieveMode, WhereCondition } from "./runtime/retrieve.js";
 
 /**
  * Whether `command`'s output gets colour: this domain's `--no-color` and
@@ -200,6 +211,50 @@ const showFormatOption = choiceOption("--format", SHAPES_SHOW_FORMATS);
  */
 const fieldsOption = (raw: string): FillField[] =>
   splitList(raw).map((value) => enumOption("--fields", ALL_FILL_FIELDS)(value));
+
+/**
+ * `--withhold <list>`: comma-separated and given once, each value one of the
+ * reasons `graph.retrieve.withhold` takes. It only ever tightens the floor.
+ */
+const withholdOption = (raw: string): WithholdReason[] =>
+  splitList(raw).map((value) => {
+    if (value !== "drifted" && value !== "failing") {
+      throw new GraphError(`--withhold takes drifted or failing, and got ${value}.`);
+    }
+    return value;
+  });
+
+/**
+ * `--where <field=value>`: one condition per occurrence, never split on
+ * commas, since a value may hold one. Conditions combine with AND.
+ */
+const whereOption = (raw: string, prev: WhereCondition[]): WhereCondition[] => {
+  const eq = raw.indexOf("=");
+  const field = eq < 0 ? "" : raw.slice(0, eq);
+  const value = eq < 0 ? "" : raw.slice(eq + 1);
+  if (field === "" || value === "") {
+    throw new GraphError(`--where takes field=value, and got ${raw}.`);
+  }
+  return [...prev, { field, value }];
+};
+
+/** The plumbing a served verb takes, and nothing else: where the artifact is. */
+function artifactInputs(command: Command): Command {
+  return command
+    .option("-c, --config <path>", "Path to manni.config.yaml")
+    .option("--no-config", "Ignore any discovered config file")
+    .option("-g, --graph <path>", "Graph .ttl path (default: config out)")
+    .option(
+      "-i, --index <dir>",
+      "Directory holding chunks.json, its rows and the search index (default: beside the graph)",
+    )
+    .option(
+      "-f, --format <format>",
+      `Output: ${GRAPH_FORMAT_LIST}`,
+      formatOption,
+      "pretty",
+    );
+}
 
 /**
  * The document-set surface the verbs that read documents share (proposals
@@ -772,13 +827,33 @@ program
   .option("--lang <tag>", "Scope filter: BCP-47 language tag, matched in any case")
   .option("--limit <n>", "Stop after this many nodes", countOption("--limit"))
   .option(
+    "--context",
+    "Return the passages the walk reaches, with their text and proof, from the chunk artifact beside the graph",
+  )
+  .option(
+    "--max-chars <n>",
+    "Character budget for the passages (with --context; default: config retrieve.maxChars)",
+    countOption("--max-chars"),
+  )
+  .option(
+    "--withhold <list>",
+    "Also leave out passages that are drifted or failing, comma-separated (with --context)",
+    withholdOption,
+  )
+  .option(
+    "--where <field=value>",
+    "Only passages whose metadata field holds the value, or a list field containing it (repeatable; all must hold; with --context)",
+    whereOption,
+    [],
+  )
+  .option(
     "-f, --format <format>",
     `Output: ${GRAPH_FORMAT_LIST}`,
     formatOption,
     "pretty",
   )
   .action(
-    (
+    async (
       node: string,
       opts: {
         config?: string | boolean;
@@ -791,12 +866,16 @@ program
         softwareSubject?: string;
         lang?: string;
         limit?: number;
+        context?: boolean;
+        maxChars?: number;
+        withhold?: WithholdReason[];
+        where: WhereCondition[];
         format: GraphFormat;
       },
     ) => {
       try {
-        const { softwareSubject, ...others } = rest(opts);
-        const report = runTraverse({
+        const { softwareSubject, context, maxChars, withhold, where, ...others } = rest(opts);
+        const inputs = {
           ...others,
           ...documentOptions(opts),
           ...(softwareSubject === undefined ? {} : { subject: softwareSubject }),
@@ -805,8 +884,141 @@ program
             opts.predicates === undefined
               ? undefined
               : splitList(opts.predicates),
+        };
+        if (context !== true) {
+          if (maxChars !== undefined) throw new GraphError("--max-chars needs --context.");
+          if (withhold !== undefined) throw new GraphError("--withhold needs --context.");
+          if (where.length > 0) throw new GraphError("--where needs --context.");
+          console.log(renderTraverse(runTraverse(inputs), opts.format));
+          return;
+        }
+        const bundle = await runTraverseContext({
+          ...inputs,
+          ...(maxChars === undefined ? {} : { maxChars }),
+          ...(withhold === undefined ? {} : { withhold }),
+          ...(where.length === 0 ? {} : { where }),
         });
-        console.log(renderTraverse(report, opts.format));
+        console.log(renderBundle(bundle, opts.format));
+      } catch (e) {
+        fail(e);
+      }
+    },
+  );
+
+artifactInputs(
+  program
+    .command("lookup")
+    .description(
+      "Answer a question from the chunk artifact: every ranked match, everything reached outward, and everything that depends on them",
+    )
+    .argument("<question>", "The question, in quotes"),
+).action(
+  async (
+    question: string,
+    opts: { config?: string | boolean; graph?: string; index?: string; format: GraphFormat },
+  ) => {
+    try {
+      const { format, ...others } = rest(opts);
+      const { result, settings } = await runLookup({ ...others, ...documentOptions(opts), question });
+      console.log(renderLookup(result, format, settings));
+    } catch (e) {
+      fail(e);
+    }
+  },
+);
+
+artifactInputs(
+  program
+    .command("retrieve")
+    .description("Retrieve passages for a question, with control over language, scope, depth and budget")
+    .argument("<question>", "The question, in quotes"),
+)
+  .option("--lang <tag>", "The localization (required when the corpus has more than one)")
+  .option("--variant <variant>", "Scope filter: product variant IRI, title, or slug")
+  .option("--software-subject <subject>", "Scope filter: software subject")
+  .option(
+    "--mode <mode>",
+    `Which legs to run: ${SEARCH_MODES.join(" | ")} (default: hybrid when the rows carry vectors)`,
+    choiceOption("--mode", SEARCH_MODES),
+  )
+  .option("--seeds <n>", "Ranked matches the walk starts from (default: config retrieve.seeds)", countOption("--seeds"))
+  .option(
+    "-d, --depth <n>",
+    "Hops out from each match (default: config retrieve.depth)",
+    countOption("--depth", 0),
+  )
+  .option(
+    "--max-chars <n>",
+    "Character budget for the passages (default: config retrieve.maxChars)",
+    countOption("--max-chars"),
+  )
+  .option(
+    "--withhold <list>",
+    "Also leave out passages that are drifted or failing, comma-separated",
+    withholdOption,
+  )
+  .option(
+    "--where <field=value>",
+    "Only passages whose metadata field holds the value, or a list field containing it (repeatable; all must hold)",
+    whereOption,
+    [],
+  )
+  .action(
+    async (
+      question: string,
+      opts: {
+        config?: string | boolean;
+        graph?: string;
+        index?: string;
+        lang?: string;
+        variant?: string;
+        softwareSubject?: string;
+        mode?: RetrieveMode;
+        seeds?: number;
+        depth?: number;
+        maxChars?: number;
+        withhold?: WithholdReason[];
+        where: WhereCondition[];
+        format: GraphFormat;
+      },
+    ) => {
+      try {
+        const { softwareSubject, format, where, ...others } = rest(opts);
+        const bundle = await runRetrieve({
+          ...others,
+          ...documentOptions(opts),
+          ...(softwareSubject === undefined ? {} : { subject: softwareSubject }),
+          ...(where.length === 0 ? {} : { where }),
+          question,
+        });
+        console.log(renderBundle(bundle, format));
+      } catch (e) {
+        fail(e);
+      }
+    },
+  );
+
+program
+  .command("serve")
+  .description(
+    "Serve lookup, retrieve, traverse and impact to an agent over MCP on stdio, from the chunk artifact, until stdin closes",
+  )
+  .option("-c, --config <path>", "Path to manni.config.yaml")
+  .option("--no-config", "Ignore any discovered config file")
+  .option("-g, --graph <path>", "Graph .ttl path (default: config out)")
+  .option(
+    "-i, --index <dir>",
+    "Directory holding chunks.json, its rows and the search index (default: beside the graph)",
+  )
+  .option(
+    "--withhold <list>",
+    "Also leave out passages that are drifted or failing, comma-separated, on every call",
+    withholdOption,
+  )
+  .action(
+    async (opts: { config?: string | boolean; graph?: string; index?: string; withhold?: WithholdReason[] }) => {
+      try {
+        await runServe({ ...rest(opts), ...documentOptions(opts) });
       } catch (e) {
         fail(e);
       }
@@ -871,7 +1083,7 @@ program
 program
   .command("export")
   .description(
-    "Reserialize the built graph into a consumer format (jsonld file, iirds package, search index, or question set)",
+    "Reserialize the built graph into a consumer format (jsonld file, iirds package, search index, question set, chunks with their provenance, or llms.txt)",
   )
   // The target is a positional, not `-f`: `-f` is the output format in every
   // other verb of the family (0051 §2), and one flag cannot mean two things.
@@ -881,12 +1093,13 @@ program
   .option("-g, --graph <path>", "Graph .ttl path (default: config out)")
   .option(
     "-o, --out <path>",
-    "Output path (default: the graph path with the target's extension)",
+    "Output path (default: the graph path with the target's extension); a directory for search and chunks",
   )
+  .option("--evals <path>", "A docevals JSON report for chunks (default: config export.chunks.evals)")
   .action(
     async (
       target: string,
-      opts: { config?: string | boolean; graph?: string; out?: string },
+      opts: { config?: string | boolean; graph?: string; out?: string; evals?: string },
     ) => {
       try {
         if (!(EXPORT_TARGETS as readonly string[]).includes(target)) {
@@ -899,12 +1112,55 @@ program
           graph: opts.graph,
           format: target as ExportFormat,
           out: opts.out,
+          ...(opts.evals === undefined ? {} : { evals: opts.evals }),
         });
         for (const warning of result.warnings) warn(warning);
-        const noun = result.format === "questions" ? "question" : "node";
+        for (const said of result.notices ?? []) noticeOnce(said);
+        const noun =
+          result.format === "questions"
+            ? "question"
+            : result.format === "chunks"
+              ? "chunk"
+              : result.format === "llms"
+                ? "page"
+                : "node";
         console.log(
           `Wrote ${result.nodes} ${noun}${result.nodes === 1 ? "" : "s"} to ${result.outPath}`,
         );
+      } catch (e) {
+        fail(e);
+      }
+    },
+  );
+
+program
+  .command("publish")
+  .description(
+    "Build, embed when configured, and export everything serving needs into one directory",
+  )
+  .option("-c, --config <path>", "Path to manni.config.yaml")
+  .option("--no-config", "Ignore any discovered config file")
+  .option("-o, --out <dir>", "Directory for every artifact (default: the directory of config out)")
+  .option("--evals <path>", "A docevals JSON report for the chunks (default: config export.chunks.evals)")
+  .option(
+    "-f, --format <format>",
+    `Output: ${GRAPH_FORMAT_LIST}`,
+    formatOption,
+    "pretty",
+  )
+  .action(
+    async (opts: { config?: string | boolean; out?: string; evals?: string; format: GraphFormat }) => {
+      try {
+        const report = await runPublish({
+          ...documentOptions(opts),
+          ...(opts.out === undefined ? {} : { out: opts.out }),
+          ...(opts.evals === undefined ? {} : { evals: opts.evals }),
+          say: (kind, message) => {
+            if (kind === "notice") noticeOnce(message);
+            else warn(message);
+          },
+        });
+        console.log(renderPublish(report, opts.format));
       } catch (e) {
         fail(e);
       }

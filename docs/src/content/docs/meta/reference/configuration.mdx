@@ -27,7 +27,7 @@ sample-questions:
 graph:
   label: Configuration reference
   type: reference
-last-updated: 2026-10-19
+last-updated: 2026-10-22
 tags:
   - configuration
   - yaml
@@ -47,6 +47,9 @@ next-steps:
   - meta-set-up-external-metadata
   - meta-reference-cli
   - meta-set-up-different-schemas-per-folder
+verified-by:
+  - tool: doc-detective
+    check: configuration-reference
 ---
 
 import { Aside } from '@astrojs/starlight/components';
@@ -1629,7 +1632,7 @@ meta:
 Each file then meets the eleven defaults and `./schemas/house.json`, in that
 order. A duplicate keeps its first place, so listing a default again changes
 nothing. Listing another version of a default replaces it, so
-`manni:stewardship:1.0.0` takes the place of `manni:stewardship:1.1.0`.
+`manni:stewardship:1.0.0` takes the place of `manni:stewardship:1.2.0`.
 
 To judge files by the listed schemas alone, turn the defaults off:
 
@@ -2239,8 +2242,8 @@ meta:
 
 With no `fields`, a page manages the merge-safe fields its schemas claim.
 The [default set](/manni/meta/reference/schema-resolution/#the-default-set)
-carries `manni:stewardship:1.1.0`, which claims `owner`, `created` and
-`last-updated`, and `manni:ai-context:1.1.0`, which claims `provenance`. A
+carries `manni:stewardship:1.2.0`, which claims `owner`, `created` and
+`last-updated`, and `manni:ai-context:1.2.0`, which claims `provenance`. A
 page on the defaults manages all four. A page judged by a house schema alone,
 which claims none of them, manages nothing.
 
