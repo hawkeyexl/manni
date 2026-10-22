@@ -191,7 +191,12 @@ export const OPTIONAL_FIELD_PREDECESSORS: ReadonlyMap<string, string> = new Map(
  */
 export function baselineIdentity(ref: string): string {
   let id = ref;
+  const seen = new Set<string>();
   for (;;) {
+    if (seen.has(id)) {
+      throw new Error(`predecessor cycle: ${[...seen, id].join(" -> ")}`);
+    }
+    seen.add(id);
     const next = ANNOTATION_ONLY_PREDECESSORS.get(id) ?? OPTIONAL_FIELD_PREDECESSORS.get(id);
     if (next === undefined) return id;
     id = next;
