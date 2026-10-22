@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE task PUBLIC "-//OASIS//DTD DITA Task//EN" "task.dtd">
+<task id="install">
+  <title>Install</title>
+  <taskbody>
+    <steps>
+      <?manni meta {"applies-to":["windows"]}?>
+      <step>
+        <?manni meta {"verified-by":[{"tool":"doc-detective","check":"install"}]}?>
+        <cmd>Run the installer.</cmd>
+      </step>
+    </steps>
+  </taskbody>
+</task>

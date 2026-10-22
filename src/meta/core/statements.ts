@@ -115,6 +115,8 @@ export interface PageStatement {
 export interface StatementRead {
   statements: PageStatement[];
   findings: FieldError[];
+  /** Where every statement on the page sits, in document order, for cutting them out of a pin. */
+  spans: Span[];
 }
 
 /** `"53-54"`, or `null` on an orphan. */
@@ -269,25 +271,57 @@ function statusOf(pin: string | undefined, text: readonly string[] | undefined):
   return text !== undefined && pinOf(text) === pin ? "current" : "changed";
 }
 
-/**
- * The anchored lines' text. A statement inside the lines it anchors, as an
- * element's first child is and as one sharing its line with the text is, is
- * cut out of its line first, so writing its own pin cannot change the text
- * the pin covers.
- */
-function anchoredText(
-  content: string,
-  lines: readonly string[],
-  anchor: PageLines,
-  token: MetaStatementToken,
-): string[] {
-  const out = lines.slice(anchor.start - 1, anchor.end);
-  const at = token.line - anchor.start;
-  const own = out[at];
-  if (own !== undefined) {
-    const lineStart = content.lastIndexOf("\n", token.start - 1) + 1;
-    out[at] = own.slice(0, token.start - lineStart) + own.slice(token.end - lineStart);
+/** The file offsets a statement takes: its comment or instruction, or a `<data>` carrier start tag to end tag. */
+interface Span {
+  start: number;
+  end: number;
+}
+
+/** The file offset line `line` starts at. */
+function lineOffset(content: string, line: number): number {
+  let at = 0;
+  for (let n = 1; n < line; n++) {
+    const nl = content.indexOf("\n", at);
+    if (nl === -1) return content.length;
+    at = nl + 1;
   }
+  return at;
+}
+
+/**
+ * The anchored lines' text, as a pin hashes it (proposal 0101). Every
+ * statement inside the lines is cut out first, the anchoring one and any
+ * other, so a tool writing into a statement never changes a pin over it.
+ * `spans` are every statement on the page, in document order. A line that
+ * held a statement and is blank after the cut is dropped, so moving a
+ * statement onto or off its own line keeps the pin. A line blank before the
+ * cut stays.
+ */
+function anchoredText(content: string, anchor: PageLines, spans: readonly Span[]): string[] {
+  const from = Math.max(lineOffset(content, anchor.start), content.charCodeAt(0) === 0xfeff ? 1 : 0);
+  const nl = content.indexOf("\n", lineOffset(content, anchor.end));
+  const to = nl === -1 ? content.length : nl;
+  let text = "";
+  const cuts: number[] = [];
+  let at = from;
+  for (const s of spans) {
+    const end = Math.min(s.end, to);
+    if (end <= at || s.start >= to) continue;
+    text += content.slice(at, Math.max(s.start, at));
+    cuts.push(text.length);
+    at = end;
+  }
+  text += content.slice(at, to);
+  const parts = text.split("\n");
+  const out: string[] = [];
+  let offset = 0;
+  parts.forEach((part, i) => {
+    const cut = cuts.some((c) => c >= offset && c <= offset + part.length);
+    offset += part.length + 1;
+    // A CR before an LF is folded, as splitLines folds CRLF.
+    const line = (i < parts.length - 1 || to < content.length) && part.endsWith("\r") ? part.slice(0, -1) : part;
+    if (!(cut && line.trim() === "")) out.push(line);
+  });
   return out;
 }
 
@@ -369,7 +403,9 @@ function readLineRule(content: string, format: string): StatementRead {
   const headings = lineHeadings(lines, format, from.line, (n) => fenced.has(n));
   const statements: PageStatement[] = [];
   const findings: FieldError[] = [];
-  for (const token of parseMetaStatements(content.slice(from.offset), format, from)) {
+  const tokens = parseMetaStatements(content.slice(from.offset), format, from);
+  const spans = tokens.map(({ start, end }) => ({ start, end }));
+  for (const token of tokens) {
     const unit = anchoredLines(content, token.end, format);
     const heading = unit !== undefined && unit.start === unit.end ? headingAt(lines, unit.start, format) : undefined;
     const anchor = heading !== undefined ? { start: heading.line, end: heading.line } : unit;
@@ -378,7 +414,7 @@ function readLineRule(content: string, format: string): StatementRead {
       line: token.line,
       scope: heading !== undefined ? "section" : "block",
       section: sectionAt(headings, anchor?.start ?? token.line),
-      status: statusOf(token.pin, anchor === undefined ? undefined : anchoredText(content, lines, anchor, token)),
+      status: statusOf(token.pin, anchor === undefined ? undefined : anchoredText(content, anchor, spans)),
       token,
     };
     if (anchor !== undefined) s.anchor = anchor;
@@ -402,7 +438,7 @@ function readLineRule(content: string, format: string): StatementRead {
       }
     }
   }
-  return { statements, findings };
+  return { statements, findings, spans };
 }
 
 // ---------------------------------------------------------------------------
@@ -567,7 +603,8 @@ function* walk(node: XmlNode): Generator<XmlNode> {
 /** The statements of an XML or DITA page, anchored to elements. */
 function readXml(content: string): StatementRead {
   const tree = scanXml(content, parseMetaStatements(content, "xml"));
-  const lines = splitLines(content);
+  // A node's own offsets: a `<data>` carrier's run start tag to end tag.
+  const spans = [...walk(tree)].filter((n) => n.statement !== undefined).map(({ start, end }) => ({ start, end }));
   // Titles in document order, slugged once, so two equal titles stay apart.
   const slugger = new GithubSlugger();
   const slugs = new Map<XmlNode, string>();
@@ -618,7 +655,7 @@ function readXml(content: string): StatementRead {
       line: token.line,
       scope,
       section,
-      status: statusOf(token.pin, anchor === undefined ? undefined : anchoredText(content, lines, anchor, token)),
+      status: statusOf(token.pin, anchor === undefined ? undefined : anchoredText(content, anchor, spans)),
       token,
     };
     if (anchor !== undefined) s.anchor = anchor;
@@ -628,7 +665,7 @@ function readXml(content: string): StatementRead {
     statements.push(s);
     findings.push(...shapeFindings(s, "reason" in parsed ? parsed.reason : undefined, true));
   }
-  return { statements, findings };
+  return { statements, findings, spans };
 }
 
 /**
@@ -649,11 +686,10 @@ export function pinStatements(
   content: string,
   format: string,
 ): { content: string; pinned: number; findings: FieldError[] } {
-  const lines = splitLines(content);
   const read = readStatements(content, format);
   const edits = read.statements
     .filter((s): s is PageStatement & { anchor: PageLines } => s.pin === undefined && s.anchor !== undefined)
-    .map((s) => ({ at: s.token.pinAt, text: `${pinOf(anchoredText(content, lines, s.anchor, s.token))} ` }))
+    .map((s) => ({ at: s.token.pinAt, text: `${pinOf(anchoredText(content, s.anchor, read.spans))} ` }))
     .sort((a, b) => b.at - a.at);
   let out = content;
   for (const e of edits) out = out.slice(0, e.at) + e.text + out.slice(e.at);
