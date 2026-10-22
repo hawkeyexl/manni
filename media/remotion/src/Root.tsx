@@ -23,6 +23,7 @@ import { beats as tbxBeats, totalFrames as tbxTotalFrames, TYPING_MS as tbxTypin
 import { beats as conceptsBeats, totalFrames as conceptsTotalFrames, TYPING_MS as conceptsTypingMs } from "./concepts/beats";
 import { beats as graphFormatsBeats, totalFrames as graphFormatsTotalFrames, TYPING_MS as graphFormatsTypingMs } from "./graph-formats/beats";
 import { beats as findingsBeats, totalFrames as findingsTotalFrames, TYPING_MS as findingsTypingMs } from "./findings/beats";
+import { beats as citeReposBeats, totalFrames as citeReposTotalFrames, TYPING_MS as citeReposTypingMs } from "./cite-repos/beats";
 
 /** sidecar-url-1x1: 23 px / 75 columns, derived in media/sidecar-url-1x1.script.md. */
 const DemoUrl: React.FC = () => <DemoView beats={urlBeats} fontPx={23} linePx={32} cols={75} />;
@@ -115,6 +116,12 @@ const DemoTbx: React.FC = () => <DemoView beats={tbxBeats} fontPx={22} linePx={3
  * (media/capture-concepts/cols.mjs). Ligatures off: a terminal prints `--` and `//` as two glyphs.
  */
 const DemoConcepts: React.FC = () => <DemoView beats={conceptsBeats} fontPx={23} linePx={32} cols={75} typingMs={conceptsTypingMs} ligatures={false} />;
+
+/**
+ * cite-repos-1x1: 21 px / 82 columns, derived in media/cite-repos-1x1.script.md
+ * (media/capture-repos/cols.mjs). Ligatures off: a terminal prints `--`, `../` and `@@` as characters.
+ */
+const DemoCiteRepos: React.FC = () => <DemoView beats={citeReposBeats} fontPx={21} linePx={30} cols={82} typingMs={citeReposTypingMs} ligatures={false} />;
 
 export const Root: React.FC = () => (
   <>
@@ -293,6 +300,14 @@ export const Root: React.FC = () => (
       height={1080}
       fps={FPS}
       durationInFrames={conceptsTotalFrames}
+    />
+    <Composition
+      id="CiteReposDemo"
+      component={DemoCiteRepos}
+      width={1080}
+      height={1080}
+      fps={FPS}
+      durationInFrames={citeReposTotalFrames}
     />
   </>
 );

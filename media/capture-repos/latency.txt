@@ -1,0 +1,9 @@
+mint-before-timeout exit 0 435 ms  manni cite add pages/limits.md:7 lib/limits.ts:2 --id timeout --root ../api
+mint-before-retries exit 0 472 ms  manni cite add pages/limits.md:19 src/client.ts:2 --id retries --root ../sdk
+b1-api exit 1 518 ms  manni cite check pages/limits.md --root ../api
+b1-sdk exit 1 546 ms  manni cite check pages/limits.md --root ../sdk
+mint-timeout exit 0 492 ms  manni cite add pages/limits.md:7 api:lib/limits.ts:2 --id timeout
+mint-retries exit 0 541 ms  manni cite add pages/limits.md:20 sdk:src/client.ts:2 --id retries
+b3-check exit 0 517 ms  manni cite check pages/limits.md
+b4-log exit 0 53 ms  git -c color.ui=always -C ../sdk log -1 -p --oneline -U0
+b5-check exit 1 768 ms  manni cite check pages/limits.md

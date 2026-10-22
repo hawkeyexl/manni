@@ -1,0 +1,82 @@
+Citations from more than one checkout (proposal 0100), demo video transcript (silent video; text describes what is on screen)
+
+Frame: 1080x1080, 30 fps, 43.5 s. Every terminal line is real output from this
+branch's build, node dist/cli.js, typed as manni, and from git. The commands run
+in docs/, one of three git checkouts (docs, api, sdk) that
+media/capture-repos/capture.sh stages side by side in media/scratch-cite-repos/.
+Beat 1's pins were minted before cite.repos was declared, one --root per pin.
+Each command appears after its measured latency, at 1x.
+
+[0:00-0:15] Title: One root per run (1 / 5)
+$ manni cite check pages/limits.md --root ../api; echo $?
+✗ pages/limits.md   (✗ in red)
+    ✓ timeout   :26 current   lib/limits.ts:2 current   (✓ in green)
+    ✗ retries   :28 current   src/client.ts:2 missing   (✗ in red)
+      Run manni cite remove --only retries, then manni cite add against the file's new path.
+      manni:cite source-missing: The path names no tracked file, names an undeclared repo, or an encrypted source cannot be decrypted.   (dim)
+      Guide: https://hawkeyexl.github.io/manni/cite/fix/#source-missing   (dim)
+
+1 file checked, 0 passed, 1 failed, 1 finding   (red)
+1
+$ manni cite check pages/limits.md --root ../sdk; echo $?
+✗ pages/limits.md   (✗ in red)
+    ✗ timeout   :26 current   lib/limits.ts:2 missing   (✗ in red)
+      Run manni cite remove --only timeout, then manni cite add against the file's new path.
+      manni:cite source-missing: The path names no tracked file, names an undeclared repo, or an encrypted source cannot be decrypted.   (dim)
+      Guide: https://hawkeyexl.github.io/manni/cite/fix/#source-missing   (dim)
+    ✓ retries   :28 current   src/client.ts:2 current   (✓ in green)
+
+1 file checked, 0 passed, 1 failed, 1 finding   (red)
+1
+Highlighted rows: lines containing ":2 missing"
+Caption: The page cites api and sdk. Either --root fails the other pin, exit 1.
+
+[0:15-0:20] Title: Name each checkout (2 / 5)
+$ cat manni.config.yaml
+cite:
+  repos:
+    api: ../api
+    sdk: ../sdk
+Highlighted rows: lines containing "api: ../api", "sdk: ../sdk"
+Caption: One key in manni.config.yaml. cite.repos names each checkout.
+
+[0:20-0:28] Title: One run, both pins (3 / 5)
+$ manni cite check pages/limits.md; echo $?
+Using manni.config.yaml (.)
+✓ pages/limits.md   (✓ in green)
+    ✓ timeout   :28 current   api:lib/limits.ts:2 current   (✓ in green)
+    ✓ retries   :30 current   sdk:src/client.ts:2 current   (✓ in green)
+
+1 file checked, 1 passed, 0 failed, 0 findings   (green)
+0
+Highlighted rows: lines containing "api:lib/limits.ts:2", "sdk:src/client.ts:2"
+Caption: Each pin resolves in its own checkout, printed as api: and sdk:. Exit 0.
+
+[0:28-0:34] Title: The SDK changes (4 / 5)
+$ git -C ../sdk log -1 -p --oneline -U0
+d5b21f0 feat: retry five times
+diff --git a/src/client.ts b/src/client.ts
+index 6a30ba2..c381e7e 100644
+--- a/src/client.ts
++++ b/src/client.ts
+@@ -2 +2 @@ export function get(url: string) {
+-  return retry(() => fetch(url), { attempts: 3 });   (removed, red)
++  return retry(() => fetch(url), { attempts: 5 });   (added, green)
+Highlighted rows: lines containing "attempts"
+Caption: A commit in sdk moves the pinned line from 3 attempts to 5.
+
+[0:34-0:43] Title: The stale sentence (5 / 5)
+$ manni cite check pages/limits.md; echo $?
+Using manni.config.yaml (.)
+✗ pages/limits.md   (✗ in red)
+    ✓ timeout   :28 current   api:lib/limits.ts:2 current   (✓ in green)
+    ✗ retries   :30 current   sdk:src/client.ts:2 changed since ce9ce76, 1 commit   (✗ in red)
+      Check the sentence against the source, then run manni cite update --accept --only retries.
+      manni:cite source-changed: The cited lines are not what they were.   (dim)
+      Guide: https://hawkeyexl.github.io/manni/cite/fix/#source-changed   (dim)
+
+1 file checked, 0 passed, 1 failed, 1 finding   (red)
+1
+Highlighted rows: lines containing "changed since", "Check the sentence"
+Caption: Only retries reports, in sdk, with the commit it changed since. Exit 1.
+
