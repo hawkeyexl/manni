@@ -15,19 +15,36 @@ language: en
 audiences:
   - schema-authors
   - docs-engineers
+  - contributors
 intent: Look up each strategy check rule, its default severity, its message and what fixes it.
 lifecycle: published
+applies-to:
+  - domain:strategy
 sample-questions:
   - What rules does manni strategy check apply?
   - Which strategy rules fail a run by default?
   - How do I fix a missing-parent finding?
+graph:
+  label: Check rules
+  type: reference
 tags:
   - validation
   - rules
   - severity
+  - content-strategy
 action: remember
+prerequisites:
+  - strategy
+next-steps:
+  - /manni/strategy/reference/cli/
+related-pages:
+  - /manni/strategy/reference/cli/
+  - /manni/meta/reference/schemas/manni-content-strategy/
+concepts:
+  - validation
 ---
 
+{/* cite rule-id-prefix */}
 `manni strategy check` reads the records and the pages that name them, and
 reports what does not line up. It reads metadata, never prose. Each rule id
 is `manni:strategy/<rule>`. Each rule's level can be moved or turned off under

@@ -134,6 +134,11 @@ npx @hawkeyexl/manni check
     description="Define a docset's terms, check every concepts: reference against them, generate a Vale style from them, and move the set between glossary formats, TBX and CSV."
   />
   <LinkCard
+    title="strategy"
+    href="/manni/strategy/"
+    description="Keep the audiences, personas and journeys a docset serves as records, and check that every page naming one names a record that exists."
+  />
+  <LinkCard
     title="test"
     href="/manni/test/"
     description="Run the Doc Detective tests embedded in the docs, and gate on them with the same exit codes and annotations as every other manni check."
@@ -145,7 +150,8 @@ like what it says it is. `cite` checks that what a page says about the code is
 still true. `docevals` checks that a page still meets the quality bar its team
 wrote down. `tracevals` checks that an agent session followed the instructions
 it ran on. `term` checks that the terms a page names are defined, and carries
-those terms into Vale and translation. `graph` checks what the pages say about
+those terms into Vale and translation. `strategy` checks that the audiences,
+personas and journeys a page names are ones the docset keeps records of. `graph` checks what the pages say about
 each other, which is the only question no single file can answer. `key` sets and
 rotates the one encryption key that `meta` and `cite` encrypt values with.
 `test` checks that a procedure still works when someone follows it.
@@ -153,8 +159,8 @@ rotates the one encryption key that `meta` and `cite` encrypt values with.
 framework's own commands.
 `manni --help` lists exactly the tools the package carries.
 
-`cite`, `docevals`, `tracevals`, `key`, `site`, `term`, `lint`, `graph` and
-`test` are in beta.
+`cite`, `docevals`, `tracevals`, `key`, `site`, `term`, `strategy`, `lint`,
+`graph` and `test` are in beta.
 Their commands, config keys and output can change in any release, without
 notice.
 

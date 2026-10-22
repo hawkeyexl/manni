@@ -55,6 +55,13 @@ collections:
       # page's schemas mark `x-manni-location: external`, so a page's
       # bookkeeping sits beside it and never reaches the published site.
       - file: "{page}.meta.yaml"
+  # The content strategy, one record per audience, persona and journey
+  # (proposal 0100). `manni strategy check` holds every page's audiences:,
+  # personas: and journeys: to these records. They are not published, so the
+  # Docs workflow's `graph publish --collection site` leaves them out.
+  - name: strategy
+    paths:
+      - "docs/content-strategy/{audiences,personas,journeys}/*.md"
 
 # Where Vale's configuration is, for the tools that run Vale. `manni term lint`
 # runs it over the glossary's definitions, and `manni term write -f vale` reads
@@ -101,6 +108,15 @@ meta:
         - astro:starlight:0.41
         - manni:terminology:1.2.0
         - manni:terminology-strict:1.2.0
+    # The strategy records name their parent in `audience:` or `persona:`.
+    # The content-strategy vocabulary is not a default, so its overlay is
+    # listed by hand, as terminology's is.
+    - collection: strategy
+      defaults: true
+      strict: true
+      schemas:
+        - manni:content-strategy:1.0.0
+        - manni:content-strategy-strict:1.0.0
     # Every other published page. Each one must declare a non-empty title and
     # description, which the house schema requires.
     - collection: site
@@ -224,6 +240,7 @@ docevals:
   # measures the regex alone.
   suites:
     site: { target-pass-rate: 1.0, evals: [no-todo-markers] }
+    strategy: { target-pass-rate: 1.0, evals: [no-todo-markers] }
     a11y: { target-pass-rate: 1.0, evals: [no-todo-markers] }
     cite: { target-pass-rate: 1.0, evals: [no-todo-markers] }
     docevals: { target-pass-rate: 1.0, evals: [no-todo-markers] }
@@ -236,6 +253,13 @@ docevals:
     term: { target-pass-rate: 1.0, evals: [no-todo-markers] }
     test: { target-pass-rate: 1.0, evals: [no-todo-markers] }
     tracevals: { target-pass-rate: 1.0, evals: [no-todo-markers] }
+
+# The strategy tool reads the `strategy` collection's records and every
+# page's references into them, so it needs no paths. Every journey here has a
+# page, and this keeps it so: a journey cannot land without one.
+strategy:
+  severity:
+    unserved-journey: error
 
 # The graph tool over this site. Its own key, its own settings; the metadata
 # tool above never reads them. It declares no document set of its own: the

@@ -1,0 +1,22 @@
+docs/src/content/docs/strategy/index.mdx:
+  personas:
+    - sara
+    - theo
+  journeys:
+    - s17
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: src/strategy/commands
+    - path: src/strategy/core
+    - path: src/strategy/reporters
+  eval-suite: strategy
+  evals:
+    - id: explain-strategy-record
+      assertion: A reader can say what a strategy record is, name its three types, and say how a record names its parent.
+      type: capability
+      grader: ai
+    - id: set-up-strategy
+      assertion: A reader can write the collection and the override that put a docset's records in play.
+      type: capability
+      grader: ai

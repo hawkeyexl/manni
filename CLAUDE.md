@@ -143,6 +143,18 @@ Key layers:
     built-in static server `preview` uses for frameworks without one.
   - `src/site/cli.ts`: thin commander wrapper exported as `buildProgram()`
     and mounted by `src/cli.ts`. No entry point of its own.
+- `src/strategy/`: the content-strategy domain, `manni strategy list`, `get`
+  and `check` (proposal 0100). A record is a page declaring `type: audience`,
+  `type: persona` or `type: journey`, and `check` holds each page's
+  `audiences:`, `personas:` and `journeys:` to the records.
+  - `src/strategy/core/`: the `strategy:` config loader, the set loader, which
+    reads sidecars through meta's page view, the rules, and severity.
+  - `src/strategy/commands/`: the command cores and the findings adapter,
+    free of CLI/IO plumbing.
+  - `src/strategy/reporters/`: output formatting (pretty / json / github /
+    sarif / junit).
+  - `src/strategy/cli.ts`: thin commander wrapper exported as
+    `buildProgram()` and mounted by `src/cli.ts`. No entry point of its own.
 - `src/family/`: the two family verbs, `manni check` and `manni status`
   (proposal 0078). It owns in-play detection, Claude Code hook-envelope
   detection and the orchestration of the domains' command cores. It owns no

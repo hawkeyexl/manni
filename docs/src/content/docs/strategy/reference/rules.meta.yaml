@@ -1,0 +1,23 @@
+docs/src/content/docs/strategy/reference/rules.mdx:
+  personas:
+    - sara
+    - theo
+  journeys:
+    - s17
+    - t1
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: src/strategy/core/check.ts
+    - path: src/strategy/core/severity.ts
+    - path: src/strategy/types.ts
+  eval-suite: strategy
+  evals:
+    - id: name-rule-severity
+      assertion: A reader can name each strategy check rule and its default severity.
+      type: capability
+      grader: ai
+    - id: fix-a-rule
+      assertion: A reader can say what edit clears a finding of any strategy check rule.
+      type: capability
+      grader: ai

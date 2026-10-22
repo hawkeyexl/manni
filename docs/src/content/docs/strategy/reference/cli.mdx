@@ -18,15 +18,30 @@ audiences:
   - ci-engineers
 intent: Look up any manni strategy command, argument, flag, output shape, config key, exit code or usage error.
 lifecycle: published
+applies-to:
+  - domain:strategy
 sample-questions:
   - What flags does manni strategy check take?
   - Which pages name a journey?
   - What does each manni strategy usage error say?
+graph:
+  label: CLI reference
+  type: reference
 tags:
   - cli
   - reference
   - commands
+  - terminal
+  - command-line
 action: remember
+prerequisites:
+  - /manni/strategy/
+next-steps:
+  - /manni/strategy/reference/rules/
+related-pages:
+  - /manni/strategy/reference/rules/
+  - /manni/meta/reference/schemas/manni-content-strategy/
+risks: read-only
 ---
 
 {/* The command, argument, and option tables on this page are drift-checked
@@ -34,6 +49,7 @@ action: remember
     docs:check-cli), enforced in CI. Keep flags, arguments, and defaults in
     sync with the code; descriptions are free-form. */}
 
+{/* cite bare-strategy-exits-2 */}
 manni strategy exposes three verbs. [`list`](#strategy-list) prints the
 records as a tree, [`get`](#strategy-get) shows one record and what names it,
 and [`check`](#strategy-check) holds the pages to the records. There is no
@@ -367,7 +383,7 @@ written.
 |---|---|
 | `strategy` | the full help |
 | `strategy get` | `error: missing required argument 'id'` |
-| `strategy get m55` | `manni: no record "m55". 82 records; did you mean "m5"?` |
+| `strategy get mya` | `manni: no record "mya". 82 records; did you mean "maya"?` |
 | `strategy get zzzz` | `manni: no record "zzzz". 82 records.` |
 | `strategy check -f xml` | `manni: unknown format "xml". Expected pretty \| json \| github \| sarif \| junit.` |
 | A run that finds no records | `manni: no strategy records found. A record is a page declaring type: audience, type: persona or type: journey.` |

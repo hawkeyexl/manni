@@ -1,0 +1,287 @@
+---
+title: manni strategy
+description: "Keep a docset's audiences, personas and journeys as records, and check that every page naming one names a record that exists."
+tableOfContents: false
+hero:
+  tagline: Write down whom the docs serve, once, and hold every page to it.
+  actions:
+    - text: CLI reference
+      link: /manni/strategy/reference/cli/
+      icon: right-arrow
+      variant: primary
+    - text: Fix a failing check
+      link: /manni/strategy/reference/rules/
+      icon: error
+      variant: minimal
+type: overview
+id: strategy
+keywords:
+  - content strategy
+  - audiences
+  - personas
+  - journeys
+  - strategy check
+language: en
+audiences:
+  - schema-authors
+  - contributors
+intent: Tell what a strategy record is, which page fields manni strategy checks, and how to set it up.
+lifecycle: published
+applies-to:
+  - domain:strategy
+next-steps:
+  - strategy-reference-cli
+  - strategy-reference-rules
+related-pages:
+  - strategy-reference-cli
+  - strategy-reference-rules
+  - meta-reference-schemas-manni-content-strategy
+  - meta-reference-schemas-manni-audience
+sample-questions:
+  - What is a strategy record in manni?
+  - Which page fields does manni strategy check?
+  - Which pages serve a journey?
+graph:
+  label: manni strategy
+  type: concept
+tags:
+  - cli-tool
+  - documentation-tools
+  - content-strategy
+  - validation
+action: explore
+risks: read-only
+concepts:
+  - validation
+  - metadata
+---
+
+import { Aside, Card, CardGrid, LinkCard } from '@astrojs/starlight/components';
+
+<Aside type="note" title="Beta">
+`manni strategy` is in beta. Its commands, config keys and output can change
+in any release, without notice.
+</Aside>
+
+A docset's content strategy says whom it serves. manni strategy keeps that
+strategy as **records**, and checks every page that names one against them.
+
+A record is a page that declares one of three types. It is one record per
+file, in any format manni meta reads.
+
+- **An audience** declares `type: audience`. It is a group of readers.
+- **A persona** declares `type: persona`, and names its audience in
+  `audience:`.
+- **A journey** declares `type: journey`, and names its persona in
+  `persona:`.
+
+A record's `id` is its `id:`, or else its file name without the extension.
+`list` and `get` print its `title` and `description`. The two parent fields
+belong to the built-in
+[`manni:content-strategy:1.0.0`](/manni/meta/reference/schemas/manni-content-strategy/)
+vocabulary. This is the journey this section serves, as this repository
+keeps it:
+
+```markdown title="docs/content-strategy/journeys/s17.md"
+---
+type: journey
+id: s17
+title: Hold the pages to the strategy they were written for
+description: The audiences, personas and journeys Sara's docs serve are records, and every page that names one is checked against them.
+persona: sara
+---
+```
+
+The prose below the frontmatter is the journey itself. No rule reads it.
+
+## What a page names
+
+A page says whom it serves in three fields of the
+[`manni:audience:1.0.0`](/manni/meta/reference/schemas/manni-audience/)
+vocabulary. Each value is a reference, and the check resolves it against the
+records.
+
+| Field | Names | Where it lives |
+|---|---|---|
+| `audiences:` | audience records | the page |
+| `personas:` | persona records | the page or its `{page}.meta.yaml` sidecar |
+| `journeys:` | journey records | the page or its `{page}.meta.yaml` sidecar |
+
+A value in a sidecar counts as one in the page does. A finding about it sits
+at the sidecar's line.
+
+{/* cite field-gated-on-records */}
+A field is checked only when the set holds a record of its type. A docset
+that keeps persona records and no audience records keeps a free-form
+`audiences:`, and no rule reads it. So the records can arrive one type at a
+time.
+
+## Set it up
+
+The records and the pages come from the family's
+[collections](/manni/meta/reference/configuration/#collections). Give the
+records a collection of their own. Then add an override, so
+`manni meta validate` checks each record against the vocabulary and its
+strict overlay. This is this repository's config, cut to the lines the
+domain reads:
+
+```yaml title="manni.config.yaml"
+collections:
+  - name: site
+    paths:
+      - "docs/src/content/docs/**/*.{md,mdx}"
+    externalMetadata:
+      - file: "{page}.meta.yaml"
+  - name: strategy
+    paths:
+      - "docs/content-strategy/{audiences,personas,journeys}/*.md"
+
+meta:
+  overrides:
+    - collection: strategy
+      defaults: true
+      strict: true
+      schemas:
+        - manni:content-strategy:1.0.0
+        - manni:content-strategy-strict:1.0.0
+```
+
+The `strategy:` section is optional, because every key has a default. The
+[configuration reference](/manni/strategy/reference/cli/#configuration)
+lists the keys. This repository raises one rule, so a journey cannot land
+without a page that serves it:
+
+```yaml title="manni.config.yaml"
+strategy:
+  severity:
+    unserved-journey: error
+```
+
+## Three commands
+
+| Command | Does |
+|---|---|
+| `manni strategy list [paths...]` | Prints the records as a tree, with how many pages name each one. |
+| `manni strategy get <id> [paths...]` | Shows one record, its parent, the records under it, and the pages that name it. |
+| `manni strategy check [paths...]` | Checks every reference against the records, and the records against each other. |
+
+Run with no paths, each command reads every collection. Here they run over
+a set of one audience, one persona and two journeys, which two pages name.
+`list` prints the tree:
+
+```console
+$ manni strategy list
+record            pages  title
+docs-engineers        2  Docs-as-code teams
+  maya                2  Maya, Documentation Engineer
+    m1                2  Stand up metadata validation for my repo
+    m2                1  Tighten the standard without breaking the build
+1 audience, 1 persona, 2 journeys
+```
+
+`get` matches the id in any case. Its `pages` row answers which pages serve
+the record:
+
+```console
+$ manni strategy get maya
+Maya, Documentation Engineer                  strategy/personas/maya.md:1
+  type          persona
+  id            maya
+  description   Owns a docs-as-code repo and wants its frontmatter correct.
+  audience      docs-engineers  Docs-as-code teams
+  journeys      m1  Stand up metadata validation for my repo
+                m2  Tighten the standard without breaking the build
+  pages         docs/ci.md
+                docs/guide.md
+```
+
+Every reference resolves, so `check` prints one line and exits `0`:
+
+```console
+$ manni strategy check
+✓ 4 records, 10 references, no findings
+```
+
+In another set, a guide names a journey that has no record, and a journey
+whose persona the page leaves out:
+
+```markdown title="docs/guide.md"
+---
+title: Guide
+audiences: [docs-engineers]
+personas: [devin]
+journeys: [m1, m9]
+---
+```
+
+`check` reports both at the line of the value that caused them:
+
+```console
+$ manni strategy check
+docs/guide.md:5
+  warning manni:strategy/missing-parent       personas: does not name "maya", the persona of journey "m1".
+                                              Add it, or drop "m1" from journeys:.
+                                              manni:strategy missing-parent: A page names a journey whose persona its personas: lacks, or a persona whose audience its audiences: lacks.
+                                              Guide: https://hawkeyexl.github.io/manni/strategy/reference/rules/#missing-parent
+  error   manni:strategy/undefined-reference  journeys: "m9" names no journey.
+                                              Did you mean "m1"?
+                                              Correct the value, or add a record with type: journey and id: m9.
+                                              manni:strategy undefined-reference: A page's audiences:, personas: or journeys:, or a record's audience: or persona:, names no record of that type.
+                                              Guide: https://hawkeyexl.github.io/manni/strategy/reference/rules/#undefined-reference
+```
+
+{/* cite check-exits-one-on-error */}
+That set breaks every rule once, so the run goes on to five findings about
+the records. It ends `3 errors, 3 warnings, 1 notice in 7 records`, and it
+exits `1` because of the errors. Warnings and notices never fail a run.
+
+## Every finding has a rule
+
+Each finding names its rule, and its `Guide:` line links to that rule's
+section of the [rules reference](/manni/strategy/reference/rules/). That page
+gives each of the six rules its default severity, its exact message, and the
+edit that clears it. It also has the full run of the set above.
+
+<CardGrid>
+  <LinkCard
+    title="Check rules"
+    href="/manni/strategy/reference/rules/"
+    description="Each rule, its default severity, the message it prints, and what fixes it."
+  />
+  <LinkCard
+    title="CLI reference"
+    href="/manni/strategy/reference/cli/"
+    description="Every flag, every output format, the strategy: keys, the exit codes and every usage error."
+  />
+  <LinkCard
+    title="The content-strategy vocabulary"
+    href="/manni/meta/reference/schemas/manni-content-strategy/"
+    description="The audience: and persona: fields a record names its parent with."
+  />
+</CardGrid>
+
+## What manni strategy checks, and what it doesn't
+
+<CardGrid>
+  <Card title="It checks" icon="approve-check">
+    That every `audiences:`, `personas:` and `journeys:` value names a record
+    of its type. That a record's `audience:` or `persona:` names one too.
+    That no two records share an id, ignoring case. That a page naming a
+    journey also names its persona, and a persona its audience. That some
+    page names every journey.
+  </Card>
+  <Card title="It doesn't" icon="close">
+    Read the prose of a record or a page. It doesn't require a page to carry
+    `journeys:` either. That is a question of presence, so it belongs to
+    manni meta, as a schema override with `required: [journeys]`.
+  </Card>
+</CardGrid>
+
+## With the other domains
+
+The domain is in play once a collection holds a record. `manni status` then
+shows the strategy row, with a count of each type. `manni check` runs
+`manni strategy check` beside the other domains' checks.
+[Gate every check](/manni/family/check/) covers the family verbs, and
+the [family CLI reference](/manni/family/reference/cli/) has the in-play
+rule for each domain.

@@ -430,6 +430,22 @@ export default defineConfig({
             },
           ],
         },
+        // `strategy` holds the pages to their audiences, personas and journeys
+        // (proposal 0100). Its record format is meta's built-in
+        // `manni:content-strategy:1.0.0`, so an overview and a reference shelf.
+        {
+          label: "strategy",
+          collapsed: true,
+          badge: BETA,
+          items: [
+            { label: "Overview", link: "/strategy/" },
+            {
+              label: "Reference",
+              collapsed: true,
+              items: [{ autogenerate: { directory: "strategy/reference" } }],
+            },
+          ],
+        },
         // `term` is the terminology tool (proposal 0052). Same shape as
         // `cite`. Its vocabulary is meta's built-in `manni:terminology:1.0.0`,
         // documented under meta's reference.

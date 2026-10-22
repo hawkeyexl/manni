@@ -1,0 +1,18 @@
+docs/src/content/docs/strategy/index.mdx:
+  citations:
+    - id: field-gated-on-records
+      claim:
+        integrity: sha256-e9be290b992f41cd004c3c40ee061bc8538918a8c3a03d55f8ec1a70dadb020a
+      source:
+        file: src/strategy/core/check.ts
+        lines: 161
+        integrity: sha256-16be0db3d681b9cad38fb35c7a33270a72b11c8f3ab3c0b8147cbf5a10d34d3a
+        commit-sha: 89a49265ea352d3854a8070819a7eeb40661e4f6
+    - id: check-exits-one-on-error
+      claim:
+        integrity: sha256-fce8148bb8f4ec940417c6f0f7f133cc8a879db1d4179bde9f338f2e4bbfced3
+      source:
+        file: src/strategy/cli.ts
+        lines: 96
+        integrity: sha256-642aa7bc0402e0101838821cd5ed5ee06a261d3134bb836e1a23650376a401d2
+        commit-sha: 89a49265ea352d3854a8070819a7eeb40661e4f6
