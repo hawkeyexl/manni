@@ -1293,6 +1293,14 @@ describe("predecessor maps", () => {
       expect(() => baselineIdentity(start)).not.toThrow();
     }
   });
+
+  it("throws on a cycle, naming its path, instead of hanging", () => {
+    const cyclic = new Map([
+      ["a", "b"],
+      ["b", "a"],
+    ]);
+    expect(() => baselineIdentity("a", [cyclic])).toThrow("predecessor cycle: a -> b -> a");
+  });
 });
 
 describe("OPTIONAL_FIELD_PREDECESSORS (proposal 0098)", () => {
