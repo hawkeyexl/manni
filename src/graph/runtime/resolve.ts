@@ -408,6 +408,24 @@ export function sectionOwnLines(
   return span === undefined ? undefined : { start: span.start + 1, end: span.end };
 }
 
+/**
+ * The file lines `sliceSection` returns, 1-based and inclusive: the heading
+ * through its subsections, less the trailing blank lines `sliceSection`
+ * trims. A chunk's `lines` come from here, so they cover its text exactly.
+ */
+export function sectionLines(
+  markdown: string,
+  title: string,
+  level?: number,
+  occurrence = 0,
+): { start: number; end: number } | undefined {
+  const text = sliceSection(markdown, title, level, occurrence);
+  if (text === undefined) return undefined;
+  const span = locate(markdown.split(/\r?\n/), title, level, occurrence, false);
+  if (span === undefined) return undefined;
+  return { start: span.start + 1, end: span.start + text.split("\n").length };
+}
+
 function slice(
   markdown: string,
   title: string,

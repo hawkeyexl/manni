@@ -31,6 +31,8 @@ import {
 import { byCodeUnit } from "../core/sort.js";
 import { PREFIXES } from "../core/vocab.js";
 import { exportSampleQuestions } from "./questions.js";
+import { exportChunks } from "./chunks.js";
+import { defaultLlmsPath, exportLlms } from "./llms.js";
 import { GraphIndex } from "../runtime/graph.js";
 import { writeZip, type ZipEntry } from "../core/zip.js";
 
@@ -39,7 +41,7 @@ import { writeZip, type ZipEntry } from "../core/zip.js";
  * The CLI names its positional against this list, and `runExport` holds a
  * library caller to it too.
  */
-export const EXPORT_TARGETS = ["jsonld", "iirds", "search", "questions"] as const;
+export const EXPORT_TARGETS = ["jsonld", "iirds", "search", "questions", "chunks", "llms"] as const;
 
 export type ExportFormat = (typeof EXPORT_TARGETS)[number];
 
@@ -52,16 +54,24 @@ export interface ExportOptions {
   format: ExportFormat;
   /** Output path (default: the graph path with the format's extension). */
   out?: string;
+  /** `--evals`: a docevals JSON report for `chunks`, overriding `graph.export.chunks.evals`. */
+  evals?: string;
   cwd?: string;
 }
 
 export interface ExportResult {
   outPath: string;
   format: ExportFormat;
-  /** Distinct subject nodes in the emitted (or projected) graph; questions for `questions`. */
+  /** Distinct subject nodes in the emitted (or projected) graph; questions for `questions`, pages for `llms`. */
   nodes: number;
-  /** Non-fatal projection warnings (iiRDS only; empty otherwise). */
+  /** Non-fatal warnings: iiRDS projection, stale answers, chunk records. */
   warnings: string[];
+  /** Notices, said once: chunks withheld, or a run outside git. */
+  notices?: string[];
+  /** Every file the export wrote, absolute. */
+  files: string[];
+  /** `chunks`: the passages `graph.retrieve.withhold` left out. */
+  withheld?: number;
 }
 
 /** File extension each single-file format writes to. */
@@ -85,7 +95,7 @@ function runJsonLd(cwd: string, graphPath: string, out?: string): ExportResult {
     : withExtension(graphPath, EXTENSION.jsonld);
   mkdirSync(dirname(outPath), { recursive: true });
   writeFileSync(outPath, serialized, "utf8");
-  return { outPath, format: "jsonld", nodes, warnings: [] };
+  return { outPath, format: "jsonld", nodes, warnings: [], files: [outPath] };
 }
 
 function runIirds(
@@ -130,7 +140,7 @@ function runIirds(
   mkdirSync(dirname(outPath), { recursive: true });
   writeFileSync(outPath, writeZip(entries));
   const nodes = new Set(projection.quads.map((q) => q.s)).size;
-  return { outPath, format: "iirds", nodes, warnings: projection.warnings };
+  return { outPath, format: "iirds", nodes, warnings: projection.warnings, files: [outPath] };
 }
 
 /**
@@ -213,6 +223,7 @@ function runSearchIndex(
     format: "search",
     nodes: index.entries.length,
     warnings,
+    files: [...languages.map((l) => join(outDir, l.search.path)), manifestPath],
   };
 }
 
@@ -246,7 +257,7 @@ async function runQuestions(
             ? "1 answer changed since it was pinned, so it is exported as it reads now, marked stale."
             : `${String(stale)} answers changed since they were pinned, so they are exported as they read now, marked stale.`,
         ];
-  return { outPath, format: "questions", nodes: lines.length, warnings };
+  return { outPath, format: "questions", nodes: lines.length, warnings, files: [outPath] };
 }
 
 /** Every command core is async, and the CLI awaits this one. A usage error rejects. */
@@ -256,6 +267,9 @@ export async function runExport(opts: ExportOptions): Promise<ExportResult> {
     throw new GraphError(
       `Unknown export target "${opts.format}". Use ${EXPORT_TARGETS.join(" | ")}.`,
     );
+  }
+  if (opts.evals !== undefined && opts.format !== "chunks") {
+    throw new GraphError("--evals applies only to graph export chunks.");
   }
 
   const config = loadRunConfig(
@@ -271,6 +285,50 @@ export async function runExport(opts: ExportOptions): Promise<ExportResult> {
   const sources = documentBase(config, {}, cwd);
 
   if (opts.format === "jsonld") return runJsonLd(cwd, graphPath, opts.out);
+  if (opts.format === "chunks") {
+    const configured = config.export.chunks.evals;
+    const evals =
+      opts.evals !== undefined
+        ? { label: opts.evals, path: resolve(cwd, opts.evals) }
+        : configured === null
+          ? undefined
+          : { label: configured, path: resolve(config.configDir, configured) };
+    const result = await exportChunks({
+      cwd,
+      config,
+      source: {
+        ...(opts.config === undefined ? {} : { configPath: opts.config }),
+        ...(opts.noConfig === undefined ? {} : { noConfig: opts.noConfig }),
+      },
+      graphPath,
+      // `--out` names the directory, as for `search`: there is more than one file.
+      outDir: opts.out ? resolve(cwd, opts.out) : dirname(graphPath),
+      ...(evals === undefined ? {} : { evals }),
+    });
+    return {
+      outPath: result.manifestPath,
+      format: "chunks",
+      nodes: result.rows,
+      warnings: result.warnings,
+      notices: result.notices,
+      files: result.files,
+      withheld: result.withheld,
+    };
+  }
+  if (opts.format === "llms") {
+    const outPath = opts.out ? resolve(cwd, opts.out) : defaultLlmsPath(graphPath);
+    const { pages, warnings } = await exportLlms({
+      cwd,
+      config,
+      source: {
+        ...(opts.config === undefined ? {} : { configPath: opts.config }),
+        ...(opts.noConfig === undefined ? {} : { noConfig: opts.noConfig }),
+      },
+      graphPath,
+      outPath,
+    });
+    return { outPath, format: "llms", nodes: pages, warnings, files: [outPath] };
+  }
   if (opts.format === "search") {
     return runSearchIndex(cwd, sources, graphPath, opts.out);
   }

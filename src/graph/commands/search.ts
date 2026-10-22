@@ -131,6 +131,16 @@ function loadSearchIndex(indexPath: string): {
   };
 }
 
+/** A `--lang` the corpus has no index for. `graph retrieve` refuses in the same words. */
+export function noIndexFor(lang: string, available: readonly string[]): string {
+  return `No index for language "${lang}" — this corpus has ${available.join(", ") || "none"}.`;
+}
+
+/** Several localizations and no `--lang`. `graph retrieve` refuses in the same words. */
+export function langRequired(available: readonly string[]): string {
+  return `This corpus has more than one localization (${available.join(", ")}) — pass --lang to choose one.`;
+}
+
 /**
  * Pick the localization to search from the manifest (ADR 01038).
  *
@@ -163,9 +173,7 @@ function resolveLocalization(
       (l) => canonicalLanguageTag(l.language) === wanted,
     );
     if (!hit) {
-      throw new GraphError(
-        `No index for language "${lang}" — this corpus has ${available.join(", ") || "none"}.`,
-      );
+      throw new GraphError(noIndexFor(lang, available));
     }
     return hit;
   }
@@ -176,9 +184,7 @@ function resolveLocalization(
     );
   }
   if (manifest.languages.length > 1) {
-    throw new GraphError(
-      `This corpus has more than one localization (${available.join(", ")}) — pass --lang to choose one.`,
-    );
+    throw new GraphError(langRequired(available));
   }
   return only;
 }

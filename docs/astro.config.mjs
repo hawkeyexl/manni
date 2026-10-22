@@ -284,6 +284,8 @@ export default defineConfig({
               collapsed: true,
               items: [{ autogenerate: { directory: "graph/publish" } }],
             },
+            { label: "Serve the docs to an agent", link: "/graph/serve/" },
+            { label: "Retrieve from a script", link: "/graph/retrieve-from-a-script/" },
             {
               label: "Govern the graph",
               collapsed: true,

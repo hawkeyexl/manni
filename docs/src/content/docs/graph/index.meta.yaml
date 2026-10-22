@@ -25,5 +25,5 @@ docs/src/content/docs/graph/index.mdx:
       lines: 2-45
       integrity: sha256-6ab75e25a9d1a646025b98f38f67cb8c5349772f9575b6125e55ba2971cdf4c4
     - generated-by: Claude Opus 5.5
-      lines: 47-102
-      integrity: sha256-ec8f5701f2f14345bc693579abcb9bb18985a1772a6d49f9f197a9b68923fb15
+      lines: 47-104
+      integrity: sha256-37f214e5aca3e8a745ece41a9870a06662c6630216f4f20e44cc3721c905f63b

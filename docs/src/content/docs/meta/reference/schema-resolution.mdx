@@ -90,7 +90,7 @@ manni:audience:1.0.0
 manni:structure:1.0.0
 manni:stewardship:1.2.0
 manni:lifecycle:1.0.0
-manni:ai-context:1.1.0
+manni:ai-context:1.2.0
 manni:evals:1.0.0
 manni:graph:1.0.0
 manni:citations:1.1.0
@@ -103,7 +103,7 @@ prefers in [external metadata](#field-location) draws a `location:external`
 warning when it sits on the page. Warnings never fail a run.
 
 `manni:stewardship:1.0.0`, `manni:stewardship:1.1.0`, `manni:citations:1.0.0`,
-`manni:ai-context:1.0.0`, `manni:terminology:1.0.0`, `manni:terminology:1.1.0`,
+`manni:ai-context:1.0.0`, `manni:ai-context:1.1.0`, `manni:terminology:1.0.0`, `manni:terminology:1.1.0`,
 `manni:terminology:1.2.0`, `manni:artifact-evals:1.0.0`, `manni:artifact-evals:1.1.0` and every strict
 overlay stay out of the default set. A config lists them where they apply.
 
@@ -118,9 +118,9 @@ It applies at levels 3 to 5, through `meta.strict` or an entry's own
   as `manni:core-strict:1.0.0` after `manni:core:1.0.0`. OKF and
   Seven-Action have none. Another version of a default vocabulary counts
   too, so a listed `manni:stewardship:1.0.0` gets
-  `manni:stewardship-strict:1.0.0`. `manni:ai-context:1.1.0` gets
-  `manni:ai-context-strict:1.0.0`, because nothing that overlay narrows
-  changed.
+  `manni:stewardship-strict:1.0.0`. `manni:ai-context:1.2.0` and
+  `manni:ai-context:1.1.0` get `manni:ai-context-strict:1.0.0`, because
+  nothing that overlay narrows changed.
 - **A registered schema.** A [registered](#registered-references)
   `vendor:name-strict:version` is the strict version of a registered
   `vendor:name:version`.

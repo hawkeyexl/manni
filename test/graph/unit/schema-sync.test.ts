@@ -12,7 +12,7 @@ import { HARVESTED_KEYS } from "../../../src/graph/core/harvest.js";
 import { DataFactory, Parser, Store } from "n3";
 import coreSchema from "../../../src/meta/schemas/core/1.0.0.json" with { type: "json" };
 import stewardshipSchema from "../../../src/meta/schemas/stewardship/1.2.0.json" with { type: "json" };
-import aiContextSchema from "../../../src/meta/schemas/ai-context/1.1.0.json" with { type: "json" };
+import aiContextSchema from "../../../src/meta/schemas/ai-context/1.2.0.json" with { type: "json" };
 import {
   COVERAGE_FIELDS,
   COVERAGE_FIELD_NAMES,

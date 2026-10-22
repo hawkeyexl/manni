@@ -1,0 +1,10 @@
+# One page in each of three languages (proposal 0090). The test embeds
+# English and German with different models and leaves French without a
+# sidecar, so the chunk manifest records each language's own model.
+collections:
+  - name: pages
+    paths:
+      - "docs/**/*.md"
+
+graph:
+  out: .manni/graph/graph.ttl

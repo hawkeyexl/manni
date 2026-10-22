@@ -827,10 +827,11 @@ describe("the default set (proposal 0070)", () => {
     ref("audience"),
     ref("structure"),
     // Stewardship's default moved past 1.0.0 for its output marks (0074) and
-    // its verification fields (0098), and ai-context's for pinned answers (0087).
+    // its verification fields (0098). ai-context moved for pinned answers (0087),
+    // then to 1.2.0, which keeps those pins out of delivered metadata (0090).
     "manni:stewardship:1.2.0",
     ref("lifecycle"),
-    "manni:ai-context:1.1.0",
+    "manni:ai-context:1.2.0",
     ref("evals"),
     ref("graph"),
     // Citations moved to 1.1.0 for the verification fields on an entry (0098).
