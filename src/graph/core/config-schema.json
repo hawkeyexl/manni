@@ -115,6 +115,13 @@
                 { "type": "null" }
               ],
               "description": "`check` exits 1 when the percentage of reviewed questions found in the top `top` falls below this, 0-100. The same scale as stats.coverageThreshold. Null (the default) sets no rate gate. questions.severity does not touch it."
+            },
+            "citedThreshold": {
+              "anyOf": [
+                { "type": "number", "minimum": 0, "maximum": 100 },
+                { "type": "null" }
+              ],
+              "description": "`check` exits 1 when the percentage of reviewed questions cited by graph retrieve falls below this, 0-100. Null (the default) sets no gate. It applies only when a chunk artifact sits beside the graph."
             }
           }
         }
@@ -362,6 +369,15 @@
               "type": ["string", "null"],
               "minLength": 1
             }
+          }
+        },
+        "llms": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "title": { "type": "string", "minLength": 1 },
+            "summary": { "type": "string", "minLength": 1 },
+            "origin": { "type": "string", "pattern": "^https?://[^/\\s]+$" }
           }
         }
       }

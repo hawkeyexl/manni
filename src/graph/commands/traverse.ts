@@ -121,6 +121,7 @@ export function checkTraverseInputs(
   if (!graph.has(node)) {
     throw new GraphError(
       `Node not found in the graph: ${opts.node} — check the IRI, or run \`manni graph build\` first.`,
+      "unknown-node",
     );
   }
   checkScope(graph, opts);
@@ -137,6 +138,7 @@ export function checkTraverseInputs(
       if (!used.has(predicate)) {
         throw new GraphError(
           `Unknown predicate: ${opts.predicates?.[i] ?? predicate}. No edge in the graph uses it.`,
+          "unknown-scope",
         );
       }
     });
@@ -152,6 +154,7 @@ export function checkScope(
   if (opts.variant && !resolveVariant(graph, opts.variant)) {
     throw new GraphError(
       `Unknown product variant: ${opts.variant} — no iirds:ProductVariant matches that IRI, title, or slug.`,
+      "unknown-scope",
     );
   }
   // An unresolvable scope filter silently disables itself in the walker, which
@@ -161,6 +164,7 @@ export function checkScope(
     throw new GraphError(
       `Unknown software subject: ${opts.subject} — expected one of ` +
         `${Object.keys(SOFTWARE_SUBJECT_IRIS).sort().join(", ")}, or a full IRI.`,
+      "unknown-scope",
     );
   }
 }

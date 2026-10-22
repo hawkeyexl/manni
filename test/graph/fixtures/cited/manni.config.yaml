@@ -1,0 +1,25 @@
+# The cited row's fixture (proposal 0090, PR 4). Four reviewed questions:
+# one graph retrieve cites, one it cites another page for, one whose page an
+# evals report fails and graph.retrieve.withhold leaves out, and one asked in
+# German. The test writes evals.json, since it pins each page's bytes.
+collections:
+  - name: pages
+    paths:
+      - "docs/**/*.md"
+
+graph:
+  out: .manni/graph/graph.ttl
+  routes:
+    - root: docs/en
+      basePath: /en
+      language: en
+    - root: docs/de
+      basePath: /de
+      language: de
+  build:
+    derive: [frontmatter, sections, links]
+  export:
+    chunks:
+      evals: evals.json
+  retrieve:
+    withhold: [failing]
