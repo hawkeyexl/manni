@@ -320,9 +320,9 @@ The exit code is 1. The warning comes from the `external` mark, since
 
 ## Strict overlay
 
-**Strict overlay id:** `manni:citations-strict:1.1.0`
+**Strict overlay id:** `manni:citations-strict:1.2.0`
 
-Published at `https://hawkeyexl.github.io/manni/schemas/citations-strict/1.1.0.json`.
+Published at `https://hawkeyexl.github.io/manni/schemas/citations-strict/1.2.0.json`.
 The overlay holds only what strict adds. It narrows the form of a value that is
 present and requires no key, so a page with no `citations` still passes it.
 Hashes stay lowercase hex in both.
@@ -347,7 +347,7 @@ vocabulary:
 ```yaml
 meta:
   schemas:
-    - manni:citations-strict:1.1.0
+    - manni:citations-strict:1.2.0
 ```
 
 Each schema is checked on its own, and a finding names the one that produced
@@ -368,13 +368,13 @@ citations:
 ```
 
 ```text
-$ manni meta validate limits.md --no-config -s manni:core:1.0.0 -s manni:citations:1.2.0 -s manni:citations-strict:1.1.0
+$ manni meta validate limits.md --no-config -s manni:core:1.0.0 -s manni:citations:1.2.0 -s manni:citations-strict:1.2.0
 ✗ limits.md
-    /citations/0/source/integrity  must match pattern "^sha256-"  (line 9)  [manni:citations-strict:1.1.0]
-      manni:citations-strict:1.1.0 citations/source/integrity: An encrypted `file` is pinned `hmac-sha256-`.
+    /citations/0/source/integrity  must match pattern "^sha256-"  (line 9)  [manni:citations-strict:1.2.0]
+      manni:citations-strict:1.2.0 citations/source/integrity: An encrypted `file` is pinned `hmac-sha256-`.
       Guide: https://hawkeyexl.github.io/manni/meta/reference/schemas/manni-citations/
-    /citations/0/source/commit-sha  must match pattern "^(?:[0-9a-f]{40}|[0-9a-f]{64})$"  (line 10)  [manni:citations-strict:1.1.0]
-      manni:citations-strict:1.1.0 citations/source/commit-sha: A full commit hash, forty lowercase hex digits or sixty-four in a SHA-256 repository.
+    /citations/0/source/commit-sha  must match pattern "^(?:[0-9a-f]{40}|[0-9a-f]{64})$"  (line 10)  [manni:citations-strict:1.2.0]
+      manni:citations-strict:1.2.0 citations/source/commit-sha: A full commit hash, forty lowercase hex digits or sixty-four in a SHA-256 repository.
       Guide: https://hawkeyexl.github.io/manni/meta/reference/schemas/manni-citations/
     /citations  warning "citations" is stored in the page; manni:citations:1.2.0 prefers external metadata, and --no-config leaves it no manifest.  (line 4)  [location:external]
 
@@ -389,13 +389,16 @@ as `entry-invalid` either way.
 
 **Built-in id:** `manni:citations:1.1.0`
 
-Published at `https://hawkeyexl.github.io/manni/schemas/citations/1.1.0.json`.
+**Strict overlay id:** `manni:citations-strict:1.1.0`
+
+Published at `https://hawkeyexl.github.io/manni/schemas/citations/1.1.0.json`
+and `https://hawkeyexl.github.io/manni/schemas/citations-strict/1.1.0.json`.
 Version 1.1.0 has every field above but `source.repo`. Its `source` block is
 closed too, so a pin into a named checkout fails under it.
 
-The id still resolves, and a page that names it keeps it. A set listing 1.1.0
-replaces 1.2.0 in the default set. Under `strict: true`, both pair with the
-1.1.0 overlay.
+Both ids still resolve, and a page that names one keeps it. A set listing
+1.1.0 replaces 1.2.0 in the default set. Under `strict: true`, 1.1.0 pairs
+with the 1.1.0 overlay.
 
 ```yaml
 meta:
@@ -417,7 +420,7 @@ Its entry is closed too, so a verified pin fails under it.
 
 Both ids still resolve, and a page that names one keeps it. Version 1.2.0 is
 the one in the default set. A set listing 1.0.0 replaces 1.2.0 there, and
-under `strict: true` the 1.0.0 overlay replaces the 1.1.0 overlay too.
+under `strict: true` the 1.0.0 overlay replaces the 1.2.0 overlay too.
 
 ```yaml
 meta:

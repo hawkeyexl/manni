@@ -204,6 +204,10 @@ describe("fingerprint: annotation-only built-in versions", () => {
     ["manni:citations:1.2.0", "manni:citations:1.0.0"],
     ["manni:ai-context:1.1.0", "manni:ai-context:1.2.0"],
     ["manni:ai-context:1.2.0", "manni:ai-context:1.1.0"],
+    ["manni:citations-strict:1.1.0", "manni:citations-strict:1.2.0"],
+    ["manni:citations-strict:1.0.0", "manni:citations-strict:1.2.0"],
+    ["manni:ai-context-strict:1.0.0", "manni:ai-context-strict:1.2.0"],
+    ["manni:ai-context-strict:1.1.0", "manni:ai-context-strict:1.0.0"],
   ])("a baseline recorded under %s suppresses the finding under %s", (from, to) => {
     const recorded = buildBaseline([result("a.md", [under(from)])], "1.0.0");
     const applied = applyBaseline([result("a.md", [under(to)])], recorded);

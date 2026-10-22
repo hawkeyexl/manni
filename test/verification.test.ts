@@ -22,9 +22,9 @@ const CITATIONS = resolve(root, FIXTURES, "citations");
 const STEWARDSHIP = "manni:stewardship:1.2.0";
 const STEWARDSHIP_STRICT = "manni:stewardship-strict:1.2.0";
 // The default citations version: 1.1.0 added the fields (0098), and 1.2.0
-// (0100) keeps them and the 1.1.0 strict overlay.
+// (0100) keeps them. Its strict overlay moves in lockstep.
 const CITATIONS_ID = "manni:citations:1.2.0";
-const CITATIONS_STRICT = "manni:citations-strict:1.1.0";
+const CITATIONS_STRICT = "manni:citations-strict:1.2.0";
 
 const DATE_GUIDANCE =
   "A day such as 2026-10-21, or a timestamp with a timezone such as 2026-10-21T14:02:11Z.";
@@ -77,6 +77,7 @@ describe("the defaults move", () => {
     "manni:stewardship-strict:1.1.0",
     "manni:citations:1.0.0",
     "manni:citations-strict:1.0.0",
+    "manni:citations-strict:1.1.0",
     STEWARDSHIP,
     STEWARDSHIP_STRICT,
     CITATIONS_ID,

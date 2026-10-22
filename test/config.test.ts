@@ -824,21 +824,10 @@ describe("the repository's own manni.config.yaml", () => {
       "core", "audience", "structure", "stewardship", "lifecycle",
       "ai-context", "evals", "graph", "citations",
     ].flatMap((family) => {
-      // Stewardship's default is 1.2.0, which adds the graph output marks
-      // (0074) and the verification fields (0098).
-      const v = family === "stewardship" ? "1.2.0" : "1.0.0";
-      // ai-context 1.1.0 lets a question pin its answer (0087), and 1.2.0
-      // keeps those pins out of delivered metadata (0090). Both keep the 1.0.0
-      // overlay, which never constrains sample-questions.
-      if (family === "ai-context") {
-        return ["manni:ai-context:1.2.0", "manni:ai-context-strict:1.0.0"];
-      }
-      // Citations 1.1.0 adds the verification fields (0098), and 1.2.0 a
-      // source's repo (0100). 1.2.0 keeps the 1.1.0 overlay, which narrows
-      // nothing the repo changed.
-      if (family === "citations") {
-        return ["manni:citations:1.2.0", "manni:citations-strict:1.1.0"];
-      }
+      // Stewardship's default is 1.2.0 (0074, 0098), ai-context's 1.2.0
+      // (0087, 0090) and citations' 1.2.0 (0098, 0100). Each overlay moves in
+      // lockstep with its vocabulary.
+      const v = ["stewardship", "ai-context", "citations"].includes(family) ? "1.2.0" : "1.0.0";
       return [`manni:${family}:${v}`, `manni:${family}-strict:${v}`];
     }),
   ];

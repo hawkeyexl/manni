@@ -9,6 +9,7 @@ docs/src/content/docs/meta/reference/schemas/manni-citations.mdx:
     - path: src/meta/schemas/citations/1.1.0.json
     - path: src/meta/schemas/citations-strict/1.1.0.json
     - path: src/meta/schemas/citations/1.2.0.json
+    - path: src/meta/schemas/citations-strict/1.2.0.json
     - path: src/meta/core/schema-registry.ts
   eval-suite: meta
   evals:
@@ -40,29 +41,26 @@ docs/src/content/docs/meta/reference/schemas/manni-citations.mdx:
       lines: 211-232
       integrity: sha256-75155f60611120f42b371d37b7449c2e128ec776a8024d9ca6c2e0cd228690cb
     - generated-by: Claude Opus 5.5
-      lines: 234-282
-      integrity: sha256-30ecd4449fa0d57625cbd5f22bb0729b90c10963adeeeb0d556b73b47945b0e1
+      lines: 234-294
+      integrity: sha256-ae097377e5a0acbd931a2307adde74a8050fcdcc94a6d58b9717afe962ef0ad7
     - generated-by: Claude Opus 5.5
-      lines: 287-294
-      integrity: sha256-00ea4d6cd286243469940f90f4a58d07a6ebc7f9f2718ceb73e085e32cd09cf9
+      lines: 308-335
+      integrity: sha256-1cafbeadf1fd60727698805250222ce6b1e1b3236131a96db8b1d7bb799d2346
     - generated-by: Claude Opus 5.5
-      lines: 308-310
-      integrity: sha256-4ef9021fb32a169a48899d263959b826877cee7489aff983f32700dce76bc99c
-    - generated-by: Claude Opus 5.5
-      lines: 312-333
-      integrity: sha256-192a553a5a57a55838cb4eb41fe8468fcdde97d0e74255d7fe8467dfca95e73d
+      lines: 337-338
+      integrity: sha256-198c74aba04261bac22df94d29576b58d47780cae5ed91637e73f7eedac21108
     - generated-by: Claude Opus 5.5
       lines: 340
       integrity: sha256-0611e239ff7234d3920912370207ae38af1c6061818a2ba5c9d277f16f460cad
     - generated-by: Claude Opus 5.5
-      lines: 343-365
-      integrity: sha256-f25b5a3ef7ce8826fd8cd4fff4368f1365a9e6956b21cee82ba2e2da0cabe5fb
+      lines: 343-368
+      integrity: sha256-a15f70ebe562493045ff14316dab4ae43dc6ae51807f283a258fc64d33e7307b
     - generated-by: Claude Opus 5.5
-      lines: 375-376
+      lines: 378-379
       integrity: sha256-3845d238891e4028bb4b4c908b968bb82c473052c364ac9ee94f28fd2b6fccf7
     - generated-by: Claude Opus 5.5
-      lines: 379-380
-      integrity: sha256-fb5b00fbb10e409df444b24e763218f0fcce9235c15ca41bbe6395613dccb11d
+      lines: 382-384
+      integrity: sha256-a521e513efbdd485f65953fb13523734d98447694defd26da8afbed7cde633eb
   owner:
     - "@hawkeyexl"
   created: 2026-09-26

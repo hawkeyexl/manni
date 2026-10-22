@@ -47,14 +47,11 @@ docs/src/content/docs/meta/reference/schemas/manni-vocabularies.mdx:
       lines: 116-125
       integrity: sha256-6d26b2aa95558978d049002d4f3ef68981112879c91ece4b208f32598aa74454
     - generated-by: Claude Opus 5.5
-      lines: 127-129
-      integrity: sha256-b591475d480493c535471481b7a0e6666b9f07512f734662406b8ef1d35f249d
-    - generated-by: Claude Opus 5.5
-      lines: 131-132
-      integrity: sha256-d0f726be08d76e3372bcc7f2116ebfca005c3a3abcd21bd23370342dc48e8f08
+      lines: 127-132
+      integrity: sha256-e51c2ceefa8857ce104e85b7c9f4adb7d8a58dd2c277fd090c769b986f15569c
     - generated-by: Claude Opus 5.5
       lines: 134-157
-      integrity: sha256-5c27a8647a2b807941c1084bba8d19d5e5ada33e841e1cfc8ac51b70bec2a801
+      integrity: sha256-f26a3cd813813c8504dc80a0e7dfd3c3f44538363e82c03245bfb2895a750b1b
     - generated-by: Claude Opus 5.5
       lines: 159-308
       integrity: sha256-66f2f0e4b18c8e86dbe35457f7bb94ccef38cd28b0c56f0f44772b0f1834fb7c
