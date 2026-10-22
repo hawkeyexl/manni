@@ -213,7 +213,7 @@ docs/src/content/docs/key/reference/cli.mdx:
         file: src/cite/core/reencrypt.ts
         lines: 129-137
         integrity: sha256-e1c84b2beb159447b45100cef28073208caecdde0ae1799e2e8ffeeffd34014a
-        commit-sha: f2ecf49996504a135f3e37de5bac35c5a054b237
+        commit-sha: b9712a2920c49c2b7e247108d80b629a4dc6ef9b
     - id: rotate-citation-manifest-per-page
       claim:
         integrity: sha256-98ed81bcf95153b8cf0fe66d98a210953e78858b8afd406faabca420ee06c1ac
@@ -522,7 +522,7 @@ docs/src/content/docs/key/reference/cli.mdx:
         file: src/cite/core/reencrypt.ts
         lines: 129-137
         integrity: sha256-e1c84b2beb159447b45100cef28073208caecdde0ae1799e2e8ffeeffd34014a
-        commit-sha: f2ecf49996504a135f3e37de5bac35c5a054b237
+        commit-sha: b9712a2920c49c2b7e247108d80b629a4dc6ef9b
     - id: by-ciphertext-citation-manifest
       claim:
         integrity: sha256-507cfc1348d7316adcf513efd54a058e6881c77d9872175dc2d09fb196a8f9c5
@@ -761,7 +761,7 @@ docs/src/content/docs/key/reference/cli.mdx:
         file: src/cite/core/reencrypt.ts
         lines: 122-128
         integrity: sha256-85834782ed09bf809510f763de83d6bc0e4808b059c01ecf7acb2efc6ef86447
-        commit-sha: f2ecf49996504a135f3e37de5bac35c5a054b237
+        commit-sha: b9712a2920c49c2b7e247108d80b629a4dc6ef9b
     - id: narrowed-section-requires-to
       claim:
         integrity: sha256-e51470294b174ff2d96c948568b8d73629fd1f8a12d3a3568414c1de5b1a5f2f
