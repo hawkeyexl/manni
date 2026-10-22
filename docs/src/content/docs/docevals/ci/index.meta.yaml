@@ -1,4 +1,10 @@
 docs/src/content/docs/docevals/ci/index.mdx:
+  personas:
+    - devin
+    - maya
+  journeys:
+    - d10
+    - m11
   provenance:
     - generated-by: Claude Fable 5.1
       lines: 2-22

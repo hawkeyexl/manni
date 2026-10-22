@@ -1,4 +1,10 @@
 docs/src/content/docs/docevals/reference/output-and-exit-codes.mdx:
+  personas:
+    - maya
+    - devin
+  journeys:
+    - m11
+    - d10
   evals:
     # This page shows the markers the check looks for, as its example.
     - use: no-todo-markers

@@ -1,4 +1,8 @@
 docs/src/content/docs/lint/get-started/index.mdx:
+  personas:
+    - maya
+  journeys:
+    - m10
   provenance:
     - generated-by: Claude Opus 5
       lines: 2-312

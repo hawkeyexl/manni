@@ -1,4 +1,10 @@
 docs/src/content/docs/docevals/reference/files-and-state.mdx:
+  personas:
+    - sara
+    - maya
+  journeys:
+    - s10
+    - m15
   provenance:
     - generated-by: Claude Opus 5
       lines: 2

@@ -1,4 +1,10 @@
 docs/src/content/docs/docevals/evals/deterministic-checks.mdx:
+  personas:
+    - sara
+    - maya
+  journeys:
+    - s11
+    - m11
   evals:
     # This page shows the markers the check looks for, as its example.
     - use: no-todo-markers

@@ -1,4 +1,8 @@
 docs/src/content/docs/docevals/adopt/retrofit-a-legacy-corpus.mdx:
+  personas:
+    - maya
+  journeys:
+    - m15
   evals:
     # This page shows the markers the check looks for, as its example.
     - use: no-todo-markers

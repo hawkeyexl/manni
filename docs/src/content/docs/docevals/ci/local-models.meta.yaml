@@ -1,4 +1,9 @@
 docs/src/content/docs/docevals/ci/local-models.mdx:
+  personas:
+    - devin
+  journeys:
+    - d10
+    - d11
   eval-suite: docevals
   evals:
     - id: local-models-in-ci

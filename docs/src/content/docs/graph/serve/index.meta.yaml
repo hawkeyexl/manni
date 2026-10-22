@@ -1,4 +1,8 @@
 docs/src/content/docs/graph/serve/index.mdx:
+  personas:
+    - devin
+  journeys:
+    - d19
   provenance:
     - generated-by: Claude Opus 5.5
       lines: 2-139

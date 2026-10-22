@@ -1,4 +1,8 @@
 docs/src/content/docs/graph/fix/index.mdx:
+  personas:
+    - theo
+  journeys:
+    - t7
   provenance:
     - generated-by: Claude Opus 5.5
       lines: 2

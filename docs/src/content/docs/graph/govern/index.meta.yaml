@@ -1,4 +1,8 @@
 docs/src/content/docs/graph/govern/index.mdx:
+  personas:
+    - sara
+  journeys:
+    - s12
   provenance:
     - generated-by: Claude Opus 5
       lines: 2-3

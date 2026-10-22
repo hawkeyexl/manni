@@ -1,4 +1,8 @@
 docs/src/content/docs/docevals/ci/untrusted-pull-requests.mdx:
+  personas:
+    - devin
+  journeys:
+    - d11
   provenance:
     - generated-by: Claude Fable 5.1
       lines: 2-5

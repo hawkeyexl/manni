@@ -1,4 +1,8 @@
 docs/src/content/docs/docevals/judge/calibrate.mdx:
+  personas:
+    - sara
+  journeys:
+    - s9
   provenance:
     - generated-by: Claude Fable 5.1
       lines: 2-29

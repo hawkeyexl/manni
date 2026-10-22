@@ -1,4 +1,10 @@
 docs/src/content/docs/docevals/evals/index.mdx:
+  personas:
+    - maya
+  journeys:
+    - m11
+    - m12
+    - m16
   evals:
     # This page quotes the check's own assertion in a docevals list sample.
     - use: no-todo-markers

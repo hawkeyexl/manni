@@ -1,4 +1,10 @@
 docs/src/content/docs/docevals/judge/index.mdx:
+  personas:
+    - sara
+  journeys:
+    - s9
+    - s8
+    - s10
   provenance:
     - generated-by: Claude Fable 5.1
       lines: 2-11

@@ -1,4 +1,8 @@
 docs/src/content/docs/lint/ci/index.mdx:
+  personas:
+    - devin
+  journeys:
+    - d9
   provenance:
     - generated-by: Claude Opus 5
       lines: 2-119
