@@ -95,6 +95,14 @@ that message names which tag does exist. npm serving it while the remote has no
 version tag is a genuinely half-published release. Both print the command that
 finishes the job by hand, version already substituted.
 
+Propagation is the likely story only when the `release` job succeeded. When it
+failed and npm never serves the version, the publish most likely failed too,
+and the message says so. 4.17.0 is the example. Its tag was pushed, then
+`npm publish` failed with `ENEEDAUTH` during an npm outage. That message prints
+no tag command, because the version will never appear. The next `feat:` or
+`fix:` merge releases the version after it, and the job moves the major tag
+then. The wait still runs in full, because 2.0.0 failed after it published.
+
 It tags `v$version` rather than `HEAD`, because semantic-release commits the
 changelog and version bump itself, so `HEAD` is not necessarily what it tagged.
 

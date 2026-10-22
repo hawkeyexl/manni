@@ -1,6 +1,6 @@
 # 0099: Inline metadata statements, pinned to the block they describe
 
-- **Status:** Implemented
+- **Status:** Implemented, superseded in part by 0101
 - **Serves:**
   - Maya · M30, and a new M31, "Pin a fact to the sentence it is about". A
     page with five procedures can only say the whole page was verified.

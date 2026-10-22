@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { mkdtempSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -6,6 +7,8 @@ import { AnalyzeCache } from "../../../src/graph/core/analyze-cache.js";
 import { parseBody } from "../../../src/graph/core/analyze.js";
 
 const PAGE = "# Title\n\nSee [config](./config.md) and ![logo](./logo.png).\n\n```ts\nx\n```\n";
+
+const sha256 = (text: string): string => createHash("sha256").update(text, "utf8").digest("hex");
 
 function tempDir(): string {
   return join(mkdtempSync(join(tmpdir(), "manni-graph-analyze-cache-")), "cache");
@@ -90,6 +93,20 @@ describe("AnalyzeCache", () => {
     expect(again.body).toEqual(parseBody(PAGE, "docs/a.md", "markdown"));
     const healed = await parseOnce(dir, PAGE, "docs/a.md");
     expect(healed.cache.hits).toBe(1);
+  });
+
+  it("misses an entry an older entry format wrote, whose statement pins may differ", async () => {
+    const dir = tempDir();
+    const { body } = await parseOnce(dir, PAGE, "docs/a.md", "markdown", "1.0.0");
+    const [name] = readdirSync(dir);
+    if (name === undefined) throw new Error("no cache entry was written");
+    // Entry format 2 pinned a statement before every statement in its lines was cut.
+    const key = sha256(JSON.stringify([2, "1.0.0", "markdown", "docs/a.md", PAGE]));
+    writeFileSync(join(dir, name), JSON.stringify({ key, body }));
+
+    const again = await parseOnce(dir, PAGE, "docs/a.md", "markdown", "1.0.0");
+    expect(again.cache.hits).toBe(0);
+    expect(again.cache.misses).toBe(1);
   });
 
   it("never fails a run when the cache directory cannot be written", async () => {

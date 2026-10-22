@@ -79,6 +79,8 @@ interface Scenario {
   listIncludesVersion?: boolean;
   /** Whether `git ls-remote` finds `refs/tags/v<after>` on the remote. */
   tagOnRemote: boolean;
+  /** `needs.release.result`, which the job's gate narrows to these two. Default success. */
+  releaseResult?: "success" | "failure";
 }
 
 interface Result {
@@ -154,6 +156,7 @@ function runStep(s: Scenario): Result {
           ...process.env,
           VERSION_BEFORE: s.before,
           VERSION_AFTER: s.after,
+          RELEASE_RESULT: s.releaseResult ?? "success",
           GH_TOKEN: "token",
           GITHUB_REPOSITORY: "hawkeyexl/manni",
         },
@@ -207,6 +210,11 @@ describe("the major tag job's gate", () => {
     // Recorded after a failed Release step too: 2.0.0 failed after publishing.
     const after = release?.steps?.find((s) => s.id === "after");
     expect(after?.if ?? "").toContain("!cancelled()");
+  });
+
+  it("reads whether the release job failed", () => {
+    // Without it, a publish that failed reads as npm lagging one that landed.
+    expect(tagStep().env?.["RELEASE_RESULT"]).toBe("${{ needs.release.result }}");
   });
 });
 
@@ -283,6 +291,62 @@ describe.skipIf(!hasBash)("the major tag step's script", () => {
       "sleep 40",
       ...Array<string>(19).fill("sleep 60"),
     ]);
+  });
+
+  it("says the publish failed when the release job failed and npm never serves the version", () => {
+    // 4.17.0: semantic-release pushed the release commit and `v4.17.0`, then
+    // `npm publish` failed with ENEEDAUTH during an npm outage. This step
+    // waited twenty minutes and blamed registry lag for a package that was
+    // never going to appear.
+    const r = runStep({
+      before: "2.0.0",
+      after: "2.0.1",
+      npmServes: null,
+      tagOnRemote: true,
+      releaseResult: "failure",
+    });
+    expect(r.status).toBe(1);
+    expect(moved(r)).toBe(false);
+    expect(r.stdout).toContain(
+      "::error::npm did not serve @hawkeyexl/manni@2.0.1 within 20 minutes, and the release job failed, so its publish most likely failed too.",
+    );
+    expect(r.stdout).toContain("The v2.0.1 tag is on the remote with no package behind it.");
+    expect(r.stdout).toContain("The next feat: or fix: merge releases the version after it");
+    expect(r.stdout).not.toContain("usually npm lagging the publish");
+    // No by-hand tag move: it waits for a version npm will never serve.
+    expect(r.stdout).not.toContain("git tag -f v2 v2.0.1");
+    // Still the full wait. 2.0.0 failed after it published, so a failed job
+    // alone does not mean npm will never serve the version.
+    expect(docReads(r)).toHaveLength(24);
+  });
+
+  it("says nothing was published when the release job failed before the version tag", () => {
+    const r = runStep({
+      before: "2.0.0",
+      after: "2.0.1",
+      npmServes: null,
+      tagOnRemote: false,
+      releaseResult: "failure",
+    });
+    expect(r.status).toBe(1);
+    expect(moved(r)).toBe(false);
+    expect(r.stdout).toContain(
+      "the release job failed before it pushed the v2.0.1 tag, so nothing was published.",
+    );
+    expect(r.stdout).not.toContain("usually npm lagging the publish");
+  });
+
+  it("still moves the tag when the release job failed after publishing", () => {
+    // 2.0.0: published, tagged, then failed in a post-publish step.
+    const r = runStep({
+      before: "1.9.0",
+      after: "2.0.0",
+      npmServes: "2.0.0",
+      tagOnRemote: true,
+      releaseResult: "failure",
+    });
+    expect(r.status, r.stdout).toBe(0);
+    expect(r.calls).toContain("git tag -f v2 v2.0.0");
   });
 
   it("names the missing version tag when neither npm nor the remote has it", () => {

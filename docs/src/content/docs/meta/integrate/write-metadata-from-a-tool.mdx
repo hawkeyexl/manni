@@ -116,9 +116,13 @@ contract, and this page says how to honor them.
     entry in it. Pin the block by the
     [hashing rule](/manni/cite/reference/citations/#the-hashing-rule), with
     `pinOf` from `@hawkeyexl/manni` or the same rule in your own language.
-    When the statement sits on a line it describes, cut its own text out of
-    that line before hashing, as manni does. Keep the statement's comment form, so the write is a one-line diff. Write
-    it on success only, as rule 6 says.
+    Before hashing, cut every statement inside the block's lines out of the
+    text, as manni does. That covers the statement you write and any other
+    one, such as a step's own statement inside a whole procedure. A
+    `<data name="manni-meta">` carrier goes whole, from its start tag to its
+    end tag. Then drop each line the cut left blank, and keep the lines that
+    were blank already. Keep the statement's comment form, so the write is a
+    one-line diff. Write it on success only, as rule 6 says.
 
 ## A verification, end to end
 
@@ -148,7 +152,7 @@ writes the line back in its own form:
 
 ```diff
 -<!-- meta {"verified-by":[{"tool":"doc-detective","check":"install-steps"}]} -->
-+<!-- meta sha256-384b6729be777c15e9e55ae3f0a0fb1fbe63793abf601e5f517702e9019966e3 {"last-verified":"2026-10-21","verified-by":[{"tool":"doc-detective","check":"install-steps","version":"4.27.0","passed":"2026-10-21"}]} -->
++<!-- meta sha256-384b6729be777c15e9e55ae3f0a0fb1fbe63793abf601e5f517702e9019966e3 {"verified-by":[{"tool":"doc-detective","check":"install-steps","version":"4.27.0","passed":"2026-10-21"}],"last-verified":"2026-10-21"} -->
  1. Run `npm install --save-dev @hawkeyexl/manni`.
  2. Run `npx manni meta validate docs/`.
 ```
@@ -174,7 +178,7 @@ manni meta get title docs/install.md
 
 1 file checked, 1 passed, 0 failed, 0 errors
 docs/install.md: title=Install manni (asserted)
-docs/install.md: statement at line 9 (lines 10-11, current) {"last-verified":"2026-10-21","verified-by":[{"tool":"doc-detective","check":"install-steps","version":"4.27.0","passed":"2026-10-21"}]}
+docs/install.md: statement at line 9 (lines 10-11, current) {"verified-by":[{"tool":"doc-detective","check":"install-steps","version":"4.27.0","passed":"2026-10-21"}],"last-verified":"2026-10-21"}
 ```
 
 A later edit to either step makes `validate` warn `statement-changed`, until
@@ -200,12 +204,12 @@ On a pass, Doc Detective writes the same values into that block:
 
 ```diff
  last-updated: 2026-10-17
-+last-verified: 2026-10-21
  verified-by:
    - tool: doc-detective
      check: cite-set-up
 +    version: 4.27.0
 +    passed: 2026-10-21
++last-verified: 2026-10-21
 ```
 
 `last-updated` is untouched, since derive owns it (rule 4). The new keys go
