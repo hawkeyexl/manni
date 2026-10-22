@@ -1,0 +1,23 @@
+docs/src/content/docs/meta/reference/schemas/manni-content-strategy.mdx:
+  personas: ["sara"]
+  journeys: ["s17"]
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: src/meta/schemas/content-strategy/1.0.0.json
+    - path: src/meta/schemas/content-strategy-strict/1.0.0.json
+    - path: src/meta/core/schema-registry.ts
+  eval-suite: meta
+  evals:
+    - id: record-format
+      assertion: "A reader can write a persona record that names its audience and a journey record that names its persona."
+      type: capability
+      grader: ai
+    - id: turn-on
+      assertion: "A reader can point manni:content-strategy:1.0.0 at the folder that holds the strategy records."
+      type: capability
+      grader: ai
+    - id: strict-overlay
+      assertion: "A reader can say what the content-strategy strict overlay rejects that the open vocabulary accepts."
+      type: capability
+      grader: ai

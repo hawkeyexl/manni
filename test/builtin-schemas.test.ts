@@ -463,6 +463,76 @@ describe("the default schema set", () => {
   });
 });
 
+describe("manni:content-strategy:1.0.0", () => {
+  // The vocabulary `manni strategy` records use to name their parent. It is
+  // opt-in, and the registry carries it at 1.0.0 with no draft behind it.
+  const OPEN = "manni:content-strategy:1.0.0";
+  const STRICT = "manni:content-strategy-strict:1.0.0";
+  const CORE = "manni:core:1.0.0";
+
+  async function record(fixture: string, schemas: string[]) {
+    const { results } = await runValidate({
+      inputs: [`test/fixtures/content-strategy/${fixture}`],
+      cliSchemas: schemas,
+      cwd: root,
+      noConfig: true,
+    });
+    const r = results[0];
+    if (!r) throw new Error(`no result for ${fixture}`);
+    return r;
+  }
+
+  it("declares audience and persona, each a page string, and requires neither", async () => {
+    const schema = await loadSchema(OPEN);
+    const props = schema.properties as Record<string, Record<string, unknown>>;
+    expect(Object.keys(props).sort()).toEqual(["audience", "persona"]);
+    for (const field of ["audience", "persona"]) {
+      expect(props[field]?.type, field).toBe("string");
+      expect(props[field]?.["x-manni-location"], field).toBe("page");
+    }
+    expect(schema.required).toBeUndefined();
+    expect(schema.additionalProperties).toBe(true);
+  });
+
+  it("leaves type, id, title and description to core", async () => {
+    const schema = await loadSchema(OPEN);
+    const props = Object.keys(schema.properties as Record<string, unknown>);
+    for (const core of ["type", "id", "title", "description"]) {
+      expect(props).not.toContain(core);
+    }
+  });
+
+  it("is opt-in: neither id is in the default set", () => {
+    expect([...DEFAULT_SCHEMAS]).not.toContain(OPEN);
+    expect([...DEFAULT_SCHEMAS]).not.toContain(STRICT);
+  });
+
+  it.each(["audience.md", "persona.md", "journey.md"])(
+    "accepts the %s record beside core",
+    async (fixture) => {
+      const r = await record(fixture, [CORE, OPEN, STRICT]);
+      expect({ fixture, errors: r.errors }).toEqual({ fixture, errors: [] });
+    },
+  );
+
+  it("rejects an audience that is a list, naming the vocabulary", async () => {
+    const r = await record("bad-audience-list.md", [OPEN]);
+    expect(r.ok).toBe(false);
+    expect(r.errors[0]?.schema).toBe(OPEN);
+    expect(r.errors[0]?.instancePath).toBe("/audience");
+  });
+
+  it("states its scope in the present tense", async () => {
+    for (const ref of [OPEN, STRICT]) {
+      const text = JSON.stringify(await loadSchema(ref));
+      expect({ ref, draft: /-proposal\.\d|planned|future|not yet|will /i.test(text) }).toEqual({
+        ref,
+        draft: false,
+      });
+    }
+  });
+});
+
 // ---------------------------------------------------------------------------
 // 0009 — publishing the built-ins is a promise, so it needs enforcement
 // ---------------------------------------------------------------------------

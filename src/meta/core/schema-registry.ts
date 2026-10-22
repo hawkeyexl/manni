@@ -81,6 +81,8 @@ import manniStewardshipStrict120 from "../schemas/stewardship-strict/1.2.0.json"
 import manniCitations110 from "../schemas/citations/1.1.0.json" with { type: "json" };
 import manniCitationsStrict110 from "../schemas/citations-strict/1.1.0.json" with { type: "json" };
 import manniAiContext120 from "../schemas/ai-context/1.2.0.json" with { type: "json" };
+import manniContentStrategy100 from "../schemas/content-strategy/1.0.0.json" with { type: "json" };
+import manniContentStrategyStrict100 from "../schemas/content-strategy-strict/1.0.0.json" with { type: "json" };
 import { errorMessage } from "../../shared/errors.js";
 
 export interface BuiltinInfo {
@@ -152,6 +154,8 @@ const BUILTINS = new Map<string, Record<string, unknown>>([
   ["manni:citations:1.1.0", manniCitations110],
   ["manni:citations-strict:1.1.0", manniCitationsStrict110],
   ["manni:ai-context:1.2.0", manniAiContext120],
+  ["manni:content-strategy:1.0.0", manniContentStrategy100],
+  ["manni:content-strategy-strict:1.0.0", manniContentStrategyStrict100],
 ]);
 
 /**
@@ -415,6 +419,8 @@ const PUBLISHED_PATHS: readonly (readonly [string, string])[] = [
   ["citations/1.1.0.json", "manni:citations:1.1.0"],
   ["citations-strict/1.1.0.json", "manni:citations-strict:1.1.0"],
   ["ai-context/1.2.0.json", "manni:ai-context:1.2.0"],
+  ["content-strategy/1.0.0.json", "manni:content-strategy:1.0.0"],
+  ["content-strategy-strict/1.0.0.json", "manni:content-strategy-strict:1.0.0"],
 ];
 
 /** Where each built-in's reference page lives on the docs site. */
@@ -458,6 +464,8 @@ const GUIDE_SLUGS: ReadonlyMap<string, string> = new Map([
   ["manni:citations:1.1.0", "manni-citations"],
   ["manni:citations-strict:1.0.0", "manni-citations"],
   ["manni:citations-strict:1.1.0", "manni-citations"],
+  ["manni:content-strategy:1.0.0", "manni-content-strategy"],
+  ["manni:content-strategy-strict:1.0.0", "manni-content-strategy"],
   ["manni:core:1.0.0", "manni-core"],
   ["manni:core-strict:1.0.0", "manni-core"],
   ["manni:evals:1.0.0", "manni-evals"],

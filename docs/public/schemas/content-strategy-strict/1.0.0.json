@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "manni:content-strategy-strict:1.0.0",
+  "title": "manni content-strategy strict overlay v1.0.0",
+  "description": "The strict overlay for manni:content-strategy:1.0.0. Stack it beside the open vocabulary. It narrows the form of values the open vocabulary already claims and requires no key.",
+  "additionalProperties": true,
+  "type": "object",
+  "properties": {
+    "audience": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]*$",
+      "description": "Strict holds the audience id to kebab case: lowercase letters, digits and hyphens, starting with a letter or digit."
+    },
+    "persona": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]*$",
+      "description": "Strict holds the persona id to kebab case: lowercase letters, digits and hyphens, starting with a letter or digit."
+    }
+  }
+}

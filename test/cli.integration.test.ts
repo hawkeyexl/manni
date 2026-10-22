@@ -217,6 +217,8 @@ describe("docmeta CLI (built bin)", () => {
       "manni:citations:1.1.0",
       "manni:citations-strict:1.1.0",
       "manni:ai-context:1.2.0",
+      "manni:content-strategy:1.0.0",
+      "manni:content-strategy-strict:1.0.0",
     ]);
   });
 

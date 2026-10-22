@@ -533,10 +533,11 @@ mark every field this way:
 | [`manni:artifact-evals:1.1.0`](/manni/meta/reference/schemas/manni-artifact-evals/) | | `metadata` |
 | [`manni:citations:1.1.0`](/manni/meta/reference/schemas/manni-citations/) | | `citations` |
 | [`manni:terminology:1.2.0`](/manni/meta/reference/schemas/manni-terminology/) | `label`, `definition`, `abstract`, `alt-labels`, `hidden-labels`, `broader`, `narrower`, `related-terms`, `see`, `scope-note`, `notation`, the five match fields, and every TBX data category, `concept-entry`, `designations` and `tbx-markup` | |
+| [`manni:content-strategy:1.0.0`](/manni/meta/reference/schemas/manni-content-strategy/) | `audience`, `persona` | |
 
-All but terminology and artifact-evals are in the built-in default set. A run
-with no schema configured therefore warns about each `external` field above
-that sits on the page.
+All but terminology, artifact-evals and content-strategy are in the built-in
+default set. A run with no schema configured therefore warns about each
+`external` field above that sits on the page.
 
 {/* cite a-mark-covers-a-whole-top-level-key */}
 A mark covers a whole top-level key. `metadata` is `external`, so an Agent

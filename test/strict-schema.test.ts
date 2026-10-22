@@ -40,6 +40,7 @@ const FAMILIES = [
   "artifact-evals",
   "graph",
   "citations",
+  "content-strategy",
 ];
 
 const openRef = (family: string): string => `manni:${family}:1.0.0`;
