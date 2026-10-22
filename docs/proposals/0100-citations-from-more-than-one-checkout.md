@@ -25,13 +25,19 @@
   by `--root`, and now also by a named repo. A path still never leaves its
   checkout.
 - **Changes:** The citations vocabulary. `manni:citations:1.2.0` adds an
-  optional `source.repo`, and the default schema set moves to it.
+  optional `source.repo`, and the default schema set moves to it. Every strict
+  overlay now moves in lockstep with its vocabulary, as decision 14 says.
+- **Supersedes in part:** [0087](0087-a-golden-set-of-reader-questions.md),
+  the last sentence of its schema bullet. `manni:ai-context-strict:1.0.0` no
+  longer stays the overlay `strict` stacks beside ai-context 1.1.0.
 - **Touches:** `src/cite/` (config, the `src` grammar, sources, mint, check,
-  update, history, re-encryption and the reporters), `src/cite/cli.ts`,
-  `src/key/` (`rotate` and its CLI), `src/meta/schemas/citations*/1.2.0.json`,
-  `src/meta/core/schema-registry.ts`, `src/meta/core/resolve-schema.ts`, the
-  cite pages under `docs/src/content/docs/cite/` and journey D5 in
-  `docs/content-strategy/cujs.md`
+  update, history, re-encryption and the reporters), `src/cite/cli.ts` and
+  `src/key/` (`rotate` and its CLI). The schemas are
+  `src/meta/schemas/citations*/1.2.0.json` and
+  `src/meta/schemas/ai-context-strict/1.1.0.json` and `1.2.0.json`, with
+  `src/meta/core/schema-registry.ts` and `src/meta/core/resolve-schema.ts`.
+  The docs are the cite pages under `docs/src/content/docs/cite/`, the schema
+  pages, and journey D5 in `docs/content-strategy/cujs.md`.
 
 ## Problem
 
@@ -366,9 +372,8 @@ source:
 | `source.repo` | string | `^[a-z0-9][a-z0-9-]*$` | no | The checkout `file` is in, by name. Absent means the root. |
 
 `manni:citations:1.2.0` maps to 1.1.0 in the optional-field predecessors, as
-0098 set up. It keeps the 1.1.0 strict overlay, because nothing the overlay
-narrows changed. ai-context 1.2.0 keeps its 1.0.0 overlay the same way, so no
-new strict file ships.
+0098 set up. Its strict overlay is `manni:citations-strict:1.2.0`, which has
+the 1.1.0 overlay's rules. Decision 14 says why it ships anyway.
 The default schema set moves to 1.2.0. A repository that lists
 `manni:citations:1.1.0` in its own schema set moves to 1.2.0 before writing
 `repo`.
@@ -516,6 +521,26 @@ manni: No repo named apii. Declare it under cite.repos in manni.config.yaml, or 
 | addition | `SourceEnd.repo?: string`, present for a repo entry. |
 | addition | `repos?: Record<string, string>` on the options of `runCheck`, `runAdd`, `runUpdate` and `runKeyRotate`. Each value is resolved against `cwd`, and each name overrides `cite.repos`. |
 | addition | `CiteRun.repos`, each declared name mapped to its absolute directory. |
+
+### 14. Strict overlays move in lockstep
+
+Every built-in vocabulary version ships a strict overlay at the same version.
+Citations 1.2.0 ships `manni:citations-strict:1.2.0`. ai-context 1.1.0 and
+1.2.0 ship the overlays they lacked. The registry's table that paired a newer
+vocabulary with an older overlay is removed.
+
+A strict id is now always the vocabulary's id with `-strict` after the name.
+A reader never has to know which version borrows which overlay. And an
+overlay whose description names an older vocabulary no longer sits beside a
+newer one, where its published text could never be corrected.
+
+Each new overlay has its predecessor's rules, byte for byte. Only its `$id`,
+title and description differ. So each maps to its predecessor as an
+annotation-only successor, and a `strict: true` baseline carries across. A
+test holds every vocabulary that has an overlay to one overlay per version.
+
+This supersedes the last sentence of 0087's schema bullet, which kept
+`manni:ai-context-strict:1.0.0` as the overlay `strict` stacks beside 1.1.0.
 
 ## Known limits
 
@@ -682,9 +707,13 @@ reading anyone would want, so it is refused rather than resolved by order.
       and a `repo` member.
 - [ ] `cite history` leaves repo entries out with its notice and exits `0`.
 - [ ] `src/meta/schemas/citations/1.2.0.json` exists, registered, mapped to
-      1.1.0 in the optional-field predecessors and published. It keeps the
-      1.1.0 strict overlay. The default schema set names
-      `manni:citations:1.2.0`.
+      1.1.0 in the optional-field predecessors and published. The default
+      schema set names `manni:citations:1.2.0`.
+- [ ] `manni:citations-strict:1.2.0`, `manni:ai-context-strict:1.1.0` and
+      `manni:ai-context-strict:1.2.0` exist, each published, registered and
+      mapped to its predecessor as annotation-only. The registry has no table
+      pairing a vocabulary with an older overlay. A test holds every
+      vocabulary with an overlay to one overlay per version.
 - [ ] `cite/reference/configuration.mdx` documents `repos`, and
       `cite/reference/citations.mdx` documents `source.repo` and the prefix.
       `cite/reference/cli.mdx` documents `--repo`, and `docs:check-cli` passes.
