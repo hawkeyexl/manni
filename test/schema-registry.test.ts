@@ -1294,6 +1294,22 @@ describe("ANNOTATION_ONLY_PREDECESSORS", () => {
   });
 });
 
+describe("predecessor maps", () => {
+  it("are acyclic, so baselineIdentity terminates for every key", () => {
+    const starts = [...ANNOTATION_ONLY_PREDECESSORS.keys(), ...OPTIONAL_FIELD_PREDECESSORS.keys()];
+    for (const start of starts) {
+      const seen = new Set<string>();
+      let id: string | undefined = start;
+      while (id !== undefined) {
+        expect(seen.has(id), `cycle through ${id}`).toBe(false);
+        seen.add(id);
+        id = ANNOTATION_ONLY_PREDECESSORS.get(id) ?? OPTIONAL_FIELD_PREDECESSORS.get(id);
+      }
+      expect(() => baselineIdentity(start)).not.toThrow();
+    }
+  });
+});
+
 describe("OPTIONAL_FIELD_PREDECESSORS (proposal 0098)", () => {
   // A successor here only adds optional fields. On any document that carries
   // none of them it must report exactly what its predecessor reports, or the
@@ -1345,6 +1361,9 @@ describe("OPTIONAL_FIELD_PREDECESSORS (proposal 0098)", () => {
       expect(ids.has(successor)).toBe(true);
       expect(ids.has(predecessor)).toBe(true);
       expect(ANNOTATION_ONLY_PREDECESSORS.has(successor)).toBe(false);
+    }
+    for (const successor of ANNOTATION_ONLY_PREDECESSORS.keys()) {
+      expect(OPTIONAL_FIELD_PREDECESSORS.has(successor)).toBe(false);
     }
     expect(baselineIdentity("manni:stewardship:1.2.0")).toBe("manni:stewardship:1.0.0");
     expect(baselineIdentity("manni:stewardship-strict:1.2.0")).toBe("manni:stewardship-strict:1.0.0");
