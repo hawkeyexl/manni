@@ -271,7 +271,7 @@ describe("manni graph export (integration)", () => {
     const { status, stdout } = run(["export", "bogus", "-g", graph], corpus);
     expect(status).toBe(2);
     expect(stdout).toContain(
-      'Unknown export target "bogus". Use jsonld | iirds | search | questions | chunks.',
+      'Unknown export target "bogus". Use jsonld | iirds | search | questions | chunks | llms.',
     );
   });
 

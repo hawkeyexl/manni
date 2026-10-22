@@ -59,6 +59,8 @@ export interface ArtifactOptions {
   cwd?: string;
   /** Injection seam for tests: the query embedder, or `null` for none. */
   embedder?: QueryEmbedder | null;
+  /** The graph already in hand, in place of reading `graph`: what `graph check` checks. */
+  quads?: ReturnType<typeof storeToQuads>;
 }
 
 export interface LookupCommandOptions extends ArtifactOptions {
@@ -138,7 +140,7 @@ export function openArtifact(opts: ArtifactOptions): Artifact {
   } catch {
     throw new GraphError(`${label} is not a chunk manifest; run manni graph publish.`);
   }
-  const quads = storeToQuads(loadGraph(graphPath));
+  const quads = opts.quads ?? storeToQuads(loadGraph(graphPath));
   if (integrityOf(Buffer.from(emitJsonLd(quads), "utf8")) !== manifest.graph) {
     throw new GraphError(`${label} was built from another graph; run manni graph publish.`);
   }

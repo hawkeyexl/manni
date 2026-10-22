@@ -392,6 +392,21 @@ function addressArgs(fw: Framework, host: string | undefined, port: number | und
   ];
 }
 
+/**
+ * The framework of the one docs site found in `base` or the folders `site`
+ * searches beside it (`docs/`, `website/`, `site/`), or `null` when none is
+ * found or a folder holds more than one.
+ */
+export function detectFramework(base: string): string | null {
+  for (const dir of [base, join(base, "docs"), join(base, "website"), join(base, "site")]) {
+    if (!isDirectory(dir)) continue;
+    const site = siteAt(dir);
+    const names = FRAMEWORKS.filter((fw) => fw.marker(site) !== null).map((fw) => fw.name);
+    if (names.length > 0) return names.length === 1 ? (names[0] ?? null) : null;
+  }
+  return null;
+}
+
 export function resolvePlan(verb: Verb, opts: ResolveOptions): Plan {
   const config = loadSiteConfig(opts.cwd, opts.configPath);
   const shown = (dir: string): string => {

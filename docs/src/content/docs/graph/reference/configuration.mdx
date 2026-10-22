@@ -104,6 +104,10 @@ graph:
       version: "1.3"
     chunks:
       evals: .manni/evals.json
+    llms:
+      title: Product documentation
+      summary: Everything the product does, page by page.
+      origin: https://docs.example.com
 
   retrieve:
     seeds: 3
@@ -200,6 +204,7 @@ Routes are corpus-defining, so they are config-only. There is no flag.
 | `questions.top` | integer, 1 or more | `5` | How high a page must rank for each of its own `sample-questions`, or the section holding a pinned answer. `graph check` asks each question through the retrieval `graph search` uses, and reports one outside the top results. |
 | `questions.severity` | `notice`, `warning`, `error` or `off` | `warning` | The severity of a question that does not find its page or its answer, and of an answer whose lines changed. A question asked twice, and an answer whose page is gone, take it too. A drafted question or pin reports at `notice` instead. `error` fails the run. `off` reports none of these, and still reports a moved answer. |
 | `questions.foundThreshold` | number 0–100, or `null` | `null` | `graph check` exits 1 when the percentage of reviewed questions found falls below this. It is the same scale as `stats.coverageThreshold`. `questions.severity` does not touch it. `null` sets no rate gate. |
+| `questions.citedThreshold` | number 0–100, or `null` | `null` | `graph check` exits 1 when the percentage of reviewed questions `graph retrieve` cites falls below this. It applies only when a chunk artifact sits beside the graph. `null` sets no gate. See [Cited by graph retrieve](/manni/graph/reference/cli/#cited-by-graph-retrieve). |
 
 ```yaml
 graph:
@@ -268,6 +273,9 @@ graph:
 
 ### `embed`
 
+`graph publish` runs its embed step only when this section exists, even
+empty. It runs the iiRDS export only when `export.iirds` exists.
+
 | Key | Type | Default | What it does |
 |---|---|---|---|
 | `model` | string | `onnx-community/granite-embedding-small-english-r2-ONNX` | The local embedding model. Any id is accepted: the documented table is the tested set, not the permitted one, so a newer model works without a manni release. |
@@ -293,6 +301,9 @@ Tested models, with what each costs:
 | `iirds.creator` | string | unset | Creator organization, written as an iiRDS Party and a vCard organization. |
 | `iirds.version` | `"1.2"` or `"1.3"` | `"1.3"` | The iiRDS version literal the package declares. Quote it: unquoted, YAML reads `1.3` as a number and the value is refused. |
 | `chunks.evals` | path, or `null` | `null` | A docevals JSON report, as `manni docevals run -f json` writes it, relative to the config file. It fills each chunk record's `evals`. `null` leaves every record's `evals` `null`. `--evals` overrides it for one run. |
+| `llms.title` | string | none | The H1 of `llms.txt`. `graph export llms` needs it. `graph publish` writes `llms.txt` only when the `llms` section exists. |
+| `llms.summary` | string | none | The blockquote under the H1. |
+| `llms.origin` | URL | none | The site's scheme and host, such as `https://docs.example.com`. Each link is this plus the page's route. `graph export llms` needs it. |
 
 ### `retrieve`
 

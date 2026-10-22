@@ -1,6 +1,6 @@
 # 0090: Served passages carry their proof
 
-- **Status:** Proposed
+- **Status:** Implemented (#224, #225, #226, #227, #228)
 - **Serves:** Four groups of readers.
   - Devin · D13, "Publish the graph for retrieval". He publishes a search
     index today, and no reader of it learns which passages passed the gate.
@@ -31,17 +31,22 @@
 - **Supersedes:** Nothing.
 - **Touches:** `src/graph/runtime/` (`assemble.ts`, `trace.ts`, `index.ts`,
   `retrieve.ts` new, `chunks.ts` new), `src/graph/commands/`
-  (`retrieve.ts` new, `serve.ts` new, `traverse.ts`, `export.ts`,
-  `check.ts`, `questions.ts`), `src/graph/core/` (`config-schema.json`,
-  `config.ts`, `llms.ts` new), `src/graph/commands/chunks.ts` new,
-  `src/docevals/core/engine.ts`, `src/meta/schemas/ai-context/1.2.0.json` new, `src/graph/reporters/`,
-  `src/graph/cli.ts`, `package.json`, `docs/src/content/docs/graph/`,
+  (`chunks.ts` new, `retrieve.ts` new, `serve.ts` new, `publish.ts` new,
+  `llms.ts` new, `traverse.ts`, `export.ts`, `check.ts`, `questions.ts`),
+  `src/graph/core/` (`config-schema.json`, `config.ts`),
+  `src/site/core/detect.ts`, `src/docevals/core/engine.ts`,
+  `src/meta/schemas/ai-context/1.2.0.json` new, `src/graph/reporters/`,
+  `src/graph/cli.ts`, `package.json`, `.github/workflows/docs.yml`,
+  `docs/src/content/docs/graph/`, `docs/src/components/` new,
   `docs/content-strategy/cujs.md`, `test/graph/`
 - **Verdict:** Every passage manni serves carries a provenance record. The
   record holds its pin status, its merge-safe dates and its page's eval
   verdicts. `graph export chunks` writes every passage with its record, and
-  every host serves those rows. `manni graph retrieve` and `manni graph serve` hand that to a
-  person or an agent. The golden set becomes the retrieval suite inside
+  every host serves those rows. `manni graph publish` writes them, with
+  everything else serving needs, in one command. `lookup` is the one call.
+  It takes a question and returns three full result sets with their proof:
+  `graph lookup` on the CLI, a tool over `graph serve`, and
+  `createRetriever().lookup()` in a script. The golden set becomes the retrieval suite inside
   `graph check`. A field reaches agent-facing output unless one of its two
   existing marks keeps it out. `graph export llms` writes `llms.txt` from
   the frontmatter, so the two descriptions cannot drift.
@@ -118,19 +123,65 @@ One row of `chunks.en.jsonl`, abridged:
 ```
 
 **Maya's agent, over MCP.** `.mcp.json` registers `npx manni graph serve`.
-The agent calls `lookup` with one argument, the reader's question. It gets
-three complete sections: the ranked matches, every passage reached outward
-from them, and every passage that depends on them. Each passage carries its
-text and its record, so the agent quotes the current sentences and flags the
-drifted one.
+The agent calls one tool with one argument: `lookup` with
+`{ "question": "How does cite check decide a pin moved?" }`. The result has
+three complete sections.
 
-**An Ask AI built on the functions.** A team running a doc site writes a
-worker around `createRetriever().lookup()`. manni retrieves, and their own
-model answers. A hosted vector DB ingests `chunks.en.jsonl` as it is.
+- **`matches`** holds the row above first, with its lexical, vector and
+  fused scores, and the runner-up matches below it.
+- **`traversal`** holds every node reached outward from those matches. Each
+  carries the edge that reached it, such as
+  `from cite/#how-a-pin-is-classified via graph:references`.
+- **`impact`** holds every node that depends on the matches, such as
+  `cite/reference/cli.mdx § update`, with its inbound edge.
+
+Each passage carries its text and its record. The agent quotes the three
+current sentences and flags line 47 as unverified. It also knows which pages
+to update if it changes the classifier's behavior.
+
+**An Ask AI built on the functions.** A team running a doc site on manni's
+artifact writes a worker. manni retrieves, and their own model answers:
+
+```ts
+import { createRetriever, type LookupResult } from "@hawkeyexl/manni/graph/runtime";
+
+const docs = await createRetriever({ manifest: "https://hawkeyexl.github.io/manni/graph/chunks.json" });
+
+function passages(result: LookupResult, section: "matches" | "traversal" | "impact", role: string) {
+  return result[section].passages.flatMap((p) =>
+    p.text === null ? []
+      : [{ id: p.iri, role, title: p.title, text: p.text, unverified: p.provenance.pins.error > 0 }]);
+}
+
+export default {
+  async fetch(request: Request, env: Env): Promise<Response> {
+    const { question } = (await request.json()) as { question: string };
+    const result = await docs.lookup(question);
+    if (result.refusal) return Response.json({ answer: null, refusal: result.refusal });
+    const context = [...passages(result, "matches", "answer"),
+      ...passages(result, "traversal", "background"), ...passages(result, "impact", "dependent")];
+    const answer = await env.MODEL.answer({ question, context }); // their backend of choice
+    return Response.json({ answer, citations: result.citations });
+  },
+};
+```
+
+They hold a hosted vector DB, so they ingest `chunks.en.jsonl` once and pass
+`store: createHttpVectorStore({ url: env.VECTORS_URL })`. Every other line
+stays the same.
 
 **Devin raises the floor.** He sets `graph.retrieve.withhold: [drifted]`.
-The next export leaves the drifted passage out of the rows and lists it
-under `withheld`, so no host holds that text.
+The next `graph publish` leaves `cite/#how-a-pin-is-classified` out of the
+rows and lists it under `withheld`. Every host reads those rows, so none
+holds that text, and each trace names it.
+
+**The suite.** `manni graph check` prints
+`cited    271 of 288 reviewed by graph retrieve (94%), 6 withheld`.
+
+**The prototype.** The docs site's "Retrieve from a script" page carries a
+small search box marked "Prototype". It is built from
+`createRetriever().lookup()` in lexical mode and shows each passage's role
+and pin badges. It is not part of the package.
 
 ## Design
 
@@ -139,10 +190,10 @@ The work lands as five stacked PRs, in this order.
 | PR | What lands |
 |---|---|
 | 1 | The provenance record, `graph export chunks`, page `integrity` in `docevals run -f json`, the delivery rule, and the ai-context annotation-only version. |
-| 2 | `graph lookup`, `graph retrieve`, `graph traverse --context`, the runtime's `retrieve()` and `lookup()`, and `createRetriever()`. |
-| 3 | `graph serve`, the MCP server. |
-| 4 | The golden set through `retrieve` in `graph check`, `graph export llms`, and `graph publish`. |
-| 5 | The docs pages for D19 and M29, and a labelled prototype search box on this repo's site. |
+| 2 | `graph lookup`, `graph retrieve`, `graph traverse --context`, the runtime's `retrieve()` and `lookup()`, `createRetriever()` and its seams. |
+| 3 | `graph serve`, the MCP server, and its page for D19. |
+| 4 | The golden set through `retrieve` in `graph check`, `graph export llms`, `graph publish`, and `docs.yml` publishing into the site. |
+| 5 | The page for M29, the publish page led by `graph publish`, and a labelled prototype search box on this repo's site. |
 
 manni ships no UI. The prototype is built from the public functions, is
 labelled, and is not exported.
@@ -393,15 +444,17 @@ manni graph retrieve <question> [options]
 | `--variant <variant>` | A scope filter, by product variant IRI, title or slug. |
 | `--software-subject <subject>` | A scope filter, by software subject. |
 | `--mode <mode>` | `lexical`, `vector` or `hybrid`. Default: hybrid when vectors exist. |
-| `--vectors <path>` | Vector sidecar path. Default: from the manifest. |
 | `--seeds <n>` | How many entry matches seed the walk. Overrides `graph.retrieve.seeds`. |
 | `-d, --depth <n>` | Hops from each seed. Overrides `graph.retrieve.depth`. |
 | `--max-chars <n>` | Character budget across all passages. Overrides `graph.retrieve.maxChars`. |
-| `--withhold <list>` | Comma-separated, given once: `drifted`, `failing`. Overrides `graph.retrieve.withhold`. |
+| `--withhold <list>` | Comma-separated, given once: `drifted`, `failing`. Tightens `graph.retrieve.withhold` for this call. |
+| `--where <field=value>` | Only passages whose metadata field holds the value. Repeatable, and every condition must hold. |
 | `-f, --format <format>` | `pretty` or `json`. Default `pretty`. |
 
-Every option but `--seeds`, `--max-chars` and `--withhold` already exists on
-`search` or `traverse`, with the same name and meaning.
+Every option but `--seeds`, `--max-chars`, `--withhold` and `--where`
+already exists on `search` or `traverse`, with the same name and meaning.
+Rows carry their vectors, so `retrieve` reads no sidecar and takes no
+`--vectors`.
 
 ```yaml
 # before: no graph.retrieve section
@@ -424,7 +477,8 @@ graph:
 
 - **The trust floor is the publisher's.** `withhold` is config and a CLI
   flag. An MCP caller cannot set it, so an agent cannot lower the floor a
-  publisher set.
+  publisher set. A script's per-call `withhold` only tightens it, as section
+  13 records.
 - **A withheld passage is traced.** The trace gains `withheld`, one entry
   per passage with the node and its reasons. An agent sees what it lost.
 - **Withholding needs records.** Every host reads the chunk rows, and every
@@ -536,6 +590,7 @@ tool has a command a person can run.
 | `--context` | New. Resolve the walked nodes and print the bundle, records included. |
 | `--max-chars <n>` | New. The budget. Valid only with `--context`. |
 | `--withhold <list>` | New. The trust floor. Valid only with `--context`. |
+| `--where <field=value>` | New. Only passages whose metadata field holds the value. Valid only with `--context`. |
 
 Without `--context`, `traverse` prints what it prints today. With it, a
 refusal exits 0, as `retrieve` does.
@@ -552,8 +607,7 @@ manni graph serve [options]
 | `--no-config` | Ignore any discovered config file. |
 | `-g, --graph <path>` | Graph `.ttl` path. Default: config `out`. |
 | `-i, --index <dir>` | Directory holding the indexes, the manifest and `chunks.json`. |
-| `--vectors <path>` | Vector sidecar path. Default: from the manifest. |
-| `--withhold <list>` | The trust floor for every call. Overrides `graph.retrieve.withhold`. |
+| `--withhold <list>` | Tightens `graph.retrieve.withhold` for every call. |
 
 - **Transport is stdio.** The server reads JSON-RPC on stdin and writes it on
   stdout. Every diagnostic goes to stderr. It runs until stdin closes, then
@@ -581,89 +635,25 @@ A client registers it as any stdio server.
 
 #### The tools, as an agent sees them
 
-`tools/list` returns three tools. Each is read-only and closed-world. The
-server writes its resolved defaults into each description, so the numbers an
-agent reads are the ones in force.
+`tools/list` returns four tools, in this order. Each is read-only and
+closed-world, and every input schema has `additionalProperties: false`.
 
-```json
-{
-  "name": "retrieve",
-  "title": "Retrieve documentation",
-  "description": "Find the documentation passages that answer a question. Each passage carries its source, the status of its citation pins, its dates and its eval verdicts. A refusal means no passage answers it.",
-  "inputSchema": {
-    "type": "object",
-    "additionalProperties": false,
-    "required": ["question"],
-    "properties": {
-      "question": { "type": "string", "minLength": 1, "description": "The question, as a reader would ask it." },
-      "lang": { "type": "string", "description": "BCP-47 tag of the localization to search. Required when the docs have more than one: en, de." },
-      "variant": { "type": "string", "description": "Product variant IRI, title or slug. Passages scoped to other variants are left out." },
-      "softwareSubject": { "type": "string", "description": "Software subject. Passages scoped to other subjects are left out." },
-      "depth": { "type": "integer", "minimum": 0, "description": "Hops to follow from each match. Default 1." },
-      "maxChars": { "type": "integer", "minimum": 1, "description": "Character budget across all passages. Default 12000." }
-    }
-  },
-  "outputSchema": { "$ref": "#/$defs/bundle" },
-  "annotations": { "readOnlyHint": true, "idempotentHint": true, "openWorldHint": false }
-}
-```
+| Tool | Required | Optional | Description |
+|---|---|---|---|
+| `lookup` | `question` | none | "Start here. Pass the reader's question. You get three full result sets. Every match is ranked with its scores. Every passage reached by following links outward from the matches comes back, and so does every passage that depends on the matches. Each set has its edges, and each passage has its source and proof: pin status, dates and eval verdicts. A refusal means nothing in the docs answers it." |
+| `retrieve` | `question` | `lang`, `variant`, `softwareSubject`, `depth`, `maxChars`, `where` | "Like lookup, with control over language, scope, depth and budget." |
+| `traverse` | `node` | `depth`, `predicates`, `reverse`, `lang`, `variant`, `softwareSubject`, `limit`, `maxChars`, `where` | "Walk the graph from one node and return the passages it reaches." |
+| `impact` | `node` | `depth` (default 3), `lang`, `variant`, `softwareSubject`, `limit`, `maxChars`, `where` | "List the passages that depend on a node. Use it before changing a page." |
 
-```json
-{
-  "name": "traverse",
-  "title": "Walk the documentation graph",
-  "description": "Walk the graph from one node and return the passages it reaches. Use it to follow links, prerequisites and sections from a passage retrieve returned.",
-  "inputSchema": {
-    "type": "object",
-    "additionalProperties": false,
-    "required": ["node"],
-    "properties": {
-      "node": { "type": "string", "minLength": 1, "description": "A node IRI from a retrieve result, or a prefix:local CURIE." },
-      "depth": { "type": "integer", "minimum": 0, "description": "Maximum hops from the node. Default 1." },
-      "predicates": { "type": "array", "items": { "type": "string" }, "description": "Only follow these predicates, as IRIs or CURIEs." },
-      "reverse": { "type": "boolean", "description": "Follow inbound edges: what points at this node. Default false." },
-      "lang": { "type": "string", "description": "Scope filter: BCP-47 language tag." },
-      "variant": { "type": "string", "description": "Scope filter: product variant IRI, title or slug." },
-      "softwareSubject": { "type": "string", "description": "Scope filter: software subject." },
-      "limit": { "type": "integer", "minimum": 1, "description": "Stop after this many nodes." },
-      "maxChars": { "type": "integer", "minimum": 1, "description": "Character budget across all passages. Default 12000." }
-    }
-  },
-  "outputSchema": { "$ref": "#/$defs/bundle" },
-  "annotations": { "readOnlyHint": true, "idempotentHint": true, "openWorldHint": false }
-}
-```
+`lookup`'s `outputSchema` is the lookup result of section 9, and the other
+three return the bundle. No tool accepts `withhold`.
 
-```json
-{
-  "name": "impact",
-  "title": "Find what a change affects",
-  "description": "List the passages that depend on a node, following inbound edges transitively. Use it before changing a page, to see what else may need the same change.",
-  "inputSchema": {
-    "type": "object",
-    "additionalProperties": false,
-    "required": ["node"],
-    "properties": {
-      "node": { "type": "string", "minLength": 1, "description": "A node IRI, or a prefix:local CURIE." },
-      "depth": { "type": "integer", "minimum": 0, "description": "Maximum inbound hops. Default 3." },
-      "lang": { "type": "string", "description": "Scope filter: BCP-47 language tag." },
-      "variant": { "type": "string", "description": "Scope filter: product variant IRI, title or slug." },
-      "softwareSubject": { "type": "string", "description": "Scope filter: software subject." },
-      "limit": { "type": "integer", "minimum": 1, "description": "Stop after this many nodes." },
-      "maxChars": { "type": "integer", "minimum": 1, "description": "Character budget across all passages. Default 12000." }
-    }
-  },
-  "outputSchema": { "$ref": "#/$defs/bundle" },
-  "annotations": { "readOnlyHint": true, "idempotentHint": true, "openWorldHint": false }
-}
-```
-
-- **One result shape.** Each tool returns the section 3 bundle as
+- **Two result forms.** Each tool returns its result as
   `structuredContent`. It also returns the same JSON as one text block, for
   clients that read only text.
 - **`isError` is for faults.** A refusal is a result, `isError: false`. Only
   an unreadable source file or an internal fault sets `isError: true`.
-- **Each tool has a CLI twin.** `retrieve` is `graph retrieve`. `traverse` is
+- **Each tool has a CLI twin.** `lookup` is `graph lookup`. `retrieve` is `graph retrieve`. `traverse` is
   `graph traverse --context`. `impact` is `graph traverse --impact --context`.
   A list is a JSON array over MCP, and comma-separated on the CLI.
 
@@ -837,41 +827,223 @@ graph:
 - **No `llms-full.txt`.** Full text is what `retrieve` serves, with the proof
   attached.
 
+### 9. `lookup`, the one call
+
+`lookup` takes only a question and runs three operations. It returns each in
+full, in its own section of a `LookupResult`.
+
+- **`matches`**: entry across every localization, keeping the language whose
+  best match scores highest. Every ranked match comes back with its lexical,
+  vector and fused scores.
+- **`traversal`**: the outward walk from every match to
+  `graph.retrieve.depth`, with every node reached and every edge followed.
+- **`impact`**: the inward walk from every match, to the depth
+  `graph traverse --impact` uses by default (3), with every dependent node
+  and every edge.
+
+```bash
+manni graph lookup <question> [options]
+```
+
+It takes only plumbing options: `-c`, `--no-config`, `-g`, `-i` and `-f`.
+Every retrieval setting comes from config.
+
+```jsonc
+{
+  "question": "How does cite check decide a pin moved?",
+  "language": "en",
+  "matches": {
+    "passages": [
+      { "iri": "…/cite/#how-a-pin-is-classified", "title": "How a pin is classified",
+        "page": "docs/src/content/docs/cite/index.mdx", "lines": "41-58", "rank": 1,
+        "score": { "lexical": 12.4, "vector": 0.81, "fused": 0.033 },
+        "text": "## How a pin is classified\n\n…", "truncated": false,
+        "provenance": { /* the record */ } }
+    ],
+    "truncated": false
+  },
+  "traversal": { "passages": [ { "iri": "…", "depth": 1 } ], "edges": [ { "from": "…", "predicate": "graph:references", "to": "…" } ], "truncated": false },
+  "impact": { "passages": [], "edges": [], "truncated": false },
+  "pages": { "<page>": { "metadata": { } } },
+  "citations": [ { "iri": "…", "title": "…", "sourceUrl": "…" } ],
+  "trace": { "entry": { "languages": { "en": 0.033, "de": 0.004 }, "chosen": "en" }, "withheld": [] }
+}
+```
+
+- **Nothing is dropped.** Every node keeps its place, edges and record. A
+  node reached by both walks appears in both, and a match repeats in
+  neither.
+- **The budget trims text only.** `graph.retrieve.maxChars` applies to each
+  section's passage text separately. A passage past it keeps everything but
+  its text, which is `null` with `truncated: true`.
+- **Its parts are the other verbs.** `matches` plus `traversal` equals
+  `retrieve(question)` without a budget. `impact` equals the union of
+  `impact(match)` over the matches.
+- **It never refuses `lang-required`.** `language` names the language it
+  chose, and `trace.entry.languages` says why.
+
+### 10. The script surface
+
+`createRetriever(options)`, from `@hawkeyexl/manni/graph/runtime`, is
+platform-neutral. It returns data and calls no model besides the query
+embedder.
+
+| Option | Type | Default | Meaning |
+|---|---|---|---|
+| `manifest` | URL string or a parsed manifest | required | `chunks.json`. The graph, the search index and the rows resolve from its directory. |
+| `store` | `VectorStore` | the static store over the rows' vectors | Pass `createHttpVectorStore(...)` for a hosted DB. |
+| `chunks` | `ChunkSource` | the chunk files the manifest names | Pass your own to read rows from a vector DB by id. |
+| `embed` | embedder or `false` | `graph/embed` with each language's model | `false` forces lexical entry. |
+| `fetch` | function | the global `fetch` | For hosts without one, or tests. |
+
+| Member | Same as | Returns |
+|---|---|---|
+| `lookup(question)` | MCP `lookup`, `graph lookup` | a `LookupResult` |
+| `retrieve(question, { lang, variant, softwareSubject, depth, maxChars, mode, where, withhold })` | MCP `retrieve`, `graph retrieve` | a bundle |
+| `traverse(node, { depth, predicates, reverse, lang, variant, softwareSubject, limit, maxChars, where, withhold })` | MCP `traverse`, `graph traverse --context` | a bundle |
+| `impact(node, { depth, lang, variant, softwareSubject, limit, maxChars, where, withhold })` | MCP `impact`, `graph traverse --impact --context` | a bundle |
+| `manifest` | n/a | the parsed manifest |
+
+Rows load lazily, one language at a time. `StaleArtifactError` and
+`ModelMismatchError` throw, and refusals come back in the result. A host
+supplies two seams:
+
+```ts
+interface VectorStore {
+  query(q: { text: string; vector: number[] | null; k: number;
+             language: string | null; where: { field: string; value: string }[] }):
+    Promise<Array<{ id: string; score: number; row?: ChunkRow }>>;
+}
+interface ChunkSource {
+  get(ids: string[], language: string | null): Promise<ChunkRow[]>;
+}
+```
+
+- **`createStaticVectorStore(rows)`** ranks by cosine in memory, among the
+  rows that meet `where`. It needs no service.
+- **`createHttpVectorStore({ url, fetch })`** speaks section 11's protocol.
+- **`createChunkFileSource(textOrUrl, { fetch })`** reads one
+  `chunks.<tag>.jsonl`. **`parseChunkRows(text)`** yields its rows, for
+  ingestion.
+
+manni ships no UI and no vendor SDK. The only UI is a prototype search box on
+this repo's docs site. It is built from these functions, labelled
+"Prototype", and not exported.
+
+### 11. The HTTP store protocol
+
+A site's server implements one endpoint over any vector DB. The store POSTs
+one JSON object per query:
+
+```json
+{ "text": "How does cite check decide a pin moved?", "vector": [0.0132, -0.0871],
+  "k": 3, "language": "en", "where": [] }
+```
+
+The server answers with the matches:
+
+```json
+{ "matches": [ { "id": "https://hawkeyexl.github.io/manni/cite/#how-a-pin-is-classified", "score": 0.81 } ] }
+```
+
+- **`vector` is `null`** when the host did not embed, so the server embeds
+  instead and no model reaches the browser.
+- **A match may carry its `row`,** which is then used as it is. Otherwise its
+  id is read through the `ChunkSource`.
+- **An unknown id is dropped and traced,** never served as an empty passage.
+- **A non-2xx answer, or a body with no `matches` array, throws.**
+
+### 12. `graph publish`
+
+```bash
+manni graph publish [options]
+```
+
+| Option | Meaning |
+|---|---|
+| `-c, --config <path>`, `--no-config` | As elsewhere. |
+| `-o, --out <dir>` | The directory for every artifact. Default: the directory of `graph.out`. |
+| `--evals <path>` | Overrides `graph.export.chunks.evals`. |
+| `-f, --format <format>` | `pretty` or `json`. Default `pretty`. |
+
+It runs `build`, then `embed` when `graph.embed` is configured. It exports
+`jsonld`, `search` and `chunks` always, and `llms` and `iirds` when their
+sections exist. Everything goes into one directory.
+
+- **Each step is its own core.** It prints each step's own messages, and a
+  step not set up prints `skipped` and never fails the run.
+- **The first failing step stops it,** with exit 2 and
+  `manni: graph publish stopped at <step>: <that step's own message>`.
+- **It does not gate.** `graph check` gates, so CI runs
+  `manni graph check && manni graph publish`. A team can still publish a
+  known-imperfect build on purpose.
+- **`-f json`** prints `{ out, steps: [{ step, status, detail, files }] }`.
+
+`graph build`, `graph embed` and `graph export <target>` stay for one step at
+a time.
+
+### 13. Four changes in the build
+
+The build departed from the approved plan in four places, each decided in
+review.
+
+- **The model is per language.** `chunks.json` records
+  `languages.<tag>.model`, `{ id, dimensions }` or `null`, and has no
+  top-level `model`. A query embeds with its language's model.
+  *Why:* `graph.embed.byLanguage` can embed each language with a different
+  model. One top-level model could not describe those rows, and a German
+  query embedded with the English model compares nothing.
+- **`withhold` is open to scripts.** `createRetriever`'s `retrieve`,
+  `traverse` and `impact` accept `withhold`, and it only tightens the floor.
+  `lookup` stays question-only. *Why:* a script runs as the host, as the CLI
+  does, and the CLI already takes `--withhold`. Rows withheld at export are
+  not in the artifact, so no call can lower the floor. An MCP tool still
+  takes no `withhold`, since an agent is not the host.
+- **`traverse --context` takes `--where`.** *Why:* the MCP `traverse` tool and
+  `createRetriever().traverse()` both filter on metadata. Each tool keeps a
+  CLI twin that answers exactly as it does, so the flag joins its twin.
+- **CI checks after it publishes.** `docs.yml` runs `graph publish`, then
+  `graph check` on the published graph, the reverse of this proposal's
+  examples. *Why:* checked first, the cited row finds no chunk artifact and
+  only prints a notice, so `citedThreshold` could never gate in CI. A failing
+  check still stops the build job, and `deploy` needs that job.
+
 ## The ladder
 
 Minimal to maximal. Each rung shows what it prints, then the usage errors.
 
 ```text
-# 1. Build what serving reads.
-$ manni graph build && manni graph export search && manni graph export chunks
+# 1. Build and write everything serving reads.
+$ manni graph publish
 manni: no docevals report is configured, so records carry no eval verdicts.
-Wrote 611 chunks to .manni/graph/chunks.json
-
-# 2. The bare minimum that answers a question.
-$ manni graph retrieve "How do I resume an upload?"
-1  docs/uploads/resume.md § Resume                 seed, lexical
-   pins     none
-   dates    updated 2026-10-02, created 2025-03-14
-   evals    not reported
+build     graph.ttl: 142 pages, 611 nodes
 …
-3 passages, 4,102 of 12,000 characters. Pass -f json for the text and the trace.
+Published 7 files to .manni/graph/.
+
+# 2. The one call.
+$ manni graph lookup "How does cite check decide a pin moved?"
+Matches
+1  cite/index.mdx § How a pin is classified        lexical 12.4, vector 0.81
+   pins     3 current, 1 error: source-changed at line 47 (src/cite/core/classify.ts:128-139)
+…
+2 matches, 1 reached outward, 2 depend on them, in en. Pass -f json for the text, edges and trace.
 exit 0
 
-# 3. With eval verdicts, the CI form.
-$ manni docevals run -f json > .manni/evals.json; manni graph export chunks --evals .manni/evals.json
-Wrote 611 chunks to .manni/graph/chunks.json
+# 3. Steering.
+$ manni graph retrieve "How do I resume an upload?" --lang en --depth 2 --max-chars 20000
+1  docs/uploads/resume.md § Resume                 seed, lexical
+…
+exit 0
 
-# 4. The scripting form.
-$ manni graph retrieve "How do I resume an upload?" -f json | jq '.context[].provenance.pins.error'
-0
-0
-1
+# 4. With eval verdicts, the CI form.
+$ manni graph check && manni graph publish --out docs/public/graph --evals .manni/evals.json
 
-# 5. A walk, resolved into a bundle.
+# 5. The scripting form.
+$ manni graph lookup "How do I resume an upload?" -f json | jq '.impact.passages[] | {iri, depth, err: .provenance.pins.error}'
+
+# 6. A walk, or what a change here affects, with text.
 $ manni graph traverse urn:manni:graph:docs/uploads/resume.md --context --depth 2 -f json
-
-# 6. What a change here affects, with text.
-$ manni graph traverse urn:manni:graph:docs/uploads/resume.md --impact --context
+$ manni graph traverse urn:manni:graph:docs/uploads/resume.md --impact --context --where type=how-to
 
 # 7. A trust floor that costs an answer.
 $ manni graph retrieve "How many times does an upload retry by default?" --withhold drifted,failing
@@ -882,20 +1054,26 @@ exit 0
 # 8. Every option at once.
 $ manni graph retrieve "Wie rotiere ich den Schlüssel?" -c manni.config.yaml \
     -g .manni/graph/graph.ttl -i .manni/graph --lang de --variant SP-X100 \
-    --software-subject configuration --mode hybrid --vectors .manni/graph/vectors.de.bin \
-    --seeds 5 -d 2 --max-chars 20000 --withhold drifted -f json
+    --software-subject configuration --mode hybrid --seeds 5 -d 2 \
+    --max-chars 20000 --withhold drifted --where type=how-to -f json
+$ manni graph publish -c manni.config.yaml -o docs/public/graph --evals .manni/evals.json -f json
 
 # 9. Serve it to an agent.
 $ manni graph serve
-manni: serving retrieve, traverse and impact over stdio from .manni/graph/graph.ttl.
+manni: serving lookup, retrieve, traverse and impact over stdio from .manni/graph/chunks.json.
 
-# 10. The suite in CI.
+# 10. A script, the minimum, then a hosted DB with no model download.
+const docs = await createRetriever({ manifest: "/graph/chunks.json" });
+const result = await docs.lookup(question);
+createRetriever({ manifest, store: createHttpVectorStore({ url: "/api/vectors" }), embed: false })
+
+# 11. The suite in CI.
 $ manni graph check
 …
   cited    271 of 288 reviewed by graph retrieve (94%), 6 withheld
 exit 1, when citedThreshold is 95
 
-# 11. llms.txt.
+# 12. llms.txt alone.
 $ manni graph export llms
 Wrote .manni/graph/llms.txt (142 pages).
 ```
@@ -911,7 +1089,9 @@ Usage and operational errors, each on stderr:
 | `chunks.json` from another graph | `manni: .manni/graph/chunks.json was built from another graph; run manni graph publish.` | 2 |
 | no vector sidecar at export | `manni: no vector sidecar, so chunks carry no vectors and retrieval is lexical only; configure graph.embed to add them.` | warning, exit unaffected |
 | passages withheld at export | `manni: 6 chunks withheld by graph.retrieve.withhold (drifted); chunks.json lists them.` | notice, exit unaffected |
-| `--max-chars` or `--withhold` without `--context` on `traverse` | `manni: --max-chars needs --context.` | 2 |
+| `--max-chars`, `--withhold` or `--where` without `--context` on `traverse` | `manni: --max-chars needs --context.` | 2 |
+| a `graph publish` step fails | `manni: graph publish stopped at <step>: <that step's own message>` | 2 |
+| `chunks.json` embedded with another model than the query's | `manni: chunks.json was embedded with Xenova/bge-small-en-v1.5, and this run loads <id>; run manni graph publish again.` | 2 |
 | `--evals` with a target other than `chunks` | `manni: --evals applies only to graph export chunks.` | 2 |
 | no evals report is configured | `manni: no docevals report is configured, so records carry no eval verdicts.` | warning, exit unaffected |
 | the evals report is missing | `manni: graph.export.chunks.evals names .manni/evals.json, which does not exist.` | 2 |
@@ -934,18 +1114,22 @@ nothing from `node:`.
 
 | addition | what it is |
 |---|---|
-| `retrieve(graph, lexical, options)` | Entry, traversal, resolution, records and assembly, in one call. |
-| `parseChunksManifest(text)`, `parseChunkRows(text)` | Read `chunks.json` and a `chunks.<tag>.jsonl`, refusing an unknown `format` or `version`. |
-| `ChunkRow`, `ChunksManifest`, `ProvenanceRecord` | The types of sections 1 and 2. |
+| `createRetriever(options)` | The script surface of section 10. |
+| `retrieve({ … })`, `lookup({ … })` | The cores every host calls, over a `RetrieverContext`. |
+| `VectorStore`, `ChunkSource`, `createStaticVectorStore`, `createHttpVectorStore`, `createChunkFileSource` | The seams, and the three manni ships. |
+| `parseChunksManifest(input)`, `parseChunkRows(text)` | Read `chunks.json` and a `chunks.<tag>.jsonl`, refusing an unknown `format` or `version`. |
+| `ChunkRow`, `ChunksManifest`, `ProvenanceRecord`, `LookupResult` | The types of sections 1, 2 and 9. |
+| `StaleArtifactError`, `ModelMismatchError` | The two errors that throw. |
 | `AssembleOptions.provenance`, `.withhold` | The artifact and the trust floor, for callers that assemble by hand. |
 | `ContextBlock.page`, `.provenance` | Additive fields. |
 | `RetrievalBundle.question`, `.language`, `.pages` | Additive fields. |
 | `QueryTrace.withheld` | Additive. Always present, often empty. |
 | `RefusalReason` | Gains `withheld`, `lang-required`, `unknown-node` and `unknown-scope`. |
 
-The graph publish page gains the browser example DESIGN.md Phase 9 asks for.
-It loads `graph.jsonld`, the search index and `chunks.json`, and renders
-each passage with its pin and eval badges.
+The browser example DESIGN.md Phase 9 asks for is the prototype on the
+"Retrieve from a script" page. It calls `createRetriever().lookup()` and
+renders each passage with its role and pin badges. It is site code, labelled
+"Prototype", and not exported.
 
 ## What this does not do
 
@@ -1039,8 +1223,14 @@ each passage with its pin and eval badges.
 - [ ] `test/graph/fixtures/provenance/` holds the minimal corpus the tests commit, drift and edit.
 - [ ] `test/graph/integration/runtime-bundle.test.ts` still passes over the built bundle.
 
-### PR 2, retrieve and traverse
+### PR 2, lookup, retrieve and the script surface
 
+- [ ] `manni graph lookup "<question>"` takes only plumbing options, prints the three sections, picks the best language and exits 0.
+- [ ] `graph lookup -f json` prints section 9's result. Budget-trimmed passages keep their node and record, with `text: null` and `truncated: true`.
+- [ ] `createRetriever()` returns `lookup`, `retrieve`, `traverse`, `impact` and `manifest`, and matches the CLI over the same artifact.
+- [ ] `retrieve`, `traverse` and `impact` in a script accept `withhold`, which only tightens the floor.
+- [ ] `chunks.json` names each language's model, and a query embeds with its language's.
+- [ ] The stores, the chunk source and the parsers are exported, and the bundle-purity test passes.
 - [ ] `manni graph retrieve "<question>"` prints the pretty output above, and exits 0 with context.
 - [ ] `-f json` prints the bundle of section 3, with `question`, `language`, `context[].page`, `context[].provenance`, `pages` and `trace.withheld`.
 - [ ] A refusal exits 0, and its JSON carries `refusal.reason` and the extra key for that reason.
@@ -1049,14 +1239,14 @@ each passage with its pin and eval badges.
 - [ ] `graph.retrieve.seeds`, `depth`, `maxChars` and `withhold` validate in `config-schema.json`, with a positive and a negative case each.
 - [ ] Each flag overrides its key, and the flag-free run reads the key.
 - [ ] `manni graph traverse <node> --context` prints the bundle. Without `--context` its output is byte-identical to today's.
-- [ ] `--max-chars` or `--withhold` without `--context` exits 2.
+- [ ] `--max-chars`, `--withhold` or `--where` without `--context` exits 2.
 - [ ] `docs/src/content/docs/graph/reference/cli.mdx` documents `retrieve`, the new `traverse` flags and the new export targets, and `npm run docs:check-cli` passes.
 - [ ] `docs/src/content/docs/graph/reference/configuration.mdx` documents every new key.
 - [ ] `docs/src/content/docs/graph/reference/library-api.mdx` lists every runtime addition above.
 
 ### PR 3, serve
 
-- [ ] `manni graph serve` answers `tools/list` with exactly `retrieve`, `traverse` and `impact`, with the schemas above.
+- [ ] `manni graph serve` answers `tools/list` with exactly `lookup`, `retrieve`, `traverse` and `impact`, in that order, with the schemas above. `lookup` takes only `question`.
 - [ ] Each tool returns the bundle as `structuredContent` and as one text block.
 - [ ] A refusal returns `isError: false`. A usage error over MCP returns the matching refusal reason, with the CLI's text in `detail`.
 - [ ] No tool accepts `withhold`.
@@ -1067,7 +1257,7 @@ each passage with its pin and eval badges.
 - [ ] `test/graph/real/` drives the real SDK, and `npm run test:graph:real` runs it.
 - [ ] A new page, `docs/src/content/docs/graph/serve/index.mdx`, shows a client registration and one tool call, with `title` and `description`.
 
-### PR 4, the suite and llms.txt
+### PR 4, the suite, publish and llms.txt
 
 - [ ] `graph check` asks every question of `retrieve`, and prints the `cited` row and the `gaps` refusal count above.
 - [ ] The JSON report's `questions` object carries `cited` and `withheld`.
@@ -1077,9 +1267,17 @@ each passage with its pin and eval badges.
 - [ ] `manni graph export llms` writes `llms.txt` with one entry per routed page, whose description equals its frontmatter `description`.
 - [ ] A multi-language corpus gets one section per tag, and a page under no route warns once.
 - [ ] A missing `title` or `origin` exits 2 with the messages above.
-- [ ] `docs/src/content/docs/graph/publish/index.mdx` covers `provenance` and `llms`, and carries the browser example.
-- [ ] A docs page states section 7's delivery rule, and issue #36 links to it.
-- [ ] `docs/content-strategy/cujs.md` gains D19, "Serve the docs to an agent with their proof", and M29, "Ground a site's Ask AI in the docs' proof".
-- [ ] `node dist/cli.js meta validate`, `cite check`, `term check` and Vale pass over the changed docs.
-- [ ] A demo video under `media/graph-serve/` shows an agent's bundle with a drifted pin, then the same call withheld.
-- [ ] This proposal's `Status:` line reads `Implemented` with the PR numbers.
+- [ ] `manni graph publish` builds, embeds when configured, and exports `jsonld`, `search`, `chunks`, plus `llms` and `iirds` when configured, all into `--out`. A failing step exits 2 with `graph publish stopped at <step>: …`.
+- [ ] `docs.yml` runs `graph publish --out docs/public/graph` after `graph check`.
+- [ ] `docs/content-strategy/cujs.md` gains D19, "Serve the docs to an agent with their proof".
+
+### PR 5, the docs and the prototype
+
+- [ ] `docs/src/content/docs/graph/retrieve-from-a-script/index.mdx` documents section 10, the worked example's worker, ingestion, section 11's protocol and the model download.
+- [ ] The worker is `test/graph/fixtures/ask-worker/worker.ts`, which `tsc` type-checks, and a test holds the page's block to it.
+- [ ] The page's search box, `docs/src/components/RetrievePrototype.astro`, is labelled "Prototype" and is not a package export.
+- [ ] `docs/src/content/docs/graph/publish/index.mdx` leads with `graph publish` and states section 7's delivery rule, which issue #36 can link to.
+- [ ] `docs/content-strategy/cujs.md` gains M29, "Ground a site's Ask AI in the docs' proof", and `information-architecture.md` places the page.
+- [ ] `node dist/cli.js meta validate`, `cite check`, `term check`, the docs build, `docs:check-links` and the site's a11y check pass, and Vale reports nothing on the changed prose.
+- [ ] The demo script is `media/graph-serve-1x1.script.md`. The MP4 is handed over, not committed.
+- [ ] This proposal's `Status:` line reads `Implemented` with the five PRs.

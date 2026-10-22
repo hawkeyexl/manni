@@ -72,6 +72,7 @@ import {
   runTraverseContext,
 } from "./commands/retrieve.js";
 import { runServe } from "./commands/serve.js";
+import { renderPublish, runPublish } from "./commands/publish.js";
 import type { WithholdReason } from "./runtime/chunks.js";
 import type { RetrieveMode, WhereCondition } from "./runtime/retrieve.js";
 
@@ -1082,7 +1083,7 @@ program
 program
   .command("export")
   .description(
-    "Reserialize the built graph into a consumer format (jsonld file, iirds package, search index, question set, or chunks with their provenance)",
+    "Reserialize the built graph into a consumer format (jsonld file, iirds package, search index, question set, chunks with their provenance, or llms.txt)",
   )
   // The target is a positional, not `-f`: `-f` is the output format in every
   // other verb of the family (0051 §2), and one flag cannot mean two things.
@@ -1116,10 +1117,50 @@ program
         for (const warning of result.warnings) warn(warning);
         for (const said of result.notices ?? []) noticeOnce(said);
         const noun =
-          result.format === "questions" ? "question" : result.format === "chunks" ? "chunk" : "node";
+          result.format === "questions"
+            ? "question"
+            : result.format === "chunks"
+              ? "chunk"
+              : result.format === "llms"
+                ? "page"
+                : "node";
         console.log(
           `Wrote ${result.nodes} ${noun}${result.nodes === 1 ? "" : "s"} to ${result.outPath}`,
         );
+      } catch (e) {
+        fail(e);
+      }
+    },
+  );
+
+program
+  .command("publish")
+  .description(
+    "Build, embed when configured, and export everything serving needs into one directory",
+  )
+  .option("-c, --config <path>", "Path to manni.config.yaml")
+  .option("--no-config", "Ignore any discovered config file")
+  .option("-o, --out <dir>", "Directory for every artifact (default: the directory of config out)")
+  .option("--evals <path>", "A docevals JSON report for the chunks (default: config export.chunks.evals)")
+  .option(
+    "-f, --format <format>",
+    `Output: ${GRAPH_FORMAT_LIST}`,
+    formatOption,
+    "pretty",
+  )
+  .action(
+    async (opts: { config?: string | boolean; out?: string; evals?: string; format: GraphFormat }) => {
+      try {
+        const report = await runPublish({
+          ...documentOptions(opts),
+          ...(opts.out === undefined ? {} : { out: opts.out }),
+          ...(opts.evals === undefined ? {} : { evals: opts.evals }),
+          say: (kind, message) => {
+            if (kind === "notice") noticeOnce(message);
+            else warn(message);
+          },
+        });
+        console.log(renderPublish(report, opts.format));
       } catch (e) {
         fail(e);
       }

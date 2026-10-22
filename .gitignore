@@ -50,3 +50,11 @@ media/scratch-*/
 # Two documented procedures write a report into .tmp/ when a reader follows
 # them, and so does the docs-as-tests run of those pages.
 .tmp/
+
+# `manni graph publish --out docs/public/graph` output. The Docs workflow
+# writes it before the site build, so the site serves the chunks and
+# llms.txt of the commit it builds. ns.ttl is the namespace document, which
+# is committed.
+docs/public/graph/*
+!docs/public/graph/ns.ttl
+docs/public/llms.txt
