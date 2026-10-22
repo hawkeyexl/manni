@@ -17,6 +17,7 @@
     "citations-strict/1.1.0.json": "sha256-1e7363e43cb515bdd5869021cd4263d4077018c20db36609be87ee305eae5e33",
     "citations/1.0.0.json": "sha256-6884204fd1d6e9abd69d60bffda7c80a5653ebb111cd54599a1c5db8e3bf3902",
     "citations/1.1.0.json": "sha256-84b3eee659e3b2838125034d7e9e4c2fc9e0cc1eb31cb8e09641a60a39d57993",
+    "citations/1.2.0.json": "sha256-9bd6a23c98ae1e25e176308aa77e157628c0ea89e359c14ccbfeeaf416be58fe",
     "claude-skill/2.1.json": "sha256-be05a82322caaf1daab6773bc15f3962ca6b986c3f1bc2e769916327409dfd50",
     "claude-subagent/2.1.json": "sha256-9a7f4c304bfe97e4e691a611d894d1d36a4f66b3f52f88bd66d7a790d847cc5e",
     "core-strict/1.0.0.json": "sha256-9f7b8a2c93cfd3dd3a12be5621dc7b37b0817de3787b2412015ab9e7b8d13600",

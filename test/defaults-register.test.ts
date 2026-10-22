@@ -68,7 +68,8 @@ const STRICT_DEFAULTS = [
   "manni:evals-strict:1.0.0",
   "manni:graph:1.0.0",
   "manni:graph-strict:1.0.0",
-  "manni:citations:1.1.0",
+  "manni:citations:1.2.0",
+  // 1.2.0 keeps the 1.1.0 overlay: nothing it narrows changed (0100).
   "manni:citations-strict:1.1.0",
 ];
 
@@ -96,7 +97,7 @@ describe("the default set (0070)", () => {
       "manni:ai-context:1.2.0",
       "manni:evals:1.0.0",
       "manni:graph:1.0.0",
-      "manni:citations:1.1.0",
+      "manni:citations:1.2.0",
     ]);
   });
 });

@@ -834,8 +834,9 @@ describe("the default set (proposal 0070)", () => {
     "manni:ai-context:1.2.0",
     ref("evals"),
     ref("graph"),
-    // Citations moved to 1.1.0 for the verification fields on an entry (0098).
-    "manni:citations:1.1.0",
+    // Citations moved to 1.1.0 for the verification fields on an entry (0098),
+    // then to 1.2.0 for a source in another checkout (0100).
+    "manni:citations:1.2.0",
   ];
 
   it("appends the whole family after the two existing members", async () => {

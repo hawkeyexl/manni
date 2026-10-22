@@ -1,7 +1,7 @@
 /**
  * Verification metadata (proposal 0098): `verified-by` and `last-verified`,
  * on a page in manni:stewardship:1.2.0 and on a citation entry in
- * manni:citations:1.1.0, each with a strict overlay.
+ * manni:citations:1.1.0 (the default 1.2.0 keeps them), each with a strict overlay.
  *
  * Every fixture under test/fixtures/verification/ goes through the real
  * validate path, under the default set and with the strict overlays stacked.
@@ -21,7 +21,9 @@ const CITATIONS = resolve(root, FIXTURES, "citations");
 
 const STEWARDSHIP = "manni:stewardship:1.2.0";
 const STEWARDSHIP_STRICT = "manni:stewardship-strict:1.2.0";
-const CITATIONS_ID = "manni:citations:1.1.0";
+// The default citations version: 1.1.0 added the fields (0098), and 1.2.0
+// (0100) keeps them and the 1.1.0 strict overlay.
+const CITATIONS_ID = "manni:citations:1.2.0";
 const CITATIONS_STRICT = "manni:citations-strict:1.1.0";
 
 const DATE_GUIDANCE =
@@ -57,7 +59,7 @@ async function pin(fixture: string, cliSchemas?: string[]): Promise<ValidationRe
 }
 
 describe("the defaults move", () => {
-  it("carries stewardship 1.2.0 and citations 1.1.0", () => {
+  it("carries stewardship 1.2.0 and citations 1.2.0", () => {
     expect(DEFAULT_SCHEMAS).toContain(STEWARDSHIP);
     expect(DEFAULT_SCHEMAS).toContain(CITATIONS_ID);
     expect(DEFAULT_SCHEMAS).not.toContain("manni:stewardship:1.1.0");

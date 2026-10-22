@@ -76,7 +76,7 @@ describe("resolveSchemaSet", () => {
       "manni:ai-context:1.2.0",
       "manni:evals:1.0.0",
       "manni:graph:1.0.0",
-      "manni:citations:1.1.0",
+      "manni:citations:1.2.0",
     ]);
   });
 

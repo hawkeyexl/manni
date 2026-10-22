@@ -1266,6 +1266,10 @@ describe("ANNOTATION_ONLY_PREDECESSORS", () => {
     expect(strictIdOf("manni:ai-context:1.2.0")).toBe("manni:ai-context-strict:1.0.0");
   });
 
+  it("puts citations 1.2.0 on the 1.1.0 strict overlay (proposal 0100)", () => {
+    expect(strictIdOf("manni:citations:1.2.0")).toBe("manni:citations-strict:1.1.0");
+  });
+
   it("publishes ai-context 1.2.0 with answers marked out of graph output", async () => {
     expect(publishedBuiltins().map((b) => b.id)).toContain("manni:ai-context:1.2.0");
     const schema = (await loadSchema("manni:ai-context:1.2.0")) as {
@@ -1324,7 +1328,8 @@ describe("OPTIONAL_FIELD_PREDECESSORS (proposal 0098)", () => {
   // entry hides a real change from every recorded baseline. Every markdown
   // fixture without the added keys is such a document. An inline `meta`
   // statement (proposal 0099) sets them as JSON keys, and counts too.
-  const ADDED = /^\s*-?\s*(last-verified|verified-by)\s*:|"(last-verified|verified-by)"\s*:/m;
+  // citations 1.2.0 adds `source.repo` (proposal 0100).
+  const ADDED = /^\s*-?\s*(last-verified|verified-by|repo)\s*:|"(last-verified|verified-by|repo)"\s*:/m;
   const fixtures = (dir: string): string[] =>
     readdirSync(dir, { withFileTypes: true }).flatMap((e) => {
       const p = join(dir, e.name);
@@ -1345,12 +1350,13 @@ describe("OPTIONAL_FIELD_PREDECESSORS (proposal 0098)", () => {
     }));
   };
 
-  it("covers the 0098 versions, over a real corpus", () => {
+  it("covers the 0098 and 0100 versions, over a real corpus", () => {
     expect([...OPTIONAL_FIELD_PREDECESSORS]).toEqual([
       ["manni:stewardship:1.2.0", "manni:stewardship:1.1.0"],
       ["manni:stewardship-strict:1.2.0", "manni:stewardship-strict:1.1.0"],
       ["manni:citations:1.1.0", "manni:citations:1.0.0"],
       ["manni:citations-strict:1.1.0", "manni:citations-strict:1.0.0"],
+      ["manni:citations:1.2.0", "manni:citations:1.1.0"],
     ]);
     expect(documents.length).toBeGreaterThan(50);
   });
@@ -1376,6 +1382,7 @@ describe("OPTIONAL_FIELD_PREDECESSORS (proposal 0098)", () => {
     expect(baselineIdentity("manni:stewardship:1.2.0")).toBe("manni:stewardship:1.0.0");
     expect(baselineIdentity("manni:stewardship-strict:1.2.0")).toBe("manni:stewardship-strict:1.0.0");
     expect(baselineIdentity("manni:citations:1.1.0")).toBe("manni:citations:1.0.0");
+    expect(baselineIdentity("manni:citations:1.2.0")).toBe("manni:citations:1.0.0");
     expect(baselineIdentity("manni:core:1.0.0")).toBe("manni:core:1.0.0");
   });
 });
