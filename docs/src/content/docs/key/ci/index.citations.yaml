@@ -253,7 +253,7 @@ docs/src/content/docs/key/ci/index.mdx:
         file: src/cite/core/reencrypt.ts
         lines: 122-128
         integrity: sha256-85834782ed09bf809510f763de83d6bc0e4808b059c01ecf7acb2efc6ef86447
-        commit-sha: f2ecf49996504a135f3e37de5bac35c5a054b237
+        commit-sha: b9712a2920c49c2b7e247108d80b629a4dc6ef9b
     - id: stopped-run-both-keys
       claim:
         integrity: sha256-f55726da285dbe9693089ed7ffcfa7cd9bcc9f9720eded4eebe16431dc063f0a
