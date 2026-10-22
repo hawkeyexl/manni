@@ -9,11 +9,19 @@
  */
 import { afterEach, describe, expect, it } from "vitest";
 import { execFileSync } from "node:child_process";
-import { copyFileSync, writeFileSync } from "node:fs";
+import { copyFileSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { runCheck } from "../../src/cite/commands/check.js";
-import { GIT_UNAVAILABLE_HISTORY, SOURCE_HISTORY_UNAVAILABLE, gitClient, noGit } from "../../src/cite/core/git.js";
+import { runUpdate } from "../../src/cite/commands/update.js";
+import {
+  GIT_UNAVAILABLE_COMMIT,
+  GIT_UNAVAILABLE_HISTORY,
+  SHALLOW_RECOMMIT,
+  SOURCE_HISTORY_UNAVAILABLE,
+  gitClient,
+  noGit,
+} from "../../src/cite/core/git.js";
 import { hashRange } from "../../src/cite/core/hash.js";
 import { mintSource } from "../../src/cite/core/mint.js";
 import { encryptSourcePath, sourceIndexFor } from "../../src/cite/core/sources.js";
@@ -21,8 +29,8 @@ import { entryObject } from "../../src/cite/core/write.js";
 import { CiteError } from "../../src/cite/errors.js";
 import { renderCheckJson } from "../../src/cite/reporters/json.js";
 import { renderCheckPretty } from "../../src/cite/reporters/pretty.js";
-import type { CheckOptions, CheckRun, Checkout, SourceEnd } from "../../src/cite/types.js";
-import { gitAvailable, removeTempRepo } from "../helpers/temp-repo.js";
+import type { CheckOptions, CheckRun, Checkout, SourceEnd, UpdateOptions, UpdateRun } from "../../src/cite/types.js";
+import { commitAll, gitAvailable, removeTempRepo } from "../helpers/temp-repo.js";
 import {
   PAGE,
   SDK_CLIENT,
@@ -30,6 +38,7 @@ import {
   citedPage,
   editLine,
   reposRepo,
+  track,
   type ReposRepo,
 } from "./fixtures/repos-repo.js";
 
@@ -267,5 +276,170 @@ describe.skipIf(!gitAvailable())("cite check across checkouts (0100)", () => {
         `No tracked file matches ${token} in sdk (wrong cite.repos.sdk?).`,
       );
     });
+  });
+});
+
+/**
+ * `update` repairs an entry in the checkout its repo names: a re-mint reads
+ * that checkout and records its HEAD, `--recommit` asks that checkout's
+ * history, and the notices about git are said once per checkout. It never
+ * writes `repo`, so every rewrite below keeps it.
+ */
+describe.skipIf(!gitAvailable())("cite update across checkouts (0100)", () => {
+  async function update(
+    r: ReposRepo,
+    over: Partial<UpdateOptions> = {},
+  ): Promise<{ run: UpdateRun; notices: string[] }> {
+    const notices: string[] = [];
+    const run = await runUpdate({
+      cwd: r.docs,
+      inputs: [PAGE],
+      noConfig: true,
+      env: {},
+      repos: { api: r.api, sdk: r.sdk },
+      onNotice: (notice) => notices.push(notice),
+      ...over,
+    });
+    return { run, notices };
+  }
+
+  /** One entry of the page as written: its lines from `- id:` to the next entry or the fence. */
+  function entryOf(r: ReposRepo, id: string): string {
+    const text = readFileSync(join(r.docs, PAGE), "utf8");
+    const from = text.indexOf(`  - id: ${id}\n`);
+    const rest = text.slice(from + 1);
+    const next = rest.search(/\n {2}- id: |\n---/);
+    return text.slice(from, from + 1 + next);
+  }
+
+  /** The page with the retries entry recording `commit`. */
+  function retriesAt(r: ReposRepo, commit: string): void {
+    const entries = r.entries.map((e) => (e.id === "retries" ? { ...e, commit } : e));
+    writeFileSync(join(r.docs, PAGE), citedPage(entries), "utf8");
+  }
+
+  const ATTEMPTS_5 = SDK_CLIENT_TEXT.replace("attempts: 3", "attempts: 5");
+  const ABSENT = "dec0de".repeat(6) + "abcd";
+
+  it("--accept re-pins a changed source at its checkout's HEAD, keeping repo and file", async () => {
+    const r = made();
+    const sdkHead = editLine(r.sdk, SDK_CLIENT, SDK_CLIENT_TEXT, 2, "  return retry(() => fetch(url), { attempts: 5 });");
+
+    const { run } = await update(r, { accept: true });
+
+    expect(run.exitCode).toBe(0);
+    expect(run.pages[0]?.rewritten).toMatchObject([
+      { id: "retries", end: "source", reason: "accepted", commitSha: sdkHead },
+    ]);
+    const entry = entryOf(r, "retries");
+    expect(entry).toContain("      repo: sdk\n      file: src/client.ts\n      lines: 2\n");
+    expect(entry).toContain(`integrity: ${hashRange(ATTEMPTS_5, { start: 2, end: 2 })}`);
+    expect(entry).toContain(`commit-sha: ${sdkHead}`);
+    expect(sourceOf((await check(r)).run, "retries")?.status).toBe("current");
+  });
+
+  it("follows a move inside the checkout, keeping repo", async () => {
+    const r = made();
+    const sdkHead = track(r.sdk, { [SDK_CLIENT]: `// header\n${SDK_CLIENT_TEXT}` });
+
+    const { run } = await update(r);
+
+    expect(run.pages[0]?.rewritten).toMatchObject([{ id: "retries", end: "source", reason: "moved" }]);
+    const entry = entryOf(r, "retries");
+    expect(entry).toContain("      repo: sdk\n      file: src/client.ts\n      lines: 3\n");
+    expect(entry).toContain(`commit-sha: ${sdkHead}`);
+    expect(sourceOf((await check(r)).run, "retries")?.status).toBe("current");
+  });
+
+  it("follows a rename inside the checkout to the other file, keeping repo", async () => {
+    const r = made();
+    renameSync(join(r.sdk, SDK_CLIENT), join(r.sdk, "src/http.ts"));
+    commitAll(r.sdk, "rename");
+
+    const { run } = await update(r);
+
+    expect(run.pages[0]?.rewritten).toMatchObject([{ id: "retries", end: "source", reason: "moved" }]);
+    const entry = entryOf(r, "retries");
+    expect(entry).toContain("      repo: sdk\n      file: src/http.ts\n      lines: 2\n");
+    // The pin still holds, so the commit it was minted at stands.
+    expect(entry).toContain(`commit-sha: ${r.minted.sdk}`);
+    expect(sourceOf((await check(r)).run, "retries")?.status).toBe("current");
+  });
+
+  it("never follows a file into another checkout: it stays missing, and update skips it", async () => {
+    const r = made();
+    rmSync(join(r.sdk, SDK_CLIENT));
+    commitAll(r.sdk, "move out");
+    track(r.api, { [SDK_CLIENT]: SDK_CLIENT_TEXT });
+    const before = readFileSync(join(r.docs, PAGE), "utf8");
+
+    const { run } = await update(r, { accept: true });
+
+    expect(run.pages[0]?.rewritten).toEqual([]);
+    expect(run.pages[0]?.skipped.map((f) => f.id)).toContain("retries");
+    expect(readFileSync(join(r.docs, PAGE), "utf8")).toBe(before);
+    expect(sourceOf((await check(r)).run, "retries")?.status).toBe("missing");
+  });
+
+  it("--recommit re-records a commit outside the checkout's history, then rests", async () => {
+    const r = made();
+    retriesAt(r, ABSENT);
+
+    const first = await update(r, { recommit: true });
+
+    expect(first.run.pages[0]?.rewritten).toMatchObject([
+      { id: "retries", reason: "recommitted", because: "not-in-history", fromCommit: ABSENT, toCommit: r.minted.sdk },
+    ]);
+    const entry = entryOf(r, "retries");
+    expect(entry).toContain("      repo: sdk\n      file: src/client.ts\n");
+    expect(entry).toContain(`commit-sha: ${r.minted.sdk}`);
+
+    const second = await update(r, { recommit: true });
+    expect(second.run.rewritten).toBe(0);
+  });
+
+  it("--recommit says a shallow checkout once, prefixed, and leaves its entry alone", async () => {
+    const r = made();
+    track(r.sdk, { "CHANGELOG.md": "# Changes\n" });
+    const shallow = join(r.dir, "sdk-shallow");
+    execFileSync("git", ["clone", "-q", "--depth", "1", pathToFileURL(r.sdk).href, shallow], { stdio: "ignore" });
+    copyFileSync(join(r.docs, PAGE), join(r.docs, "pages/more.md"));
+
+    const { run, notices } = await update(r, {
+      inputs: ["pages"],
+      recommit: true,
+      repos: { api: r.api, sdk: shallow },
+    });
+
+    expect(run.rewritten).toBe(0);
+    expect(notices.filter((n) => n === `sdk: ${SHALLOW_RECOMMIT}`)).toHaveLength(1);
+    expect(notices).not.toContain(SHALLOW_RECOMMIT);
+  });
+
+  it("--recommit says a checkout without git once, prefixed, and leaves its entry alone", async () => {
+    const r = made({ sdkGit: false });
+    retriesAt(r, ABSENT);
+    copyFileSync(join(r.docs, PAGE), join(r.docs, "pages/more.md"));
+
+    const { run, notices } = await update(r, { inputs: ["pages"], recommit: true });
+
+    expect(run.rewritten).toBe(0);
+    expect(entryOf(r, "retries")).toContain(`commit-sha: ${ABSENT}`);
+    expect(
+      notices.filter((n) => n === "sdk: --recommit needs git to verify recorded commits, and git is not available here."),
+    ).toHaveLength(1);
+  });
+
+  it("--accept says a checkout without git once, prefixed; the root says nothing", async () => {
+    const r = made({ sdkGit: false });
+    writeFileSync(join(r.sdk, SDK_CLIENT), ATTEMPTS_5);
+    copyFileSync(join(r.docs, PAGE), join(r.docs, "pages/more.md"));
+
+    const { run, notices } = await update(r, { inputs: ["pages"], accept: true });
+
+    expect(run.exitCode).toBe(0);
+    expect(entryOf(r, "retries")).toContain("      repo: sdk\n      file: src/client.ts\n");
+    expect(notices.filter((n) => n === `sdk: ${GIT_UNAVAILABLE_COMMIT}`)).toHaveLength(1);
+    expect(notices).not.toContain(GIT_UNAVAILABLE_COMMIT);
   });
 });

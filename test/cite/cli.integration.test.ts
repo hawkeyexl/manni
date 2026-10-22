@@ -30,7 +30,9 @@ import {
   API_LIMITS_TEXT,
   NEW_PAGE,
   NEW_PAGE_TEXT,
+  SDK_CLIENT,
   SDK_CLIENT_TEXT,
+  editLine,
   reposRepo,
   track,
   type ReposRepo,
@@ -984,6 +986,34 @@ describe.skipIf(!gitAvailable())("manni cite add across checkouts (0100)", () =>
     );
     expect(out.stdout).toBe("");
     expect(out.status).toBe(2);
+  }, 60000);
+});
+
+describe.skipIf(!gitAvailable())("manni cite update across checkouts (0100)", () => {
+  let dir: string | undefined;
+  afterEach(() => {
+    removeTempRepo(dir);
+    dir = undefined;
+  });
+
+  it("re-pins a changed source at its checkout's HEAD with --accept", () => {
+    const r = reposRepo();
+    dir = r.dir;
+    const now = SDK_CLIENT_TEXT.replace("attempts: 3", "attempts: 5");
+    const head = editLine(r.sdk, SDK_CLIENT, SDK_CLIENT_TEXT, 2, "  return retry(() => fetch(url), { attempts: 5 });");
+    const out = run(
+      ["cite", "update", "pages/limits.md", "--accept", "--only", "retries", "--repo", "api=../api", "--repo", "sdk=../sdk", "--no-config"],
+      { cwd: r.docs },
+    );
+    const was = shortPin(hashRange(SDK_CLIENT_TEXT, { start: 2, end: 2 }));
+    const is = shortPin(hashRange(now, { start: 2, end: 2 }));
+    expect(out.stdout).toBe(
+      `pages/limits.md: retries source sdk:src/client.ts:2 re-pinned at ${head.slice(0, 7)} (changed; ${was} -> ${is})
+1 citation rewritten in 1 file, 0 skipped
+`,
+    );
+    expect(out.stderr).toBe("");
+    expect(out.status).toBe(0);
   }, 60000);
 });
 
