@@ -163,6 +163,7 @@ element, from its start tag to its end tag:
 
 ```xml title="install.dita"
 <steps>
+  <?manni meta {"applies-to":["windows"]}?>
   <step><?manni meta {"verified-by":[{"tool":"doc-detective","check":"install"}]}?>
     <cmd>Run the installer.</cmd>
   </step>
@@ -176,8 +177,10 @@ element, from its start tag to its end tag:
 </steps>
 ```
 
-The first two statements each describe one whole `<step>`, so an edit to its
-`<cmd>` changes the pin. The `<data>` element is the first child of the third
+The first statement sits right after `<steps>`, so it is the first child of
+`<steps>` and describes all of it. A statement inside a `<step>` describes
+that step instead. The next two statements each describe one whole `<step>`,
+so an edit to its `<cmd>` changes the pin. The `<data>` element is the first child of the third
 `<cmd>`, so it describes that `<cmd>`. DITA's content model refuses `<data>`
 as a `<step>`'s first child, so use the instruction there for a whole step.
 cite markers in XML keep their own line rule.
@@ -190,11 +193,16 @@ The lines are joined with LF, one byte-order mark is dropped, CRLF becomes
 LF, and there is no trailing LF. It is written `sha256-` and 64 lowercase hex
 digits, after `meta`.
 
-A statement can sit inside the lines it describes. That happens when it
-shares a line with its text, or when it is an element's first child on the
-start tag's line. The statement's own text is then cut out of that line
-before hashing. Writing the pin therefore never changes what the pin covers.
-Every other line is hashed as it is.
+A statement can sit inside the lines it describes. It may share a line with
+its text, or be an element's first child. Other statements can sit there too,
+as each step's statement sits inside `<steps>`. So before hashing, every
+statement inside the lines is cut out, from its opener to its closer. A
+`<data>` carrier is cut whole, from its start tag to its end tag, even across
+lines. A line that held a statement and is blank after the cut is dropped. A
+line that was blank before the cut stays.
+
+Writing a pin or a tool's result into any statement therefore never changes a
+pin over it. Moving a statement onto or off its own line keeps its pin too.
 
 `manni meta derive` pins every unpinned statement that describes something:
 
