@@ -75,7 +75,7 @@ docs/src/content/docs/meta/ci/index.mdx:
         file: action.yml
         lines: 135-160
         integrity: sha256-a2cf8261e68fe6452568bca01f4dd6e93f95c99a671fe85d6d91d89a2f99830e
-        commit-sha: 73751cd645718dd842f739c267eacb04f7406f93
+        commit-sha: e11739b7674773faf7d661b20556e580e5ca1b1f
     - id: action-defaults-to-github-format
       claim:
         lines: 15-16
@@ -84,7 +84,7 @@ docs/src/content/docs/meta/ci/index.mdx:
         file: action.yml
         lines: 45-50
         integrity: sha256-de4886c34d3b011d069ed6229a5360fff7790e3fbfb4c2556a435c257fe219ec
-        commit-sha: 73751cd645718dd842f739c267eacb04f7406f93
+        commit-sha: e11739b7674773faf7d661b20556e580e5ca1b1f
     - id: action-version-input-pins-the-cli
       claim:
         lines: 15-16
@@ -93,7 +93,7 @@ docs/src/content/docs/meta/ci/index.mdx:
         file: action.yml
         lines: 57-64
         integrity: sha256-70342395edaf9a3798dad037bb99de851aa4bf4ad45087d98425a95ffb5f5c3e
-        commit-sha: 73751cd645718dd842f739c267eacb04f7406f93
+        commit-sha: e11739b7674773faf7d661b20556e580e5ca1b1f
     - id: action-sets-up-node
       claim:
         lines: 15-16
@@ -102,4 +102,4 @@ docs/src/content/docs/meta/ci/index.mdx:
         file: action.yml
         lines: 93-95
         integrity: sha256-1fc76c9e5adf857cc49898c91b8d17d9862de35ff880576bc8bc784376bc0f28
-        commit-sha: 73751cd645718dd842f739c267eacb04f7406f93
+        commit-sha: e11739b7674773faf7d661b20556e580e5ca1b1f

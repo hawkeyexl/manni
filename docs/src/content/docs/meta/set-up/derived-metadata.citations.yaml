@@ -195,7 +195,7 @@ docs/src/content/docs/meta/set-up/derived-metadata.mdx:
         file: action.yml
         lines: 162-170
         integrity: sha256-e5435687b84ba51380183570298c2fb07740e1d1c66e2c0f15e77f9f0b09497f
-        commit-sha: 485a386889d3a506ac498e02177a574bea750e29
+        commit-sha: e11739b7674773faf7d661b20556e580e5ca1b1f
     - id: github-format-emits-line-anchored-annotation
       claim:
         integrity: sha256-c72fd8cb855bb89c63cf9ffb07cfeb841bc5b23b3dc989eeaaa021af415ae8d6
@@ -211,7 +211,7 @@ docs/src/content/docs/meta/set-up/derived-metadata.mdx:
         file: action.yml
         lines: 65-70
         integrity: sha256-d699ba5a80dec22e8ba6bb268ee4f637d29b5468edc0a53a8b1efb6a85ee80ae
-        commit-sha: 73751cd645718dd842f739c267eacb04f7406f93
+        commit-sha: e11739b7674773faf7d661b20556e580e5ca1b1f
     - id: no-derive-skips-managed-field-comparison
       claim:
         integrity: sha256-c72fd8cb855bb89c63cf9ffb07cfeb841bc5b23b3dc989eeaaa021af415ae8d6

@@ -364,7 +364,7 @@ docs/src/content/docs/meta/set-up/external-metadata.mdx:
         file: action.yml
         lines: 31-36
         integrity: sha256-6394660530a6122e2cfe0ec3d280bc6989d3c50f7c8fcd52f8e0a23bd9e8495c
-        commit-sha: 73751cd645718dd842f739c267eacb04f7406f93
+        commit-sha: e11739b7674773faf7d661b20556e580e5ca1b1f
     - id: no-manifest-configured-loads-nothing
       claim:
         lines: 289
