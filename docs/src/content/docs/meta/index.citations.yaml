@@ -32,9 +32,9 @@ docs/src/content/docs/meta/index.mdx:
         integrity: sha256-9e4919db3f2c7b8d5b8d495e05695a990ee087c81083038868822067556ceb18
       source:
         file: src/meta/core/schema-registry.ts
-        lines: 95-145
+        lines: 97-147
         integrity: sha256-b70ffb8c7c31cf749ddc88c0c2f42d247087fa2bc804f8efa873264a6215c179
-        commit-sha: 7de49f7ecc82d73ec615c863e57ffd0a0a57b809
+        commit-sha: 2aa26d3cac0117f0965c5c8c4abfa3b9d5f115d3
     - id: error-line-names-field-line-and-schema
       claim:
         integrity: sha256-6e24a2751ad70c15d7e6a0c643456d631350f32d19020526786cb196d44968af
