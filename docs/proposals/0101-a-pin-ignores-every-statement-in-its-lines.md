@@ -1,6 +1,6 @@
 # 0101: A pin ignores every statement in its lines
 
-- **Status:** Implemented
+- **Status:** Implemented (#233)
 - **Serves:**
   - Maya · M30 and M31. A DITA task carries a statement on `<steps>`, and Doc
     Detective verifies each step under it.
