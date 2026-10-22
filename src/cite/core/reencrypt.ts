@@ -20,6 +20,7 @@
  * No message names a path.
  */
 import type {
+  CheckoutResolver,
   Citation,
   CitationInput,
   CitationOrigin,
@@ -40,6 +41,7 @@ import { spliceEntryField } from "./write.js";
 const UNDECRYPTABLE = "does not decrypt under the current key";
 const MISSING = "missing (no tracked file matches)";
 const CHANGED = "changed; run `manni cite update --accept` before rotating";
+const undeclared = (repo: string): string => `missing (no repo named ${repo} is declared)`;
 
 type Where = Pick<ReencryptedCitation, "id" | "index" | "line">;
 
@@ -105,6 +107,12 @@ export interface ReencryptOptions {
   /** History and the source index are read through it; defaults to one over the root. */
   gitClient?: GitClient;
   sourceIndex?: SourceIndex;
+  /**
+   * The checkouts an entry's `source.repo` may name (proposal 0100). Given,
+   * it answers for the root too. Absent, an entry with no repo resolves under
+   * `root` and every repo is undeclared.
+   */
+  checkouts?: CheckoutResolver;
 }
 
 /**
@@ -146,6 +154,25 @@ async function contextFor(opts: ReencryptOptions): Promise<Context> {
   return { root: opts.root, index, git };
 }
 
+/** The context each citation is judged in, by its `source.repo`; `undefined` for an undeclared repo. */
+function contextsFor(opts: ReencryptOptions): CheckoutResolver {
+  if (opts.checkouts !== undefined) return opts.checkouts;
+  let root: Promise<Context> | undefined;
+  return (repo) => (repo === undefined ? (root ??= contextFor(opts)) : Promise.resolve(undefined));
+}
+
+/** One citation's verdict in the checkout it names. */
+async function verdictIn(
+  contexts: CheckoutResolver,
+  citation: Citation,
+  opts: Pick<ReencryptOptions, "fromKey" | "toKey">,
+): Promise<Verdict> {
+  const repo = citation.source.repo;
+  const ctx = await contexts(repo);
+  if (ctx === undefined) return { kind: "skip", message: undeclared(repo ?? "") };
+  return verdictFor(ctx, citation, opts);
+}
+
 export async function reencryptCitations(
   page: { file: string; content: string; format?: string },
   opts: ReencryptOptions,
@@ -156,12 +183,12 @@ export async function reencryptCitations(
   // A page with nothing encrypted costs no index and no git.
   if (encrypted.length === 0) return result;
 
-  const ctx = await contextFor(opts);
+  const contexts = contextsFor(opts);
   let after = page.content;
   for (const { citation, origin } of encrypted) {
     const range = sourceRange(citation.source);
     const where = whereOf(citation, origin);
-    const verdict = await verdictFor(ctx, citation, opts);
+    const verdict = await verdictIn(contexts, citation, opts);
     if (verdict.kind === "done") continue;
     if (verdict.kind === "skip") {
       result.skipped.push({ ...where, message: verdict.message });
@@ -218,10 +245,10 @@ export async function reencryptCitationEntries(
   const encrypted = read.citations.filter(({ citation }) => sourceRange(citation.source).encrypted);
   if (encrypted.length === 0) return out;
 
-  const ctx = await contextFor(opts);
+  const contexts = contextsFor(opts);
   for (const { citation, origin } of encrypted) {
     const where = whereOf(citation, origin);
-    const verdict = await verdictFor(ctx, citation, opts);
+    const verdict = await verdictIn(contexts, citation, opts);
     if (verdict.kind === "done") continue;
     if (verdict.kind === "skip") {
       out.skipped.push({ ...where, message: verdict.message });

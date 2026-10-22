@@ -43,6 +43,7 @@ import {
   GIT_UNAVAILABLE_HISTORY,
   ManifestSet,
   buildSourceIndex,
+  checkoutResolver,
   gitClient,
   loadCitationSidecars,
   parseCiteConfig,
@@ -51,6 +52,7 @@ import {
   reencryptCitationEntries,
   reencryptCitations,
   type CiteConfig,
+  type CheckoutResolver,
   type CitationSidecars,
   type GitClient,
   type ReencryptCitationsResult,
@@ -120,7 +122,7 @@ const NO_FILES =
  */
 const ANY_CIPHERTEXT = /~[A-Za-z0-9_-]{82,}/;
 
-/** The `cite:` section of the file, for `root:` and `baseline:`; `{}` without one. */
+/** The `cite:` section of the file, for `root:`, `repos:` and `baseline:`; `{}` without one. */
 function citeSection(file: ConfigFile | null): CiteConfig {
   if (file === null) return {};
   const doc: unknown = parseYaml(file.text);
@@ -144,6 +146,24 @@ function rootFor(
   }
   const gitRoot = findGitRoot(cwd);
   return gitRoot === null ? { root: cwd, fellBack: true } : { root: gitRoot, fellBack: false };
+}
+
+/**
+ * The checkouts an entry's `source.repo` may name, as `cite` resolves them:
+ * `cite.repos` from the config's directory, then `--repo` from `cwd`, the
+ * flag winning per name.
+ */
+function reposFor(
+  flags: Readonly<Record<string, string>> | undefined,
+  cite: CiteConfig,
+  file: ConfigFile | null,
+  cwd: string,
+): Record<string, string> {
+  const repos: Record<string, string> = {};
+  // `cite` is `{}` without a file, so a config repo always has a directory to sit beside.
+  if (file !== null) for (const [name, dir] of Object.entries(cite.repos ?? {})) repos[name] = resolve(file.dir, dir);
+  for (const [name, dir] of Object.entries(flags ?? {})) repos[name] = resolve(cwd, dir);
+  return repos;
 }
 
 function isEnoent(error: unknown): boolean {
@@ -203,6 +223,7 @@ async function rotateManifestCitations(
     toKey: string;
     gitClient: GitClient;
     sourceIndex: () => Promise<SourceIndex>;
+    checkouts: () => Promise<CheckoutResolver>;
   },
 ): Promise<{ rewritten: RotatedValue[]; skipped: SkippedValue[]; wantsHistory: boolean }> {
   const none = { rewritten: [], skipped: [], wantsHistory: false };
@@ -222,6 +243,7 @@ async function rotateManifestCitations(
       toKey: opts.toKey,
       gitClient: opts.gitClient,
       sourceIndex: await opts.sourceIndex(),
+      checkouts: await opts.checkouts(),
     },
   );
   if (result.changed && sidecar.entry !== undefined) {
@@ -518,6 +540,13 @@ export async function runKeyRotate(opts: KeyRotateOptions): Promise<KeyRotateRes
     }
     return index;
   };
+  // The root's checkout and the declared ones, opened as an entry names them.
+  const repos = reposFor(opts.repos, cite, file, cwd);
+  let resolver: Promise<CheckoutResolver> | undefined;
+  const checkouts = (): Promise<CheckoutResolver> =>
+    (resolver ??= sourceIndex().then((rootIndex) =>
+      checkoutResolver({ root, index: rootIndex, git: client }, repos),
+    ));
 
   // The manifests that own `citations` (proposal 0044): a page whose entries
   // live in one carries no ciphertext of its own, so they are read for every
@@ -552,6 +581,7 @@ export async function runKeyRotate(opts: KeyRotateOptions): Promise<KeyRotateRes
       toKey,
       gitClient: client,
       sourceIndex,
+      checkouts,
     });
     if (sidecarWork.wantsHistory) wantsHistory = true;
     if (!ANY_CIPHERTEXT.test(before)) {
@@ -570,7 +600,14 @@ export async function runKeyRotate(opts: KeyRotateOptions): Promise<KeyRotateRes
     const cited: ReencryptCitationsResult = encrypted.any
       ? await reencryptCitations(
           { ...page, content: meta.content },
-          { root, fromKey, toKey, gitClient: client, sourceIndex: await sourceIndex() },
+          {
+            root,
+            fromKey,
+            toKey,
+            gitClient: client,
+            sourceIndex: await sourceIndex(),
+            checkouts: await checkouts(),
+          },
         )
       : { content: meta.content, rewritten: [], skipped: [] };
     const rewritten: RotatedValue[] = [

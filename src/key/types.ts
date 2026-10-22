@@ -62,6 +62,11 @@ export interface KeyRotateOptions {
   respectGitignore?: boolean;
   /** `--root <dir>`, cwd-relative: where cited sources resolve from. Else `cite.root`, else the git root, else `cwd`. */
   root?: string;
+  /**
+   * `--repo <name=dir>`, already split: the checkouts an entry's `source.repo`
+   * may name, cwd-relative. Each overrides `cite.repos` for its name.
+   */
+  repos?: Record<string, string>;
   /** `--dry-run`: re-encrypt in memory, write nothing. */
   dryRun?: boolean;
   cwd?: string;

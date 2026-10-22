@@ -15,7 +15,7 @@ import { parse } from "yaml";
 import { afterEach, describe, expect, it } from "vitest";
 import { hashRange } from "../../src/cite/core/hash.js";
 import { encryptSourcePath } from "../../src/cite/core/sources.js";
-import { noGit, runCheck } from "../../src/cite/index.js";
+import { noGit, parseRepoFlags, runCheck } from "../../src/cite/index.js";
 import {
   KeyError,
   runKeyRotate,
@@ -938,5 +938,122 @@ describe("runKeyRotate: the citation baseline", () => {
     const result = await rotate();
     expect(result.baselineStale).toBe(false);
     expect(pretty(result)).not.toContain(BASELINE_NOTICE);
+  });
+});
+
+describe("runKeyRotate: a citation in another checkout (0100)", () => {
+  const SDK = [
+    "export function get(url: string) {",
+    "  return retry(() => fetch(url), { attempts: 3 });",
+    "}",
+    "",
+  ].join("\n");
+  const SDK_DIR = "checkouts/sdk";
+  const UNDECLARED = "missing (no repo named sdk is declared)";
+
+  /** A page citing `sdk:src/client.ts:2`, the path encrypted under `key`. */
+  function repoPage(key: string): string {
+    return [
+      "---",
+      "title: Client",
+      "citations:",
+      "  - id: retries",
+      "    claim:",
+      "      lines: 2",
+      `      integrity: ${CLAIM_PIN}`,
+      "    source:",
+      "      repo: sdk",
+      `      file: ${encryptSourcePath("src/client.ts", key)}`,
+      "      lines: 2",
+      `      integrity: ${hashRange(SDK, LINE_2, key)}`,
+      "---",
+      "",
+      CLAIM,
+      "",
+    ].join("\n");
+  }
+
+  const withRepo = (config = ""): string =>
+    family({ config, extra: { "docs/client.md": repoPage(OLD), [`${SDK_DIR}/src/client.ts`]: SDK } });
+
+  /** The rotated entry's two halves, and the key the run wrote. */
+  function rotated(): { file: string; pin: string; key: string } {
+    const page = read("docs/client.md");
+    const file = /^ {6}file: (~[A-Za-z0-9_-]+)$/m.exec(page)?.[1];
+    const pin = /^ {6}integrity: (hmac-sha256-[0-9a-f]{64})$/m.exec(page)?.[1];
+    const key = readConfig().encryptionKey;
+    if (file === undefined || pin === undefined || typeof key !== "string") throw new Error("not rotated");
+    return { file, pin, key };
+  }
+
+  function expectRekeyed(): void {
+    const { file, pin, key } = rotated();
+    expect(key).not.toBe(OLD);
+    expect(decryptValue(file, key, "cite-src")).toEqual({ ok: true, value: "src/client.ts" });
+    expect(pin).toBe(hashRange(SDK, LINE_2, key));
+    expect(read("docs/client.md")).toContain("      repo: sdk\n");
+  }
+
+  it("re-keys it in the checkout --repo names, and cite check holds under the new key", async () => {
+    withRepo();
+    const result = await rotate({ repos: { sdk: SDK_DIR } });
+
+    expect(result).toMatchObject({ outcome: "written", skipped: 0, exitCode: 0 });
+    expectRekeyed();
+    const checked = await runCheck({
+      inputs: ["docs/client.md"],
+      cwd: tree(),
+      env: {},
+      gitClient: noGit(),
+      repos: { sdk: SDK_DIR },
+    });
+    expect(checked.results.every((r) => r.ok)).toBe(true);
+  });
+
+  it("finds the checkout through cite.repos, relative to the config", async () => {
+    withRepo(`cite:\n  repos:\n    sdk: ${SDK_DIR}\n`);
+    const result = await rotate({ cwd: join(tree(), "docs") });
+
+    expect(result).toMatchObject({ outcome: "written", skipped: 0 });
+    expectRekeyed();
+  });
+
+  it("--repo wins over cite.repos for the same name", async () => {
+    withRepo("cite:\n  repos:\n    sdk: nowhere\n");
+    const result = await rotate({ repos: { sdk: SDK_DIR } });
+
+    expect(result).toMatchObject({ outcome: "written", skipped: 0 });
+    expectRekeyed();
+  });
+
+  it("skips a citation whose repo nothing declares, and writes nothing", async () => {
+    withRepo();
+    const before = snapshot(["docs/client.md"]);
+    const result = await rotate();
+
+    expect(result).toMatchObject({ outcome: "skipped", keyWritten: false, skipped: 1, exitCode: 1 });
+    expect(snapshot(["docs/client.md"])).toEqual(before);
+    expect(result.pages.find((p) => p.file === "docs/client.md")?.skipped).toEqual([
+      { kind: "citation", id: "retries", index: 0, line: 4, message: UNDECLARED },
+    ]);
+    expect(pretty(result)).toContain(`docs/client.md: retries  skipped: ${UNDECLARED}`);
+  });
+
+  it("refuses a checkout directory that is not there, naming both places to fix it", async () => {
+    withRepo();
+    const err: unknown = await rotate({ repos: { sdk: "gone" } }).then(
+      () => undefined,
+      (e: unknown) => e,
+    );
+    expect((err as Error).message).toBe(
+      `Repo directory not found: ${join(tree(), "gone")} (sdk). Fix --repo sdk=<dir>, or cite.repos.sdk in manni.config.yaml.`,
+    );
+  });
+
+  it("splits --repo values into KeyErrors, as cite does", () => {
+    expect(() => parseRepoFlags(["sdk"], (m) => new KeyError(m))).toThrow(
+      new KeyError('--repo "sdk" is not name=dir. Use --repo sdk=../sdk.'),
+    );
+    expect(parseRepoFlags(["sdk=../sdk"], (m) => new KeyError(m))).toEqual({ sdk: "../sdk" });
   });
 });

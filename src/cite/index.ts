@@ -148,7 +148,7 @@ export {
 } from "./core/config.js";
 export type { CiteRunOptions } from "./core/config.js";
 
-export { runCheck } from "./commands/check.js";
+export { checkoutResolver, runCheck } from "./commands/check.js";
 export { runAdd } from "./commands/add.js";
 export { runRemove } from "./commands/remove.js";
 export { runUpdate } from "./commands/update.js";
