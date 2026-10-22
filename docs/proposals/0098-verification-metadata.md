@@ -136,3 +136,7 @@ rules.
    repeated entry instead, the part of the rule a schema can state.
 5. **A pinned config.** A config that lists `manni:stewardship:1.1.0` keeps
    it, and `verified-by` passes through that version unchecked.
+
+## Changes in the build
+
+- `verified-by` is published to the graph and carries no `x-manni-graph-output: false`. Proposal 0099 derives statement verification fields into the graph.
