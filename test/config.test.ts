@@ -862,6 +862,14 @@ describe("the repository's own manni.config.yaml", () => {
         // of its own (0041 rule 12). The local preview, not the deployed site.
         url: "http://127.0.0.1:4321/manni/",
       },
+      // The content strategy's records (0100), which `manni strategy` holds
+      // the site's pages to. They are not published, so no url and no manifest.
+      {
+        name: "strategy",
+        paths: ["docs/content-strategy/{audiences,personas,journeys}/*.md"],
+        exclude: [],
+        externalMetadata: [],
+      },
     ]);
 
     const ref = loaded?.config.overrides?.[0]?.schemas[0];
@@ -880,11 +888,11 @@ describe("the repository's own manni.config.yaml", () => {
     // `test/` against the docs frontmatter contract.
     const config = (await loadConfig(undefined, repoRoot))?.config;
     expect(config?.schemas).toBeUndefined();
-    // Both docs overrides take the defaults and close them (0070), which is
+    // Every override takes the defaults and closes them (0070), which is
     // what replaced the two hand-copied vocabulary lists the overrides once
     // carried. An override's `defaults` is false unless it says otherwise, so
     // dropping either key would silently shrink what the site is held to.
-    expect(config?.overrides).toHaveLength(2);
+    expect(config?.overrides).toHaveLength(3);
     for (const ov of config?.overrides ?? []) {
       expect(ov.defaults).toBe(true);
       expect(ov.strict).toBe(true);
@@ -938,6 +946,19 @@ describe("the repository's own manni.config.yaml", () => {
       "./docs/doc-frontmatter.schema.json",
       "astro:starlight:0.41",
       "tgdp:templates:1.1",
+    ]);
+    // A strategy record takes the content-strategy vocabulary, which is not a
+    // default, so its overlay is named by hand, as terminology's is.
+    expect(
+      resolveSchemaSet({
+        filePath: "docs/content-strategy/journeys/m5.md",
+        config,
+        memberOf: ["strategy"],
+      }),
+    ).toEqual([
+      ...STRICT_DEFAULTS,
+      "manni:content-strategy:1.0.0",
+      "manni:content-strategy-strict:1.0.0",
     ]);
     // A file outside the collection is a member of nothing, so the override
     // cannot reach it and DEFAULT_SCHEMAS stands.
