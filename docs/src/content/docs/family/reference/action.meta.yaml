@@ -1,0 +1,65 @@
+docs/src/content/docs/family/reference/action.mdx:
+  personas:
+    - devin
+  journeys:
+    - d1
+    - d16
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: action.yml
+  eval-suite: family
+  evals:
+    - id: configure-action-inputs
+      assertion: A reader can write a workflow step that sets the Action's inputs, including a multi-value input with one item per line.
+      type: capability
+      grader: ai
+    - id: reproduce-action-by-hand
+      assertion: A reader can write the manni command line the Action runs for a given set of inputs, including the default command.
+      type: capability
+      grader: ai
+  provenance:
+    - generated-by: Claude Opus 5
+      lines: 2-5
+      integrity: sha256-c3645f962ff96db2cbea773feea07355a9b490509cb3c0252d22db41680cd138
+    - generated-by: Claude Opus 5
+      lines: 52-55
+      integrity: sha256-c14ae3e52a0e8a39d9ef4ab7a8119dfa484d272913148cb23aa64e4c717dc6d4
+    - generated-by: Claude Opus 5
+      lines: 57-62
+      integrity: sha256-58b300d190a98665da6b6a5070bada6f4107d1de4945f4828e0e1832165f4073
+    - generated-by: Claude Opus 5
+      lines: 77-78
+      integrity: sha256-6e493a5f26eba5bf4ce40e9358204e802c27f7450d469e1407acfc5f5c50168f
+    - generated-by: Claude Opus 5
+      lines: 81
+      integrity: sha256-d300380f1402b0c46b27502e052179be698b725b603cb6ba589f4374c035f65c
+    - generated-by: Claude Opus 5
+      lines: 262-267
+      integrity: sha256-35e3acd9d35c022289479ec59f6a4a1d6db0aeed9df06c6a18e945f75cade3c9
+    - generated-by: Claude Fable 5.1
+      lines: 306
+      integrity: sha256-798120a6204b3b7fafb2269bdc20dc5696f54c378de790bf1475f056eae29358
+  owner:
+    - "@hawkeyexl"
+  created: 2026-08-23
+  meta-provenance:
+    - generated-by: claude-sonnet-4-5
+      fields:
+        - /resource
+        - /tags
+        - /action
+        - /risks
+        - /concepts
+        - /prerequisites
+        - /next-steps
+        - /related-pages
+      confidence:
+        /resource: 0.9
+        /tags: 0.7
+        /action: 0.9
+        /risks: 0.8
+        /concepts: 0.75
+        /prerequisites: 0.85
+        /next-steps: 0.75
+        /related-pages: 0.7

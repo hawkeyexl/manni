@@ -77,10 +77,10 @@ docs/src/content/docs/index.mdx:
       lines: 121-131
       integrity: sha256-eb894ad7d475c33df77cc37fa0d2679ad1b8973e6992ffdf6eab06cb1abac655
     - generated-by: Claude Fable 5.1
-      lines: 134-135
+      lines: 137-138
       integrity: sha256-22ce86ce09a39ce17edb6a75a512ad70e2f70411dfedde4daff639fb7391d7b7
     - generated-by: Claude Opus 5.5
-      lines: 136
+      lines: 139
       integrity: sha256-4155a00325cda3ba9494efe1e67fab63f5905b52ba9057000f576a9520f6ffb6
   owner:
     - "@hawkeyexl"

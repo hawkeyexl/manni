@@ -57,7 +57,9 @@ The metadata tool used to be the whole package. Three things changed:
 - **The config file.** `manni.config.yaml`, shared by every tool in the
   family, with the metadata tool's keys under `meta:`. A `docmeta.config.yaml`
   is still read, with a warning.
-- **The GitHub Action.** `uses: hawkeyexl/manni@v4`, same inputs.
+- **The GitHub Action.** `uses: hawkeyexl/manni@v4` now runs `manni check`,
+  every check the repository has set up. Add `command: meta validate` to run
+  the metadata check alone, with the inputs it took before.
 
 The rename changed nothing else. The exit codes, the output formats and the
 programmatic API carry over, and so do the built-in schemas and their published
@@ -87,17 +89,19 @@ A config's `meta.schemas` add to the default set, and `meta.defaults: false` mak
 ## Run it in CI
 
 On GitHub Actions, use the packaged action. It sets up Node, pins the CLI, and
-defaults to inline PR annotations:
+runs `manni check`, every check the repository has set up, as inline PR
+annotations:
 
 ```yaml
 - uses: actions/checkout@v7
-- uses: hawkeyexl/manni@v4
   with:
-    paths: "docs/**/*.md"
+    fetch-depth: 0
+- uses: hawkeyexl/manni@v4
 ```
 
-Every input is in the [Action
-reference](https://hawkeyexl.github.io/manni/meta/reference/action/). Other
+`command:` runs any one manni command instead, such as `meta validate`. Every
+input is in the [Action
+reference](https://hawkeyexl.github.io/manni/family/reference/action/). Other
 platforms run the CLI directly. The [CI
 recipes](https://hawkeyexl.github.io/manni/meta/ci/recipes/) cover GitLab CI,
 Jenkins, and the rest.
@@ -110,7 +114,7 @@ actually reads rather than hand-written:
 ```yaml
 repos:
   - repo: https://github.com/hawkeyexl/manni
-    rev: v4.15.0
+    rev: v4.16.0
     hooks:
       - id: manni-meta
 ```
