@@ -256,9 +256,9 @@ docs/src/content/docs/term/reference/configuration.mdx:
         integrity: sha256-19bf69bbaca754e83b9842320fc2402a33cccee5e1c8993bc24b9d73c3d3861e
       source:
         file: src/term/cli.ts
-        lines: 161
+        lines: 153
         integrity: sha256-642aa7bc0402e0101838821cd5ed5ee06a261d3134bb836e1a23650376a401d2
-        commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
+        commit-sha: bfd040c52b77a44f328fd41ea0b6d454972a39d5
     - id: lint-levels-from-vale
       claim:
         integrity: sha256-19bf69bbaca754e83b9842320fc2402a33cccee5e1c8993bc24b9d73c3d3861e

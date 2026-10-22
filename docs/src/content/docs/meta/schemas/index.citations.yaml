@@ -30,17 +30,17 @@ docs/src/content/docs/meta/schemas/index.mdx:
         integrity: sha256-546c0aaae16911ec5ea485d3e113abd28e488fd018c3337df2e9a3fba3a4ee89
       source:
         file: src/meta/core/schema-registry.ts
-        lines: 1446-1450
+        lines: 1454-1458
         integrity: sha256-58dcb64f18f7ddeb4a5175d21bb6cb92ee33e473384c5aaca08a9395140bea5e
-        commit-sha: cb74827009894c38f8646504ae9eb4a2745761a9
+        commit-sha: bfd040c52b77a44f328fd41ea0b6d454972a39d5
     - id: the-three-reference-kinds
       claim:
         integrity: sha256-a4fd7bcc0a486a118551bbf7e3bbabc59aa43f8d0e60ef4a49045d1be70dec66
       source:
         file: src/meta/core/schema-registry.ts
-        lines: 598-611
+        lines: 606-619
         integrity: sha256-2f40a8e1715136cf70277d50252b4172f3fd9106e42a5fccd6914c78d0d6f32c
-        commit-sha: cb74827009894c38f8646504ae9eb4a2745761a9
+        commit-sha: bfd040c52b77a44f328fd41ea0b6d454972a39d5
     - id: document-names-its-own-schema
       claim:
         integrity: sha256-2e9e70750388d767b7562acdee44aca8ea482909e69207e404a25dca04fc9d7b
@@ -98,18 +98,18 @@ docs/src/content/docs/meta/schemas/index.mdx:
         integrity: sha256-f06920d66d5f43f126e4e6cb078996a46d61e1587e968b1a60247a99b6defe2f
       source:
         file: src/meta/core/schema-registry.ts
-        lines: 91-141
+        lines: 93-143
         integrity: sha256-b70ffb8c7c31cf749ddc88c0c2f42d247087fa2bc804f8efa873264a6215c179
-        commit-sha: cb74827009894c38f8646504ae9eb4a2745761a9
+        commit-sha: bfd040c52b77a44f328fd41ea0b6d454972a39d5
     - id: builtin-ids-are-bundled-not-registered
       claim:
         lines: 198
         integrity: sha256-d1974a43b00c7b305c06a0d0973b8cb5ca61f1b20d6018cb5008e33a5c2da6cb
       source:
         file: src/meta/core/schema-registry.ts
-        lines: 91-141
+        lines: 93-143
         integrity: sha256-b70ffb8c7c31cf749ddc88c0c2f42d247087fa2bc804f8efa873264a6215c179
-        commit-sha: cb74827009894c38f8646504ae9eb4a2745761a9
+        commit-sha: bfd040c52b77a44f328fd41ea0b6d454972a39d5
     - id: okf-tolerates-unknown-keys
       claim:
         lines: 196
