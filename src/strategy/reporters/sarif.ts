@@ -27,7 +27,7 @@ interface SarifLog {
   }[];
 }
 
-function describe(rule: SarifRule): SarifRule {
+function describeRule(rule: SarifRule): SarifRule {
   const name = rule.id.slice(RULE_ID_PREFIX.length + 1);
   if (!isStrategyRule(name)) return rule;
   const { description, guide } = guidanceFor(name);
@@ -48,7 +48,7 @@ export function renderFindingsSarif(report: StrategyReport, opts: { onNotice?: (
   ) as SarifLog;
   for (const run of log.runs) {
     run.tool.driver.informationUri = INFORMATION_URI;
-    run.tool.driver.rules = run.tool.driver.rules.map(describe);
+    run.tool.driver.rules = run.tool.driver.rules.map(describeRule);
     for (const result of run.results) {
       const text = result.message.text.replace(FIELD_LABEL, "");
       result.message.text = [text, ...guidanceLines(result.properties?.guidance)].join("\n");

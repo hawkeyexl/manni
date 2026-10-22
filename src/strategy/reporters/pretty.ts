@@ -84,7 +84,9 @@ function wrapSentences(text: string, width: number): string[] {
   if (text.length <= width) return [text];
   const lines: string[] = [];
   let line = "";
-  for (const sentence of text.split(/(?<=[.?])\s+(?=\S)/)) {
+  // A sentence ends at `.` or `?` before a space and a capital, which every
+  // message sentence starts with, so `m1.0`, a URL or `e.g. x` never splits.
+  for (const sentence of text.split(/(?<=[.?])\s+(?=[A-Z])/)) {
     if (line === "") line = sentence;
     else if (line.length + 1 + sentence.length <= width) line = `${line} ${sentence}`;
     else {

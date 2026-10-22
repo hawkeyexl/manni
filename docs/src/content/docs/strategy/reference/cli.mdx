@@ -205,8 +205,9 @@ Maya, Documentation Engineer                  strategy/personas/maya.md:1
                 docs/guide.md
 ```
 
-`json` prints the record. `title` falls back to the id, and `description` is
-there when the record has one. A persona carries `audience`, and a journey
+`json` prints the record. `title` is always there: a record with no title
+gets its id, so `title` equal to `id` means none was written. `description`
+is there only when the record has one. A persona carries `audience`, and a journey
 `persona`, as written. `namedBy` holds `personas` on an audience, `journeys`
 on a persona, and `pages` always. Paths are relative to the working
 directory:

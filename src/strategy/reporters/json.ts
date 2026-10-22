@@ -11,6 +11,7 @@ import { titleOf } from "./pretty.js";
 
 export function recordJson(entry: RecordEntry): Record<string, unknown> {
   const { record } = entry;
+  // `title` is never absent: an untitled record shows its id, as `list` does.
   const out: Record<string, unknown> = { id: record.id, type: record.type, title: titleOf(record) };
   if (record.description !== undefined) out["description"] = record.description;
   out["file"] = entry.file;

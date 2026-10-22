@@ -50,6 +50,8 @@ export async function runCheck(opts: CheckOptions): Promise<StrategyReport> {
     summary: summarize(reported, baseline),
     frame,
     records: set.records.length,
+    // Two kinds, both resolved: every audiences:, personas: and journeys:
+    // value (pages and records alike), plus each record's own parent field.
     references: set.references.length + parents,
     ...(baseline === undefined ? {} : { baseline }),
     found: findings.length,
