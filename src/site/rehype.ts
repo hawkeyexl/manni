@@ -26,7 +26,11 @@ interface VFileLike {
   history?: string[];
 }
 
-/** The elements a claim can be joined to. Table cells join through their row. */
+/**
+ * The elements a claim can be joined to. Table cells join through their row.
+ * Not the same set as `TEXT_BLOCKS` in `core/annotate.ts`: containers are stamped
+ * here so `byLines` can find the innermost stamped child.
+ */
 const BLOCKS = new Set([
   "p", "h1", "h2", "h3", "h4", "h5", "h6", "li", "ul", "ol", "pre", "blockquote",
   "table", "tr", "dl", "dt", "dd",

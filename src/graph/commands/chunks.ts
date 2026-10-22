@@ -39,16 +39,17 @@ import {
 import { byCodeUnit } from "../core/sort.js";
 import { decodeVectorIndex } from "../core/vector-index.js";
 import { NS, PREFIXES } from "../core/vocab.js";
-import type {
-  ChunkRow,
-  ChunksManifest,
-  DerivedDate,
-  EvalItem,
-  PassageStatement,
-  PinItem,
-  PinSummary,
-  ProvenanceEvals,
-  ProvenanceRecord,
+import {
+  range,
+  type ChunkRow,
+  type ChunksManifest,
+  type DerivedDate,
+  type EvalItem,
+  type PassageStatement,
+  type PinItem,
+  type PinSummary,
+  type ProvenanceEvals,
+  type ProvenanceRecord,
 } from "../runtime/chunks.js";
 import { GraphIndex } from "../runtime/graph.js";
 // The floor is applied at export here and again at query in the runtime: one rule.
@@ -483,15 +484,6 @@ function claimLines(result: CitationResult, bodyLine: number): { start: number; 
   if (claim.fileLines === undefined) return undefined;
   const file = range(claim.fileLines);
   return file && { start: file.start - bodyLine + 1, end: file.end - bodyLine + 1 };
-}
-
-/** A cite line spec, `N` or `N-M`, as a span; `undefined` when it is not one or runs backwards. */
-export function range(spec: string): { start: number; end: number } | undefined {
-  const m = /^(\d+)(?:-(\d+))?$/.exec(spec.trim());
-  if (m?.[1] === undefined) return undefined;
-  const start = Number(m[1]);
-  const end = m[2] === undefined ? start : Number(m[2]);
-  return end < start ? undefined : { start, end };
 }
 
 const RANK = { notice: 1, warning: 2, error: 3 } as const;

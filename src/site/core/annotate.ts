@@ -16,7 +16,7 @@ import remarkGfm from "remark-gfm";
 import remarkParse from "remark-parse";
 import { toString as mdastToString } from "mdast-util-to-string";
 import { unified } from "unified";
-import type { ChunkRow, PassageStatement, PinItem, ProvenanceRecord } from "../../graph/runtime/chunks.js";
+import { range, type ChunkRow, type PassageStatement, type PinItem, type ProvenanceRecord } from "../../graph/runtime/chunks.js";
 
 type Node = DefaultTreeAdapterTypes.Node;
 type Element = DefaultTreeAdapterTypes.Element;
@@ -24,7 +24,12 @@ type Element = DefaultTreeAdapterTypes.Element;
 export const STAMP = "data-manni-src";
 export const ISLAND_ID = "manni-provenance";
 
-/** The elements the text step compares; a table row is one, not its cells. */
+/**
+ * The elements the text step compares; a table row is one, not its cells. Not the
+ * same set as `BLOCKS` in `rehype.ts`: that one also stamps the containers (`ul`,
+ * `ol`, `table`, `dl`) so `byLines` can find the innermost stamped child, and
+ * leaves out `figcaption`, which only this step reads.
+ */
 const TEXT_BLOCKS = new Set(["p", "h1", "h2", "h3", "h4", "h5", "h6", "li", "pre", "blockquote", "tr", "dt", "dd", "figcaption"]);
 const NO_TEXT = new Set(["script", "style", "template", "head"]);
 /** Shorter than this, a block inside a longer claim is too common to count. */
@@ -157,14 +162,6 @@ export function renderedText(lines: readonly string[]): string {
 }
 
 // ---- the records ------------------------------------------------------------------
-
-function range(spec: string): { start: number; end: number } | undefined {
-  const m = /^(\d+)(?:-(\d+))?$/.exec(spec.trim());
-  if (m?.[1] === undefined) return undefined;
-  const start = Number(m[1]);
-  const end = m[2] === undefined ? start : Number(m[2]);
-  return end < start ? undefined : { start, end };
-}
 
 interface Row {
   id: string;
@@ -455,7 +452,7 @@ export function joinPage(input: PageJoinInput): PageJoin {
   return result;
 }
 
-const escapeAttr = (value: string): string => value.replace(/&/g, "&amp;").replace(/"/g, "&quot;");
+const escapeAttr = (value: string): string => value.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
 
 function insertAttrs(el: Element, pairs: [string, string | undefined][], html: string, edits: Edit[]): void {
   const tag = el.sourceCodeLocation?.startTag;
