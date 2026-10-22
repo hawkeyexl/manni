@@ -32,7 +32,11 @@ export const ISLAND_ID = "manni-provenance";
  */
 const TEXT_BLOCKS = new Set(["p", "h1", "h2", "h3", "h4", "h5", "h6", "li", "pre", "blockquote", "tr", "dt", "dd", "figcaption"]);
 const NO_TEXT = new Set(["script", "style", "template", "head"]);
-/** Shorter than this, a block inside a longer claim is too common to count. */
+/**
+ * Shorter than this, a block inside a longer claim is too common to count. Such a
+ * block inside a claim's run splits the run, so the claim is reported as
+ * `repeated-text` and stays unplaced. That is conservative.
+ */
 const MIN_PART = 12;
 
 export interface PageJoinInput {
@@ -374,7 +378,8 @@ export function joinPage(input: PageJoinInput): PageJoin {
     const appliesTo = heading ? strings(heading.metadata["applies-to"]) : [];
     for (const el of placed) {
       const m = marksOf(el);
-      m.node = node;
+      // A pin's passage node wins: the island's records are keyed by it.
+      m.node ??= node;
       if (typeof lastVerified === "string") m.verified = lastVerified;
       if (by.length > 0) m.verifiedBy = by.join(" ");
       m.statement = statement.status;

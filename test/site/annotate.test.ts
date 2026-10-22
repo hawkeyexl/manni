@@ -9,7 +9,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { parse } from "parse5";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { renderAnnotate, runAnnotate, type AnnotateReport } from "../../src/site/commands/annotate.js";
+import { claimTexts, renderAnnotate, runAnnotate, type AnnotateReport } from "../../src/site/commands/annotate.js";
 import { SiteError } from "../../src/site/errors.js";
 import { resetWarnings } from "../../src/shared/warn.js";
 
@@ -97,6 +97,16 @@ function stripped(html: string): string {
     .replace(/<script type="application\/json" id="manni-provenance">[\s\S]*?<\/script>\n/, "");
 }
 
+describe("the text a claim range reads", () => {
+  it("clamps a range outside the page and reads an inverted one as empty", () => {
+    const { text } = claimTexts(join(root, "site/src/content/docs/guide.md"), "guide.md");
+    expect(text(1, 1)).toBe("Pinsholdtheirsentencestosourcelines.");
+    expect(text(-5, 1)).toContain("Pinsholdtheirsentencestosourcelines.");
+    expect(text(90, 99)).toBe("");
+    expect(text(3, 1)).toBe("");
+  });
+});
+
 describe("the join, on the stamped page", () => {
   it("places each pin on its block by lines, with the section node and the state", () => {
     run();
@@ -151,6 +161,21 @@ describe("the join, on the stamped page", () => {
       "data-manni-verified": "2026-10-20",
       "data-manni-verified-by": "vale doc-detective",
       "data-manni-statement": "changed",
+    });
+  });
+
+  it("keeps the passage node on a block that holds a pin and a block statement", () => {
+    const file = join(root, "graph", "chunks.en.jsonl");
+    const rows = readFileSync(file, "utf8").trim().split("\n").map((l) => JSON.parse(l) as { provenance: { statements: unknown[] } });
+    rows[0]?.provenance.statements.push({ data: { "last-verified": "2026-10-02" }, lines: "1-1", status: "current" });
+    writeFileSync(file, rows.map((r) => JSON.stringify(r)).join("\n") + "\n", "utf8");
+    run();
+    expect(manni(byText(read("site/dist/guide/index.html"), "p", "Pins hold their sentences to source lines."))).toEqual({
+      "data-manni-node": `${BASE}guide.md`,
+      "data-manni-pins": "holds",
+      "data-manni-state": "current",
+      "data-manni-verified": "2026-10-02",
+      "data-manni-statement": "current",
     });
   });
 
