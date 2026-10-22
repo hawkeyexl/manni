@@ -115,9 +115,9 @@ docs/src/content/docs/meta/fix/index.mdx:
         integrity: sha256-f192b317320b2529418915bf19d31db20775947c576c4aedd182153424cb13a1
       source:
         file: src/meta/core/schema-registry.ts
-        lines: 1301-1307
+        lines: 1308-1314
         integrity: sha256-32f532eec4d87ee764584428f50c80c02ce2af2b1bd3f803c01ccec9ae0daf6d
-        commit-sha: 3f869d44baa56c4b8b4dfc12822397c0b58a878d
+        commit-sha: 281805709ffecf8e2bf6a0f816f185353a6c0896
     - id: moved-text-is-never-a-finding
       claim:
         integrity: sha256-2a92270a056121c9517f9f40032ce7b62e09aacc74668d10a25ea220748cdc48

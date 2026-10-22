@@ -186,7 +186,10 @@ export const OPTIONAL_FIELD_PREDECESSORS: ReadonlyMap<string, string> = new Map(
  * The id a baseline fingerprint hashes for `ref`: its earliest predecessor,
  * followed through both maps, so 1.2.0 and 1.1.0 both hash as 1.0.0.
  */
-export function baselineIdentity(ref: string): string {
+export function baselineIdentity(
+  ref: string,
+  maps: readonly ReadonlyMap<string, string>[] = [ANNOTATION_ONLY_PREDECESSORS, OPTIONAL_FIELD_PREDECESSORS],
+): string {
   let id = ref;
   const seen = new Set<string>();
   for (;;) {
@@ -194,7 +197,11 @@ export function baselineIdentity(ref: string): string {
       throw new Error(`predecessor cycle: ${[...seen, id].join(" -> ")}`);
     }
     seen.add(id);
-    const next = ANNOTATION_ONLY_PREDECESSORS.get(id) ?? OPTIONAL_FIELD_PREDECESSORS.get(id);
+    let next: string | undefined;
+    for (const map of maps) {
+      next = map.get(id);
+      if (next !== undefined) break;
+    }
     if (next === undefined) return id;
     id = next;
   }
