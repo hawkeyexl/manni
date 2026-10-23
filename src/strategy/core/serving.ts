@@ -97,7 +97,7 @@ function retired(entry: ImpactEntry): number {
   return entry.lifecycle !== undefined && RETIRED.has(entry.lifecycle) ? 1 : 0;
 }
 
-/** Personas, then journeys. Within each: live first, then errors, warnings, notices and findings, descending, then id. */
+/** Personas, then journeys. Within each: live first, then errors, warnings and notices, descending, then id. */
 function worstFirst(a: ImpactEntry, b: ImpactEntry): number {
   return (
     SERVING_TYPES.indexOf(a.type) - SERVING_TYPES.indexOf(b.type) ||
@@ -105,7 +105,6 @@ function worstFirst(a: ImpactEntry, b: ImpactEntry): number {
     b.errors - a.errors ||
     b.warnings - a.warnings ||
     b.notices - a.notices ||
-    b.findings - a.findings ||
     a.id.localeCompare(b.id, "en", { numeric: true, sensitivity: "base" })
   );
 }

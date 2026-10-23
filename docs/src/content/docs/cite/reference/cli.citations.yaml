@@ -970,8 +970,8 @@ docs/src/content/docs/cite/reference/cli.mdx:
         integrity: sha256-a5239a17366ca9773da99ac0fe21f3d434795edfb7aeafb8318b64b46e9d32c2
       source:
         file: src/strategy/core/serving.ts
-        lines: 100-111
-        integrity: sha256-e573e27c626676f14769f6980c8d4e7969ff11d88a5d165355a2a04b6e3a6cc9
+        lines: 100-110
+        integrity: sha256-0fb9313de6f25ce0f718b10b7d2467cf8e973e4988fce5a5287d5b74fcc95a31
     - id: pretty-impact-block
       claim:
         integrity: sha256-148931435e911c39100ecf075a812545b8811771388b4dcd60bef54d902d4f54
