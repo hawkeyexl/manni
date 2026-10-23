@@ -15,7 +15,7 @@ import { shouldColor } from "../shared/color.js";
 import { errorMessage } from "../shared/errors.js";
 import { programName } from "../shared/program-name.js";
 import { fail } from "../shared/run.js";
-import { notice } from "../shared/warn.js";
+import { noticeOnce } from "../shared/warn.js";
 import { readEnvelope, type Envelope } from "./core/envelope.js";
 import { FamilyError, labelFrom } from "./core/in-play.js";
 import {
@@ -144,7 +144,10 @@ export function buildCheck(): Command {
         const run = await runFamilyCheck({
           scope: paths.length > 0 ? { kind: "paths", paths } : { kind: "all" },
           ...(options.config === undefined ? {} : { configPath: options.config }),
-          onNotice: notice,
+          // Said once: cite and the roll-up both say when strategy's set cannot be read.
+          onNotice: noticeOnce,
+          // By hand or in CI only; a hook's reply carries no roll-up (proposal 0109).
+          impact: true,
         });
         for (const check of run.checks) {
           if (check.status === "error") {

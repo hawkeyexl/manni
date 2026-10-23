@@ -9,6 +9,7 @@
  * no record is left out, since `strategy check` already reports it.
  */
 import { resolve } from "node:path";
+import { hasPagePlaceholder, pageManifestPath } from "../../shared/page-manifest.js";
 import type { Severity } from "../../shared/severity.js";
 import { loadStrategy } from "../commands/run.js";
 import type { StrategyRecord } from "../types.js";
@@ -26,6 +27,11 @@ export interface ServingSet {
   records: StrategyRecord[];
   /** Each page's named records, keyed by absolute path: personas first, then journeys, each once. */
   pages: Map<string, StrategyRecord[]>;
+  /**
+   * Each named page's `{page}` manifests (0058), absolute, to the page's
+   * absolute path: a finding in one counts on its page (proposal 0109).
+   */
+  manifests: Map<string, string>;
 }
 
 export interface ServingOptions {
@@ -63,7 +69,19 @@ export async function loadServing(opts: ServingOptions): Promise<ServingSet | un
       pages.set(page, list);
     }
   }
-  return { records, pages };
+  // ponytail: every collection's patterns for every page; a pattern a page's own collection lacks maps a file nobody reports.
+  const manifests = new Map<string, string>();
+  const configDir = run.configDir;
+  if (configDir !== undefined) {
+    for (const page of pages.keys()) {
+      for (const m of run.collections.flatMap((c) => c.externalMetadata)) {
+        if (!hasPagePlaceholder(m.file)) continue;
+        const at = pageManifestPath(m.file, configDir, page);
+        if (!("outside" in at) && !manifests.has(at.abs)) manifests.set(at.abs, page);
+      }
+    }
+  }
+  return { records, pages, manifests };
 }
 
 /** One reported finding, on the page it counts on. */
@@ -155,26 +173,50 @@ export function servesSentence(records: readonly StrategyRecord[]): string | und
   return `Serves ${listOf(records.map((r) => (r.title === undefined ? r.id : `${r.id} (${r.title})`)))}.`;
 }
 
-/** The pretty block: a heading, then one row per entry, padded to the widest id and title. Empty for no entries. */
-export function impactLines(entries: readonly ImpactEntry[]): string[] {
-  if (entries.length === 0) return [];
+/** `The pages with findings serve 4 personas and 10 journeys.`, naming only the types present. */
+function headingOf(entries: readonly ImpactEntry[]): string {
   const counts = SERVING_TYPES.flatMap((type) => {
     const n = entries.filter((e) => e.type === type).length;
     return n === 0 ? [] : [plural(n, type)];
   });
-  const titleOf = (e: ImpactEntry): string =>
-    [e.title, e.lifecycle !== undefined && RETIRED.has(e.lifecycle) ? `(${e.lifecycle})` : undefined]
-      .filter((part) => part !== undefined)
-      .join(" ");
+  return `The pages with findings serve ${counts.join(" and ")}.`;
+}
+
+/** The title, then `(draft)` or `(archived)` for a journey that is not live. */
+function titleOf(e: ImpactEntry): string {
+  return [e.title, e.lifecycle !== undefined && RETIRED.has(e.lifecycle) ? `(${e.lifecycle})` : undefined]
+    .filter((part) => part !== undefined)
+    .join(" ");
+}
+
+/** `3 errors and 1 warning on 2 pages`, zero parts left out. */
+function countsOf(e: ImpactEntry): string {
+  const levels = [
+    e.errors > 0 ? plural(e.errors, "error") : undefined,
+    e.warnings > 0 ? plural(e.warnings, "warning") : undefined,
+    e.notices > 0 ? plural(e.notices, "notice") : undefined,
+  ].filter((level) => level !== undefined);
+  return `${listOf(levels)} on ${plural(e.pages.length, "page")}`;
+}
+
+/** The pretty block: a heading, then one row per entry, padded to the widest id and title. Empty for no entries. */
+export function impactLines(entries: readonly ImpactEntry[]): string[] {
+  if (entries.length === 0) return [];
   const idWidth = Math.max(...entries.map((e) => e.id.length));
   const titleWidth = Math.max(...entries.map((e) => titleOf(e).length));
-  const rows = entries.map((e) => {
-    const levels = [
-      e.errors > 0 ? plural(e.errors, "error") : undefined,
-      e.warnings > 0 ? plural(e.warnings, "warning") : undefined,
-      e.notices > 0 ? plural(e.notices, "notice") : undefined,
-    ].filter((level) => level !== undefined);
-    return `  ${e.id.padEnd(idWidth)}   ${titleOf(e).padEnd(titleWidth)}   ${listOf(levels)} on ${plural(e.pages.length, "page")}`;
-  });
-  return [`The pages with findings serve ${counts.join(" and ")}.`, ...rows];
+  const rows = entries.map((e) => `  ${e.id.padEnd(idWidth)}   ${titleOf(e).padEnd(titleWidth)}   ${countsOf(e)}`);
+  return [headingOf(entries), ...rows];
+}
+
+/**
+ * The same roll-up as one annotation (proposal 0109): the heading as its
+ * title, then `<id> <title>: <counts>` per entry, unpadded. `undefined` for no
+ * entries.
+ */
+export function impactNotice(entries: readonly ImpactEntry[]): { title: string; lines: string[] } | undefined {
+  if (entries.length === 0) return undefined;
+  return {
+    title: headingOf(entries),
+    lines: entries.map((e) => `${[e.id, titleOf(e)].filter((part) => part !== "").join(" ")}: ${countsOf(e)}`),
+  };
 }

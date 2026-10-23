@@ -7,7 +7,7 @@ id: "family-check"
 type: "how-to"
 keywords: ["manni check", "manni status", "CI gate", "in play", "skipped", "exit codes"]
 language: en
-audiences: ["ci-engineers"]
+audiences: ["ci-engineers", "docs-engineers"]
 intent: "Run every check a repository has set up as one CI step, and read what it ran and what it skipped."
 lifecycle: published
 applies-to: ["domain:family"]
@@ -257,6 +257,61 @@ upload is skipped. A `run:` step gets the same log from
 The upload needs `permissions: security-events: write`. A last run in the log,
 `manni/check/`, names each check that was skipped or could not run. A check that
 could not run gets no run of its own, so its last analysis stays in place.
+
+## Fix first what your readers hit
+
+A refactor can turn many pages red at once, across several checks. Each
+check's report lists its own findings by file. The file order says nothing
+about which readers the change hurts.
+
+{/* cite family-check-worst-first */}
+When your collections hold persona and journey records, `manni check` ranks the
+red pages by the readers they serve. One block follows the skipped lines, before
+the summary. It counts every check's findings under each persona and journey the
+pages name, worst first.
+
+```console
+$ manni check
+…
+skipped  lint check   no lint: section
+
+The pages with findings serve 4 personas and 48 journeys.
+  maya    Maya, Documentation Engineer                  28 errors, 151 warnings and 58 notices on 101 pages
+  sara    Sara, Schema Author / Information Architect   22 errors, 124 warnings and 62 notices on 100 pages
+  devin   Devin, Platform / CI Engineer                 20 errors, 172 warnings and 63 notices on 87 pages
+  theo    Theo, Doc Contributor                         3 errors, 95 warnings and 31 notices on 61 pages
+  m1      Stand up metadata validation for my repo      15 errors, 9 warnings and 3 notices on 6 pages
+  s2      Wire schemas to the right documents           14 errors, 2 warnings and 4 notices on 3 pages
+  d2      Govern one schema across many repos           12 errors, 3 warnings and 3 notices on 2 pages
+  …
+
+7 checks over 345 files: 3 failed, 1 skipped
+# exit 1
+```
+
+Errors sort before warnings, so a journey with one error outranks one with
+twenty warnings. Take the journey at the top. The `json` output carries the
+same roll-up with each entry's pages, so one `jq` names the pages to fix first:
+
+```console
+$ manni check -f json | jq -r '.impact[] | select(.id == "m1") | .pages[]'
+docs/src/content/docs/meta/get-started/index.mdx
+docs/src/content/docs/meta/reference/configuration.mdx
+docs/src/content/docs/meta/reference/schemas/index.mdx
+docs/src/content/docs/meta/set-up/config.mdx
+docs/src/content/docs/meta/set-up/index.mdx
+docs/src/content/docs/meta/set-up/retrofit.mdx
+```
+
+Fix those pages and run the check again. The journey leaves the list, and so
+does every journey that shared only those pages. A draft or archived journey
+sorts after the live ones, whatever its count.
+
+{/* cite family-check-notice-first */}
+On a pull request, `-f github` opens with the same ranking as one notice. It
+prints before every check's own annotations, so GitHub's cap on annotations
+never hides it. The [CLI reference](/manni/family/reference/cli/#who-the-findings-reach)
+has the counting rules and each format's shape.
 
 ## Narrow the run to some files
 

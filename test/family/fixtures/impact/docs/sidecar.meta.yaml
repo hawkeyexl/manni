@@ -1,0 +1,4 @@
+docs/sidecar.md:
+  audiences: [docs-engineers]
+  personas: [devin]
+  journeys: [m2]

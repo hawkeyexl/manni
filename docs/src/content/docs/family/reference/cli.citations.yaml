@@ -1,0 +1,23 @@
+docs/src/content/docs/family/reference/cli.mdx:
+  citations:
+    - id: family-impact-sarif
+      claim:
+        integrity: sha256-3015aecfdae183b5f8151ffdf8881a0d783ddf44d951e1567d819dd81863dced
+      source:
+        file: src/family/commands/check.ts
+        lines: 657
+        integrity: sha256-1f5597a25d4424490fd875053f5528467e47e17ed4575bab2a4637e6b8ffda68
+    - id: family-impact-notice-first
+      claim:
+        integrity: sha256-8b333ae5a14d36468c8cd2d9510cbffbb6f0ab7af0114738bf617b914b7c7da7
+      source:
+        file: src/family/commands/check.ts
+        lines: 573-581
+        integrity: sha256-7a04d871f71069e98bd72ea4c9cbeb810e872bc1893c54eea73045ba402d05b2
+    - id: family-impact-counts
+      claim:
+        integrity: sha256-0f323a922f3167fdf9fcff61112be0d734a138d3bc470c74f6a9b8b2e7b44df6
+      source:
+        file: src/family/commands/check.ts
+        lines: 469-472
+        integrity: sha256-0a85cade7cca79f3facdce0b985d20f3f62be71e71967a925ecb7eb28a55714a

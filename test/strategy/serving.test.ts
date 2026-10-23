@@ -10,9 +10,11 @@ import { afterEach, describe, expect, it } from "vitest";
 import {
   StrategyError,
   impactLines,
+  impactNotice,
   impactOf,
   loadServing,
   servesSentence,
+  type ImpactEntry,
   type ServingSet,
   type StrategyRecord,
 } from "../../src/strategy/index.js";
@@ -42,6 +44,14 @@ describe("loadServing", () => {
     expect(ids(serving.pages.get(join(FIXTURE, "pages", "clean.md")))).toEqual(["maya", "m6"]);
     // A record's own fields name nobody.
     expect(serving.pages.has(join(FIXTURE, "strategy", "m5.md"))).toBe(false);
+  });
+
+  it("maps each named page's {page} manifest to the page, so a finding there counts on it (0109)", async () => {
+    const serving = await loadServing({ cwd: FIXTURE, configPath: join(FIXTURE, "manni.config.yaml") });
+    expect(serving?.manifests.get(join(FIXTURE, "pages", "stale.meta.yaml"))).toBe(join(FIXTURE, "pages", "stale.md"));
+    // A page that names nobody has no manifest to map, and a record file is no page.
+    expect(serving?.manifests.has(join(FIXTURE, "pages", "unnamed.meta.yaml"))).toBe(false);
+    expect(serving?.manifests.has(join(FIXTURE, "strategy", "m5.md"))).toBe(false);
   });
 
   it("counts journeys: only when a journey record exists", async () => {
@@ -82,6 +92,7 @@ describe("impactOf", () => {
       ["/b.md", [devin, d5]],
       ["/c.md", [devin, d18]],
     ]),
+    manifests: new Map(),
   };
 
   it("runs personas first, then journeys, worst first, drafts last, ties by id with numeric collation", () => {
@@ -171,5 +182,25 @@ describe("impactLines", () => {
       impactLines([{ type: "persona", id: "maya", findings: 1, errors: 1, warnings: 0, notices: 0, pages: ["a"] }])[0],
     ).toBe("The pages with findings serve 1 persona.");
     expect(impactLines([])).toEqual([]);
+  });
+});
+
+describe("impactNotice", () => {
+  it("carries the heading as its title and one unpadded row per entry, in the same order and words", () => {
+    const entries: ImpactEntry[] = [
+      { type: "persona", id: "devin", title: "Devin, Platform", findings: 3, errors: 3, warnings: 0, notices: 0, pages: ["a", "b"] },
+      { type: "persona", id: "sara", findings: 2, errors: 1, warnings: 1, notices: 0, pages: ["a"] },
+      { type: "journey", id: "m2", title: "Draft", lifecycle: "draft", findings: 1, errors: 1, warnings: 0, notices: 0, pages: ["a"] },
+    ];
+    expect(impactNotice(entries)).toEqual({
+      title: "The pages with findings serve 2 personas and 1 journey.",
+      lines: [
+        "devin Devin, Platform: 3 errors on 2 pages",
+        "sara: 1 error and 1 warning on 1 page",
+        "m2 Draft (draft): 1 error on 1 page",
+      ],
+    });
+    expect(impactNotice(entries)?.title).toBe(impactLines(entries)[0]);
+    expect(impactNotice([])).toBeUndefined();
   });
 });

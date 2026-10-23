@@ -43,7 +43,7 @@ import { render as renderLint } from "../../src/lint/reporters/index.js";
 import { runValidate } from "../../src/meta/commands/validate.js";
 import { render as renderMeta } from "../../src/meta/reporters/index.js";
 import { commitAll, gitAvailable, makeTempRepo, removeTempRepo } from "../helpers/temp-repo.js";
-import { envelope, fixtureRepo } from "./helpers.js";
+import { envelope, fixtureRepo, nestedFixtureRepo } from "./helpers.js";
 
 let dir: string | undefined;
 afterEach(() => {
@@ -629,5 +629,204 @@ describe.skipIf(!gitAvailable())("renderSarif", () => {
     expect(log.runs).toHaveLength(1);
     expect(log.runs[0]?.invocations).toEqual([{ executionSuccessful: true }]);
     expect(log.runs[0]?.results).toEqual([]);
+  });
+});
+
+/** The roll-up's rows as `type:id`, in order. */
+const rows = (run: FamilyCheckRun): string[] => (run.impact ?? []).map((e) => `${e.type}:${e.id}`);
+
+function entry(run: FamilyCheckRun, id: string): NonNullable<FamilyCheckRun["impact"]>[number] {
+  const found = run.impact?.find((e) => e.id === id);
+  if (found === undefined) throw new Error(`no ${id} in ${rows(run).join(", ")}`);
+  return found;
+}
+
+/** The files a check placed its findings on. */
+function placed(run: FamilyCheckRun, command: string): string[] {
+  const check = byCommand(run, command);
+  return "render" in check ? (check.findings ?? []).map((f) => f.file) : [];
+}
+
+describe.skipIf(!gitAvailable())("the roll-up by persona and journey (0109)", () => {
+  it("counts each check's findings under every persona and journey its page names, worst first, drafts last", async () => {
+    dir = fixtureRepo("impact");
+    const run = await runFamilyCheck({ cwd: dir, scope: { kind: "all" }, impact: true });
+    expect(rows(run)).toEqual(["persona:devin", "persona:maya", "journey:m2", "journey:m1", "journey:d1"]);
+
+    // Two checks report on two-journeys.md, and its findings count under both its journeys.
+    const twoJourneys = join(dir, "docs", "two-journeys.md");
+    const onIt = ["meta validate", "docevals run"].map((c) => placed(run, c).filter((f) => f === twoJourneys).length);
+    expect(onIt.every((n) => n > 0)).toBe(true);
+    expect(entry(run, "m1").errors).toBe(onIt.reduce((a, b) => a + b, 0));
+    expect(entry(run, "m2").errors).toBe(entry(run, "m1").errors);
+
+    // The warning in sidecar.meta.yaml counts on sidecar.md, and pages are sorted labels.
+    expect(placed(run, "strategy check")).toContain(join(dir, "docs", "sidecar.meta.yaml"));
+    expect(entry(run, "m2")).toMatchObject({ warnings: 1, pages: ["docs/sidecar.md", "docs/two-journeys.md"] });
+
+    // A draft journey with more errors still comes after the live ones.
+    expect(entry(run, "d1").errors).toBeGreaterThan(entry(run, "m1").errors);
+    expect(entry(run, "d1").lifecycle).toBe("draft");
+
+    // A page that names nobody counts nowhere, and the counts sum to findings.
+    for (const e of run.impact ?? []) {
+      expect(e.pages).not.toContain("docs/untagged.md");
+      expect(e.errors + e.warnings + e.notices).toBe(e.findings);
+    }
+  }, 60000);
+
+  it("is never built unless asked, as under a hook, and a hook's reply is the same either way", async () => {
+    dir = fixtureRepo("impact");
+    const scope = { kind: "paths", paths: ["docs/two-journeys.md"] } as const;
+    const asked = await runFamilyCheck({ cwd: dir, scope: { ...scope, paths: [...scope.paths] }, impact: true });
+    const plain = await runFamilyCheck({ cwd: dir, scope: { ...scope, paths: [...scope.paths] } });
+    expect(asked.impact).not.toBeUndefined();
+    expect(plain.impact).toBeUndefined();
+    expect(hookReply(asked, env("post-tool-use-member"))).toEqual(hookReply(plain, env("post-tool-use-member")));
+    expect(hookReply(asked, env("stop"))).toEqual(hookReply(plain, env("stop")));
+  }, 60000);
+
+  it("paths: counts only the named pages' findings, with records from every collection", async () => {
+    dir = fixtureRepo("impact");
+    const run = await runFamilyCheck({ cwd: dir, scope: { kind: "paths", paths: ["docs/draft.md"] }, impact: true });
+    expect(rows(run)).toEqual(["persona:devin", "journey:d1"]);
+  }, 60000);
+
+  it("with no record in any collection, every format prints what it prints unasked", async () => {
+    dir = fixtureRepo("meta-and-lint");
+    const asked = await runFamilyCheck({ cwd: dir, scope: { kind: "all" }, impact: true });
+    const plain = await runFamilyCheck({ cwd: dir, scope: { kind: "all" } });
+    expect(asked.status).toBe("fail");
+    expect(asked.impact).toBeUndefined();
+    for (const format of ["pretty", "json", "github", "sarif"] as const) {
+      expect(render(asked, format, false)).toBe(render(plain, format, false));
+    }
+  }, 60000);
+
+  it("a clean run carries no roll-up", async () => {
+    dir = fixtureRepo("everything");
+    const run = await runFamilyCheck({ cwd: dir, scope: { kind: "all" }, impact: true });
+    expect(run.status).toBe("pass");
+    expect(run.impact).toBeUndefined();
+  }, 60000);
+
+  it("a broken strategy: section is one notice, and the checks keep their verdicts", async () => {
+    dir = fixtureRepo("impact");
+    edit(dir, "manni.config.yaml", (t) => `${t}\nstrategy:\n  paths: [x]\n`);
+    const notices: string[] = [];
+    const run = await runFamilyCheck({
+      cwd: dir,
+      scope: { kind: "all" },
+      impact: true,
+      onNotice: (m) => notices.push(m),
+    });
+    expect(run.impact).toBeUndefined();
+    expect(byCommand(run, "strategy check").status).toBe("error");
+    expect(byCommand(run, "meta validate").status).toBe("fail");
+    expect(notices).toContain(
+      'personas and journeys left out of the report. manni.config.yaml: strategy does not carry "paths". Name a collection under collections:.',
+    );
+  }, 60000);
+
+  describe("each domain places its finding on the page, one directory below the repository root", () => {
+    // The check, the file its finding comes from, and the change that makes it report.
+    const cases: [string, string, (text: string) => string][] = [
+      ["meta validate", "docs/limits.md", (t) => t.replace(/^description:.*\n/m, "")],
+      ["cite check", "src/limits.ts", (t) => t.replace("FETCH_TIMEOUT_MS = 10_000", "FETCH_TIMEOUT_MS = 20_000")],
+      ["lint check", "templates.yaml", (t) => t.replace("min: 1", "min: 5")],
+      ["docevals run", "docs/limits.md", (t) => `${t}\nTODO: finish this.\n`],
+      ["term check", "docs/limits.md", (t) => t.replace("concepts: [timeout]", "concepts: [timeout, deadline]")],
+      ["strategy check", "docs/limits.meta.yaml", (t) => t.replace("journeys: [m1]", "journeys: [m1, m9]")],
+      [
+        "graph check",
+        "docs/limits.md",
+        (t) => t.replace("title: Limits\n", "title: Limits\ngraph:\n  label: Limits\n  broader: [Limits]\n"),
+      ],
+    ];
+    for (const [command, file, change] of cases) {
+      it(command, async () => {
+        const nested = nestedFixtureRepo("everything");
+        dir = nested.root;
+        edit(nested.dir, file, change);
+        const run = await runFamilyCheck({ cwd: nested.dir, scope: { kind: "all" }, impact: true });
+        const page = join(nested.dir, "docs", "limits.md");
+        const sidecar = join(nested.dir, "docs", "limits.meta.yaml");
+        expect(placed(run, command).length).toBeGreaterThan(0);
+        expect(placed(run, command).filter((f) => f !== page && f !== sidecar)).toEqual([]);
+        expect(rows(run)).toEqual(["persona:maya", "journey:m1"]);
+        expect(entry(run, "m1").pages).toEqual(["docs/limits.md"]);
+      }, 60000);
+    }
+  });
+});
+
+describe("rendering the roll-up (0109)", () => {
+  const impact: NonNullable<FamilyCheckRun["impact"]> = [
+    { type: "persona", id: "maya", title: "Maya", findings: 2, errors: 2, warnings: 0, notices: 0, pages: ["docs/a.md"] },
+    {
+      type: "journey",
+      id: "m1",
+      title: "Set up",
+      findings: 2,
+      errors: 1,
+      warnings: 1,
+      notices: 0,
+      pages: ["docs/a.md", "docs/b.md"],
+    },
+  ];
+  const own: Record<string, string> = {
+    pretty: "meta report",
+    json: "{}",
+    github: "::error file=docs/a.md::x",
+    sarif: '{"version":"2.1.0","runs":[{"tool":{"driver":{"name":"manni"}},"results":[]}]}',
+  };
+  const base: FamilyCheckRun = {
+    status: "fail",
+    files: ["docs/a.md", "docs/b.md"],
+    checks: [
+      { command: "meta validate", status: "fail", render: (format) => own[format] ?? "" },
+      { command: "lint check", status: "skipped", message: "no lint: section" },
+    ],
+  };
+  const run: FamilyCheckRun = { ...base, impact };
+
+  it("pretty: one block after the not-run lines and before the summary, its heading bold only with color", () => {
+    expect(renderPretty(run, false).split("\n\n")).toEqual([
+      "meta validate\nmeta report",
+      "skipped  lint check   no lint: section",
+      [
+        "The pages with findings serve 1 persona and 1 journey.",
+        "  maya   Maya     2 errors on 1 page",
+        "  m1     Set up   1 error and 1 warning on 2 pages",
+      ].join("\n"),
+      "2 checks over 2 files: 1 failed, 1 skipped",
+    ]);
+    expect(renderPretty(run, true)).toContain("\u001b[1mThe pages with findings serve");
+    expect(renderPretty(run, true)).toContain("\n  maya   Maya");
+    expect(renderPretty(base, false).split("\n\n")).toHaveLength(3);
+  });
+
+  it("json: impact after checks, absent when empty", () => {
+    const doc = JSON.parse(renderJson(run)) as Record<string, unknown>;
+    expect(Object.keys(doc)).toEqual(["status", "files", "checks", "impact"]);
+    expect(doc.impact).toEqual(impact);
+    expect(Object.keys(JSON.parse(renderJson(base)) as object)).toEqual(["status", "files", "checks"]);
+  });
+
+  it("github: one notice first, titled with the heading, then each check's own lines", () => {
+    const lines = renderGithub(run).split("\n");
+    expect(lines[0]).toBe(
+      "::notice title=The pages with findings serve 1 persona and 1 journey.::maya Maya: 2 errors on 1 page%0Am1 Set up: 1 error and 1 warning on 2 pages",
+    );
+    expect(lines.slice(1)).toEqual(renderGithub(base).split("\n"));
+    expect(renderGithub(base).startsWith("::notice")).toBe(false);
+  });
+
+  it("sarif: the manni-check run carries properties.impact, the JSON array; every other run is unchanged", () => {
+    const log = sarifOf(renderSarif(run)) as { runs: (SarifRun & { properties?: { impact?: unknown } })[] };
+    const plain = sarifOf(renderSarif(base)) as { runs: (SarifRun & { properties?: unknown })[] };
+    expect(log.runs.at(-1)?.properties?.impact).toEqual((JSON.parse(renderJson(run)) as { impact: unknown }).impact);
+    expect(log.runs.slice(0, -1)).toEqual(plain.runs.slice(0, -1));
+    expect(plain.runs.at(-1)?.properties).toBeUndefined();
   });
 });

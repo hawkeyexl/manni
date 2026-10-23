@@ -21,11 +21,21 @@
  * `strategy` never runs on paths, and runs on any change: a page's
  * `personas:` and `journeys:` mostly sit in its `{page}.meta.yaml`, which is
  * neither a document nor a collection member.
+ *
+ * By hand or in CI, the run also rolls every check's reported findings up by
+ * the personas and journeys their pages serve (proposal 0109), through the
+ * strategy domain's own roll-up. It counts what the checks reported and moves
+ * no verdict.
  */
 import { basename, extname, resolve } from "node:path";
 import pkg from "../../../package.json" with { type: "json" };
 import { ToolError, errorMessage } from "../../shared/errors.js";
 import { warn } from "../../shared/warn.js";
+import { palette } from "../../shared/color.js";
+import { escapeWorkflowCommandMessage, escapeWorkflowCommandProperty } from "../../shared/github.js";
+import type { Severity } from "../../shared/severity.js";
+import type { FingerprintContext, ValidationResult } from "../../meta/index.js";
+import { impactLines, impactNotice, type ImpactEntry, type ImpactFinding, type ServingSet } from "../../strategy/index.js";
 import { resolveTargetSet } from "../../meta/internal.js";
 import { supportedExtensions } from "../../meta/extractors/index.js";
 import type { TurnCheckInput, TurnCheckResult } from "../../tracevals/commands/check.js";
@@ -70,6 +80,17 @@ export interface FamilyCheckOptions {
   allowMissing?: boolean;
   /** Diagnostics: the outside-every-collection notice, and the domains' own. */
   onNotice?: (message: string) => void;
+  /**
+   * Roll the reported findings up by the personas and journeys their pages
+   * serve (proposal 0109). The CLI asks by hand, never under a hook.
+   */
+  impact?: boolean;
+}
+
+/** A reported finding, where it sits: an absolute file and its severity. */
+export interface PlacedFinding {
+  file: string;
+  severity: Severity;
 }
 
 /** A check that ran. `render` is the domain's own reporter. */
@@ -77,6 +98,8 @@ export interface RanCheck {
   command: string;
   status: "pass" | "fail";
   render: (format: CheckFormat, color: boolean) => string;
+  /** The findings its report holds, each placed on its file (proposal 0109). */
+  findings?: PlacedFinding[];
 }
 
 /** A check that did not run: not in play, or it could not. */
@@ -93,11 +116,21 @@ export interface FamilyCheckRun {
   /** The collection members the per-file checks covered, labelled from `cwd`. */
   files: string[];
   checks: CheckOutcome[];
+  /** The roll-up by persona and journey, worst first. Absent when empty or not asked for. */
+  impact?: ImpactEntry[];
 }
 
 type Outcome =
   | { skipped: string }
-  | { failed: boolean; render: (format: CheckFormat, color: boolean) => string };
+  | { failed: boolean; render: (format: CheckFormat, color: boolean) => string; findings: PlacedFinding[] };
+
+/** Every error a meta-shaped report holds, on the file its label names from the run's base. */
+function fromResults(results: readonly ValidationResult[], frame: FingerprintContext): PlacedFinding[] {
+  const base = frame.runBase ?? frame.base;
+  return results.flatMap((r) =>
+    r.errors.map((e) => ({ file: resolve(base, r.file), severity: e.severity ?? "error" })),
+  );
+}
 
 interface Context {
   family: Family;
@@ -129,6 +162,7 @@ async function runDomain(domain: Domain, ctx: Context): Promise<Outcome> {
         failed: run.summary.failed > 0,
         render: (format, color) =>
           renderMeta(format, run.results, run.summary, { color, quiet: true, frame: run.frame, onNotice }),
+        findings: fromResults(run.results, run.frame),
       };
     }
     case "cite": {
@@ -151,6 +185,7 @@ async function runDomain(domain: Domain, ctx: Context): Promise<Outcome> {
       }
       return {
         failed: run.summary.failed > 0,
+        findings: fromResults(run.results, run.frame),
         render: (format, color) => {
           switch (format) {
             case "pretty":
@@ -172,12 +207,15 @@ async function runDomain(domain: Domain, ctx: Context): Promise<Outcome> {
         import("../../lint/reporters/index.js"),
       ]);
       const run = await runLint({ inputs, configPath, cwd, onNotice });
+      // SARIF locations resolve from `root`, which is where the run's labels
+      // start: the config's directory for a bare run, else the working one.
+      const root = inputs.length === 0 ? resolve(cwd, family.file.dir) : cwd;
       return {
         failed: run.summary.failed > 0,
-        // SARIF locations resolve from `root`, which is where the run's labels
-        // start: the config's directory for a bare run, else the working one.
-        render: (format, color) =>
-          renderLint(run, format, { color, root: inputs.length === 0 ? resolve(cwd, family.file.dir) : cwd }),
+        render: (format, color) => renderLint(run, format, { color, root }),
+        findings: run.results.flatMap((r) =>
+          r.findings.map((f) => ({ file: resolve(root, r.file), severity: f.severity })),
+        ),
       };
     }
     case "docevals": {
@@ -205,6 +243,14 @@ async function runDomain(domain: Domain, ctx: Context): Promise<Outcome> {
       return {
         failed: report.exitCode !== 0,
         render: (format, color) => renderDocevals(report, format, { color }),
+        // Labels run from the working directory. An eval that errored with
+        // no finding is reported on its page, as its github line is.
+        findings: report.evalResults.flatMap((r) => [
+          ...(r.findings ?? []).map((f) => ({ file: resolve(cwd, f.file), severity: f.severity })),
+          ...(r.outcome === "error" && (r.findings ?? []).length === 0
+            ? [{ file: resolve(cwd, r.file), severity: "error" as const }]
+            : []),
+        ]),
       };
     }
     case "term": {
@@ -225,6 +271,7 @@ async function runDomain(domain: Domain, ctx: Context): Promise<Outcome> {
       if (report.terms === 0) return { skipped: NOT_SET_UP.term };
       return {
         failed: report.summary.failed > 0,
+        findings: fromResults(report.results, report.frame),
         render: (format, color) => {
           switch (format) {
             case "pretty":
@@ -257,6 +304,7 @@ async function runDomain(domain: Domain, ctx: Context): Promise<Outcome> {
       if (report.records === 0) return { skipped: NOT_SET_UP.strategy };
       return {
         failed: report.summary.failed > 0,
+        findings: fromResults(report.results, report.frame),
         render: (format, color) => {
           switch (format) {
             case "pretty":
@@ -283,6 +331,10 @@ async function runDomain(domain: Domain, ctx: Context): Promise<Outcome> {
       return {
         failed: report.exitCode !== 0,
         render: (format) => renderGraph(report, format),
+        // A finding counts on every page responsible for it.
+        findings: report.findings.flatMap((f) =>
+          f.docs.map((doc) => ({ file: resolve(report.root, doc), severity: f.severity })),
+        ),
       };
     }
   }
@@ -293,7 +345,7 @@ async function outcome(domain: Domain, ctx: Context): Promise<CheckOutcome> {
   try {
     const result = await runDomain(domain, ctx);
     if ("skipped" in result) return { command, status: "skipped", message: result.skipped };
-    return { command, status: result.failed ? "fail" : "pass", render: result.render };
+    return { command, status: result.failed ? "fail" : "pass", render: result.render, findings: result.findings };
   } catch (err) {
     return { command, status: "error", message: errorMessage(err) };
   }
@@ -378,7 +430,48 @@ async function checkUnshared(opts: FamilyCheckOptions): Promise<FamilyCheckRun> 
   if (opts.scope.kind === "all" && checks.every((c) => c.status === "skipped")) {
     throw nothingSetUpError();
   }
-  return { status: checks.some((c) => c.status === "fail") ? "fail" : "pass", files, checks };
+  const impact = opts.impact === true ? await impactFor(family, cwd, checks, onNotice) : undefined;
+  return {
+    status: checks.some((c) => c.status === "fail") ? "fail" : "pass",
+    files,
+    checks,
+    ...(impact === undefined ? {} : { impact }),
+  };
+}
+
+/**
+ * The roll-up over every check's reported findings (proposal 0109). Records
+ * come from every collection, whatever the scope, and are read only when a
+ * check reported a finding. A finding in a page's `{page}` manifest counts on
+ * the page, and one on a file that is no page counts nowhere. Strategy's own
+ * error is said once and leaves the report as it is.
+ */
+async function impactFor(
+  family: Family,
+  cwd: string,
+  checks: readonly CheckOutcome[],
+  onNotice: (message: string) => void,
+): Promise<ImpactEntry[] | undefined> {
+  const placed = checks.flatMap((c) => (isRan(c) ? (c.findings ?? []) : []));
+  if (placed.length === 0) return undefined;
+  const { impactOf, loadServing } = await import("../../strategy/index.js");
+  let serving: ServingSet | undefined;
+  try {
+    // ponytail: a bare run reads the set strategy check already read, once more. Hand that set in if it costs.
+    serving = await loadServing({ cwd, configPath: family.configPath });
+  } catch (err) {
+    if (!(err instanceof ToolError)) throw err;
+    onNotice(`personas and journeys left out of the report. ${err.message}`);
+    return undefined;
+  }
+  if (serving === undefined) return undefined;
+  const set = serving;
+  const findings: ImpactFinding[] = placed.flatMap((f) => {
+    const page = set.pages.has(f.file) ? f.file : set.manifests.get(f.file);
+    return page === undefined ? [] : [{ page, file: labelFrom(cwd, page), severity: f.severity }];
+  });
+  const entries = impactOf(set, findings).map((e) => ({ ...e, pages: [...e.pages].sort() }));
+  return entries.length > 0 ? entries : undefined;
 }
 
 /** The exit code a run by hand ends with: 2 when a check could not run. */
@@ -429,6 +522,8 @@ export function renderPretty(run: FamilyCheckRun, color: boolean): string {
         .join("\n"),
     );
   }
+  const impact = impactBlock(run.impact, color);
+  if (impact !== undefined) blocks.push(impact);
   const count = (status: CheckOutcome["status"]): number =>
     run.checks.filter((c) => c.status === status).length;
   const errors = count("error");
@@ -438,6 +533,13 @@ export function renderPretty(run: FamilyCheckRun, color: boolean): string {
       (errors > 0 ? `, ${String(errors)} could not run` : ""),
   );
   return blocks.join("\n\n");
+}
+
+/** The roll-up's pretty block, its heading bold on a TTY and nothing else colored. */
+function impactBlock(impact: readonly ImpactEntry[] | undefined, color: boolean): string | undefined {
+  const [heading, ...rows] = impactLines(impact ?? []);
+  if (heading === undefined) return undefined;
+  return [palette(color).bold(heading), ...rows].join("\n");
 }
 
 /** A check's JSON entry: its own report, or why there is none. */
@@ -460,6 +562,7 @@ export function renderJson(run: FamilyCheckRun): string {
       status: run.status,
       files: run.files,
       checks: run.checks.map(jsonEntry),
+      ...(run.impact === undefined ? {} : { impact: run.impact }),
     },
     null,
     2,
@@ -467,9 +570,15 @@ export function renderJson(run: FamilyCheckRun): string {
 }
 
 export function renderGithub(run: FamilyCheckRun): string {
-  return run.checks
-    .filter(isRan)
-    .map((c) => c.render("github", false))
+  // The roll-up comes first, so the cap on annotations per step never hides it.
+  const notice = impactNotice(run.impact ?? []);
+  const first =
+    notice === undefined
+      ? []
+      : [
+          `::notice title=${escapeWorkflowCommandProperty(notice.title)}::${escapeWorkflowCommandMessage(notice.lines.join("\n"))}`,
+        ];
+  return [...first, ...run.checks.filter(isRan).map((c) => c.render("github", false))]
     .filter((text) => text.length > 0)
     .join("\n");
 }
@@ -545,6 +654,7 @@ export function renderSarif(run: FamilyCheckRun): string {
       },
     ],
     results: [],
+    ...(run.impact === undefined ? {} : { properties: { impact: run.impact } }),
   });
   return JSON.stringify(
     { $schema: "https://json.schemastore.org/sarif-2.1.0.json", version: "2.1.0", runs },

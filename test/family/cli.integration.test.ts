@@ -226,6 +226,78 @@ describe.skipIf(!gitAvailable())("manni check, by hand", () => {
   });
 });
 
+describe.skipIf(!gitAvailable())("manni check, the roll-up by persona and journey (0109)", () => {
+  const HEADING = "The pages with findings serve 2 personas and 3 journeys.";
+
+  it("pretty: the block after the not-run lines and before the summary, exit 1", () => {
+    dir = fixtureRepo("impact");
+    const r = run(["check"], dir);
+    expect(r.status).toBe(1);
+    const blocks = r.stdout.trimEnd().split("\n\n");
+    expect(blocks.at(-3)).toMatch(/^skipped {2}/);
+    expect(blocks.at(-2)?.split("\n")[0]).toBe(HEADING);
+    expect(blocks.at(-2)).toMatch(/^ {2}d1 +Add the gate \(draft\) +3 errors on 1 page$/m);
+    expect(blocks.at(-1)).toMatch(/^\d+ checks over \d+ files: 2 failed, \d+ skipped$/);
+  });
+
+  it("json, github and sarif carry the same roll-up", () => {
+    dir = fixtureRepo("impact");
+    const json = run(["check", "-f", "json"], dir);
+    expect(json.status).toBe(1);
+    const doc = JSON.parse(json.stdout) as Record<string, unknown> & { impact: { id: string }[] };
+    expect(Object.keys(doc)).toEqual(["status", "files", "checks", "impact"]);
+    expect(doc.impact.map((e) => e.id)).toEqual(["devin", "maya", "m2", "m1", "d1"]);
+
+    const github = run(["check", "-f", "github"], dir);
+    expect(github.status).toBe(1);
+    expect(github.stdout.split("\n")[0]).toMatch(
+      new RegExp(`^::notice title=${HEADING.replace(/[.]/g, "\\.")}::devin Devin: 3 errors and 1 warning on 2 pages%0A`),
+    );
+
+    const sarif = run(["check", "-f", "sarif"], dir);
+    expect(sarif.status).toBe(1);
+    const log = JSON.parse(sarif.stdout) as { runs: { properties?: { impact?: unknown } }[] };
+    expect(log.runs.at(-1)?.properties?.impact).toEqual(doc.impact);
+  });
+
+  it("no record in any collection: no block, no key, no notice, no property", () => {
+    dir = fixtureRepo("meta-and-lint");
+    const pretty = run(["check"], dir);
+    expect(pretty.status).toBe(1);
+    expect(pretty.stdout).not.toContain("The pages with findings serve");
+    expect(Object.keys(JSON.parse(run(["check", "-f", "json"], dir).stdout) as object)).not.toContain("impact");
+    expect(run(["check", "-f", "github"], dir).stdout).not.toContain("The pages with findings serve");
+    expect(run(["check", "-f", "sarif"], dir).stdout).not.toContain('"impact"');
+  });
+
+  it("a broken strategy: section is said once, though cite and the roll-up both meet it", () => {
+    dir = fixtureRepo("everything");
+    edit(dir, "src/limits.ts", (t) => t.replace("FETCH_TIMEOUT_MS = 10_000", "FETCH_TIMEOUT_MS = 20_000"));
+    edit(dir, "manni.config.yaml", (t) => `${t}\nstrategy:\n  paths: [x]\n`);
+    const r = run(["check"], dir);
+    expect(r.status).toBe(2);
+    const said =
+      'manni: personas and journeys left out of the report. manni.config.yaml: strategy does not carry "paths". Name a collection under collections:.';
+    expect(r.stderr.split("\n").filter((line) => line === said)).toHaveLength(1);
+    expect(r.stdout).not.toContain("The pages with findings serve");
+  });
+
+  it("there is no grouping flag", () => {
+    dir = fixtureRepo("impact");
+    const r = run(["check", "--by", "journey"], dir);
+    expect(r.status).toBe(2);
+    expect(r.stderr.split("\n")[0]).toBe("error: unknown option '--by'");
+  });
+
+  it("under a hook, the reply carries no roll-up", () => {
+    dir = fixtureRepo("impact");
+    const r = run(["check"], dir, envelope("post-tool-use-member", dir, { tool_input: { file_path: "docs/two-journeys.md" } }));
+    expect(r.status).toBe(2);
+    expect(r.stderr).toMatch(/^manni found errors in docs\/two-journeys\.md\. /);
+    expect(r.stderr).not.toContain("The pages with findings serve");
+  });
+});
+
 describe.skipIf(!gitAvailable())("manni check, under a hook", () => {
   it("PostToolUse on a member page with errors: exit 2 and the report on stderr", () => {
     dir = fixtureRepo("only-docevals");
