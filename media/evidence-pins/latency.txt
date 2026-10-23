@@ -1,0 +1,7 @@
+add exit 0 489 ms
+check-current exit 0 405 ms
+diff-persona exit 0 58 ms
+check-moved exit 0 417 ms
+update exit 0 428 ms
+diff-note exit 0 57 ms
+check-changed exit 1 660 ms

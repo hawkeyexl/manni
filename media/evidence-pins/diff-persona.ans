@@ -1,0 +1,10 @@
+[1mdiff --git a/records/personas/theo.md b/records/personas/theo.md[m
+[1mindex 983d0de..cf8125c 100644[m
+[1m--- a/records/personas/theo.md[m
+[1m+++ b/records/personas/theo.md[m
+[36m@@ -7,4 +7,4 @@[m [maudience: contributors[m
+ pains:[m
+[31m-  - Error messages are terse with no remediation hint.[m
+   - He does not know which schema fired.[m
+[32m+[m[32m  - Error messages are terse with no remediation hint.[m
+ ---[m

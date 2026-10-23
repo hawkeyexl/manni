@@ -1,0 +1,25 @@
+1
+00:00:00,000 --> 00:00:04,233
+A persona's pains
+A persona makes claims. What do they rest on?
+
+2
+00:00:04,233 --> 00:00:12,000
+manni cite add
+Pin the first pain to line 3 of an interview note.
+
+3
+00:00:12,000 --> 00:00:16,933
+manni cite check
+The pain and its evidence both read current.
+
+4
+00:00:16,933 --> 00:00:29,233
+The pains reorder
+The pin follows the moved value. update rewrites it.
+
+5
+00:00:29,233 --> 00:00:39,967
+The evidence changes
+The evidence changed, so the check fails. Exit 1.
+
