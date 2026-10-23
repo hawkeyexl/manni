@@ -1,0 +1,8 @@
+# The plugin's Read hook: one collection, whose pages keep `owner` in a
+# sidecar beside each page.
+collections:
+  - name: pages
+    paths: ["docs/**/*.md"]
+    externalMetadata:
+      - file: "{page}.meta.yaml"
+        keys: [owner]
