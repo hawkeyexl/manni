@@ -1,6 +1,6 @@
 manni strategy, demo video transcript (silent video; text describes what is on screen)
 
-Frame: 1080x1080, 30 fps, 37.8 s. Every terminal line is real output. The CLI is
+Frame: 1080x1080, 30 fps, 37.5 s. Every terminal line is real output. The CLI is
 this branch's build, node dist/cli.js, typed as manni. It runs in
 media/scratch-strategy/, which media/capture-strategy/capture.sh stages from a byte
 copy of test/fixtures/strategy/clean/ with one page, docs/guide.md, swapped for
@@ -35,7 +35,7 @@ docs/guide.md:4
 strategy/journeys/m2.md:3
   warning manni:strategy/unserved-journey     no page names this journey in journeys:.   ("warning" in yellow)
                                               Name it on the pages that serve it.
-                                              manni:strategy unserved-journey: No page names the journey in journeys:. Records do not count.   (dim)
+                                              manni:strategy unserved-journey: No page names the journey in journeys:. Records do not count, and a draft or archived journey is exempt.   (dim)
                                               Guide: https://hawkeyexl.github.io/manni/strategy/reference/rules/#unserved-journey   (dim)
 
 1 error, 1 warning in 4 records

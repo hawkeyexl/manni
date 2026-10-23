@@ -8,17 +8,17 @@ A journey filed as a persona
 m1 is a journey, but the guide lists it as a persona.
 
 2
-00:00:08.867 --> 00:00:19.867
+00:00:08.867 --> 00:00:19.800
 manni strategy check
 It suggests maya, and finds m2 with no page. Exit 1.
 
 3
-00:00:19.867 --> 00:00:30.833
+00:00:19.800 --> 00:00:30.667
 Fix the page, and it passes
 The guide now names maya, and both journeys. Exit 0.
 
 4
-00:00:30.833 --> 00:00:37.767
+00:00:30.667 --> 00:00:37.533
 manni strategy list
 Each record, and how many pages name it. m2 has one.
 

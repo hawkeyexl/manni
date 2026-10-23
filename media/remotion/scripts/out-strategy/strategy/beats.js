@@ -12,15 +12,15 @@ Object.defineProperty(exports, "FPS", { enumerable: true, get: function () { ret
 exports.TYPING_MS = 45;
 // Measured wall-clock latency, from media/capture-strategy/latency.txt.
 // Replayed at 1x: every run is under 0.5 s, so nothing is compressed.
-//   check-before  406 ms
-//   diff           91 ms
-//   check-after   398 ms
-//   list          406 ms
+//   check-before  340 ms
+//   diff           83 ms
+//   check-after   336 ms
+//   list          336 ms
 exports.latency = {
-    checkBefore: Math.round(0.406 * beats_1.FPS),
-    diff: Math.round(0.091 * beats_1.FPS),
-    checkAfter: Math.round(0.398 * beats_1.FPS),
-    list: Math.round(0.406 * beats_1.FPS),
+    checkBefore: Math.round(0.340 * beats_1.FPS),
+    diff: Math.round(0.083 * beats_1.FPS),
+    checkAfter: Math.round(0.336 * beats_1.FPS),
+    list: Math.round(0.336 * beats_1.FPS),
     cat: 2,
     echo: 1,
 };

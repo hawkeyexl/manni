@@ -6,7 +6,7 @@
 [1mstrategy/journeys/m2.md:3[22m
   [33mwarning[39m manni:strategy/unserved-journey     no page names this journey in journeys:.
                                               Name it on the pages that serve it.
-                                              [2mmanni:strategy unserved-journey: No page names the journey in journeys:. Records do not count.[22m
+                                              [2mmanni:strategy unserved-journey: No page names the journey in journeys:. Records do not count, and a draft or archived journey is exempt.[22m
                                               [2mGuide: https://hawkeyexl.github.io/manni/strategy/reference/rules/#unserved-journey[22m
 
 1 error, 1 warning in 4 records

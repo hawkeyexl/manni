@@ -9,15 +9,15 @@ export const TYPING_MS = 45;
 
 // Measured wall-clock latency, from media/capture-strategy/latency.txt.
 // Replayed at 1x: every run is under 0.5 s, so nothing is compressed.
-//   check-before  406 ms
-//   diff           91 ms
-//   check-after   398 ms
-//   list          406 ms
+//   check-before  340 ms
+//   diff           83 ms
+//   check-after   336 ms
+//   list          336 ms
 export const latency = {
-  checkBefore: Math.round(0.406 * FPS),
-  diff: Math.round(0.091 * FPS),
-  checkAfter: Math.round(0.398 * FPS),
-  list: Math.round(0.406 * FPS),
+  checkBefore: Math.round(0.340 * FPS),
+  diff: Math.round(0.083 * FPS),
+  checkAfter: Math.round(0.336 * FPS),
+  list: Math.round(0.336 * FPS),
   cat: 2,
   echo: 1,
 };

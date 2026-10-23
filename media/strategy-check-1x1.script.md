@@ -64,7 +64,7 @@ warning opened.
   `git diff` gets `-c color.ui=always` for the same reason: the capture is a
   file, and that flag gives the colour git prints to a terminal.
 - **Latency is replayed at 1x** (`capture-strategy/latency.txt`): check
-  before 406 ms, diff 91 ms, check after 398 ms, list 406 ms. Nothing is
+  before 340 ms, diff 83 ms, check after 336 ms, list 336 ms. Nothing is
   compressed.
 - **The check's layout sets beat 2's size.** `strategy check` prints each
   message under a 46-column gutter, and its dim rule and Guide lines run to
@@ -72,7 +72,12 @@ warning opened.
 - **Font size is derived per beat, not chosen** (`node capture-strategy/cols.mjs 19`).
   - Beat 2: **19 px / 91 columns.** The largest size at which neither finding's
     first row wraps. At 20 px the error row breaks before `persona.`, an
-    orphan. The dim lines wrap at spaces under their own gutter. The two
+    orphan. The dim lines wrap at spaces under their own gutter. The
+    `unserved-journey` rule line, which now ends "and a draft or archived
+    journey is exempt.", wraps to a last row of one word, `exempt.`. That
+    is a space wrap of a dim line, not a finding row or a broken token, so
+    the size stays at 19 px. `cols.mjs` counts that row as an orphan, and
+    17 px / 101 columns is its orphan-free size. The two
     Guide URLs (80 and 77 characters, no space) break after a `/`. That is
     the new opt-in `breakAfter="/"` in `Demo.tsx`; nothing else splits a
     token.
@@ -117,7 +122,7 @@ prompt. That is the feature in one frame.
    URLs, broken after a `/`, named above.
 3. Captions on every beat, one line each, burned in and in the `.vtt` and
    `.srt`.
-4. `ffprobe`: 1080×1080, 30 fps, h264 yuv420p, AAC 48 kHz, 37.82 s.
+4. `ffprobe`: 1080×1080, 30 fps, h264 yuv420p, AAC 48 kHz, 37.59 s.
 5. The finished file's audio measures as a silent track at −91 dB. There is
    no narration, so no loudness pass.
 6. Accent `#58a6ff`, blue.
