@@ -12,5 +12,5 @@ docs/src/content/docs/family/check.mdx:
         integrity: sha256-8f7640f61d966770a9970ff6a6a8b28b3e0d4dd822a3a03629dbd2878cafc587
       source:
         file: src/strategy/core/serving.ts
-        lines: 119-129
-        integrity: sha256-9fcc7ff3f568081353908b06606ec9bafca30c4cb0b9fcb6096cb7fdaefac813
+        lines: 119-128
+        integrity: sha256-8f77d4ec1bb294f730f5e848b6cee7ae8a17d83e49247dae4cc968d2d9926a5f
