@@ -129,14 +129,14 @@ it.
            with:
              fetch-depth: 0   # the walk reads every commit
 
-         - uses: actions/setup-node@v6
+         - uses: actions/setup-node@v7
            with:
              node-version: 24
 
          - name: Walk the citation history
            run: npx --yes @hawkeyexl/manni@latest cite history -f json > cite-history.json
 
-         - uses: actions/upload-artifact@v4
+         - uses: actions/upload-artifact@v7
            with:
              name: cite-history
              path: cite-history.json

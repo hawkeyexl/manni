@@ -62,7 +62,7 @@ jobs:
   a11y:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v7
         with:
           node-version: 24
       - run: npx @hawkeyexl/manni a11y check https://docs.example.com/ -f github --progress
@@ -90,7 +90,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v7
         with:
           node-version: 24
           cache: npm
