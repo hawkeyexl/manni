@@ -56,7 +56,7 @@ try {
 // re-export (`export { X } from "y"`).
 const FLAT_EXPORT = /export\s*(?:type\s+)?\{([^{}]+)\}\s*;/g;
 // FLAT_EXPORT's capture group rides along unused here: only the whole run is read.
-const tail =dts.match(new RegExp(`(?:${FLAT_EXPORT.source}\\s*)+$`))?.[0] ?? "";
+const tail = dts.match(new RegExp(`(?:${FLAT_EXPORT.source}\\s*)+$`))?.[0] ?? "";
 const statements = [...tail.matchAll(FLAT_EXPORT)];
 if (statements.length === 0) {
   // Passing here would be worse than having no guard at all: the page could
