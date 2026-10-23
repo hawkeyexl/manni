@@ -38,9 +38,9 @@ docs/src/content/docs/meta/fix/faq.mdx:
         integrity: sha256-4ad98f541fbbf16ce90e957bd9e2a0c5a770d704b5d89943ffc60c99702920ed
       source:
         file: src/meta/cli.ts
-        lines: 739
+        lines: 750
         integrity: sha256-322dd30e4515bcfac300cfc4973260a660aa6ff29955850d82aea0c0c555181c
-        commit-sha: a589e08250dee7efaee7ed0f58df01986fad8d1d
+        commit-sha: 34ccc5573527b4549ca4da3ef37e3c0a6c988e0f
     - id: default-ignores-are-node-modules-and-git
       claim:
         integrity: sha256-4af1d71090ee4c80c0e4486e655f7d9860a17af1c1e0250d37d2ab7bc47864dd
@@ -81,18 +81,18 @@ docs/src/content/docs/meta/fix/faq.mdx:
         integrity: sha256-369a3d5d29f0b671abcebf9249d4b33a9ae1b6894780f14db6c3650acf01432e
       source:
         file: src/meta/cli.ts
-        lines: 889
+        lines: 900
         integrity: sha256-b900d16ea81ba54da695ee6ec4f8e9c3d17f1700d0b307ed74045692b603e056
-        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
+        commit-sha: 34ccc5573527b4549ca4da3ef37e3c0a6c988e0f
     - id: faq-exit-0-all-passed
       claim:
         lines: 114
         integrity: sha256-e7bbf58b0b32d5100b6d2f2e7609a14ba25e57d27688ee56d0977e065da017fd
       source:
         file: src/meta/cli.ts
-        lines: 889
+        lines: 900
         integrity: sha256-b900d16ea81ba54da695ee6ec4f8e9c3d17f1700d0b307ed74045692b603e056
-        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
+        commit-sha: 34ccc5573527b4549ca4da3ef37e3c0a6c988e0f
     - id: explicit-file-always-validated
       claim:
         lines: 104-105
@@ -156,9 +156,9 @@ docs/src/content/docs/meta/fix/faq.mdx:
         integrity: sha256-0347e3aff508e2a1d1aaa2b6dbd5276cdc03c1944e1b261a1a7ce1daae94caf1
       source:
         file: src/meta/commands/get.ts
-        lines: 314-316
+        lines: 339-341
         integrity: sha256-fa43521ca7e2c4816e77be4f03f1738b57e93e3f99d24676580d5fa9d81272f1
-        commit-sha: cb74827009894c38f8646504ae9eb4a2745761a9
+        commit-sha: 34ccc5573527b4549ca4da3ef37e3c0a6c988e0f
     - id: validate-checks-whole-schemas
       claim:
         integrity: sha256-c8465740603ef96129e4b7d4cdabc6a5e3da1d642132008bac8eff3dcbaaa4fd

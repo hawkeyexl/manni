@@ -647,10 +647,10 @@ docs/src/content/docs/cite/reference/cli.mdx:
         lines: 516
         integrity: sha256-7924c2d48741075bc855af1e874f86e79ebd91cf057e3a654705cc50801a5ea6
       source:
-        file: src/shared/statements.ts
-        lines: 122-132
-        integrity: sha256-e22921c3eed06d3b83f1d3f14f3819a27bc74959400289e4779440d5f00a248e
-        commit-sha: cb74827009894c38f8646504ae9eb4a2745761a9
+        file: src/shared/code-regions.ts
+        lines: 78-106
+        integrity: sha256-6a71f92fb33fd46147a0344e9bec3c6c8a527aab01dbb8c284ab004abb05aef8
+        commit-sha: 8bc91cbb324501b261d13991c52a479685e0a686
     - id: add-quote-compare
       claim:
         lines: 516
@@ -844,9 +844,9 @@ docs/src/content/docs/cite/reference/cli.mdx:
         integrity: sha256-8b46d83b2224e8650751bc3e98d6c4f7d9fc191d4e769b0a8e4d9cd399e6b226
       source:
         file: src/shared/statements.ts
-        lines: 766-783
+        lines: 773-790
         integrity: sha256-4a8dc25c55e1b2f8271a953e51f3de3eabc1e75f89300717e216537350bda41a
-        commit-sha: cb74827009894c38f8646504ae9eb4a2745761a9
+        commit-sha: 8bc91cbb324501b261d13991c52a479685e0a686
     - id: update-report-summary
       claim:
         lines: 865-868

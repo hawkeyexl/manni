@@ -240,6 +240,19 @@ describe("parseConfig", () => {
     expect(() => parseConfig(text, "/tmp/manni.config.yaml")).toThrow(GraphError);
   });
 
+  // What one answer graph serve sends over MCP may take.
+  it("defaults serve.maxChars to 40000 and parses it", () => {
+    expect(parseConfig("", "/tmp/manni.config.yaml").serve).toEqual({ maxChars: 40000 });
+    expect(parseConfig("serve:\n  maxChars: 5000\n", "/tmp/manni.config.yaml").serve).toEqual({ maxChars: 5000 });
+  });
+
+  it.each(["serve:\n  maxChars: 0\n", "serve:\n  maxChars: x\n", "serve:\n  maxChars: 1.5\n", "serve:\n  bogus: 1\n"])(
+    "rejects %j",
+    (text) => {
+      expect(() => parseConfig(text, "/tmp/manni.config.yaml")).toThrow(GraphError);
+    },
+  );
+
   it("normalizes baseIri with a trailing slash", () => {
     const c = parseConfig(
       "baseIri: https://example.com/graph\n",

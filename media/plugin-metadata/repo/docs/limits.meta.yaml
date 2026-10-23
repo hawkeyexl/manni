@@ -1,0 +1,3 @@
+docs/limits.md:
+  owner: platform-docs
+  eval-suite: limits

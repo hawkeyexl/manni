@@ -2,7 +2,7 @@ docs/src/content/docs/meta/ci/consume-results.mdx:
   citations:
     - id: manni-is-an-es-module
       claim:
-        lines: 300-301
+        lines: 303-304
         integrity: sha256-7d073224f4e34dab752e69bc6f9068d0a773282e98ddb3e9a627a2be3cd9d84b
       source:
         file: package.json
@@ -11,7 +11,7 @@ docs/src/content/docs/meta/ci/consume-results.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: no-commonjs-require-entry
       claim:
-        lines: 301
+        lines: 304
         integrity: sha256-c0870bdf5287e2e6081d182f7b4701cb8e027cd6a0775571c4803b0ce7ca3470
       source:
         file: package.json
@@ -20,7 +20,7 @@ docs/src/content/docs/meta/ci/consume-results.mdx:
         commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
     - id: collections-cannot-combine-with-inputs
       claim:
-        lines: 272-274
+        lines: 275-277
         integrity: sha256-b6fce5be90865cb419e8a611ddcb461aa6badeb4048a0233c660f36fcbe15583
       source:
         file: src/meta/core/config.ts
@@ -29,7 +29,7 @@ docs/src/content/docs/meta/ci/consume-results.mdx:
         commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
     - id: empty-inputs-fall-back-to-collections
       claim:
-        lines: 269-271
+        lines: 272-274
         integrity: sha256-d58856eea2d47021e0e5623eb94c4c9be4962c678f4068a6b838f8298c943981
       source:
         file: src/meta/core/config.ts
@@ -38,52 +38,52 @@ docs/src/content/docs/meta/ci/consume-results.mdx:
         commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
     - id: get-quiet-drops-all-unset-files
       claim:
-        lines: 230-231
+        lines: 233-234
         integrity: sha256-d3ac227998131854e26a4e7ab9a5e3dbdb2972655ef9d58316016f6b16596488
       source:
         file: src/meta/cli.ts
-        lines: 960-963
+        lines: 975-978
         integrity: sha256-3bc74074c8952636df5c6f68b9d559a92e1dda00b46dfa186f5723f16364efa5
-        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
+        commit-sha: 34ccc5573527b4549ca4da3ef37e3c0a6c988e0f
     - id: get-takes-pretty-and-json-only
       claim:
-        lines: 224-225
+        lines: 227-228
         integrity: sha256-8c64ec05ab7cee4c39c4835c4c6ecbf48d537dbe1d019bc67ccb41e567f4669f
       source:
         file: src/meta/cli.ts
-        lines: 947-951
+        lines: 962-966
         integrity: sha256-b503ccf2d5faf492d3e8eb42a02c2193e9002da4890c9c8dde4774435125333c
-        commit-sha: a589e08250dee7efaee7ed0f58df01986fad8d1d
+        commit-sha: 34ccc5573527b4549ca4da3ef37e3c0a6c988e0f
     - id: get-unsupported-format-exits-2
       claim:
-        lines: 228
+        lines: 231
         integrity: sha256-79056c424982b4bf4902984fcea150da19d76356cdb633aab3affbfdaec0350c
       source:
         file: src/meta/cli.ts
-        lines: 1036-1041
+        lines: 1054-1059
         integrity: sha256-ed88e062b2f25e5f5d7be02a925046a075dc66df7cf3d1e6243ba690642c9961
-        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
+        commit-sha: 34ccc5573527b4549ca4da3ef37e3c0a6c988e0f
     - id: dot-notation-or-json-pointer
       claim:
-        lines: 197-199
+        lines: 200-202
         integrity: sha256-ffc258c2691109dc0b6503d92b9a6fd00e7ba6f6d602092374a282c805c647cb
       source:
         file: src/meta/commands/get.ts
-        lines: 541-554
+        lines: 596-609
         integrity: sha256-3de206ba7b2d15623d6b478a91053a59fae6f997f965d443274221d9761769f6
-        commit-sha: cb74827009894c38f8646504ae9eb4a2745761a9
+        commit-sha: 318b38556ed151a0efcc4d475279a6db8a01cfc6
     - id: get-json-file-present-values
       claim:
-        lines: 180-183
-        integrity: sha256-07386cb057c62a0a4ab3e116dc94fc760856568bf8b8de298b248e077dbfef00
+        lines: 181-186
+        integrity: sha256-ba90251a8b1e3465ed18f166e2bbf53a76b6a4d72c0847f103eafc99427ba311
       source:
         file: src/meta/commands/get.ts
-        lines: 122-125
-        integrity: sha256-a6c55d99822a9da90fbf1e63657a67f42536e8e1cb0d71d28681ebc26cf6237d
-        commit-sha: cb74827009894c38f8646504ae9eb4a2745761a9
+        lines: 130-139
+        integrity: sha256-6aa9fdc00f5d16632f518faa318a321e8660ff3d78af54d8b655a28d1def786a
+        commit-sha: 34ccc5573527b4549ca4da3ef37e3c0a6c988e0f
     - id: pretty-prints-unset
       claim:
-        lines: 190-191
+        lines: 193-194
         integrity: sha256-e9ffb38342eaf4709607dd9cbc06bc9a00d1e726cc288391323b31f90cfb2f2c
       source:
         file: src/meta/reporters/get.ts
@@ -96,9 +96,9 @@ docs/src/content/docs/meta/ci/consume-results.mdx:
         integrity: sha256-3c2434351e0c235257b42b727932a3407933256153739c52ad3cf5d8f63e0212
       source:
         file: src/meta/cli.ts
-        lines: 952-957
+        lines: 967-972
         integrity: sha256-74320011f15b4a953c0496f55ff3d7e3c02bfa5bf49c03a7c8cdcc5568d67630
-        commit-sha: a589e08250dee7efaee7ed0f58df01986fad8d1d
+        commit-sha: 34ccc5573527b4549ca4da3ef37e3c0a6c988e0f
     - id: json-output-is-never-colorized
       claim:
         lines: 109-110
@@ -110,7 +110,7 @@ docs/src/content/docs/meta/ci/consume-results.mdx:
         commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: cores-throw-docmetaerror-for-exit-2
       claim:
-        lines: 291-293
+        lines: 294-296
         integrity: sha256-e095f87787c8d7b17267d1866bdf7f36fda39c6ec48666dc77db512d172b1a56
       source:
         file: src/shared/run.ts

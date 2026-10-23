@@ -5,7 +5,7 @@ sidebar:
   order: 2
 id: "family-claude-code"
 type: "how-to"
-keywords: ["Claude Code", "plugin", "hooks", "marketplace", "MANNI_GENERATED_BY", "skills"]
+keywords: ["Claude Code", "plugin", "hooks", "marketplace", "MANNI_GENERATED_BY", "skills", "MCP", "graph serve"]
 language: en
 audiences: ["docs-engineers"]
 intent: "Install the manni Claude Code plugin and know what it checks at session start, after each edit and before the agent stops."
@@ -13,9 +13,9 @@ lifecycle: published
 applies-to: ["domain:family"]
 prerequisites: ["family-check"]
 next-steps: ["family-check", "family-reference-cli", "meta-set-up-machine-authorship"]
-sample-questions: ["How do I install the manni plugin for Claude Code?", "What happens when an agent edits a page and the check fails?", "How do I turn the manni plugin off?"]
+sample-questions: ["How do I install the manni plugin for Claude Code?", "What happens when an agent edits a page and the check fails?", "How do I turn the manni plugin off?", "What does the agent see when it reads a page?"]
 graph: { label: "Keep an agent's docs green", type: task }
-last-updated: 2026-10-22
+last-updated: 2026-10-23
 tags:
   - claude-code
   - agents
@@ -40,6 +40,10 @@ cannot finish while an error is outstanding.
 The plugin runs [`manni check`](/manni/family/check/) for the agent. It checks
 only what your repository has set up. A domain you never set up never blocks the
 agent, so a repository that only uses `docevals` is not failed by `meta`.
+
+It also gives the agent two things to read with. A read of a docs page brings
+the page's metadata, sidecar fields included. An MCP server serves your docs
+graph, published for the session and kept current as the agent works.
 
 ## Install the plugin
 
@@ -112,7 +116,6 @@ cite       not set up    no page carries citations
 lint       not set up    no lint: section
 docevals   not set up    no page resolves any evals
 term       not set up    no terms in any collection
-strategy   not set up    no strategy records in any collection
 graph      not set up    no graph: section
 a11y       not checked   needs a running site and a browser
 test       not checked   runs the shell steps the pages carry
@@ -135,6 +138,76 @@ variable is already set, so a value you chose wins. Every command the agent runs
 afterwards records which model wrote the uncommitted lines, with no line about it
 in your agent instructions. See
 [Record an agent's edit](/manni/meta/set-up/machine-authorship/#record-an-agents-edit).
+
+## The docs graph, served to the agent
+
+The plugin registers one MCP server, `graph`. Claude Code starts it with every
+session and lists it in `/mcp` as `plugin:manni:graph`. The first session asks
+you to approve it, as Claude Code does for a project's `.mcp.json`.
+
+In a repository with `collections:` in `manni.config.yaml`, the server runs
+[`manni graph serve --publish`](/manni/graph/reference/cli/#graph-serve). The
+agent gets four tools: `lookup`, `retrieve`, `traverse` and `impact`. Each
+passage they return carries its pins and dates, so the agent knows what is
+verified before it quotes it. [Serve the docs to an agent](/manni/graph/serve/)
+covers what each tool answers.
+
+The server publishes the graph at start when the published copy is missing or
+older than the checkout. It answers Claude Code first and publishes behind
+that, so a large site never misses the start-up deadline. A call made during
+the publish waits for it.
+
+Before each later call, the server checks whether any file `git status` lists
+has changed. If one has, it publishes again and then answers. The agent's own
+edits reach `lookup` without a restart.
+
+```text
+manni: publishing the graph before serving it: docs/public/graph/chunks.json does not exist.
+manni: published the graph in 11.3s.
+manni: serving lookup, retrieve, traverse and impact over stdio from docs/public/graph/chunks.json.
+```
+
+Those lines go to Claude Code's debug log, not to the agent.
+
+Where the graph goes depends on the config. With a `graph:` section, it goes
+where `graph.out` says, as `manni graph publish` writes it. Without one, it goes
+to the plugin's data directory, outside your working tree. The build's parse
+cache under `.manni/graph/analyze-cache/` ignores itself, so `git status` shows
+nothing new either way.
+
+A repository with no `collections:` has nothing to build. The server then
+offers no tools and adds nothing to the agent's context.
+
+## What happens when the agent reads a page
+
+When the agent reads a page in one of your collections, the plugin hands it the
+page's metadata beside the file. That is every field the page stores, in its
+frontmatter and in every sidecar file its collection declares. A field kept in
+`{page}.meta.yaml` is one the read alone never shows.
+
+```text
+Metadata for docs/limits.md, from the page and its sidecars:
+{"title":"Limits","description":"What the service accepts.","owner":["@docs-team"],"eval-suite":"reference"}
+```
+
+The values come from
+[`manni meta get --all-fields --no-derived`](/manni/meta/reference/cli/#meta-get),
+so you can ask for the same answer yourself.
+
+A second read of the page adds nothing. When a field changes, in the page or a
+sidecar, the next read brings the new values and says they replace the old.
+
+```text
+Metadata for docs/limits.md changed since it was last given here. This replaces it:
+{"title":"Limits","description":"What the service accepts.","owner":["@api-team"],"eval-suite":"reference"}
+```
+
+Each subagent gets its own, since it has its own context. After Claude Code
+compacts the conversation, the next read of each page brings its metadata
+again. Encrypted values arrive as their stored ciphertext.
+
+A file outside every collection gets nothing. Neither does a file manni cannot
+read, and reading source code starts no manni process.
 
 ## What happens after an edit
 
@@ -179,9 +252,7 @@ When the agent tries to finish, the plugin runs `manni check` over what it
 changed. That is the per-file checks on every file the git working tree changed
 against `HEAD`, whether modified, added, renamed or untracked. It also checks
 every citation, since a source edit can drift one on a page the agent never
-opened. The content strategy is checked on any change too, since a page's
-`personas:` and `journeys:` often sit in its `{page}.meta.yaml` sidecar.
-The glossary reads only collection documents, so it is checked when
+opened. The glossary reads only collection documents, so it is checked when
 the agent changed or removed one, and skipped when it changed only code. The
 graph is never checked here. It is the slowest whole-set check, and its
 findings span pages, so CI checks it with a bare `manni check`.
@@ -247,6 +318,9 @@ Disable the plugin and every hook stops.
 ```sh
 claude plugin disable manni@manni
 ```
+
+To keep the hooks but stop the graph server, turn `plugin:manni:graph` off in
+`/mcp`. Claude Code remembers that choice for the project.
 
 To keep the plugin but stop one domain from blocking, remove that domain's
 section from `manni.config.yaml`. A domain counts as set up only when its config

@@ -27,6 +27,7 @@ import {
 } from "../src/meta/core/external-metadata.js";
 import { runValidate } from "../src/meta/commands/validate.js";
 import { runGet } from "../src/meta/commands/get.js";
+import { renderGet } from "../src/meta/reporters/get.js";
 import { runQuery } from "../src/meta/commands/query.js";
 import { runInferSchema } from "../src/meta/commands/schemas.js";
 import { DocmetaError, type ExtractedMetadata } from "../src/meta/types.js";
@@ -350,5 +351,67 @@ describe("per-page manifests: runtime refusals (exit 2)", () => {
     expect(err.message).toBe(
       'Manifest docs/index.citations.yaml:1 names "docs/other.md", but {page} resolved this file for "docs/index.md". A per-page manifest holds one entry, for its own page.',
     );
+  });
+});
+
+describe("get --all-fields: every stored field, and each file's collections", () => {
+  const sibling = resolve(fixtures, "sibling");
+  const allStored = { cwd: sibling, fields: [] as string[], allFields: true, derived: false };
+
+  it("prints the page's fields first, then its sidecar's, for every member", async () => {
+    const results = await runGet({ ...allStored, inputs: [] });
+    expect(results.map((r) => [r.file, r.collections, Object.keys(r.values)])).toEqual([
+      ["docs/cited.md", ["site"], ["title", "owner", "jira"]],
+      ["docs/uncited.md", ["site"], ["title"]],
+    ]);
+    expect(results[0]?.values).toEqual({ title: "Cited", owner: "maya", jira: "PLAT-7" });
+    // `--no-derived` consults no source, so no derived record is attached.
+    for (const r of results) {
+      expect(r).not.toHaveProperty("resolved");
+      expect(r).not.toHaveProperty("origin");
+      expect(r).not.toHaveProperty("derived");
+    }
+  });
+
+  it("names no collection for a typed path outside every one, nor for stdin", async () => {
+    const typed = await runGet({ ...allStored, inputs: ["notes/README.md"] });
+    expect(typed.map((r) => [r.file, r.collections, r.values])).toEqual([
+      ["notes/README.md", [], { title: "Notes" }],
+    ]);
+    const piped = await runGet({
+      ...allStored,
+      inputs: ["-"],
+      as: "markdown",
+      stdinContent: "---\ntitle: Piped\n---\n",
+    });
+    expect(piped.map((r) => [r.file, r.collections, r.values])).toEqual([
+      ["<stdin>", [], { title: "Piped" }],
+    ]);
+  });
+
+  it("names each file's collections without --all-fields too, after present", async () => {
+    const results = await runGet({ cwd: sibling, inputs: [], fields: ["jira"], derived: false });
+    expect(results.map((r) => r.collections)).toEqual([["site"], ["site"]]);
+    expect(Object.keys(results[0] ?? {}).slice(0, 4)).toEqual(["file", "present", "collections", "values"]);
+  });
+
+  it("refuses a field list beside --all-fields", async () => {
+    const err = await rejection(runGet({ ...allStored, fields: ["title"], inputs: [] }));
+    expect(err).toBeInstanceOf(DocmetaError);
+    expect(err.message).toBe("--all-fields prints every field, so it cannot be combined with --fields.");
+  });
+
+  it("renders each file's own fields, and -q hides a file with none", async () => {
+    const results = await runGet({ ...allStored, inputs: [] });
+    expect(renderGet(results)).toBe(
+      [
+        "docs/cited.md: title=Cited",
+        "docs/cited.md: owner=maya",
+        "docs/cited.md: jira=PLAT-7",
+        "docs/uncited.md: title=Uncited",
+      ].join("\n"),
+    );
+    const bare = await runGet({ ...allStored, inputs: ["-"], as: "markdown", stdinContent: "# No metadata\n" });
+    expect(renderGet(bare, undefined, { quiet: true })).toBe("");
   });
 });

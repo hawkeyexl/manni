@@ -24,6 +24,7 @@ import { beats as conceptsBeats, totalFrames as conceptsTotalFrames, TYPING_MS a
 import { beats as graphFormatsBeats, totalFrames as graphFormatsTotalFrames, TYPING_MS as graphFormatsTypingMs } from "./graph-formats/beats";
 import { beats as findingsBeats, totalFrames as findingsTotalFrames, TYPING_MS as findingsTypingMs } from "./findings/beats";
 import { beats as citeReposBeats, totalFrames as citeReposTotalFrames, TYPING_MS as citeReposTypingMs } from "./cite-repos/beats";
+import { beats as pluginMetadataBeats, totalFrames as pluginMetadataTotalFrames, TYPING_MS as pluginMetadataTypingMs } from "./plugin-metadata/beats";
 import { beats as strategyBeats, totalFrames as strategyTotalFrames, TYPING_MS as strategyTypingMs } from "./strategy/beats";
 
 /** sidecar-url-1x1: 23 px / 75 columns, derived in media/sidecar-url-1x1.script.md. */
@@ -123,6 +124,12 @@ const DemoConcepts: React.FC = () => <DemoView beats={conceptsBeats} fontPx={23}
  * (media/capture-repos/cols.mjs). Ligatures off: a terminal prints `--`, `../` and `@@` as characters.
  */
 const DemoCiteRepos: React.FC = () => <DemoView beats={citeReposBeats} fontPx={21} linePx={30} cols={82} typingMs={citeReposTypingMs} ligatures={false} />;
+
+/**
+ * plugin-metadata-1x1: 28 px / 61 columns, derived in media/plugin-metadata/plugin-metadata-1x1.script.md
+ * (media/plugin-metadata/capture/cols.mjs). Ligatures off: the page's `---` fences and `://` would draw as glyphs.
+ */
+const DemoPluginMetadata: React.FC = () => <DemoView beats={pluginMetadataBeats} fontPx={28} linePx={39} cols={61} typingMs={pluginMetadataTypingMs} ligatures={false} />;
 
 /**
  * strategy-check-1x1: 19 px / 91 columns for beat 2, derived in media/strategy-check-1x1.script.md
@@ -320,6 +327,14 @@ export const Root: React.FC = () => (
       height={1080}
       fps={FPS}
       durationInFrames={citeReposTotalFrames}
+    />
+    <Composition
+      id="PluginMetadataDemo"
+      component={DemoPluginMetadata}
+      width={1080}
+      height={1080}
+      fps={FPS}
+      durationInFrames={pluginMetadataTotalFrames}
     />
     <Composition
       id="StrategyCheckDemo"

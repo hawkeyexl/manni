@@ -10,7 +10,7 @@ concepts:
   - base IRI
   - turn
   - confidence
-last-updated: 2026-10-22
+last-updated: 2026-10-23
 ---
 
 manni graph reads one file, `manni.config.yaml`, and one key in it, `graph:`. Two
@@ -114,6 +114,9 @@ graph:
     depth: 1
     maxChars: 12000
     withhold: []
+
+  serve:
+    maxChars: 40000
 ```
 
 Section keys are camelCase (`baseIri`, `maxTurns`, `confidenceThreshold`). The
@@ -331,6 +334,15 @@ graph:
 
 See [Chunks](/manni/graph/reference/cli/#chunks) for the files the export
 writes.
+
+### `serve`
+
+What `graph serve` sends an agent over MCP. The key is config-only, and it
+is not required. The CLI twins print the full result whatever it says.
+
+| Key | Type | Default | What it does |
+|---|---|---|---|
+| `maxChars` | integer ≥ 1 | `40000` | The most characters one served answer may take, as JSON. Past it, passages go out as references with no text, then edges go. [What an answer carries](/manni/graph/reference/cli/#what-an-answer-carries) gives the order. |
 
 ## Keys that moved or went
 

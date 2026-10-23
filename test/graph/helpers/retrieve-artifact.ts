@@ -17,7 +17,7 @@ import {
   vectorIndexFilename,
 } from "../../../src/graph/core/localizations.js";
 import { encodeVectorIndex } from "../../../src/graph/core/vector-index.js";
-import { makeTempRepo } from "../../helpers/temp-repo.js";
+import { commitAll, makeTempRepo } from "../../helpers/temp-repo.js";
 
 const FIXTURE = join(import.meta.dirname, "..", "fixtures", "retrieve");
 const LANGUAGES = join(import.meta.dirname, "..", "fixtures", "chunks-languages");
@@ -49,6 +49,13 @@ export async function retrieveArtifact(): Promise<string> {
   await runEmbed({ cwd: dir, model: "mock", noCache: true });
   await runExport({ cwd: dir, format: "chunks" });
   await runExport({ cwd: dir, format: "jsonld" });
+  return dir;
+}
+
+/** The fixture alone, committed to a fresh git repository, with nothing published. */
+export function retrieveRepo(): string {
+  const dir = makeTempRepo({ files: fixtureFiles() });
+  commitAll(dir, "the retrieval fixture");
   return dir;
 }
 

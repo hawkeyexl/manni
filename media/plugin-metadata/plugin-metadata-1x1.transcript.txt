@@ -1,0 +1,65 @@
+The manni plugin hands the agent a page's metadata, demo video transcript (silent video; text describes what is on screen)
+
+Frame: 1080x1080, 30 fps, 40.8 s. Every terminal line is real output, run inside a demo
+repository staged by media/plugin-metadata/capture/capture.sh from media/plugin-metadata/repo/.
+`manni` is this branch's built CLI. `read-page` builds the PostToolUse envelope Claude Code
+sends after a Read and pipes it into the plugin's real hook, plugin/manni/hooks/page-metadata.mjs,
+then prints the context the hook returns. `mcp-call` starts the plugin's real MCP server,
+plugin/manni/hooks/graph-server.mjs, asks its lookup tool one question and prints the best passage.
+
+[0:00-0:08] Title: Fields a Read never shows (1 / 5)
+$ head -4 docs/limits.md
+---
+title: Limits
+description: Rate limits and retries.
+---
+$ cat docs/limits.meta.yaml
+docs/limits.md:
+  owner: platform-docs
+  eval-suite: limits
+Highlighted rows: lines containing "owner:", "eval-suite:"
+Caption: owner and eval-suite live in a sidecar. Reading the page alone never shows them.
+
+[0:08-0:14] Title: manni meta get --all-fields (2 / 5)
+$ manni meta get --all-fields --no-derived docs/limits.md
+Using manni.config.yaml (.)
+docs/limits.md: title=Limits
+docs/limits.md: description=Rate limits and retries.
+docs/limits.md: owner=platform-docs
+docs/limits.md: eval-suite=limits
+Highlighted rows: lines containing "owner=", "eval-suite="
+Caption: The new flag prints every stored field, page and sidecar alike.
+
+[0:14-0:21] Title: What the Read hook adds (3 / 5)
+$ read-page docs/limits.md
+Metadata for docs/limits.md, from the page and its sidecars:
+{"title":"Limits","description":"Rate limits and retries.","owner":"platform-docs","eval-suite":"limits"}
+Highlighted rows: lines containing "\"owner\""
+Caption: When the agent reads the page, the plugin's hook hands it the metadata, sidecar included.
+
+[0:21-0:32] Title: Once, then on change (4 / 5)
+$ read-page docs/limits.md
+$ sed -i 's/platform-docs/docs-team/' docs/limits.meta.yaml
+$ read-page docs/limits.md
+Metadata for docs/limits.md changed since it was last given here. This replaces it:
+{"title":"Limits","description":"Rate limits and retries.","owner":"docs-team","eval-suite":"limits"}
+Highlighted rows: lines containing "changed since"
+Caption: A second Read adds nothing. Change the sidecar and the next Read says so.
+
+[0:32-0:41] Title: The graph, over MCP (5 / 5)
+$ mcp-call lookup "What is the fetch timeout?"
+manni: publishing the graph before serving it: ../scratch-pd/graph/b1148b99811b127b/chunks.json does not exist.
+… 2 advisory lines left out
+manni: published the graph in 0.7s.
+manni: serving lookup, retrieve, traverse and impact over stdio from ../scratch-pd/graph/b1148b99811b127b/chunks.json.
+lookup: docs/limits.md:1-4  The fetch timeout is 10 seconds. Failed requests retry three times.
+Highlighted rows: lines containing "published the graph", "lookup: docs"
+Caption: The plugin's MCP server publishes the graph on first use, then answers from it.
+
+Beat 4: the second read-page prints nothing, which is the point: the hook gives a page's
+metadata once, and again only when it changes.
+
+Colour: the only colour in the terminal is the dim file prefix in beat 2's output. Beat 5's marker
+line "... 2 advisory lines left out" is drawn in the accent blue and italic because it is not output.
+The server printed two more notices there (no eval report configured, no vector sidecar), and the
+edit leaves them out to keep the frame legible at phone size.

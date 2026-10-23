@@ -1,6 +1,6 @@
 # 0090: Served passages carry their proof
 
-- **Status:** Implemented (#224, #225, #226, #227, #228)
+- **Status:** Implemented (#224, #225, #226, #227, #228); superseded in part by [0103](0103-the-plugin-serves-the-graph-and-keeps-page-metadata-current.md)
 - **Serves:** Four groups of readers.
   - Devin · D13, "Publish the graph for retrieval". He publishes a search
     index today, and no reader of it learns which passages passed the gate.

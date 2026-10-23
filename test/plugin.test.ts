@@ -1,12 +1,16 @@
 import { describe, it, expect } from "vitest";
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join, resolve } from "node:path";
+import { pathToFileURL } from "node:url";
 import type { Command } from "commander";
 import { buildProgram } from "../src/cli.js";
 import { EDIT_TOOLS } from "../src/family/commands/check.js";
 import { FIX_SKILL } from "../src/family/commands/status.js";
+import { supportedExtensions } from "../src/meta/extractors/index.js";
 
 const ROOT = resolve(import.meta.dirname, "..");
+const LAUNCHER = "${CLAUDE_PLUGIN_ROOT}/hooks/manni.mjs";
+const PAGE_METADATA = "${CLAUDE_PLUGIN_ROOT}/hooks/page-metadata.mjs";
 
 function readJson(path: string): unknown {
   return JSON.parse(readFileSync(join(ROOT, path), "utf8"));
@@ -25,6 +29,13 @@ interface HookFile {
 
 /** The manni command a hook runs: the launcher's arguments after its path. */
 const manniArgs = (hook: Hook): string => (hook.args ?? []).slice(1).join(" ");
+
+/** Each group of `event` with its hooks narrowed to those running `script`. */
+function groupsRunning(file: HookFile, event: string, script: string): { matcher?: string; hooks: Hook[] }[] {
+  return (file.hooks[event] ?? [])
+    .map((g) => ({ ...g, hooks: g.hooks.filter((h) => h.args?.[0] === script) }))
+    .filter((g) => g.hooks.length > 0);
+}
 
 /** The hooks registered for `event` whose manni command is `command`, with their group's matcher. */
 function hooksFor(file: HookFile, event: string, command: string): (Hook & { matcher?: string })[] {
@@ -62,7 +73,7 @@ describe("manni plugin", () => {
   // EDIT_TOOLS: one list, kept in two places.
   it("the PostToolUse matcher names exactly the tools manni check answers", () => {
     const hooks = JSON.parse(readFileSync(join(pluginDir, "hooks/hooks.json"), "utf8")) as HookFile;
-    const matchers = (hooks.hooks.PostToolUse ?? []).map((h) => h.matcher ?? "");
+    const matchers = groupsRunning(hooks, "PostToolUse", LAUNCHER).map((h) => h.matcher ?? "");
     expect(matchers.length).toBeGreaterThan(0);
     for (const matcher of matchers) {
       expect(matcher.split("|").sort()).toEqual([...EDIT_TOOLS].sort());
@@ -77,7 +88,7 @@ describe("manni plugin", () => {
     expect(more).toEqual([]);
     expect(prepare).toMatchObject({ type: "command", matcher: "startup|resume", async: true });
     // 0078's session-start hooks run first, in their order.
-    const commands = (hooks.hooks.SessionStart ?? []).flatMap((g) => g.hooks.map(manniArgs));
+    const commands = groupsRunning(hooks, "SessionStart", LAUNCHER).flatMap((g) => g.hooks.map(manniArgs));
     expect(commands).toEqual([
       "tracevals capture",
       "status",
@@ -111,7 +122,7 @@ describe("manni plugin", () => {
 
   // Exec form, so no shell parses the command on any platform, through the
   // launcher that finds the project's own manni.
-  it("every hook runs the launcher on a command the manni umbrella mounts", async () => {
+  it("every hook runs the launcher on a command the manni umbrella mounts, or the Read hook", async () => {
     const { hooks } = readJson(
       `${entry?.source.replace(/^\.\//, "") ?? ""}/hooks/hooks.json`,
     ) as HookFile;
@@ -121,10 +132,47 @@ describe("manni plugin", () => {
     expect(all.length).toBeGreaterThan(0);
     for (const hook of all) {
       expect(hook.command).toBe("node");
-      const [launcher, ...args] = hook.args ?? [];
-      expect(launcher).toBe("${CLAUDE_PLUGIN_ROOT}/hooks/manni.mjs");
+      const [script, ...args] = hook.args ?? [];
+      if (script === PAGE_METADATA) {
+        expect(args).toEqual([]);
+        continue;
+      }
+      expect(script).toBe(LAUNCHER);
       expect(await resolves(args), args.join(" ")).toBe(true);
     }
+  });
+
+  // A read of a collection page hands the agent its metadata, and a
+  // compaction forgets what the session was given.
+  it("runs the Read hook after each Read and after a compaction", async () => {
+    const hooks = JSON.parse(readFileSync(join(pluginDir, "hooks/hooks.json"), "utf8")) as HookFile;
+    const post = groupsRunning(hooks, "PostToolUse", PAGE_METADATA);
+    expect(post.map((g) => g.matcher)).toEqual(["Read"]);
+    expect(post[0]?.hooks).toEqual([{ type: "command", command: "node", args: [PAGE_METADATA], timeout: 30 }]);
+    const start = groupsRunning(hooks, "SessionStart", PAGE_METADATA);
+    expect(start.map((g) => g.matcher)).toEqual(["compact"]);
+    const script = join(pluginDir, "hooks/page-metadata.mjs");
+    expect(existsSync(script)).toBe(true);
+    const { EXTENSIONS } = (await import(pathToFileURL(script).href)) as { EXTENSIONS: string[] };
+    const norm = (list: readonly string[]) => [...new Set(list.map((e) => e.toLowerCase()))].sort();
+    expect(norm(EXTENSIONS)).toEqual(norm(supportedExtensions()));
+  });
+
+  // The graph server reads the project and keeps a published graph in the
+  // plugin's data directory, so both variables reach it.
+  it("registers the graph MCP server, run by node from the plugin's hooks", () => {
+    const { mcpServers } = JSON.parse(readFileSync(join(pluginDir, ".mcp.json"), "utf8")) as {
+      mcpServers: Record<string, { command: string; args: string[]; env: Record<string, string> }>;
+    };
+    expect(Object.keys(mcpServers)).toEqual(["graph"]);
+    const graph = mcpServers.graph;
+    expect(graph?.command).toBe("node");
+    expect(graph?.args).toEqual(["${CLAUDE_PLUGIN_ROOT}/hooks/graph-server.mjs"]);
+    expect(existsSync(join(pluginDir, "hooks/graph-server.mjs"))).toBe(true);
+    expect(graph?.env).toEqual({
+      CLAUDE_PROJECT_DIR: "${CLAUDE_PROJECT_DIR}",
+      CLAUDE_PLUGIN_DATA: "${CLAUDE_PLUGIN_DATA}",
+    });
   });
 
   // The session briefing names a skill by `<plugin>:<skill>`; both halves

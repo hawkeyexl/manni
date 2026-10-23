@@ -6,9 +6,9 @@ docs/src/content/docs/meta/set-up/index.mdx:
         integrity: sha256-1df6fe82622726ef405b596435a08f4d2aba5a51901a3b3ba1ea0ec47041fba6
       source:
         file: src/meta/cli.ts
-        lines: 889
+        lines: 900
         integrity: sha256-b900d16ea81ba54da695ee6ec4f8e9c3d17f1700d0b307ed74045692b603e056
-        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
+        commit-sha: 34ccc5573527b4549ca4da3ef37e3c0a6c988e0f
     - id: github-format-emits-annotations
       claim:
         lines: 77
