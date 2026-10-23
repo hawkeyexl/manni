@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { mkdtempSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
@@ -9,6 +9,9 @@ import { parseBody } from "../../../src/graph/core/analyze.js";
 const PAGE = "# Title\n\nSee [config](./config.md) and ![logo](./logo.png).\n\n```ts\nx\n```\n";
 
 const sha256 = (text: string): string => createHash("sha256").update(text, "utf8").digest("hex");
+
+/** The cache's entries, without the `.gitignore` it writes beside them. */
+const entries = (dir: string): string[] => readdirSync(dir).filter((name) => name.endsWith(".json"));
 
 function tempDir(): string {
   return join(mkdtempSync(join(tmpdir(), "manni-graph-analyze-cache-")), "cache");
@@ -71,7 +74,7 @@ describe("AnalyzeCache", () => {
     await parseOnce(dir, PAGE, "docs/a.md");
     await parseOnce(dir, "# Changed\n", "docs/a.md");
     await parseOnce(dir, PAGE, "docs/b.md");
-    expect(readdirSync(dir)).toHaveLength(2);
+    expect(entries(dir)).toHaveLength(2);
   });
 
   it.each([
@@ -83,7 +86,7 @@ describe("AnalyzeCache", () => {
   ])("ignores an entry that %s, and rewrites it", async (_, corrupt) => {
     const dir = tempDir();
     await parseOnce(dir, PAGE, "docs/a.md");
-    const [name] = readdirSync(dir);
+    const [name] = entries(dir);
     if (name === undefined) throw new Error("no cache entry was written");
     const file = join(dir, name);
     writeFileSync(file, corrupt(readFileSync(file, "utf8")));
@@ -98,7 +101,7 @@ describe("AnalyzeCache", () => {
   it("misses an entry an older entry format wrote, whose statement pins may differ", async () => {
     const dir = tempDir();
     const { body } = await parseOnce(dir, PAGE, "docs/a.md", "markdown", "1.0.0");
-    const [name] = readdirSync(dir);
+    const [name] = entries(dir);
     if (name === undefined) throw new Error("no cache entry was written");
     // Entry format 2 pinned a statement before every statement in its lines was cut.
     const key = sha256(JSON.stringify([2, "1.0.0", "markdown", "docs/a.md", PAGE]));
@@ -107,6 +110,20 @@ describe("AnalyzeCache", () => {
     const again = await parseOnce(dir, PAGE, "docs/a.md", "markdown", "1.0.0");
     expect(again.cache.hits).toBe(0);
     expect(again.cache.misses).toBe(1);
+  });
+
+  it("ignores itself in git when it creates its directory", async () => {
+    const dir = tempDir();
+    await parseOnce(dir, PAGE, "docs/a.md");
+    expect(readFileSync(join(dir, ".gitignore"), "utf8")).toBe("*\n");
+  });
+
+  it("adds nothing to a directory that already exists", async () => {
+    const dir = tempDir();
+    mkdirSync(dir);
+    await parseOnce(dir, PAGE, "docs/a.md");
+    expect(existsSync(join(dir, ".gitignore"))).toBe(false);
+    expect(entries(dir)).toHaveLength(1);
   });
 
   it("never fails a run when the cache directory cannot be written", async () => {

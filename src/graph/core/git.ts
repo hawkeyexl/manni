@@ -10,7 +10,7 @@
  */
 import { GraphError } from "../types.js";
 import { realExec, type ExecFn } from "@hawkeyexl/inference";
-import { posix } from "node:path";
+import { posix, resolve } from "node:path";
 import { normalizeDocPath } from "./iri.js";
 
 export interface GitFileHistory {
@@ -100,6 +100,40 @@ function clearedGitEnv(): Record<string, string | undefined> {
     if (key.startsWith("GIT_")) cleared[key] = undefined;
   }
   return cleared;
+}
+
+/** HEAD, the work tree's root, and each path `git status` lists. */
+export interface CheckoutStatus {
+  head: string;
+  /** Absolute, spelled from `cwd`. */
+  root: string;
+  /** Relative to `root`, untracked files included. */
+  paths: string[];
+}
+
+/** The checkout `cwd` sits in, or `null` outside git or before the first commit. */
+export async function checkoutStatus(cwd: string, exec: ExecFn = realExec): Promise<CheckoutStatus | null> {
+  const git = async (args: string[]): Promise<string | null> => {
+    const r = await exec(["git", ...args], { cwd, timeoutMs: 60000, env: clearedGitEnv() });
+    return r.spawnError !== undefined || r.timedOut || r.code !== 0 ? null : r.stdout;
+  };
+  // The root as a path up from `cwd`, not `--show-toplevel`: that one is git's spelling, which can
+  // differ from the caller's (a Windows 8.3 short name, a symlink), so paths would not compare.
+  const [up, head] = (await git(["rev-parse", "--show-cdup", "HEAD"]))?.split(/\r?\n/) ?? [];
+  if (up === undefined || head === undefined || head === "") return null;
+  const root = resolve(cwd, up);
+  const status = await git(["status", "--porcelain=v1", "-z", "--untracked-files=all"]);
+  if (status === null) return null;
+  const paths: string[] = [];
+  const entries = status.split("\0");
+  for (let i = 0; i < entries.length; i++) {
+    const entry = entries[i] ?? "";
+    if (entry.length < 4) continue;
+    // A rename names its source in the next field.
+    if (entry[0] === "R" || entry[0] === "C") i++;
+    paths.push(entry.slice(3));
+  }
+  return { head, root, paths };
 }
 
 export async function collectGitHistory(

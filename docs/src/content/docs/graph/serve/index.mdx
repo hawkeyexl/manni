@@ -6,7 +6,7 @@ id: graph-serve
 language: en
 lifecycle: published
 action: develop
-last-updated: 2026-10-21
+last-updated: 2026-10-23
 ---
 
 An agent that answers from your docs, or edits them, reads passages.
@@ -60,7 +60,7 @@ calls:
 
 ```console
 $ manni graph serve
-manni: serving lookup, retrieve, traverse and impact over stdio from .manni/graph/chunks.json.
+manni: serving lookup, retrieve, traverse and impact over stdio from graph/chunks.json.
 ```
 
 The server opens the artifact once, at start. Restart it after a rebuild, so
@@ -145,5 +145,5 @@ Each of these exits 2 before anything is served, with one line on stderr.
 | Message | Fix |
 |---|---|
 | `manni: graph serve needs the optional @modelcontextprotocol/sdk package; run npm install @modelcontextprotocol/sdk.` | Install the SDK. |
-| `manni: .manni/graph/chunks.json does not exist; run manni graph publish.` | Build the artifact, as above. |
-| `manni: .manni/graph/chunks.json was built from another graph; run manni graph publish.` | Export the chunks again from the graph you built. |
+| `manni: graph/chunks.json does not exist; run manni graph publish.` | Build the artifact, as above. |
+| `manni: graph/chunks.json was built from another graph; run manni graph publish.` | Export the chunks again from the graph you built. |
