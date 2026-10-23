@@ -112,10 +112,14 @@ function annotation(r: GetFileResult, field: string): string {
  * another did not is still printed, `(unset)` included: the flag hides files,
  * never values, so `--quiet` can never be the reason a value the user asked
  * for went missing.
+ *
+ * Without `fields` (`--all-fields`), each file prints its own: the keys of
+ * `resolved` where the run derived, of `values` where it did not. A file with
+ * none is then what `quiet` hides.
  */
 export function renderGet(
   results: GetFileResult[],
-  fields: string[],
+  fieldList?: readonly string[],
   opts: GetReportOptions = {},
 ): string {
   const c = palette(opts.color ?? false);
@@ -134,6 +138,7 @@ export function renderGet(
     // what the document stores where it did not. `--quiet` reads the same
     // record, so it hides a file only when nothing at all answered for it.
     const effective = r.resolved ?? r.values;
+    const fields = fieldList ?? Object.keys(effective);
     if (opts.quiet && fields.every((f) => effective[f] === undefined)) continue;
     for (const f of fields) {
       const note = annotation(r, f);

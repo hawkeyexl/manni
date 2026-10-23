@@ -44,6 +44,7 @@ import {
 import { readerManifests, readerPlace, stampManifests } from "../core/derive/provenance-place.js";
 import {
   DERIVE_SOURCES,
+  derivableFields as derivableFieldList,
   isBuiltinField,
   PROVENANCE_FIELD,
   STAMPED_DATE_FIELDS,
@@ -58,7 +59,14 @@ import { STDIN_REQUIRES_AS } from "../../shared/cli-options.js";
 import { readStatements, statementView, type StatementView } from "../core/statements.js";
 
 export interface GetOptions {
+  /** The fields to print. Empty under `allFields`, which picks them per file. */
   fields: string[];
+  /**
+   * `--all-fields`: every field each file stores, in the page or a sidecar,
+   * in that order, then every field a derive source supplies for it. Under
+   * `derived: false`, stored fields only. Refused beside a non-empty `fields`.
+   */
+  allFields?: boolean;
   inputs: string[];
   as?: string;
   exclude?: string[];
@@ -122,6 +130,12 @@ export interface GetOptions {
 export interface GetFileResult {
   file: string;
   present: boolean;
+  /**
+   * The configured collections this file belongs to, in declaration order.
+   * Empty for a path outside every collection, and for stdin.
+   */
+  collections: string[];
+  /** The value per requested field. Under `allFields`, every field the file stores. */
   values: Record<string, unknown>;
   /**
    * The evidence per requested field. A derivable field is always a key
@@ -180,7 +194,11 @@ export interface GetFileResult {
 
 export async function runGet(opts: GetOptions): Promise<GetFileResult[]> {
   const cwd = opts.cwd ?? process.cwd();
-  if (opts.fields.length === 0) {
+  const allFields = opts.allFields === true;
+  if (allFields && opts.fields.length > 0) {
+    throw new DocmetaError("--all-fields prints every field, so it cannot be combined with --fields.");
+  }
+  if (!allFields && opts.fields.length === 0) {
     throw new DocmetaError("Specify at least one field to get.");
   }
 
@@ -270,12 +288,17 @@ export async function runGet(opts: GetOptions): Promise<GetFileResult[]> {
   const commands: Readonly<Record<string, DeriveCommand>> = commandsOf(config?.derive) ?? {};
   // Derivation is on unless the user said `--no-derived` (proposal 0043).
   const deriving = opts.derived !== false;
-  const derivableFields: DerivableField[] = deriving
-    ? opts.fields.filter((f) => isBuiltinField(f) || Object.hasOwn(commands, f))
-    : [];
+  // `--all-fields` derives every field a source can state, as naming them would.
+  const derivableFields: DerivableField[] = !deriving
+    ? []
+    : allFields
+      ? derivableFieldList(commands)
+      : opts.fields.filter((f) => isBuiltinField(f) || Object.hasOwn(commands, f));
   const deriveInputs: DeriveInput[] = [];
+  /** Each parsed file's own field list, by label: `opts.fields`, unless `--all-fields`. */
+  const fieldsOf = new Map<string, readonly string[]>();
   // The manifests that hold a page's `provenance` record (0046), for evidence rule 2.
-  const wantsProvenance = opts.fields.includes(PROVENANCE_FIELD);
+  const wantsProvenance = allFields || opts.fields.includes(PROVENANCE_FIELD);
   const provenanceManifests = deriving && derivableFields.includes(PROVENANCE_FIELD)
     ? readerManifests(declaredCollections, configDir ?? cwd, base)
     : [];
@@ -309,6 +332,8 @@ export async function runGet(opts: GetOptions): Promise<GetFileResult[]> {
       );
     }
     const members = membersFor(label);
+    // Every configured collection, not only the ones `--collection` selected.
+    const inCollections = memberOf(declaredCollections, configDir ?? cwd, base, label);
     let extracted;
     try {
       const own = extractor.extract(content, label, {
@@ -356,21 +381,27 @@ export async function runGet(opts: GetOptions): Promise<GetFileResult[]> {
       // so the reason is narrowed rather than cast: `(err as Error).message`
       // would record `undefined` and lose the reason entirely.
       const reason = err instanceof Error ? err.message : String(err);
-      out.push({ file: label, present: false, values: {}, error: reason });
+      out.push({ file: label, present: false, collections: inCollections, values: {}, error: reason });
       return;
     }
+    // Under `--all-fields`, the merged data's own key order is the page's,
+    // then each sidecar's; the fields only a source can state follow.
+    const stored = allFields ? Object.keys(extracted.data) : opts.fields;
+    const fields = allFields
+      ? [...stored, ...derivableFields.filter((f) => !Object.hasOwn(extracted.data, f))]
+      : opts.fields;
+    fieldsOf.set(label, fields);
     const values: Record<string, unknown> = {};
     const carries: Record<string, boolean> = {};
-    for (const f of opts.fields) {
-      values[f] = resolveField(extracted.data, f);
-      carries[f] = carriesField(extracted.data, f);
-    }
+    for (const f of stored) values[f] = resolveField(extracted.data, f);
+    for (const f of fields) carries[f] = carriesField(extracted.data, f);
     carried.set(label, carries);
-    const bodyLine = bodyLines.get(label);
+    const bodyLine = fields.includes(PROVENANCE_FIELD) ? bodyLines.get(label) : undefined;
     const statements = readStatements(content, extractor.name).statements.map(statementView);
     out.push({
       file: label,
       present: extracted.present,
+      collections: inCollections,
       values,
       ...(bodyLine !== undefined ? { provenance: { bodyLine } } : {}),
       ...(statements.length > 0 ? { statements } : {}),
@@ -393,7 +424,8 @@ export async function runGet(opts: GetOptions): Promise<GetFileResult[]> {
 
   if (deriving) {
     await attachResolved(out, deriveInputs, {
-      fields: opts.fields,
+      fieldsOf: (file) => fieldsOf.get(file) ?? opts.fields,
+      allFields,
       derivable: derivableFields,
       carried,
       run: {
@@ -430,8 +462,13 @@ async function attachResolved(
   out: GetFileResult[],
   inputs: readonly DeriveInput[],
   opts: {
-    /** Every requested field, in the order the user named them. */
-    fields: readonly string[];
+    /** Each file's requested fields, in the order the user named them. */
+    fieldsOf: (file: string) => readonly string[];
+    /**
+     * `--all-fields`: a field neither side answered is left out of
+     * `resolved`, since only a stored or supplied field is printed.
+     */
+    allFields: boolean;
     /** The subset a source can state; only these are derived. */
     derivable: readonly DerivableField[];
     /** Which requested fields each parsed file carries, by label. */
@@ -485,7 +522,7 @@ async function attachResolved(
     const carries = opts.carried.get(r.file) ?? {};
     const resolved: Record<string, unknown> = {};
     const origin: Record<string, "asserted" | "derived"> = {};
-    for (const field of opts.fields) {
+    for (const field of opts.fieldsOf(r.file)) {
       const evidence = derived[field];
       if (carries[field] === true) {
         resolved[field] = r.values[field];
@@ -493,13 +530,16 @@ async function attachResolved(
       } else if (evidence != null) {
         resolved[field] = evidence.value;
         origin[field] = "derived";
-      } else {
+      } else if (!opts.allFields) {
         // Neither side has it. Shaped like `values`, which also carries the
         // key with `undefined` rather than dropping it, so a caller iterating
         // the requested fields sees the same key set on both records.
         resolved[field] = undefined;
       }
     }
+    // `--all-fields` asked for `provenance` only as a field a source might
+    // supply; when none did, its record has nothing to describe.
+    if (opts.allFields && !Object.hasOwn(resolved, PROVENANCE_FIELD)) delete r.provenance;
     // Only when a requested field is derivable. With none there is no
     // evidence to report, and `{}` would read as "derived, and nothing
     // answered".

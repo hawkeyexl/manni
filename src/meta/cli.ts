@@ -213,8 +213,17 @@ export function resolveGetInputs(
   pathsArg: string[],
   fieldsOption: unknown,
   cwd: string,
+  allFields = false,
 ): { fields: string[]; paths: string[] } {
   const flag = typeof fieldsOption === "string" ? fieldsOption : undefined;
+
+  // `--all-fields` picks the fields per file, so every positional is a path.
+  if (allFields) {
+    if (flag !== undefined) {
+      throw new DocmetaError("--all-fields prints every field, so it cannot be combined with --fields.");
+    }
+    return { fields: [], paths: fieldsArg === undefined ? pathsArg : [fieldsArg, ...pathsArg] };
+  }
 
   if (
     flag === undefined &&
@@ -222,7 +231,7 @@ export function resolveGetInputs(
     looksLikePath(fieldsArg, cwd, pathsArg.length === 0)
   ) {
     throw new DocmetaError(
-      `"${fieldsArg}" looks like a path, not a field list. Pass fields first (manni meta get title ${fieldsArg}) or use --fields.`,
+      `"${fieldsArg}" looks like a path, not a field list. Pass fields first (manni meta get title ${fieldsArg}), use --fields, or use --all-fields.`,
     );
   }
 
@@ -235,7 +244,7 @@ export function resolveGetInputs(
   const fields = source === undefined ? [] : splitList(source);
   if (fields.length === 0) {
     throw new DocmetaError(
-      "Specify at least one field to get. Pass fields first (manni meta get title docs/a.md) or use --fields.",
+      "Specify at least one field to get. Pass fields first (manni meta get title docs/a.md), use --fields, or use --all-fields.",
     );
   }
 
@@ -562,6 +571,8 @@ interface ValidateCliOptions extends RunCliOptions {
 interface GetCliOptions extends RunCliOptions {
   /** `--fields <list>`; when present, every positional is a path. */
   fields?: string;
+  /** `--all-fields`; every positional is then a path. */
+  allFields?: boolean;
   /**
    * `--no-derived` / `--derived`. Both spellings are registered, which is
    * why this is `boolean | undefined` rather than commander's usual `true`
@@ -932,6 +943,10 @@ export function buildProgram(): Command {
       "comma-separated metadata fields to print; every positional is then a path",
     )
     .option(
+      "--all-fields",
+      "print every field each file stores, plus each one a derive source supplies; every positional is then a path",
+    )
+    .option(
       "--no-derived",
       "print only what the document stores, consulting no source",
     )
@@ -974,6 +989,7 @@ export function buildProgram(): Command {
         "Examples:",
         "  manni meta get title,type docs/intro.md",
         "  manni meta get --fields title,type docs/intro.md",
+        "  manni meta get --all-fields docs/intro.md",
         "  manni meta get author.name,/author/email docs/intro.md",
         '  manni meta get type "**/*.md" -f json',
         "  manni meta get owner docs/intro.md --no-derived",
@@ -994,6 +1010,7 @@ export function buildProgram(): Command {
             pathsArg,
             options.fields,
             process.cwd(),
+            options.allFields === true,
           );
           const exts: string[] | undefined = options.ext
             ? splitList(options.ext)
@@ -1004,6 +1021,7 @@ export function buildProgram(): Command {
 
           const results = await runGet({
             fields,
+            allFields: options.allFields === true,
             derived: options.derived !== false,
             cache: options.cache,
             inputs: paths,
@@ -1026,7 +1044,7 @@ export function buildProgram(): Command {
               process.stdout.write(`${JSON.stringify(results, null, 2)}\n`);
               break;
             case "pretty": {
-              const text = renderGet(results, fields, {
+              const text = renderGet(results, options.allFields === true ? undefined : fields, {
                 color: resolveColor(command.parent ?? command),
                 quiet: Boolean(options.quiet),
               });
