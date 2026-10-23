@@ -90,6 +90,12 @@
 # `manni:meta/statement-*` rules on purpose, and they lack the front matter
 # the default set asks for.
 #
+# `test/fixtures/plugin-read/` (0103) joins them. It carries its own
+# `manni.config.yaml`, and its pages exist so the plugin's Read hook has a
+# collection page with a sidecar and a page outside every collection. They
+# carry a title and nothing else, because nothing there is about the default
+# schema set.
+#
 # `test/fixtures/get-parse-error/` is deliberately NOT excluded. Its unparseable
 # file is a real parse failure, which is exactly the explainable alert this
 # workflow exists to demonstrate — the same standing as `dd/malformed-yaml.md`.
@@ -166,7 +172,7 @@ jobs:
             --exclude "test/fixtures/term/**" \
             --exclude "test/fixtures/guidance/**" \
             --exclude "test/fixtures/verification/**" \
-            --exclude "test/fixtures/statements/**" \
+            --exclude "test/fixtures/statements/**"             --exclude "test/fixtures/plugin-read/**" \
             --allow-empty -f sarif > manni.sarif
           echo "results=$(jq '.runs[0].results | length' manni.sarif)" >> "$GITHUB_OUTPUT"
 
