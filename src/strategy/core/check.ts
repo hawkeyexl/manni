@@ -9,6 +9,7 @@
  * read pages that are not records: a record's own `journeys:` serves nobody.
  */
 import { closestName } from "../../shared/closest-name.js";
+import { RECORD_FIELDS } from "../../shared/reference-fields.js";
 import {
   PAGE_FIELDS,
   PARENTS,
@@ -27,12 +28,7 @@ import { guidanceFor, resolveSeverity, ruleId } from "./severity.js";
 const fold = (value: string): string => value.toLowerCase();
 
 /** The type each page field names. */
-const FIELD_TYPES: Readonly<Record<ReferenceField, RecordType>> = {
-  audiences: "audience",
-  personas: "persona",
-  journeys: "journey",
-  audience: "audience",
-};
+const FIELD_TYPES: Readonly<Record<ReferenceField, RecordType>> = RECORD_FIELDS;
 
 /** The type of a child's parents: an audience for a persona, a persona for a journey. */
 const parentTypeOf = (type: ChildType): RecordType => FIELD_TYPES[PARENTS[type]];

@@ -9,7 +9,7 @@
  * quietly lost a record would report the pages naming it as broken.
  */
 import { readFile } from "node:fs/promises";
-import { basename, extname, resolve } from "node:path";
+import { extname, resolve } from "node:path";
 import {
   STDIN_LABEL,
   STDIN_TOKEN,
@@ -25,13 +25,12 @@ import {
 import type { ExtractedMetadata } from "../../meta/index.js";
 import { STDIN_REQUIRES_AS } from "../../shared/cli-options.js";
 import { errorMessage } from "../../shared/errors.js";
+import { readRecord } from "../../shared/reference-fields.js";
 import { StrategyError } from "../errors.js";
 import {
   PAGE_FIELDS,
   PARENTS,
-  RECORD_TYPES,
   type At,
-  type RecordType,
   type StrategyRecord,
   type StrategyReference,
   type StrategyRun,
@@ -58,10 +57,6 @@ export interface LoadStrategySetOptions {
 interface Extracted {
   label: string;
   extracted: ExtractedMetadata;
-}
-
-function isRecordType(value: unknown): value is RecordType {
-  return typeof value === "string" && (RECORD_TYPES as readonly string[]).includes(value);
 }
 
 function text(value: unknown): string | undefined {
@@ -146,11 +141,6 @@ function valuesOf(data: Record<string, unknown>, field: string): { value: string
   );
 }
 
-function stem(label: string): string {
-  const name = basename(label);
-  return name.slice(0, name.length - extname(name).length);
-}
-
 export async function loadStrategySet(opts: LoadStrategySetOptions): Promise<StrategySet> {
   const { run } = opts;
   const allowEmpty = opts.allowEmpty ?? run.config?.allowEmpty === true;
@@ -169,17 +159,18 @@ export async function loadStrategySet(opts: LoadStrategySetOptions): Promise<Str
     const merged = await view.merge(label, extracted);
     const data = merged.extracted.data;
     const at = (pointer: string): At => declaredAt(label, pointer, { extracted: merged.extracted, locate: merged.locate });
-    const type = data["type"];
-    const isRecord = isRecordType(type);
+    const declares = readRecord(data, label);
+    const type = declares?.type;
+    const isRecord = declares !== undefined;
 
-    if (isRecord) {
+    if (declares !== undefined) {
       const declaredId = text(data["id"]);
       const title = text(data["title"]);
       const description = text(data["description"]);
       const lifecycle = text(data["lifecycle"]);
       const record: StrategyRecord = {
-        id: declaredId ?? stem(label),
-        type,
+        id: declares.id,
+        type: declares.type,
         ...(title === undefined ? {} : { title }),
         ...(description === undefined ? {} : { description }),
         ...(lifecycle === undefined ? {} : { lifecycle }),
@@ -187,13 +178,15 @@ export async function loadStrategySet(opts: LoadStrategySetOptions): Promise<Str
         line: 1,
         ...(declaredId === undefined ? {} : { idAt: at("/id") }),
         parents:
-          type === "audience" ? [] : valuesOf(data, PARENTS[type]).map(({ value, pointer }) => ({ value, ...at(pointer) })),
+          declares.type === "audience"
+            ? []
+            : valuesOf(data, PARENTS[declares.type]).map(({ value, pointer }) => ({ value, ...at(pointer) })),
       };
       set.records.push(record);
     }
 
     // A journey's `personas:` is its parent field, read above, so it is not a reference too.
-    const parentField = isRecord && type !== "audience" ? PARENTS[type] : undefined;
+    const parentField = type !== undefined && type !== "audience" ? PARENTS[type] : undefined;
     for (const field of Object.values(PAGE_FIELDS)) {
       if (field === parentField) continue;
       for (const { value, pointer } of valuesOf(data, field)) {

@@ -325,9 +325,9 @@ docs/src/content/docs/term/reference/terminology.mdx:
         integrity: sha256-41b76e60b60d0b3b47ba9e1388d6c8c979c9f7933f5aa37bcf0dbdbb07563f00
       source:
         file: src/shared/reference-fields.ts
-        lines: 18
+        lines: 19
         integrity: sha256-9426cc108ed63a136774fc49c6bca56ed49730bd99a696a4ccf699b2c2b85301
-        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
+        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
     - id: see-not-empty-finding
       claim:
         integrity: sha256-41b76e60b60d0b3b47ba9e1388d6c8c979c9f7933f5aa37bcf0dbdbb07563f00

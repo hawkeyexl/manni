@@ -5,9 +5,9 @@ docs/src/content/docs/strategy/index.mdx:
         integrity: sha256-e9be290b992f41cd004c3c40ee061bc8538918a8c3a03d55f8ec1a70dadb020a
       source:
         file: src/strategy/core/check.ts
-        lines: 164
+        lines: 160
         integrity: sha256-16be0db3d681b9cad38fb35c7a33270a72b11c8f3ab3c0b8147cbf5a10d34d3a
-        commit-sha: 544bb2afeed952d29440ecbcf3628ee4d33eee54
+        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
     - id: check-exits-one-on-error
       claim:
         integrity: sha256-fce8148bb8f4ec940417c6f0f7f133cc8a879db1d4179bde9f338f2e4bbfced3

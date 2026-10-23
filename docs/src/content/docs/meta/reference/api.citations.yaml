@@ -243,7 +243,7 @@ docs/src/content/docs/meta/reference/api.mdx:
     - id: api-command-core-exports
       claim:
         lines: 35-65
-        integrity: sha256-649db6ba393573883c4d15675335cbb72ecf4fcb4597b34a62cba54cdc5b46cd
+        integrity: sha256-4d2600a438ab3b0ba33c8c4492baea8c4018dd4150a36d30c776462e76c47e23
       source:
         file: src/meta/index.ts
         lines: 2-34

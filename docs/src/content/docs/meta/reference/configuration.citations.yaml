@@ -849,9 +849,9 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         integrity: sha256-b05cb3bf654ae6b277ec9280f724d2077b98cee9b7e446ab2ef496aeb1454aae
       source:
         file: src/meta/commands/get.ts
-        lines: 342-345
+        lines: 364-367
         integrity: sha256-c34a2e8e3d3ae1328aaddc3a9d93dbfa81ab3c6365ed85479597a8c8e2da1f51
-        commit-sha: 0d3d8a74bd17fce503520bb2313a412ca60aeeca
+        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
     - id: query-rows-hold-the-merged-values
       claim:
         lines: 890
@@ -1839,9 +1839,9 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         integrity: sha256-600b5511415007b5e2e1eff81775df428122e592af95d5dd3dbf06caa6e7b387
       source:
         file: src/meta/commands/get.ts
-        lines: 540-553
+        lines: 619-632
         integrity: sha256-e1f6a4dec74ab12228b3458544b495e4193b96396d795c49dcc4f5d65a90e1f3
-        commit-sha: 0d3d8a74bd17fce503520bb2313a412ca60aeeca
+        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
     - id: derive-fields-rules
       claim:
         lines: 2166

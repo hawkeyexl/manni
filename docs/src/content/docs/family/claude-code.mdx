@@ -126,6 +126,13 @@ Before you finish, manni check runs on every file you changed. You get one repai
 The manni:fix skill says how to repair each finding.
 ```
 
+Where the strategy domain is in play, the briefing gains one line before the
+last:
+
+```text
+Pages name their readers and jobs in audiences:, personas: and journeys:. Write each page for the ones it names; manni strategy list prints every record.
+```
+
 You see the same table when you run `manni status` yourself, so you and the
 agent read one answer. Yours also has a line under each domain that is not in
 play, naming what would set it up. That choice is yours, so the agent never
@@ -208,6 +215,36 @@ again. Encrypted values arrive as their stored ciphertext.
 
 A file outside every collection gets nothing. Neither does a file manni cannot
 read, and reading source code starts no manni process.
+
+### A page that names its readers
+
+A page can name strategy records in `audiences:`, `personas:` and `journeys:`,
+and a persona names its audience in `audience:`. When one of those values names
+a record that exists, the reply names the record too. Each record gets one line
+with its type, its id and its file. The record's content stays in its file, one
+read away.
+
+```text
+Metadata for docs/limits.md, from the page and its sidecars:
+{"title":"Limits","description":"What the service accepts.","personas":["devin"],"owner":["@docs-team"],"eval-suite":"reference"}
+The page names these records. Read a record's file for its details, or run manni strategy get <id>, which also lists the pages that name it:
+persona devin docs/content-strategy/personas/devin.md
+```
+
+On such a page the key fields come first. Those are the fields of `manni:core`
+and `manni:lifecycle`, plus the four record fields. The reply also stays under
+Claude Code's limit of 10,000 characters. When the page stores more, the reply
+leaves out whole fields, largest first. It never leaves out a key field or a
+reference, and it never cuts a value. Its last line then names each field it
+left out, and the command that prints them.
+
+```text
+This leaves out citations and provenance to stay under Claude Code's limit of 10,000 characters. manni meta get citations,provenance --no-derived docs/limits.md prints them.
+```
+
+A page that names no record gets every field in page order, as in the first
+example. Past 10,000 characters, Claude Code saves that reply to a file and
+gives the model a preview.
 
 ## What happens after an edit
 

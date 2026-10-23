@@ -617,6 +617,40 @@ the statement sits in or describes, and is empty before the first heading. `stat
 `changed` or `unpinned`, and `pin` is absent when there is none. `data` is
 `null` when the payload is not one JSON object.
 
+A requested `audiences`, `personas`, `journeys` or `audience` value can name a
+[strategy record](/manni/strategy/). Each record it names prints on a line of
+its own, after the field and statement lines, as `<file>: record <type> <id>
+<record file>`.
+
+```console
+$ manni meta get personas docs/src/content/docs/cite/ci/stale-windows.mdx
+docs/src/content/docs/cite/ci/stale-windows.mdx: personas=["devin","maya"] (asserted)
+docs/src/content/docs/cite/ci/stale-windows.mdx: record persona devin docs/content-strategy/personas/devin.md
+docs/src/content/docs/cite/ci/stale-windows.mdx: record persona maya docs/content-strategy/personas/maya.md
+```
+
+A record is a member of a declared collection whose own `type:` is
+`audience`, `persona` or `journey`. A value names it when it equals the
+record's `id:`, ignoring case. A record with no `id:` is named by its file
+name without the extension. `audiences` and `audience` name audiences,
+`personas` names personas and `journeys` names journeys.
+
+In `json`, such a file's object gains a `records` list, in the page's field
+order, with each record once:
+
+```json
+"records": [
+  { "type": "persona", "id": "devin", "file": "docs/content-strategy/personas/devin.md" },
+  { "type": "persona", "id": "maya", "file": "docs/content-strategy/personas/maya.md" }
+]
+```
+
+`file` is relative to the directory the entry's own `file` is relative to. An
+entry holds none of the record's content. A value that names no record
+is left out, and `manni strategy check` reports it. When nothing is named,
+there is no `records` key and no `record` line, so the output is the same as
+for any other field.
+
 ### Examples
 
 ```sh

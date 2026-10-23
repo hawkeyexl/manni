@@ -7,7 +7,7 @@
 import { readFile } from "node:fs/promises";
 import { loadExternalMetadata, mergeWithMarks } from "../core/external-metadata.js";
 import { marksValidator, pageMarks } from "../core/page-marks.js";
-import { resolve, extname } from "node:path";
+import { resolve, extname, relative, sep } from "node:path";
 import { resolveElements } from "../core/resolve-schema.js";
 import { memberOf, retainMembers } from "../core/collections.js";
 import { DocmetaError } from "../types.js";
@@ -57,6 +57,15 @@ import {
 import { lazyKey } from "../core/encrypted.js";
 import { STDIN_REQUIRES_AS } from "../../shared/cli-options.js";
 import { readStatements, statementView, type StatementView } from "../core/statements.js";
+import type { CollectionConfig } from "../../shared/collections.js";
+import {
+  isRecordField,
+  readRecord,
+  RECORD_FIELDS,
+  sameRecordId,
+  type RecordField,
+} from "../../shared/reference-fields.js";
+import { readMembers } from "./fill-hints.js";
 
 export interface GetOptions {
   /** The fields to print. Empty under `allFields`, which picks them per file. */
@@ -190,7 +199,20 @@ export interface GetFileResult {
    * on a file that did not parse.
    */
   statements?: StatementView[];
+  /**
+   * The strategy records (proposal 0102) the requested `audiences`,
+   * `personas`, `journeys` and `audience` values name, in the page's field
+   * order, each once. A record is a member of a declared collection whose own
+   * `type:` is the field's record type, and whose `id:`, else file stem,
+   * equals the value ignoring case. `file` is relative to the directory the
+   * entry's own `file` is. Absent when nothing is named, and on a file that
+   * did not parse.
+   */
+  records?: { type: string; id: string; file: string }[];
 }
+
+/** A reference to one strategy record: what it is and where it lives, none of its content. */
+type RecordReference = NonNullable<GetFileResult["records"]>[number];
 
 export async function runGet(opts: GetOptions): Promise<GetFileResult[]> {
   const cwd = opts.cwd ?? process.cwd();
@@ -440,7 +462,64 @@ export async function runGet(opts: GetOptions): Promise<GetFileResult[]> {
     });
   }
 
+  await attachRecords(out, (r) => (allFields ? Object.keys(r.values) : opts.fields), {
+    collections: declaredCollections,
+    configDir: configDir ?? cwd,
+    base,
+    respectGitignore: opts.respectGitignore ?? config?.respectGitignore ?? true,
+  });
+
   return out;
+}
+
+/** The string values a field holds: one string, or the strings of a list. */
+function namesIn(value: unknown): string[] {
+  if (typeof value === "string") return [value];
+  return Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : [];
+}
+
+/**
+ * `records` on each parsed file whose requested record fields name a record.
+ * The collections are walked once, and only when some file holds a value in a
+ * requested record field, so `get title` never walks.
+ */
+async function attachRecords(
+  out: GetFileResult[],
+  fieldsOf: (r: GetFileResult) => readonly string[],
+  opts: { collections: readonly CollectionConfig[]; configDir: string; base: string; respectGitignore: boolean },
+): Promise<void> {
+  const named = new Map<GetFileResult, { field: RecordField; value: string }[]>();
+  for (const r of out) {
+    if (r.error !== undefined) continue;
+    const values = fieldsOf(r)
+      .filter(isRecordField)
+      .flatMap((field) => namesIn(r.values[field]).map((value) => ({ field, value })));
+    if (values.length > 0) named.set(r, values);
+  }
+  if (named.size === 0 || opts.collections.length === 0) return;
+
+  const records: RecordReference[] = [];
+  const seen = new Set<string>();
+  for (const collection of opts.collections) {
+    for (const { path, id, type } of await readMembers(collection, opts)) {
+      if (seen.has(path)) continue;
+      seen.add(path);
+      const record = readRecord({ id, type }, path);
+      if (record !== undefined) records.push({ ...record, file: relative(opts.base, path).split(sep).join("/") });
+    }
+  }
+
+  for (const [r, values] of named) {
+    const found: RecordReference[] = [];
+    for (const { field, value } of values) {
+      for (const record of records) {
+        if (record.type === RECORD_FIELDS[field] && sameRecordId(record.id, value) && !found.includes(record)) {
+          found.push(record);
+        }
+      }
+    }
+    if (found.length > 0) r.records = found.map((record) => ({ ...record }));
+  }
 }
 
 /**

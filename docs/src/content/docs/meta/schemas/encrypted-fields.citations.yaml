@@ -113,9 +113,9 @@ docs/src/content/docs/meta/schemas/encrypted-fields.mdx:
         integrity: sha256-01182f60c58cc3372d664f673964b422969595a876eb743a8bebd502cd67fd86
       source:
         file: src/meta/commands/get.ts
-        lines: 380-397
+        lines: 402-419
         integrity: sha256-1408c55095713c1afa0eece7f552e2f67d328dedbfe3ef3f526b53f283ad710b
-        commit-sha: 0d3d8a74bd17fce503520bb2313a412ca60aeeca
+        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
     - id: ciphertext-is-tilde-plus-82-chars
       claim:
         integrity: sha256-e8ae5d4ddb21d0e2004225929e2d9c5863d0e52bcc05bb9e2a307f06e0f89207
