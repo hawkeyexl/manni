@@ -4,7 +4,8 @@
  * retrieval fixture, mock vectors, no network.
  *
  * Every tool answers through the same command core as its CLI twin, so each
- * result is compared with what the CLI prints for the same inputs.
+ * result is compared with what the CLI prints for the same inputs, as
+ * `fitAnswer` compacts it under the default graph.serve.maxChars.
  */
 import { spawnSync } from "node:child_process";
 import { appendFileSync, copyFileSync, existsSync, mkdtempSync, readdirSync, readFileSync } from "node:fs";
@@ -16,6 +17,8 @@ import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js"
 import { Ajv2020 } from "ajv/dist/2020.js";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { runServe } from "../../../src/graph/commands/serve.js";
+import { fitAnswer, type ServedLookup } from "../../../src/graph/commands/serve-fit.js";
+import type { LookupResult, PassageBundle } from "../../../src/graph/runtime/retrieve.js";
 import { createMockEmbedder } from "../../../src/graph/embed/mock.js";
 import type { QueryEmbedder } from "../../../src/graph/runtime/entry.js";
 import { GraphError } from "../../../src/graph/types.js";
@@ -141,12 +144,31 @@ describe("graph serve: tools/list", () => {
   });
 });
 
+/** What the CLI prints for `args`, as serve sends it under the default cap. */
+function served(args: string[]): unknown {
+  return fitAnswer(JSON.parse(graph([...args, "-f", "json"]).stdout) as LookupResult | PassageBundle, 40000);
+}
+
+/** Every passage of a lookup, in its three sections. */
+const passagesOf = (r: ServedLookup) => [...r.matches.passages, ...r.traversal.passages, ...r.impact.passages];
+
 describe("graph serve: tools/call", () => {
-  it("lookup takes only the question and returns what graph lookup prints", async () => {
+  it("lookup takes only the question and returns what graph lookup prints, compacted", async () => {
     const result = await both(await call("lookup", { question: QUESTION }));
-    const cli = JSON.parse(graph(["lookup", QUESTION, "-f", "json"]).stdout) as unknown;
-    expect(result).toEqual(cli);
+    expect(result).toEqual(served(["lookup", QUESTION]));
     expect(result.language).toBe("en");
+    const lookup = result as unknown as ServedLookup;
+    expect(Object.keys(lookup.trace).sort()).toEqual(["entry", "filtered", "withheld"]);
+    for (const p of passagesOf(lookup)) if (p.text === null) expect(p, p.iri).not.toHaveProperty("provenance");
+    const texted = new Set(passagesOf(lookup).filter((p) => p.text !== null).map((p) => p.page));
+    expect(Object.keys(lookup.pages).sort()).toEqual([...texted].sort());
+  });
+
+  it("leaves graph lookup -f json the full result, trace and all", () => {
+    const cli = JSON.parse(graph(["lookup", QUESTION, "-f", "json"]).stdout) as LookupResult;
+    expect(cli.trace).toHaveProperty("hops");
+    expect(cli.trace).toHaveProperty("resolutions");
+    expect(cli.trace.hops.length).toBeGreaterThan(0);
   });
 
   it("retrieve, traverse and impact return what their CLI twins print", async () => {
@@ -154,21 +176,17 @@ describe("graph serve: tools/call", () => {
       await call("retrieve", { question: QUESTION, lang: "en", depth: 2, maxChars: 20000, where: { tags: ["security", "keys"] } }),
     );
     expect(retrieved).toEqual(
-      JSON.parse(
-        graph([
-          "retrieve", QUESTION, "--lang", "en", "-d", "2", "--max-chars", "20000",
-          "--where", "tags=security", "--where", "tags=keys", "-f", "json",
-        ]).stdout,
-      ),
+      served([
+        "retrieve", QUESTION, "--lang", "en", "-d", "2", "--max-chars", "20000",
+        "--where", "tags=security", "--where", "tags=keys",
+      ]),
     );
 
     const walked = await both(await call("traverse", { node: ROTATE, depth: 2, maxChars: 20000 }));
-    expect(walked).toEqual(
-      JSON.parse(graph(["traverse", ROTATE, "--context", "-d", "2", "--max-chars", "20000", "-f", "json"]).stdout),
-    );
+    expect(walked).toEqual(served(["traverse", ROTATE, "--context", "-d", "2", "--max-chars", "20000"]));
 
     const impact = await both(await call("impact", { node: ROTATE }));
-    expect(impact).toEqual(JSON.parse(graph(["traverse", ROTATE, "--impact", "--context", "-f", "json"]).stdout));
+    expect(impact).toEqual(served(["traverse", ROTATE, "--impact", "--context"]));
   });
 
   it("answers a CLI usage error with a refusal, never isError", async () => {
@@ -209,6 +227,44 @@ describe("graph serve: tools/call", () => {
       expect(r.content[0]?.text).toMatch(/^Invalid arguments for (lookup|retrieve|traverse|impact): /);
     }
   });
+});
+
+describe("graph serve: graph.serve.maxChars", () => {
+  it("reduces passages to references until the answer fits, and leaves the CLI's result whole", async () => {
+    const whole = JSON.stringify(served(["lookup", QUESTION])).length;
+    const cap = Math.floor(whole / 2);
+    const config = readFileSync(join(dir, "manni.config.yaml"), "utf8").trimEnd();
+    writeFile(dir, "small.config.yaml", `${config}
+  serve:
+    maxChars: ${String(cap)}
+`);
+    const transport = new StdioClientTransport({
+      command: process.execPath,
+      args: [cli, "graph", "serve", "-c", "small.config.yaml"],
+      cwd: dir,
+      stderr: "pipe",
+    });
+    const small = new Client({ name: "serve-test", version: "0.0.0" });
+    await small.connect(transport);
+    try {
+      const r = (await small.callTool({ name: "lookup", arguments: { question: QUESTION } })) as ToolResult;
+      toolOf.set(r, "lookup");
+      const result = (await both(r)) as unknown as ServedLookup;
+      expect(r.content[0]?.text?.length).toBeLessThanOrEqual(cap);
+      const references = passagesOf(result).filter((p) => p.text === null && p.truncated === true);
+      expect(references.length).toBeGreaterThan(0);
+      for (const p of references) expect(p, p.iri).not.toHaveProperty("provenance");
+      expect(result.impact.truncated).toBe(true);
+      const texted = new Set(passagesOf(result).filter((p) => p.text !== null).map((p) => p.page));
+      expect(Object.keys(result.pages).sort()).toEqual([...texted].sort());
+    } finally {
+      await small.close();
+    }
+
+    const full = JSON.parse(graph(["lookup", QUESTION, "-c", "small.config.yaml", "-f", "json"]).stdout) as LookupResult;
+    expect(full).toEqual(JSON.parse(graph(["lookup", QUESTION, "-f", "json"]).stdout));
+    expect(full.trace.hops.length).toBeGreaterThan(0);
+  }, 60_000);
 });
 
 describe("graph serve: the process", () => {

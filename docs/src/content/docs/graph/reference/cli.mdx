@@ -1294,6 +1294,35 @@ sets `additionalProperties: false`, and none names `withhold`.
 Each call returns its result as `structuredContent`, and again as one text
 block holding the same JSON. Each tool declares an `outputSchema` for it.
 
+### What an answer carries
+
+An answer over MCP is the CLI twin's result, made to fit an agent's context.
+A refusal goes out as it is. Every other answer is compacted first:
+
+- `trace` keeps `entry`, `withheld` and `filtered`. It leaves out `hops`,
+  `exclusions` and `resolutions`.
+- A passage whose `text` is `null` carries no `provenance`.
+- `pages` names only the pages of passages that carry text.
+
+The compact answer is then capped at `graph.serve.maxChars` characters of
+JSON, 40000 by default. While it runs longer, passages become references, one
+at a time, in this order:
+
+| Tool | Reduced first to last |
+|---|---|
+| `lookup` | `impact` passages, deepest first and later first at equal depth. Then `traversal` passages the same way. Then `impact` edges from the end, then `traversal` edges. Then `matches`, lowest-ranked first. |
+| `retrieve`, `traverse`, `impact` | `context` passages, last first. |
+
+A reference keeps `iri`, `page`, and whichever of `title`, `lines`, `rank`,
+`score.fused`, `depth` and `role` the passage has. Its `text` is `null` and
+its `truncated` is `true`. A section that loses text or an edge sets its own
+`truncated` to `true`. `pages` drops a page once no passage with text names
+it. The cap stops as soon as the answer fits, and an answer that still does
+not fit goes out as it is.
+
+`graph lookup -f json` and the other CLI twins print the full result, and so
+does the runtime's `lookup`.
+
 ### Errors over MCP
 
 | Case | What the agent gets |

@@ -105,7 +105,7 @@ outside your working tree.
 { "name": "lookup", "arguments": { "question": "How does a citation pin a claim to source lines?" } }
 ```
 
-The result holds three sections, and nothing is dropped from any of them:
+The result holds three sections:
 
 - **`matches`**: every ranked passage, with its lexical, vector and fused scores.
 - **`traversal`**: every passage reached by following links outward from the
@@ -113,8 +113,8 @@ The result holds three sections, and nothing is dropped from any of them:
 - **`impact`**: every passage that depends on the matches, with each edge.
 
 On this repository, that call returns three matches from the cite pages. One
-passage is reached outward, and 21 depend on the matches. Each passage carries
-its `provenance` record. Abridged, the first match reads:
+passage is reached outward, and 21 depend on the matches. Each passage with
+text carries its `provenance` record. Abridged, the first match reads:
 
 ```json
 {
@@ -133,10 +133,16 @@ The result arrives as `structuredContent`, and again as one text block
 holding the same JSON. [The lookup result](/manni/graph/reference/cli/#the-lookup-result)
 lists every key.
 
+The answer is compacted to fit an agent's context and capped at
+`graph.serve.maxChars`, 40000 characters by default. Past the cap, the
+lowest-priority passages come back as references with no text.
+[What an answer carries](/manni/graph/reference/cli/#what-an-answer-carries)
+gives the rules, and `graph lookup -f json` prints the full result.
+
 ## Steer when you need to
 
 Three more tools give the agent control. Each runs the same core as its CLI
-twin, so a call answers exactly as the command would.
+twin, so a call finds what the command would.
 
 | Tool | Use it to | CLI twin |
 |---|---|---|

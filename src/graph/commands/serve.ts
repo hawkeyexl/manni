@@ -9,6 +9,9 @@
  * high-level `registerTool` takes zod shapes, so the tools are served through
  * the underlying protocol server with plain JSON Schemas, validated here.
  *
+ * Each answer goes out compacted and capped at `graph.serve.maxChars`
+ * (`serve-fit.ts`); the CLI twins print the full result.
+ *
  * A CLI usage error comes back as a refusal carrying the CLI's text, never as
  * `isError`. `--withhold` tightens every call's floor, and no tool argument
  * can loosen it: no input schema names `withhold`.
@@ -32,6 +35,7 @@ import { GraphError } from "../types.js";
 import { CHUNKS_MANIFEST } from "./chunks.js";
 import { runPublish, type PublishOptions } from "./publish.js";
 import { lookupIn, openArtifact, retrieveIn, traverseIn, type Artifact, type ArtifactOptions } from "./retrieve.js";
+import { fitAnswer, type ServedAnswer } from "./serve-fit.js";
 
 export interface ServeOptions extends ArtifactOptions {
   /** Tightens the trust floor for every call. */
@@ -118,10 +122,7 @@ const REFUSAL: Schema = {
   required: ["reason", "detail"],
 };
 const PROOF: Schema = { type: "object", description: "The provenance record: pins, dates and eval verdicts." };
-const TRACE: Schema = {
-  type: "object",
-  required: ["entry", "hops", "exclusions", "resolutions", "withheld", "filtered"],
-};
+const TRACE: Schema = { type: "object", required: ["entry", "withheld", "filtered"] };
 const CITATIONS: Schema = {
   type: "array",
   items: { type: "object", properties: { iri: { type: "string" }, sourceUrl: { type: "string" } }, required: ["iri", "sourceUrl"] },
@@ -142,13 +143,14 @@ const BUNDLE: Schema = {
         properties: {
           iri: { type: "string" },
           title: { type: "string" },
-          text: { type: "string" },
+          text: NULLABLE_TEXT,
           page: { type: "string" },
           depth: { type: "integer" },
           role: { type: "string", enum: ["match", "context", "dependent"] },
+          truncated: { type: "boolean" },
           provenance: PROOF,
         },
-        required: ["iri", "text", "page", "depth", "role", "provenance"],
+        required: ["iri", "text", "page", "depth", "role"],
       },
     },
     citations: CITATIONS,
@@ -173,7 +175,7 @@ const PASSAGE = (extra: Record<string, Schema>, required: string[]): Schema => (
     provenance: PROOF,
     ...extra,
   },
-  required: ["iri", "page", "text", "truncated", "provenance", ...required],
+  required: ["iri", "page", "text", "truncated", ...required],
 });
 const EDGES: Schema = {
   type: "array",
@@ -227,9 +229,10 @@ const TOOLS = [
   {
     name: "lookup",
     description:
-      "Start here. Pass the reader's question. You get three full result sets. Every match is ranked with its scores. " +
+      "Start here. Pass the reader's question. You get three result sets. Every match is ranked with its scores. " +
       "Every passage reached by following links outward from the matches comes back, and so does every passage that depends on the matches. " +
-      "Each set has its edges, and each passage has its source and proof: pin status, dates and eval verdicts. " +
+      "Each set has its edges, and each passage with text has its source and proof: pin status, dates and eval verdicts. " +
+      "When the answer runs long, the lowest-priority passages come back as references with no text. " +
       "A refusal means nothing in the docs answers it.",
     inputSchema: input({ question: QUESTION }, "question"),
     outputSchema: LOOKUP_RESULT,
@@ -587,9 +590,10 @@ export async function runServe(opts: ServeOptions, seams: ServeSeams = {}): Prom
         : `${where} ${first?.message ?? "is invalid"}`;
       return fault(`Invalid arguments for ${name}: ${why}.`);
     }
-    const work = (async (): Promise<string | LookupResult | PassageBundle> => {
+    const work = (async (): Promise<string | ServedAnswer> => {
       const held = await current();
-      return typeof held === "string" ? held : answer(held, name as ToolName, args, opts.withhold);
+      if (typeof held === "string") return held;
+      return fitAnswer(await answer(held, name as ToolName, args, opts.withhold), held.config.serve.maxChars);
     })();
     pending.add(work);
     try {

@@ -395,6 +395,17 @@
           "items": { "enum": ["drifted", "failing"] }
         }
       }
+    },
+    "serve": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "maxChars": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "The most characters one answer graph serve sends over MCP may take. Default 40000."
+        }
+      }
     }
   }
 }

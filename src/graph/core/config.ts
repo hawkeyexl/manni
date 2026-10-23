@@ -287,6 +287,11 @@ export interface GraphConfig {
     maxChars: number;
     withhold: WithholdReason[];
   };
+  /**
+   * What `graph serve` sends over MCP. `maxChars` caps one answer, its JSON
+   * as characters: past it, passages go out as references, then edges go.
+   */
+  serve: { maxChars: number };
   /** Absolute path of the loaded config file. */
   configPath: string;
   /** Directory containing the config file; relative paths resolve against it. */
@@ -430,6 +435,7 @@ interface RawGraphConfig {
     llms?: { title?: string; summary?: string; origin?: string };
   };
   retrieve?: { seeds?: number; depth?: number; maxChars?: number; withhold?: WithholdReason[] };
+  serve?: { maxChars?: number };
 }
 
 /**
@@ -657,6 +663,7 @@ export function parseConfigSection(
       maxChars: r.retrieve?.maxChars ?? 12000,
       withhold: r.retrieve?.withhold ?? [],
     },
+    serve: { maxChars: r.serve?.maxChars ?? 40000 },
     configPath: abs,
     configDir: dir,
   };
