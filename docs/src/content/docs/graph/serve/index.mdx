@@ -67,6 +67,36 @@ manni: serving lookup, retrieve, traverse and impact over stdio from graph/chunk
 The server opens the artifact once, at start. Restart it after a rebuild, so
 it serves the new text. It exits 0 when the client closes its stdin.
 
+### Keep it current with `--publish`
+
+With `--publish`, the server keeps the artifact current itself. It answers the
+client first, then publishes when the artifact is missing or older than the
+checkout. Before each later call, it publishes again if any file `git status`
+lists has changed.
+
+```json
+{
+  "mcpServers": {
+    "manni-docs": {
+      "command": "npx",
+      "args": ["manni", "graph", "serve", "--publish"]
+    }
+  }
+}
+```
+
+A call made during a publish waits for it, so an agent never reads a passage
+the last edit changed. [The CLI reference](/manni/graph/reference/cli/#graph-serve)
+lists each reason it publishes.
+
+### In Claude Code, the manni plugin does this for you
+
+The [manni plugin](/manni/family/claude-code/#the-docs-graph-served-to-the-agent)
+registers this server as `plugin:manni:graph` and runs it with `--publish`. A
+repository with `collections:` needs no `.mcp.json` entry and no publish step.
+Without a `graph:` section, the plugin publishes into its own data directory,
+outside your working tree.
+
 ## Ask one question
 
 `lookup` is the tool to start with. It takes the question and nothing else:
