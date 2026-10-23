@@ -35,9 +35,15 @@ export const NAMES_ITS_SUBJECT = new Set<CiteRule>([
  * `<id> (<src>): <message>`, or `<src>: <message>` when the entry has no id.
  * A message that names its own subject, by its rule or by opening with the
  * id (an `entry-invalid` about a pin prefix does), is left to say it once.
- * SARIF and JUnit carry the same message.
+ * SARIF and JUnit carry the same message. `serves`, the page's `Serves …`
+ * sentence (proposal 0105), follows it when the page names a record.
  */
-export function findingMessage(finding: CitationFinding): string {
+export function findingMessage(finding: CitationFinding, serves?: string): string {
+  const text = subjectMessage(finding);
+  return serves === undefined ? text : `${text} ${serves}`;
+}
+
+function subjectMessage(finding: CitationFinding): string {
   const subject = finding.id ?? finding.src;
   if (subject === undefined) return finding.message;
   if (NAMES_ITS_SUBJECT.has(finding.rule)) return finding.message;
@@ -50,6 +56,7 @@ export function renderCheckGithub(run: CheckRun): string {
   const lines: string[] = [];
   run.pages.forEach((page, index) => {
     const { reported } = splitBaselined(page, resultFor(run, index));
+    const serves = run.impact?.serves.get(page.file);
     for (const finding of reported) {
       // A finding about an entry a manifest owns is annotated on the
       // manifest, unless that manifest is outside the tree, where an
@@ -58,7 +65,7 @@ export function renderCheckGithub(run: CheckRun): string {
       const params = [`file=${escapeWorkflowCommandProperty(site.file ?? page.file)}`];
       if (site.line !== undefined) params.push(`line=${String(site.line)}`);
       params.push(`title=${escapeWorkflowCommandProperty(finding.ruleId)}`);
-      const message = [findingMessage(finding), ...guidanceLines(finding.guidance)].join("\n");
+      const message = [findingMessage(finding, serves), ...guidanceLines(finding.guidance)].join("\n");
       lines.push(`::${finding.severity} ${params.join(",")}::${escapeWorkflowCommandMessage(message)}`);
     }
   });

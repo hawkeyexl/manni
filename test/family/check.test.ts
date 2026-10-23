@@ -6,7 +6,19 @@
  * their own reporters' output, so a report is compared against the domain
  * core's own `-f json` where the output is deterministic.
  */
-import { existsSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
+import { execFileSync } from "node:child_process";
+import {
+  cpSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  realpathSync,
+  renameSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
+import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import * as AjvDraft04Ns from "ajv-draft-04";
@@ -30,7 +42,7 @@ import { runLint } from "../../src/lint/commands/lint.js";
 import { render as renderLint } from "../../src/lint/reporters/index.js";
 import { runValidate } from "../../src/meta/commands/validate.js";
 import { render as renderMeta } from "../../src/meta/reporters/index.js";
-import { gitAvailable, makeTempRepo, removeTempRepo } from "../helpers/temp-repo.js";
+import { commitAll, gitAvailable, makeTempRepo, removeTempRepo } from "../helpers/temp-repo.js";
 import { envelope, fixtureRepo } from "./helpers.js";
 
 let dir: string | undefined;
@@ -113,6 +125,20 @@ describe.skipIf(!gitAvailable())("runFamilyCheck", () => {
     const drifted = await runFamilyCheck({ cwd: dir, scope: { kind: "all" } });
     expect(byCommand(drifted, "cite check").status).toBe("fail");
   });
+
+  it("cite's JSON report carries impact through the family verb (0105)", async () => {
+    dir = realpathSync(mkdtempSync(join(tmpdir(), "manni-family-impact-")));
+    cpSync(join(dirname(fileURLToPath(import.meta.url)), "..", "fixtures", "cite", "impact"), dir, { recursive: true });
+    execFileSync("git", ["init", "-q"], { cwd: dir, stdio: "ignore" });
+    commitAll(dir, "fixture");
+    const run = await runFamilyCheck({ cwd: dir, scope: { kind: "all" } });
+    const report = JSON.parse(renderJson(run)) as {
+      checks: { command: string; report?: { impact?: { id: string; pages: string[] }[] } }[];
+    };
+    const cite = report.checks.find((c) => c.command === "cite check");
+    expect(cite?.report?.impact?.map((e) => e.id)).toEqual(["maya", "m5"]);
+    expect(cite?.report?.impact?.[0]?.pages).toEqual(["pages/stale.md"]);
+  }, 60000);
 
   it("a session that only deletes a cited source still runs the set-wide checks", async () => {
     dir = fixtureRepo("only-citations");

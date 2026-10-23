@@ -1,5 +1,5 @@
 /**
- * JSON output. `{ summary, pages }` for check; the run itself for update,
+ * JSON output. `{ summary, impact, pages }` for check; the run itself for update,
  * remove and history.
  *
  * A citation prints its two ends and how they are anchored. `resolvedPath`,
@@ -116,7 +116,9 @@ export function publicPage(page: PageCitationReport): PublicPageReport {
 }
 
 export function renderCheckJson(run: CheckRun): string {
-  return JSON.stringify({ summary: run.summary, pages: run.pages.map(publicPage) }, null, 2);
+  // `impact` (proposal 0105) is omitted when empty, as the summary's zero counts are.
+  const impact = run.impact === undefined ? {} : { impact: run.impact.entries };
+  return JSON.stringify({ summary: run.summary, ...impact, pages: run.pages.map(publicPage) }, null, 2);
 }
 
 export function renderRemoveJson(run: RemoveRun): string {
