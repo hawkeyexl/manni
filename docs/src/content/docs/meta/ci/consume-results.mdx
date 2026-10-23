@@ -30,7 +30,7 @@ sample-questions:
 graph:
   label: Consume results programmatically
   type: concept
-last-updated: 2026-10-20
+last-updated: 2026-10-23
 tags:
   - json
   - api
@@ -221,6 +221,7 @@ npx -y @hawkeyexl/manni meta get title,tags "docs/**/*.md" --format json
   {
     "file": "docs/intro.md",
     "present": true,
+    "collections": ["docs"],
     "values": {
       "title": "Introduction",
       "tags": ["onboarding", "guide"]
@@ -234,6 +235,8 @@ Each object reports:
 - **`file`**: the file path.
 - **`present`**: whether the file had a metadata block at all (`false` for a
   document with no frontmatter).
+- **`collections`**: the configured collections the file belongs to, empty
+  for a file in none.
 - **`values`**: the requested fields and their values.
 
 <Aside type="caution" title="Unset fields are omitted from JSON, not null">
