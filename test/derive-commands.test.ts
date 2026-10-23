@@ -447,6 +447,31 @@ describe("get resolves each field, and says which side answered (0043)", () => {
     expect(lines).toHaveLength(resolved.length);
   });
 
+  it("--all-fields leaves out a source that cannot answer, and says so once", async () => {
+    const files = fixtureFiles();
+    files["manni.config.yaml"] = (files["manni.config.yaml"] ?? "").replace(
+      "sources: [git, codeowners]",
+      "sources: [git, codeowners]\n    codeowners: nope/CODEOWNERS",
+    );
+    const dir = repo(files);
+    const notices: string[] = [];
+    const results = await runGet({
+      fields: [],
+      allFields: true,
+      inputs: ["docs/b.md"],
+      cwd: dir,
+      onNotice: (m) => notices.push(m),
+    });
+    expect(Object.keys(results[0]?.resolved ?? {})).not.toContain("owner");
+    expect(results[0]?.origin?.title).toBe("asserted");
+    expect(notices.filter((m) => m.startsWith("codeowners source unavailable: "))).toHaveLength(1);
+    expect(notices.find((m) => m.startsWith("codeowners"))).toMatch(/; --all-fields leaves its fields out\.$/);
+    // Naming the field still asks for that source, so its silence is an error.
+    await expect(runGet({ fields: ["owner"], inputs: ["docs/b.md"], cwd: dir })).rejects.toThrow(
+      /codeowners source unavailable/,
+    );
+  });
+
   // Case 3: both sides answered, and they agree.
   it("annotates (asserted) when the evidence agrees", async () => {
     const dir = repo();

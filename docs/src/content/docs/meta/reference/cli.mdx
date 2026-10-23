@@ -422,7 +422,18 @@ spelling: with it, nothing about a path can be mistaken for a field.
 the file stores, in the page or a sidecar, then every field a derive source
 supplies for it. Stored fields print in the file's own key order, the page's
 first and then each sidecar's. Under `--no-derived` only the stored fields
-print. `--all-fields` and `--fields` together are an error:
+print.
+
+A source that cannot answer supplies nothing under `--all-fields`, so its
+fields are left out and the run still exits 0. It says so once on stderr. A
+field you name still needs its source, so the same silence is exit 2 there.
+
+```console
+$ manni meta get --all-fields docs/intro.md
+manni: github source unavailable: no origin remote to tell GitHub from GitLab; --all-fields leaves its fields out.
+```
+
+`--all-fields` and `--fields` together are an error:
 
 ```console
 $ manni meta get --all-fields --fields title docs/intro.md

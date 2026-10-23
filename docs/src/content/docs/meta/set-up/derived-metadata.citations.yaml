@@ -404,9 +404,9 @@ docs/src/content/docs/meta/set-up/derived-metadata.mdx:
         integrity: sha256-6509df9718a2f071984d19b38eded89e9facc8964efdfc1394dbab493c408b12
       source:
         file: src/meta/commands/get.ts
-        lines: 525-532
+        lines: 540-547
         integrity: sha256-3cb4c27b714d3efc6dbf886fd4f90dbb9926300dc85012160241c3f757269312
-        commit-sha: 34ccc5573527b4549ca4da3ef37e3c0a6c988e0f
+        commit-sha: 318b38556ed151a0efcc4d475279a6db8a01cfc6
     - id: get-annotates-derived-origin-with-source
       claim:
         integrity: sha256-6509df9718a2f071984d19b38eded89e9facc8964efdfc1394dbab493c408b12

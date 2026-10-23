@@ -428,6 +428,7 @@ export async function runGet(opts: GetOptions): Promise<GetFileResult[]> {
       allFields,
       derivable: derivableFields,
       carried,
+      ...(opts.onNotice !== undefined ? { onNotice: opts.onNotice } : {}),
       run: {
         cwd,
         base,
@@ -473,6 +474,8 @@ async function attachResolved(
     derivable: readonly DerivableField[];
     /** Which requested fields each parsed file carries, by label. */
     carried: ReadonlyMap<string, Record<string, boolean>>;
+    /** Where `--all-fields` says a source it left out could not answer. */
+    onNotice?: (message: string) => void;
     run: {
       cwd: string;
       base: string;
@@ -505,10 +508,22 @@ async function attachResolved(
             now: run.now,
             machines: machinesOf(derive),
           });
-          assertSourcesAvailable(
-            result.sources,
-            "pass --no-derived, or narrow derive.sources",
-          );
+          // A named field asks for its source, so that source's silence is
+          // an error. `--all-fields` asked for no source in particular: one
+          // that cannot answer supplies nothing, and the run says so once.
+          if (opts.allFields) {
+            for (const [name, status] of Object.entries(result.sources)) {
+              if (status.available) continue;
+              opts.onNotice?.(
+                `${name} source unavailable: ${status.reason ?? "it could not answer"}; --all-fields leaves its fields out.`,
+              );
+            }
+          } else {
+            assertSourcesAvailable(
+              result.sources,
+              "pass --no-derived, or narrow derive.sources",
+            );
+          }
           if (result.provenance !== undefined) provenance = result.provenance;
           return result.records;
         })();

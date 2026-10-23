@@ -1839,9 +1839,9 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         integrity: sha256-600b5511415007b5e2e1eff81775df428122e592af95d5dd3dbf06caa6e7b387
       source:
         file: src/meta/commands/get.ts
-        lines: 525-538
+        lines: 540-553
         integrity: sha256-e1f6a4dec74ab12228b3458544b495e4193b96396d795c49dcc4f5d65a90e1f3
-        commit-sha: 34ccc5573527b4549ca4da3ef37e3c0a6c988e0f
+        commit-sha: 318b38556ed151a0efcc4d475279a6db8a01cfc6
     - id: derive-fields-rules
       claim:
         lines: 2166
