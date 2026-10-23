@@ -4,6 +4,13 @@
 4.13.1. Entries below that version are docmeta releases; the repository
 history is the same one.
 
+# [4.20.0](https://github.com/hawkeyexl/manni/compare/v4.19.0...v4.20.0) (2026-10-23)
+
+
+### Features
+
+* **strategy:** audiences, personas and journeys as records, checked by manni strategy ([#232](https://github.com/hawkeyexl/manni/issues/232)) ([544bb2a](https://github.com/hawkeyexl/manni/commit/544bb2afeed952d29440ecbcf3628ee4d33eee54))
+
 # [4.19.0](https://github.com/hawkeyexl/manni/compare/v4.18.1...v4.19.0) (2026-10-23)
 
 

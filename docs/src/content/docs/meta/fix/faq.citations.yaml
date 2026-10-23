@@ -126,7 +126,7 @@ docs/src/content/docs/meta/fix/faq.mdx:
         file: src/shared/cli-options.ts
         lines: 38-43
         integrity: sha256-e1c9e89e3c390801aaf96312f558a39f70c5f184cba9b55da3ddbcc3147a92ca
-        commit-sha: bfd040c52b77a44f328fd41ea0b6d454972a39d5
+        commit-sha: 544bb2afeed952d29440ecbcf3628ee4d33eee54
     - id: as-takes-an-extractor-name
       claim:
         integrity: sha256-435ce80083a89db75c417d16d53588c95303b8d80cf96aa14c58bbb9c82e5533

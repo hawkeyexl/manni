@@ -104,7 +104,7 @@ docs/src/content/docs/meta/set-up/config.mdx:
         file: src/meta/core/schema-registry.ts
         lines: 608
         integrity: sha256-73916bbbc37290e31b41fcefb00183d8f66b200197926e0860d5a1138e8b6204
-        commit-sha: 7aa3840d1a0f835838f43c08c194edd340fb7063
+        commit-sha: ddba7252337859626421b6060ae8952f93f61653
     - id: schema-ref-can-be-a-local-file
       claim:
         lines: 147
@@ -113,7 +113,7 @@ docs/src/content/docs/meta/set-up/config.mdx:
         file: src/meta/core/schema-registry.ts
         lines: 617
         integrity: sha256-54d3ca5663d01b67211e96f23c07ea217f315568bb05c0fed1a575a471062a52
-        commit-sha: 7aa3840d1a0f835838f43c08c194edd340fb7063
+        commit-sha: ddba7252337859626421b6060ae8952f93f61653
     - id: builtin-id-shape
       claim:
         lines: 146
@@ -122,7 +122,7 @@ docs/src/content/docs/meta/set-up/config.mdx:
         file: src/meta/core/schema-registry.ts
         lines: 605
         integrity: sha256-f5e3a939a781ffcfd02b1e0b1fc055d28d3a1ed1a39efbe53a978870587c0b1d
-        commit-sha: 7aa3840d1a0f835838f43c08c194edd340fb7063
+        commit-sha: ddba7252337859626421b6060ae8952f93f61653
     - id: every-schema-in-the-set-is-applied
       claim:
         integrity: sha256-981a7d04d5bb404e8d68c177c9cf1de8f0b015d97b4bfaa854c4464b79fd7b15
@@ -155,9 +155,9 @@ docs/src/content/docs/meta/set-up/config.mdx:
         integrity: sha256-6db4d5d084e63d6301555a29399627c768a89ea90219446ce59f29e70f534908
       source:
         file: CHANGELOG.md
-        lines: 1169-1172
+        lines: 1176-1179
         integrity: sha256-45e8f8c4528f6e8164bb9f060cb05f911f235aec5b19ef2d7c4001423d3c47e5
-        commit-sha: 0d3d8a74bd17fce503520bb2313a412ca60aeeca
+        commit-sha: 544bb2afeed952d29440ecbcf3628ee4d33eee54
     - id: collection-flag-refuses-positional-paths
       claim:
         integrity: sha256-733c0b2524ed1903bd3560cdcfd64a88195eabb411d4f725708cc91cfbf30146
@@ -238,7 +238,7 @@ docs/src/content/docs/meta/set-up/config.mdx:
         file: src/shared/cli-options.ts
         lines: 15-18
         integrity: sha256-463a4e47a18fa52743b32955ac1e50ac03f2030d2f7101ab0ca3c2e617f14db6
-        commit-sha: 3b3bdbd8dff6c0f51159e9a906f10da7e0fc047d
+        commit-sha: 544bb2afeed952d29440ecbcf3628ee4d33eee54
     - id: collection-named-docs-is-refused
       claim:
         lines: 80
@@ -397,7 +397,7 @@ docs/src/content/docs/meta/set-up/config.mdx:
         file: src/shared/cli-options.ts
         lines: 96-100
         integrity: sha256-c220ff2956d4f6e216f5568f3fe135022814e703c49eca7962f8fab6b2931042
-        commit-sha: 3b3bdbd8dff6c0f51159e9a906f10da7e0fc047d
+        commit-sha: 544bb2afeed952d29440ecbcf3628ee4d33eee54
     - id: no-config-skips-discovery
       claim:
         integrity: sha256-f6ef9b80abd47c042b8046d5c3b342ac38b8668c2786bc8a449dbc58171514d0

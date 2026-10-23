@@ -15,7 +15,7 @@ docs/src/content/docs/cite/set-up/require-citations.mdx:
         file: src/meta/core/schema-registry.ts
         lines: 131
         integrity: sha256-02074e5a775838f31cc2014617c6c0ccf6cfaa9bc049b7c680443fc455a08324
-        commit-sha: 7aa3840d1a0f835838f43c08c194edd340fb7063
+        commit-sha: ddba7252337859626421b6060ae8952f93f61653
     - id: strict-overlay-narrows
       claim:
         integrity: sha256-b9180e92ae7651efb6b5770ccf62a370e2d96be336a4c09b6c569505feb545a7

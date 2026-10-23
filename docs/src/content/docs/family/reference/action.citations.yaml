@@ -73,7 +73,7 @@ docs/src/content/docs/family/reference/action.mdx:
         file: src/shared/cli-options.ts
         lines: 15-18
         integrity: sha256-463a4e47a18fa52743b32955ac1e50ac03f2030d2f7101ab0ca3c2e617f14db6
-        commit-sha: bfd040c52b77a44f328fd41ea0b6d454972a39d5
+        commit-sha: 544bb2afeed952d29440ecbcf3628ee4d33eee54
     - id: action-args-is-the-escape-hatch
       claim:
         integrity: sha256-6139f94ceaa9c2cd3a2cbc999e0a6649985dfe0927a71fb31f3fd9d0c669b2b3

@@ -69,7 +69,7 @@ docs/src/content/docs/meta/schemas/resolution.mdx:
         file: src/meta/core/schema-registry.ts
         lines: 1379-1383
         integrity: sha256-7561c36d4320819e21ddc66059ccc85e8fb7bcdb638dbc68d86d4b21a8c4ef44
-        commit-sha: 7aa3840d1a0f835838f43c08c194edd340fb7063
+        commit-sha: ddba7252337859626421b6060ae8952f93f61653
     - id: reference-kind-is-structural
       claim:
         lines: 153
@@ -78,7 +78,7 @@ docs/src/content/docs/meta/schemas/resolution.mdx:
         file: src/meta/core/schema-registry.ts
         lines: 607-618
         integrity: sha256-d90a35561f5a1fe78578e6f93047d7b1f1ceaa64bee2989b9729aa62642840a7
-        commit-sha: 7aa3840d1a0f835838f43c08c194edd340fb7063
+        commit-sha: ddba7252337859626421b6060ae8952f93f61653
     - id: url-kind-is-http-or-https
       claim:
         lines: 145-148
@@ -87,7 +87,7 @@ docs/src/content/docs/meta/schemas/resolution.mdx:
         file: src/meta/core/schema-registry.ts
         lines: 608
         integrity: sha256-73916bbbc37290e31b41fcefb00183d8f66b200197926e0860d5a1138e8b6204
-        commit-sha: 7aa3840d1a0f835838f43c08c194edd340fb7063
+        commit-sha: ddba7252337859626421b6060ae8952f93f61653
     - id: url-fetch-has-a-10-second-timeout
       claim:
         lines: 148
@@ -96,7 +96,7 @@ docs/src/content/docs/meta/schemas/resolution.mdx:
         file: src/meta/core/schema-registry.ts
         lines: 681-682
         integrity: sha256-aa333a8e669bd4b424cabd01575e4c0bb18cb0b7837d95668f032f176ddaa95b
-        commit-sha: 7aa3840d1a0f835838f43c08c194edd340fb7063
+        commit-sha: ddba7252337859626421b6060ae8952f93f61653
     - id: builtin-kind-has-no-separator
       claim:
         lines: 130
@@ -105,7 +105,7 @@ docs/src/content/docs/meta/schemas/resolution.mdx:
         file: src/meta/core/schema-registry.ts
         lines: 609-616
         integrity: sha256-fb3e1d0326e54a52b38c8797c6459bfc3fbd81f6bc3544b51fe5f3bc39809013
-        commit-sha: 7aa3840d1a0f835838f43c08c194edd340fb7063
+        commit-sha: ddba7252337859626421b6060ae8952f93f61653
     - id: file-kind-is-everything-else
       claim:
         lines: 137
@@ -114,7 +114,7 @@ docs/src/content/docs/meta/schemas/resolution.mdx:
         file: src/meta/core/schema-registry.ts
         lines: 617
         integrity: sha256-54d3ca5663d01b67211e96f23c07ea217f315568bb05c0fed1a575a471062a52
-        commit-sha: 7aa3840d1a0f835838f43c08c194edd340fb7063
+        commit-sha: ddba7252337859626421b6060ae8952f93f61653
     - id: schema-trust-narrows-level-two
       claim:
         lines: 122

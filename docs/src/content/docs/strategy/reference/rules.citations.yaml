@@ -7,4 +7,4 @@ docs/src/content/docs/strategy/reference/rules.mdx:
         file: src/strategy/core/severity.ts
         lines: 5
         integrity: sha256-b2492754d095e3baa831201571394600122125f485a454f89835ce05dcd4bb28
-        commit-sha: 89a49265ea352d3854a8070819a7eeb40661e4f6
+        commit-sha: 544bb2afeed952d29440ecbcf3628ee4d33eee54

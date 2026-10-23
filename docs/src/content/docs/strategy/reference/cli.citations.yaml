@@ -7,4 +7,4 @@ docs/src/content/docs/strategy/reference/cli.mdx:
         file: src/shared/run.ts
         lines: 81-90
         integrity: sha256-0b1adcea878f72a48497137fff1e405ac1b9c8b8b5906e17eb740806b00ca825
-        commit-sha: 89a49265ea352d3854a8070819a7eeb40661e4f6
+        commit-sha: cac43a4a3190b4eb7d0a110e9c20ca427839104b

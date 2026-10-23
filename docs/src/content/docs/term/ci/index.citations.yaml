@@ -7,7 +7,7 @@ docs/src/content/docs/term/ci/index.mdx:
         file: src/term/cli.ts
         lines: 308
         integrity: sha256-6c93d7529351c9410b26d3c459bb936649605aaf66cfb3cd6e5705925fef1d56
-        commit-sha: bfd040c52b77a44f328fd41ea0b6d454972a39d5
+        commit-sha: 544bb2afeed952d29440ecbcf3628ee4d33eee54
     - id: exit-zero-clean
       claim:
         lines: 20
@@ -16,7 +16,7 @@ docs/src/content/docs/term/ci/index.mdx:
         file: src/term/cli.ts
         lines: 153
         integrity: sha256-642aa7bc0402e0101838821cd5ed5ee06a261d3134bb836e1a23650376a401d2
-        commit-sha: bfd040c52b77a44f328fd41ea0b6d454972a39d5
+        commit-sha: 544bb2afeed952d29440ecbcf3628ee4d33eee54
     - id: exit-two-no-terms
       claim:
         lines: 22
@@ -120,7 +120,7 @@ docs/src/content/docs/term/ci/index.mdx:
         file: src/term/cli.ts
         lines: 266-270
         integrity: sha256-16ec9c73536b0f867f0b27a1096bd188d56dd361f1983cd15168834ec743362b
-        commit-sha: bfd040c52b77a44f328fd41ea0b6d454972a39d5
+        commit-sha: 544bb2afeed952d29440ecbcf3628ee4d33eee54
     - id: lint-prose-rule-id
       claim:
         integrity: sha256-70c60d6211778341eb324e58c93e8964ed306a1da67ba341946d7ef0c0a143ed
@@ -154,7 +154,7 @@ docs/src/content/docs/term/ci/index.mdx:
         file: src/term/cli.ts
         lines: 146
         integrity: sha256-b1d76731e86f841f6007d397c2ee26353efb88d6c9ec5ebf192817056dcc3161
-        commit-sha: bfd040c52b77a44f328fd41ea0b6d454972a39d5
+        commit-sha: 544bb2afeed952d29440ecbcf3628ee4d33eee54
     - id: vale-style-terms-dir
       claim:
         lines: 88
@@ -303,4 +303,4 @@ docs/src/content/docs/term/ci/index.mdx:
         file: src/term/cli.ts
         lines: 308
         integrity: sha256-6c93d7529351c9410b26d3c459bb936649605aaf66cfb3cd6e5705925fef1d56
-        commit-sha: bfd040c52b77a44f328fd41ea0b6d454972a39d5
+        commit-sha: 544bb2afeed952d29440ecbcf3628ee4d33eee54
