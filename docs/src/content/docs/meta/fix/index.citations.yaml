@@ -26,7 +26,7 @@ docs/src/content/docs/meta/fix/index.mdx:
         file: src/meta/cli.ts
         lines: 900
         integrity: sha256-b900d16ea81ba54da695ee6ec4f8e9c3d17f1700d0b307ed74045692b603e056
-        commit-sha: 34ccc5573527b4549ca4da3ef37e3c0a6c988e0f
+        commit-sha: 0d3d8a74bd17fce503520bb2313a412ca60aeeca
     - id: exit-0-when-none-failed
       claim:
         lines: 473
@@ -35,7 +35,7 @@ docs/src/content/docs/meta/fix/index.mdx:
         file: src/meta/cli.ts
         lines: 900
         integrity: sha256-b900d16ea81ba54da695ee6ec4f8e9c3d17f1700d0b307ed74045692b603e056
-        commit-sha: 34ccc5573527b4549ca4da3ef37e3c0a6c988e0f
+        commit-sha: 0d3d8a74bd17fce503520bb2313a412ca60aeeca
     - id: fill-skips-below-threshold
       claim:
         integrity: sha256-02de4565fd61c6b243042af6123122aea8b7f2b5fa751679cc4e1a13e155ad6e
@@ -284,7 +284,7 @@ docs/src/content/docs/meta/fix/index.mdx:
         file: src/meta/cli.ts
         lines: 752-755
         integrity: sha256-f4ceae447f423a880bfc75bf0632b4dcdc41c384a805904368fe4c7bae68c9b6
-        commit-sha: 34ccc5573527b4549ca4da3ef37e3c0a6c988e0f
+        commit-sha: 0d3d8a74bd17fce503520bb2313a412ca60aeeca
     - id: local-flag-keeps-inference-on-your-hardware
       claim:
         integrity: sha256-d5c6414a09e858b044f5e56d8e6641f84341e379afc1b14c82ce6452a1adbc85

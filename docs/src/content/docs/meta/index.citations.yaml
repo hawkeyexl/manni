@@ -50,7 +50,7 @@ docs/src/content/docs/meta/index.mdx:
         file: src/meta/cli.ts
         lines: 900
         integrity: sha256-b900d16ea81ba54da695ee6ec4f8e9c3d17f1700d0b307ed74045692b603e056
-        commit-sha: 34ccc5573527b4549ca4da3ef37e3c0a6c988e0f
+        commit-sha: 0d3d8a74bd17fce503520bb2313a412ca60aeeca
     - id: default-run-requires-type
       claim:
         integrity: sha256-5641af1fab3e0ee0ecc5b8ff5a64e87af036426aa1f4a4a06ff340e640e4b38c

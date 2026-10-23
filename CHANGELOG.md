@@ -4,6 +4,13 @@
 4.13.1. Entries below that version are docmeta releases; the repository
 history is the same one.
 
+# [4.19.0](https://github.com/hawkeyexl/manni/compare/v4.18.1...v4.19.0) (2026-10-23)
+
+
+### Features
+
+* **plugin:** serve the docs graph and hand the agent each page's metadata (0103) ([#235](https://github.com/hawkeyexl/manni/issues/235)) ([0d3d8a7](https://github.com/hawkeyexl/manni/commit/0d3d8a74bd17fce503520bb2313a412ca60aeeca))
+
 ## [4.18.1](https://github.com/hawkeyexl/manni/compare/v4.18.0...v4.18.1) (2026-10-23)
 
 

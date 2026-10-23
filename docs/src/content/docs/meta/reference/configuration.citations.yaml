@@ -851,7 +851,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         file: src/meta/commands/get.ts
         lines: 342-345
         integrity: sha256-c34a2e8e3d3ae1328aaddc3a9d93dbfa81ab3c6365ed85479597a8c8e2da1f51
-        commit-sha: 34ccc5573527b4549ca4da3ef37e3c0a6c988e0f
+        commit-sha: 0d3d8a74bd17fce503520bb2313a412ca60aeeca
     - id: query-rows-hold-the-merged-values
       claim:
         lines: 890
@@ -991,7 +991,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         file: src/meta/cli.ts
         lines: 900
         integrity: sha256-b900d16ea81ba54da695ee6ec4f8e9c3d17f1700d0b307ed74045692b603e056
-        commit-sha: 34ccc5573527b4549ca4da3ef37e3c0a6c988e0f
+        commit-sha: 0d3d8a74bd17fce503520bb2313a412ca60aeeca
     - id: external-ref-classifies-as-a-builtin-id
       claim:
         integrity: sha256-b9848df12f447808856882497ee30c1a4d8c7ff0b933f9a32c242805d8d2dd8e
@@ -1597,7 +1597,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         file: src/meta/cli.ts
         lines: 1355-1359
         integrity: sha256-5abfe6d52902e66ac8e3b44e7f2781ada6faa56ccd8786005a5a6c19d0ee58e0
-        commit-sha: 34ccc5573527b4549ca4da3ef37e3c0a6c988e0f
+        commit-sha: 0d3d8a74bd17fce503520bb2313a412ca60aeeca
     - id: fill-model-needs-an-explicit-provider
       claim:
         lines: 1868
@@ -1841,7 +1841,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         file: src/meta/commands/get.ts
         lines: 540-553
         integrity: sha256-e1f6a4dec74ab12228b3458544b495e4193b96396d795c49dcc4f5d65a90e1f3
-        commit-sha: 318b38556ed151a0efcc4d475279a6db8a01cfc6
+        commit-sha: 0d3d8a74bd17fce503520bb2313a412ca60aeeca
     - id: derive-fields-rules
       claim:
         lines: 2166
@@ -2365,7 +2365,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         file: src/meta/cli.ts
         lines: 1638
         integrity: sha256-1df16324aab3fc342c34710f82e77fa159cda9e9686d4ddcb6a4032eb3b979ed
-        commit-sha: 34ccc5573527b4549ca4da3ef37e3c0a6c988e0f
+        commit-sha: 0d3d8a74bd17fce503520bb2313a412ca60aeeca
     - id: overlapping-collections-resolve-one-schema-set
       claim:
         integrity: sha256-40dafd7edcaaf5b1e9a0c3b3fd75274e69ec62577c42b8f03b0de7f69b926f1c

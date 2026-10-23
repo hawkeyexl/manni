@@ -44,7 +44,7 @@ docs/src/content/docs/meta/ci/consume-results.mdx:
         file: src/meta/cli.ts
         lines: 975-978
         integrity: sha256-3bc74074c8952636df5c6f68b9d559a92e1dda00b46dfa186f5723f16364efa5
-        commit-sha: 34ccc5573527b4549ca4da3ef37e3c0a6c988e0f
+        commit-sha: 0d3d8a74bd17fce503520bb2313a412ca60aeeca
     - id: get-takes-pretty-and-json-only
       claim:
         lines: 227-228
@@ -53,7 +53,7 @@ docs/src/content/docs/meta/ci/consume-results.mdx:
         file: src/meta/cli.ts
         lines: 962-966
         integrity: sha256-b503ccf2d5faf492d3e8eb42a02c2193e9002da4890c9c8dde4774435125333c
-        commit-sha: 34ccc5573527b4549ca4da3ef37e3c0a6c988e0f
+        commit-sha: 0d3d8a74bd17fce503520bb2313a412ca60aeeca
     - id: get-unsupported-format-exits-2
       claim:
         lines: 231
@@ -62,7 +62,7 @@ docs/src/content/docs/meta/ci/consume-results.mdx:
         file: src/meta/cli.ts
         lines: 1054-1059
         integrity: sha256-ed88e062b2f25e5f5d7be02a925046a075dc66df7cf3d1e6243ba690642c9961
-        commit-sha: 34ccc5573527b4549ca4da3ef37e3c0a6c988e0f
+        commit-sha: 0d3d8a74bd17fce503520bb2313a412ca60aeeca
     - id: dot-notation-or-json-pointer
       claim:
         lines: 200-202
@@ -71,7 +71,7 @@ docs/src/content/docs/meta/ci/consume-results.mdx:
         file: src/meta/commands/get.ts
         lines: 596-609
         integrity: sha256-3de206ba7b2d15623d6b478a91053a59fae6f997f965d443274221d9761769f6
-        commit-sha: 318b38556ed151a0efcc4d475279a6db8a01cfc6
+        commit-sha: 0d3d8a74bd17fce503520bb2313a412ca60aeeca
     - id: get-json-file-present-values
       claim:
         lines: 181-186
@@ -80,7 +80,7 @@ docs/src/content/docs/meta/ci/consume-results.mdx:
         file: src/meta/commands/get.ts
         lines: 130-139
         integrity: sha256-6aa9fdc00f5d16632f518faa318a321e8660ff3d78af54d8b655a28d1def786a
-        commit-sha: 34ccc5573527b4549ca4da3ef37e3c0a6c988e0f
+        commit-sha: 0d3d8a74bd17fce503520bb2313a412ca60aeeca
     - id: pretty-prints-unset
       claim:
         lines: 193-194
@@ -98,7 +98,7 @@ docs/src/content/docs/meta/ci/consume-results.mdx:
         file: src/meta/cli.ts
         lines: 967-972
         integrity: sha256-74320011f15b4a953c0496f55ff3d7e3c02bfa5bf49c03a7c8cdcc5568d67630
-        commit-sha: 34ccc5573527b4549ca4da3ef37e3c0a6c988e0f
+        commit-sha: 0d3d8a74bd17fce503520bb2313a412ca60aeeca
     - id: json-output-is-never-colorized
       claim:
         lines: 109-110
