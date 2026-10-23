@@ -127,6 +127,23 @@ describe("manni plugin", () => {
     }
   });
 
+  // The graph server reads the project and keeps a published graph in the
+  // plugin's data directory, so both variables reach it.
+  it("registers the graph MCP server, run by node from the plugin's hooks", () => {
+    const { mcpServers } = JSON.parse(readFileSync(join(pluginDir, ".mcp.json"), "utf8")) as {
+      mcpServers: Record<string, { command: string; args: string[]; env: Record<string, string> }>;
+    };
+    expect(Object.keys(mcpServers)).toEqual(["graph"]);
+    const graph = mcpServers.graph;
+    expect(graph?.command).toBe("node");
+    expect(graph?.args).toEqual(["${CLAUDE_PLUGIN_ROOT}/hooks/graph-server.mjs"]);
+    expect(existsSync(join(pluginDir, "hooks/graph-server.mjs"))).toBe(true);
+    expect(graph?.env).toEqual({
+      CLAUDE_PROJECT_DIR: "${CLAUDE_PROJECT_DIR}",
+      CLAUDE_PLUGIN_DATA: "${CLAUDE_PLUGIN_DATA}",
+    });
+  });
+
   // The session briefing names a skill by `<plugin>:<skill>`; both halves
   // are names the plugin owns, so the reference is checked against them.
   it("the skill the session briefing names exists in the plugin", () => {

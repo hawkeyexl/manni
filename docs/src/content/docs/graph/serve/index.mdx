@@ -6,7 +6,7 @@ id: graph-serve
 language: en
 lifecycle: published
 action: develop
-last-updated: 2026-10-21
+last-updated: 2026-10-23
 ---
 
 An agent that answers from your docs, or edits them, reads passages.
@@ -32,7 +32,8 @@ manni graph publish
 The chunks are `chunks.json` and one row file per language.
 [Publish the graph](/manni/graph/publish/) covers each step.
 
-**The MCP SDK.** It is an optional peer of manni, so install it beside manni:
+**The MCP SDK.** It is an optional dependency of manni, so npm installs it with manni.
+An install that omits optional packages leaves it out, so add it beside manni:
 
 ```sh
 npm install @modelcontextprotocol/sdk
