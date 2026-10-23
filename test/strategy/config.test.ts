@@ -51,9 +51,19 @@ describe("parseStrategyConfig", () => {
     );
   });
 
+  it("accepts a level for each step rule", () => {
+    const severity = {
+      "broken-step": "warning",
+      "stale-step": "off",
+      "missing-journey": "error",
+      "unwritten-step": "notice",
+    };
+    expect(parse({ severity })).toEqual({ severity });
+  });
+
   it("refuses an unknown rule, naming every rule", () => {
     expect(() => parse({ severity: { unserved: "error" } })).toThrow(
-      `Unknown key "unserved" under strategy.severity: in ${SOURCE}. Supported keys: undefined-reference, duplicate-id, missing-parent, orphan-record, unserved-journey, unused-record.`,
+      `Unknown key "unserved" under strategy.severity: in ${SOURCE}. Supported keys: undefined-reference, duplicate-id, missing-parent, orphan-record, unserved-journey, unused-record, broken-step, stale-step, missing-journey, unwritten-step.`,
     );
   });
 

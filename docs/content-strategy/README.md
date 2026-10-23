@@ -38,6 +38,7 @@ personas: [maya]
 | `audience` | a persona | The id of the audience the persona belongs to. |
 | `personas` | a journey | The ids of the personas the journey serves, as a list. A journey can serve more than one. |
 | `lifecycle` | a journey, optional | `draft` while its pages are still to be written, or `archived` once it is retired. `manni strategy check` expects no page to name either. |
+| `steps` | a journey, optional | The journey's stages in order. Each has a `stage`, and the `doc` that carries it as a repo path or a site route. `exists: false` marks a page not written yet, `exists: partial` one that covers the stage in part, and `note` says anything else. |
 
 Pages name the records they serve in their own `audiences:`, `personas:` and `journeys:` fields. A page can hold them in its front matter or in its `{page}.meta.yaml` sidecar.
 
@@ -50,6 +51,8 @@ Three commands read the records.
 The ids are stable. A new journey takes the next free id in its persona's series.
 
 A journey can land before its pages exist. Give it `lifecycle: draft`, and `manni strategy check` stays green while no page names it. Once a page serves it, set `lifecycle: published` or drop the field.
+
+A journey's `steps:` record the path through its pages, in order. Write a step per stage of the journey's body. Name each stage's page by its route, as `next-steps:` does, or by its repo path. `manni strategy get <id>` then prints the steps with each one's state and page, and `list` adds a column of served steps. `manni strategy check` holds every step to its page. A `doc` that names no page is an error. A page that leaves the journey out of its own `journeys:` is a warning, so add the journey to that page. A step with `exists: false` is a notice until its page is written. Copy a step's `doc` from the site, never from memory.
 
 ### Audiences
 

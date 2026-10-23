@@ -81,8 +81,12 @@ Run `manni strategy get <id>` to see a record, its parent and the pages that nam
 | `orphan-record` | Name the parent with `audience:` on a persona or `personas:` on a journey. Ask the user if you cannot tell which. |
 | `unserved-journey` | Name the journey in `journeys:` on the pages that serve it. If no page serves it yet, tell the user. Mark it `lifecycle: draft` only when the user says its pages are still to be written. |
 | `unused-record` | A notice. Notices never fail. Fix one only when the user asks. |
+| `broken-step` | Correct the step's `doc` to the page's repo path or route. If the page is not written yet, ask the user before you set `exists: false`. |
+| `stale-step` | The page now exists. Drop `exists: false`, or set `exists: partial` when the page covers the stage only in part. |
+| `missing-journey` | Add the journey to the `journeys:` of the page the message names. Ask the user before you point the step at another page instead. |
+| `unwritten-step` | A notice. Notices never fail. Fix one only when the user asks. |
 
-Never delete a record, and never set a rule `off`, to make a finding go away.
+Never delete a record or a step, and never set a rule `off`, to make a finding go away.
 
 ## lint check
 

@@ -10,7 +10,7 @@ import type { Severity } from "../../shared/severity.js";
 import type { StrategyReport } from "../commands/findings.js";
 import type { RecordEntry } from "../commands/list.js";
 import { displayPath, plural } from "../commands/run.js";
-import { PARENTS, RECORD_TYPES, type StrategyFinding, type StrategyRecord } from "../types.js";
+import { PARENTS, RECORD_TYPES, type ResolvedStep, type StrategyFinding, type StrategyRecord } from "../types.js";
 
 const WIDTH = 80;
 
@@ -31,11 +31,17 @@ export function renderListPretty(entries: readonly RecordEntry[]): string {
   const cell = (e: RecordEntry): string => `${"  ".repeat(e.depth)}${e.record.id}`;
   const recordWidth = Math.max("record".length, ...entries.map((e) => cell(e).length)) + 4;
   const pagesWidth = Math.max("pages".length, ...entries.map((e) => String(e.pages.length).length));
-  const row = (record: string, pages: string, title: string): string =>
-    `${record.padEnd(recordWidth)}${pages.padStart(pagesWidth)}  ${title}`.trimEnd();
+  // The steps column shows only when some journey has steps, so a set without them prints as it always has.
+  const covered = (e: RecordEntry): string =>
+    e.coverage === undefined ? "" : `${String(e.coverage.served)}/${String(e.coverage.steps)}`;
+  const stepsWidth = entries.some((e) => e.coverage !== undefined)
+    ? Math.max("steps".length, ...entries.map((e) => covered(e).length))
+    : 0;
+  const row = (record: string, pages: string, steps: string, title: string): string =>
+    `${record.padEnd(recordWidth)}${pages.padStart(pagesWidth)}  ${stepsWidth === 0 ? "" : `${steps.padStart(stepsWidth)}  `}${title}`.trimEnd();
   return [
-    row("record", "pages", "title"),
-    ...entries.map((e) => row(cell(e), String(e.pages.length), titleOf(e.record))),
+    row("record", "pages", "steps", "title"),
+    ...entries.map((e) => row(cell(e), String(e.pages.length), covered(e), titleOf(e.record))),
     // A record under several parents is counted once.
     countsLine([...new Set(entries.map((e) => e.record))]),
   ].join("\n");
@@ -50,6 +56,22 @@ const KEY_WIDTH = 14;
 function recordLines(records: readonly Pick<StrategyRecord, "id" | "title">[]): string[] {
   const width = Math.max(0, ...records.map((r) => r.id.length)) + 2;
   return records.map((r) => (r.title === undefined ? r.id : `${r.id.padEnd(width)}${r.title}`));
+}
+
+/**
+ * Each step as its number, its state padded to nine and its stage. Under it,
+ * dim: the page `doc` names, else `doc` as written, then the note.
+ */
+function stepLines(steps: readonly ResolvedStep[], c: Colors): string[] {
+  const numberWidth = Math.max(...steps.map((s) => String(s.n).length));
+  const indent = " ".repeat(numberWidth + 2 + 9 + 2);
+  return steps.flatMap((step) => {
+    const lines = [`${String(step.n).padEnd(numberWidth)}  ${step.state.padEnd(9)}  ${step.stage ?? ""}`.trimEnd()];
+    const where = step.page ?? step.doc;
+    if (where !== undefined) lines.push(`${indent}${c.dim(where)}`);
+    if (step.note !== undefined) lines.push(`${indent}${c.dim(step.note)}`);
+    return lines;
+  });
 }
 
 export function renderGetPretty(entry: RecordEntry, opts: { color: boolean }): string {
@@ -69,6 +91,9 @@ export function renderGetPretty(entry: RecordEntry, opts: { color: boolean }): s
     rows.push([PARENTS[record.type], recordLines(shown)]);
   }
   if (entry.children.length > 0) rows.push([record.type === "audience" ? "personas" : "journeys", recordLines(entry.children)]);
+  if (entry.steps !== undefined && entry.coverage !== undefined) {
+    rows.push(["steps", [`${String(entry.coverage.served)} of ${String(entry.coverage.steps)} served`, ...stepLines(entry.steps, c)]]);
+  }
   rows.push(["pages", entry.pages.length === 0 ? ["none"] : entry.pages]);
 
   const where = `${entry.file}:${String(record.line)}`;
@@ -128,7 +153,8 @@ export function renderFindingsPretty(report: StrategyReport, opts: { color: bool
   const baselined = baseline !== undefined && baseline.suppressed > 0 ? `, ${String(baseline.suppressed)} baselined` : "";
   const records = plural(report.records, "record");
   if (report.findings.length === 0) {
-    return `${c.green("✓")} ${records}, ${plural(report.references, "reference")}, no findings${baselined}`;
+    const steps = report.steps > 0 ? `, ${plural(report.steps, "step")}` : "";
+    return `${c.green("✓")} ${records}, ${plural(report.references, "reference")}${steps}, no findings${baselined}`;
   }
 
   const ruleWidth = Math.max(RULE_WIDTH, ...report.findings.map((f) => f.ruleId.length + 2));
