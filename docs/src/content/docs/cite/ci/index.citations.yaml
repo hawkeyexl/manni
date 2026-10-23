@@ -73,9 +73,9 @@ docs/src/content/docs/cite/ci/index.mdx:
         integrity: sha256-c3b0989170d7d4bad2bb57816d6ee22279e17d4db3e1d7e6e2618f4f8d57ef59
       source:
         file: src/cite/types.ts
-        lines: 140-157
-        integrity: sha256-67a1e009955436df5b21d01ab7c8aae7d2f4eddb1040ef7e7ae9b86bba8bfff6
-        commit-sha: ddba7252337859626421b6060ae8952f93f61653
+        lines: 147-165
+        integrity: sha256-b60c89c73c21f81884b4851c63d4dea14c3f7c9096e54131bcb1cebe3bbb7b08
+        commit-sha: 3925fe76d4b5c1b3995acda16bb88cb379b42e85
     - id: severity-levels-off
       claim:
         integrity: sha256-c3b0989170d7d4bad2bb57816d6ee22279e17d4db3e1d7e6e2618f4f8d57ef59
@@ -123,16 +123,16 @@ docs/src/content/docs/cite/ci/index.mdx:
     - id: format-json-shape
       claim:
         lines: 76
-        integrity: sha256-be40568fe59493f63ca04e90f0970057320f1aa792e4b000f4ad17f4ded909c7
+        integrity: sha256-71708e8f4f2d3f961cf14d78b7fac560ca5a17d720b00efc835d1ea9b9d23fd1
       source:
         file: src/cite/reporters/json.ts
-        lines: 51-108
-        integrity: sha256-d48edacb5c5933f7a06ac1ebfc0ef223431895c803f60726a13dff837deb4111
-        commit-sha: ddba7252337859626421b6060ae8952f93f61653
+        lines: 54-122
+        integrity: sha256-770e0c5fa11c7bc36e1420f323fcee87e8e83be05e91ac45909fa9b4943cb449
+        commit-sha: 3925fe76d4b5c1b3995acda16bb88cb379b42e85
     - id: format-json-skipped-sources
       claim:
         lines: 76
-        integrity: sha256-be40568fe59493f63ca04e90f0970057320f1aa792e4b000f4ad17f4ded909c7
+        integrity: sha256-71708e8f4f2d3f961cf14d78b7fac560ca5a17d720b00efc835d1ea9b9d23fd1
       source:
         file: src/cite/core/check-page.ts
         lines: 462-468
@@ -312,9 +312,9 @@ docs/src/content/docs/cite/ci/index.mdx:
         integrity: sha256-6cd781084d1cb253d0a0ba2b8903c211d687211658c2ed920049c084917fe13b
       source:
         file: src/cite/core/claims.ts
-        lines: 91-114
-        integrity: sha256-07907d32f3e0ed1ff15e3b679ba0e3b3b8e94ef35b1d21fa994675eb0498a841
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        lines: 92-122
+        integrity: sha256-b6e31f6570e0c06049461658e1cd7583b02fff4a3c5bd7086e2be0d979863a2d
+        commit-sha: 3925fe76d4b5c1b3995acda16bb88cb379b42e85
     - id: git-when-available
       claim:
         integrity: sha256-efc7bb92610fe5242cb59b03561d4d690a31ddfb91be2ae2627838c722a10f11

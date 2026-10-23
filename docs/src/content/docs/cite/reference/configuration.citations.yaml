@@ -455,9 +455,9 @@ docs/src/content/docs/cite/reference/configuration.mdx:
         integrity: sha256-e7bb947e3c16588551e3f379b99452d5c91d0f12ae7afaeffe6d947782e0c313
       source:
         file: src/cite/types.ts
-        lines: 140-157
-        integrity: sha256-67a1e009955436df5b21d01ab7c8aae7d2f4eddb1040ef7e7ae9b86bba8bfff6
-        commit-sha: ddba7252337859626421b6060ae8952f93f61653
+        lines: 147-165
+        integrity: sha256-b60c89c73c21f81884b4851c63d4dea14c3f7c9096e54131bcb1cebe3bbb7b08
+        commit-sha: 3925fe76d4b5c1b3995acda16bb88cb379b42e85
     - id: default-source-moved
       claim:
         lines: 330

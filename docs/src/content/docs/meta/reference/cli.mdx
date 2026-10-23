@@ -477,8 +477,7 @@ accepted:
   validation failure works verbatim. Use it to address keys that contain dots
   (`/odd.key`) or slashes (`/a~1b` for the key `a/b`).
 
-{/* cite get-parent-key-returns-the-whole-value */}
-{/* cite get-inherited-members-are-missing */}
+{/* cite get-parent-key-returns-the-whole-value get-inherited-members-are-missing */}
 Requesting a parent key (`author`) returns the whole nested value. A path that
 descends into a scalar, or whose segment is missing, is reported as unset. Only
 a key's own properties resolve; inherited members such as `toString` or
