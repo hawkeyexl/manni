@@ -1,0 +1,12 @@
+# A records-only shared strategy: its pages live in other repositories, which
+# borrow these records from a checkout beside them, as ../consumer does.
+collections:
+  - name: strategy
+    paths:
+      - audiences/
+      - personas/
+      - journeys/
+
+strategy:
+  severity:
+    unserved-journey: off

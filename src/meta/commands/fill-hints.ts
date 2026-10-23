@@ -266,22 +266,28 @@ export interface CollectionMember {
 /**
  * Every member of `collection` that its extractor reads, in walk order. Each
  * is read from its own file only, with no sidecar merged. A member that
- * cannot be read or parsed is left out. `meta fill` offers the ids, and
- * `meta get` finds the strategy records by `type`.
+ * cannot be read or parsed is left out. `meta fill` offers the ids.
+ *
+ * `outside` also keeps the files a `paths:` entry reaches above the config
+ * directory, which are members of nothing, as `manni strategy` reads them.
+ * `meta get` finds the strategy records that way, borrowed ones included
+ * (proposal 0112).
  */
 export async function readMembers(
   collection: CollectionConfig,
   opts: PageIdReaderOptions,
+  outside = false,
 ): Promise<CollectionMember[]> {
   const { files } = await resolveTargetSet({
     inputs: collection.paths,
     cwd: opts.configDir,
     allowEmpty: true,
     respectGitignore: opts.respectGitignore ?? true,
+    ...(outside ? { exclude: collection.exclude } : {}),
   });
   const members: CollectionMember[] = [];
   for (const file of files) {
-    if (!isMember(collection, file)) continue;
+    if (!outside && !isMember(collection, file)) continue;
     const extractor = extractorForExtension(extname(file));
     if (extractor === undefined) continue;
     const path = resolve(opts.configDir, file);

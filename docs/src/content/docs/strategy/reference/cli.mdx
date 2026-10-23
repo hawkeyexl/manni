@@ -311,6 +311,12 @@ and `note` as written when written. `line` is the step's first line, and
 }
 ```
 
+{/* cite borrowed-steps-unchecked */}
+A [borrowed](/manni/strategy/reference/rules/#borrowed-records) journey's
+steps name its owner's pages, which the run does not hold. Each step's
+`state` is `unchecked`, and the journey has no `coverage`. The pretty `steps`
+row has no coverage line, and `list` leaves its `steps` cell blank.
+
 ### Exit codes
 
 | Code | Meaning |
@@ -375,15 +381,28 @@ their pages:
 ✓ 4 records, 9 references, 10 steps, no findings
 ```
 
+{/* cite borrowed-count */}
+When the run read a
+[borrowed](/manni/strategy/reference/rules/#borrowed-records) record, the
+record count says how many, on the clean line and on the summary line. The
+steps count holds the owned journeys' steps only:
+
+```
+✓ 84 records (83 borrowed), 90 references, no findings
+1 error in 85 records (83 borrowed)
+```
+
 `json` prints `{ findings, summary }`. Each finding carries `rule`, `ruleId`,
 `severity`, `message`, `guidance`, `file` and `line`. It adds the record's
 `id` when the finding is about one, and the `field` that breaks the rule when
 one does. A step rule's `field` is `steps`. `summary` holds `records`,
 `references`, `errors`, `warnings` and `notices`, and `baseline` when one was
 read or written. It holds `steps`, after `references`, when the set's
-journeys carry any. `references` counts every value of `audiences:`,
-`personas:`, `journeys:` and `audience:` the run read. A journey's own
-`personas:` counts once:
+journeys carry any. It holds `borrowed`, after `records`, when the run read a
+borrowed record. `records` and `references` count borrowed ones too, and no
+finding's `file` is borrowed. `references` counts every value of
+`audiences:`, `personas:`, `journeys:` and `audience:` the run read. A
+journey's own `personas:` counts once:
 
 ```json
 {
@@ -428,7 +447,8 @@ metadata tool's [renderers](/manni/meta/reference/output-and-exit-codes/). A
 SARIF rule's `shortDescription` is the rule's line from the rules reference,
 and its `helpUri` is the rule's section of that page. A SARIF result's message
 carries the guidance lines too. JUnit testcases carry the classname
-`manni.strategy`, one per file that holds a record or a reference.
+`manni.strategy`, one per owned file that holds a record or a reference. No
+annotation, result or testcase names a borrowed file.
 
 ### Baselines
 

@@ -91,8 +91,10 @@ export function renderGetPretty(entry: RecordEntry, opts: { color: boolean }): s
     rows.push([PARENTS[record.type], recordLines(shown)]);
   }
   if (entry.children.length > 0) rows.push([record.type === "audience" ? "personas" : "journeys", recordLines(entry.children)]);
-  if (entry.steps !== undefined && entry.coverage !== undefined) {
-    rows.push(["steps", [`${String(entry.coverage.served)} of ${String(entry.coverage.steps)} served`, ...stepLines(entry.steps, c)]]);
+  if (entry.steps !== undefined) {
+    // A borrowed journey's steps show as written, with no coverage line.
+    const coverage = entry.coverage === undefined ? [] : [`${String(entry.coverage.served)} of ${String(entry.coverage.steps)} served`];
+    rows.push(["steps", [...coverage, ...stepLines(entry.steps, c)]]);
   }
   rows.push(["pages", entry.pages.length === 0 ? ["none"] : entry.pages]);
 
@@ -151,7 +153,8 @@ export function renderFindingsPretty(report: StrategyReport, opts: { color: bool
     return `${c.green("✓")} ${plural(report.found, "finding")} recorded in ${baseline.path}`;
   }
   const baselined = baseline !== undefined && baseline.suppressed > 0 ? `, ${String(baseline.suppressed)} baselined` : "";
-  const records = plural(report.records, "record");
+  const borrowed = report.borrowed > 0 ? ` (${String(report.borrowed)} borrowed)` : "";
+  const records = `${plural(report.records, "record")}${borrowed}`;
   if (report.findings.length === 0) {
     const steps = report.steps > 0 ? `, ${plural(report.steps, "step")}` : "";
     return `${c.green("✓")} ${records}, ${plural(report.references, "reference")}${steps}, no findings${baselined}`;

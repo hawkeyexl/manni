@@ -20,7 +20,7 @@ export function recordJson(entry: RecordEntry): Record<string, unknown> {
   const parents = record.parents.map((p) => p.value);
   if (record.type === "journey") out["personas"] = parents;
   if (record.type === "persona" && parents.length > 0) out["audience"] = parents.length === 1 ? parents[0] : parents;
-  if (entry.steps !== undefined && entry.coverage !== undefined) {
+  if (entry.steps !== undefined) {
     out["steps"] = entry.steps.map((step) => ({
       ...(step.stage === undefined ? {} : { stage: step.stage }),
       ...(step.doc === undefined ? {} : { doc: step.doc }),
@@ -30,7 +30,7 @@ export function recordJson(entry: RecordEntry): Record<string, unknown> {
       state: step.state,
       ...(step.page === undefined ? {} : { page: step.page }),
     }));
-    out["coverage"] = entry.coverage;
+    if (entry.coverage !== undefined) out["coverage"] = entry.coverage;
   }
   const children = entry.children.map((r) => r.id);
   out["namedBy"] = {
@@ -62,6 +62,8 @@ export function renderFindingsJson(report: StrategyReport): string {
       })),
       summary: {
         records: report.records,
+        // Only a run that read a borrowed record carries the key.
+        ...(report.borrowed > 0 ? { borrowed: report.borrowed } : {}),
         references: report.references,
         // Only a set with steps carries the key, so a set without them prints as it always has.
         ...(report.steps > 0 ? { steps: report.steps } : {}),

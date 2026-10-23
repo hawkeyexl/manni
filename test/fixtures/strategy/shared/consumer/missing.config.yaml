@@ -1,0 +1,10 @@
+# manni.config.yaml, with a borrowed directory that is not checked out.
+collections:
+  - name: site
+    paths: ["docs/**/*.md"]
+  - name: strategy
+    paths:
+      - ../owner/audiences/
+      - ../nowhere/personas/
+      - ../owner/journeys/
+      - strategy/journeys/

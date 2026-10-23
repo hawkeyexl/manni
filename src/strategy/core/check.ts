@@ -10,6 +10,9 @@
  *
  * The four step rules (proposal 0106) read each live journey's resolved
  * `steps:`. A draft or archived journey's steps draw nothing.
+ *
+ * A file the run does not own is borrowed (proposal 0112). Its records and
+ * pages resolve values like any other, and no finding is filed in it.
  */
 import { closestName } from "../../shared/closest-name.js";
 import { RECORD_FIELDS } from "../../shared/reference-fields.js";
@@ -133,6 +136,8 @@ export interface CheckStrategySetOptions {
   steps?: StepMap;
   /** A step's page as a message names it. Default: its label. */
   pagePath?: (page: string) => string;
+  /** Whether the run owns a file. A finding in a file it does not own is dropped. Default: every file. */
+  owns?: (file: string) => boolean;
 }
 
 /** The step rules' drafts for one live journey. `naming` holds the pages that name it, posix. */
@@ -198,6 +203,7 @@ function stepDrafts(
 
 export function checkStrategySet(set: StrategySet, opts: CheckStrategySetOptions = {}): StrategyFinding[] {
   const levels = resolveSeverity(opts.severity);
+  const owns = opts.owns ?? (() => true);
   const index = indexSet(set);
   const drafts: Draft[] = [];
 
@@ -267,16 +273,17 @@ export function checkStrategySet(set: StrategySet, opts: CheckStrategySetOptions
   for (const group of sharing.values()) {
     if (group.length < 2) continue;
     for (const record of group) {
-      const others = group
-        .filter((other) => other !== record)
-        .map((other) => {
-          const at = onRecord(other);
-          return at.line === undefined ? at.file : `${at.file}:${String(at.line)}`;
-        });
+      const rest = group.filter((other) => other !== record);
+      const others = rest.map((other) => {
+        const at = onRecord(other);
+        return at.line === undefined ? at.file : `${at.file}:${String(at.line)}`;
+      });
       drafts.push({
         rule: "duplicate-id",
         message: `id: "${record.id}" is also the id of ${others.join(", ")}.`,
-        fix: "Give each record its own id.",
+        fix: rest.every((other) => !owns(other.file))
+          ? "That record is borrowed from outside this repository. Remove this copy, or give it its own id."
+          : "Give each record its own id.",
         ...located(onRecord(record)),
         id: record.id,
       });
@@ -361,7 +368,7 @@ export function checkStrategySet(set: StrategySet, opts: CheckStrategySetOptions
   const findings: StrategyFinding[] = [];
   for (const draft of drafts) {
     const level = levels[draft.rule];
-    if (level === "off") continue;
+    if (level === "off" || !owns(draft.file)) continue;
     findings.push({
       rule: draft.rule,
       ruleId: ruleId(draft.rule),

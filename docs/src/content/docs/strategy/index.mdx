@@ -309,6 +309,120 @@ with each journey's served steps over its steps. The
 [steps section](/manni/strategy/reference/rules/#steps) of the rules
 reference has every state.
 
+## Share one strategy across repositories
+
+Several docsets can serve the same readers from one set of records. Keep the
+records in one repository, and check it out beside each repository that
+reads them:
+
+```text
+work/
+  manni/                 owns docs/content-strategy/
+  manni-plugin/          borrows it
+    manni.config.yaml
+    docs/
+    strategy/journeys/   the journeys only the plugin serves
+```
+
+In the borrowing repository, the `strategy` collection names the owner's
+folders as directories. A glob that matches nothing is not an error, so a
+missing checkout would quietly narrow the run. A missing directory stops it
+with exit `2`:
+
+```yaml title="manni-plugin/manni.config.yaml"
+collections:
+  - name: site
+    paths: ["docs/**/*.md"]
+  - name: strategy
+    paths:
+      - ../manni/docs/content-strategy/audiences/
+      - ../manni/docs/content-strategy/personas/
+      - ../manni/docs/content-strategy/journeys/
+      - strategy/journeys/
+```
+
+{/* cite borrowed-outside-run-directory */}
+A record or page read from outside the run's directory is **borrowed**. The
+run's directory is the config file's, or the working directory when no config
+file governs the run. A checkout inside that directory reads as the
+repository's own, so check out side by side.
+
+{/* cite borrowed-files-no-finding */}
+A borrowed record resolves every page's references, as an owned one does.
+`check` files no finding in a borrowed file. The owner's own `check` reports
+those. The summary counts the borrowed records:
+
+```console
+$ manni strategy check
+✓ 84 records (83 borrowed), 90 references, no findings
+```
+
+A kept copy of a borrowed record draws `duplicate-id`, and its fix says to
+remove the copy:
+
+```console
+$ manni strategy check
+strategy/personas/maya.md:3
+  error   manni:strategy/duplicate-id         id: "maya" is also the id of ../manni/docs/content-strategy/personas/maya.md:3.
+                                              That record is borrowed from outside this repository.
+                                              Remove this copy, or give it its own id.
+                                              manni:strategy duplicate-id: Two records share an id, ignoring case.
+                                              Guide: https://hawkeyexl.github.io/manni/strategy/reference/rules/#duplicate-id
+
+1 error in 85 records (83 borrowed)
+```
+
+The journeys the borrowing repository owns are checked as before. One that
+no page names still draws `unserved-journey`. A borrowed journey's steps name
+its owner's pages, so `get` shows each as `unchecked`, with no coverage line.
+
+In CI, check out both repositories side by side. The second checkout's `ref:`
+pins the records to a tag of the owner's:
+
+```yaml title=".github/workflows/docs.yml"
+- uses: actions/checkout@v7
+  with:
+    path: manni-plugin
+- uses: actions/checkout@v7
+  with:
+    repository: your-org/manni
+    path: manni
+    ref: strategy-v3
+    sparse-checkout: docs/content-strategy
+- run: npx @hawkeyexl/manni strategy check -f github
+  working-directory: manni-plugin
+```
+
+A typo on a plugin page annotates that page, and nothing annotates
+`../manni/`.
+
+Coverage across products is data. Each repository's `strategy list -f json`
+prints every record with the pages that name it. Joined by `id`, the files
+give pages per journey per repository:
+
+```console
+$ (cd manni && manni strategy list -f json > ../manni.json)
+$ (cd manni-plugin && manni strategy list -f json > ../manni-plugin.json)
+$ jq -nc '[inputs | (input_filename | split("/") | last | rtrimstr(".json")) as $repo
+      | .records[] | select(.type == "journey")
+      | {id, repo: $repo, pages: (.namedBy.pages | length)}]
+    | group_by(.id)
+    | map({id: .[0].id, pages: (map({(.repo): .pages}) | add)}) | .[]' manni.json manni-plugin.json
+…
+{"id":"d16","pages":{"manni":3,"manni-plugin":1}}
+…
+{"id":"m1","pages":{"manni":10,"manni-plugin":1}}
+…
+{"id":"p1","pages":{"manni-plugin":1}}
+…
+```
+
+Each repository is its input file's base name. Append
+`| select([.pages[]] | add == 0)` to list the journeys no product serves.
+The ids match on both sides because there is one set of records. A journey
+one product owns can share an id with another product's, so give owned
+journeys a product prefix.
+
 ## Every finding has a rule
 
 Each finding names its rule, and its `Guide:` line links to that rule's

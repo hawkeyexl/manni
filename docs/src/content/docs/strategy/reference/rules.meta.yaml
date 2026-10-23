@@ -26,14 +26,14 @@ docs/src/content/docs/strategy/reference/rules.mdx:
       lines: 2-18
       integrity: sha256-77f79c23a9d9ac8c8271b7cb19f31ba45328ab1505ca9d1444761c1ef35f22a8
     - generated-by: Claude Opus 5.5
-      lines: 24-39
-      integrity: sha256-bc69eb4ed6171b72703c63f73c120f8ffd2896d598300236eaaa5303cf6bda78
+      lines: 24-60
+      integrity: sha256-38a9e2bf05bb73b8fa9b97c5f71b7d333d68ed015ed55db45e2ea14ada93bd35
     - generated-by: Claude Opus 5.5
-      lines: 82-126
+      lines: 103-147
       integrity: sha256-96277068747d59cc5dbdf3601ddc59498f187f33e85c33ffd86ab4c83ee3a345
     - generated-by: Claude Opus 5.5
-      lines: 162-256
-      integrity: sha256-c6b4aa6352dd053d13922c5a6b5da57dcb5635c9037f5b78c032df5b2567ec79
+      lines: 183-288
+      integrity: sha256-3d1d0a480042b0036203de57e1d2da92ede4c16086a75adef51c02cd1f147c82
   owner:
     - "@hawkeyexl"
   created: 2026-10-22

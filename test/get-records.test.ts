@@ -7,7 +7,9 @@ import { cpSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from "node:f
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
+import { pageIdReader } from "../src/meta/commands/fill-hints.js";
 import { runGet, type GetOptions } from "../src/meta/commands/get.js";
+import { loadConfig } from "../src/meta/core/config.js";
 import { RECORD_FIELDS } from "../src/shared/reference-fields.js";
 import { PAGE_FIELDS, PARENTS, RECORD_TYPES } from "../src/strategy/types.js";
 
@@ -101,6 +103,20 @@ describe("meta get: records", () => {
       stdinContent: "---\npersonas: [maya, mya]\n---\n",
     });
     expect(entry?.records).toEqual([MAYA]);
+  });
+
+  it("names a record borrowed from a checkout beside the config file (proposal 0112)", async () => {
+    const consumer = resolve(import.meta.dirname, "fixtures/strategy/shared/consumer");
+    const [entry] = await get({ fields: ["personas"], inputs: ["docs/page.md"] }, consumer);
+    expect(entry?.records).toEqual([{ type: "persona", id: "maya", file: "../owner/personas/maya.md" }]);
+  });
+
+  it("leaves fill's page ids to members only, so a borrowed record is never offered", async () => {
+    const consumer = resolve(import.meta.dirname, "fixtures/strategy/shared/consumer");
+    const loaded = await loadConfig(undefined, consumer);
+    if (loaded === null) throw new Error("fixture config");
+    const read = pageIdReader({ collections: loaded.collections, configDir: loaded.dir });
+    expect(await read(resolve(consumer, "docs/page.md"), ["strategy"])).toEqual(["p1"]);
   });
 
   it("agrees with strategy's fields", () => {

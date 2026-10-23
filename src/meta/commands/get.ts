@@ -501,7 +501,7 @@ async function attachRecords(
   const records: RecordReference[] = [];
   const seen = new Set<string>();
   for (const collection of opts.collections) {
-    for (const { path, id, type } of await readMembers(collection, opts)) {
+    for (const { path, id, type } of await readMembers(collection, opts, true)) {
       if (seen.has(path)) continue;
       seen.add(path);
       const record = readRecord({ id, type }, path);
