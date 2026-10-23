@@ -1,0 +1,5 @@
+When an agent reads a docs page, it sees the file. It does not see the fields kept beside it: an owner, an eval suite, a ticket in a sidecar. So it edits the page without knowing who owns it.
+
+The manni Claude Code plugin now hands the agent a page's metadata when it reads the page, sidecar fields included. It does that once per page, and again only when a field changes. The same lookup is a new flag, manni meta get --all-fields. The plugin also serves the docs graph over MCP, and publishes it the first time it is asked.
+
+npm i -D @hawkeyexl/manni · manni meta get --all-fields docs/limits.md

@@ -1,0 +1,11 @@
+{
+    "head": "---\ntitle: Limits\ndescription: Rate limits and retries.\n---\n",
+    "sidecar": "docs/limits.md:\n  owner: platform-docs\n  eval-suite: limits\n",
+    "get": "Using manni.config.yaml (.)\n\u001b[2mdocs/limits.md:\u001b[22m title=Limits\n\u001b[2mdocs/limits.md:\u001b[22m description=Rate limits and retries.\n\u001b[2mdocs/limits.md:\u001b[22m owner=platform-docs\n\u001b[2mdocs/limits.md:\u001b[22m eval-suite=limits\n",
+    "read1": "Metadata for docs/limits.md, from the page and its sidecars:\n{\"title\":\"Limits\",\"description\":\"Rate limits and retries.\",\"owner\":\"platform-docs\",\"eval-suite\":\"limits\"}\n",
+    "read2": "",
+    "read3": "Metadata for docs/limits.md changed since it was last given here. This replaces it:\n{\"title\":\"Limits\",\"description\":\"Rate limits and retries.\",\"owner\":\"docs-team\",\"eval-suite\":\"limits\"}\n",
+    "graphFirst": "manni: publishing the graph before serving it: ../scratch-pd/graph/b1148b99811b127b/chunks.json does not exist.\n",
+    "graphRest": "@@cut@@… 2 advisory lines left out\nmanni: published the graph in 0.7s.\nmanni: serving lookup, retrieve, traverse and impact over stdio from ../scratch-pd/graph/b1148b99811b127b/chunks.json.\nlookup: docs/limits.md:1-4  The fetch timeout is 10 seconds. Failed requests retry three times.\n",
+    "graphGapMs": 654
+}
