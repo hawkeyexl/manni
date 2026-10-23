@@ -43,6 +43,26 @@ describe("codeRegions", () => {
     expect(texts("  ----\ntext\n", "asciidoc")).toEqual([]);
   });
 
+  it("skips the four verbatim asciidoc blocks and reads the three compound ones", () => {
+    for (const d of ["----", "....", "++++", "////"]) {
+      expect(texts(`${d}\nx\n${d}\n`, "asciidoc")).toEqual([`${d}\nx\n${d}`]);
+    }
+    for (const d of ["====", "****", "____"]) {
+      expect(texts(`${d}\nx\n${d}\n`, "asciidoc")).toEqual([]);
+    }
+  });
+
+  it("closes an asciidoc block only on an exact repeat of its opener line", () => {
+    expect(texts("----\n------\nx\n----\n", "asciidoc")).toEqual(["----\n------\nx\n----"]);
+    expect(texts("////  \nx\n//// \nafter\n", "asciidoc")).toEqual(["////  \nx\n//// "]);
+    expect(texts("----x\ncode\n", "asciidoc")).toEqual([]);
+  });
+
+  it("does not close a markdown fence on a fence line that carries an info string", () => {
+    const text = "  ```js\n  ```js-extra\n  more\n  ```\nafter\n";
+    expect(texts(text, "markdown")).toEqual(["  ```js\n  ```js-extra\n  more\n  ```"]);
+  });
+
   it("finds backtick spans closed by a run of the same length", () => {
     const text = "a `one` b ``two ` two`` c ```open\n";
     expect(texts(text, "markdown")).toEqual(["`one`", "``two ` two``"]);

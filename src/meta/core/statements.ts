@@ -22,6 +22,7 @@ import type { DefinedError, ErrorObject, ValidateFunction } from "ajv/dist/2020.
 import GithubSlugger from "github-slugger";
 import graphSchema from "../schemas/graph/1.0.0.json" with { type: "json" };
 import type { Guidance } from "../../shared/guidance.js";
+import { codeRegions } from "../../shared/code-regions.js";
 import { hashLines, normalizeText, spellLines, splitLines, type PageLines } from "../../shared/pin.js";
 import type { Severity } from "../../shared/severity.js";
 import {
@@ -249,23 +250,11 @@ function sectionAt(headings: readonly Heading[], line: number): string {
 }
 
 /** Lines of the page that sit in a fenced block, for skipping headings in code. */
-function fencedLines(lines: readonly string[], format: string): Set<number> {
+function fencedLines(content: string, format: string): Set<number> {
   const out = new Set<number>();
-  const fence = format === "asciidoc" ? /^(-{4,})/ : format === "markdown" || format === "mdx" ? /^[ \t]*(`{3,}|~{3,})/ : undefined;
-  if (fence === undefined) return out;
-  let open: string | undefined;
-  lines.forEach((text, i) => {
-    const marker = fence.exec(text)?.[1];
-    if (open === undefined) {
-      if (marker !== undefined) {
-        open = marker;
-        out.add(i + 1);
-      }
-      return;
-    }
-    out.add(i + 1);
-    if (text.trim().startsWith(open)) open = undefined;
-  });
+  for (const { start, end } of codeRegions(content, format, { spans: false })) {
+    for (let n = lineAt(content, start); n <= lineAt(content, end - 1); n++) out.add(n);
+  }
   return out;
 }
 
@@ -406,7 +395,7 @@ function shapeFindings(s: PageStatement, payloadReason: string | undefined, xml:
 function readLineRule(content: string, format: string): StatementRead {
   const from = bodyStart(content, format);
   const lines = splitLines(content);
-  const fenced = fencedLines(lines, format);
+  const fenced = fencedLines(content, format);
   const headings = lineHeadings(lines, format, from.line, (n) => fenced.has(n));
   const statements: PageStatement[] = [];
   const findings: FieldError[] = [];

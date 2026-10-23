@@ -34,7 +34,7 @@
  * `formatStatement` writes: the html comment for markdown, the jsx comment
  * for mdx, which rejects an html comment.
  */
-import { codeEndAt, codeRegions } from "./code-regions.js";
+import { asciidocBlock, blockCloser, codeEndAt, codeRegions } from "./code-regions.js";
 
 /**
  * One replacement against a fixed text: the bytes `[start, end)` become
@@ -88,17 +88,23 @@ const RST_FORMS: readonly StatementForm[] = [{ open: ".. (", close: ")" }];
 const ID = /^[a-z0-9][a-z0-9-]*$/;
 
 /**
- * A fence opener in any format. `paragraphAfter` reads it whether or not it
- * was given a format, and so does the claim search (`claims.ts`), so every
- * family's opener counts; the per-format locators below are what `quote`
- * anchoring uses.
- * A markdown fence keeps its meaning when indented, as inside a list item, so
- * it is read there too, matching the code skip in `src/shared/code-regions.ts`; the
- * asciidoc `----` stays at column 0.
+ * A fence opener in any format, for a caller with no format at hand. A
+ * markdown fence keeps its meaning when indented, as inside a list item; the
+ * asciidoc `----` stays at column 0. With a format, the blocks are the ones
+ * `blockCloser` in `src/shared/code-regions.ts` reads, which is the one
+ * block rule the code skip shares.
  */
 export const ANY_FENCE = /^(?:[ \t]*(?:`{3,}|~{3,})|-{4,})/;
-const MARKDOWN_FENCE = /^(`{3,}|~{3,})/;
-const ASCIIDOC_FENCE = /^(-{4,})/;
+
+/**
+ * Whether a line ends a paragraph as a fence or a block delimiter: any
+ * `ANY_FENCE`, and in asciidoc any delimiter line. `above` is the line before,
+ * which keeps a title's `=` underline a bound line rather than a delimiter.
+ */
+function isFenceLine(line: string, format?: string, above?: string): boolean {
+  return ANY_FENCE.test(line) || (format === "asciidoc" && asciidocBlock(line, above) !== undefined);
+}
+
 /** The forms per extractor name. Unknown formats have none. */
 export function statementForms(format: string): readonly StatementForm[] {
   switch (format) {
@@ -118,23 +124,17 @@ export function statementForms(format: string): readonly StatementForm[] {
   }
 }
 
-/** The fence-opener pattern for a format, or undefined when it has no locator. */
-function fenceFor(format: string): RegExp | undefined {
-  switch (format) {
-    case "markdown":
-    case "mdx":
-      return MARKDOWN_FENCE;
-    case "asciidoc":
-      return ASCIIDOC_FENCE;
-    default:
-      return undefined;
-  }
-}
-
 /** Offset of the terminator of the line containing `pos` (or the text length). */
 function lineEnd(content: string, pos: number): number {
   const nl = content.indexOf("\n", pos);
   return nl === -1 ? content.length : nl;
+}
+
+/** The text of the line before the one starting at `pos`, or undefined at the start. */
+function lineBefore(content: string, pos: number): string | undefined {
+  if (pos === 0) return undefined;
+  const start = content.lastIndexOf("\n", pos - 2) + 1;
+  return lineText(content, start, pos - 1);
 }
 
 /** The text of the line `[pos, end)`, without a trailing CR. */
@@ -411,7 +411,7 @@ export function paragraphAfter(
       pos = end + 1;
       continue;
     }
-    if (ANY_FENCE.test(text)) return undefined;
+    if (isFenceLine(text, format, lineBefore(content, pos))) return undefined;
     const start = pos;
     let last = end;
     // A bound line is its own unit, so it never gathers the lines under it.
@@ -419,7 +419,7 @@ export function paragraphAfter(
     while (cursor < content.length) {
       const e = lineEnd(content, cursor);
       const t = lineText(content, cursor, e);
-      if (t.trim() === "" || ANY_FENCE.test(t) || marker(t) || bound(t)) break;
+      if (t.trim() === "" || isFenceLine(t, format) || marker(t) || bound(t)) break;
       last = e;
       cursor = e + 1;
     }
@@ -436,21 +436,25 @@ interface FencedBlock {
 }
 
 /**
- * The next fenced block whose opener matches `fence`, scanning whole lines
- * from `offset`, plus the offset just past its closing fence line so a caller
- * can continue.
+ * The next block the format opens, scanning whole lines from `offset`, plus
+ * the offset just past its closing line so a caller can continue. Every block
+ * when `compound` is set, else only those whose content is code: in asciidoc,
+ * a compound block holds prose, and blocks nest inside it.
  */
 function scanFence(
   content: string,
   offset: number,
-  fence: RegExp,
+  format: string,
+  compound: boolean,
 ): (FencedBlock & { next: number }) | undefined {
   let pos = nextLineStart(content, offset);
+  let above = lineBefore(content, pos);
   while (pos < content.length) {
     const end = lineEnd(content, pos);
     const text = lineText(content, pos, end);
-    const opener = fence.exec(text)?.[1];
-    if (opener === undefined) {
+    const closes = blockCloser(text, format, { above, compound });
+    if (closes === undefined) {
+      above = text;
       pos = end + 1;
       continue;
     }
@@ -459,7 +463,7 @@ function scanFence(
     let cursor = start;
     while (cursor < content.length) {
       const e = lineEnd(content, cursor);
-      if (lineText(content, cursor, e).startsWith(opener)) {
+      if (closes(lineText(content, cursor, e))) {
         return {
           start,
           end: cursor,
@@ -476,18 +480,17 @@ function scanFence(
 }
 
 /**
- * The fenced code block starting at or after `offset` (``` or ~~~; asciidoc
- * `----`), as file offsets of its content lines and the file line of the
- * opening fence. `undefined` for formats with no locator (html, xml, rst).
+ * The fenced code block starting at or after `offset` (``` or ~~~; any
+ * asciidoc delimited block), as file offsets of its content lines and the
+ * file line of the opening fence. `undefined` for formats with no locator
+ * (html, xml, rst).
  */
 export function fencedBlockAfter(
   content: string,
   offset: number,
   format: string,
 ): { start: number; end: number; line: number; text: string } | undefined {
-  const fence = fenceFor(format);
-  if (!fence) return undefined;
-  const block = scanFence(content, offset, fence);
+  const block = scanFence(content, offset, format, true);
   if (!block) return undefined;
   const { start, end, line, text } = block;
   return { start, end, line, text };
@@ -507,24 +510,26 @@ export function fencedBlockAt(
     return undefined;
   }
   const block =
-    scanFence(content, pos, MARKDOWN_FENCE) ?? scanFence(content, pos, ASCIIDOC_FENCE);
+    scanFence(content, pos, "markdown", true) ?? scanFence(content, pos, "asciidoc", true);
   if (!block || block.line !== lineAt(content, pos)) return undefined;
   const { start, end, line, text } = block;
   return { start, end, line, text };
 }
 
-/** Every fenced block in the body, for `--quote` without `--claim`. */
+/**
+ * Every block in the body whose content is code, for `--quote` without
+ * `--claim` and for what sits inside a fence. An asciidoc compound block
+ * holds prose, so it is left out, and the blocks nested in it are found.
+ */
 export function fencedBlocks(
   content: string,
   bodyOffset: number,
   format: string,
 ): { start: number; end: number; line: number; text: string }[] {
-  const fence = fenceFor(format);
-  if (!fence) return [];
   const out: FencedBlock[] = [];
   let pos = bodyOffset;
   for (;;) {
-    const block = scanFence(content, pos, fence);
+    const block = scanFence(content, pos, format, false);
     if (!block) return out;
     const { start, end, line, text } = block;
     out.push({ start, end, line, text });
@@ -600,18 +605,17 @@ function nextTextLine(text: string, offset: number, format: string): number | un
 }
 
 /**
- * The fenced block opening on `line`, as the lines it spans, fences included.
- * Undefined when that line is not an opener the format knows, or the block is
- * never closed.
+ * The fenced block opening on `line`, as the lines it spans, fences included:
+ * a markdown fence at any indent, or any asciidoc delimited block. Undefined
+ * when that line is not an opener the format knows, or the block is never
+ * closed.
  */
 export function fenceSpanAt(
   text: string,
   line: number,
   format: string,
 ): { start: number; end: number } | undefined {
-  const fence = fenceFor(format);
-  if (!fence) return undefined;
-  const block = scanFence(text, offsetOfLine(text, line), fence);
+  const block = scanFence(text, offsetOfLine(text, line), format, true);
   if (!block || block.line !== line) return undefined;
   return { start: line, end: lineAt(text, block.end) };
 }
@@ -667,14 +671,17 @@ export function unitHolding(
   if (block !== undefined) {
     return { start: block.line, end: lineAt(text, block.end), kind: "block" };
   }
-  if (ANY_FENCE.test(own)) return undefined;
+  // An asciidoc compound block is found by its opener; the prose inside it is not the block.
+  const opened = fenceSpanAt(text, line, format);
+  if (opened !== undefined) return { ...opened, kind: "block" };
+  if (isFenceLine(own, format, line > 1 ? textOf(line - 1) : undefined)) return undefined;
   let start = line;
   // A bound line is its own unit, so the walk up never leaves it.
   while (start - 1 >= body.line && !isBoundLine(own, format)) {
     const above = textOf(start - 1);
     if (
       above.trim() === "" ||
-      ANY_FENCE.test(above) ||
+      isFenceLine(above, format) ||
       isMarkerLine(above, format) ||
       isBoundLine(above, format)
     ) {
@@ -861,7 +868,7 @@ export function offsetOfLine(content: string, line: number): number {
 export function isUnitText(line: string | undefined, format: string): boolean {
   if (line === undefined) return false;
   if (line.trim() === "") return false;
-  if (ANY_FENCE.test(line)) return false;
+  if (isFenceLine(line, format)) return false;
   if (isMarkerLine(line, format)) return false;
   return !isBoundLine(line, format);
 }
