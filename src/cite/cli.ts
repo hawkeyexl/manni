@@ -241,6 +241,10 @@ export function addMessage(result: AddResult): string {
     if (citation.quote === true) return `${marked} (a block that reproduces ${src})`;
     return `${marked} (${shortPin(claim.integrity)}; source ${pin})`;
   }
+  // A metadata value is placed by its pointer, not by lines (0108).
+  if (claim?.pointer !== undefined) {
+    return `${head} (claim at ${claim.pointer}, ${shortPin(claim.integrity)}; source ${pin})`;
+  }
   if (claim === undefined || claimLines === undefined) {
     return `${head} (source ${pin})`;
   }
@@ -411,7 +415,7 @@ export function buildProgram(): Command {
     .description("Mint a citation for a source range and write it to a page")
     .argument(
       "<page>",
-      "the page to cite from, with the claim's lines: page:L or page:L1-L2 (use - for stdin, with --as)",
+      "the page to cite from, with the claim: page:L or page:L1-L2 for body lines, or record#/pointer for a value on an audience, persona or journey record (use - for stdin, with --as)",
     )
     .argument(
       "<src>",
@@ -444,6 +448,7 @@ export function buildProgram(): Command {
         "  manni cite add docs/limits.md:9 lib/limits.ts:2 --id fetch-timeout",
         "  manni cite add docs/limits.md:30 lib/limits.ts:8-12 --id timeouts --marker",
         "  manni cite add docs/limits.md:14-18 lib/limits.ts:1-3 --quote",
+        "  manni cite add docs/personas/theo.md#/pains/0 notes/2026-09-12.md:3-4 --id terse-messages",
         "  manni cite add docs/limits.md lib/limits.ts --dry-run",
         "  cat page.md | manni cite add -:9 lib/limits.ts:2 --as markdown > out.md",
       ].join("\n"),

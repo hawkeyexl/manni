@@ -1,0 +1,60 @@
+exit: 0
+--- stdout
+{
+  "summary": {
+    "files": 1,
+    "passed": 1,
+    "failed": 0,
+    "errors": 0
+  },
+  "pages": [
+    {
+      "file": "docs/pages/limits.md",
+      "format": "markdown",
+      "citations": [
+        {
+          "id": "timeout",
+          "origin": {
+            "kind": "frontmatter",
+            "file": "docs/pages/limits.md",
+            "line": 5
+          },
+          "anchor": "claim",
+          "claim": {
+            "status": "current",
+            "lines": "3",
+            "fileLines": "26"
+          },
+          "source": {
+            "src": "api:lib/limits.ts:2",
+            "repo": "api",
+            "status": "current"
+          }
+        },
+        {
+          "id": "retries",
+          "origin": {
+            "kind": "frontmatter",
+            "file": "docs/pages/limits.md",
+            "line": 14
+          },
+          "anchor": "claim",
+          "claim": {
+            "status": "current",
+            "lines": "5",
+            "fileLines": "28"
+          },
+          "source": {
+            "src": "sdk:src/client.ts:2",
+            "repo": "sdk",
+            "status": "current"
+          }
+        }
+      ],
+      "findings": [],
+      "notices": []
+    }
+  ]
+}
+--- stderr
+manni: No git root found; resolving src: paths from <dir>

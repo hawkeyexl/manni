@@ -1357,8 +1357,10 @@ describe("OPTIONAL_FIELD_PREDECESSORS (proposal 0098)", () => {
   // entry hides a real change from every recorded baseline. Every markdown
   // fixture without the added keys is such a document. An inline `meta`
   // statement (proposal 0099) sets them as JSON keys, and counts too.
-  // citations 1.2.0 adds `source.repo` (proposal 0100).
-  const ADDED = /^\s*-?\s*(last-verified|verified-by|repo)\s*:|"(last-verified|verified-by|repo)"\s*:/m;
+  // citations 1.2.0 adds `source.repo` (proposal 0100), and 1.3.0 adds
+  // `claim.pointer` (proposal 0108).
+  const ADDED =
+    /^\s*-?\s*(last-verified|verified-by|repo|pointer)\s*:|"(last-verified|verified-by|repo|pointer)"\s*:/m;
   const fixtures = (dir: string): string[] =>
     readdirSync(dir, { withFileTypes: true }).flatMap((e) => {
       const p = join(dir, e.name);
@@ -1386,6 +1388,7 @@ describe("OPTIONAL_FIELD_PREDECESSORS (proposal 0098)", () => {
       ["manni:citations:1.1.0", "manni:citations:1.0.0"],
       ["manni:citations-strict:1.1.0", "manni:citations-strict:1.0.0"],
       ["manni:citations:1.2.0", "manni:citations:1.1.0"],
+      ["manni:citations:1.3.0", "manni:citations:1.2.0"],
     ]);
     expect(documents.length).toBeGreaterThan(50);
   });
@@ -1412,6 +1415,9 @@ describe("OPTIONAL_FIELD_PREDECESSORS (proposal 0098)", () => {
     expect(baselineIdentity("manni:stewardship-strict:1.2.0")).toBe("manni:stewardship-strict:1.0.0");
     expect(baselineIdentity("manni:citations:1.1.0")).toBe("manni:citations:1.0.0");
     expect(baselineIdentity("manni:citations:1.2.0")).toBe("manni:citations:1.0.0");
+    expect(baselineIdentity("manni:citations:1.3.0")).toBe("manni:citations:1.0.0");
+    expect(baselineIdentity("manni:citations-strict:1.3.0")).toBe("manni:citations-strict:1.0.0");
+    expect(ANNOTATION_ONLY_PREDECESSORS.get("manni:citations-strict:1.3.0")).toBe("manni:citations-strict:1.2.0");
     expect(baselineIdentity("manni:core:1.0.0")).toBe("manni:core:1.0.0");
   });
 });

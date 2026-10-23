@@ -25,6 +25,9 @@ export interface PublicClaimEnd {
   lines?: string;
   fileLines?: string;
   status: string;
+  /** A pointer claim's pointer, and where the value is now when it moved (0108). */
+  pointer?: string;
+  newPointer?: string;
   newLines?: string;
   candidates?: string[];
   /** The baseline the claim was read against: the page's own history says it. */
@@ -54,6 +57,8 @@ export interface PublicCitationResult {
   anchor: CitationAnchor;
   /** The marker that names the entry: its line, and its misplacement when it has one. */
   marker?: MarkerEnd;
+  /** A pointer claim's value line now (0108). */
+  at?: number;
   claim: PublicClaimEnd | null;
   source: PublicSourceEnd;
 }
@@ -83,7 +88,15 @@ export function publicCitation(result: CitationResult): PublicCitationResult {
   }
 
   let claim: PublicClaimEnd | null = null;
-  if (result.claim !== null) {
+  const pointer = result.claim?.pointer;
+  if (result.claim !== null && pointer !== undefined) {
+    // A metadata value (0108): where it is, as pointers. Its line is `at`.
+    claim = { status: result.claim.status, pointer };
+    if (result.claim.newPointer !== undefined) claim.newPointer = result.claim.newPointer;
+    if (result.claim.candidates !== undefined) claim.candidates = result.claim.candidates;
+    if (result.claim.commitSha !== undefined) claim.commitSha = result.claim.commitSha;
+    if (result.claim.historyAvailable !== undefined) claim.historyAvailable = result.claim.historyAvailable;
+  } else if (result.claim !== null) {
     claim = { status: result.claim.status };
     if (result.claim.lines !== undefined) claim.lines = result.claim.lines;
     if (result.claim.fileLines !== undefined) claim.fileLines = result.claim.fileLines;
@@ -102,6 +115,7 @@ export function publicCitation(result: CitationResult): PublicCitationResult {
     origin,
     anchor: result.anchor,
     ...(result.marker === undefined ? {} : { marker: result.marker }),
+    ...(pointer === undefined || result.anchorLine === undefined ? {} : { at: result.anchorLine }),
     claim,
     source,
   };

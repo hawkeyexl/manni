@@ -568,3 +568,56 @@ describe("0009 · the published copies under docs/public", () => {
     }
   });
 });
+
+// ---------------------------------------------------------------------------
+// 0108: citations 1.3.0 adds `claim.pointer`, a claim that is a metadata value
+// ---------------------------------------------------------------------------
+
+describe("manni:citations:1.3.0", () => {
+  const V130 = "manni:citations:1.3.0";
+  const V120 = "manni:citations:1.2.0";
+  const SRC =
+    "      file: src/limits.ts\n      lines: 2\n      integrity: sha256-78af1d3321f9cbb177a7e4c958e39be56fd14cb93c1e441778bc4232e0fe4b1f\n";
+  const HASH = "sha256-c56558bf647d03e540ddcb461a22dc17c760420163de9d22c4c5718c27c1fdfb";
+  /** A page whose one entry carries `claim`, given as its YAML lines. */
+  const pageWith = (claim: string): string =>
+    `---\ntitle: Theo\npains:\n  - A request times out with no hint.\ncitations:\n  - id: timeout\n    claim:\n${claim}    source:\n${SRC}---\n# Theo\n`;
+  const errorsUnder = async (content: string, schema: string) => {
+    const { results } = await runValidate({
+      inputs: ["-"],
+      as: "markdown",
+      stdinContent: content,
+      cliSchemas: [schema],
+      noConfig: true,
+      cwd: root,
+    });
+    return (results[0]?.errors ?? []).filter((e) => e.keyword !== "location");
+  };
+
+  it("accepts a claim by pointer", async () => {
+    expect(await errorsUnder(pageWith(`      pointer: /pains/0\n      integrity: ${HASH}\n`), V130)).toEqual([]);
+  });
+
+  it("refuses a claim with both lines and a pointer", async () => {
+    const errs = await errorsUnder(
+      pageWith(`      lines: 1\n      pointer: /pains/0\n      integrity: ${HASH}\n`),
+      V130,
+    );
+    expect(errs.map((e) => [e.instancePath, e.keyword])).toEqual([["/citations/0/claim", "not"]]);
+  });
+
+  it.each(["/citations/0", "/citations", ""])("refuses the pointer %j", async (pointer) => {
+    const errs = await errorsUnder(pageWith(`      pointer: "${pointer}"\n      integrity: ${HASH}\n`), V130);
+    expect(errs.map((e) => [e.instancePath, e.keyword])).toEqual([["/citations/0/claim/pointer", "pattern"]]);
+  });
+
+  it("is not in 1.2.0, which refuses a pointer", async () => {
+    const errs = await errorsUnder(pageWith(`      pointer: /pains/0\n      integrity: ${HASH}\n`), V120);
+    expect(errs.map((e) => [e.instancePath, e.keyword])).toEqual([["/citations/0/claim", "additionalProperties"]]);
+  });
+
+  it("stays out of the default set", () => {
+    expect(DEFAULT_SCHEMAS).not.toContain(V130);
+    expect(DEFAULT_SCHEMAS).toContain(V120);
+  });
+});

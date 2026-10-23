@@ -17,7 +17,7 @@ sample-questions:
 graph:
   label: "The manni vocabularies"
   type: concept
-last-updated: 2026-10-22
+last-updated: 2026-10-23
 tags:
   - vocabularies
   - schemas
@@ -65,7 +65,7 @@ glossary tool or CI tool can read.
 | [`manni:evals:1.0.0`](/manni/meta/reference/schemas/manni-evals/) | What must be true of this page? | `evals` · `eval-suite` · `eval-skip` |
 | [`manni:graph:1.0.0`](/manni/meta/reference/schemas/manni-graph/) | What does the knowledge graph know about it? | `graph`, one closed block of SKOS concepts, iiRDS typing and PROV provenance |
 | [`manni:artifact-evals:1.1.0`](/manni/meta/reference/schemas/manni-artifact-evals/) | What must a session using this artifact have done? | `metadata.evals` · `metadata.eval-skip` · `metadata.meta-provenance` |
-| [`manni:citations:1.2.0`](/manni/meta/reference/schemas/manni-citations/) | What do its claims rest on? | `citations`, each entry with `last-verified` and `verified-by` |
+| [`manni:citations:1.3.0`](/manni/meta/reference/schemas/manni-citations/#version-130) | What do its claims rest on? | `citations`, each entry with `last-verified` and `verified-by`, and a claim `pointer` on a strategy record |
 | [`manni:terminology:1.2.0`](/manni/meta/reference/schemas/manni-terminology/) | What does this term mean, and what else is it called? | `label` · `definition` · `abstract` · `alt-labels` · `hidden-labels` · `broader` · `narrower` · `related-terms` · `see` · `scope-note` · `notation` · the five match fields · the TBX data categories · `concept-entry` · `designations` · `tbx-markup` |
 
 \* Required. Core's `title` and `description` are the only fields the family
@@ -87,6 +87,10 @@ structure, stewardship, lifecycle, ai-context, evals, graph and citations. A
 run with no schema configured checks all nine, so every page needs `title`
 and `description`. Config `schemas` add to the default set rather than
 replace it.
+
+Citations is on by default at 1.2.0. Its newest version, 1.3.0, adds a
+claim that is a metadata value. `manni cite` reads one on strategy records
+only. 1.3.0 is opt-in, so an override names it where those records live.
 
 Terminology and artifact-evals stay out. A term page and an artifact are
 special kinds of page, and a set of guides has neither. Name them where they

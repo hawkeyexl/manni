@@ -143,6 +143,7 @@ function citesEncrypted(src: string): boolean {
  */
 function claimColumn(result: CitationResult): string {
   const { claim, marker } = result;
+  if (claim?.pointer !== undefined) return pointerColumn({ ...claim, pointer: claim.pointer });
   const anchoredByMarker = result.anchor === "marker" && result.markerLine !== undefined;
   const moves = marker?.misplaced === undefined ? "" : ` -> :${String(marker.misplaced.to)}`;
   const where = anchoredByMarker
@@ -174,6 +175,21 @@ function claimColumn(result: CitationResult): string {
       status = claim.status;
   }
   return where === "" ? status : `${where} ${status}`;
+}
+
+/** A pointer claim's column: `#/pains/0` and how it reads, as lines read `:14 current` (0108). */
+function pointerColumn(claim: NonNullable<CitationResult["claim"]> & { pointer: string }): string {
+  const at = `#${claim.pointer}`;
+  switch (claim.status) {
+    case "moved":
+      return `${at} moved -> #${claim.newPointer ?? "?"}`;
+    case "moved-ambiguous":
+      return `${at} moved-ambiguous (${(claim.candidates ?? []).map((p) => `#${p}`).join(", ")})`;
+    case "changed":
+      return `${at} ${changedText(claim)}`;
+    default:
+      return `${at} ${claim.status}`;
+  }
 }
 
 /** How a changed claim's column says since when, as the source column does. */
@@ -512,12 +528,15 @@ function movedSpan(rewrite: UpdateRewrite): string {
  */
 export function refusalLine(rewrite: UpdateRewrite): string {
   const at = shortCommit(rewrite.commitSha ?? "");
-  const where = `claim at ${spellAtSpec(String(rewrite.at ?? 0))} skipped:`;
+  // A metadata value is named by its pointer, and is a value, not a line (0108).
+  const pointer = rewrite.pointer;
+  const where = `claim at ${pointer === undefined ? spellAtSpec(String(rewrite.at ?? 0)) : `#${pointer}`} skipped:`;
+  const holder = pointer === undefined ? "that line" : "that value";
   if (rewrite.wordShare !== undefined) {
     const share = Math.round(rewrite.wordShare * 100);
-    return `${where} that line now holds text sharing ${String(share)}% of the claim's words at ${at}. Re-add it with cite add.`;
+    return `${where} ${holder} now holds text sharing ${String(share)}% of the claim's words at ${at}. Re-add it with cite add.`;
   }
-  return `${where} that line now holds different text than the claim at ${at}. Re-add it with cite add.`;
+  return `${where} ${holder} now holds different text than the claim at ${at}. Re-add it with cite add.`;
 }
 
 /**
@@ -541,6 +560,12 @@ export function rewriteLine(rewrite: UpdateRewrite): string {
   const status = rewrite.status === "never-true" ? "never true" : rewrite.status;
   if (rewrite.end === "marker") {
     return `marker line ${rewrite.from} -> ${rewrite.to} (misplaced)`;
+  }
+  // A metadata value: moved between pointers, or re-pinned at one (0108).
+  if (rewrite.end === "claim" && rewrite.pointer !== undefined) {
+    return rewrite.reason === "moved"
+      ? `claim #${rewrite.from} -> #${rewrite.to} (moved)`
+      : `claim at #${rewrite.pointer} re-pinned (${status}; now "${rewrite.text ?? ""}")`;
   }
   // The pin held; only its date was wrong. The row names both commits, so the
   // log says what the entry claimed before it was corrected.

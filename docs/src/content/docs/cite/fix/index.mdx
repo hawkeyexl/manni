@@ -31,7 +31,7 @@ sample-questions:
 graph:
   label: Fix a failing check
   type: troubleshooting
-last-updated: 2026-10-22
+last-updated: 2026-10-23
 tags:
   - troubleshooting
   - citations
@@ -89,7 +89,7 @@ Each indented line below it is one citation, and it carries **both ends**:
 | --- | --- |
 | `<mark>` | `✓` fine, `↕` a warning, `ℹ` a notice, `✗` an error, `·` skipped or baselined. |
 | `<id>` | The citation's `id`. An entry without one leaves the column empty, and the two ends identify it. |
-| `<claim end>` | The page lines the sentence occupies, and their status: `:13 current`, `:13 moved -> :15`, `:13 changed`. A marker-anchored claim reads `marker :13`, and `marker :13 -> :11` when the marker is misplaced. Empty for a bare pin. |
+| `<claim end>` | The page lines the sentence occupies, and their status: `:13 current`, `:13 moved -> :15`, `:13 changed`. A marker-anchored claim reads `marker :13`, and `marker :13 -> :11` when the marker is misplaced. A claim that is a metadata value reads as its pointer, such as `#/pains/0 current`. Empty for a bare pin. |
 | `<source end>` | The source as the entry spells it (`lib/limits.ts:2`, `lib/limits.ts:1-3`, a bare path for a whole file, or a ciphertext such as `~AQm4…:5`), then its status. |
 | `<manifest>` | Printed only when the page's entries come from more than one place, such as frontmatter and a sidecar. It names the sidecar that owns the entry, and the entry's line in it. Empty for a frontmatter entry. |
 
@@ -116,10 +116,11 @@ the entry's own line, in the manifest when a sidecar owns it.
 | [`source-changed`](#source-changed) | error | The cited lines are not what they were. | Read `--show-diff`, fix the sentence, then `update --accept --only <id>` |
 | [`source-never-true`](#source-never-true) | error | The pin held at no commit in the source's history. | Check the sentence, then `update --accept --only <id>` |
 | [`source-missing`](#source-missing) | error | The path names no tracked file, names an undeclared repo, or an encrypted source cannot be decrypted. | Re-add against the new path; or fix `--root` or the key |
-| [`claim-moved`](#claim-moved) | notice | The pinned page text sits at a different line. | `manni cite update` |
-| [`claim-moved-ambiguous`](#claim-moved-ambiguous) | warning | The pinned page text now occurs in more than one place. | Re-add over a range that occurs once |
+| [`claim-moved`](#claim-moved) | notice | The pinned page text sits at a different line. The pinned metadata value sits at another pointer. | `manni cite update` |
+| [`claim-moved-ambiguous`](#claim-moved-ambiguous) | warning | The pinned page text now occurs in more than one place. The pinned metadata value now occurs at more than one pointer. | Re-add over a range that occurs once, or `remove` and re-add the pointer |
 | [`claim-reanchored`](#claim-reanchored) | notice | The pinned words are unchanged, and only the layout around them moved. | `manni cite update` |
-| [`claim-changed`](#claim-changed) | warning | The sentence was edited since it was pinned. | Read it, then `update --accept --only <id>` |
+| [`claim-changed`](#claim-changed) | warning | The sentence was edited since it was pinned. The metadata value was edited since it was pinned. | Read it, then `update --accept --only <id>` |
+| [`claim-missing`](#claim-missing) | warning | The pinned metadata value is gone from the record. | `manni cite remove --only <id>` |
 | [`marker-orphan`](#marker-orphan) | error | A marker names an id no entry has. | Fix the id, or add the entry |
 | [`marker-invalid`](#marker-invalid) | error | A marker the tool cannot read, including one carrying JSON. | Write an id, and keep the entry out of the body |
 | [`marker-repeated`](#marker-repeated) | warning | Two markers name one id. | Delete one, or give the second entry its own id |
@@ -130,7 +131,7 @@ the entry's own line, in the manifest when a sidecar owns it.
 
 {/* cite update-reports-skipped */}
 {/* cite update-skipped-exit-one */}
-The first five are about the **source** end, the next four about the
+The first five are about the **source** end, the next five about the
 **claim** end, and the rest about the entry and its anchor. `update` handles
 the mechanical ones and refuses the rest, printing each as `skipped`. It exits
 `1` when a skipped finding is an error, so you know work is left. Skipped
@@ -342,6 +343,14 @@ supplies it. See
 
 ## Claim-end rules
 
+A claim is body text on any page. A strategy record is a page whose own
+metadata declares `type: audience`, `type: persona` or `type: journey`. On a
+record, a claim can also be a metadata value, pinned by a JSON Pointer such
+as `/pains/0`. cite reads a pointer claim on records only. Each rule below shows
+the body-line case first, then the pointer case where it differs.
+[Rest each persona on evidence](/manni/strategy/evidence/) sets pointer
+claims up.
+
 ### claim-moved
 
 ```
@@ -373,6 +382,21 @@ A marker-anchored claim reaches this rule only when the marker no longer
 anchors the span the pin holds. The marker travels with its text otherwise.
 `update` re-pins it over the span the marker anchors now, with no flag.
 
+A pointer claim moves when its list is reordered, or an item is inserted
+above it. The pinned value sits at one other pointer:
+
+```
+ℹ records/personas/theo.md   records/personas/theo.citations.yaml
+    ℹ terse-messages   #/pains/0 moved -> #/pains/1   research:notes/2026-09-12-contributor.md:3 current
+      Run manni cite update.
+```
+
+The same `update` rewrites `claim.pointer`:
+
+```
+records/personas/theo.md: terse-messages claim #/pains/0 -> #/pains/1 (moved)
+```
+
 ### claim-moved-ambiguous
 
 ```
@@ -392,6 +416,22 @@ be ambiguous:
 
 ```sh
 manni cite add docs/limits.md:21 src/limits.ts:3 --id retries --marker
+```
+
+A pointer claim is ambiguous when its value now sits at two or more pointers.
+A goal copied word for word from a pain does this:
+
+```
+⚠ records/personas/theo.md   records/personas/theo.citations.yaml
+    ↕ terse-messages   #/pains/0 moved-ambiguous (#/goals/0, #/pains/1)   research:notes/2026-09-12-contributor.md:3 current
+      Run manni cite remove --only terse-messages, then cite add the pointer you mean.
+```
+
+**Fix.** Remove the entry, then pin the pointer you mean:
+
+```sh
+manni cite remove --only terse-messages records/personas/theo.md
+manni cite add records/personas/theo.md#/pains/1 research:notes/2026-09-12-contributor.md:3 --id terse-messages
 ```
 
 ### claim-reanchored
@@ -450,10 +490,67 @@ that was reworded **and** moved has left that line. `--accept` then re-pins
 whatever paragraph now starts there, so read the printed text. If it is not
 the sentence, `cite add` the sentence again.
 
+A pointer claim is changed when the value at its pointer was edited and the
+pinned value is nowhere else in the record:
+
+```
+⚠ records/personas/theo.md   records/personas/theo.citations.yaml
+    ↕ terse-messages   #/pains/1 changed since d572997, uncommitted   research:notes/2026-09-12-contributor.md:3 current
+      Check it still matches the source, then run manni cite update --accept --only terse-messages.
+```
+
+**Fix.** Read the value against the evidence. `--show-diff` prints the old
+and new value, labelled with the pointer:
+
+```
+        --- records/personas/theo.md@d572997:#/pains/1
+        +++ records/personas/theo.md:#/pains/1
+        -Error messages are terse with no remediation hint.
+        +Error messages are terse and name no fix.
+```
+
+When the evidence still says what the value says, re-pin it. The log prints
+the value now pinned:
+
+```sh
+manni cite update --accept --only terse-messages records/personas/theo.md
+```
+
+```
+records/personas/theo.md: terse-messages claim at #/pains/1 re-pinned (changed; now "Error messages are terse and name no fix.")
+1 citation rewritten in 1 file, 0 skipped
+```
+
+A blanket `--accept` judges a value by its words alone, and skips one that
+keeps under half of the pinned value's words. Naming the id with `--only`
+accepts it, and the log says `replaced` rather than `changed`.
+
 {/* cite claim-changed-configurable */}
 A team that wants every edit to a cited sentence reviewed sets
 `claim-changed: error` under
 [`severity:`](/manni/cite/reference/configuration/#severity).
+
+### claim-missing
+
+```
+⚠ records/personas/theo.md   records/personas/theo.citations.yaml
+    ↕ unknown-schema   #/pains/0 missing              research:notes/2026-09-12-contributor.md:4 current
+      Run manni cite remove --only unknown-schema. If the claim still stands, cite add it at its pointer now.
+```
+
+The value a pointer claim pins is gone from the record. Either the pointer
+names no value, or it names the value another entry pins. The second is a
+deleted item whose neighbour shifted up into its index. A body-line claim
+never reads `missing`. This is a **warning**, and the exit code stays `0`.
+
+**Fix.** `update` skips the entry and names the remedy. Remove the entry:
+
+```sh
+manni cite remove --only unknown-schema records/personas/theo.md
+```
+
+If the claim still stands somewhere in the record, pin it at its pointer
+now with `cite add`.
 
 ## Anchor and entry rules
 
@@ -546,14 +643,16 @@ Read the sentence first with `cite check --show-diff`, then
 ```
 
 {/* cite anchor-invalid-claim-not-judged */}
-The entry's anchor cannot work, so neither end is judged. Three cases reach
-this rule:
+The entry's anchor cannot work, so neither end is judged. Five cases reach
+this rule, and the last two arise on a record only:
 
 | Message | Cause | Fix |
 | --- | --- | --- |
 | `fetch-timeout has claim lines and a marker. Keep one.` | The entry stores `claim.lines` and a marker names it too. | Delete the marker, or delete `claim.lines`. |
 | `fetch-timeout: quote needs a claim or a marker. Add claim.lines over the block, or a marker above it.` | `quote: true` with nothing anchoring the block. | Add `claim.lines` over the block, or a marker above it. |
 | `fetch-timeout: the quote's claim lines 14-18 are no longer a fenced block. Restore the fences, or re-add the citation over the block.` | The lines a quote pins are not fenced any more. | Restore the fences, or re-add the citation over the block. |
+| `terse-messages has a claim pointer and a marker. Keep one.` | On a record, the entry stores `claim.pointer` and a marker names it too. | Delete the marker, or re-add the entry over body lines. |
+| `terse-messages: a quote's claim is a fenced block, so it takes claim.lines, not claim.pointer.` | On a record, `quote: true` beside a pointer claim. | Drop `quote`, or re-add the entry over the block's lines. |
 
 {/* cite add-refuses-frontmatter */}
 Claim lines inside the frontmatter cannot happen. `claim.lines` counts the
@@ -561,6 +660,12 @@ body, so it never points there. `add` refuses such a line outright:
 
 ```
 manni: docs/limits.md:2 is in the frontmatter. A claim is body text.
+```
+
+On a record, the refusal names the pointer for the value on that line:
+
+```
+manni: records/personas/theo.md:8 is in the frontmatter. Cite the value there as records/personas/theo.md#/pains/0.
 ```
 
 ### entry-invalid
@@ -589,6 +694,12 @@ fetch-timeout: a plain source is pinned with sha256-, not hmac-sha256-.
 {/* cite entry-invalid-manifest-owns */}
 And a page that still carries its own `citations:` while a manifest owns the
 key is the other. Move those entries into the manifest.
+
+On a record, a claim that holds both `lines` and `pointer` is one more,
+as `terse-messages: claim has lines and a pointer. Keep one.`. A pointer
+entry on a page that is not a record fails the shape outright, as
+`/claim must NOT have additional properties`. cite reads pointers on records
+only.
 
 **Fix.** Correct the entry, or remove it and let `add` write a well-formed
 one. `remove` reads the entries as they are written. A broken one is still

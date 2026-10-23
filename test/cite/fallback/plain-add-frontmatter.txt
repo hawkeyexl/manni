@@ -1,0 +1,4 @@
+exit: 2
+--- stdout
+--- stderr
+manni: plain.md:2 is in the frontmatter. A claim is body text.

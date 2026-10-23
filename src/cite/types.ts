@@ -8,7 +8,7 @@
  * body marker, `cite <id>` in the format's comment syntax, is the other way
  * to anchor an entry's claim.
  */
-import type { ValidationResult } from "../meta/index.js";
+import type { ExtractedMetadata, ValidationResult } from "../meta/index.js";
 import type { ClassifyOptions } from "./core/classify.js";
 import type { CollectionConfig } from "../shared/collections.js";
 import type { ConfigFile } from "../shared/config-file.js";
@@ -35,11 +35,16 @@ export interface SourceRange {
 // The line shapes are the shared pin engine's, re-exported so cite's imports and its namespace keep them.
 export type { LineSpec, PageLines };
 
-/** The page text a citation supports. */
+/** The page text, or the metadata value, a citation supports. */
 export interface CitationClaim {
-  /** Body lines: counted from the first line after the frontmatter. Absent when a marker anchors the entry. */
+  /** Body lines: counted from the first line after the frontmatter. Absent when a marker anchors the entry, or `pointer` places the claim. */
   lines?: LineSpec;
-  /** `sha256-<64 hex>` over the claimed lines, always plain. */
+  /**
+   * A JSON Pointer to one value in the page's own metadata, on a strategy
+   * record only (proposal 0108). Never set beside `lines`.
+   */
+  pointer?: string;
+  /** `sha256-<64 hex>` over the claimed lines, or over the value's RFC 8785 JSON. Always plain. */
   integrity: string;
 }
 
@@ -107,6 +112,8 @@ export type ClaimStatus =
   | "moved-ambiguous"
   | "reanchored"
   | "changed"
+  /** A pointer claim whose value is gone, or holds another entry's value (proposal 0108). */
+  | "missing"
   | "skipped";
 
 /** Where a misplaced marker is, and where it belongs (proposal 0054). */
@@ -147,6 +154,7 @@ export const CITE_RULES = [
   "claim-moved-ambiguous",
   "claim-reanchored",
   "claim-changed",
+  "claim-missing",
   "marker-orphan",
   "marker-invalid",
   "marker-repeated",
@@ -165,14 +173,18 @@ export type CiteSeverity = Severity | "off";
 
 /** The claim end of a classified citation. Line specs are `"L"` or `"L1-L2"`. */
 export interface ClaimEnd {
-  /** The entry's body lines. Absent when a marker anchors the claim. */
+  /** The entry's body lines. Absent when a marker anchors the claim, or a pointer places it. */
   lines?: string;
+  /** A pointer claim's recorded pointer (proposal 0108). Its `fileLines` is the value's line. */
+  pointer?: string;
+  /** For a pointer claim that `moved`: where the value is now. */
+  newPointer?: string;
   /** Where the claim is judged, in file lines: the recorded lines, or what the marker anchors. */
   fileLines?: string;
   status: ClaimStatus;
   /** For `moved`: the new body lines. */
   newLines?: string;
-  /** For `moved-ambiguous`: every candidate, in body lines. */
+  /** For `moved-ambiguous`: every candidate, in body lines, or as pointers for a pointer claim. */
   candidates?: string[];
   /** For `moved`: the new file lines. Pretty-only. */
   newFileLines?: string;
@@ -494,6 +506,10 @@ export interface PageCitations {
   citations: PageCitation[];
   statements: InlineStatement[];
   findings: CitationFinding[];
+  /** The page's own extracted metadata, which a pointer claim reads, with the line of each value. */
+  metadata: ExtractedMetadata;
+  /** Whether the page is a strategy record: its own `type` is audience, persona or journey (0108). */
+  record: boolean;
 }
 
 export interface CheckOptions {
@@ -633,6 +649,11 @@ export interface AddOptions {
   page: string;
   /** The claim's lines as an editor numbers them (`page:L`, `page:L1-L2`). Absent: a bare pin. */
   pageLines?: PageLines;
+  /**
+   * The claim as a JSON Pointer into the page's metadata: `record#/pains/0`
+   * gives `/pains/0`. On a strategy record only (proposal 0108).
+   */
+  pagePointer?: string;
   src: string;
   id?: string;
   /** Write a marker above the page lines instead of claim lines, and pin the text it anchors. Needs `pageLines` and `id`. */
@@ -780,6 +801,8 @@ export interface UpdateRewrite {
    * holds them, but is not in the history of HEAD.
    */
   because?: RecommitReason;
+  /** A pointer claim: the pointer it was re-pinned or refused at (proposal 0108). */
+  pointer?: string;
   /** A re-anchored claim: the span that held, in file lines. */
   lines?: string;
   /** A re-anchored claim: the span now pinned, in file lines. */

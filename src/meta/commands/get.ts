@@ -11,6 +11,7 @@ import { resolve, extname } from "node:path";
 import { resolveElements } from "../core/resolve-schema.js";
 import { memberOf, retainMembers } from "../core/collections.js";
 import { DocmetaError } from "../types.js";
+import { descend, parseJsonPointer } from "../extractors/pointer.js";
 import {
   extractorByName,
   extractorForExtension,
@@ -646,33 +647,4 @@ function carriesPath(data: Record<string, unknown>, segments: string[]): boolean
     return Object.prototype.hasOwnProperty.call(parent, last);
   }
   return false;
-}
-
-/** Walk `segments` into `data`, or `undefined` at the first miss. */
-function descend(data: Record<string, unknown>, segments: string[]): unknown {
-  let current: unknown = data;
-  for (const segment of segments) {
-    if (Array.isArray(current)) {
-      if (!/^\d+$/.test(segment)) return undefined;
-      current = current[Number(segment)];
-    } else if (current !== null && typeof current === "object") {
-      // Own-property check only: never resolve inherited members like
-      // `toString` or `__proto__` — those are "missing", not values.
-      if (!Object.prototype.hasOwnProperty.call(current, segment)) {
-        return undefined;
-      }
-      current = (current as Record<string, unknown>)[segment];
-    } else {
-      return undefined;
-    }
-  }
-  return current;
-}
-
-/** Decode a JSON Pointer into path segments, unescaping `~1`→`/` and `~0`→`~`. */
-function parseJsonPointer(pointer: string): string[] {
-  return pointer
-    .split("/")
-    .slice(1)
-    .map((s) => s.replace(/~1/g, "/").replace(/~0/g, "~"));
 }

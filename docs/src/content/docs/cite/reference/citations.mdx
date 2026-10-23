@@ -70,6 +70,10 @@ reference page is
 [`manni:citations:1.2.0`](/manni/meta/reference/schemas/manni-citations/). It
 also documents the strict overlay, `manni:citations-strict:1.2.0`.
 
+A [strategy record](#claims-on-records) is the one exception. cite checks a
+record's entries against `manni:citations:1.3.0`, which adds a claim that is
+a metadata value.
+
 ## Where citations live
 
 An entry lives in one of two places, and nothing on the page repeats it.
@@ -130,9 +134,10 @@ block is the other end, and both carry a line range and a hash.
 | Field | Type | Required | Description |
 |---|---|---|---|
 | `id` | `^[a-z0-9][a-z0-9-]*$`, unique per page | no; yes when a marker names the entry | What a marker names, what a finding is reported under, and what `update --only` selects. Allowed on a bare pin, so an unanchored entry can still be named. |
-| `claim` | block | no | The page text the citation supports. Absent, the entry is a bare pin, or a marker with no drift check on its sentence. |
-| `claim.lines` | `L` or `"L1-L2"` | yes, unless a marker names the entry | Lines of the page **body**. See [Body lines and file lines](#body-lines-and-file-lines). |
-| `claim.integrity` | `sha256-` and 64 lowercase hex digits | yes, inside `claim` | The claimed lines hashed under [the one rule](#the-hashing-rule). With a marker, the lines the marker anchors. Always plain, never keyed, because the page is public. |
+| `claim` | block | no | The page text or, on a record, the metadata value the citation supports. Absent, the entry is a bare pin, or a marker with no drift check on its sentence. |
+| `claim.lines` | `L` or `"L1-L2"` | yes, unless a marker names the entry or `claim.pointer` is set | Lines of the page **body**. See [Body lines and file lines](#body-lines-and-file-lines). |
+| `claim.pointer` | a JSON Pointer, such as `/pains/0` | no; on a record only | One value in the page's own metadata, in place of `lines`. A claim takes one of the two, never both. See [Claims on records](#claims-on-records). |
+| `claim.integrity` | `sha256-` and 64 lowercase hex digits | yes, inside `claim` | The claimed lines hashed under [the one rule](#the-hashing-rule). With a marker, the lines the marker anchors. With a pointer, the [value's hash](#a-values-hash). Always plain, never keyed, because the page is public. |
 | `source` | block | yes | The lines the claim rests on. |
 | `source.repo` | `^[a-z0-9][a-z0-9-]*$` | no | The checkout `file` is in, by a name [`cite.repos`](/manni/cite/reference/configuration/#more-than-one-checkout) or `--repo` maps to a directory. Absent, `file` is in the root. See [sources in other checkouts](#sources-in-other-checkouts). |
 | `source.file` | root-relative posix path, or `~` and 82 or more base64url characters | yes | The file. A `~` value is the path encrypted with the family key. See [the file grammar](#the-file-grammar). |
@@ -173,6 +178,55 @@ page. Two branches adding citations to one page would then conflict on every
 An entry in a manifest still counts the page's body, not the manifest's
 lines. The page decides where its body starts, whoever keeps the entry.
 </Aside>
+
+## Claims on records
+
+A strategy record is a page whose own metadata declares `type: audience`,
+`type: persona` or `type: journey`. On a record, a claim can be a metadata
+value instead of body text. `claim.pointer` names it, and
+`claim.integrity` pins it:
+
+```yaml title="records/personas/theo.citations.yaml"
+records/personas/theo.md:
+  citations:
+    - id: terse-messages
+      claim:
+        pointer: /pains/0
+        integrity: sha256-c1ac46fcd895d6fb26f1364c6ab3930ce3662689758855f7f66ffb89e5f09e73
+      source:
+        repo: research
+        file: notes/2026-09-12-contributor.md
+        lines: 3
+        integrity: sha256-13745edd5eea6e243c6d3682ebd5460c0377c323ea6bda3502b500e7364b5b1b
+```
+
+- **What a pointer names.** One value in the page's own metadata block, as
+  manni meta reads it. That is the frontmatter, or the format's native
+  header. It is an RFC 6901 pointer, with `~` written `~0` and `/` written
+  `~1`. Array indexes count from 0. It never names the whole block, and never
+  anything under `citations`.
+- **What a pointer does not reach.** A value a `{page}.meta.yaml` manifest
+  keeps is not in the page's own metadata. A record's `type` must be on the
+  page too, or the page is not a record.
+- **Which vocabulary reads it.** cite validates a record's entries against
+  `manni:citations:1.3.0`, and every other page's against
+  `manni:citations:1.2.0`. So a pointer entry on a site page is
+  `entry-invalid`, as `/claim must NOT have additional properties`. A
+  record's override names `manni:citations:1.3.0` so that `meta validate`
+  reads it the same way.
+
+### A value's hash
+
+A pointer claim's `integrity` is `sha256-` over the value's canonical JSON,
+under RFC 8785, encoded as UTF-8. For the values a metadata block holds, that
+is the JSON text with every object's keys sorted. A string is hashed with its
+quotes. One rule covers a string, a list and a mapping, whatever format the
+value was written in.
+
+So the pin over `pains[0]` in the sample is the SHA-256 of
+`"Error messages are terse with no remediation hint."`, quotes included. An
+edit to another key never moves a pointer claim. An insert or a reorder in
+the same list does, and the move search follows it.
 
 ## The file grammar
 
@@ -320,7 +374,7 @@ once for both ends:
 {/* cite pin-prefix-mismatch */}
 A claim is always pinned `sha256-`, because the page is public and there is
 nothing to hide. The prefix follows `source.file`, and any other pairing is
-`entry-invalid`:
+`entry-invalid`. A pointer claim's pin is [a value's hash](#a-values-hash):
 
 ```
 fetch-timeout: an encrypted source is pinned with hmac-sha256-, not sha256-.
@@ -640,7 +694,7 @@ any of them.
 `current` and `skipped` are statuses, per end, and neither is a finding.
 `current` says the end hashes to its pin. `skipped` says the end was not read,
 which happens to every source end under `--no-check-sources`. Neither can be
-named in `severity:`, which takes the sixteen rule names below.
+named in `severity:`, which takes the seventeen rule names below.
 
 ### Source-end rules
 
@@ -698,10 +752,11 @@ before the pin held, in a shallow clone or at the cap, reads
 
 | Rule | Meaning | Message | Default |
 |---|---|---|---|
-| <span id="claim-moved">`claim-moved`</span> | The pinned page text is found verbatim at other lines, so nothing drifted. `update` rewrites `claim.lines`. For a marker, the pinned text is intact but the marker now anchors a different span, and `update` re-pins it there. | `fetch-timeout: the claim moved from line 9 to line 11. Run manni cite update.` | `notice` |
-| <span id="claim-moved-ambiguous">`claim-moved-ambiguous`</span> | The pinned text is found verbatim at several places. `update` skips it. | `fetch-timeout: the claim at line 9 now appears at lines 11 and 30. Pin a range that occurs once, or anchor the claim with a marker.` | `warning` |
+| <span id="claim-moved">`claim-moved`</span> | The pinned page text is found verbatim at other lines, so nothing drifted. `update` rewrites `claim.lines`. For a marker, the pinned text is intact but the marker now anchors a different span, and `update` re-pins it there. On a record, a pointer claim's value sits verbatim at one other pointer, and `update` rewrites `claim.pointer`. | `fetch-timeout: the claim moved from line 9 to line 11. Run manni cite update.` | `notice` |
+| <span id="claim-moved-ambiguous">`claim-moved-ambiguous`</span> | The pinned text is found verbatim at several places. `update` skips it. For a pointer claim, the value sits at several pointers, and the message names each. | `fetch-timeout: the claim at line 9 now appears at lines 11 and 30. Pin a range that occurs once, or anchor the claim with a marker.` | `warning` |
 | <span id="claim-reanchored">`claim-reanchored`</span> | The words the pin covered are unchanged since the claim's [baseline](#the-claims-baseline), and only the layout moved. Three changes reach it. A rewrapped paragraph, a hoisted marker, and a marker line the anchor rule stopped counting. A plain `update` re-pins it, with no `--accept`. | `retries: the claim at lines 15-17 was reanchored since 3f9c2a1. Its words are unchanged. Run manni cite update.` | `notice` |
-| <span id="claim-changed">`claim-changed`</span> | The words the pin covered were edited. The message says since when, where the claim has a [baseline](#the-claims-baseline). `update --accept` re-pins it, and a blanket accept refuses a line that shares no sentence with the claim at its baseline. Naming the id with `--only` accepts that line too. | `fetch-timeout: the claim at line 9 has changed since 3f9c2a1, 2 commits. Check it still matches the source, then run manni cite update --accept --only fetch-timeout.` | `warning` |
+| <span id="claim-changed">`claim-changed`</span> | The words the pin covered were edited. The message says since when, where the claim has a [baseline](#the-claims-baseline). `update --accept` re-pins it, and a blanket accept refuses a line that shares no sentence with the claim at its baseline. Naming the id with `--only` accepts that line too. For a pointer claim, the value at the pointer was edited and the pinned value is nowhere else in the record. | `fetch-timeout: the claim at line 9 has changed since 3f9c2a1, 2 commits. Check it still matches the source, then run manni cite update --accept --only fetch-timeout.` | `warning` |
+| <span id="claim-missing">`claim-missing`</span> | A pointer claim's value is gone. The pointer names no value, or names the value another entry's pointer claim pins, which is a deleted item whose neighbour shifted up. A body-line claim never reads it. `update` skips it. | `unknown-schema: the value pinned at #/pains/0 is gone. Run manni cite remove --only unknown-schema. If the claim still stands, cite add it at its pointer now.` | `warning` |
 
 {/* cite claim-changed-warning */}
 {/* cite claim-changed-scope-lines */}
@@ -843,7 +898,7 @@ second asserts the same of the findings `sarif` and `junit` are rendered from.
 | Term | Meaning |
 |---|---|
 | **citation** | One entry, with a source end, optionally a claim end, and optionally an id and a quote flag. Lives in a page's `citations` list or in a sidecar manifest. |
-| **claim** | The page text a citation supports, pinned by body lines and a hash. Not a copy of the sentence. |
+| **claim** | The page text a citation supports, pinned by body lines and a hash. On a record, a metadata value pinned by a pointer and a hash. Not a copy of the sentence. |
 | **source** | The file, the lines, the pin and the commit the claim rests on. |
 | **pin** | An `integrity` value: the hash of an end's lines under the rule, at the moment it was minted. A record of the past, not a copy of the present, which is why it is stored rather than recomputed. |
 | **marker** | A `cite <id>` comment in the body, in the format's own syntax. It names an entry and anchors it. It never holds a source. |

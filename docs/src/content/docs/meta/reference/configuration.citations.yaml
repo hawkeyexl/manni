@@ -520,9 +520,9 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         integrity: sha256-c85540d48165f4c20ba7f27b10363e53bf5b923e34bec1f3d28793b39210c158
       source:
         file: src/cite/core/page.ts
-        lines: 80-83
+        lines: 82-85
         integrity: sha256-8832eaa02c1fafc08d583f77347091315ddb862f8db9a290ed6071648d848046
-        commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
+        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
     - id: join-field-keys-the-manifest
       claim:
         integrity: sha256-503b16cb612ed5f58150898070c75d6a1bd7fc33f7c5bd8eca6fc0e0274e24b1
@@ -849,9 +849,9 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         integrity: sha256-b05cb3bf654ae6b277ec9280f724d2077b98cee9b7e446ab2ef496aeb1454aae
       source:
         file: src/meta/commands/get.ts
-        lines: 342-345
+        lines: 343-346
         integrity: sha256-c34a2e8e3d3ae1328aaddc3a9d93dbfa81ab3c6365ed85479597a8c8e2da1f51
-        commit-sha: 0d3d8a74bd17fce503520bb2313a412ca60aeeca
+        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
     - id: query-rows-hold-the-merged-values
       claim:
         lines: 890
@@ -1425,9 +1425,9 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         integrity: sha256-a0445253f21233dd09149c4dcbb9ca1f871514f2a509d21ee22874f7f3acf86b
       source:
         file: src/meta/core/schema-registry.ts
-        lines: 1197-1205
+        lines: 1207-1215
         integrity: sha256-0fdd2bc93eb0acbc84d62eaaf5f1c7ec2795441da58714327642a7d7ee77c36c
-        commit-sha: ddba7252337859626421b6060ae8952f93f61653
+        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
     - id: offline-flag-is-per-run
       claim:
         integrity: sha256-50cc1fbd993bc5e2a23e9cdb9373a16358550f893478fc626477be551f7abcc7
@@ -1839,9 +1839,9 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         integrity: sha256-600b5511415007b5e2e1eff81775df428122e592af95d5dd3dbf06caa6e7b387
       source:
         file: src/meta/commands/get.ts
-        lines: 540-553
+        lines: 541-554
         integrity: sha256-e1f6a4dec74ab12228b3458544b495e4193b96396d795c49dcc4f5d65a90e1f3
-        commit-sha: 0d3d8a74bd17fce503520bb2313a412ca60aeeca
+        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
     - id: derive-fields-rules
       claim:
         lines: 2166

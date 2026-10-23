@@ -1,0 +1,5 @@
+exit: 2
+--- stdout
+--- stderr
+error: unknown option '-#/pains/0'
+(add --help for usage)

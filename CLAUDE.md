@@ -693,7 +693,9 @@ node dist/cli.js term check
 # advisory. It fails on an error-severity finding alone, which means
 # `source-changed` and the marker, anchor and entry rules. A `source-moved`
 # warning or a `claim-moved` notice annotates and passes. `manni cite update`
-# rewrites those, and `--accept` re-mints a changed end.
+# rewrites those, and `--accept` re-mints a changed end. The strategy records
+# pin their goals and pains to the proposals that measured them, so the same
+# gate holds them.
 node dist/cli.js cite check
 
 # After changing a term page, regenerate .vale/styles/Terms/ (drop --check) and

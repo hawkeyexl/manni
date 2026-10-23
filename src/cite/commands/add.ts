@@ -14,6 +14,7 @@
  * the pins the command can already see are wrong: a duplicate of an entry the
  * page has, and a claim whose lines hold no text at all.
  */
+import { existsSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { relative, resolve } from "node:path";
 import { locateFrontmatter, writeFileAtomic } from "../../meta/index.js";
@@ -32,7 +33,9 @@ import { resolveCiteRun } from "../core/config.js";
 import { GIT_UNAVAILABLE_COMMIT, checkoutNotice, gitClient } from "../core/git.js";
 import { sliceLines, splitLines } from "../core/hash.js";
 import { mintSource } from "../core/mint.js";
-import { bodyLineOf, readPage } from "../core/page.js";
+import { bodyLineOf, isStrategyRecord, pickExtractor, readPage } from "../core/page.js";
+import { isPointer, pointerAtLine, underCitations, valueAt } from "../core/pointer.js";
+import { valuePin } from "../../shared/pin.js";
 import {
   formatSrc,
   lineSpec,
@@ -101,6 +104,35 @@ async function readPageFile(path: string, label: string): Promise<string> {
   }
 }
 
+/** Whether a page's own metadata makes it a strategy record. A page no extractor reads is not one. */
+function recordContent(label: string, content: string, as: string | undefined): boolean {
+  try {
+    return isStrategyRecord(pickExtractor(label, as).extract(content, label).data);
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * The refusal for a pointer that cannot be a claim, `at` being the page and
+ * the pointer as the caller spelled them. Undefined when it names a value
+ * that can be pinned.
+ */
+function pointerRefusal(page: PageCitations, pointer: string, at: string): string | undefined {
+  if (!isPointer(pointer)) return `Invalid pointer "${pointer}": write ~ as ~0 and / as ~1.`;
+  if (underCitations(pointer)) return `${at} is a citation, not a claim.`;
+  const held = valueAt(page.metadata.data, pointer);
+  if (held === undefined) return `${at} names no value in the page's metadata.`;
+  if (isEncryptedValue(held.value)) {
+    return `${at} holds an encrypted value. A claim's pin is public, so cite a plain value.`;
+  }
+  const value = held.value;
+  const empty =
+    (Array.isArray(value) && value.length === 0) ||
+    (typeof value === "object" && value !== null && !Array.isArray(value) && Object.keys(value).length === 0);
+  return empty ? `${at} is empty.` : undefined;
+}
+
 /** The cited lines, joined as the hashing rule joins them. */
 async function citedText(
   checkout: Checkout,
@@ -133,6 +165,7 @@ function duplicateOf(
   page: PageCitations,
   range: SourceRange,
   pageLines: PageLines | undefined,
+  pointer?: string,
 ): PageCitation | undefined {
   // The range is the caller's spelling with the checkout it resolved in, so
   // one path in two repos is two sources. An existing entry encrypted under a
@@ -141,6 +174,7 @@ function duplicateOf(
   return page.citations.find((entry) => {
     const { citation } = entry;
     if (spellSource(citation.source) !== wanted) return false;
+    if (pointer !== undefined) return citation.claim?.pointer === pointer;
     if (pageLines === undefined) return citation.claim === undefined;
     const spec = citation.claim?.lines;
     if (spec === undefined) return false;
@@ -247,10 +281,28 @@ export async function runAdd(opts: AddOptions): Promise<AddResult> {
   if (usingStdin && opts.as === undefined) {
     throw new CiteError(STDIN_REQUIRES_AS);
   }
+  // `record#/pains/0` names a value on a strategy record (proposal 0108). The
+  // argument splits at its first `#/` only when no file has the whole name
+  // and the file before it exists; whether that file is a record is asked
+  // once it is read. Anything else is the path it always was.
+  let pagePath = opts.page;
+  let pointer = opts.pagePointer;
+  const cut = opts.page.indexOf("#/");
+  if (!usingStdin && pointer === undefined && cut > 0 && !existsSync(resolve(cwd, opts.page))) {
+    if (existsSync(resolve(cwd, opts.page.slice(0, cut)))) {
+      pagePath = opts.page.slice(0, cut);
+      pointer = opts.page.slice(cut + 1);
+    }
+  }
   // `-` names no file: nothing to resolve, and nothing to write back to.
-  const path = usingStdin ? undefined : resolve(cwd, opts.page);
+  const path = usingStdin ? undefined : resolve(cwd, pagePath);
   const label = path === undefined ? STDIN_LABEL : toPosix(relative(cwd, path));
   const content = path === undefined ? (opts.stdinContent ?? "") : await readPageFile(path, label);
+  // A pointer on a page that is not a record reads as today: the whole
+  // argument is a path, and no file has that name.
+  if (pointer !== undefined && !recordContent(label, content, opts.as)) {
+    throw new CiteError(`File not found: "${label}#${pointer}". Check the path. Named paths resolve from the working directory.`);
+  }
 
   // The manifests that own `citations`, if any collection declares one. The
   // page is labelled from the working directory here, so membership is
@@ -288,6 +340,13 @@ export async function runAdd(opts: AddOptions): Promise<AddResult> {
   const at = pageLines === undefined ? "" : `${label}:${spellLines(pageLines)}`;
 
   // Composition first: these need no source and no search.
+  if (marker && pointer !== undefined) {
+    throw new CiteError("--marker anchors body text, so it takes page lines, not a pointer.");
+  }
+  if (pointer !== undefined) {
+    const refused = pointerRefusal(page, pointer, `${label}#${pointer}`);
+    if (refused !== undefined) throw new CiteError(refused);
+  }
   if (marker && pageLines === undefined) {
     throw new CiteError(`--marker needs the page lines to anchor: ${label}:L.`);
   }
@@ -326,7 +385,14 @@ export async function runAdd(opts: AddOptions): Promise<AddResult> {
       throw new CiteError(`${at} is past the end of the page (${String(lines.length)} lines).`);
     }
     if (pageLines.start < page.bodyLine) {
-      throw new CiteError(`${at} is in the frontmatter. A claim is body text.`);
+      // On a record, the value on that line is citable by its pointer (0108).
+      if (!page.record) throw new CiteError(`${at} is in the frontmatter. A claim is body text.`);
+      const named = pointerAtLine(page.metadata, pageLines.start);
+      throw new CiteError(
+        named === undefined
+          ? `${at} is in the frontmatter, and starts no value. Cite a value as ${label}#/<key>.`
+          : `${at} is in the frontmatter. Cite the value there as ${label}#${named}.`,
+      );
     }
     if (quote) {
       const span = fenceSpanAt(content, pageLines.start, format);
@@ -378,13 +444,15 @@ export async function runAdd(opts: AddOptions): Promise<AddResult> {
 
   // The same claim on the same source twice is one citation reported twice,
   // and the second is what a re-run of a script writes.
-  const duplicate = marker ? undefined : duplicateOf(page, srcRange, pageLines);
+  const duplicate = marker ? undefined : duplicateOf(page, srcRange, pageLines, pointer);
   if (duplicate !== undefined) {
     const src = shortSrc(spellSource(duplicate.citation.source));
     const what =
-      pageLines === undefined
-        ? `a bare pin for ${src}`
-        : `an entry for ${spellAt(pageLines)} and ${src}`;
+      pointer !== undefined
+        ? `an entry for ${pointer} and ${src}`
+        : pageLines === undefined
+          ? `a bare pin for ${src}`
+          : `an entry for ${spellAt(pageLines)} and ${src}`;
     throw new CiteError(`${label} already has ${what} (${entryName(duplicate)}).`);
   }
 
@@ -496,6 +564,9 @@ export async function runAdd(opts: AddOptions): Promise<AddResult> {
     claimSpan = pageLines;
     claim = { lines: lineSpec(toBodyLines(pageLines, page.bodyLine)), integrity: pin };
     elsewhere = otherClaimSpans(lines, pageLines, pin, page.bodyLine);
+  } else if (pointer !== undefined) {
+    // The refusals above settled that the pointer names a plain value.
+    claim = { pointer, integrity: valuePin(valueAt(page.metadata.data, pointer)?.value) };
   }
 
   const mint = (key: string | undefined, encrypt: boolean): Promise<Citation> =>

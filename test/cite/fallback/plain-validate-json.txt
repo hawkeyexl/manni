@@ -1,0 +1,86 @@
+exit: 1
+--- stdout
+{
+  "summary": {
+    "files": 1,
+    "passed": 0,
+    "failed": 1,
+    "errors": 3,
+    "warnings": 1
+  },
+  "results": [
+    {
+      "file": "plain-pointer.md",
+      "format": "markdown",
+      "ok": false,
+      "schemas": [
+        "google:okf:0.1",
+        "passo-uno:seven-action:1.0",
+        "manni:core:1.0.0",
+        "manni:audience:1.0.0",
+        "manni:structure:1.0.0",
+        "manni:stewardship:1.2.0",
+        "manni:lifecycle:1.0.0",
+        "manni:ai-context:1.2.0",
+        "manni:evals:1.0.0",
+        "manni:graph:1.0.0",
+        "manni:citations:1.2.0"
+      ],
+      "errors": [
+        {
+          "schema": "google:okf:0.1",
+          "instancePath": "",
+          "message": "must have required property 'type'",
+          "keyword": "required",
+          "subject": "type",
+          "line": 1,
+          "guidance": {
+            "id": "google:okf:0.1",
+            "rule": "type",
+            "description": "A short string identifying the kind of concept.",
+            "guide": "https://hawkeyexl.github.io/manni/meta/reference/schemas/google-okf/"
+          }
+        },
+        {
+          "schema": "manni:core:1.0.0",
+          "instancePath": "",
+          "message": "must have required property 'description'",
+          "keyword": "required",
+          "subject": "description",
+          "line": 1,
+          "guidance": {
+            "id": "manni:core:1.0.0",
+            "rule": "description",
+            "description": "One full non-empty sentence saying what the page is for.",
+            "guide": "https://hawkeyexl.github.io/manni/meta/reference/schemas/manni-core/"
+          }
+        },
+        {
+          "schema": "manni:citations:1.2.0",
+          "instancePath": "/citations/0/claim",
+          "message": "must NOT have additional property 'pointer'",
+          "keyword": "additionalProperties",
+          "subject": "pointer",
+          "line": 8,
+          "guidance": {
+            "id": "manni:citations:1.2.0",
+            "rule": "citations/claim",
+            "description": "The page text the citation supports, pinned by lines and a hash.",
+            "guide": "https://hawkeyexl.github.io/manni/meta/reference/schemas/manni-citations/"
+          }
+        },
+        {
+          "schema": "location:external",
+          "keyword": "location",
+          "subject": "citations",
+          "instancePath": "/citations",
+          "severity": "warning",
+          "message": "\"citations\" is stored in the page; manni:citations:1.2.0 prefers external metadata, and --no-config leaves it no manifest.",
+          "line": 6,
+          "guidance": null
+        }
+      ]
+    }
+  ]
+}
+--- stderr

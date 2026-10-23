@@ -90,6 +90,28 @@ export function hashLines(joined: string, key?: string): string {
   return key === undefined ? integrityOf(Buffer.from(joined, "utf8")) : keyedPin(joined, key);
 }
 
+/**
+ * A value as RFC 8785 serializes it, for the values a metadata block holds:
+ * `JSON.stringify` with every object's keys sorted by UTF-16 code unit. Built
+ * by hand, because a JS object puts integer-like keys first whatever order
+ * they are inserted in. A string keeps its quotes.
+ */
+export function canonicalValue(value: unknown): string {
+  if (Array.isArray(value)) return `[${value.map(canonicalValue).join(",")}]`;
+  if (typeof value === "object" && value !== null && !(value instanceof Date)) {
+    const record = value as Record<string, unknown>;
+    // `sort()` with no comparator orders by UTF-16 code unit, as RFC 8785 does.
+    const keys = Object.keys(record).sort();
+    return `{${keys.map((k) => `${JSON.stringify(k)}:${canonicalValue(record[k])}`).join(",")}}`;
+  }
+  return JSON.stringify(value);
+}
+
+/** The plain pin of a metadata value: SHA-256 over its RFC 8785 JSON, as UTF-8 (proposal 0108). */
+export function valuePin(value: unknown): string {
+  return hashLines(canonicalValue(value));
+}
+
 /** Whether a pin is keyed (`hmac-sha256-`), the form an encrypted value carries. */
 export function isKeyedPin(pin: string): boolean {
   return pin.startsWith(KEYED_PIN_PREFIX);

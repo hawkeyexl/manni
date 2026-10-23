@@ -202,6 +202,8 @@ describe("fingerprint: annotation-only built-in versions", () => {
     ["manni:citations:1.0.0", "manni:citations:1.2.0"],
     ["manni:citations:1.1.0", "manni:citations:1.2.0"],
     ["manni:citations:1.2.0", "manni:citations:1.0.0"],
+    ["manni:citations:1.2.0", "manni:citations:1.3.0"],
+    ["manni:citations-strict:1.2.0", "manni:citations-strict:1.3.0"],
     ["manni:ai-context:1.1.0", "manni:ai-context:1.2.0"],
     ["manni:ai-context:1.2.0", "manni:ai-context:1.1.0"],
     ["manni:citations-strict:1.1.0", "manni:citations-strict:1.2.0"],
