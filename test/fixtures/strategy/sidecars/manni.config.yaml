@@ -1,0 +1,11 @@
+# The page keeps audiences: and its {page}.meta.yaml sidecar keeps journeys:,
+# so a finding about a journey is filed at the sidecar line.
+collections:
+  - name: site
+    paths:
+      - "docs/**/*.md"
+    externalMetadata:
+      - file: "{page}.meta.yaml"
+  - name: strategy
+    paths:
+      - "strategy/**/*.md"

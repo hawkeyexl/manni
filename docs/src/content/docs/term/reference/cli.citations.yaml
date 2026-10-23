@@ -13,9 +13,9 @@ docs/src/content/docs/term/reference/cli.mdx:
         integrity: sha256-734c0305f55457abaad3625784c00dd96865f9be6d92bc622535a7ed1eedbf17
       source:
         file: src/term/cli.ts
-        lines: 169
+        lines: 161
         integrity: sha256-f6c79bda32f8010de1827777c8ac4c7ab460ca1cab8482031f39f69d871a4b34
-        commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
+        commit-sha: bfd040c52b77a44f328fd41ea0b6d454972a39d5
     - id: term-no-subcommand-exits-2
       claim:
         integrity: sha256-734c0305f55457abaad3625784c00dd96865f9be6d92bc622535a7ed1eedbf17
@@ -286,9 +286,9 @@ docs/src/content/docs/term/reference/cli.mdx:
         integrity: sha256-6e9e1c35dccd864b34fb8e318db25b568c532b28411008440e70c678f3c05d62
       source:
         file: src/term/cli.ts
-        lines: 161
+        lines: 153
         integrity: sha256-642aa7bc0402e0101838821cd5ed5ee06a261d3134bb836e1a23650376a401d2
-        commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
+        commit-sha: bfd040c52b77a44f328fd41ea0b6d454972a39d5
     - id: check-exit-failed-count
       claim:
         lines: 438
@@ -427,9 +427,9 @@ docs/src/content/docs/term/reference/cli.mdx:
         integrity: sha256-418aa0f339dc7009ccff1006e9c9c24fc990ba3744eff316003906fb32cd8d19
       source:
         file: src/term/cli.ts
-        lines: 316
+        lines: 308
         integrity: sha256-6c93d7529351c9410b26d3c459bb936649605aaf66cfb3cd6e5705925fef1d56
-        commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
+        commit-sha: bfd040c52b77a44f328fd41ea0b6d454972a39d5
     - id: write-dry-run-notes
       claim:
         lines: 579
@@ -504,9 +504,9 @@ docs/src/content/docs/term/reference/cli.mdx:
         integrity: sha256-1712fa9b58b7ff400ec3183a0787580e8f04a187b67bc084c7bd1fe195772bda
       source:
         file: src/term/cli.ts
-        lines: 316
+        lines: 308
         integrity: sha256-6c93d7529351c9410b26d3c459bb936649605aaf66cfb3cd6e5705925fef1d56
-        commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
+        commit-sha: bfd040c52b77a44f328fd41ea0b6d454972a39d5
     - id: formats-from-registries
       claim:
         integrity: sha256-676a7db805809e32a9fb9de3be40238cf7bce146ed888b77c37df81355696d5b

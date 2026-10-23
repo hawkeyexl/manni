@@ -154,7 +154,7 @@ describe.skipIf(!gitAvailable())("manni check, by hand", () => {
       const log = JSON.parse(r.stdout) as Log;
       expect(log.version).toBe("2.1.0");
       expect(ids(log)).toEqual(["manni/meta/", "manni/lint/", "manni/check/"]);
-      expect(log.runs[2]?.invocations[0]?.toolExecutionNotifications).toHaveLength(4);
+      expect(log.runs[2]?.invocations[0]?.toolExecutionNotifications).toHaveLength(5);
     });
 
     it("a page that passes: runs with no results, exit 0", () => {

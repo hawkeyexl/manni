@@ -1,4 +1,8 @@
 docs/src/content/docs/docevals/ci/recipes.mdx:
+  personas:
+    - devin
+  journeys:
+    - d10
   provenance:
     - generated-by: Claude Fable 5.1
       lines: 2-67

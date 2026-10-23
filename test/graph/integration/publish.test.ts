@@ -7,7 +7,7 @@
  * publishing never needs a repository.
  */
 import { spawnSync } from "node:child_process";
-import { existsSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { join, relative } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { renderPublish, runPublish, type PublishReport } from "../../../src/graph/commands/publish.js";
@@ -143,6 +143,24 @@ describe("graph publish", () => {
     );
   });
 
+  it("builds from the collections --collection names, and from every collection without it", async () => {
+    const dir = fixture();
+    const config = join(dir, "manni.config.yaml");
+    writeFileSync(
+      config,
+      readFileSync(config, "utf8").replace("\ngraph:\n", '  - name: notes\n    paths:\n      - "notes/**/*.md"\n\ngraph:\n'),
+      "utf8",
+    );
+    mkdirSync(join(dir, "notes"));
+    writeFileSync(join(dir, "notes", "internal.md"), "---\ntitle: Internal note\n---\n\nNot for the site.\n", "utf8");
+    const built = (): string => readFileSync(join(dir, ".manni/graph/graph.ttl"), "utf8");
+
+    await runPublish({ cwd: dir, collection: ["pages"], say });
+    expect(built()).not.toContain("Internal note");
+    await runPublish({ cwd: dir, say });
+    expect(built()).toContain("Internal note");
+  });
+
   it("prints a line per step and the file count, or the step list as JSON", async () => {
     const dir = fixture();
     const report = await runPublish({ cwd: dir, say });
@@ -170,6 +188,14 @@ describe("graph publish, through the CLI", () => {
     expect(r.status, r.stderr).toBe(0);
     expect(r.stdout).toMatch(/\nPublished \d+ files to \.manni\/graph\/\.\n$/);
     expect(r.stderr.match(/git cannot read this directory/g)).toHaveLength(1);
+  });
+
+  it("takes --collection, one name per occurrence", () => {
+    const dir = fixture();
+    expect(graph(["publish", "--collection", "pages"], dir).status).toBe(0);
+    const r = graph(["publish", "--collection", "nope"], dir);
+    expect(r.status).toBe(2);
+    expect(r.stderr).toMatch(/no collection named "nope"/);
   });
 
   it("exits 2 when a step fails, naming the step", () => {

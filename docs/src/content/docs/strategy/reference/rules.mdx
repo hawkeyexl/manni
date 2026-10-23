@@ -1,0 +1,222 @@
+---
+title: Check rules
+description: "The six rules manni strategy check applies to a docset's audiences, personas and journeys, with each one's default severity, the message it prints, where it is reported, and what fixes it."
+sidebar:
+  order: 2
+type: reference
+id: strategy-reference-rules
+keywords:
+  - check rules
+  - severity
+  - undefined-reference
+  - missing-parent
+  - unserved-journey
+language: en
+audiences:
+  - schema-authors
+  - docs-engineers
+  - contributors
+intent: Look up each strategy check rule, its default severity, its message and what fixes it.
+lifecycle: published
+applies-to:
+  - domain:strategy
+sample-questions:
+  - What rules does manni strategy check apply?
+  - Which strategy rules fail a run by default?
+  - How do I fix a missing-parent finding?
+graph:
+  label: Check rules
+  type: reference
+tags:
+  - validation
+  - rules
+  - severity
+  - content-strategy
+action: remember
+prerequisites:
+  - strategy
+next-steps:
+  - /manni/strategy/reference/cli/
+related-pages:
+  - /manni/strategy/reference/cli/
+concepts:
+  - validation
+last-updated: 2026-10-23
+---
+
+{/* cite rule-id-prefix */}
+`manni strategy check` reads the records and the pages that name them, and
+reports what does not line up. It reads metadata, never prose. Each rule id
+is `manni:strategy/<rule>`. Each rule's level can be moved or turned off under
+`strategy.severity`, as the [configuration](/manni/strategy/reference/cli/#configuration)
+shows.
+
+## The rules
+
+| Rule | Default | Fires when |
+|---|---|---|
+| `undefined-reference` | error | A page's `audiences:`, `personas:` or `journeys:`, or a record's `audience:` or `personas:`, names no record of that type. |
+| `duplicate-id` | error | Two records share an `id`, ignoring case. |
+| `missing-parent` | warning | A page names a journey but none of its personas in `personas:`, or a persona but not its audience in `audiences:`. |
+| `orphan-record` | warning | A persona names no audience, or a journey names no persona, while the set holds records of the parent type. |
+| `unserved-journey` | warning | No page names the journey in `journeys:`. Records do not count, and a draft or archived journey is exempt. |
+| `unused-record` | notice | No page and no record names an audience or a persona. |
+
+## Records and references
+
+A record is a page that declares `type: audience`, `type: persona` or
+`type: journey`, in any format `manni meta` reads. Its `id` is its `id:`, or
+the file name without its extension when it has none. A persona names its
+audience in `audience:`. A journey names the personas it serves in
+`personas:`, as one string or a list.
+
+A reference is a value of a page's `audiences:`, `personas:` or `journeys:`,
+as one string or a list. The pages are read the way `manni meta validate`
+reads them. So a value that a `{page}.meta.yaml` sidecar holds counts, and a
+finding about it sits at the sidecar's line.
+
+Every id compares ignoring case. A field is checked only when the set holds a
+record of that field's type. A docset with persona records and no audience
+records keeps a free-form `audiences:`, and no rule reads it.
+
+## Every rule in one run
+
+This set breaks each rule once. A finding sits on the line of the value that
+caused it. A finding about a whole record sits on its `id:` line, or on its
+first line when it declares no `id`:
+
+```console
+$ manni strategy check
+docs/guide.md:5
+  warning manni:strategy/missing-parent       personas: does not name "maya", the persona of journey "m1".
+                                              Add it, or drop "m1" from journeys:.
+                                              manni:strategy missing-parent: A page names a journey but none of its personas in personas:, or a persona but not its audience in audiences:.
+                                              Guide: https://hawkeyexl.github.io/manni/strategy/reference/rules/#missing-parent
+  error   manni:strategy/undefined-reference  journeys: "m9" names no journey.
+                                              Did you mean "m1"?
+                                              Correct the value, or add a record with type: journey and id: m9.
+                                              manni:strategy undefined-reference: A page's audiences:, personas: or journeys:, or a record's audience: or personas:, names no record of that type.
+                                              Guide: https://hawkeyexl.github.io/manni/strategy/reference/rules/#undefined-reference
+strategy/audiences/ci-engineers.md:1
+  notice  manni:strategy/unused-record        no page and no record names this audience.
+                                              manni:strategy unused-record: No page and no record names an audience or a persona.
+                                              Guide: https://hawkeyexl.github.io/manni/strategy/reference/rules/#unused-record
+strategy/journeys/d1.md:3
+  warning manni:strategy/unserved-journey     no page names this journey in journeys:.
+                                              Name it on the pages that serve it.
+                                              manni:strategy unserved-journey: No page names the journey in journeys:. Records do not count, and a draft or archived journey is exempt.
+                                              Guide: https://hawkeyexl.github.io/manni/strategy/reference/rules/#unserved-journey
+strategy/journeys/m1.md:3
+  error   manni:strategy/duplicate-id         id: "m1" is also the id of strategy/journeys/m2.md:3.
+                                              Give each record its own id.
+                                              manni:strategy duplicate-id: Two records share an id, ignoring case.
+                                              Guide: https://hawkeyexl.github.io/manni/strategy/reference/rules/#duplicate-id
+strategy/journeys/m2.md:3
+  error   manni:strategy/duplicate-id         id: "M1" is also the id of strategy/journeys/m1.md:3.
+                                              Give each record its own id.
+                                              manni:strategy duplicate-id: Two records share an id, ignoring case.
+                                              Guide: https://hawkeyexl.github.io/manni/strategy/reference/rules/#duplicate-id
+strategy/personas/devin.md:1
+  warning manni:strategy/orphan-record        audience: missing, so this persona belongs to no audience.
+                                              Name one with audience:.
+                                              manni:strategy orphan-record: A persona names no audience, or a journey names no persona, while the set holds records of the parent type.
+                                              Guide: https://hawkeyexl.github.io/manni/strategy/reference/rules/#orphan-record
+
+3 errors, 3 warnings, 1 notice in 7 records
+```
+
+## What each rule means
+
+### `undefined-reference`
+
+A value names no record of the type its field holds. The finding sits on the
+value's line. When an id of that type is a few edits away, the message
+suggests it:
+
+```
+journeys: "s-17" names no journey. Did you mean "s17"? Correct the value, or add a record with type: journey and id: s-17.
+```
+
+When the value is the id of a record of another type, the message says so.
+It suggests the record's own persona or audience when it has one:
+
+```
+personas: "s17" is a journey, not a persona. Did you mean its persona, "sara"?
+```
+
+A persona named in `journeys:` has no journey above it, so the message names
+the field it belongs in instead: `Move it to personas:.`
+
+A record's `audience:` or `personas:` is checked the same way. Each value of
+a journey's `personas:` gets its own finding, on that value's line:
+
+```
+personas: "mya" names no persona. Did you mean "maya"?
+```
+
+### `duplicate-id`
+
+Reported on every record that shares the id, each naming the others with
+their file and line. Ids compare ignoring case, so `M1` and `m1` collide.
+Two files with no `id:` and the same name in different folders collide too.
+Give each record its own id.
+
+### `missing-parent`
+
+A page that names a journey also names at least one of that journey's
+personas. A page that names a persona also names its audience. The rule
+reads a page's own values and not a record's. It reports each missing parent
+once per page, on the line of the first value that implies it:
+
+```
+personas: does not name "maya", the persona of journey "m1". Add it, or drop "m1" from journeys:.
+audiences: does not name "schema-authors", the audience of persona "sara". Add it, or drop "sara" from personas:.
+```
+
+A journey that serves several personas is satisfied by any one of them. When
+the page names none, the message lists them all:
+
+```
+personas: names none of "maya", "sara", the personas of journey "m5". Add one, or drop "m5" from journeys:.
+```
+
+### `orphan-record`
+
+A persona with no `audience:`, or a journey with no `personas:`. It fires only
+while the set holds a record of the parent type, so a set with no audience
+records has no orphan personas. Name the parent:
+
+```
+audience: missing, so this persona belongs to no audience. Name one with audience:.
+personas: missing, so this journey belongs to no persona. Name one with personas:.
+```
+
+### `unserved-journey`
+
+No page names the journey in `journeys:`. A record's own `journeys:` serves
+no reader, so it does not count. A journey can carry `lifecycle` from the
+[`manni:lifecycle:1.0.0`](/manni/meta/reference/schemas/manni-lifecycle/)
+vocabulary. A `draft` journey is not live yet, and an `archived` one no
+longer is, so the rule skips both.
+
+There are two fixes. Name the journey on the pages that serve it. Or, while
+those pages are still to be written, mark the journey `lifecycle: draft`:
+
+```yaml
+---
+type: journey
+id: m33
+title: Hold a new page to its journey
+personas: [maya]
+lifecycle: draft
+---
+```
+
+Raise the rule to `error` once every journey is served. A new journey then
+lands with a page that serves it, or as a draft.
+
+### `unused-record`
+
+No page names the audience or persona, and no record names it as its parent.
+It is a notice, so it never fails a run. A journey has `unserved-journey`
+instead.

@@ -1152,6 +1152,7 @@ program
   .option("--no-config", "Ignore any discovered config file")
   .option("-o, --out <dir>", "Directory for every artifact (default: the directory of config out)")
   .option("--evals <path>", "A docevals JSON report for the chunks (default: config export.chunks.evals)")
+  .option("--collection <name>", "Configured collection to read (repeatable)", collect, [])
   .option(
     "-f, --format <format>",
     `Output: ${GRAPH_FORMAT_LIST}`,
@@ -1159,7 +1160,7 @@ program
     "pretty",
   )
   .action(
-    async (opts: { config?: string | boolean; out?: string; evals?: string; format: GraphFormat }) => {
+    async (opts: { config?: string | boolean; out?: string; evals?: string; collection: string[]; format: GraphFormat }) => {
       try {
         const report = await runPublish({
           ...documentOptions(opts),

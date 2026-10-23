@@ -1,0 +1,10 @@
+docs/src/content/docs/strategy/reference/rules.mdx:
+  citations:
+    - id: rule-id-prefix
+      claim:
+        integrity: sha256-fa944a5a320ee72e0a98196a44f8acf3239feb738469dc09dcdbb9a05da7247e
+      source:
+        file: src/strategy/core/severity.ts
+        lines: 5
+        integrity: sha256-b2492754d095e3baa831201571394600122125f485a454f89835ce05dcd4bb28
+        commit-sha: 89a49265ea352d3854a8070819a7eeb40661e4f6

@@ -45,6 +45,11 @@ export interface Beat {
   highlight?: string[];
   /** Extra frames held after the last command; lets a continuing beat carry only a new caption. */
   pauseFrames?: number;
+  /**
+   * This beat's own type size, derived from its own longest line, in place of
+   * the video's. For a video whose widest beat would shrink every other beat.
+   */
+  type?: { fontPx: number; linePx: number; cols: number };
 }
 
 const q = `manni meta query "UPDATE docs SET jira = 'PLAT-1' WHERE _path = 'docs/auth.md'"`;

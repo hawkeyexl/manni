@@ -1,4 +1,11 @@
 docs/src/content/docs/docevals/reference/configuration.mdx:
+  personas:
+    - maya
+    - devin
+  journeys:
+    - m12
+    - d11
+    - m15
   provenance:
     - generated-by: Claude Opus 5
       lines: 2-3

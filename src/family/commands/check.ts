@@ -12,12 +12,15 @@
  *   Each domain runs bare, exactly as its own CI step would.
  * - `paths`: the per-file checks on the collection members among the paths.
  * - `changed`: the per-file checks on the git working tree's changes, plus
- *   `cite` set-wide. `term` runs set-wide too when a collection document
- *   changed or was removed. `graph` never runs here; only `all` checks it.
- *   A clean tree runs nothing.
+ *   `cite` and `strategy` set-wide. `term` runs set-wide too when a
+ *   collection document changed or was removed. `graph` never runs here;
+ *   only `all` checks it. A clean tree runs nothing.
  *
  * `cite` is per-file on paths and set-wide otherwise: a source edit can drift
  * any page's citation, so after a session the whole set is what is checked.
+ * `strategy` never runs on paths, and runs on any change: a page's
+ * `personas:` and `journeys:` mostly sit in its `{page}.meta.yaml`, which is
+ * neither a document nor a collection member.
  */
 import { basename, extname, resolve } from "node:path";
 import pkg from "../../../package.json" with { type: "json" };
@@ -236,6 +239,38 @@ async function runDomain(domain: Domain, ctx: Context): Promise<Outcome> {
         },
       };
     }
+    case "strategy": {
+      const [
+        { runCheck: runStrategy },
+        { renderFindingsPretty: strategyPretty },
+        { renderFindingsJson: strategyJson },
+        { renderFindingsGithub: strategyGithub },
+        { renderFindingsSarif: strategySarif },
+      ] = await Promise.all([
+        import("../../strategy/commands/check.js"),
+        import("../../strategy/reporters/pretty.js"),
+        import("../../strategy/reporters/json.js"),
+        import("../../strategy/reporters/github.js"),
+        import("../../strategy/reporters/sarif.js"),
+      ]);
+      const report = await runStrategy({ inputs, configPath, cwd, allowEmpty: true, onNotice });
+      if (report.records === 0) return { skipped: NOT_SET_UP.strategy };
+      return {
+        failed: report.summary.failed > 0,
+        render: (format, color) => {
+          switch (format) {
+            case "pretty":
+              return strategyPretty(report, { color });
+            case "json":
+              return strategyJson(report);
+            case "github":
+              return strategyGithub(report);
+            case "sarif":
+              return strategySarif(report, { onNotice });
+          }
+        },
+      };
+    }
     case "graph": {
       if (!family.sections.has("graph")) return { skipped: NOT_SET_UP.graph };
       const [{ buildGraph }, { runCheck: runGraph, renderCheck: renderGraph }] = await Promise.all([
@@ -317,11 +352,14 @@ async function checkUnshared(opts: FamilyCheckOptions): Promise<FamilyCheckRun> 
       // removed none of them leaves the glossary as it was. graph never runs
       // here: it is the slowest set-wide check, and its findings span pages
       // rather than the one an agent just wrote, so a bare run (CI) owns it.
+      // strategy runs on any change, as cite does: a sidecar edit alone can
+      // move a page's personas: or journeys:.
       const pageChanged = files.length > 0 || memberDocuments(changed.removed).length > 0;
       domains = [
         ...(files.length > 0 ? (["meta", "lint", "docevals"] as const) : []),
         "cite",
         ...(pageChanged ? (["term"] as const) : []),
+        "strategy",
       ];
       break;
     }
@@ -330,7 +368,11 @@ async function checkUnshared(opts: FamilyCheckOptions): Promise<FamilyCheckRun> 
   const checks: CheckOutcome[] = [];
   for (const domain of domains) {
     // The set-wide checks run bare, over every collection, whatever the scope.
-    const setWide = domain === "term" || domain === "graph" || (domain === "cite" && opts.scope.kind !== "paths");
+    const setWide =
+      domain === "term" ||
+      domain === "strategy" ||
+      domain === "graph" ||
+      (domain === "cite" && opts.scope.kind !== "paths");
     checks.push(await outcome(domain, { family, cwd, inputs: setWide ? [] : inputs, onNotice }));
   }
   if (opts.scope.kind === "all" && checks.every((c) => c.status === "skipped")) {
@@ -445,8 +487,9 @@ interface SarifNotification {
 
 /**
  * One SARIF 2.1.0 log for the whole run. Each check that ran contributes its
- * domain's own runs, each under the category `manni/<domain>/`: meta, cite
- * and term share the driver `manni`, so the category is what tells them apart.
+ * domain's own runs, each under the category `manni/<domain>/`: meta, cite,
+ * term and strategy share the driver `manni`, so the category is what tells
+ * them apart.
  * A last `manni-check` run, with no results, names the checks that were
  * skipped or could not run. A check that could not run gets no run of its
  * own: an empty run would tell code scanning every open alert in its

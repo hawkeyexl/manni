@@ -1,0 +1,13 @@
+Docs teams write down whom their pages serve. Then the tags drift from it.
+
+New in manni, in beta: manni strategy. Your audiences, personas and journeys are records, one file each. A persona names its audience, and a journey names its personas.
+
+`manni strategy check` holds every page's audiences:, personas: and journeys: to those records.
+
+Here a guide lists journey m1 as a persona. check says so, and names the persona m1 belongs to, maya. It also finds journey m2, which no page serves. Exit 1.
+
+Fix the two tags and it passes, exit 0. `manni strategy list` prints the tree, with how many pages name each record.
+
+Real output from a real test fixture. Only the input is staged.
+
+npm i -g @hawkeyexl/manni · manni strategy check

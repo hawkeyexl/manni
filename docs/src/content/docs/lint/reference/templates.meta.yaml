@@ -1,4 +1,10 @@
 docs/src/content/docs/lint/reference/templates.mdx:
+  personas:
+    - maya
+    - sara
+  journeys:
+    - m10
+    - s7
   provenance:
     - generated-by: Claude Opus 5
       lines: 2-140

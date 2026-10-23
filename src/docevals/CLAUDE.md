@@ -69,10 +69,13 @@ Before drafting or editing any page under `docs/src/content/docs/docevals/**`,
 consult the family's content strategy. **Read on demand; do not inline it
 here.**
 
-- `docs/content-strategy/personas.md`, the four personas. docevals folded its
-  own six into them: Priya, Nate and Iris are Maya's entry now.
-- `docs/content-strategy/cujs.md`, the journeys. docevals's are M11–M16, D10–D11,
-  S8–S11 and T6.
+- `docs/content-strategy/personas/`, the four personas, one record each.
+  docevals folded its own six into them: Priya, Nate and Iris are Maya's
+  record now.
+- `docs/content-strategy/journeys/`, the journeys, one record each. docevals's
+  are M11, M12, M14, M15, M16, D10, D11, S8, S9, S10, S11 and T6.
+  `manni strategy list` prints them all, and `manni strategy get <id>` shows
+  one and the pages that name it.
 - `docs/content-strategy/information-architecture.md`, the content set, with
   the `docevals/` section's tree.
 

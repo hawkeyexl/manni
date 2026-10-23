@@ -1,0 +1,95 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hawkeyexl.github.io/manni/content-strategy/journey.schema.json",
+  "title": "manni content strategy: journey record",
+  "description": "A content-strategy journey: an end-to-end outcome a persona reaches with the docs. One record per file, under docs/content-strategy/journeys/. Every field after `type`, `id` and `personas` is optional.",
+  "type": "object",
+  "required": [
+    "type",
+    "id",
+    "personas"
+  ],
+  "properties": {
+    "type": {
+      "const": "journey",
+      "description": "Marks the file as a journey (critical user journey) record, which `manni strategy` reads."
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]*$",
+      "description": "The id pages and other records name this record by. Unique across every record."
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The record's name, as `manni strategy list` and `get` show it."
+    },
+    "description": {
+      "type": "string",
+      "minLength": 1,
+      "description": "One sentence that says who or what the record is."
+    },
+    "personas": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z0-9][a-z0-9-]*$"
+      },
+      "uniqueItems": true,
+      "description": "The ids of the persona records this journey serves. `manni strategy` builds its tree from this field, and a journey may serve several personas.",
+      "minItems": 1
+    },
+    "trigger": {
+      "type": "string",
+      "minLength": 1,
+      "description": "What starts the journey."
+    },
+    "entry-point": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The page the journey starts on, as a path or URL."
+    },
+    "success-criteria": {
+      "type": "string",
+      "minLength": 1,
+      "description": "What the persona has when the journey succeeds."
+    },
+    "steps": {
+      "type": "array",
+      "description": "The journey's stages, each with the page that carries it.",
+      "items": {
+        "type": "object",
+        "required": [
+          "stage"
+        ],
+        "properties": {
+          "stage": {
+            "type": "string",
+            "minLength": 1,
+            "description": "What the persona does at this stage."
+          },
+          "doc": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The page that carries the stage, as a path or URL."
+          },
+          "exists": {
+            "enum": [
+              true,
+              false,
+              "partial"
+            ],
+            "description": "Whether that page exists: `true`, `false` or `partial`."
+          },
+          "note": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Anything a reviewer of the stage needs to know."
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": true
+}

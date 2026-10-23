@@ -1,0 +1,85 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hawkeyexl.github.io/manni/content-strategy/audience.schema.json",
+  "title": "manni content strategy: audience record",
+  "description": "A content-strategy audience: a group of readers the docs serve. One record per file, under docs/content-strategy/audiences/. Every field after `type` and `id` is optional.",
+  "type": "object",
+  "required": [
+    "type",
+    "id"
+  ],
+  "properties": {
+    "type": {
+      "const": "audience",
+      "description": "Marks the file as an audience record, which `manni strategy` reads."
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]*$",
+      "description": "The id pages and other records name this record by. Unique across every record."
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The record's name, as `manni strategy list` and `get` show it."
+    },
+    "description": {
+      "type": "string",
+      "minLength": 1,
+      "description": "One sentence that says who or what the record is."
+    },
+    "segment": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The segment in one line, such as the team that owns the docs and the state of the corpus."
+    },
+    "maturity": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The company stage or size the audience spans."
+    },
+    "docs-owner": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Who owns the docs in this audience."
+    },
+    "firmographics": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "description": "Traits of the organisations in the audience."
+    },
+    "relationship-stages": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "description": "The relationship stages the audience covers, such as prospect or customer."
+    },
+    "personas": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z0-9][a-z0-9-]*$"
+      },
+      "uniqueItems": true,
+      "description": "The ids of the persona records that belong to this audience. `manni strategy` derives the same list from each persona's `audience:`, so this one is optional."
+    },
+    "features-emphasized": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "description": "The features this audience cares most about."
+    },
+    "underrepresented": {
+      "type": "boolean",
+      "description": "Whether the docs serve this audience less than its weight."
+    }
+  },
+  "additionalProperties": true
+}

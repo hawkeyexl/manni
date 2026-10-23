@@ -1,4 +1,8 @@
 docs/src/content/docs/docevals/evals/named-evals-and-suites.mdx:
+  personas:
+    - maya
+  journeys:
+    - m12
   evals:
     # This page quotes the check's own assertion in a docevals list sample.
     - use: no-todo-markers

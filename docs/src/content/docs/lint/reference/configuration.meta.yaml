@@ -1,4 +1,10 @@
 docs/src/content/docs/lint/reference/configuration.mdx:
+  personas:
+    - maya
+    - devin
+  journeys:
+    - m10
+    - d9
   provenance:
     - generated-by: Claude Opus 5
       lines: 2-65

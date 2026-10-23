@@ -1,0 +1,423 @@
+---
+title: CLI reference
+description: "Every manni strategy command, argument, and flag (list, get and check), with output shapes, configuration keys, exit codes, and every usage error."
+sidebar:
+  order: 1
+type: reference
+id: strategy-reference-cli
+keywords:
+  - CLI
+  - strategy check
+  - strategy list
+  - options
+  - exit codes
+language: en
+audiences:
+  - schema-authors
+  - docs-engineers
+  - ci-engineers
+intent: Look up any manni strategy command, argument, flag, output shape, config key, exit code or usage error.
+lifecycle: published
+applies-to:
+  - domain:strategy
+sample-questions:
+  - What flags does manni strategy check take?
+  - Which pages name a journey?
+  - What does each manni strategy usage error say?
+graph:
+  label: CLI reference
+  type: reference
+tags:
+  - cli
+  - reference
+  - commands
+  - terminal
+  - command-line
+action: remember
+prerequisites:
+  - /manni/strategy/
+next-steps:
+  - /manni/strategy/reference/rules/
+related-pages:
+  - /manni/strategy/reference/rules/
+risks: read-only
+last-updated: 2026-10-23
+---
+
+{/* The command, argument, and option tables on this page are drift-checked
+    against src/strategy/cli.ts by scripts/check-cli-reference.mjs (npm run
+    docs:check-cli), enforced in CI. Keep flags, arguments, and defaults in
+    sync with the code; descriptions are free-form. */}
+
+{/* cite bare-strategy-exits-2 */}
+manni strategy exposes three verbs. [`list`](#strategy-list) prints the
+records as a tree, [`get`](#strategy-get) shows one record and what names it,
+and [`check`](#strategy-check) holds the pages to the records. There is no
+default. A bare `manni strategy` prints usage and exits `2`.
+
+```sh
+manni strategy [options] <command> [command options] [arguments]
+```
+
+## Global options
+
+Global options are accepted before the subcommand.
+
+| Option | Description |
+|---|---|
+| `-V, --version` | Print the manni version and exit. |
+| `-h, --help` | Print help for the program or a subcommand. |
+
+## `strategy`
+
+The strategy tool. Every command on this page lives under it. `strategy`
+accepts its own `-V, --version`, which reports the manni version, and
+`-h, --help`. Run with no subcommand, it prints its usage to stderr and exits
+`2`.
+
+```sh
+manni strategy [options] <command> [command options] [arguments]
+```
+
+## The shared input model
+
+`list`, `get` and `check` read the set the same way, with the same flags.
+They are the flags `manni term` takes for the same jobs.
+
+- **Paths are positional.** Files, directories and globs, space-separated.
+  Without them the run reads every configured
+  [collection](/manni/meta/reference/configuration/#collections).
+- **Records and pages are read together.** A run that names paths has to
+  name the records too:
+  `manni strategy check docs/content-strategy/ docs/guides/`.
+- **`-` reads stdin**, alongside any named paths. It needs `--as <format>`,
+  which names one of the metadata tool's
+  [extractors](/manni/meta/reference/formats/).
+- **A record is a page that declares a type.** That is `type: audience`,
+  `type: persona` or `type: journey`, in any format the metadata tool reads.
+  Its `id` is its `id:`, else its file name without the extension.
+- **Every page contributes references.** A page's `audiences:`, `personas:`
+  and `journeys:` are read with what its `{page}.meta.yaml` sidecar adds.
+- **No records is an error.** A run that reads files but finds no record exits
+  `2`, unless `--allow-empty` or `strategy.allowEmpty` says an empty set is
+  fine.
+
+## `strategy list`
+
+List the records as a tree. Each audience has its personas under it, and
+each persona has its journeys under it.
+
+```sh
+manni strategy list [paths...] [options]
+```
+
+### Arguments
+
+| Argument | Description |
+|---|---|
+| `[paths...]` | Files, directories, or globs to read. Use `-` to read from stdin, with `--as`. Optional. Without paths the run covers every configured collection. See [the shared input model](#the-shared-input-model). |
+
+### Options
+
+| Option | Argument | Default | Description |
+|---|---|---|---|
+| `--as` | `<format>` | n/a | Input format for stdin. Required with `-`. |
+| `--ext` | `<list>` | supported extensions | Comma-separated extensions kept when expanding directories and globs. Given once. |
+| `--exclude` | `<glob>` | n/a | Glob to exclude from directory and glob walks. Repeatable, one glob per occurrence. |
+| `--collection` | `<name>` | every collection | Read one configured collection rather than every declared one. Repeatable, one name per occurrence. Cannot be combined with positional paths (exit 2). |
+| `--allow-empty` | n/a | off | Treat a missing path, no matched files or no records as success rather than an error (exit 2). Wins over config `allowEmpty:`. |
+| `--no-gitignore` | n/a | on | Read files `.gitignore` covers as well. Wins over config `respectGitignore:`. |
+| `-c, --config` | `<path>` | discovered | Path to a config file. The file must exist (exit 2). |
+| `--no-color` | n/a | off | Disable colored output. Color applies on a TTY only, and never under `NO_COLOR`. |
+| `-f, --format` | `<pretty\|json>` | `pretty` | Output format. An unknown value is an error (exit 2). |
+
+### Output
+
+`pretty` prints the tree, then a count of each type. The number is how many
+pages name the record directly. A journey that serves several personas sits
+under each of them, and the count holds it once. A record whose parents are
+not in the set sits at the top level, and a record with no `title` shows its
+id:
+
+```
+record            pages  title
+docs-engineers        2  Docs-as-code teams
+  maya                2  Maya, Documentation Engineer
+    m1                2  Stand up metadata validation for my repo
+    m2                1  Tighten the standard without breaking the build
+1 audience, 1 persona, 2 journeys
+```
+
+`json` prints `{ "records": [...] }`, in the tree's order, each record once.
+Each record is the object `get -f json` prints.
+
+### Exit codes
+
+| Code | Meaning |
+|---|---|
+| `0` | The records were listed. |
+| `2` | Operational or usage error. See [usage errors](#usage-errors). |
+
+## `strategy get`
+
+Show one record, the records it belongs to, the records under it, and the
+pages that name it.
+
+```sh
+manni strategy get <id> [paths...] [options]
+```
+
+### Arguments
+
+| Argument | Description |
+|---|---|
+| `<id>` | The record's id, in any case. |
+| `[paths...]` | Files, directories, or globs to read, exactly as on [`list`](#strategy-list). |
+
+### Options
+
+| Option | Argument | Default | Description |
+|---|---|---|---|
+| `--as` | `<format>` | n/a | Input format for stdin. Required with `-`. |
+| `--ext` | `<list>` | supported extensions | Comma-separated extensions kept when expanding directories and globs. |
+| `--exclude` | `<glob>` | n/a | Glob to exclude. Repeatable. |
+| `--collection` | `<name>` | every collection | Read one configured collection. Repeatable. |
+| `--allow-empty` | n/a | off | Treat a missing path, no matched files or no records as success. |
+| `--no-gitignore` | n/a | on | Read files `.gitignore` covers as well. |
+| `-c, --config` | `<path>` | discovered | Path to a config file. |
+| `--no-color` | n/a | off | Disable colored output. |
+| `-f, --format` | `<pretty\|json>` | `pretty` | Output format. |
+
+### Output
+
+`pretty` prints the title and where the record was read, then a row per
+field. A journey shows its `personas`, one per line. A persona shows its
+`audience` and its `journeys`, and an audience its `personas`. The `pages`
+row prints `none` when no page names the record:
+
+```
+Maya, Documentation Engineer                  strategy/personas/maya.md:1
+  type          persona
+  id            maya
+  description   Owns a docs-as-code repo and wants its frontmatter correct.
+  audience      docs-engineers  Docs-as-code teams
+  journeys      m1  Stand up metadata validation for my repo
+                m2  Tighten the standard without breaking the build
+  pages         docs/ci.md
+                docs/guide.md
+```
+
+A record that sets `lifecycle` shows it in a row after `description`. This
+journey is a draft, so no page names it yet:
+
+```
+Gate a new page on its journey                strategy/journeys/m3.md:1
+  type          journey
+  id            m3
+  description   A journey whose pages are still to be written.
+  lifecycle     draft
+  personas      maya  Maya, Documentation Engineer
+  pages         none
+```
+
+`json` prints the record. `title` is always there: a record with no title
+gets its id, so `title` equal to `id` means none was written. `description`
+and `lifecycle` are there only when the record has them. A persona carries
+`audience`, as written. A journey carries `personas`, always a list.
+`namedBy` holds `personas` on an audience, `journeys` on a persona, and
+`pages` always. Paths are relative to the working directory:
+
+```json
+{
+  "id": "m1",
+  "type": "journey",
+  "title": "Stand up metadata validation for my repo",
+  "file": "strategy/journeys/m1.md",
+  "line": 1,
+  "personas": ["maya"],
+  "namedBy": {
+    "pages": ["docs/ci.md", "docs/guide.md"]
+  }
+}
+```
+
+### Exit codes
+
+| Code | Meaning |
+|---|---|
+| `0` | The record was found and printed. |
+| `2` | No record matched, or an operational or usage error. The message names the set's size and the nearest id. |
+
+## `strategy check`
+
+Check the pages against the records, and the records against each other. The
+six rules, their default severities and their messages are on the
+[rules reference](/manni/strategy/reference/rules/).
+
+```sh
+manni strategy check [paths...] [options]
+```
+
+### Arguments
+
+| Argument | Description |
+|---|---|
+| `[paths...]` | Files, directories, or globs to read, exactly as on [`list`](#strategy-list). |
+
+### Options
+
+| Option | Argument | Default | Description |
+|---|---|---|---|
+| `--as` | `<format>` | n/a | Input format for stdin. Required with `-`. |
+| `--ext` | `<list>` | supported extensions | Comma-separated extensions kept when expanding directories and globs. |
+| `--exclude` | `<glob>` | n/a | Glob to exclude. Repeatable. |
+| `--collection` | `<name>` | every collection | Read one configured collection. Repeatable. |
+| `--allow-empty` | n/a | off | Treat a missing path, no matched files or no records as success. |
+| `--no-gitignore` | n/a | on | Read files `.gitignore` covers as well. |
+| `-c, --config` | `<path>` | discovered | Path to a config file. |
+| `--no-color` | n/a | off | Disable colored output. |
+| `-f, --format` | `<pretty\|json\|github\|sarif\|junit>` | `pretty` | Output format. The shapes are below. |
+| `--baseline` | n/a | off | Compare against `.manni-strategy-baseline.json`, or the file config `baseline:` names. When the file does not exist yet, record this run's findings in it and exit `0`. After that, fail only on findings the file does not hold. Takes no value. |
+
+### Output
+
+`pretty` groups findings by file and line. Each row is the severity, the rule
+id and the message, and the rule's guidance follows it, dim. The
+[rules reference](/manni/strategy/reference/rules/#every-rule-in-one-run) has
+a run that breaks every rule. The summary counts each severity:
+
+```
+3 errors, 3 warnings, 1 notice in 7 records
+```
+
+A clean run prints one line. An `--allow-empty` run that found no records
+prints the same line with zero counts:
+
+```
+✓ 4 records, 10 references, no findings
+```
+
+`json` prints `{ findings, summary }`. Each finding carries `rule`, `ruleId`,
+`severity`, `message`, `guidance`, `file` and `line`. It adds the record's
+`id` when the finding is about one, and the `field` that breaks the rule when
+one does. `summary` holds `records`, `references`, `errors`, `warnings` and
+`notices`, and `baseline` when one was read or written. `references` counts
+every value of `audiences:`, `personas:`, `journeys:` and `audience:` the run
+read. A journey's own `personas:` counts once:
+
+```json
+{
+  "findings": [
+    {
+      "rule": "unserved-journey",
+      "ruleId": "manni:strategy/unserved-journey",
+      "severity": "warning",
+      "message": "no page names this journey in journeys:. Name it on the pages that serve it.",
+      "guidance": {
+        "id": "manni:strategy",
+        "rule": "unserved-journey",
+        "description": "No page names the journey in journeys:. Records do not count, and a draft or archived journey is exempt.",
+        "guide": "https://hawkeyexl.github.io/manni/strategy/reference/rules/#unserved-journey"
+      },
+      "file": "strategy/journeys/m2.md",
+      "line": 3,
+      "id": "m2"
+    }
+  ],
+  "summary": {
+    "records": 4,
+    "references": 9,
+    "errors": 0,
+    "warnings": 1,
+    "notices": 0
+  }
+}
+```
+
+`github` prints one workflow command per finding. The colon in the rule id is
+escaped, because a workflow command reads `:` as a separator. A clean run
+prints nothing:
+
+```
+::warning file=strategy/journeys/m2.md,line=3,title=manni%3Astrategy/unserved-journey::no page names this journey in journeys:. Name it on the pages that serve it.%0Amanni:strategy unserved-journey: No page names the journey in journeys:. Records do not count, and a draft or archived journey is exempt.%0AGuide: https://hawkeyexl.github.io/manni/strategy/reference/rules/#unserved-journey
+```
+
+`sarif` and `junit` carry the same findings under the rule id
+`manni:strategy/<rule>`, in the envelope, paths and fingerprints of the
+metadata tool's [renderers](/manni/meta/reference/output-and-exit-codes/). A
+SARIF rule's `shortDescription` is the rule's line from the rules reference,
+and its `helpUri` is the rule's section of that page. A SARIF result's message
+carries the guidance lines too. JUnit testcases carry the classname
+`manni.strategy`, one per file that holds a record or a reference.
+
+### Baselines
+
+`--baseline` is one flag for both halves of the ratchet.
+
+```console
+$ manni strategy check --baseline
+✓ 7 findings recorded in .manni-strategy-baseline.json
+$ manni strategy check --baseline
+✓ 7 records, 8 references, no findings, 7 baselined
+```
+
+A configured `baseline:` is compared on every run, without the flag. When
+that file does not exist and the flag is absent, the run stops with exit `2`
+and names the command that records one.
+
+### Exit codes
+
+| Code | Meaning |
+|---|---|
+| `0` | No error-severity finding the baseline does not already hold. Warnings and notices never move the exit code. A run that records a baseline exits `0`. |
+| `1` | At least one unbaselined error-severity finding. |
+| `2` | Operational or usage error. See [usage errors](#usage-errors). |
+
+## Configuration
+
+The `strategy:` section of `manni.config.yaml` is optional. Every key has a
+default, and the records and pages come from the family `collections:`.
+
+| Key | Type | Default | What it does |
+|---|---|---|---|
+| `strategy.severity.<rule>` | `notice`, `warning`, `error` or `off` | the [rules table](/manni/strategy/reference/rules/#the-rules) | Moves one rule's level. `off` drops its findings. |
+| `strategy.baseline` | string, a path | none | Compares against this baseline on every run. It resolves from the config file's directory. |
+| `strategy.allowEmpty` | boolean | `false` | Treats no records as success. |
+| `strategy.respectGitignore` | boolean | `true` | Skips files `.gitignore` covers. |
+
+```yaml
+strategy:
+  severity:
+    unserved-journey: error
+```
+
+## Usage errors
+
+Every usage error goes to stderr, prefixed `manni:`, and exits `2`. Nothing is
+written.
+
+| Invocation | stderr |
+|---|---|
+| `strategy` | the full help |
+| `strategy get` | `error: missing required argument 'id'` |
+| `strategy get mya` | `manni: no record "mya". 82 records; did you mean "maya"?` |
+| `strategy get zzzz` | `manni: no record "zzzz". 82 records.` |
+| `strategy check -f xml` | `manni: unknown format "xml". Expected pretty \| json \| github \| sarif \| junit.` |
+| A run that finds no records | `manni: no strategy records found. A record is a page declaring type: audience, type: persona or type: journey.` |
+| `strategy check -` with no `--as` | ``manni: Reading from stdin (`-`) requires --as <format> to choose an extractor.`` |
+| `strategy check --collection site docs/` | `manni: --collection selects a configured collection; it cannot be combined with paths.` |
+| `strategy check --collection site`, with no config | `manni: --collection needs a config file to select from.` |
+| `strategy check --collection nope` | `manni: no collection named "nope" in manni.config.yaml. Configured: site, strategy.` |
+| `strategy check nowhere/` | `manni: File not found: "nowhere/". Check the path. Named paths resolve from the working directory.` |
+| No paths and no collections | ``manni: No files to read. Pass paths/globs, or declare a collection under `collections:` in manni.config.yaml.`` |
+| `strategy: { paths: [x] }` in config | `manni: manni.config.yaml: strategy does not carry "paths". Name a collection under collections:.` |
+| `strategy: { exclude: [x] }` in config | `manni: manni.config.yaml: strategy does not carry "exclude". Name a collection under collections:.` |
+| `strategy: [1]` in config | `manni: strategy: in manni.config.yaml must be a mapping.` |
+| An unknown key under `strategy:` | `manni: Unknown key "rules" under strategy: in manni.config.yaml. Supported keys: severity, baseline, allowEmpty, respectGitignore.` |
+| An unknown rule under `strategy.severity` | `manni: Unknown key "unserved" under strategy.severity: in manni.config.yaml. Supported keys: undefined-reference, duplicate-id, missing-parent, orphan-record, unserved-journey, unused-record.` |
+| `strategy: { allowEmpty: "yes" }` | `manni: strategy.allowEmpty in manni.config.yaml must be a boolean.` |
+| A severity that is not a level | `manni: manni.config.yaml: strategy.severity.unserved-journey "fatal" is not a level. Expected notice \| warning \| error \| off.` |
+| The configured baseline file is missing | ``manni: Baseline ".manni-strategy-baseline.json" not found. Record one with `manni strategy check --baseline`.`` |
+
+A type error never quotes the value back, because a value can be a secret
+pasted under the wrong key. A severity level is quoted, because it is not one.

@@ -1,6 +1,6 @@
 ---
 name: fix
-description: Repair manni findings in docs. Use after manni check or a hook reports errors in metadata, citations, terms, structure, evals or the graph, or after manni a11y check or manni test run fails.
+description: Repair manni findings in docs. Use after manni check or a hook reports errors in metadata, citations, terms, the content strategy, structure, evals or the graph, or after manni a11y check or manni test run fails.
 allowed-tools: Bash(npx manni *), Bash(node "${CLAUDE_PLUGIN_ROOT}/hooks/manni.mjs" *)
 ---
 
@@ -66,6 +66,23 @@ Each finding names the field and the value, then says what to do. Under it, the 
 | `prose/<Style.Rule>` | Rewrite the sentence. Never add a Vale exception. |
 
 Never delete a term, a label or an alt-label, and never set a rule `off`, to make a finding go away. After you change a term page, run `manni term write`. Add `--check` to see whether the committed output is stale.
+
+## strategy check
+
+Each finding names the field and the value, or the record, then says what to do. Under it, the report names the rule, says what it means and links the rules page. Read those lines before you edit.
+A finding can sit in a `{page}.meta.yaml` sidecar. Edit the value there, not in the page.
+Run `manni strategy get <id>` to see a record, its parent and the pages that name it.
+
+| Rule | Repair |
+|---|---|
+| `undefined-reference` | Use the id the message suggests, or fix the typo. When the message names another field, move the value there. If the value names a new record, ask the user before adding one. |
+| `duplicate-id` | Two records claim one id. Ask the user which keeps it before you rename one. |
+| `missing-parent` | Add the persona or audience the message names. When it names several personas, add the one the page serves. Drop the journey or persona instead only when the page does not serve it. |
+| `orphan-record` | Name the parent with `audience:` on a persona or `personas:` on a journey. Ask the user if you cannot tell which. |
+| `unserved-journey` | Name the journey in `journeys:` on the pages that serve it. If no page serves it yet, tell the user. Mark it `lifecycle: draft` only when the user says its pages are still to be written. |
+| `unused-record` | A notice. Notices never fail. Fix one only when the user asks. |
+
+Never delete a record, and never set a rule `off`, to make a finding go away.
 
 ## lint check
 

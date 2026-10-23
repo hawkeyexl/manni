@@ -143,6 +143,18 @@ Key layers:
     built-in static server `preview` uses for frameworks without one.
   - `src/site/cli.ts`: thin commander wrapper exported as `buildProgram()`
     and mounted by `src/cli.ts`. No entry point of its own.
+- `src/strategy/`: the content-strategy domain, `manni strategy list`, `get`
+  and `check` (proposal 0102). A record is a page declaring `type: audience`,
+  `type: persona` or `type: journey`, and `check` holds each page's
+  `audiences:`, `personas:` and `journeys:` to the records.
+  - `src/strategy/core/`: the `strategy:` config loader, the set loader, which
+    reads sidecars through meta's page view, the rules, and severity.
+  - `src/strategy/commands/`: the command cores and the findings adapter,
+    free of CLI/IO plumbing.
+  - `src/strategy/reporters/`: output formatting (pretty / json / github /
+    sarif / junit).
+  - `src/strategy/cli.ts`: thin commander wrapper exported as
+    `buildProgram()` and mounted by `src/cli.ts`. No entry point of its own.
 - `src/family/`: the two family verbs, `manni check` and `manni status`
   (proposal 0078). It owns in-play detection, Claude Code hook-envelope
   detection and the orchestration of the domains' command cores. It owns no
@@ -290,7 +302,7 @@ or a parity break with `meta` gets caught before it ships.
 **Plans carry a worked example.** A plan opens with the pain, the gap or
 friction the change closes. After the pain and before the interface, a plan
 walks one persona through the change end to end. Name the persona from
-`docs/content-strategy/personas.md`, and start from a real state, this
+`docs/content-strategy/personas/`, and start from a real state, this
 repository's own where it can be. Show each command or call they make, in
 order, and what each prints or returns. End at the outcome the pain section
 promised. The ladder shows that the flags compose. The worked example shows
@@ -422,8 +434,8 @@ stdin/parse cases.
 
 Before any user-facing writing or docs task, consult `docs/content-strategy/`:
 
-1. Identify the **persona** the page serves: Maya (docs engineer), Devin (CI engineer), Sara (schema author), or Theo (contributor fixing a failure). See `personas.md`.
-2. Find the matching **CUJ** in `cujs.md` (M1–M27 and M30, D1–D17, S1–S16, T1–T8). Structure the content around reaching that outcome, not by document type or Diátaxis category.
+1. Identify the **persona** the page serves: Maya (docs engineer), Devin (CI engineer), Sara (schema author), or Theo (contributor fixing a failure). Each has a record in `docs/content-strategy/personas/`.
+2. Find the matching **CUJ** in `docs/content-strategy/journeys/`, one record per journey. `manni strategy list` prints every audience, persona and journey, and `manni strategy get <id>` shows one record and the pages that name it. Structure the content around reaching that outcome, not by document type or Diátaxis category.
 3. Link into the **Reference shelf** (`reference/`) for exhaustive detail (flag tables, config keys, precedence chain). Journey pages explain the path; they don't duplicate reference.
 4. Check `information-architecture.md` for the page's place in the content set and its ★ launch status.
 5. Every page in `docs/src/content/docs/**` needs `title` and `description` frontmatter.

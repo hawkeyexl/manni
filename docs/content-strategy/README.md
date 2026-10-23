@@ -4,29 +4,80 @@ This directory holds the durable content strategy for the manni meta documentati
 
 These files live inside `docs/` but outside `docs/src/content/docs/**`, so they are not published as end-user pages. They are internal working documents for agents and contributors.
 
-## Files
+## Layout
 
-| File | Contents |
+| Path | Contents |
 |---|---|
-| `audiences.md` | The four target audiences and why each matters. |
-| `personas.md` | Full profiles for Maya, Devin, Sara, and Theo. |
-| `cujs.md` | Critical User Journeys per persona, the end-to-end outcomes the docs must support. |
-| `information-architecture.md` | The CUJ-based IA and nav tree, plus the full content-set map (which page serves which CUJ, with ★ launch markers). |
+| `audiences/` | One record per target audience, the four audiences and why each matters. |
+| `personas/` | One record per persona, the full profiles for Maya, Devin, Sara, and Theo. |
+| `journeys/` | One record per Critical User Journey, the end-to-end outcomes the docs must support. Each sits under the personas it serves. |
+| `information-architecture.md` | The journey-based IA and nav tree, plus the full content-set map (the pages, with ★ launch markers). |
 | `design.md` | The visual rules the docs site and the demo videos both follow: palette, type, capture geometry, composition, and the measurements behind them. |
+| `OWNERS` | Who owns each published docs page, in CODEOWNERS format. `manni meta derive` reads it for the `owner` field. |
+
+## The records
+
+Each audience, persona and journey is a page of its own. A record is front matter followed by the prose that describes it.
+
+```yaml
+---
+type: journey
+id: m5
+title: Pin a claim and catch it going stale
+description: A sentence on one of Maya's pages rests on a few lines of code.
+personas: [maya]
+---
+```
+
+| Field | On | What it holds |
+|---|---|---|
+| `type` | every record | `audience`, `persona` or `journey`. |
+| `id` | every record | A stable id, unique across all records. The file name is the id. |
+| `title` | every record | What the record is called. |
+| `description` | every record | One sentence saying what the record is for. |
+| `audience` | a persona | The id of the audience the persona belongs to. |
+| `personas` | a journey | The ids of the personas the journey serves, as a list. A journey can serve more than one. |
+| `lifecycle` | a journey, optional | `draft` while its pages are still to be written, or `archived` once it is retired. `manni strategy check` expects no page to name either. |
+
+Pages name the records they serve in their own `audiences:`, `personas:` and `journeys:` fields. A page can hold them in its front matter or in its `{page}.meta.yaml` sidecar.
+
+Three commands read the records.
+
+- `manni strategy list` lists them as a tree, audience then persona then journey, with the number of pages that name each.
+- `manni strategy get <id>` shows one record and the pages that name it.
+- `manni strategy check` checks every page's `audiences:`, `personas:` and `journeys:` against the records.
+
+The ids are stable. A new journey takes the next free id in its persona's series.
+
+A journey can land before its pages exist. Give it `lifecycle: draft`, and `manni strategy check` stays green while no page names it. Once a page serves it, set `lifecycle: published` or drop the field.
+
+### Audiences
+
+manni meta serves four distinct audiences. The **lead audience** drives the primary IA track and gets the deepest coverage. Secondary audiences have dedicated tracks, but are scoped to what they actually need from the tool.
+
+### Personas
+
+Four concrete personas, one per audience. Each writing task should be anchored to the persona(s) it serves. The journeys in `journeys/` are the end-to-end outcomes each persona must complete.
+
+### Journeys
+
+A CUJ is a complete, end-to-end outcome a persona must be able to reach using manni meta and its documentation. The CUJs are the organizing principle for the IA. Each top-level nav section maps to one persona's set of journeys, and every page is justified by the CUJ it serves.
+
+`manni strategy get <id>` lists the pages that carry a journey.
 
 ## How to use this during writing tasks
 
 Before drafting or editing any user-facing documentation:
 
-1. **Identify the relevant persona.** Is this page for Maya (docs engineer), Devin (CI engineer), Sara (schema author), or Theo (contributor hitting a red check)? A page may serve more than one, but there is usually a primary.
+1. **Identify the relevant persona.** Is this page for Maya (docs engineer), Devin (CI engineer), Sara (schema author), or Theo (contributor hitting a red check)? A page may serve more than one, but there is usually a primary. Each has a record in `personas/`.
 
-2. **Find the matching CUJ in `cujs.md`.** Each persona has a numbered series of journeys across the tools (M1–M27, M30 and M31, D1–D18, S1–S16, T1–T8). Understand the end-to-end outcome the persona needs to reach.
+2. **Find the matching journey.** `manni strategy list` prints every journey under its persona, and `manni strategy get <id>` shows one in full. Each persona has a series of journeys across the tools. Understand the end-to-end outcome the persona needs to reach.
 
 3. **Structure content around that journey, not by document type.** Do not impose a Diátaxis-style tutorial/how-to/explanation/reference split as the organizing principle. Ask: "What does this persona need to know, and in what order, to reach the outcome?" Let the journey sequence the content.
 
 4. **Link into the Reference shelf for lookups.** Detailed flag tables, full config-key lists, and the precedence chain belong in `reference/`. Journey pages explain the path and link into reference for exhaustive detail. They do not duplicate it.
 
-5. **Check the IA map.** `information-architecture.md` lists every planned page, the CUJ it serves, and whether it is a ★ launch priority. If you are adding a new page, record it there.
+5. **Check the IA map.** `information-architecture.md` lists every planned page and whether it is a ★ launch priority. If you are adding a new page, record it there, and name the journeys it serves in the page's `journeys:` field.
 
 6. **Frontmatter.** Every page in `docs/src/content/docs/**` must have `title` and `description` in its frontmatter. No exceptions.
 
@@ -42,18 +93,24 @@ manni meta docs document a real CLI. Every flag, exit code, output string, and s
 
 ## Per-tool strategy
 
-The files above are the whole family's. A tool that joins the family does not
-bring a strategy directory of its own. Its readers are these four personas, its
-journeys are numbered into their series in `cujs.md`, and its pages get a
-content set in `information-architecture.md`. A persona is added only when no
-existing one does the job. a11y added none, and neither did docevals, whose six
-imported personas were three of these four by name, plus three situations of
-Maya's.
+The records above are the whole family's. A tool that joins the family does not
+bring a strategy directory of its own. Its readers are these four personas. Its
+journeys take the next free id in their persona's series under `journeys/`. Its
+pages get a content set in `information-architecture.md`. A persona is added
+only when no existing one does the job. a11y added none, and neither did
+docevals, whose six imported personas were three of these four by name, plus
+three situations of Maya's.
 
 docevals arrived with an ID-linked strategy directory (audiences, personas,
-journeys and IA). What was strategy moved into the files above. Its IA gap
+journeys and IA). What was strategy moved into the records above. Its IA gap
 analysis, a delivery record of how the section was built, moved to
 `docs/proposals/docevals/ia-gap-analysis.md` beside the tool's ADRs. Like
 every persona here, docevals's were reasoned from the tool's own surface and a
 sibling's adopters rather than from call evidence. The tool had no users yet. Treat its pains as claims to re-test when it does. `design.md` is
 shared: one site, one palette, one set of capture rules.
+
+### The same four, for docevals
+
+docevals segmented its adopters on who owns the docs and how mature the company is, and arrived at six segments. They land on these four. A docs platform team, a solo owner and a brownfield corpus are all docs-as-code teams. The solo owner differs by hours available, and the brownfield corpus is a lens on the state of the pages, not a different owner. The other three segments are the platform engineers, the owners of the quality standard (the schema authors' job, in prose), and the contributors.
+
+Three concerns cut across every segment for docevals, which is why they get sections of their own rather than footnotes. Can a model be trusted to gate a build (`judge/`)? Can the cost surprise anyone (`ci/cost-and-caching.mdx`, counted in calls, never dollars)? And what executes when the gate runs on a stranger's pull request (`ci/untrusted-pull-requests.mdx`)? Framework was deliberately not a segment, because docevals reads frontmatter and never touches the site build.

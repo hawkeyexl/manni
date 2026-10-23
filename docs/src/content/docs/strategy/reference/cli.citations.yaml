@@ -1,0 +1,10 @@
+docs/src/content/docs/strategy/reference/cli.mdx:
+  citations:
+    - id: bare-strategy-exits-2
+      claim:
+        integrity: sha256-e93ddf3fd85128c174d2fc449f3f8e91554793eb58daf6d7b47ea1b2c7b8edfc
+      source:
+        file: src/shared/run.ts
+        lines: 81-90
+        integrity: sha256-0b1adcea878f72a48497137fff1e405ac1b9c8b8b5906e17eb740806b00ca825
+        commit-sha: 89a49265ea352d3854a8070819a7eeb40661e4f6

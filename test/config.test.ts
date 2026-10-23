@@ -856,6 +856,14 @@ describe("the repository's own manni.config.yaml", () => {
         // of its own (0041 rule 12). The local preview, not the deployed site.
         url: "http://127.0.0.1:4321/manni/",
       },
+      // The content strategy's records (0102), which `manni strategy` holds
+      // the site's pages to. They are not published, so no url and no manifest.
+      {
+        name: "strategy",
+        paths: ["docs/content-strategy/{audiences,personas,journeys}/*.md"],
+        exclude: [],
+        externalMetadata: [],
+      },
     ]);
 
     const ref = loaded?.config.overrides?.[0]?.schemas[0];
@@ -878,10 +886,17 @@ describe("the repository's own manni.config.yaml", () => {
     // what replaced the two hand-copied vocabulary lists the overrides once
     // carried. An override's `defaults` is false unless it says otherwise, so
     // dropping either key would silently shrink what the site is held to.
-    expect(config?.overrides).toHaveLength(2);
+    // The three content-strategy record overrides (0102) are not docs pages:
+    // each takes its own schema and none of the defaults.
+    expect(config?.overrides).toHaveLength(5);
+    const records = (config?.overrides ?? []).filter((ov) =>
+      ov.schemas.some((s) => s.startsWith("./docs/content-strategy/schemas/")),
+    );
+    expect(records).toHaveLength(3);
     for (const ov of config?.overrides ?? []) {
-      expect(ov.defaults).toBe(true);
-      expect(ov.strict).toBe(true);
+      const record = records.includes(ov);
+      expect(ov.defaults === true).toBe(!record);
+      expect(ov.strict === true).toBe(!record);
     }
 
     expect(
@@ -933,6 +948,18 @@ describe("the repository's own manni.config.yaml", () => {
       "astro:starlight:0.41",
       "tgdp:templates:1.1",
     ]);
+    // A strategy record takes its record type's schema and none of the
+    // defaults. A journey also takes the lifecycle vocabulary, so a draft
+    // journey's `lifecycle:` is checked against its enum.
+    const journeySchemas = ["./docs/content-strategy/schemas/journey.schema.json", "manni:lifecycle:1.0.0"];
+    expect(records.find((ov) => ov.schemas.includes(journeySchemas[0] ?? "<missing>"))?.schemas).toEqual(journeySchemas);
+    expect(
+      resolveSchemaSet({
+        filePath: "docs/content-strategy/journeys/m5.md",
+        config,
+        memberOf: ["strategy"],
+      }),
+    ).toEqual(journeySchemas);
     // A file outside the collection is a member of nothing, so the override
     // cannot reach it and DEFAULT_SCHEMAS stands.
     expect(

@@ -1,0 +1,4 @@
+docs/limits.md:
+  audiences: [docs-engineers]
+  personas: [maya]
+  journeys: [m1]

@@ -1,0 +1,8 @@
+# A set that breaks each of the six rules once, at its default severity.
+collections:
+  - name: site
+    paths:
+      - "docs/**/*.md"
+  - name: strategy
+    paths:
+      - "strategy/**/*.md"

@@ -101,6 +101,15 @@ const DOMAINS: readonly Domain[] = [
     ],
   },
   {
+    names: ["strategy"],
+    load: async () => [
+      (await import("./strategy/index.js"))
+        .buildProgram()
+        .name("strategy")
+        .description("Check a docset's pages against its audiences, personas and journeys"),
+    ],
+  },
+  {
     names: ["test"],
     load: async () => [
       (await import("./test/cli.js"))

@@ -20,8 +20,8 @@ docs/src/content/docs/meta/reference/schemas/manni-vocabularies.mdx:
       lines: 2-12
       integrity: sha256-d3c0b06c4eee9a7c75b802ee006a4fcf73e939661b20dca5254b32a5d5c224dc
     - generated-by: Claude Opus 5.5
-      lines: 15-20
-      integrity: sha256-1c27ac474c9a5b826bf042aae105ae10790556af8917251ed31e21ab19e79ecc
+      lines: 14-20
+      integrity: sha256-65976d227eb67d7c8ed14d0036760c65b9ad8e4e4f0fa652759171b24975f1ef
     - generated-by: Claude Opus 5.5
       lines: 22-24
       integrity: sha256-0c741dc8207c4b3f1d0d446520c8d5a8cdd080e5fc99aa6c53c76e9850079c52
@@ -32,8 +32,11 @@ docs/src/content/docs/meta/reference/schemas/manni-vocabularies.mdx:
       lines: 29-40
       integrity: sha256-c86e088f6e3f7d126008b6f0a7608bf58b75e6de2f0dd4950ec3a3fd82fecfca
     - generated-by: Claude Opus 5.5
-      lines: 56-57
-      integrity: sha256-e35de401b3128816c9416d0bbf980ca3a437ccbab4b8108139bbec2b40458165
+      lines: 44
+      integrity: sha256-fd11a126efb2ac94826fce20e94c54014d4b9d5f33a5d4d45a9dbf0d3fb53115
+    - generated-by: Claude Opus 5.5
+      lines: 52-57
+      integrity: sha256-77ab319d5fbeb55d7844bf0196b2335462c7d5192a72e0a57d86af795706f2e6
     - generated-by: Claude Opus 5.5
       lines: 62-63
       integrity: sha256-281c600de7fecde6eaab06c0b76725065fa25177bdf7ac6cc03f9edf7138df92
@@ -44,8 +47,8 @@ docs/src/content/docs/meta/reference/schemas/manni-vocabularies.mdx:
       lines: 81-103
       integrity: sha256-f702647fc5552fdd92b3ed957b2903843d9bd6ce3c221aa3eea2c0f9353972a2
     - generated-by: Claude Opus 5.5
-      lines: 116-125
-      integrity: sha256-6d26b2aa95558978d049002d4f3ef68981112879c91ece4b208f32598aa74454
+      lines: 113-125
+      integrity: sha256-5b2fdabd17950e2cb38e4a22992188238decbec8922dbe039a8702aea66c1060
     - generated-by: Claude Opus 5.5
       lines: 127-132
       integrity: sha256-e51c2ceefa8857ce104e85b7c9f4adb7d8a58dd2c277fd090c769b986f15569c

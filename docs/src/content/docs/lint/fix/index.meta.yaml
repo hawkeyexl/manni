@@ -1,4 +1,8 @@
 docs/src/content/docs/lint/fix/index.mdx:
+  personas:
+    - theo
+  journeys:
+    - t5
   provenance:
     - generated-by: Claude Opus 5
       lines: 2-12

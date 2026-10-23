@@ -1,0 +1,8 @@
+# References that are near misses: a typo, a value of the wrong type, and a record parent typo.
+collections:
+  - name: site
+    paths:
+      - "docs/**/*.md"
+  - name: strategy
+    paths:
+      - "strategy/**/*.md"

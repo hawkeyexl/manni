@@ -1,4 +1,11 @@
 docs/src/content/docs/docevals/reference/frontmatter.mdx:
+  personas:
+    - maya
+    - sara
+  journeys:
+    - m12
+    - s8
+    - s11
   provenance:
     - generated-by: Claude Opus 5
       lines: 2

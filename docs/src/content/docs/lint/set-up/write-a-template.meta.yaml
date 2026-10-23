@@ -1,4 +1,8 @@
 docs/src/content/docs/lint/set-up/write-a-template.mdx:
+  personas:
+    - sara
+  journeys:
+    - s7
   provenance:
     - generated-by: Claude Opus 5
       lines: 2-30

@@ -1,0 +1,6 @@
+record            pages  title
+docs-engineers        2  Docs-as-code teams
+  maya                2  Maya, Documentation Engineer
+    m1                2  Stand up metadata validation for my repo
+    m2                1  Tighten the standard without breaking the build
+1 audience, 1 persona, 2 journeys

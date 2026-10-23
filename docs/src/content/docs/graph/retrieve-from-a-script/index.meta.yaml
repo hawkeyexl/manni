@@ -1,4 +1,8 @@
 docs/src/content/docs/graph/retrieve-from-a-script/index.mdx:
+  personas:
+    - maya
+  journeys:
+    - m29
   provenance:
     - generated-by: Claude Opus 5.5
       lines: 2-251

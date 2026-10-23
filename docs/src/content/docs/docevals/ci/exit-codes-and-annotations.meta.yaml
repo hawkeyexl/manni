@@ -1,4 +1,12 @@
 docs/src/content/docs/docevals/ci/exit-codes-and-annotations.mdx:
+  personas:
+    - devin
+    - sara
+    - maya
+  journeys:
+    - d10
+    - s10
+    - m15
   evals:
     # This page shows the markers the check looks for, as its example.
     - use: no-todo-markers

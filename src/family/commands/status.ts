@@ -3,7 +3,8 @@
  *
  * It reads the same table `check` does (`in-play.ts`), counting what the
  * content declares where a domain is in play by declaration: the pages that
- * name their own `$schema`, carry citations or resolve evals, and the terms.
+ * name their own `$schema`, carry citations or resolve evals, the terms, and
+ * the strategy records.
  * It checks nothing, so it exits 0 whatever it finds.
  */
 import { appendFileSync, existsSync, readFileSync } from "node:fs";
@@ -178,6 +179,14 @@ async function row(domain: Domain, family: Family, cwd: string, members: readonl
       const { terms } = await listTerms({ inputs: [], configPath, cwd, allowEmpty: true });
       return terms.length > 0 ? inPlay(plural(terms.length, "term")) : notSetUp;
     }
+    case "strategy": {
+      const [{ runList: listStrategy }, { countsLine }] = await Promise.all([
+        import("../../strategy/commands/list.js"),
+        import("../../strategy/reporters/pretty.js"),
+      ]);
+      const { set } = await listStrategy({ inputs: [], configPath, cwd, allowEmpty: true });
+      return set.records.length > 0 ? inPlay(countsLine(set.records)) : notSetUp;
+    }
     case "lint":
     case "graph":
       return section ? inPlay(`${domain}: section`) : notSetUp;
@@ -281,6 +290,14 @@ export const FIX_SKILL = "manni:fix";
 /** The sentence the briefing and every hook block end on. */
 export const FIX_SENTENCE = `The ${FIX_SKILL} skill says how to repair each finding.`;
 
+/** The set-wide checks a stop runs whenever the tree changed, as the briefing names them. */
+const TREE_WIDE: ReadonlyArray<readonly [Domain, string]> = [
+  // A source edit can drift any citation.
+  ["cite", "every citation"],
+  // A sidecar edit alone can move a page's personas: or journeys:.
+  ["strategy", "the content strategy"],
+];
+
 /** The set-wide checks a stop runs when a collection document changed, as the briefing names them. */
 const PAGE_WIDE: ReadonlyArray<readonly [Domain, string]> = [["term", "the glossary"]];
 
@@ -295,8 +312,8 @@ function prose(items: readonly string[], conjunction: string): string {
 export function agentLines(report: StatusReport): string {
   const names = prose(report.collections.map((c) => c.name), "or");
   const inPlay = new Set(report.domains.filter((d) => d.status === "in-play").map((d) => d.name));
-  // A stop checks every citation whenever the tree changed: a source edit can drift any of them.
-  const plus = inPlay.has("cite") ? ", plus every citation" : "";
+  const treeWide = TREE_WIDE.filter(([domain]) => inPlay.has(domain)).map(([, what]) => what);
+  const plus = treeWide.length === 0 ? "" : `, plus ${prose(treeWide, "and")}`;
   const pageWide = PAGE_WIDE.filter(([domain]) => inPlay.has(domain)).map(([, what]) => what);
   const also = pageWide.length === 0 ? "" : ` It checks ${prose(pageWide, "and")} too when you changed a page.`;
   return [

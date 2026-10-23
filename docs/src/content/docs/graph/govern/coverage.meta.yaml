@@ -1,4 +1,12 @@
 docs/src/content/docs/graph/govern/coverage.mdx:
+  personas:
+    - maya
+    - devin
+    - sara
+  journeys:
+    - m18
+    - d12
+    - s12
   provenance:
     - generated-by: Claude Opus 5.5
       lines: 2

@@ -1,0 +1,27 @@
+docs/src/content/docs/strategy/reference/cli.mdx:
+  personas:
+    - sara
+  journeys:
+    - s17
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: src/strategy/cli.ts
+    - path: src/strategy/core/config.ts
+  eval-suite: strategy
+  evals:
+    - id: find-flag
+      assertion: A reader can find the flags, output and exit codes of any manni strategy command.
+      type: capability
+      grader: ai
+    - id: read-usage-error
+      assertion: A reader can match a manni strategy usage error to the invocation that caused it.
+      type: capability
+      grader: ai
+  provenance:
+    - generated-by: Claude Opus 5.5
+      lines: 2-378
+      integrity: sha256-e047f405b60cf82d74566336f713286474f1afef6b6892b3cd99fcc85d915d64
+  owner:
+    - "@hawkeyexl"
+  created: 2026-10-22

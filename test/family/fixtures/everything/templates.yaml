@@ -1,9 +1,12 @@
 # The lint templates the everything fixture routes by: a term page has no
-# heading, and a concept holds a paragraph.
+# heading, a concept holds a paragraph, and a strategy record has no shape
+# of its own to keep.
 templates:
   term:
     types: [term]
     heading: false
+  record:
+    types: [audience, persona, journey]
   concept:
     types: [concept]
     contains:
