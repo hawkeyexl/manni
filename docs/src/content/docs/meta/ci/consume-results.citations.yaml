@@ -69,18 +69,18 @@ docs/src/content/docs/meta/ci/consume-results.mdx:
         integrity: sha256-ffc258c2691109dc0b6503d92b9a6fd00e7ba6f6d602092374a282c805c647cb
       source:
         file: src/meta/commands/get.ts
-        lines: 675-688
+        lines: 674-687
         integrity: sha256-3de206ba7b2d15623d6b478a91053a59fae6f997f965d443274221d9761769f6
-        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
+        commit-sha: 43ae0b13694b9f517f561a5c83b48e848f4feaf2
     - id: get-json-file-present-values
       claim:
         lines: 181-186
         integrity: sha256-ba90251a8b1e3465ed18f166e2bbf53a76b6a4d72c0847f103eafc99427ba311
       source:
         file: src/meta/commands/get.ts
-        lines: 139-148
+        lines: 140-149
         integrity: sha256-6aa9fdc00f5d16632f518faa318a321e8660ff3d78af54d8b655a28d1def786a
-        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
+        commit-sha: 43ae0b13694b9f517f561a5c83b48e848f4feaf2
     - id: pretty-prints-unset
       claim:
         lines: 193-194
