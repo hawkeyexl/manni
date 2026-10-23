@@ -1,6 +1,6 @@
 # 0102: A strategy domain holds pages to their personas and journeys
 
-- **Status:** Implemented (#232)
+- **Status:** Implemented (#232); superseded in part by 0108
 - **Serves:** Two people.
   - Sara · S17, "Hold the pages to the strategy they were written for", a new
     journey. She owns `docs/content-strategy/`, and nothing holds the pages to

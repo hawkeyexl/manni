@@ -450,6 +450,7 @@ export default defineConfig({
           badge: BETA,
           items: [
             { label: "Overview", link: "/strategy/" },
+            { label: "Rest personas on evidence", link: "/strategy/evidence/" },
             {
               label: "Reference",
               collapsed: true,

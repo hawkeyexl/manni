@@ -21,11 +21,16 @@ Each audience, persona and journey is a page of its own. A record is front matte
 
 ```yaml
 ---
-type: journey
-id: m5
-title: Pin a claim and catch it going stale
-description: A sentence on one of Maya's pages rests on a few lines of code.
-personas: [maya]
+type: persona
+id: theo
+title: Theo, Doc Contributor
+description: Theo is a developer or technical writer who opened a PR.
+audience: contributors
+goals:
+  - Understand the specific error, find the offending field and line in his file, fix it, confirm locally, and move on.
+pains:
+  - Error messages are terse with no obvious remediation hint.
+  - He doesn't know which schema fired or why that rule exists.
 ---
 ```
 
@@ -36,6 +41,9 @@ personas: [maya]
 | `title` | every record | What the record is called. |
 | `description` | every record | One sentence saying what the record is for. |
 | `audience` | a persona | The id of the audience the persona belongs to. |
+| `goals` | a persona | What the persona is trying to achieve, as a list of claims, one per item. |
+| `pains` | a persona | What gets in the persona's way, as a list of claims, one per item. |
+| `citations` | a persona or an audience | The evidence the record's claims rest on, kept in `{record}.citations.yaml` beside it. `manni cite` writes and checks it. |
 | `personas` | a journey | The ids of the personas the journey serves, as a list. A journey can serve more than one. |
 | `lifecycle` | a journey, optional | `draft` while its pages are still to be written, or `archived` once it is retired. `manni strategy check` expects no page to name either. |
 
@@ -50,6 +58,17 @@ Three commands read the records.
 The ids are stable. A new journey takes the next free id in its persona's series.
 
 A journey can land before its pages exist. Give it `lifecycle: draft`, and `manni strategy check` stays green while no page names it. Once a page serves it, set `lifecycle: published` or drop the field.
+
+### Evidence
+
+Every persona and audience pins its claims to the evidence they rest on, and its schema requires at least one pin. Pin a goal or a pain by its pointer, and a line of the body by its line.
+
+```text
+manni cite add docs/content-strategy/personas/theo.md#/pains/0 docs/proposals/0089-findings-say-what-to-do.md:35 --id terse-messages
+manni cite add docs/content-strategy/audiences/contributors.md:8 docs/proposals/0089-findings-say-what-to-do.md:34 --id decode-one-error
+```
+
+Evidence is any file `manni cite` can index. Here it is the proposals that measured the friction, which are tracked files in this repository. A private checkout under `cite.repos`, or an export folder with no git, works the same way. A pin says a claim rests on a recorded observation, not that the persona is validated. [Rest personas on evidence](https://hawkeyexl.github.io/manni/strategy/evidence/) has the whole path.
 
 ### Audiences
 
@@ -104,10 +123,12 @@ three situations of Maya's.
 docevals arrived with an ID-linked strategy directory (audiences, personas,
 journeys and IA). What was strategy moved into the records above. Its IA gap
 analysis, a delivery record of how the section was built, moved to
-`docs/proposals/docevals/ia-gap-analysis.md` beside the tool's ADRs. Like
-every persona here, docevals's were reasoned from the tool's own surface and a
-sibling's adopters rather than from call evidence. The tool had no users yet. Treat its pains as claims to re-test when it does. `design.md` is
-shared: one site, one palette, one set of capture rules.
+`docs/proposals/docevals/ia-gap-analysis.md` beside the tool's ADRs.
+docevals's personas were reasoned from the tool's own surface and a sibling's
+adopters rather than from call evidence. A claim pinned in its record's
+`.citations.yaml` rests on a recorded observation. One that is not is a claim
+to re-test. `design.md` is shared: one site, one palette, one set of capture
+rules.
 
 ### The same four, for docevals
 

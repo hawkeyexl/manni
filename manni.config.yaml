@@ -59,9 +59,16 @@ collections:
   # (proposal 0102). `manni strategy check` holds every page's audiences:,
   # personas: and journeys: to these records. They are not published, so the
   # Docs workflow's `graph publish --collection site` leaves them out.
+  #
+  # Each record's evidence pins live beside it in `{record}.citations.yaml`,
+  # written and checked by `manni cite` (proposal 0108). A persona pins its
+  # goals and pains by pointer, as `theo.md#/pains/0`.
   - name: strategy
     paths:
       - "docs/content-strategy/{audiences,personas,journeys}/*.md"
+    externalMetadata:
+      - file: "{page}.citations.yaml"
+        keys: [citations]
 
 # Where Vale's configuration is, for the tools that run Vale. `manni term lint`
 # runs it over the glossary's definitions, and `manni term write -f vale` reads
@@ -114,10 +121,16 @@ meta:
     # journey the personas it serves in `personas:`. A journey also takes the
     # lifecycle vocabulary: `lifecycle: draft` exempts one whose pages are
     # still to be written from `strategy check`'s unserved-journey.
+    # An audience and a persona also take citations 1.3.0, whose claim may be
+    # a pointer to a goal or a pain, and their schemas require the pins.
     - files: "docs/content-strategy/audiences/*.md"
-      schemas: [./docs/content-strategy/schemas/audience.schema.json]
+      schemas:
+        - ./docs/content-strategy/schemas/audience.schema.json
+        - manni:citations:1.3.0
     - files: "docs/content-strategy/personas/*.md"
-      schemas: [./docs/content-strategy/schemas/persona.schema.json]
+      schemas:
+        - ./docs/content-strategy/schemas/persona.schema.json
+        - manni:citations:1.3.0
     - files: "docs/content-strategy/journeys/*.md"
       schemas:
         - ./docs/content-strategy/schemas/journey.schema.json

@@ -2,12 +2,13 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://hawkeyexl.github.io/manni/content-strategy/persona.schema.json",
   "title": "manni content strategy: persona record",
-  "description": "A content-strategy persona: one concrete reader within an audience. One record per file, under docs/content-strategy/personas/. Every field after `type`, `id` and `audience` is optional.",
+  "description": "A content-strategy persona: one concrete reader within an audience. One record per file, under docs/content-strategy/personas/. Every field after `type`, `id`, `audience` and `citations` is optional.",
   "type": "object",
   "required": [
     "type",
     "id",
-    "audience"
+    "audience",
+    "citations"
   ],
   "properties": {
     "type": {
@@ -71,7 +72,7 @@
         "type": "string",
         "minLength": 1
       },
-      "description": "What the persona is trying to achieve."
+      "description": "What the persona is trying to achieve, one claim per item. A citation pins an item as `/goals/<n>`."
     },
     "pains": {
       "type": "array",
@@ -79,7 +80,7 @@
         "type": "string",
         "minLength": 1
       },
-      "description": "What gets in the persona's way."
+      "description": "What gets in the persona's way, one claim per item. A citation pins an item as `/pains/<n>`."
     },
     "content-types": {
       "type": "array",
@@ -97,6 +98,9 @@
       },
       "uniqueItems": true,
       "description": "The ids of the journey records this persona follows. `manni strategy` derives the same list from each journey's `personas:`, so this one is optional."
+    },
+    "citations": {
+      "description": "The evidence the record's claims rest on. Each entry pins a goal, a pain or a line of the body to a line of an interview note, ticket export, transcript or analytics export. manni:citations:1.3.0 gives its shape."
     }
   },
   "additionalProperties": true
