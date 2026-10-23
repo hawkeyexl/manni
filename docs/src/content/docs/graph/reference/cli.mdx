@@ -448,7 +448,7 @@ reviewed questions. The row's denominator is `found.reviewed.of`.
 | Cited outside its language | error | `"<question>" asks in de, and graph retrieve cites <page>, which is en.` |
 | Under `citedThreshold` | error | `2 of 4 reviewed questions are cited by graph retrieve (50%), under the 75% that graph.check.questions.citedThreshold asks for.` |
 | No chunk artifact | notice | `the cited row did not run: no chunk artifact; run manni graph publish.` |
-| An artifact from another graph | notice | `the cited row did not run: .manni/graph/chunks.json was built from another graph; run manni graph publish.` |
+| An artifact from another graph | notice | `the cited row did not run: graph/chunks.json was built from another graph; run manni graph publish.` |
 
 A withheld answer that is a whole page is named by its path. When the bundle
 cites nothing, the first message ends `which cites nothing for it.` The row
@@ -1192,8 +1192,8 @@ Each is **exit 2**, on stderr.
 
 | Case | Message |
 |---|---|
-| No artifact | `manni: .manni/graph/chunks.json does not exist; run manni graph publish.` |
-| An artifact from another graph | `manni: .manni/graph/chunks.json was built from another graph; run manni graph publish.` |
+| No artifact | `manni: graph/chunks.json does not exist; run manni graph publish.` |
+| An artifact from another graph | `manni: graph/chunks.json was built from another graph; run manni graph publish.` |
 | The query model differs from the language's rows' | `manni: chunks.json was embedded with <id>, and this run loads <id>; run manni graph publish again.` |
 | Several localizations, no `--lang` | `manni: This corpus has more than one localization (de, en) — pass --lang to choose one.` |
 | A bad `--withhold` value | `manni: --withhold takes drifted or failing, and got stale.` |
@@ -1211,12 +1211,53 @@ manni graph serve [options]
 
 ```console
 $ manni graph serve
-manni: serving lookup, retrieve, traverse and impact over stdio from .manni/graph/chunks.json.
+manni: serving lookup, retrieve, traverse and impact over stdio from graph/chunks.json.
 ```
 
 That line goes to stderr, because stdout carries the protocol. The server
 needs `@modelcontextprotocol/sdk`, an optional dependency npm installs with
 manni. It opens the artifact once, at start, and answers every call from it.
+
+With `--publish`, the server keeps the artifact current itself. It answers
+the handshake at once and publishes behind it, so a client's start-up timeout
+never waits on a publish. `tools/list` answers at once too.
+
+```console
+$ manni graph serve --publish
+manni: publishing the graph before serving it: graph/chunks.json does not exist.
+manni: published the graph in 11.3s.
+manni: serving lookup, retrieve, traverse and impact over stdio from graph/chunks.json.
+```
+
+It publishes at start when the first of these holds, and names it in the
+first line:
+
+| Reason | When |
+|---|---|
+| `<dir>/chunks.json does not exist` | No artifact. |
+| `<dir>/chunks.json is not a chunk manifest` | The manifest does not parse. |
+| `<dir>/chunks.json was built from another graph` | The manifest and the graph disagree. |
+| `<dir>/graph.ttl does not exist` | No graph. |
+| `it records no commit` | The manifest was built outside git. |
+| `it was built at <sha> and HEAD is <sha>` | HEAD moved since. Both are 7-character SHAs. |
+| `the working tree has changes` | `git status` lists a file outside `<dir>`. |
+
+When none holds, it prints only the serving line.
+
+Before each call, it compares the checkout with the one the last publish
+began from. That means HEAD, plus the path, size and modification time of
+each file `git status` lists. Untracked files count, and files under `<dir>` do not. When
+they differ, it publishes again before it answers:
+
+```console
+manni: republishing the graph: the checkout changed since the last publish.
+manni: published the graph in 9.5s.
+```
+
+A call made during a publish waits for it, then answers from the new
+artifact. An edit made during a publish starts another one on the next call.
+Outside git there is nothing to compare, so the server publishes once, at
+start. Publish's own report never reaches stdout. Its warnings go to stderr.
 
 ### Options
 
@@ -1227,6 +1268,12 @@ manni. It opens the artifact once, at start, and answers every call from it.
 | `-g, --graph` | `<path>` | config `out` | The built Turtle file. The artifact must have been built from it. |
 | `-i, --index` | `<dir>` | beside the graph | The directory holding `chunks.json`, its rows and the search index. |
 | `--withhold` | `<list>` | none | Also leave out passages that are `drifted` or `failing` on every call, comma-separated and given once. No tool argument can loosen it. |
+| `--publish` | n/a | off | Publish the graph when its artifact is missing or older than the checkout, and again before any call made after the checkout changes. It connects at once, and calls wait for a publish in progress. |
+
+With `--publish`, `-i` is the directory publish writes to, as its `-o`, and
+the one the server reads from. The server reads the graph from there too,
+under the file name of config `out`. `-g` is refused, because publish writes
+the graph into that directory.
 
 ### The tools
 
@@ -1254,6 +1301,13 @@ block holding the same JSON. Each tool declares an `outputSchema` for it.
 | A refusal | The result with its `refusal`, and `isError: false`. |
 | A CLI usage error, such as an unknown node or no `lang` | A refusal with the CLI's text in `detail`, and `isError: false`. |
 | An argument the schema does not name, or a value of the wrong type | `isError: true`, with `Invalid arguments for <tool>: <why>.` |
+| With `--publish`, a publish that fails | `isError: true`, with `graph publish stopped at <step>: <why>. Run manni graph publish to see the whole report.` |
+
+When a publish fails, stderr gets `manni: graph publish stopped at <step>: <why>`
+too. A failure at start answers every call that way, and the server exits 2
+when stdin closes. A later failure answers only the calls that waited on it.
+The previous artifact stays loaded, and the next call after another change
+tries again.
 
 A usage error takes the reason that fits it. An unknown node is
 `unknown-node`, and a missing `lang` is `lang-required`. An unknown variant,
@@ -1266,9 +1320,10 @@ Each is **exit 2**, on stderr, before anything is served.
 | Case | Message |
 |---|---|
 | No SDK | `manni: graph serve needs the optional @modelcontextprotocol/sdk package; run npm install @modelcontextprotocol/sdk.` |
-| No artifact | `manni: .manni/graph/chunks.json does not exist; run manni graph publish.` |
-| An artifact from another graph | `manni: .manni/graph/chunks.json was built from another graph; run manni graph publish.` |
+| No artifact, without `--publish` | `manni: graph/chunks.json does not exist; run manni graph publish.` |
+| An artifact from another graph, without `--publish` | `manni: graph/chunks.json was built from another graph; run manni graph publish.` |
 | A bad `--withhold` value | `manni: --withhold takes drifted or failing, and got stale.` |
+| `--publish` with `-g` | `manni: --publish writes graph.ttl into the index directory, so it cannot be combined with --graph. Use --index to choose the directory.` |
 
 ## `graph publish`
 

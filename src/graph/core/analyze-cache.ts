@@ -105,7 +105,10 @@ export class AnalyzeCache {
 
   private async write(file: string, text: string): Promise<void> {
     try {
-      await mkdir(this.dir, { recursive: true });
+      // A directory this created ignores itself, so a cache write never shows in `git status`.
+      if ((await mkdir(this.dir, { recursive: true })) !== undefined) {
+        await writeTextAtomic(join(this.dir, ".gitignore"), "*\n");
+      }
       await writeTextAtomic(file, text);
     } catch {
       // Best-effort: the next run parses this page again.

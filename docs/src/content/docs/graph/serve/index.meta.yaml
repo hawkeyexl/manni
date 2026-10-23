@@ -5,7 +5,7 @@ docs/src/content/docs/graph/serve/index.mdx:
       integrity: sha256-5ac615ebd07b47285615d80a8daa2f69ebfcdde46656884a26d190685fbe7d68
     - generated-by: Claude Opus 5.5
       lines: 28-140
-      integrity: sha256-420ef687046ab672a043604e52f1edb1f623d73f50abda49a171a40b7a25bf79
+      integrity: sha256-766a4f2d72d1d37cfb1ffbdba2f508f956bce796aed1f750b4db3261affd1afb
   owner:
     - "@hawkeyexl"
   created: 2026-10-21

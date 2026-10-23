@@ -7,8 +7,9 @@
  * result is compared with what the CLI prints for the same inputs.
  */
 import { spawnSync } from "node:child_process";
-import { appendFileSync, copyFileSync, readdirSync, readFileSync } from "node:fs";
-import { join } from "node:path";
+import { appendFileSync, copyFileSync, existsSync, mkdtempSync, readdirSync, readFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join, relative } from "node:path";
 import { PassThrough } from "node:stream";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
@@ -19,8 +20,8 @@ import { createMockEmbedder } from "../../../src/graph/embed/mock.js";
 import type { QueryEmbedder } from "../../../src/graph/runtime/entry.js";
 import { GraphError } from "../../../src/graph/types.js";
 import { spawnText } from "../../helpers/spawn.js";
-import { removeTempRepo } from "../../helpers/temp-repo.js";
-import { INDEX, QUESTION, ROTATE, retrieveArtifact } from "../helpers/retrieve-artifact.js";
+import { removeTempRepo, writeFile } from "../../helpers/temp-repo.js";
+import { INDEX, QUESTION, ROTATE, retrieveArtifact, retrieveRepo } from "../helpers/retrieve-artifact.js";
 
 const root = join(import.meta.dirname, "..", "..", "..");
 const cli = join(root, "dist", "cli.js");
@@ -318,5 +319,164 @@ describe("graph serve: packaging", () => {
       .join("\n");
     expect(built).toMatch(/import\(\s*["'`]@modelcontextprotocol\/sdk\/server\/mcp\.js["'`]\s*\)/);
     expect(built).not.toMatch(/class McpServer\b/);
+  });
+});
+
+describe("graph serve --publish", () => {
+  const serving = (label: string): string =>
+    `manni: serving lookup, retrieve, traverse and impact over stdio from ${label}.\n`;
+  const PUBLISHED = /^manni: published the graph in \d+\.\ds\.$/m;
+  const REPUBLISHING = "manni: republishing the graph: the checkout changed since the last publish.\n";
+
+  let repo: string;
+  let outside: string;
+
+  beforeAll(() => {
+    repo = retrieveRepo();
+    outside = mkdtempSync(join(tmpdir(), "manni-serve-publish-"));
+  });
+  afterAll(() => {
+    removeTempRepo(repo);
+    removeTempRepo(outside);
+  });
+
+  /** A `serve --publish` client, and what the server has said on stderr so far. */
+  async function start(args: string[] = []): Promise<{ client: Client; stderr: () => string }> {
+    let said = "";
+    const transport = new StdioClientTransport({
+      command: process.execPath,
+      args: [cli, "graph", "serve", "--publish", ...args],
+      cwd: repo,
+      stderr: "pipe",
+    });
+    transport.stderr?.on("data", (chunk: Buffer) => (said += chunk.toString("utf8")));
+    const c = new Client({ name: "serve-test", version: "0.0.0" });
+    await c.connect(transport);
+    return { client: c, stderr: () => said };
+  }
+
+  /** stderr, once it holds `text`: it travels on its own pipe, beside the replies. */
+  async function until(stderr: () => string, text: string | RegExp): Promise<string> {
+    for (let i = 0; i < 200; i++) {
+      const said = stderr();
+      if (typeof text === "string" ? said.includes(text) : text.test(said)) return said;
+      await new Promise((done) => setTimeout(done, 50));
+    }
+    return stderr();
+  }
+
+  async function lookupOver(c: Client, question: string): Promise<ToolResult> {
+    return (await c.callTool({ name: "lookup", arguments: { question } })) as ToolResult;
+  }
+
+  it("connects at once, publishes a missing artifact, then answers from it", async () => {
+    const { client: c, stderr } = await start();
+    // tools/list answers before the publish behind the handshake has finished.
+    expect((await c.listTools()).tools).toHaveLength(4);
+    expect(stderr()).not.toMatch(PUBLISHED);
+
+    const r = await lookupOver(c, QUESTION);
+    expect(r.isError).toBeUndefined();
+    expect(r.structuredContent).toHaveProperty("matches");
+    const said = await until(stderr, serving(`${INDEX}/chunks.json`));
+    await c.close();
+
+    const lines = said.split("\n");
+    const reason = lines.indexOf(`manni: publishing the graph before serving it: ${INDEX}/chunks.json does not exist.`);
+    const published = lines.findIndex((l) => PUBLISHED.test(l));
+    const served = lines.indexOf(serving(`${INDEX}/chunks.json`).trimEnd());
+    expect(reason).toBeGreaterThanOrEqual(0);
+    expect(published).toBeGreaterThan(reason);
+    expect(served).toBeGreaterThan(published);
+    expect(existsSync(join(repo, INDEX, "chunks.json"))).toBe(true);
+  }, 60_000);
+
+  it("serves a fresh artifact over a clean tree without publishing, and republishes once after an edit", async () => {
+    const { client: c, stderr } = await start();
+    expect(JSON.stringify((await lookupOver(c, "zebra crossing")).structuredContent)).not.toContain("zebra.md");
+    await lookupOver(c, QUESTION);
+    expect(await until(stderr, "serving")).toBe(serving(`${INDEX}/chunks.json`));
+
+    writeFile(
+      repo,
+      "docs/en/zebra.md",
+      "---\ntitle: Zebra crossing\n---\n\n# Zebra crossing\n\nA zebra crossing lets people cross the road.\n",
+    );
+    const after = await lookupOver(c, "zebra crossing");
+    expect(after.isError).toBeUndefined();
+    expect(JSON.stringify(after.structuredContent)).toContain("zebra.md");
+    const said = await until(stderr, PUBLISHED);
+    expect(said.startsWith(`${serving(`${INDEX}/chunks.json`)}${REPUBLISHING}`)).toBe(true);
+    expect(said).toMatch(PUBLISHED);
+
+    // No change since: no second publish.
+    await lookupOver(c, QUESTION);
+    await c.close();
+    expect(stderr().split(REPUBLISHING)).toHaveLength(2);
+  }, 60_000);
+
+  it("publishes into -i and serves from there", async () => {
+    const label = relative(repo, join(outside, "chunks.json")).split("\\").join("/");
+    const { client: c, stderr } = await start(["-i", outside]);
+    const r = await lookupOver(c, QUESTION);
+    expect(r.isError).toBeUndefined();
+    const said = await until(stderr, serving(label));
+    await c.close();
+    expect(said).toContain(`manni: publishing the graph before serving it: ${label} does not exist.\n`);
+    expect(existsSync(join(outside, "graph.ttl"))).toBe(true);
+    expect(existsSync(join(outside, "chunks.json"))).toBe(true);
+  }, 60_000);
+
+  it("refuses --graph, exit 2", () => {
+    const r = spawnText(
+      spawnSync(process.execPath, [cli, "graph", "serve", "--publish", "-g", "x.ttl"], {
+        encoding: "utf8",
+        cwd: repo,
+        input: "",
+      }),
+    );
+    expect(r.status).toBe(2);
+    expect(r.stdout).toBe("");
+    expect(r.stderr).toBe(
+      "manni: --publish writes graph.ttl into the index directory, so it cannot be combined with --graph. Use --index to choose the directory.\n",
+    );
+  });
+
+  it("answers every call with isError when the start-up publish fails, and exits 2", async () => {
+    const stdin = new PassThrough();
+    const stdout = new PassThrough();
+    let out = "";
+    stdout.on("data", (chunk: Buffer) => (out += chunk.toString("utf8")));
+    const run = runServe(
+      { cwd: repo, index: join(outside, "never"), publish: true },
+      { stdin, stdout, publish: () => Promise.reject(new GraphError("graph publish stopped at build: the page is broken.")) },
+    );
+    const send = (message: object): boolean => stdin.write(`${JSON.stringify(message)}\n`);
+    send({
+      jsonrpc: "2.0",
+      id: 1,
+      method: "initialize",
+      params: { protocolVersion: "2025-06-18", capabilities: {}, clientInfo: { name: "serve-test", version: "0.0.0" } },
+    });
+    send({ jsonrpc: "2.0", method: "notifications/initialized" });
+    send({ jsonrpc: "2.0", id: 2, method: "tools/call", params: { name: "lookup", arguments: { question: QUESTION } } });
+    send({ jsonrpc: "2.0", id: 3, method: "tools/call", params: { name: "impact", arguments: { node: ROTATE } } });
+    for (let i = 0; i < 200 && out.split("\n").filter((l) => l !== "").length < 3; i++) {
+      await new Promise((done) => setTimeout(done, 25));
+    }
+    stdin.end();
+    await expect(run).resolves.toBe(2);
+
+    const replies = out
+      .split("\n")
+      .filter((line) => line !== "")
+      .map((line) => JSON.parse(line) as { id?: number; result?: ToolResult });
+    for (const id of [2, 3]) {
+      const reply = replies.find((r) => r.id === id);
+      expect(reply?.result?.isError).toBe(true);
+      expect(reply?.result?.content[0]?.text).toBe(
+        "graph publish stopped at build: the page is broken. Run manni graph publish to see the whole report.",
+      );
+    }
   });
 });
