@@ -106,6 +106,9 @@ describe("plugin Read hook", () => {
 
     const subagent = context(hook(dir, markers, read(dir, "docs/page.md", { agent_id: "a1" })));
     expect(subagent).toMatch(/^Metadata for docs\/page\.md, from the page and its sidecars:/);
+    expect(hook(dir, markers, read(dir, "docs/page.md", { agent_id: "a1" })).stdout).toBe("");
+    // An envelope with no agent_id is the outermost session, which already has it.
+    expect(hook(dir, markers, read(dir, "docs/page.md")).stdout).toBe("");
   });
 
   it("forgets what the session was given after a compaction", () => {

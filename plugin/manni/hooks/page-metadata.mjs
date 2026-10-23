@@ -107,6 +107,8 @@ async function onRead(envelope) {
 
   const json = JSON.stringify(values);
   const hash = sha(json);
+  // Claude Code sets `agent_id` on a hook fired inside a subagent, which has a
+  // context of its own. The outermost session carries none, so it is "main".
   const marker = join(sessionDir(envelope.session_id), `${sha(envelope.agent_id ?? "main")}-${sha(abs)}`);
   const stored = readMarker(marker);
   if (stored === hash) return;

@@ -386,6 +386,8 @@ describe("graph serve --publish", () => {
     const published = lines.findIndex((l) => PUBLISHED.test(l));
     const served = lines.indexOf(serving(`${INDEX}/chunks.json`).trimEnd());
     expect(reason).toBeGreaterThanOrEqual(0);
+    // The reason is openArtifact's message without its advice to publish.
+    expect(said).not.toMatch(/before serving it: .*run manni graph publish/);
     expect(published).toBeGreaterThan(reason);
     expect(served).toBeGreaterThan(published);
     expect(existsSync(join(repo, INDEX, "chunks.json"))).toBe(true);

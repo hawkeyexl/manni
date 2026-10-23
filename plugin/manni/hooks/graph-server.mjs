@@ -54,7 +54,10 @@ function serveNothing(reason) {
       reply({
         id,
         result: {
-          protocolVersion: request.params?.protocolVersion,
+          // A server answers with the client's version when it supports it. With no
+          // tools there is nothing to differ between versions, so this one supports
+          // any, and names its own only when the client named none.
+          protocolVersion: request.params?.protocolVersion ?? "2025-06-18",
           capabilities: { tools: {} },
           serverInfo: { name: "manni", version: pluginVersion() },
         },
@@ -75,7 +78,8 @@ if (isMain(import.meta.url)) {
   if (plan.kind === "none") serveNothing("no collections are set up here");
   else {
     const i = plan.args.indexOf("-i");
-    if (i !== -1) mkdirSync(plan.args[i + 1], { recursive: true });
+    const dir = i === -1 ? undefined : plan.args[i + 1];
+    if (dir !== undefined) mkdirSync(dir, { recursive: true });
     const child = launch(plan.args, { stdio: "inherit", cwd: project });
     // Only manni's own checkout, before it is built, has no manni to run.
     if (child === undefined) serveNothing("this checkout of manni is not built; run npm run build");
