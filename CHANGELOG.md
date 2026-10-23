@@ -4,6 +4,13 @@
 4.13.1. Entries below that version are docmeta releases; the repository
 history is the same one.
 
+## [4.18.1](https://github.com/hawkeyexl/manni/compare/v4.18.0...v4.18.1) (2026-10-23)
+
+
+### Bug Fixes
+
+* **cite:** one block rule for markers and statements, fences, AsciiDoc blocks and the DITA carrier ([#236](https://github.com/hawkeyexl/manni/issues/236)) ([8bc91cb](https://github.com/hawkeyexl/manni/commit/8bc91cbb324501b261d13991c52a479685e0a686))
+
 # [4.18.0](https://github.com/hawkeyexl/manni/compare/v4.17.1...v4.18.0) (2026-10-22)
 
 

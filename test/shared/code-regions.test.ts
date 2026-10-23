@@ -4,7 +4,7 @@
  * fences, so a page that documents either syntax yields nothing.
  */
 import { describe, expect, it } from "vitest";
-import { codeEndAt, codeRegions } from "../../src/shared/code-regions.js";
+import { closesFence, codeEndAt, codeRegions } from "../../src/shared/code-regions.js";
 
 /** The text of each region, which is easier to read than offsets. */
 const texts = (text: string, format: string, spans?: boolean): string[] =>
@@ -41,6 +41,26 @@ describe("codeRegions", () => {
   it("finds an asciidoc listing block at column 0 only", () => {
     expect(texts("----\ncode\n----\n", "asciidoc")).toEqual(["----\ncode\n----"]);
     expect(texts("  ----\ntext\n", "asciidoc")).toEqual([]);
+  });
+
+  it("skips the four verbatim asciidoc blocks and reads the three compound ones", () => {
+    for (const d of ["----", "....", "++++", "////"]) {
+      expect(texts(`${d}\nx\n${d}\n`, "asciidoc")).toEqual([`${d}\nx\n${d}`]);
+    }
+    for (const d of ["====", "****", "____"]) {
+      expect(texts(`${d}\nx\n${d}\n`, "asciidoc")).toEqual([]);
+    }
+  });
+
+  it("closes an asciidoc block only on an exact repeat of its opener line", () => {
+    expect(texts("----\n------\nx\n----\n", "asciidoc")).toEqual(["----\n------\nx\n----"]);
+    expect(texts("////  \nx\n//// \nafter\n", "asciidoc")).toEqual(["////  \nx\n//// "]);
+    expect(texts("----x\ncode\n", "asciidoc")).toEqual([]);
+  });
+
+  it("does not close a markdown fence on a fence line that carries an info string", () => {
+    const text = "  ```js\n  ```js-extra\n  more\n  ```\nafter\n";
+    expect(texts(text, "markdown")).toEqual(["  ```js\n  ```js-extra\n  more\n  ```"]);
   });
 
   it("finds backtick spans closed by a run of the same length", () => {
@@ -83,5 +103,19 @@ describe("codeEndAt", () => {
     expect(codeEndAt(regions, 5)).toBeUndefined();
     expect(codeEndAt(regions, 11)).toBe(12);
     expect(codeEndAt(regions, 0)).toBeUndefined();
+  });
+});
+
+describe("closesFence", () => {
+  it.each([
+    ["the same run", "```", "```", true],
+    ["a longer run", "````", "```", true],
+    ["an indented closer", "   ```", "```", true],
+    ["trailing whitespace", "```  ", "```", true],
+    ["a shorter run", "```", "````", false],
+    ["an info string", "```js", "```", false],
+    ["the other fence character", "~~~", "```", false],
+  ])("closes on %s: %j after %j is %s", (_, line, open, closes) => {
+    expect(closesFence(line, open)).toBe(closes);
   });
 });

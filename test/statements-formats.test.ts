@@ -153,6 +153,12 @@ describe("statements in XML and DITA", () => {
     expect(s?.status).toBe("current");
   });
 
+  it("reads a <data> carrier only by its own name attribute, and its payload from its own value", () => {
+    // data-name, a name inside another attribute's value, and data-value are not the carrier's.
+    const found = readStatements(read("blocks/carriers.dita"), "xml").statements;
+    expect(found.map((s) => s.data)).toEqual([{ concepts: ["real"] }]);
+  });
+
   it("leaves the statement's own text out of a pin that covers it", () => {
     const s = at('"check":"install-the-tool"');
     const lines = splitLines(task).slice((s?.anchor?.start ?? 1) - 1, s?.anchor?.end);

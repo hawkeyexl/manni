@@ -22,6 +22,7 @@ import type { DefinedError, ErrorObject, ValidateFunction } from "ajv/dist/2020.
 import GithubSlugger from "github-slugger";
 import graphSchema from "../schemas/graph/1.0.0.json" with { type: "json" };
 import type { Guidance } from "../../shared/guidance.js";
+import { codeRegions } from "../../shared/code-regions.js";
 import { hashLines, normalizeText, spellLines, splitLines, type PageLines } from "../../shared/pin.js";
 import type { Severity } from "../../shared/severity.js";
 import {
@@ -249,23 +250,11 @@ function sectionAt(headings: readonly Heading[], line: number): string {
 }
 
 /** Lines of the page that sit in a fenced block, for skipping headings in code. */
-function fencedLines(lines: readonly string[], format: string): Set<number> {
+function fencedLines(content: string, format: string): Set<number> {
   const out = new Set<number>();
-  const fence = format === "asciidoc" ? /^(-{4,})/ : format === "markdown" || format === "mdx" ? /^[ \t]*(`{3,}|~{3,})/ : undefined;
-  if (fence === undefined) return out;
-  let open: string | undefined;
-  lines.forEach((text, i) => {
-    const marker = fence.exec(text)?.[1];
-    if (open === undefined) {
-      if (marker !== undefined) {
-        open = marker;
-        out.add(i + 1);
-      }
-      return;
-    }
-    out.add(i + 1);
-    if (text.trim().startsWith(open)) open = undefined;
-  });
+  for (const { start, end } of codeRegions(content, format, { spans: false })) {
+    for (let n = lineAt(content, start); n <= lineAt(content, end - 1); n++) out.add(n);
+  }
   return out;
 }
 
@@ -406,7 +395,7 @@ function shapeFindings(s: PageStatement, payloadReason: string | undefined, xml:
 function readLineRule(content: string, format: string): StatementRead {
   const from = bodyStart(content, format);
   const lines = splitLines(content);
-  const fenced = fencedLines(lines, format);
+  const fenced = fencedLines(content, format);
   const headings = lineHeadings(lines, format, from.line, (n) => fenced.has(n));
   const statements: PageStatement[] = [];
   const findings: FieldError[] = [];
@@ -466,8 +455,24 @@ interface XmlNode {
   statement?: MetaStatementToken;
 }
 
-const DATA_NAME = /\bname\s*=\s*(["'])manni-meta\1/;
-const DATA_VALUE = /\bvalue\s*=\s*(["'])/;
+/** One attribute of a start tag: its name, and its value in either quote. */
+const ATTRIBUTE = /([^\s=/>"']+)\s*=\s*(?:"([^"]*)"|'([^']*)')/g;
+
+/**
+ * A start tag's attributes, read as whole `name=value` pairs, each with the
+ * tag offset its value starts at. The first of a repeated name wins.
+ */
+function attributesOf(tag: string): Map<string, { value: string; at: number }> {
+  const out = new Map<string, { value: string; at: number }>();
+  const from = /^<[^\s/>]*/.exec(tag)?.[0].length ?? 0;
+  for (const m of tag.slice(from).matchAll(ATTRIBUTE)) {
+    const [whole, name = "", double, single] = m;
+    const value = double ?? single ?? "";
+    // `at` is the value's first character in `tag`, just past its opening quote.
+    if (!out.has(name)) out.set(name, { value, at: from + m.index + whole.length - value.length - 1 });
+  }
+  return out;
+}
 
 /** The five predefined entities and character references, decoded. */
 function decodeEntities(text: string): string {
@@ -478,16 +483,19 @@ function decodeEntities(text: string): string {
   });
 }
 
-/** The `<data name="manni-meta" value='…'/>` statement a start tag holds, or undefined. */
+/**
+ * The `<data name="manni-meta" value='…'/>` statement a start tag holds, or
+ * undefined. The tag's own `name` attribute must be `manni-meta`, and its own
+ * `value` attribute is the payload, so `data-name`, `data-value` and text
+ * inside another attribute's value never count.
+ */
 function dataStatement(content: string, start: number, tagEnd: number): MetaStatementToken | undefined {
-  const tag = content.slice(start, tagEnd);
-  if (!DATA_NAME.test(tag)) return undefined;
-  const value = DATA_VALUE.exec(tag);
-  if (value?.[1] === undefined) return undefined;
-  const open = start + value.index + value[0].length;
-  const close = content.indexOf(value[1], open);
-  if (close === -1) return undefined;
-  const raw = content.slice(open, close);
+  const attributes = attributesOf(content.slice(start, tagEnd));
+  if (attributes.get("name")?.value !== "manni-meta") return undefined;
+  const value = attributes.get("value");
+  if (value === undefined) return undefined;
+  const open = start + value.at;
+  const raw = value.value;
   const lead = /^\s*/.exec(raw)?.[0] ?? "";
   const rest = decodeEntities(raw.slice(lead.length));
   const word = /^\S+/.exec(rest)?.[0] ?? "";
