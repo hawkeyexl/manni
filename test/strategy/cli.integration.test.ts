@@ -220,12 +220,14 @@ describe("manni strategy (the ladder)", () => {
     expect(failed.status).toBe(1);
   });
 
-  it("4. breaks every rule on the failing fixture, each at its default severity", () => {
-    const r = strategy(["check", "-f", "json"], { cwd: join(work, "failing") });
-    expect(r.status).toBe(1);
-    const json = JSON.parse(r.stdout) as { findings: { rule: (typeof STRATEGY_RULES)[number]; severity: string }[] };
-    expect(new Set(json.findings.map((f) => f.rule))).toEqual(new Set(STRATEGY_RULES));
-    for (const finding of json.findings) expect(finding.severity).toBe(DEFAULT_SEVERITY[finding.rule]);
+  it("4. breaks every rule on the failing and steps fixtures, each at its default severity", () => {
+    const findings = ["failing", "steps"].flatMap((fixture) => {
+      const r = strategy(["check", "-f", "json"], { cwd: join(work, fixture) });
+      expect(r.status).toBe(1);
+      return (JSON.parse(r.stdout) as { findings: { rule: (typeof STRATEGY_RULES)[number]; severity: string }[] }).findings;
+    });
+    expect(new Set(findings.map((f) => f.rule))).toEqual(new Set(STRATEGY_RULES));
+    for (const finding of findings) expect(finding.severity).toBe(DEFAULT_SEVERITY[finding.rule]);
   });
 
   it("4. prints the failing set in term's layout", () => {
@@ -332,6 +334,70 @@ describe("manni strategy (the ladder)", () => {
   });
 });
 
+describe("manni strategy (journey steps)", () => {
+  const steps = (): string => join(work, "steps");
+
+  it("check exits 1 on the broken step, and files each step finding at its line", () => {
+    const r = strategy(["check", "-f", "json"], { cwd: steps() });
+    expect(r.status).toBe(1);
+    const json = JSON.parse(r.stdout) as { findings: { rule: string; line: number; field: string }[]; summary: { steps: number } };
+    expect(json.findings.map((f) => [f.rule, f.line])).toEqual([
+      ["missing-journey", 16],
+      ["broken-step", 18],
+      ["stale-step", 21],
+      ["unwritten-step", 22],
+      ["unwritten-step", 25],
+    ]);
+    expect(json.findings.every((f) => f.field === "steps")).toBe(true);
+    expect(json.summary.steps).toBe(10);
+  });
+
+  it("check pretty prints each message, its advice on the next line", () => {
+    const r = strategy(["check"], { cwd: steps() });
+    expect(r.stdout).toContain(
+      [
+        "strategy/journeys/m1.md:18",
+        '  error   manni:strategy/broken-step          step 5: doc "docs/gide.md" names no page.',
+        "                                              Correct doc, or set exists: false if the page does not exist.",
+      ].join("\n"),
+    );
+    expect(r.stdout.trimEnd().split("\n").at(-1)).toBe("1 error, 2 warnings, 2 notices in 4 records");
+  });
+
+  it("check -f github annotates a notice as ::notice", () => {
+    const r = strategy(["check", "-f", "github"], { cwd: steps() });
+    expect(r.stdout).toMatch(
+      /^::notice file=strategy\/journeys\/m1\.md,line=25,title=manni%3Astrategy\/unwritten-step::step 8: no page carries this stage\./m,
+    );
+  });
+
+  it("get prints the steps row, and its json the coverage", () => {
+    const pretty = strategy(["get", "m1"], { cwd: steps() });
+    expect(pretty.status).toBe(0);
+    expect(pretty.stdout).toContain("  steps         3 of 9 served\n                1  served     Read the guide\n");
+    const json = strategy(["get", "m1", "-f", "json"], { cwd: steps() });
+    expect((JSON.parse(json.stdout) as { coverage: unknown }).coverage).toEqual({ served: 3, steps: 9 });
+  });
+
+  it("list shows the steps column", () => {
+    const r = strategy(["list"], { cwd: steps() });
+    expect(r.status).toBe(0);
+    expect(r.stdout.split("\n")[0]).toBe("record            pages  steps  title");
+    expect(r.stdout).toContain("    m1                2    3/9  Stand up metadata validation for my repo\n");
+  });
+
+  it("an invalid graph: section fails a run whose steps name a / route, with graph's message, exit 2", () => {
+    const cwd = steps();
+    const path = join(cwd, "manni.config.yaml");
+    writeFileSync(path, readFileSync(path, "utf8").replace("      root: docs\n", ""));
+    const r = strategy(["check"], { cwd });
+    expect(r.status).toBe(2);
+    expect(r.stdout).toBe("");
+    // The runner prefixes each stderr line, as it does for `manni graph build` on the same config.
+    expect(r.stderr).toMatch(/^manni: Invalid config in .*manni\.config\.yaml:\nmanni: {3}\/graph\/routes\/0: must have required property 'root'\n$/);
+  });
+});
+
 describe("manni strategy (usage errors)", () => {
   /** An empty directory outside the repository, where discovery finds no config. */
   function bare(): string {
@@ -430,7 +496,7 @@ describe("manni strategy (usage errors)", () => {
   it("an unknown rule under strategy.severity", () => {
     refused(
       strategy(["check"], { cwd: configure("clean", "strategy:\n  severity:\n    unserved: error\n") }),
-      'manni: Unknown key "unserved" under strategy.severity: in manni.config.yaml. Supported keys: undefined-reference, duplicate-id, missing-parent, orphan-record, unserved-journey, unused-record.',
+      'manni: Unknown key "unserved" under strategy.severity: in manni.config.yaml. Supported keys: undefined-reference, duplicate-id, missing-parent, orphan-record, unserved-journey, unused-record, broken-step, stale-step, missing-journey, unwritten-step.',
     );
   });
 

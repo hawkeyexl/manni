@@ -1,0 +1,17 @@
+# A journey whose steps reach every state `manni strategy` gives one: served,
+# unclaimed, partial, unwritten, broken and unchecked. `manni strategy check`
+# exits 1 on the typo path's broken-step.
+collections:
+  - name: site
+    paths:
+      - "docs/**/*.md"
+  - name: strategy
+    paths:
+      - "strategy/**/*.md"
+
+graph:
+  routes:
+    - basePath: /site
+      root: docs
+      extensions: [".md"]
+      indexFiles: ["index"]
