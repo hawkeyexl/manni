@@ -1,6 +1,6 @@
 # 0106: A journey's steps name the pages that carry it
 
-- **Status:** Proposed
+- **Status:** Implemented (#239)
 - **Serves:** Two people.
   - Sara · S17, "Hold the pages to the strategy they were written for". She
     owns `docs/content-strategy/`, and nothing holds a journey's path to the
