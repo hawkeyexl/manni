@@ -416,7 +416,7 @@ docs/src/content/docs/cite/reference/citations.mdx:
         file: src/shared/statements.ts
         lines: 810-818
         integrity: sha256-3aa3422f3a5b8c6a604feb4838bf9f24fcaf17f89406b20d36780f8a0b83541a
-        commit-sha: c4b30476c094517921ec4b766291759bc64feed8
+        commit-sha: 8bc91cbb324501b261d13991c52a479685e0a686
     - id: anchor-marker-never-moves
       claim:
         lines: 378-380
@@ -509,7 +509,7 @@ docs/src/content/docs/cite/reference/citations.mdx:
         file: src/shared/code-regions.ts
         lines: 33-105
         integrity: sha256-1b805d84b4a81755d84fa5c9812956101a8b8f8cdafc7f0cb003f4e246acedf3
-        commit-sha: b5f92d6972ae322a69bbf08c6b895d319faf8dfd
+        commit-sha: 8bc91cbb324501b261d13991c52a479685e0a686
     - id: sidecar-reading-every-collection
       claim:
         integrity: sha256-5cfd5e7f578297d8adfb156c11c648b255958f4a69de4690ebfcdb5657f32402
@@ -1363,4 +1363,4 @@ docs/src/content/docs/cite/reference/citations.mdx:
         file: src/shared/code-regions.ts
         lines: 41-72
         integrity: sha256-e27a86e18cab461561f2ea5339954eb6b7868d360bbd26585507aaabd403a421
-        commit-sha: b5f92d6972ae322a69bbf08c6b895d319faf8dfd
+        commit-sha: 8bc91cbb324501b261d13991c52a479685e0a686
