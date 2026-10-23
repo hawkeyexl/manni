@@ -29,7 +29,7 @@ sample-questions:
 graph:
   label: Citations reference
   type: reference
-last-updated: 2026-10-22
+last-updated: 2026-10-23
 tags:
   - citations
   - hashing
@@ -391,6 +391,12 @@ how this page can show the syntax without carrying it. It reads at most 500
 markers per page; past that, the rest are not read and the page carries one
 `marker-invalid` saying so.
 
+{/* cite asciidoc-prose-blocks */}
+In asciidoc, a listing `----`, literal `....`, passthrough `++++` or comment
+`////` block is code, so a marker inside one is skipped. An example `====`,
+sidebar `****` or quote `____` block holds prose, so a marker inside one is
+read.
+
 ```md title="A marker in markdown"
 <!-- cite fetch-timeout retries -->
 The fetch timeout is 10 seconds, and it is
@@ -526,8 +532,11 @@ fetch-timeout: the quote's claim lines 14-18 are no longer a fenced block. Resto
 ```
 
 {/* cite quote-fence-per-format */}
-The fence is ```` ``` ```` or `~~~` in markdown and MDX, and `----` in
-asciidoc. `html`, `xml` and `rst` have no fence the tool can locate.
+The fence is ```` ``` ```` or `~~~` in markdown and MDX, at any indent. It
+closes on the same character, at least as many, and nothing else on the line.
+In asciidoc the fence is any delimited block: `----`, `....`, `++++`, `////`,
+`====`, `****` or `____`. It closes only on an exact copy of its opening line.
+`html`, `xml` and `rst` have no fence the tool can locate.
 
 ## The sidecar
 

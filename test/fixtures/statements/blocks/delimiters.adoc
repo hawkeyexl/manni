@@ -1,0 +1,74 @@
+= Delimited blocks
+
+// (cite above-listing)
+// (meta {"concepts":["listing"]})
+----
+// (cite in-listing)
+// (meta {"concepts":["in-listing"]})
+----
+
+// (cite above-literal)
+// (meta {"concepts":["literal"]})
+....
+// (cite in-literal)
+// (meta {"concepts":["in-literal"]})
+....
+
+// (cite above-passthrough)
+// (meta {"concepts":["passthrough"]})
+++++
+// (cite in-passthrough)
+// (meta {"concepts":["in-passthrough"]})
+++++
+
+// (cite above-comment)
+// (meta {"concepts":["comment"]})
+////
+// (cite in-comment)
+// (meta {"concepts":["in-comment"]})
+////
+
+// (cite above-example)
+// (meta {"concepts":["example"]})
+====
+// (cite in-example)
+// (meta {"concepts":["in-example"]})
+Example text.
+====
+
+// (cite above-sidebar)
+// (meta {"concepts":["sidebar"]})
+****
+// (cite in-sidebar)
+// (meta {"concepts":["in-sidebar"]})
+Sidebar text.
+****
+
+// (cite above-quote)
+// (meta {"concepts":["quote"]})
+____
+// (cite in-quote)
+// (meta {"concepts":["in-quote"]})
+Quote text.
+____
+
+// (cite comment-with-a-shorter-line)
+//////
+////
+// (cite past-a-shorter-delimiter)
+//////
+
+// (cite listing-with-a-longer-line)
+----
+------
+// (cite past-a-longer-delimiter)
+----
+
+First title
+===========
+
+// (cite between-the-titles)
+A paragraph between two titles.
+
+Other title
+===========
