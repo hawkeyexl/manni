@@ -47,7 +47,7 @@ verified-by:
 import { Aside, Tabs, TabItem, CardGrid, LinkCard } from '@astrojs/starlight/components';
 
 {/* cite registry-forty-five-bundled-schemas */}
-manni meta bundles sixty-seven schemas. You reference any of them by id, with no file
+manni meta bundles sixty-five schemas. You reference any of them by id, with no file
 to write, no URL to host, and no network call at validation time. This page is
 the registry: what each one constrains, whether it requires anything, and which
 are applied when you pass no flags at all. Each id links to its own page, with
@@ -126,17 +126,15 @@ installed.
 | [`manni:citations-strict:1.2.0`](/manni/meta/reference/schemas/manni-citations/#strict-overlay) | the form of `citations` | nothing | No | [`citations-strict/1.2.0.json`](/manni/schemas/citations-strict/1.2.0.json) |
 | [`manni:citations-strict:1.1.0`](/manni/meta/reference/schemas/manni-citations/#version-110) | the form of `citations` | nothing | No | [`citations-strict/1.1.0.json`](/manni/schemas/citations-strict/1.1.0.json) |
 | [`manni:citations-strict:1.0.0`](/manni/meta/reference/schemas/manni-citations/#version-100) | the form of `citations` | nothing | No | [`citations-strict/1.0.0.json`](/manni/schemas/citations-strict/1.0.0.json) |
-| [`manni:content-strategy:1.0.0`](/manni/meta/reference/schemas/manni-content-strategy/) | `audience`, `persona` | nothing | No | [`content-strategy/1.0.0.json`](/manni/schemas/content-strategy/1.0.0.json) |
-| [`manni:content-strategy-strict:1.0.0`](/manni/meta/reference/schemas/manni-content-strategy/#strict-overlay) | the form of `audience`, `persona` | nothing | No | [`content-strategy-strict/1.0.0.json`](/manni/schemas/content-strategy-strict/1.0.0.json) |
 
 {/* cite registry-all-draft-2020-12-and-builtin-refs */}
-All sixty-seven use [Draft
+All sixty-five use [Draft
 2020-12](/manni/meta/reference/schema-resolution/#dialects) and are [built-in
 references](/manni/meta/reference/schema-resolution/#reference-kinds). A typo in an
 id is reported as an unknown schema rather than a missing file.
 
 {/* cite registry-forty-four-allow-additional-properties */}
-Sixty-six of them allow additional properties. `agentskills:skill:1.0` is the
+Sixty-four of them allow additional properties. `agentskills:skill:1.0` is the
 one exception, and not out of strictness. The tooling that packages a skill for
 distribution *hard-errors* on a key outside the standard's six rather than
 ignoring it. A schema that tolerated unknown keys would pass exactly the file
@@ -219,8 +217,6 @@ https://hawkeyexl.github.io/manni/schemas/tgdp/1.1.json
 https://hawkeyexl.github.io/manni/schemas/tgdp-strict/1.1.json
 https://hawkeyexl.github.io/manni/schemas/artifact-evals/1.1.0.json
 https://hawkeyexl.github.io/manni/schemas/artifact-evals-strict/1.1.0.json
-https://hawkeyexl.github.io/manni/schemas/content-strategy/1.0.0.json
-https://hawkeyexl.github.io/manni/schemas/content-strategy-strict/1.0.0.json
 ```
 
 {/* cite registry-published-urls-have-three-jobs */}
@@ -343,7 +339,7 @@ renders badly everywhere it is shared. See [Metadata
 vocabularies](/manni/meta/reference/metadata-vocabularies/).
 
 {/* cite registry-manni-core-is-the-only-vocabulary-that-requires */}
-**The manni vocabularies** are editorial schemas of manni's own, twelve
+**The manni vocabularies** are editorial schemas of manni's own, eleven
 families that each answer one question about a page. Only
 `manni:core:1.0.0` requires anything, a `title` and a `description`. Two more
 require a key only on a page that opts in. A `deprecated` lifecycle needs its
@@ -391,7 +387,7 @@ compose](/manni/meta/reference/taxonomy-schemas/#which-ones-compose).
 ## What runs when you pass no flags
 
 {/* cite registry-only-two-in-the-default-set */}
-Eleven of the sixty-seven are in the default set, in this order:
+Eleven of the sixty-five are in the default set, in this order:
 
 ```text
 google:okf:0.1
@@ -551,7 +547,7 @@ version](/manni/meta/schemas/#name-your-schema-and-its-strict-version).
   <LinkCard
     title="manni vocabularies"
     href="/manni/meta/reference/schemas/manni-vocabularies/"
-    description="The twelve manni vocabulary families and their strict overlays."
+    description="The eleven manni vocabulary families and their strict overlays."
   />
   <LinkCard
     title="Built-in taxonomy schemas"

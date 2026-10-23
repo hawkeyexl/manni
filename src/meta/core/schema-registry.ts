@@ -85,8 +85,6 @@ import manniCitations120 from "../schemas/citations/1.2.0.json" with { type: "js
 import manniCitationsStrict120 from "../schemas/citations-strict/1.2.0.json" with { type: "json" };
 import manniAiContextStrict110 from "../schemas/ai-context-strict/1.1.0.json" with { type: "json" };
 import manniAiContextStrict120 from "../schemas/ai-context-strict/1.2.0.json" with { type: "json" };
-import manniContentStrategy100 from "../schemas/content-strategy/1.0.0.json" with { type: "json" };
-import manniContentStrategyStrict100 from "../schemas/content-strategy-strict/1.0.0.json" with { type: "json" };
 import { errorMessage } from "../../shared/errors.js";
 
 export interface BuiltinInfo {
@@ -162,8 +160,6 @@ const BUILTINS = new Map<string, Record<string, unknown>>([
   ["manni:citations-strict:1.2.0", manniCitationsStrict120],
   ["manni:ai-context-strict:1.1.0", manniAiContextStrict110],
   ["manni:ai-context-strict:1.2.0", manniAiContextStrict120],
-  ["manni:content-strategy:1.0.0", manniContentStrategy100],
-  ["manni:content-strategy-strict:1.0.0", manniContentStrategyStrict100],
 ]);
 
 /**
@@ -422,8 +418,6 @@ const PUBLISHED_PATHS: readonly (readonly [string, string])[] = [
   ["citations-strict/1.2.0.json", "manni:citations-strict:1.2.0"],
   ["ai-context-strict/1.1.0.json", "manni:ai-context-strict:1.1.0"],
   ["ai-context-strict/1.2.0.json", "manni:ai-context-strict:1.2.0"],
-  ["content-strategy/1.0.0.json", "manni:content-strategy:1.0.0"],
-  ["content-strategy-strict/1.0.0.json", "manni:content-strategy-strict:1.0.0"],
 ];
 
 /** Where each built-in's reference page lives on the docs site. */
@@ -471,8 +465,6 @@ const GUIDE_SLUGS: ReadonlyMap<string, string> = new Map([
   ["manni:citations-strict:1.0.0", "manni-citations"],
   ["manni:citations-strict:1.1.0", "manni-citations"],
   ["manni:citations-strict:1.2.0", "manni-citations"],
-  ["manni:content-strategy:1.0.0", "manni-content-strategy"],
-  ["manni:content-strategy-strict:1.0.0", "manni-content-strategy"],
   ["manni:core:1.0.0", "manni-core"],
   ["manni:core-strict:1.0.0", "manni-core"],
   ["manni:evals:1.0.0", "manni-evals"],

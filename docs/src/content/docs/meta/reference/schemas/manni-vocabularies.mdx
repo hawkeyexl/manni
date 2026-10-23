@@ -1,6 +1,6 @@
 ---
 title: The manni vocabularies
-description: "The twelve manni:<family> built-in vocabularies for maintained, machine-readable docs: what each one answers, how they stack, and their strict overlays."
+description: "The eleven manni:<family> built-in vocabularies for maintained, machine-readable docs: what each one answers, how they stack, and their strict overlays."
 type: concept
 id: meta-reference-schemas-manni-vocabularies
 keywords: ["manni vocabularies", "strict overlays", "field location", "quality contracts"]
@@ -43,17 +43,16 @@ published, such as Hugo's front matter, DITA's prolog, and Open Graph. The
 manni vocabularies are the schemas manni publishes itself. They cover the facts
 a docs set needs to stay maintained and readable by machines. Those are
 ownership, review, audience, applicability, lifecycle, relationships, AI
-provenance, quality checks, citations, terminology and content-strategy
-records. No site generator
+provenance, quality checks, citations and terminology. No site generator
 defines those facts, and no standard owns them.
 
-## The twelve vocabularies
+## The eleven vocabularies
 
-The twelve form one family. They share the same conventions, and no two of
+The eleven form one family. They share the same conventions, and no two of
 them claim the same key. They are split by intent, so each one answers a
-separate question. Six describe a page. Six carry quality, knowledge-graph,
-citation, terminology and content-strategy metadata that any grader, graph
-builder, drift check, glossary tool or CI tool can read.
+separate question. Six describe a page. Five carry quality, knowledge-graph,
+citation and terminology metadata that any grader, graph builder, drift check,
+glossary tool or CI tool can read.
 
 | Id | The question it answers | Fields |
 |---|---|---|
@@ -68,7 +67,6 @@ builder, drift check, glossary tool or CI tool can read.
 | [`manni:artifact-evals:1.1.0`](/manni/meta/reference/schemas/manni-artifact-evals/) | What must a session using this artifact have done? | `metadata.evals` · `metadata.eval-skip` · `metadata.meta-provenance` |
 | [`manni:citations:1.2.0`](/manni/meta/reference/schemas/manni-citations/) | What do its claims rest on? | `citations`, each entry with `last-verified` and `verified-by` |
 | [`manni:terminology:1.2.0`](/manni/meta/reference/schemas/manni-terminology/) | What does this term mean, and what else is it called? | `label` · `definition` · `abstract` · `alt-labels` · `hidden-labels` · `broader` · `narrower` · `related-terms` · `see` · `scope-note` · `notation` · the five match fields · the TBX data categories · `concept-entry` · `designations` · `tbx-markup` |
-| [`manni:content-strategy:1.0.0`](/manni/meta/reference/schemas/manni-content-strategy/) | Which audience does this persona belong to, and which persona does this journey belong to? | `audience` · `persona` |
 
 \* Required. Core's `title` and `description` are the only fields the family
 requires of every page it applies to. Terminology asks more only of a page
@@ -82,7 +80,7 @@ call.
 
 ## Nine on by default
 
-Nine of the twelve are in manni meta's
+Nine of the eleven are in manni meta's
 [default set](/manni/meta/reference/schema-resolution/#the-default-set), after
 `google:okf:0.1` and `passo-uno:seven-action:1.0`. They are core, audience,
 structure, stewardship, lifecycle, ai-context, evals, graph and citations. A
@@ -90,9 +88,9 @@ run with no schema configured checks all nine, so every page needs `title`
 and `description`. Config `schemas` add to the default set rather than
 replace it.
 
-Terminology, artifact-evals and content-strategy stay out. A term page, an
-artifact and a strategy record are special kinds of page, and a set of guides
-has none of them. Name them where they apply:
+Terminology and artifact-evals stay out. A term page and an artifact are
+special kinds of page, and a set of guides has neither. Name them where they
+apply:
 
 ```yaml
 meta:
@@ -151,8 +149,8 @@ meta:
   strict: true
 ```
 
-`strict` reaches only the defaults and registered schemas. For terminology,
-artifact-evals or content-strategy, list the overlay beside its vocabulary:
+`strict` reaches only the defaults and registered schemas. For terminology or
+artifact-evals, list the overlay beside its vocabulary:
 
 ```yaml
 meta:
@@ -174,7 +172,6 @@ meta:
 | `manni:artifact-evals:1.1.0` | [`manni:artifact-evals-strict:1.1.0`](/manni/meta/reference/schemas/manni-artifact-evals/#strict-overlay) |
 | `manni:citations:1.2.0` | [`manni:citations-strict:1.2.0`](/manni/meta/reference/schemas/manni-citations/#strict-overlay) |
 | `manni:terminology:1.2.0` | [`manni:terminology-strict:1.2.0`](/manni/meta/reference/schemas/manni-terminology/#strict-overlay) |
-| `manni:content-strategy:1.0.0` | [`manni:content-strategy-strict:1.0.0`](/manni/meta/reference/schemas/manni-content-strategy/#strict-overlay) |
 
 Every overlay keeps the same rules.
 

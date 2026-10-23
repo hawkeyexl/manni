@@ -1,8 +1,6 @@
 /**
- * Each vocabulary registered from a draft is the draft it was cut from.
- * Proposal 0067 registered the 0023 and 0044 drafts, and the 0066 overlays,
- * at 1.0.0. `manni:content-strategy` has no draft: it shipped directly at
- * 1.0.0 with the domain that reads it, so it has no row in `DRAFTS`.
+ * Each registered vocabulary is the draft it was cut from. Proposal 0067
+ * registered the 0023 and 0044 drafts, and the 0066 overlays, at 1.0.0.
  * Registration rewrote ids, titles and descriptions, and made three changes
  * to shape, each named below. Anything else that differs is drift.
  *
