@@ -26,6 +26,7 @@ import { beats as findingsBeats, totalFrames as findingsTotalFrames, TYPING_MS a
 import { beats as citeReposBeats, totalFrames as citeReposTotalFrames, TYPING_MS as citeReposTypingMs } from "./cite-repos/beats";
 import { beats as pluginMetadataBeats, totalFrames as pluginMetadataTotalFrames, TYPING_MS as pluginMetadataTypingMs } from "./plugin-metadata/beats";
 import { beats as strategyBeats, totalFrames as strategyTotalFrames, TYPING_MS as strategyTypingMs } from "./strategy/beats";
+import { beats as citeImpactBeats, totalFrames as citeImpactTotalFrames, TYPING_MS as citeImpactTypingMs } from "./cite-impact/beats";
 
 /** sidecar-url-1x1: 23 px / 75 columns, derived in media/sidecar-url-1x1.script.md. */
 const DemoUrl: React.FC = () => <DemoView beats={urlBeats} fontPx={23} linePx={32} cols={75} />;
@@ -142,8 +143,25 @@ const DemoStrategy: React.FC = () => (
   <DemoView beats={strategyBeats} fontPx={19} linePx={27} cols={91} typingMs={strategyTypingMs} ligatures={false} breakAfter="/" />
 );
 
+/**
+ * cite-impact-1x1: every beat carries its own size, derived in media/cite-impact/cite-impact-1x1.script.md
+ * (media/cite-impact/cols.mjs): 32 px for beats 1 and 2, 22 px / 78 columns for the github
+ * annotation and the pretty roll-up. Ligatures off: git diff's `---` header would draw as one rule.
+ */
+const DemoCiteImpact: React.FC = () => (
+  <DemoView beats={citeImpactBeats} fontPx={22} linePx={31} cols={78} typingMs={citeImpactTypingMs} ligatures={false} />
+);
+
 export const Root: React.FC = () => (
   <>
+    <Composition
+      id="CiteImpactDemo"
+      component={DemoCiteImpact}
+      width={1080}
+      height={1080}
+      fps={FPS}
+      durationInFrames={citeImpactTotalFrames}
+    />
     <Composition
       id="SidecarDemo"
       component={Demo}

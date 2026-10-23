@@ -1,0 +1,18 @@
+Using manni.config.yaml (.)
+[31m✗[39m pages/config.md
+    [31m✗[39m [36mtimeout[39m   :15 current   src/value.ts:1 changed since b61a6c5, 0 commits
+      Check the sentence against the source, then run manni cite update --accept --only timeout.
+      [2mmanni:cite source-changed: The cited lines are not what they were.[22m
+      [2mGuide: https://hawkeyexl.github.io/manni/cite/fix/#source-changed[22m
+[31m✗[39m pages/guide.md
+    [31m✗[39m [36mtimeout[39m   :15 current   src/value.ts:1 changed since b61a6c5, 0 commits
+      Check the sentence against the source, then run manni cite update --accept --only timeout.
+      [2mmanni:cite source-changed: The cited lines are not what they were.[22m
+      [2mGuide: https://hawkeyexl.github.io/manni/cite/fix/#source-changed[22m
+
+The pages with findings serve 1 persona and 2 journeys.
+  maya   Maya, Documentation Engineer           2 errors on 2 pages
+  m5     Pin a claim and catch it going stale   1 error on 1 page
+  m6     Keep citations out of the page         1 error on 1 page
+
+[31m5 files checked, 3 passed, 2 failed, 2 findings[39m

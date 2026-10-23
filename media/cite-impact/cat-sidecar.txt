@@ -1,0 +1,3 @@
+pages/guide.md:
+  personas: [maya]
+  journeys: [m5]

@@ -1,0 +1,73 @@
+manni cite, demo video transcript (silent video; text describes what is on screen)
+
+Frame: 1080x1080, 30 fps, 33.6 s. Every terminal line is real output. The CLI is
+this branch's build, node dist/cli.js, typed as manni. It runs in
+media/scratch-cite-impact/, which media/cite-impact/capture.sh stages from
+test/fixtures/cite/impact/: two pages whose sidecars name persona maya and
+journeys m5 and m6, the three records, and src/value.ts, which both pages
+cite. Each command appears after its measured latency, at 1x.
+
+[0:00-0:08] Title: The page names its readers (1 / 4)
+$ cat pages/guide.meta.yaml
+pages/guide.md:
+  personas: [maya]
+  journeys: [m5]
+$ manni cite check
+Using manni.config.yaml (.)
+✓ pages/config.md   (✓ in green)
+    ✓ timeout   :15 current   src/value.ts:1 current   (✓ in green)
+✓ pages/guide.md   (✓ in green)
+    ✓ timeout   :15 current   src/value.ts:1 current   (✓ in green)
+✓ strategy/m5.md   (✓ in green)
+✓ strategy/m6.md   (✓ in green)
+✓ strategy/maya.md   (✓ in green)
+
+5 files checked, 5 passed, 0 failed, 0 findings   (green)
+Highlighted rows: lines containing "personas: [maya]", "journeys: [m5]"
+Caption: The guide's sidecar names persona maya and journey m5.
+
+[0:08-0:14] Title: One source line changes (2 / 4)
+$ git diff src/value.ts
+diff --git a/src/value.ts b/src/value.ts
+index 4a8de38..e239449 100644
+--- a/src/value.ts
++++ b/src/value.ts
+@@ -1,2 +1,2 @@
+-export const TIMEOUT_SECONDS = 10;   (red)
++export const TIMEOUT_SECONDS = 30;   (green)
+ export const RETRIES = 3;
+Highlighted rows: lines containing "TIMEOUT_SECONDS = 10", "TIMEOUT_SECONDS = 30"
+Caption: Both pages pin this line, so both pins go stale.
+
+[0:14-0:25] Title: manni cite check -f github (3 / 4)
+$ manni cite check -f github pages/guide.md
+Using manni.config.yaml (.)
+::error file=pages/guide.md,line=15,title=manni%3Acite/source-changed::timeout (src/value.ts:1): changed since b61a6c5, 0 commits. Check the sentence against the source, then run manni cite update --accept --only timeout. Serves maya (Maya, Documentation Engineer) and m5 (Pin a claim and catch it going stale).%0Amanni:cite source-changed: The cited lines are not what they were.%0AGuide: https://hawkeyexl.github.io/manni/cite/fix/#source-changed
+$ echo $?
+1
+Highlighted rows: lines containing "Serves maya"
+Caption: The annotation now names maya and m5. Exit 1.
+
+[0:25-0:34] Title: Who the findings reach (4 / 4)
+$ manni cite check -q
+Using manni.config.yaml (.)
+✗ pages/config.md   (✗ in red)
+    ✗ timeout   :15 current   src/value.ts:1 changed since b61a6c5, 0 commits   (✗ in red)
+      Check the sentence against the source, then run manni cite update --accept --only timeout.
+      manni:cite source-changed: The cited lines are not what they were.   (dim)
+      Guide: https://hawkeyexl.github.io/manni/cite/fix/#source-changed   (dim)
+✗ pages/guide.md   (✗ in red)
+    ✗ timeout   :15 current   src/value.ts:1 changed since b61a6c5, 0 commits   (✗ in red)
+      Check the sentence against the source, then run manni cite update --accept --only timeout.
+      manni:cite source-changed: The cited lines are not what they were.   (dim)
+      Guide: https://hawkeyexl.github.io/manni/cite/fix/#source-changed   (dim)
+
+The pages with findings serve 1 persona and 2 journeys.
+  maya   Maya, Documentation Engineer           2 errors on 2 pages
+  m5     Pin a claim and catch it going stale   1 error on 1 page
+  m6     Keep citations out of the page         1 error on 1 page
+
+5 files checked, 3 passed, 2 failed, 2 findings   (red)
+Highlighted rows: lines containing "The pages with findings serve", "Maya, Documentation Engineer", "Pin a claim", "Keep citations"
+Caption: Findings rolled up by persona and journey.
+

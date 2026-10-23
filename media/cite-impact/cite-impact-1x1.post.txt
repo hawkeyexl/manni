@@ -1,0 +1,15 @@
+A source change stales a sentence in the docs. CI says which file. It never said who reads it.
+
+New in manni, a citation finding names the readers of its page.
+
+Your pages already list their personas and journeys. When manni cite check finds a stale pin on such a page, each annotation ends by naming them, with their titles.
+
+Here one line of code changes, and two pinned sentences go stale. The CI annotation says the guide serves maya and journey m5. Exit 1, as before.
+
+The plain report then rolls every finding up by persona and journey, worst first. One edit, two pages, one persona, two journeys.
+
+No flag and no config. A page that names no record prints what it always did.
+
+Real output from a real test fixture. Only the input is staged.
+
+npm i -g @hawkeyexl/manni · manni cite check
