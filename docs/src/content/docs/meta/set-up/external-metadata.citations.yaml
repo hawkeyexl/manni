@@ -446,9 +446,9 @@ docs/src/content/docs/meta/set-up/external-metadata.mdx:
         integrity: sha256-312f0485854c4b39438e45a31f72245401843d988d1ba3b97aea031ceac86bd6
       source:
         file: src/meta/cli.ts
-        lines: 889
+        lines: 900
         integrity: sha256-b900d16ea81ba54da695ee6ec4f8e9c3d17f1700d0b307ed74045692b603e056
-        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
+        commit-sha: 34ccc5573527b4549ca4da3ef37e3c0a6c988e0f
     - id: validate-summary-line-format
       claim:
         integrity: sha256-b703fb189e7b60d9d5e33c0c7a1508869101ab61fb8f444b79b2d85f005a5332
@@ -486,9 +486,9 @@ docs/src/content/docs/meta/set-up/external-metadata.mdx:
         integrity: sha256-14ad244fc010736bbb473235d7746a514acd806569f379a80ab6a90e679777d4
       source:
         file: src/meta/reporters/get.ts
-        lines: 141-143
+        lines: 146-148
         integrity: sha256-642f78a65bb9f015f16f11bd4c530e0335ea567c881ad8dcc3b917ecd7778cd9
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: 34ccc5573527b4549ca4da3ef37e3c0a6c988e0f
     - id: bare-run-loads-every-collection
       claim:
         lines: 121

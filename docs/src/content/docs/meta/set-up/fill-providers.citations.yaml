@@ -86,9 +86,9 @@ docs/src/content/docs/meta/set-up/fill-providers.mdx:
         integrity: sha256-266917b07310ff924ec2651bd25c51a1ca7722ddc692f779e4eaadf4f55da4e0
       source:
         file: src/meta/cli.ts
-        lines: 1346
+        lines: 1364
         integrity: sha256-76ac4b0f3aafc60695af01c15bcd46d7868c99adae78121ecaf2757d530b0dc3
-        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
+        commit-sha: 34ccc5573527b4549ca4da3ef37e3c0a6c988e0f
     - id: cache-rooted-at-cwd
       claim:
         lines: 66
