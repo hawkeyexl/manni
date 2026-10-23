@@ -6,7 +6,7 @@ id: graph-reference-cli
 language: en
 lifecycle: published
 action: remember
-last-updated: 2026-10-22
+last-updated: 2026-10-23
 ---
 
 {/* The command, argument, and option tables on this page are drift-checked
@@ -1215,8 +1215,8 @@ manni: serving lookup, retrieve, traverse and impact over stdio from .manni/grap
 ```
 
 That line goes to stderr, because stdout carries the protocol. The server
-needs the optional `@modelcontextprotocol/sdk` peer. It opens the artifact
-once, at start, and answers every call from it.
+needs `@modelcontextprotocol/sdk`, an optional dependency npm installs with
+manni. It opens the artifact once, at start, and answers every call from it.
 
 ### Options
 

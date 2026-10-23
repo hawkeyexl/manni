@@ -8,6 +8,7 @@ import { spawnSync } from "node:child_process";
 import { mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
+import { pathToFileURL } from "node:url";
 import { afterEach, describe, expect, it } from "vitest";
 import pkg from "../package.json" with { type: "json" };
 
@@ -139,6 +140,19 @@ describe("plugin hook launcher", () => {
     // path as one argument rather than split at the space.
     const argv = /npm verbose argv (.*)/.exec(r.stderr)?.[1] ?? "";
     expect(argv).toContain(`"${PLUGIN_SPEC}" "check" "docs/my page.md"`);
+  });
+
+  // The graph server imports the launcher for its functions, not its run.
+  it("launches nothing when imported", () => {
+    const dir = projectWithStub();
+    const script = `const m = await import(${JSON.stringify(pathToFileURL(LAUNCHER).href)}); console.log(typeof m.launch, typeof m.configFile);`;
+    const r = spawnSync(process.execPath, ["--input-type=module", "-e", script], {
+      cwd: dir,
+      input: "",
+      encoding: "utf8",
+      env: { ...process.env, CLAUDE_PROJECT_DIR: dir },
+    });
+    expect(r).toMatchObject({ status: 0, stdout: "function function\n", stderr: "" });
   });
 
   it("runs nothing in manni's own repository before it is built", () => {

@@ -300,15 +300,17 @@ describe("graph serve: the process", () => {
 });
 
 describe("graph serve: packaging", () => {
-  it("keeps the SDK an optional peer, imported by bare specifier", () => {
+  it("keeps the SDK an optional dependency, imported by bare specifier", () => {
     const pkg = JSON.parse(readFileSync(join(root, "package.json"), "utf8")) as {
       dependencies?: Record<string, string>;
+      devDependencies?: Record<string, string>;
+      optionalDependencies?: Record<string, string>;
       peerDependencies?: Record<string, string>;
-      peerDependenciesMeta?: Record<string, { optional?: boolean }>;
     };
+    expect(pkg.optionalDependencies?.["@modelcontextprotocol/sdk"]).toBeDefined();
     expect(pkg.dependencies?.["@modelcontextprotocol/sdk"]).toBeUndefined();
-    expect(pkg.peerDependencies?.["@modelcontextprotocol/sdk"]).toBeDefined();
-    expect(pkg.peerDependenciesMeta?.["@modelcontextprotocol/sdk"]?.optional).toBe(true);
+    expect(pkg.devDependencies?.["@modelcontextprotocol/sdk"]).toBeUndefined();
+    expect(pkg.peerDependencies?.["@modelcontextprotocol/sdk"]).toBeUndefined();
     // The Node build splits chunks, so the import lands in whichever one holds serve.
     const built = readdirSync(join(root, "dist"))
       .filter((f) => f.endsWith(".js"))

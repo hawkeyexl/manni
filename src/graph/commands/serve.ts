@@ -5,7 +5,7 @@
  * the command core its CLI twin runs (`lookupIn`, `retrieveIn`, `traverseIn`)
  * over one artifact opened at start. Nothing here retrieves.
  *
- * The SDK is an optional peer, imported only when this command runs. Its
+ * The SDK is an optional dependency, imported only when this command runs. Its
  * high-level `registerTool` takes zod shapes, so the tools are served through
  * the underlying protocol server with plain JSON Schemas, validated here.
  *
@@ -48,7 +48,7 @@ export interface ServeSeams {
 }
 
 async function importSdk(): Promise<McpSdk> {
-  // Literal specifiers, so the Node build leaves them bare: an optional peer.
+  // Literal specifiers, so the Node build leaves them bare: an optional dependency.
   const [mcp, stdio, types] = await Promise.all([
     import("@modelcontextprotocol/sdk/server/mcp.js"),
     import("@modelcontextprotocol/sdk/server/stdio.js"),

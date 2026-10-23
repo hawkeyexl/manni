@@ -15,14 +15,18 @@
 // `npx --no` would ask the registry on every hook in every repository
 // without manni. Running node on a found bin also skips npx's start-up.
 //
+// The plugin's other scripts import `project`, `configFile`, `launch` and
+// `pluginVersion` from here. Run as a script, it launches manni with its own
+// arguments.
+//
 // Plain ESM with no dependencies: the plugin ships as files, not a package.
 import { spawn, spawnSync } from "node:child_process";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, realpathSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const PACKAGE = "@hawkeyexl/manni";
-const project = resolve(process.env.CLAUDE_PROJECT_DIR ?? process.cwd());
+export const project = resolve(process.env.CLAUDE_PROJECT_DIR ?? process.cwd());
 const windows = process.platform === "win32";
 
 function readJson(file) {
@@ -102,22 +106,24 @@ function npmGlobalRoot() {
  * agent's paths, which may hold a space or a cmd metacharacter. On Windows
  * npx is a .cmd shim, so its own script runs under node instead.
  */
-function npx(words) {
+function npx(words, options) {
   const script = join(dirname(process.execPath), "node_modules", "npm", "bin", "npx-cli.js");
-  if (windows && existsSync(script)) return spawn(process.execPath, [script, ...words], { stdio: "inherit" });
-  if (!windows) return spawn("npx", words, { stdio: "inherit" });
+  if (windows && existsSync(script)) return spawn(process.execPath, [script, ...words], options);
+  if (!windows) return spawn("npx", words, options);
   // Last resort on an unusual Windows layout: each word quoted for cmd.
   const quoted = words.map((w) => `"${w.replaceAll('"', '""')}"`).join(" ");
-  return spawn(`npx ${quoted}`, { stdio: "inherit", shell: true });
+  return spawn(`npx ${quoted}`, { ...options, shell: true });
 }
 
-/** Whether the project has a manni config, found as manni finds one: up to the repository root. */
-function configured() {
+/** The project's manni config, found as manni finds one: up to the repository root. */
+export function configFile() {
   for (const d of upward(project)) {
-    if (existsSync(join(d, "manni.config.yaml")) || existsSync(join(d, "manni.config.yml"))) return true;
-    if (existsSync(join(d, ".git"))) return false;
+    for (const name of ["manni.config.yaml", "manni.config.yml"]) {
+      if (existsSync(join(d, name))) return join(d, name);
+    }
+    if (existsSync(join(d, ".git"))) return undefined;
   }
-  return false;
+  return undefined;
 }
 
 /**
@@ -125,33 +131,53 @@ function configured() {
  * installed plugin carries its plugin.json; were it missing, the caller asks
  * for the bare package, so npx fetches the latest release, not a match.
  */
-function pluginVersion() {
+export function pluginVersion() {
   const manifest = join(dirname(fileURLToPath(import.meta.url)), "..", ".claude-plugin", "plugin.json");
   const version = readJson(manifest)?.version;
   return typeof version === "string" ? version : undefined;
 }
 
-function launch() {
-  const args = process.argv.slice(2);
+/**
+ * Starts manni with `args` and returns the child, or `undefined` where no
+ * manni runs. `options` go to `spawn`, so a caller can set `stdio` and `cwd`.
+ */
+export function launch(args, options = { stdio: "inherit" }) {
   const own = ownBuild();
   if (own === false) return undefined;
-  const run = (cli) => spawn(process.execPath, [cli, ...args], { stdio: "inherit" });
+  const run = (cli) => spawn(process.execPath, [cli, ...args], options);
   const found = own ?? installed() ?? globalIn(defaultGlobalRoot());
   if (found !== undefined) return run(found);
   // Without a config manni has nothing to do here, so neither an npm
   // start-up nor a download is worth paying for.
-  if (!configured()) return undefined;
+  if (configFile() === undefined) return undefined;
   const configuredGlobal = globalIn(npmGlobalRoot());
   if (configuredGlobal !== undefined) return run(configuredGlobal);
   const version = pluginVersion();
-  return npx(["--yes", version === undefined ? PACKAGE : `${PACKAGE}@${version}`, ...args]);
+  return npx(["--yes", version === undefined ? PACKAGE : `${PACKAGE}@${version}`, ...args], options);
 }
 
-const child = launch();
-if (child === undefined) process.exit(0);
-child.on("error", () => {
-  process.exitCode = 1;
-});
-child.on("exit", (code) => {
-  process.exitCode = code ?? 1;
-});
+/** Whether `url`, a module's `import.meta.url`, is the script node was asked to run. */
+export function isMain(url) {
+  if (process.argv[1] === undefined) return false;
+  const real = (path) => {
+    const r = realpathSync(path);
+    // Windows paths compare case-insensitively, drive letter included.
+    return windows ? r.toLowerCase() : r;
+  };
+  try {
+    return real(fileURLToPath(url)) === real(process.argv[1]);
+  } catch {
+    return false;
+  }
+}
+
+if (isMain(import.meta.url)) {
+  const child = launch(process.argv.slice(2));
+  if (child === undefined) process.exit(0);
+  child.on("error", () => {
+    process.exitCode = 1;
+  });
+  child.on("exit", (code) => {
+    process.exitCode = code ?? 1;
+  });
+}

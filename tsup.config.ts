@@ -32,6 +32,10 @@ export default defineConfig([
     // exist — so the strip breaks `query` at runtime while raw esbuild output
     // is fine. Engines are >= 24; nothing needs the strip.
     removeNodeProtocol: false,
+    // tsup leaves `dependencies` and `peerDependencies` bare but bundles an
+    // optional dependency. The MCP SDK stays a bare import, so an install
+    // without it still runs every command but `graph serve`.
+    external: ["@modelcontextprotocol/sdk"],
     clean: false,
     dts: true,
     sourcemap: true,
