@@ -1015,10 +1015,20 @@ program
     "Also leave out passages that are drifted or failing, comma-separated, on every call",
     withholdOption,
   )
+  .option(
+    "--publish",
+    "Publish the graph first when its artifact is missing or older than the checkout, and again after the checkout changes",
+  )
   .action(
-    async (opts: { config?: string | boolean; graph?: string; index?: string; withhold?: WithholdReason[] }) => {
+    async (opts: {
+      config?: string | boolean;
+      graph?: string;
+      index?: string;
+      withhold?: WithholdReason[];
+      publish?: boolean;
+    }) => {
       try {
-        await runServe({ ...rest(opts), ...documentOptions(opts) });
+        process.exitCode = await runServe({ ...rest(opts), ...documentOptions(opts) });
       } catch (e) {
         fail(e);
       }

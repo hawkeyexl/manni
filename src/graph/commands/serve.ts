@@ -5,14 +5,19 @@
  * the command core its CLI twin runs (`lookupIn`, `retrieveIn`, `traverseIn`)
  * over one artifact opened at start. Nothing here retrieves.
  *
- * The SDK is an optional peer, imported only when this command runs. Its
+ * The SDK is an optional dependency, imported only when this command runs. Its
  * high-level `registerTool` takes zod shapes, so the tools are served through
  * the underlying protocol server with plain JSON Schemas, validated here.
+ *
+ * Each answer goes out compacted and capped at `graph.serve.maxChars`
+ * (`serve-fit.ts`); the CLI twins print the full result.
  *
  * A CLI usage error comes back as a refusal carrying the CLI's text, never as
  * `isError`. `--withhold` tightens every call's floor, and no tool argument
  * can loosen it: no input schema names `withhold`.
  */
+import { existsSync, readFileSync, statSync } from "node:fs";
+import { basename, dirname, join, relative, resolve, sep } from "node:path";
 import type { Readable, Writable } from "node:stream";
 import { Ajv2020 } from "ajv/dist/2020.js";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
@@ -20,15 +25,23 @@ import type { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdi
 import type { CallToolRequestSchema, ListToolsRequestSchema } from "@modelcontextprotocol/sdk/types.js";
 import pkg from "../../../package.json" with { type: "json" };
 import { errorMessage } from "../../shared/errors.js";
-import { notice } from "../../shared/warn.js";
+import { notice, warn } from "../../shared/warn.js";
+import { loadRunConfig } from "../core/config.js";
+import { checkoutStatus, type CheckoutStatus } from "../core/git.js";
+import { byCodeUnit } from "../core/sort.js";
 import type { WithholdReason } from "../runtime/chunks.js";
-import type { LookupResult, PassageBundle, WhereCondition } from "../runtime/retrieve.js";
+import { parseChunksManifest, type LookupResult, type PassageBundle, type WhereCondition } from "../runtime/retrieve.js";
 import { GraphError } from "../types.js";
+import { CHUNKS_MANIFEST } from "./chunks.js";
+import { runPublish, type PublishOptions } from "./publish.js";
 import { lookupIn, openArtifact, retrieveIn, traverseIn, type Artifact, type ArtifactOptions } from "./retrieve.js";
+import { fitAnswer, type ServedAnswer } from "./serve-fit.js";
 
 export interface ServeOptions extends ArtifactOptions {
   /** Tightens the trust floor for every call. */
   withhold?: WithholdReason[];
+  /** `--publish`: publish a stale artifact behind the handshake, and again after the checkout changes. */
+  publish?: boolean;
 }
 
 /** The SDK pieces serve uses, as one injectable seam. */
@@ -45,10 +58,12 @@ export interface ServeSeams {
   /** Injection seams for tests: the streams served over, `process.stdin` and `process.stdout` by default. */
   stdin?: Readable;
   stdout?: Writable;
+  /** Injection seam for tests: what `--publish` runs, `runPublish` by default. */
+  publish?: (opts: PublishOptions) => Promise<unknown>;
 }
 
 async function importSdk(): Promise<McpSdk> {
-  // Literal specifiers, so the Node build leaves them bare: an optional peer.
+  // Literal specifiers, so the Node build leaves them bare: an optional dependency.
   const [mcp, stdio, types] = await Promise.all([
     import("@modelcontextprotocol/sdk/server/mcp.js"),
     import("@modelcontextprotocol/sdk/server/stdio.js"),
@@ -107,10 +122,7 @@ const REFUSAL: Schema = {
   required: ["reason", "detail"],
 };
 const PROOF: Schema = { type: "object", description: "The provenance record: pins, dates and eval verdicts." };
-const TRACE: Schema = {
-  type: "object",
-  required: ["entry", "hops", "exclusions", "resolutions", "withheld", "filtered"],
-};
+const TRACE: Schema = { type: "object", required: ["entry", "withheld", "filtered"] };
 const CITATIONS: Schema = {
   type: "array",
   items: { type: "object", properties: { iri: { type: "string" }, sourceUrl: { type: "string" } }, required: ["iri", "sourceUrl"] },
@@ -131,13 +143,14 @@ const BUNDLE: Schema = {
         properties: {
           iri: { type: "string" },
           title: { type: "string" },
-          text: { type: "string" },
+          text: NULLABLE_TEXT,
           page: { type: "string" },
           depth: { type: "integer" },
           role: { type: "string", enum: ["match", "context", "dependent"] },
+          truncated: { type: "boolean" },
           provenance: PROOF,
         },
-        required: ["iri", "text", "page", "depth", "role", "provenance"],
+        required: ["iri", "text", "page", "depth", "role"],
       },
     },
     citations: CITATIONS,
@@ -162,7 +175,7 @@ const PASSAGE = (extra: Record<string, Schema>, required: string[]): Schema => (
     provenance: PROOF,
     ...extra,
   },
-  required: ["iri", "page", "text", "truncated", "provenance", ...required],
+  required: ["iri", "page", "text", "truncated", ...required],
 });
 const EDGES: Schema = {
   type: "array",
@@ -216,9 +229,10 @@ const TOOLS = [
   {
     name: "lookup",
     description:
-      "Start here. Pass the reader's question. You get three full result sets. Every match is ranked with its scores. " +
+      "Start here. Pass the reader's question. You get three result sets. Every match is ranked with its scores. " +
       "Every passage reached by following links outward from the matches comes back, and so does every passage that depends on the matches. " +
-      "Each set has its edges, and each passage has its source and proof: pin status, dates and eval verdicts. " +
+      "Each set has its edges, and each passage with text has its source and proof: pin status, dates and eval verdicts. " +
+      "When the answer runs long, the lowest-priority passages come back as references with no text. " +
       "A refusal means nothing in the docs answers it.",
     inputSchema: input({ question: QUESTION }, "question"),
     outputSchema: LOOKUP_RESULT,
@@ -368,12 +382,166 @@ async function answer(
   }
 }
 
+// ---- --publish ----------------------------------------------------------------
+
+const RUN_PUBLISH = "; run manni graph publish.";
+
+/** The artifact `--publish` keeps current: each call's artifact, or the failure text it answers with. */
+interface Publisher {
+  /** Settles once the start-up check, and any publish it ran, is done: with the failure text, or nothing. */
+  start: () => Promise<string | undefined>;
+  current: () => Promise<Artifact | string>;
+  /** Every publish still running. */
+  running: () => Promise<unknown>[];
+}
+
+function publisher(opts: ServeOptions, seams: ServeSeams): Publisher {
+  const cwd = opts.cwd ?? process.cwd();
+  const source = {
+    ...(opts.config === undefined ? {} : { config: opts.config }),
+    ...(opts.noConfig === undefined ? {} : { noConfig: opts.noConfig }),
+    cwd,
+  };
+  // A bad config fails here, before the handshake, as a plain serve does.
+  const config = loadRunConfig(
+    {
+      ...(opts.config === undefined ? {} : { configPath: opts.config }),
+      ...(opts.noConfig === undefined ? {} : { noConfig: opts.noConfig }),
+    },
+    cwd,
+  );
+  const configured = resolve(cwd, config.out);
+  const index = opts.index === undefined ? dirname(configured) : resolve(cwd, opts.index);
+  const target: ArtifactOptions = { ...opts, graph: join(index, basename(configured)), index };
+  const shown = (path: string): string => relative(cwd, path).split("\\").join("/");
+  const publish = seams.publish ?? runPublish;
+
+  /** HEAD and every changed file's path, size and mtime, leaving out what publish itself writes. */
+  const fingerprint = (state: CheckoutStatus | null): string | null => {
+    if (state === null) return null;
+    const lines = changed(state).map((abs) => {
+      try {
+        const s = statSync(abs);
+        return `${abs}\t${String(s.size)}\t${String(s.mtimeMs)}`;
+      } catch {
+        return `${abs}\tgone`;
+      }
+    });
+    return [state.head, ...lines].join("\n");
+  };
+  const changed = (state: CheckoutStatus): string[] =>
+    state.paths
+      .map((p) => resolve(state.root, p))
+      .filter((abs) => abs !== index && !abs.startsWith(index + sep))
+      .sort(byCodeUnit);
+
+  let artifact: Artifact | undefined;
+  let failed: string | undefined;
+  let baseline: string | null = null;
+  let inflight: Promise<string | undefined> | undefined;
+  const publishing = (): Promise<string | undefined> | undefined => inflight;
+
+  /** Why the artifact on disk cannot be served as it is, or nothing; opens it when it can. */
+  const staleness = (state: CheckoutStatus | null): string | undefined => {
+    try {
+      artifact = openArtifact(target);
+    } catch (e) {
+      if (!(e instanceof GraphError)) throw e;
+      if (e.message.endsWith(RUN_PUBLISH)) return e.message.slice(0, -RUN_PUBLISH.length);
+      const graph = target.graph ?? "";
+      return existsSync(graph) ? e.message.replace(/\.$/, "") : `${shown(graph)} does not exist`;
+    }
+    const { commit } = parseChunksManifest(readFileSync(join(index, CHUNKS_MANIFEST), "utf8"));
+    if (commit === null) return "it records no commit";
+    if (state === null) return undefined;
+    if (commit !== state.head) return `it was built at ${commit.slice(0, 7)} and HEAD is ${state.head.slice(0, 7)}`;
+    if (changed(state).length > 0) return "the working tree has changes";
+    return undefined;
+  };
+
+  /** One publish, from the checkout `print` names. The previous artifact stays when it fails. */
+  const run = async (print: string | null): Promise<string | undefined> => {
+    baseline = print;
+    const began = performance.now();
+    try {
+      await publish({
+        ...source,
+        out: index,
+        say: (kind, message) => {
+          if (kind === "warning") warn(message);
+          else notice(message);
+        },
+      });
+      artifact = openArtifact(target);
+    } catch (e) {
+      const said = errorMessage(e);
+      notice(said);
+      return `${said.replace(/\.$/, "")}. Run manni graph publish to see the whole report.`;
+    }
+    notice(`published the graph in ${((performance.now() - began) / 1000).toFixed(1)}s.`);
+    return undefined;
+  };
+
+  let ready: Promise<string | undefined> | undefined;
+  const start = (): Promise<string | undefined> =>
+    (ready ??= (async () => {
+      try {
+        const state = await checkoutStatus(cwd);
+        const reason = staleness(state);
+        if (reason === undefined) baseline = fingerprint(state);
+        else {
+          notice(`publishing the graph before serving it: ${reason}.`);
+          failed = await run(fingerprint(state));
+        }
+      } catch (e) {
+        failed = errorMessage(e);
+        notice(failed);
+      }
+      if (failed === undefined) {
+        notice(`serving lookup, retrieve, traverse and impact over stdio from ${shown(join(index, CHUNKS_MANIFEST))}.`);
+      }
+      return failed;
+    })());
+
+  /** Republish when the checkout moved since the last publish began. Concurrent calls share one publish. */
+  const fresh = async (): Promise<string | undefined> => {
+    if (inflight !== undefined) return inflight;
+    if (baseline === null) return undefined;
+    const now = fingerprint(await checkoutStatus(cwd));
+    // Read again, through a call the compiler cannot narrow: another call may have begun a publish while git ran.
+    const begun = publishing();
+    if (begun !== undefined) return begun;
+    if (now === baseline) return undefined;
+    notice("republishing the graph: the checkout changed since the last publish.");
+    inflight = run(now).finally(() => (inflight = undefined));
+    return inflight;
+  };
+
+  return {
+    start,
+    current: async () => {
+      const startup = await start();
+      if (startup !== undefined) return startup;
+      const later = await fresh();
+      return later ?? artifact ?? "graph serve has no artifact to answer from.";
+    },
+    running: () => [...(ready === undefined ? [] : [ready]), ...(inflight === undefined ? [] : [inflight])],
+  };
+}
+
 /**
- * Serve until stdin closes. Resolves then, so the bin exits 0. A missing SDK,
- * a missing artifact or one built from another graph rejects with a
- * `GraphError`, exit 2, before anything is served.
+ * Serve until stdin closes. Resolves then with the exit code: 0, or 2 when
+ * `--publish` could not publish at start. A missing SDK, a missing artifact
+ * or one built from another graph rejects with a `GraphError`, exit 2, before
+ * anything is served. With `--publish`, those three publish instead, behind
+ * the handshake.
  */
-export async function runServe(opts: ServeOptions, seams: ServeSeams = {}): Promise<void> {
+export async function runServe(opts: ServeOptions, seams: ServeSeams = {}): Promise<number> {
+  if (opts.publish === true && opts.graph !== undefined) {
+    throw new GraphError(
+      "--publish writes graph.ttl into the index directory, so it cannot be combined with --graph. Use --index to choose the directory.",
+    );
+  }
   let sdk: McpSdk;
   try {
     sdk = await (seams.loadSdk ?? importSdk)();
@@ -382,7 +550,17 @@ export async function runServe(opts: ServeOptions, seams: ServeSeams = {}): Prom
       "graph serve needs the optional @modelcontextprotocol/sdk package; run npm install @modelcontextprotocol/sdk.",
     );
   }
-  const artifact = openArtifact(opts);
+  // Plain: one artifact, opened now. `--publish`: whatever its publisher holds when a call arrives.
+  const kept = opts.publish === true ? publisher(opts, seams) : undefined;
+  let opened: Artifact | undefined;
+  let current: () => Promise<Artifact | string>;
+  if (kept === undefined) {
+    const artifact = openArtifact(opts);
+    opened = artifact;
+    current = () => Promise.resolve(artifact);
+  } else {
+    current = kept.current;
+  }
 
   const ajv = new Ajv2020({ allErrors: false, strict: false });
   const validators = new Map(TOOLS.map((t) => [t.name as string, ajv.compile(t.inputSchema)]));
@@ -412,10 +590,15 @@ export async function runServe(opts: ServeOptions, seams: ServeSeams = {}): Prom
         : `${where} ${first?.message ?? "is invalid"}`;
       return fault(`Invalid arguments for ${name}: ${why}.`);
     }
-    const work = answer(artifact, name as ToolName, args, opts.withhold);
+    const work = (async (): Promise<string | ServedAnswer> => {
+      const held = await current();
+      if (typeof held === "string") return held;
+      return fitAnswer(await answer(held, name as ToolName, args, opts.withhold), held.config.serve.maxChars);
+    })();
     pending.add(work);
     try {
       const result = await work;
+      if (typeof result === "string") return fault(result);
       return {
         structuredContent: { ...result },
         content: [{ type: "text" as const, text: JSON.stringify(result) }],
@@ -435,11 +618,15 @@ export async function runServe(opts: ServeOptions, seams: ServeSeams = {}): Prom
     stdin.once("close", done);
   });
   await server.connect(transport);
-  notice(`serving lookup, retrieve, traverse and impact over stdio from ${artifact.label}.`);
+  if (opened !== undefined) notice(`serving lookup, retrieve, traverse and impact over stdio from ${opened.label}.`);
+  // Behind the handshake: a client's initialize timeout does not wait for a publish.
+  const startup = kept?.start();
   await closed;
-  await Promise.allSettled([...pending]);
+  // A publish in progress finishes, so no artifact is left half-written.
+  await Promise.allSettled([...pending, ...(kept?.running() ?? [])]);
   // The SDK writes each reply a few microtasks after its handler returns, and
   // closing aborts any reply not yet written. One macrotask lets them all out.
   await new Promise((done) => setImmediate(done));
   await server.close();
+  return (await startup) === undefined ? 0 : 2;
 }

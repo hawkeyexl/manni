@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "graph": {
+      "command": "node",
+      "args": ["${CLAUDE_PLUGIN_ROOT}/hooks/graph-server.mjs"],
+      "env": {
+        "CLAUDE_PROJECT_DIR": "${CLAUDE_PROJECT_DIR}",
+        "CLAUDE_PLUGIN_DATA": "${CLAUDE_PLUGIN_DATA}"
+      }
+    }
+  }
+}

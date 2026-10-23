@@ -183,9 +183,9 @@ docs/src/content/docs/meta/set-up/new-required-field.mdx:
         integrity: sha256-07bccf807e8c81c94a70ed9f15ddadef1182ecf59b557ead8b43f76bb0b13221
       source:
         file: src/meta/cli.ts
-        lines: 889
+        lines: 900
         integrity: sha256-b900d16ea81ba54da695ee6ec4f8e9c3d17f1700d0b307ed74045692b603e056
-        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
+        commit-sha: 34ccc5573527b4549ca4da3ef37e3c0a6c988e0f
     - id: builtin-schemas-are-immutable
       claim:
         integrity: sha256-d25170d7187579ffa292e40f233ca965860e182402f347daa7e598dfba7d92fb

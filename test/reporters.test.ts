@@ -1020,11 +1020,12 @@ describe("reporters: get", () => {
     {
       file: "both.md",
       present: true,
+      collections: [],
       values: { title: "A title", owner: "docs-team" },
     },
     // One set, one unset: the case `--quiet` must NOT hide.
-    { file: "partial.md", present: true, values: { title: "Only a title" } },
-    { file: "neither.md", present: false, values: {} },
+    { file: "partial.md", present: true, collections: [], values: { title: "Only a title" } },
+    { file: "neither.md", present: false, collections: [], values: {} },
   ];
   const fields = ["title", "owner"];
 
@@ -1042,7 +1043,7 @@ describe("reporters: get", () => {
 
   it("renders a non-string value as JSON, and no ANSI when color is off", () => {
     const out = renderGet(
-      [{ file: "x.md", present: true, values: { tags: ["a", "b"] } }],
+      [{ file: "x.md", present: true, collections: [], values: { tags: ["a", "b"] } }],
       ["tags"],
       { color: false },
     );

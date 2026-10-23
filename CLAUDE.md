@@ -149,7 +149,12 @@ Key layers:
   checks of its own, and `src/cli.ts` mounts its two commands.
 - `plugin/manni/`: the Claude Code plugin. SessionStart runs
   `manni tracevals capture` and `manni status`, and PostToolUse and Stop run
-  `manni check`. Its skills are `setup`, `check`, `fix` and `evals`. The
+  `manni check`. A PostToolUse hook on `Read` runs `hooks/page-metadata.mjs`,
+  which hands the agent a collection page's `meta get --all-fields` values
+  on its first read and again when they change. Its MCP server, `graph` in
+  `.mcp.json`, is `hooks/graph-server.mjs`. Where collections exist, it runs
+  `manni graph serve --publish`, and elsewhere it offers no tools (proposal
+  0103). Its skills are `setup`, `check`, `fix` and `evals`. The
   marketplace is `.claude-plugin/marketplace.json`. Hooks and skills go
   through `hooks/manni.mjs`, which runs this checkout's own `dist/cli.js`
   here, so this repo enables the plugin in `.claude/settings.json`. Run

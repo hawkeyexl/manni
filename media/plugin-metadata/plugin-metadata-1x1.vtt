@@ -1,0 +1,29 @@
+WEBVTT
+
+NOTE Captions are burned into plugin-metadata-1x1.mp4 (LinkedIn autoplays muted). This sidecar carries the same text for players and for hosts that accept a caption track. Silent video: there is no narration, and the terminal text is in the transcript.
+
+1
+00:00:00.000 --> 00:00:07.567
+Fields a Read never shows
+owner and eval-suite live in a sidecar. Reading the page alone never shows them.
+
+2
+00:00:07.567 --> 00:00:14.367
+manni meta get --all-fields
+The new flag prints every stored field, page and sidecar alike.
+
+3
+00:00:14.367 --> 00:00:20.567
+What the Read hook adds
+When the agent reads the page, the plugin's hook hands it the metadata, sidecar included.
+
+4
+00:00:20.567 --> 00:00:32.000
+Once, then on change
+A second Read adds nothing. Change the sidecar and the next Read says so.
+
+5
+00:00:32.000 --> 00:00:40.800
+The graph, over MCP
+The plugin's MCP server publishes the graph on first use, then answers from it.
+

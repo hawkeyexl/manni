@@ -1,0 +1,6 @@
+855	manni: publishing the graph before serving it: ../scratch-pd/graph/b1148b99811b127b/chunks.json does not exist.
+1509	manni: no docevals report is configured, so records carry no eval verdicts.
+1530	manni: no vector sidecar, so chunks carry no vectors and retrieval is lexical only; configure graph.embed to add them.
+1551	manni: published the graph in 0.7s.
+1572	manni: serving lookup, retrieve, traverse and impact over stdio from ../scratch-pd/graph/b1148b99811b127b/chunks.json.
+1592	lookup: docs/limits.md:1-4  The fetch timeout is 10 seconds. Failed requests retry three times.

@@ -6,7 +6,7 @@ id: graph-serve
 language: en
 lifecycle: published
 action: develop
-last-updated: 2026-10-21
+last-updated: 2026-10-23
 ---
 
 An agent that answers from your docs, or edits them, reads passages.
@@ -32,7 +32,8 @@ manni graph publish
 The chunks are `chunks.json` and one row file per language.
 [Publish the graph](/manni/graph/publish/) covers each step.
 
-**The MCP SDK.** It is an optional peer of manni, so install it beside manni:
+**The MCP SDK.** It is an optional dependency of manni, so npm installs it with manni.
+An install that omits optional packages leaves it out, so add it beside manni:
 
 ```sh
 npm install @modelcontextprotocol/sdk
@@ -60,11 +61,41 @@ calls:
 
 ```console
 $ manni graph serve
-manni: serving lookup, retrieve, traverse and impact over stdio from .manni/graph/chunks.json.
+manni: serving lookup, retrieve, traverse and impact over stdio from graph/chunks.json.
 ```
 
 The server opens the artifact once, at start. Restart it after a rebuild, so
 it serves the new text. It exits 0 when the client closes its stdin.
+
+### Keep it current with `--publish`
+
+With `--publish`, the server keeps the artifact current itself. It answers the
+client first, then publishes when the artifact is missing or older than the
+checkout. Before each later call, it publishes again if any file `git status`
+lists has changed.
+
+```json
+{
+  "mcpServers": {
+    "manni-docs": {
+      "command": "npx",
+      "args": ["manni", "graph", "serve", "--publish"]
+    }
+  }
+}
+```
+
+A call made during a publish waits for it, so an agent never reads a passage
+the last edit changed. [The CLI reference](/manni/graph/reference/cli/#graph-serve)
+lists each reason it publishes.
+
+### In Claude Code, the manni plugin does this for you
+
+The [manni plugin](/manni/family/claude-code/#the-docs-graph-served-to-the-agent)
+registers this server as `plugin:manni:graph` and runs it with `--publish`. A
+repository with `collections:` needs no `.mcp.json` entry and no publish step.
+Without a `graph:` section, the plugin publishes into its own data directory,
+outside your working tree.
 
 ## Ask one question
 
@@ -74,7 +105,7 @@ it serves the new text. It exits 0 when the client closes its stdin.
 { "name": "lookup", "arguments": { "question": "How does a citation pin a claim to source lines?" } }
 ```
 
-The result holds three sections, and nothing is dropped from any of them:
+The result holds three sections:
 
 - **`matches`**: every ranked passage, with its lexical, vector and fused scores.
 - **`traversal`**: every passage reached by following links outward from the
@@ -82,8 +113,8 @@ The result holds three sections, and nothing is dropped from any of them:
 - **`impact`**: every passage that depends on the matches, with each edge.
 
 On this repository, that call returns three matches from the cite pages. One
-passage is reached outward, and 21 depend on the matches. Each passage carries
-its `provenance` record. Abridged, the first match reads:
+passage is reached outward, and 21 depend on the matches. Each passage with
+text carries its `provenance` record. Abridged, the first match reads:
 
 ```json
 {
@@ -102,10 +133,16 @@ The result arrives as `structuredContent`, and again as one text block
 holding the same JSON. [The lookup result](/manni/graph/reference/cli/#the-lookup-result)
 lists every key.
 
+The answer is compacted to fit an agent's context and capped at
+`graph.serve.maxChars`, 40000 characters by default. Past the cap, the
+lowest-priority passages come back as references with no text.
+[What an answer carries](/manni/graph/reference/cli/#what-an-answer-carries)
+gives the rules, and `graph lookup -f json` prints the full result.
+
 ## Steer when you need to
 
 Three more tools give the agent control. Each runs the same core as its CLI
-twin, so a call answers exactly as the command would.
+twin, so a call finds what the command would.
 
 | Tool | Use it to | CLI twin |
 |---|---|---|
@@ -145,5 +182,5 @@ Each of these exits 2 before anything is served, with one line on stderr.
 | Message | Fix |
 |---|---|
 | `manni: graph serve needs the optional @modelcontextprotocol/sdk package; run npm install @modelcontextprotocol/sdk.` | Install the SDK. |
-| `manni: .manni/graph/chunks.json does not exist; run manni graph publish.` | Build the artifact, as above. |
-| `manni: .manni/graph/chunks.json was built from another graph; run manni graph publish.` | Export the chunks again from the graph you built. |
+| `manni: graph/chunks.json does not exist; run manni graph publish.` | Build the artifact, as above. |
+| `manni: graph/chunks.json was built from another graph; run manni graph publish.` | Export the chunks again from the graph you built. |

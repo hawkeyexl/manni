@@ -29,9 +29,9 @@ docs/src/content/docs/meta/set-up/retrofit.mdx:
         integrity: sha256-41593122f94befb57ec4d9d88620053959aabb7d1ced18284efb28756315c068
       source:
         file: src/meta/cli.ts
-        lines: 1336
+        lines: 1354
         integrity: sha256-d48a1f94a60400ff43f1a882f65a368b9fb3941361aba366e732e7dcd72b9016
-        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
+        commit-sha: 34ccc5573527b4549ca4da3ef37e3c0a6c988e0f
     - id: fill-records-meta-provenance-entry
       claim:
         integrity: sha256-88e08c91d8f138cb3243f2f700d7eb4483bfcbfea2b70d65752e5e2139913bcb
@@ -54,9 +54,9 @@ docs/src/content/docs/meta/set-up/retrofit.mdx:
         integrity: sha256-5b934a27a66ebd0238f5cc3b8197c2f1d93402d4b78b7542fe34b96835bbbb3e
       source:
         file: src/meta/cli.ts
-        lines: 1337
+        lines: 1355
         integrity: sha256-98e341a0fa6a56b774a26d435aa4fbf5f1cc4a6cff834262e75d1a9123bcc668
-        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
+        commit-sha: 34ccc5573527b4549ca4da3ef37e3c0a6c988e0f
     - id: fill-summary-names-provider-threshold-counts
       claim:
         integrity: sha256-59672769dec712879077966b41a61cbfcaebcbeb8057dd96fbcb017975086fe8
@@ -177,9 +177,9 @@ docs/src/content/docs/meta/set-up/retrofit.mdx:
         integrity: sha256-b434cb91645fc3c84066f41be4d26f16a21838ce807764daf2b443931b3738bd
       source:
         file: src/meta/cli.ts
-        lines: 739
+        lines: 750
         integrity: sha256-322dd30e4515bcfac300cfc4973260a660aa6ff29955850d82aea0c0c555181c
-        commit-sha: a589e08250dee7efaee7ed0f58df01986fad8d1d
+        commit-sha: 34ccc5573527b4549ca4da3ef37e3c0a6c988e0f
     - id: config-exclude-behavior-changed-in-1-0
       claim:
         lines: 155
@@ -246,9 +246,9 @@ docs/src/content/docs/meta/set-up/retrofit.mdx:
         integrity: sha256-042a8ed49fb289b8d0e24b1f83aa6e5fbae536533976f7967e5c2c1009a8f7b0
       source:
         file: src/meta/cli.ts
-        lines: 889
+        lines: 900
         integrity: sha256-b900d16ea81ba54da695ee6ec4f8e9c3d17f1700d0b307ed74045692b603e056
-        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
+        commit-sha: 34ccc5573527b4549ca4da3ef37e3c0a6c988e0f
     - id: file-without-frontmatter-is-still-validated
       claim:
         lines: 101
@@ -345,6 +345,6 @@ docs/src/content/docs/meta/set-up/retrofit.mdx:
         integrity: sha256-2988eeaa9dcd6662a159890a99c80d3c0b190cac77e586878b1db3941bf01ca2
       source:
         file: src/meta/cli.ts
-        lines: 1804-1807
+        lines: 1822-1825
         integrity: sha256-eaa90e4a83d54974c477da86400e90bcc610f2f0468e44720689348289d2e0f5
-        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
+        commit-sha: 34ccc5573527b4549ca4da3ef37e3c0a6c988e0f

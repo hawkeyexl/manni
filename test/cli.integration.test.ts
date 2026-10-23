@@ -2705,6 +2705,63 @@ describe("get names the real mistake when a path lands in [fields] (0005 §2)", 
     expect(r.stdout).not.toContain("undefined");
     expect(r.stderr).toMatch(/field/i);
   });
+
+  it("names --all-fields in both hints", () => {
+    expect(run(["get", A]).stderr).toContain(
+      `docmeta: "${A}" looks like a path, not a field list. Pass fields first (manni meta get title ${A}), use --fields, or use --all-fields.`,
+    );
+    expect(run(["get"]).stderr).toContain(
+      "docmeta: Specify at least one field to get. Pass fields first (manni meta get title docs/a.md), use --fields, or use --all-fields.",
+    );
+  });
+});
+
+describe("get --all-fields prints every field each file stores", () => {
+  const sibling = join(root, "test", "fixtures", "per-page", "sibling");
+  const inSibling = (args: string[], input?: string): Run => run(args, input, undefined, sibling);
+  interface Entry { file: string; collections: string[]; values: Record<string, unknown> }
+  const entries = (r: Run): Entry[] => JSON.parse(r.stdout) as Entry[];
+
+  it("prints the page's fields, then the sidecar's, as JSON with each file's collections", () => {
+    const r = inSibling(["get", "--all-fields", "--no-derived", "-f", "json", "docs/cited.md"]);
+    expect(r.status).toBe(0);
+    const [entry] = JSON.parse(r.stdout) as Record<string, unknown>[];
+    expect(entry).toEqual({
+      file: "docs/cited.md",
+      present: true,
+      collections: ["site"],
+      values: { title: "Cited", owner: "maya", jira: "PLAT-7" },
+    });
+  });
+
+  it("prints one line per stored field", () => {
+    const r = inSibling(["get", "--all-fields", "--no-derived", "docs/cited.md"]);
+    expect(r.status).toBe(0);
+    expect(r.stdout).toContain("docs/cited.md: title=Cited\ndocs/cited.md: owner=maya\ndocs/cited.md: jira=PLAT-7\n");
+  });
+
+  it("falls back to every collection member, and composes with -q, --collection and -c", () => {
+    const bare = inSibling(["get", "--all-fields", "--no-derived", "-f", "json"]);
+    expect(bare.status).toBe(0);
+    expect(entries(bare).map((e) => e.file)).toEqual(["docs/cited.md", "docs/uncited.md"]);
+    const full = inSibling([
+      "get", "--all-fields", "--no-derived", "-q", "--collection", "site", "-f", "json", "-c", "manni.config.yaml",
+    ]);
+    expect(full.status).toBe(0);
+    expect(entries(full).map((e) => e.collections)).toEqual([["site"], ["site"]]);
+  });
+
+  it("reads stdin, which belongs to no collection", () => {
+    const r = inSibling(["get", "--all-fields", "--no-derived", "-", "--as", "markdown", "-f", "json"], "---\ntitle: Piped\n---\n");
+    expect(r.status).toBe(0);
+    expect(entries(r)).toEqual([{ file: "<stdin>", present: true, collections: [], values: { title: "Piped" } }]);
+  });
+
+  it("refuses --fields beside it", () => {
+    const r = inSibling(["get", "--all-fields", "--fields", "title", "docs/cited.md"]);
+    expect(r.status).toBe(2);
+    expect(r.stderr).toMatch(/^docmeta: --all-fields prints every field, so it cannot be combined with --fields\.$/m);
+  });
 });
 
 // ---------------------------------------------------------------------------

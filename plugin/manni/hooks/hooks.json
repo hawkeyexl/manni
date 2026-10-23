@@ -45,6 +45,19 @@
             "async": true
           }
         ]
+      },
+      {
+        "matcher": "compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node",
+            "args": [
+              "${CLAUDE_PLUGIN_ROOT}/hooks/page-metadata.mjs"
+            ],
+            "timeout": 30
+          }
+        ]
       }
     ],
     "PostToolUse": [
@@ -60,6 +73,19 @@
             ],
             "timeout": 120,
             "statusMessage": "Checking the edited file…"
+          }
+        ]
+      },
+      {
+        "matcher": "Read",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node",
+            "args": [
+              "${CLAUDE_PLUGIN_ROOT}/hooks/page-metadata.mjs"
+            ],
+            "timeout": 30
           }
         ]
       }
