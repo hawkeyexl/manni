@@ -38,8 +38,8 @@ docs/src/content/docs/docevals/ci/untrusted-pull-requests.mdx:
       lines: 67-73
       integrity: sha256-ca5d99b67677272e44db4e03c2179a757cb491b22b18a3658c9961972f0b5d93
     - generated-by: Claude Opus 5
-      lines: 74-75
-      integrity: sha256-02da42da10010f0fe8da04bebdff8b7ac66c204c1b4c2e09898563e9e82bf577
+      lines: 74
+      integrity: sha256-58f00e46fdbbb68a75f1437f9f5dfcade0928cfd0a7553c1b8ab4520a4c96642
     - generated-by: Claude Fable 5.1
       lines: 76-79
       integrity: sha256-0b1f2df8099fbba92d75ab9b00b3648ff4f5018841648a3b612e546bab52e79f

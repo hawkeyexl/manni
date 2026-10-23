@@ -80,8 +80,11 @@ docs/src/content/docs/meta/set-up/derived-metadata.mdx:
       lines: 466
       integrity: sha256-2eef3e8a89ab23f32d774c5c3bb56e9d5caaacaef173f8971d2e5e8589e0ff93
     - generated-by: Claude Opus 5
-      lines: 468-617
-      integrity: sha256-db4e252b17128c32391ed1f77dd1cb345db2ff666cba3653b793487dc5dede71
+      lines: 468-532
+      integrity: sha256-3ea3e75929de9b77ed416e90d6c50fd7ef1b5709fe1fbe2a1e4a367b63b709fd
+    - generated-by: Claude Opus 5
+      lines: 534-617
+      integrity: sha256-9a24bfb84c858ceaaf9ccf2d6d8ccc5ce21d49c9de26dba2a6a4dc58fffb50b8
     - generated-by: Claude Opus 5.5
       lines: 618-620
       integrity: sha256-a47a54d07a2541ef1b9e0aad108aa37ad9d1e49e21db4ac702caade8783ff568
