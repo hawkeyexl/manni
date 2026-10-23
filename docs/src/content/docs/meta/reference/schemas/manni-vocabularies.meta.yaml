@@ -17,46 +17,46 @@ docs/src/content/docs/meta/reference/schemas/manni-vocabularies.mdx:
       grader: ai
   provenance:
     - generated-by: Claude Opus 5.5
-      lines: 2-13
-      integrity: sha256-ecf370da2940b928d2864262b2c8e238845bf39debf32c65ec2ebd5cbd1452b4
+      lines: 2-12
+      integrity: sha256-d3c0b06c4eee9a7c75b802ee006a4fcf73e939661b20dca5254b32a5d5c224dc
     - generated-by: Claude Opus 5.5
-      lines: 15-21
-      integrity: sha256-8bef2efa3a6d697a0b3474848ba7980c14190e8274256ed0ebd104ece2220f67
+      lines: 14-20
+      integrity: sha256-65976d227eb67d7c8ed14d0036760c65b9ad8e4e4f0fa652759171b24975f1ef
     - generated-by: Claude Opus 5.5
-      lines: 23-25
+      lines: 22-24
       integrity: sha256-0c741dc8207c4b3f1d0d446520c8d5a8cdd080e5fc99aa6c53c76e9850079c52
     - generated-by: Claude Opus 5.5
-      lines: 27-28
+      lines: 26-27
       integrity: sha256-77b1fbe88eb70fc692d6a58ba2a961564f5a41234ab17189025d87fe53f3146f
     - generated-by: Claude Opus 5.5
-      lines: 30-42
-      integrity: sha256-8983ee8a10c781272554324f6bf8e5dd555e01b6a2b41d47f419a9eb81f40a50
+      lines: 29-40
+      integrity: sha256-c86e088f6e3f7d126008b6f0a7608bf58b75e6de2f0dd4950ec3a3fd82fecfca
     - generated-by: Claude Opus 5.5
-      lines: 46
-      integrity: sha256-88f113771bb121c8eb273b4203d81c0657fde20ab87ea908fb355b10e34908bc
+      lines: 44
+      integrity: sha256-fd11a126efb2ac94826fce20e94c54014d4b9d5f33a5d4d45a9dbf0d3fb53115
     - generated-by: Claude Opus 5.5
-      lines: 54-59
-      integrity: sha256-6bb877f1b376081698785c891cac3a83409b0ecbe0f781a13fdbcb3331090e5a
+      lines: 52-57
+      integrity: sha256-77ab319d5fbeb55d7844bf0196b2335462c7d5192a72e0a57d86af795706f2e6
     - generated-by: Claude Opus 5.5
-      lines: 64-65
+      lines: 62-63
       integrity: sha256-281c600de7fecde6eaab06c0b76725065fa25177bdf7ac6cc03f9edf7138df92
     - generated-by: Claude Opus 5.5
-      lines: 71-80
+      lines: 69-78
       integrity: sha256-a9efaa577eff784311b00724c8cf7594fc1d399bb7ac6b6053592459576ff14f
     - generated-by: Claude Opus 5.5
-      lines: 83-105
+      lines: 81-103
       integrity: sha256-f702647fc5552fdd92b3ed957b2903843d9bd6ce3c221aa3eea2c0f9353972a2
     - generated-by: Claude Opus 5.5
-      lines: 115-127
-      integrity: sha256-5b2a5cbbaad2216d3bb2456208dda96e368e8209f8bfb83d52aec88a35263ce7
+      lines: 113-125
+      integrity: sha256-5b2fdabd17950e2cb38e4a22992188238decbec8922dbe039a8702aea66c1060
     - generated-by: Claude Opus 5.5
-      lines: 129-134
+      lines: 127-132
       integrity: sha256-e51c2ceefa8857ce104e85b7c9f4adb7d8a58dd2c277fd090c769b986f15569c
     - generated-by: Claude Opus 5.5
-      lines: 136-160
-      integrity: sha256-3e37c4d92348b9d676dd85c8906f18e8423d988dd77a02c300396ef137dab62b
+      lines: 134-157
+      integrity: sha256-f26a3cd813813c8504dc80a0e7dfd3c3f44538363e82c03245bfb2895a750b1b
     - generated-by: Claude Opus 5.5
-      lines: 162-311
+      lines: 159-308
       integrity: sha256-66f2f0e4b18c8e86dbe35457f7bb94ccef38cd28b0c56f0f44772b0f1834fb7c
   owner:
     - "@hawkeyexl"

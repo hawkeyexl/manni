@@ -61,10 +61,10 @@ docs/src/content/docs/meta/schemas/field-location.mdx:
       lines: 477-478
       integrity: sha256-c6a2092569cf7ee5a3e5e9317a5db2ec82d8059399367115b154d99e6682b7ff
     - generated-by: Claude Opus 5
-      lines: 485-499
+      lines: 484-498
       integrity: sha256-45df1d179bed465870ab26a19e55bf1ad51bc56ed2d116ebfce1137a556ec2a4
     - generated-by: Claude Opus 5
-      lines: 504-544
+      lines: 503-543
       integrity: sha256-f380e7ebefea68d20900623273912f571f40077c636611ec57c5ce998bbc3f06
   owner:
     - "@hawkeyexl"
