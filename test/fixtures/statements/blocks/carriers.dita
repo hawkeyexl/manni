@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic id="carriers">
+  <title>Carriers</title>
+  <body>
+    <p><data data-name="manni-meta" value='{"concepts":["data-name"]}'/>A data-name attribute is not a name.</p>
+    <p><data title="name='manni-meta'" value='{"concepts":["in-a-value"]}'/>Attribute text inside another value is not a name.</p>
+    <p><data name="manni-meta" data-value="x" value='{"concepts":["real"]}'/>The value attribute is the payload.</p>
+  </body>
+</topic>
