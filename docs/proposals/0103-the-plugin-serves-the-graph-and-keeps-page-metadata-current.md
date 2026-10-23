@@ -192,6 +192,57 @@ so a changed reply says that it replaces the earlier one.
 The values are the stored ones, ciphertext included. Inline statements are
 left out, because they sit in the body the Read just showed.
 
+### 8. A served answer fits an agent's context
+
+The first live session showed the cost. One `lookup` on this repository
+answered 165,024 characters, about 47,000 tokens. Claude Code saves a tool
+result over 25,000 tokens to a file, so the agent had to read its own answer
+back.
+
+Passage text was only about 22,000 of those characters. The rest was four
+things.
+
+- The walk's diagnostics.
+- A proof record on each passage the budget had already emptied.
+- A metadata record for every page the walks touched.
+- The edges.
+
+So `graph serve` now compacts every answer it sends, for all four tools.
+
+- `trace` keeps `entry`, `withheld` and `filtered`. The walk's hops,
+  exclusions and resolutions are left out.
+- A passage with no text carries no `provenance`. The proof travels with the
+  text it vouches for.
+- `pages` names only the pages of passages that carry text.
+
+Then it caps the answer at `graph.serve.maxChars`, 40,000 characters by
+default.
+
+```yaml
+graph:
+  serve:
+    maxChars: 40000
+```
+
+Past the cap, the answer gives things up in a fixed order, and stops as soon as
+it fits.
+
+1. Impact passages become references, deepest first.
+2. Traversal passages do the same.
+3. Impact edges go, from the end.
+4. Traversal edges go, from the end.
+5. Matches become references, lowest rank first.
+
+A reference keeps its node, title, page and lines, with `truncated: true`, and
+its section says it was cut. The matches come last because they answer the
+question. On this repository the edges alone outweigh the matches, so cutting
+edges after every passage would have emptied the first match first.
+
+The CLI and the runtime keep the full result. `graph lookup -f json` is still
+the way to see every hop, and a script's `LookupResult` loses nothing. The key
+has no flag, because `--max-chars` already names the passage-text budget on
+`retrieve` and `traverse`.
+
 ## Known limits
 
 - Any change `git status` lists republishes, code included. A graph call right
@@ -251,6 +302,9 @@ one. A check of file times alone would have missed it.
   The plugin now has one MCP server.
 - In 0090's rejected alternatives, "Register the server in the plugin." The
   plugin registers it, gated on collections, and publishes what is missing.
+- In 0090's section 9, "Nothing is dropped" and "The budget trims text only",
+  for answers sent over MCP. Decision 8 compacts and caps them. The CLI and
+  the runtime still return the whole result.
 
 ## Verification
 
