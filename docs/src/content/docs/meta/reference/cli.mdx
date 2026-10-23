@@ -29,7 +29,7 @@ sample-questions:
 graph:
   label: CLI reference
   type: reference
-last-updated: 2026-10-22
+last-updated: 2026-10-23
 tags:
   - cli
   - command-reference
@@ -386,6 +386,7 @@ code is unchanged.
 
 ```sh
 manni meta get --fields <list> [paths...] [options]
+manni meta get --all-fields [paths...] [options]
 manni meta get [fields] [paths...] [options]
 ```
 
@@ -404,17 +405,30 @@ as an error.
 
 The field list can be given either way, and there is one rule:
 
-> If `--fields` is present, **every** positional is a path. Otherwise the first
-> positional is the field list.
+> If `--fields` or `--all-fields` is present, **every** positional is a path.
+> Otherwise the first positional is the field list.
 
 ```sh
 manni meta get title,type docs/intro.md          # positional field list
 manni meta get --fields title,type docs/intro.md # the flag; both positionals are paths
 manni meta get --fields title                    # no paths: the collections apply
+manni meta get --all-fields docs/intro.md        # every field the file has
 ```
 
 `--fields` is the same flag [`fill`](#meta-fill) takes, and it is the unambiguous
 spelling: with it, nothing about a path can be mistaken for a field.
+
+`--all-fields` names no fields, and prints each file's own. That is every field
+the file stores, in the page or a sidecar, then every field a derive source
+supplies for it. Stored fields print in the file's own key order, the page's
+first and then each sidecar's. Under `--no-derived` only the stored fields
+print. `--all-fields` and `--fields` together are an error:
+
+```console
+$ manni meta get --all-fields --fields title docs/intro.md
+manni: --all-fields prints every field, so it cannot be combined with --fields.
+exit=2
+```
 
 {/* cite get-no-fields-is-exit-2 */}
 {/* cite get-path-in-the-field-slot-is-exit-2 */}
@@ -425,7 +439,7 @@ invites:
 ```console
 $ manni meta get docs/intro.md
 manni: "docs/intro.md" looks like a path, not a field list. Pass fields first
-(manni meta get title docs/intro.md) or use --fields.
+(manni meta get title docs/intro.md), use --fields, or use --all-fields.
 exit=2
 ```
 
@@ -468,6 +482,7 @@ unaffected.
 | Option | Argument | Default | Description |
 |---|---|---|---|
 | `--fields` | `<list>` | the `[fields]` positional | Comma-separated fields to print. When given, **every** positional is a path. See [naming the fields](#naming-the-fields). |
+| `--all-fields` | n/a | off | Print every field each file stores, in the page or a sidecar, plus every field a derive source supplies. When given, **every** positional is a path. Cannot be combined with `--fields` (exit 2). See [naming the fields](#naming-the-fields). |
 | `--no-derived` | n/a | off | Print only what the document stores. No source is consulted, no origin is annotated, and the output is what `get` printed before config [`derive:`](/manni/meta/reference/configuration/#derive) existed. |
 | `--derived` | n/a | off | Accepted and inert. It was the opt-in before derivation became the default. A script that passes it still runs, and prints what a run without it prints. |
 | `--no-cache` | n/a | off | Ask GitHub or GitLab again rather than reading the [review cache](/manni/meta/reference/configuration/#the-review-sources). Only a run that derives consults it, and only for `reviewed-by` and `last-reviewed`. A merged change's approvals never change, so the cache is on by default; this is the way past an answer recorded wrongly. |
@@ -478,7 +493,7 @@ unaffected.
 | `-c, --config` | `<path>` | discovered | Path to a [config file](/manni/meta/reference/configuration/). When set, the file must exist or manni meta exits 2. |
 | `--no-config` | n/a | off | Ignore any discovered config file and run on the [built-in default schema set](/manni/meta/reference/schema-resolution/#precedence). `-c` and `--no-config` set the same option, so the one written later on the command line wins. |
 | `--collection` | `<name>` | every collection | Run over a configured [collection](/manni/meta/reference/configuration/#collections) rather than the whole corpus. Repeatable, one name per occurrence, never comma-separated; repeats collapse, and a name must match a declared collection exactly. Cannot be combined with positional paths, and needs a config file to select from (exit 2 for both). See [collections as inputs](#collections-as-inputs). |
-| `-q, --quiet` | n/a | off | In `pretty` output, hide files where **every** requested field is unset. A file with any value present still prints, `(unset)` included, because quiet hides files and never values. Has no effect on `json`. |
+| `-q, --quiet` | n/a | off | In `pretty` output, hide files where **every** requested field is unset. A file with any value present still prints, `(unset)` included, because quiet hides files and never values. Under `--all-fields`, it hides a file with no field at all. Has no effect on `json`. |
 | `--allow-empty` | n/a | off | Treat zero matched files as success instead of an error (exit 2). See [empty input sets](#empty-input-sets). |
 | `--no-gitignore` | n/a | on | Read files `.gitignore` covers as well. Filtering is on by default; see [default ignores](#default-ignores). Overrides config `respectGitignore:`. |
 | `--offline` | n/a | off | Never fetch an [external-metadata manifest](/manni/meta/set-up/external-metadata/) that lives at a URL. One is refused instead, with `Manifest <url> is remote and the run is offline. Vendor it to a path, or drop --offline.` `get` loads no schema, so schema fetching is not affected. Overrides config `offline:`. |
@@ -489,9 +504,22 @@ unaffected.
 {/* cite get-json-object-shape */}
 In `pretty` format, `get` prints one `<file>: <field>=<value>` line per
 requested field per file. Unset fields print as `(unset)`. In `json` format it
-prints an array of `{ file, present, values }` objects, where `values` maps each
+prints an array of `{ file, present, collections, values }` objects, where `values` maps each
 requested field to its value. A requested field that is unset is omitted from
 `values`. `present` reports whether the file had a metadata block at all.
+
+`collections` names the configured [collections](/manni/meta/reference/configuration/#collections)
+the file belongs to, in declaration order, including any that `--collection`
+left out. It is `[]` for a path outside every collection, and for stdin.
+`pretty` output does not show it.
+
+```json
+[{ "file": "docs/install.md", "present": true, "collections": ["site"], "values": { "title": "Install the operator" } }]
+```
+
+Under `--all-fields`, `values` holds every field the file stores. A field only
+a source supplies is in `resolved` and `origin`, and a field nobody supplies is
+in neither. In `pretty`, each file prints one line per field it has.
 
 {/* cite get-prints-the-resolved-value */}
 {/* cite get-no-derived-drops-the-annotation */}
@@ -551,8 +579,8 @@ one.
 
 A page's [`meta` statements](/manni/meta/set-up/inline-statements/) print
 under its fields, one line each. A statement is never a field, so
-`--fields` and the `[fields]` positional select page fields only, and `get`
-still needs at least one.
+`--fields`, `--all-fields` and the `[fields]` positional select page fields
+only.
 
 ```console
 $ manni meta get title page.md
@@ -583,6 +611,8 @@ the statement sits in or describes, and is empty before the first heading. `stat
 ```sh
 manni meta get title,type docs/intro.md
 manni meta get --fields title,type docs/intro.md
+manni meta get --all-fields docs/intro.md
+manni meta get --all-fields --no-derived -f json   # what every collection member stores
 manni meta get author.name,/author/email docs/intro.md
 manni meta get type "**/*.md" -f json
 manni meta get owner "docs/**/*.md" -q          # only the files that resolve one

@@ -428,6 +428,25 @@ describe("get resolves each field, and says which side answered (0043)", () => {
     );
   });
 
+  it("--all-fields prints the stored fields, then each one a source supplies", async () => {
+    const dir = repo({ ...fixtureFiles(), CODEOWNERS: "* @docs-team\n" });
+    const results = await runGet({ fields: [], allFields: true, inputs: ["docs/b.md"], cwd: dir });
+    const r = results[0];
+    // What the page stores, in its own order, and nothing else.
+    expect(Object.keys(r?.values ?? {})).toEqual(["title", "last-updated", "type", "description"]);
+    const resolved = Object.keys(r?.resolved ?? {});
+    expect(resolved.slice(0, 4)).toEqual(["title", "last-updated", "type", "description"]);
+    expect(r?.origin?.owner).toBe("derived");
+    // A field no consulted source answered is not printed at all: the run
+    // names github in no source, so nobody states a review.
+    expect(resolved).not.toContain("reviewed-by");
+    expect(r).not.toHaveProperty("provenance");
+    const lines = renderGet(results).split("\n");
+    expect(lines[0]).toBe("docs/b.md: title=B (asserted)");
+    expect(lines).toContain('docs/b.md: owner=["@docs-team"] (derived, codeowners: CODEOWNERS:1)');
+    expect(lines).toHaveLength(resolved.length);
+  });
+
   // Case 3: both sides answered, and they agree.
   it("annotates (asserted) when the evidence agrees", async () => {
     const dir = repo();
@@ -447,6 +466,7 @@ describe("get resolves each field, and says which side answered (0043)", () => {
     const r: GetFileResult = {
       file: "docs/a.md",
       present: true,
+      collections: [],
       values: { authors: ["b@x", "a@x"] },
       derived: { authors: { value: ["a@x", "b@x"], source: "git", evidence: "2 commits" } },
       resolved: { authors: ["b@x", "a@x"] },
