@@ -6,7 +6,6 @@
 import type { StrategyReport } from "../commands/findings.js";
 import type { RecordEntry } from "../commands/list.js";
 import { displayPath } from "../commands/run.js";
-import { PARENTS } from "../types.js";
 import { titleOf } from "./pretty.js";
 
 export function recordJson(entry: RecordEntry): Record<string, unknown> {
@@ -16,7 +15,10 @@ export function recordJson(entry: RecordEntry): Record<string, unknown> {
   if (record.description !== undefined) out["description"] = record.description;
   out["file"] = entry.file;
   out["line"] = record.line;
-  if (record.type !== "audience" && record.parent !== undefined) out[PARENTS[record.type]] = record.parent.value;
+  // A journey's `personas` is always a list. A persona's `audience` is one value, as it is written.
+  const parents = record.parents.map((p) => p.value);
+  if (record.type === "journey") out["personas"] = parents;
+  if (record.type === "persona" && parents.length > 0) out["audience"] = parents.length === 1 ? parents[0] : parents;
   const children = entry.children.map((r) => r.id);
   out["namedBy"] = {
     ...(record.type === "audience" ? { personas: children } : {}),
@@ -26,8 +28,10 @@ export function recordJson(entry: RecordEntry): Record<string, unknown> {
   return out;
 }
 
+/** Each record once, where the tree first reaches it. */
 export function renderListJson(entries: readonly RecordEntry[]): string {
-  return JSON.stringify({ records: entries.map(recordJson) }, null, 2);
+  const once = new Map(entries.map((entry) => [entry.record, entry]));
+  return JSON.stringify({ records: [...once.values()].map(recordJson) }, null, 2);
 }
 
 export function renderGetJson(entry: RecordEntry): string {

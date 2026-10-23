@@ -10,7 +10,7 @@ These files live inside `docs/` but outside `docs/src/content/docs/**`, so they 
 |---|---|
 | `audiences/` | One record per target audience, the four audiences and why each matters. |
 | `personas/` | One record per persona, the full profiles for Maya, Devin, Sara, and Theo. |
-| `journeys/` | One record per Critical User Journey, the end-to-end outcomes the docs must support. Each sits under one persona. |
+| `journeys/` | One record per Critical User Journey, the end-to-end outcomes the docs must support. Each sits under the personas it serves. |
 | `information-architecture.md` | The journey-based IA and nav tree, plus the full content-set map (the pages, with ★ launch markers). |
 | `design.md` | The visual rules the docs site and the demo videos both follow: palette, type, capture geometry, composition, and the measurements behind them. |
 | `OWNERS` | Who owns each published docs page, in CODEOWNERS format. `manni meta derive` reads it for the `owner` field. |
@@ -25,7 +25,7 @@ type: journey
 id: m5
 title: Pin a claim and catch it going stale
 description: A sentence on one of Maya's pages rests on a few lines of code.
-persona: maya
+personas: [maya]
 ---
 ```
 
@@ -36,7 +36,7 @@ persona: maya
 | `title` | every record | What the record is called. |
 | `description` | every record | One sentence saying what the record is for. |
 | `audience` | a persona | The id of the audience the persona belongs to. |
-| `persona` | a journey | The id of the persona the journey belongs to. |
+| `personas` | a journey | The ids of the personas the journey serves, as a list. A journey can serve more than one. |
 
 Pages name the records they serve in their own `audiences:`, `personas:` and `journeys:` fields. A page can hold them in its front matter or in its `{page}.meta.yaml` sidecar.
 

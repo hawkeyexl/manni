@@ -11,7 +11,7 @@ import { RULE_ID_PREFIX, guidanceFor, isStrategyRule } from "../core/severity.js
 const INFORMATION_URI = "https://hawkeyexl.github.io/manni/strategy/";
 
 /** The label meta's reporters put before a message: `(root) ` or `/<field> `. */
-export const FIELD_LABEL = /^(?:\(root\)|\/(?:audiences|personas|journeys|audience|persona)) /;
+export const FIELD_LABEL = /^(?:\(root\)|\/(?:audiences|personas|journeys|audience)) /;
 
 interface SarifRule {
   id: string;

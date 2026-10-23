@@ -37,7 +37,7 @@ export interface StrategyReport {
   frame: FingerprintContext;
   /** Records in the set. */
   records: number;
-  /** Values of audiences:, personas:, journeys:, audience: and persona: the run read. */
+  /** Values of audiences:, personas:, journeys: and audience: the run read. */
   references: number;
   baseline?: BaselineSummary;
   /** Findings before the baseline, for the line a recording run prints. */

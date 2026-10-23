@@ -77,8 +77,8 @@ Run `manni strategy get <id>` to see a record, its parent and the pages that nam
 |---|---|
 | `undefined-reference` | Use the id the message suggests, or fix the typo. When the message names another field, move the value there. If the value names a new record, ask the user before adding one. |
 | `duplicate-id` | Two records claim one id. Ask the user which keeps it before you rename one. |
-| `missing-parent` | Add the persona or audience the message names. Drop the journey or persona instead only when the page does not serve it. |
-| `orphan-record` | Name the parent with `audience:` on a persona or `persona:` on a journey. Ask the user if you cannot tell which. |
+| `missing-parent` | Add the persona or audience the message names. When it names several personas, add the one the page serves. Drop the journey or persona instead only when the page does not serve it. |
+| `orphan-record` | Name the parent with `audience:` on a persona or `personas:` on a journey. Ask the user if you cannot tell which. |
 | `unserved-journey` | Name the journey in `journeys:` on the pages that serve it. If no page serves it, tell the user. |
 | `unused-record` | A notice. Notices never fail. Fix one only when the user asks. |
 

@@ -120,7 +120,7 @@ describe("manni strategy (flags shared with meta and term)", () => {
   it("--ext keeps only the named extensions in a walk", () => {
     writeFileSync(
       join(work, "clean", "strategy", "journeys", "m3.html"),
-      '<html><head><meta name="type" content="journey"><meta name="persona" content="maya"></head></html>',
+      '<html><head><meta name="type" content="journey"><meta name="personas" content="maya"></head></html>',
     );
     expect(strategy(["list", "strategy"]).stdout).toContain("1 audience, 1 persona, 3 journeys");
     expect(strategy(["list", "strategy", "--ext", "md"]).stdout).toContain("1 audience, 1 persona, 2 journeys");
@@ -180,7 +180,7 @@ describe("manni strategy (the ladder)", () => {
         "Stand up metadata validation for my repo      strategy/journeys/m1.md:1",
         "  type          journey",
         "  id            m1",
-        "  persona       maya  Maya, Documentation Engineer",
+        "  personas      maya  Maya, Documentation Engineer",
         "  pages         docs/ci.md",
         "                docs/guide.md",
         "",
@@ -193,7 +193,7 @@ describe("manni strategy (the ladder)", () => {
       title: "Stand up metadata validation for my repo",
       file: "strategy/journeys/m1.md",
       line: 1,
-      persona: "maya",
+      personas: ["maya"],
       namedBy: { pages: ["docs/ci.md", "docs/guide.md"] },
     });
   });
@@ -235,7 +235,7 @@ describe("manni strategy (the ladder)", () => {
       "docs/guide.md:5",
       '  warning manni:strategy/missing-parent       personas: does not name "maya", the persona of journey "m1".',
       `${" ".repeat(46)}Add it, or drop "m1" from journeys:.`,
-      `${" ".repeat(46)}manni:strategy missing-parent: A page names a journey whose persona its personas: lacks, or a persona whose audience its audiences: lacks.`,
+      `${" ".repeat(46)}manni:strategy missing-parent: A page names a journey but none of its personas in personas:, or a persona but not its audience in audiences:.`,
       `${" ".repeat(46)}Guide: https://hawkeyexl.github.io/manni/strategy/reference/rules/#missing-parent`,
     ]);
     expect(lines.at(-2)).toBe("3 errors, 3 warnings, 1 notice in 7 records");
@@ -249,7 +249,7 @@ describe("manni strategy (the ladder)", () => {
       'journeys: "s-17" names no journey. Did you mean "s17"? Correct the value, or add a record with type: journey and id: s-17.',
     );
     expect(messages).toContain('personas: "s17" is a journey, not a persona. Did you mean its persona, "sara"?');
-    expect(messages).toContain('persona: "mya" names no persona. Did you mean "maya"?');
+    expect(messages).toContain('personas: "mya" names no persona. Did you mean "maya"?');
     expect(r.status).toBe(1);
   });
 

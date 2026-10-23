@@ -36,7 +36,8 @@ export function renderListPretty(entries: readonly RecordEntry[]): string {
   return [
     row("record", "pages", "title"),
     ...entries.map((e) => row(cell(e), String(e.pages.length), titleOf(e.record))),
-    countsLine(entries.map((e) => e.record)),
+    // A record under several parents is counted once.
+    countsLine([...new Set(entries.map((e) => e.record))]),
   ].join("\n");
 }
 
@@ -46,7 +47,7 @@ export function renderListPretty(entries: readonly RecordEntry[]): string {
 const KEY_WIDTH = 14;
 
 /** Each record as `id  title`, the ids padded so the titles line up. */
-function recordLines(records: readonly StrategyRecord[]): string[] {
+function recordLines(records: readonly Pick<StrategyRecord, "id" | "title">[]): string[] {
   const width = Math.max(0, ...records.map((r) => r.id.length)) + 2;
   return records.map((r) => (r.title === undefined ? r.id : `${r.id.padEnd(width)}${r.title}`));
 }
@@ -59,9 +60,12 @@ export function renderGetPretty(entry: RecordEntry, opts: { color: boolean }): s
     ["id", [record.id]],
   ];
   if (record.description !== undefined) rows.push(["description", [record.description]]);
-  if (record.type !== "audience" && record.parent !== undefined) {
-    const field = PARENTS[record.type];
-    rows.push([field, entry.parent === undefined ? [record.parent.value] : recordLines([entry.parent])]);
+  if (record.type !== "audience" && record.parents.length > 0) {
+    // A value no record answers to shows as written.
+    const shown = record.parents.map(
+      (p) => entry.parents.find((r) => r.id.toLowerCase() === p.value.toLowerCase()) ?? { id: p.value },
+    );
+    rows.push([PARENTS[record.type], recordLines(shown)]);
   }
   if (entry.children.length > 0) rows.push([record.type === "audience" ? "personas" : "journeys", recordLines(entry.children)]);
   rows.push(["pages", entry.pages.length === 0 ? ["none"] : entry.pages]);

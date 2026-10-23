@@ -32,8 +32,8 @@ function page(fields: Record<string, string>): string {
 const RECORDS: Record<string, string> = {
   "strategy/audiences/docs-engineers.md": page({ type: "audience", title: "Docs-as-code teams" }),
   "strategy/personas/maya.md": page({ type: "persona", title: "Maya, Documentation Engineer", description: "Owns the repo.", audience: "docs-engineers" }),
-  "strategy/journeys/m2.md": page({ type: "journey", id: "m2", title: "Tighten the standard", persona: "maya" }),
-  "strategy/journeys/m10.md": page({ type: "journey", id: "m10", title: "Keep the gate green", persona: "maya" }),
+  "strategy/journeys/m2.md": page({ type: "journey", id: "m2", title: "Tighten the standard", personas: "[maya]" }),
+  "strategy/journeys/m10.md": page({ type: "journey", id: "m10", title: "Keep the gate green", personas: "[maya]" }),
 };
 
 let tmp: string | undefined;
@@ -91,12 +91,33 @@ describe("list", () => {
   });
 
   it("puts a record whose parent is not in the set at the top, and falls back to the id for a title", async () => {
-    const cwd = await docset({ "strategy/journeys/x1.md": page({ type: "journey", persona: "nobody" }) });
+    const cwd = await docset({ "strategy/journeys/x1.md": page({ type: "journey", personas: "[nobody]" }) });
     const { entries } = await runList({ cwd, inputs: [] });
     const orphan = entries.find((e) => e.record.id === "x1");
     expect(orphan?.depth).toBe(0);
     expect(entries.at(-1)?.record.id).toBe("x1");
     expect(renderListPretty(entries).split("\n")).toContain("x1                    0  x1");
+  });
+
+  it("files a journey with two personas under each, and counts it once", async () => {
+    const cwd = await docset({
+      "strategy/personas/sara.md": page({ type: "persona", title: "Sara, Schema Author", audience: "docs-engineers" }),
+      "strategy/journeys/m5.md": page({ type: "journey", id: "m5", title: "Share a schema", personas: "[maya, sara]" }),
+    });
+    const { entries } = await runList({ cwd, inputs: [] });
+    expect(entries.map((e) => [e.depth, e.record.id])).toEqual([
+      [0, "docs-engineers"],
+      [1, "maya"],
+      [2, "m2"],
+      [2, "m5"],
+      [2, "m10"],
+      [1, "sara"],
+      [2, "m5"],
+    ]);
+    expect(renderListPretty(entries).split("\n").at(-1)).toBe("1 audience, 2 personas, 3 journeys");
+    const json = JSON.parse(renderListJson(entries)) as { records: { id: string; personas?: string[] }[] };
+    expect(json.records.map((r) => r.id)).toEqual(["docs-engineers", "maya", "m2", "m5", "m10", "sara"]);
+    expect(json.records.find((r) => r.id === "m5")?.personas).toEqual(["maya", "sara"]);
   });
 
   it("returns { records } in json, each with namedBy", async () => {
@@ -147,9 +168,22 @@ describe("get", () => {
       title: "Tighten the standard",
       file: "strategy/journeys/m2.md",
       line: 1,
-      persona: "maya",
+      personas: ["maya"],
       namedBy: { pages: [] },
     });
+  });
+
+  it("lists every persona of a journey, one per line", async () => {
+    const cwd = await docset({
+      "strategy/personas/sara.md": page({ type: "persona", title: "Sara, Schema Author", audience: "docs-engineers" }),
+      "strategy/journeys/m5.md": page({ type: "journey", id: "m5", title: "Share a schema", personas: "[maya, sara, nobody]" }),
+    });
+    const entry = await runGet({ cwd, inputs: [], id: "m5" });
+    expect(renderGetPretty(entry, { color: false }).split("\n").slice(3, 6)).toEqual([
+      "  personas      maya    Maya, Documentation Engineer",
+      "                sara    Sara, Schema Author",
+      "                nobody",
+    ]);
   });
 
   it("refuses a miss, with the nearest id when one is near", async () => {
@@ -173,6 +207,8 @@ describe("check", () => {
     const cwd = await docset();
     const report = await runCheck({ cwd, inputs: [] });
     expect(report.findings).toEqual([]);
+    // Four page values, maya's audience and each journey's one persona: a
+    // journey's personas: is its parent field, counted once, not twice.
     expect(renderFindingsPretty(report, { color: false })).toBe("✓ 4 records, 7 references, no findings");
   });
 
@@ -279,7 +315,7 @@ describe("check reporters", () => {
       guidance: {
         id: "manni:strategy",
         rule: "missing-parent",
-        description: "A page names a journey whose persona its personas: lacks, or a persona whose audience its audiences: lacks.",
+        description: "A page names a journey but none of its personas in personas:, or a persona but not its audience in audiences:.",
         guide: "https://hawkeyexl.github.io/manni/strategy/reference/rules/#missing-parent",
       },
       file: "docs/guide.md",

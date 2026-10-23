@@ -38,17 +38,13 @@
 - **Supersedes:** No proposal.
 - **Touches:** `src/strategy/**` (new), `src/shared/cli-options.ts`,
   `src/term/cli.ts`, `src/cli.ts`, `src/graph/{cli.ts,commands/publish.ts}`,
-  `src/meta/schemas/content-strategy{,-strict}/1.0.0.json` (new),
-  `src/meta/schemas/manifest.json`, `src/meta/core/schema-registry.ts`,
-  `docs/public/schemas/content-strategy/**` (new),
   `src/family/core/in-play.ts`, `src/family/commands/{check,status}.ts`,
   `plugin/manni/skills/{fix,setup}/SKILL.md`, `test/strategy/**` (new),
-  `test/fixtures/strategy/**` (new), `test/family/**`,
-  `test/{builtin-schemas,builtin-docs,registered-vocabularies}.test.ts`,
+  `test/fixtures/strategy/**` (new), `test/family/**`, `test/config.test.ts`,
   `scripts/check-cli-reference.mjs`, `docs/content-strategy/**`,
-  `docs/src/content/docs/strategy/**` (new),
-  `docs/src/content/docs/meta/reference/schemas/manni-content-strategy.mdx`
-  (new), `docs/src/content/docs/family/reference/cli.mdx`,
+  `docs/content-strategy/schemas/{audience,persona,journey}.schema.json`
+  (new), `docs/src/content/docs/strategy/**` (new),
+  `docs/src/content/docs/family/reference/cli.mdx`,
   `docs/src/content/docs/index.mdx`, the pages and sidecars the IA's map
   moves into, `docs/astro.config.mjs`, `manni.config.yaml`,
   `.github/workflows/docs.yml`, `CLAUDE.md`, `src/docevals/CLAUDE.md`,
@@ -57,10 +53,12 @@
   page that declares `type: audience`, `type: persona` or `type: journey`, one
   per file. `list` prints the records as a tree, and `get` shows one with the
   pages that name it. `check` holds every page's `audiences:`, `personas:` and
-  `journeys:` to the records, under six rules. The opt-in
-  `manni:content-strategy:1.0.0` vocabulary declares the two parent fields.
-  This repository's strategy becomes 82 records, and the IA stops keeping a
-  second copy of the page-to-journey map.
+  `journeys:` to the records, under six rules. A persona names its audience in
+  `audience:`, and a journey names the personas it serves in `personas:`.
+  Each record type has its own schema, applied through meta's existing
+  `overrides`, and no built-in schema is added. This repository's strategy
+  becomes 82 records, and the IA stops keeping a second copy of the
+  page-to-journey map.
 
 ## Problem
 
@@ -111,11 +109,12 @@ starts from this repository as it is on `main`.
    id: m5
    title: Pin a claim and catch it going stale
    description: A sentence on one of Maya's pages rests on a few lines of code.
-   persona: maya
+   personas: [maya]
    ---
    ```
 
-   Then she adds a `strategy` collection and its override to
+   She writes one schema per record type, as decision 2 describes. Then she
+   adds a `strategy` collection and an override per record type to
    `manni.config.yaml`, as the Config section shows.
 
 3. `manni strategy list` prints the tree. It ends with
@@ -180,55 +179,91 @@ A record is any page `manni meta` reads that declares `type: audience`,
 the default inputs are every collection. There is one record per file, in any
 format meta extracts: Markdown, MDX, AsciiDoc, reStructuredText, HTML or XML.
 
-| Field | On | Type | Required | From |
-|---|---|---|---|---|
-| `type` | every record | `audience`, `persona` or `journey` | yes | core, an open string |
-| `id` | every record | string, unique across all records, compared ignoring case | no, it defaults to the file name without its extension | core |
-| `title` | every record | string | no, `list` and `get` fall back to the id | core |
-| `description` | every record | string | no | core |
-| `audience` | a persona | the id of its audience | no, `orphan-record` reports a missing one | new, `manni:content-strategy:1.0.0` |
-| `persona` | a journey | the id of its persona | no, `orphan-record` reports a missing one | new, the same vocabulary |
+These are the fields `manni strategy` reads.
+
+| Field | On | Type | Required by `strategy` |
+|---|---|---|---|
+| `type` | every record | `audience`, `persona` or `journey` | yes |
+| `id` | every record | string, unique across all records, compared ignoring case | no, it defaults to the file name without its extension |
+| `title` | every record | string | no, `list` and `get` fall back to the id |
+| `description` | every record | string | no |
+| `audience` | a persona | the id of its audience | no, `orphan-record` reports a missing one |
+| `personas` | a journey | a list of the ids of the personas it serves | no, `orphan-record` reports a missing one |
 
 The prose after the frontmatter is the record's body, and no rule reads it.
 
-`title` and `description` are optional in the format. This repository requires
-them, because its override's `defaults: true` brings in `manni:core:1.0.0`,
-which requires both. `google:okf:0.1` requires `type`. No other default schema
-or strict overlay requires a top-level field.
+`strategy` requires only `type`. What a repository requires beyond that is its
+schemas' job, as decision 2 describes. This repository's schemas require `id`,
+so no record here leans on the file-name default. They leave `title` and
+`description` optional.
 
-The page fields `audiences`, `personas` and `journeys` keep the meaning
-`manni:audience:1.0.0` gives them, which is who a page serves. They are the
-references. A record names its parent with a singular field instead, for the
-reasons stress test 2 gives.
+On a page, `audiences`, `personas` and `journeys` keep the meaning
+`manni:audience:1.0.0` gives them, which is who the page serves. They are the
+references. A persona names its one parent in `audience:`. A journey names its
+parents in `personas:`, a list, because a journey can serve several personas.
+Stress test 9 gives the reasons.
 
 A value counts when it is a string or a list of strings. A page's values are
 read through meta's merged view, so a value its `{page}.meta.yaml` sidecar
 holds counts. A finding about such a value sits at the sidecar's line.
 
-A record's own `audiences:`, `personas:` and `journeys:` are checked like any
-page's. They never count as a page naming the record, because a record serves
-no reader.
+A journey record's `personas:` is read once, as its parents. It is not also
+read as a reference, so nothing is reported twice. Every other `audiences:`,
+`personas:` and `journeys:` on a record is checked like a page's. An
+audience's `personas:` and a persona's `journeys:` list its children, and they
+are read as ordinary references. A value on a record counts as a record naming
+its target, never as a page naming it, because a record serves no reader.
 
-### 2. The `manni:content-strategy:1.0.0` vocabulary
+### 2. Each record type has its own schema
 
-- It declares `audience` and `persona`, each `x-manni-location: page`. Its
-  strict overlay, `manni:content-strategy-strict:1.0.0`, holds both to kebab
-  case.
-- It is opt-in, as terminology is. The default set is unchanged, and a
-  repository lists the vocabulary in an override for its records.
-- It is registered directly at 1.0.0, with no draft, because it ships with the
-  domain that reads it.
-- It is named `content-strategy` so that its id does not read like the rule
-  prefix `manni:strategy/…`.
-- Its reference page, `meta/reference/schemas/manni-content-strategy.mdx`, is
-  the reference for the record format.
+No built-in schema is added. The registry keeps its 65 built-ins and its
+eleven vocabulary families. Meta validates a record as it validates any
+document, against the schema an override names. The site's override names the
+house schema `./docs/doc-frontmatter.schema.json` the same way.
+
+This repository ships three schemas, in
+`docs/content-strategy/schemas/{audience,persona,journey}.schema.json`.
+
+- Each is a JSON Schema 2020-12 document with `additionalProperties: true`.
+- Each requires `type`, as a `const`, and `id`, in kebab case. A persona also
+  requires `audience`, and a journey a non-empty `personas` list.
+- Everything else is optional, `title` and `description` included.
+- The descriptive fields are every field in the content-strategy records of
+  [Promptless/promptless.ai](https://github.com/Promptless/promptless.ai),
+  under `docs/content_strategy/`. Their keys are kebab-cased to match this
+  repository's, so `docs_owner` becomes `docs-owner`. The types follow their
+  examples.
+
+| Schema | Required | Optional |
+|---|---|---|
+| audience | `type: audience`, `id` | `title`, `description`, `segment`, `maturity`, `docs-owner` (strings); `firmographics`, `relationship-stages`, `features-emphasized` (string lists); `personas` (kebab list); `underrepresented` (boolean) |
+| persona | `type: persona`, `id`, `audience` (kebab) | `title`, `description`, `name`, `role`, `team-context` (strings); `proficiency`, `prerequisites`, `goals`, `pains`, `content-types` (string lists); `journeys` (kebab list) |
+| journey | `type: journey`, `id`, `personas` (non-empty kebab list) | `title`, `description`, `trigger`, `entry-point`, `success-criteria` (strings); `steps`, a list of `{stage (required), doc, exists: true \| false \| "partial", note}` |
+
+- `strategy` builds its tree from the parent fields, a persona's `audience`
+  and a journey's `personas`.
+- The children lists, an audience's `personas` and a persona's `journeys`, are
+  read as ordinary references. They are checked for resolving, as every
+  reference is.
+- Each record type gets an override by path that names its schema. An
+  override's `defaults` is `false` unless set, so a record takes its one
+  schema and none of the defaults.
+
+There are three reasons, and stress test 2 weighs them.
+
+- Normal docs pages keep the baked-in schemas. Nothing in the default set
+  changes.
+- A record is not a docs page. It serves no reader, so the page vocabularies
+  have no claim on it.
+- Meta already validates any document against a schema an override names. The
+  records need no new key, no registry row and no reference page.
 
 ### 3. A field is checked only when its records exist
 
 A field is checked only when the set holds at least one record of that field's
 type. A repository with persona records and no audience records keeps a
-free-form `audiences:`. So the vocabulary's "may dangle" promise holds until a
-repository keeps the records.
+free-form `audiences:`. So the audience vocabulary's "may dangle" promise holds
+until a repository keeps the records.
 
 The record fields follow the same gate. `orphan-record` fires only while the
 set holds records of the parent type, so a set with no audience records has no
@@ -241,9 +276,9 @@ Each rule id is `manni:strategy/<rule>`. The levels are the family scale from
 
 | Rule | Default | Fires when |
 |---|---|---|
-| `undefined-reference` | error | A page's `audiences:`, `personas:` or `journeys:`, or a record's `audience:` or `persona:`, names no record of that type. |
+| `undefined-reference` | error | A page's `audiences:`, `personas:` or `journeys:`, or a persona's `audience:`, names no record of that type. A journey record's `personas:` counts as well. |
 | `duplicate-id` | error | Two records share an id, ignoring case. |
-| `missing-parent` | warning | A page names a journey whose persona its `personas:` lacks, or a persona whose audience its `audiences:` lacks. |
+| `missing-parent` | warning | A page names a journey but none of its personas in `personas:`, or a persona whose audience its `audiences:` lacks. |
 | `orphan-record` | warning | A persona names no audience, or a journey names no persona, while the set holds records of the parent type. |
 | `unserved-journey` | warning | No page names the journey in `journeys:`. Records do not count. |
 | `unused-record` | notice | No page and no record names an audience or a persona. |
@@ -259,7 +294,8 @@ record sits on its `id:` line, or on its first line when it declares no `id`.
 - `duplicate-id` is reported on every record that shares the id. Each finding
   names the others by file and line.
 - `missing-parent` reports each missing parent once per page. It sits at the
-  line of the first value that implies it.
+  line of the first value that implies it. A page that names any one of a
+  journey's personas passes for that journey.
 
 Requirements traceability tools such as Doorstop and sphinx-needs are the
 prior art for the coverage and dangling-link rules. Whether every page must
@@ -308,6 +344,9 @@ becomes one file, and its prose becomes the record's body.
   and for a persona the profile's.
 - A sentence that does not stand alone, or that Vale flags, is edited by hand.
   The pull request lists each edit.
+- A journey names its persona as `personas: [maya]`, a list of one.
+- The records carry only `type`, `id`, `title`, `description` and the parent
+  field. Nothing copies their prose into the schemas' descriptive fields.
 - The intros move into `README.md`, which gains the layout and the three
   commands. Its hand-written id ranges go.
 - `CLAUDE.md`, `src/docevals/CLAUDE.md` and `src/tracevals/CLAUDE.md` point to
@@ -366,12 +405,12 @@ collections:
 meta:
   overrides:
     - files: …glossary…                   # unchanged
-    - collection: strategy
-      defaults: true
-      strict: true
-      schemas:
-        - manni:content-strategy:1.0.0
-        - manni:content-strategy-strict:1.0.0
+    - files: "docs/content-strategy/audiences/*.md"
+      schemas: [./docs/content-strategy/schemas/audience.schema.json]
+    - files: "docs/content-strategy/personas/*.md"
+      schemas: [./docs/content-strategy/schemas/persona.schema.json]
+    - files: "docs/content-strategy/journeys/*.md"
+      schemas: [./docs/content-strategy/schemas/journey.schema.json]
     - collection: site                    # unchanged
       …
 
@@ -381,6 +420,10 @@ strategy:
 
 graph: …                                  # unchanged
 ```
+
+The three overrides use meta's existing `files:` and `schemas:` keys, so no
+meta key is new. None sets `defaults:`, so each record takes its one schema
+alone.
 
 The `strategy:` section is optional, and every key has a default. Its keys
 mirror `term:`'s.
@@ -468,8 +511,9 @@ not exported either.
 
 **`list -f pretty`** prints a tree, audience then persona then journey.
 Siblings sort by id with numeric collation, so `m2` comes before `m10`. A
-record whose parent is not in the set sits at depth 0. The number is how many
-pages name the record directly. These rows are this branch's:
+journey with several personas is listed under each of them. A record whose
+parent is not in the set sits at depth 0. The number is how many pages name
+the record directly. These rows are this branch's:
 
 ```text
 record            pages  title
@@ -482,8 +526,8 @@ ci-engineers        129  Platform / CI engineers
 ```
 
 **`get -f pretty`** prints the title and where the record was read, then one
-row per field. A persona shows its `audience` and its `journeys`, and an
-audience its `personas`. The `pages` row prints `none` when no page names the
+row per field. A journey shows its `personas`. A persona shows its `audience`
+and its `journeys`, and an audience its `personas`. The `pages` row prints `none` when no page names the
 record.
 
 ```text
@@ -510,13 +554,14 @@ Maya, Documentation Engineer                  docs/content-strategy/personas/may
   "description": "A sentence on one of Maya's pages rests on a few lines of code.",
   "file": "docs/content-strategy/journeys/m5.md",
   "line": 1,
-  "persona": "maya",
+  "personas": ["maya"],
   "namedBy": { "pages": ["docs/src/content/docs/cite/ci/stale-windows.mdx", "…"] }
 }
 ```
 
 `title` falls back to the id. `description` is there when the record has one.
-A persona carries `audience` and a journey `persona`, as written. `namedBy`
+A persona carries `audience`, a string, and a journey carries `personas`, a
+list. `namedBy`
 holds `personas` on an audience, `journeys` on a persona, and `pages` always.
 Paths are relative to the working directory.
 
@@ -530,8 +575,8 @@ Paths are relative to the working directory.
 `message` carries the fix. The text before the fix stays internal as the
 baseline's key, so a reworded fix moves no baseline. `guidance` holds the
 rule's `id`, `rule`, `description` and `guide`. `references` counts every
-value of `audiences:`, `personas:`, `journeys:`, `audience:` and `persona:` the
-run read.
+value of `audiences:`, `personas:`, `journeys:` and `audience:` the run read. A
+journey record's `personas:` counts once.
 
 **`github`, `sarif` and `junit`** go through the adapter term uses onto meta's
 renderers. `github` prints one workflow command per finding, with the title
@@ -562,13 +607,14 @@ is `manni.strategy`. Guidance links point to
 | `undefined-reference`, no near id | `journeys: "zzzz" names no journey. Correct the value, or add a record with type: journey and id: zzzz.` |
 | `undefined-reference`, another type with a parent | `personas: "s17" is a journey, not a persona. Did you mean its persona, "sara"?` |
 | `undefined-reference`, a persona in `journeys:` | `journeys: "maya" is a persona, not a journey. Move it to personas:.` |
-| `undefined-reference`, on a record | `persona: "mya" names no persona. Did you mean "maya"?` |
-| `undefined-reference`, another type on a record | `persona: "docs-engineers" is an audience, not a persona. Correct the value.` |
+| `undefined-reference`, on a record | `personas: "mya" names no persona. Did you mean "maya"?` |
+| `undefined-reference`, another type on a record | `personas: "docs-engineers" is an audience, not a persona. Correct the value.` |
 | `duplicate-id` | `id: "m5" is also the id of docs/content-strategy/journeys/m5-old.md:3. Give each record its own id.` |
 | `missing-parent`, a persona | `audiences: does not name "schema-authors", the audience of persona "sara". Add it, or drop "sara" from personas:.` |
-| `missing-parent`, a journey | `personas: does not name "maya", the persona of journey "m5". Add it, or drop "m5" from journeys:.` |
+| `missing-parent`, a journey with one persona | `personas: does not name "maya", the persona of journey "m5". Add it, or drop "m5" from journeys:.` |
+| `missing-parent`, a journey with several | `personas: names none of "maya", "sara", the personas of journey "m5". Add one, or drop "m5" from journeys:.` |
 | `orphan-record`, a persona | `audience: missing, so this persona belongs to no audience. Name one with audience:.` |
-| `orphan-record`, a journey | `persona: missing, so this journey belongs to no persona. Name one with persona:.` |
+| `orphan-record`, a journey | `personas: missing, so this journey belongs to no persona. Name one with personas:.` |
 | `unserved-journey` | `no page names this journey in journeys:. Name it on the pages that serve it.` |
 | `unused-record` | `no page and no record names this persona.`, or `this audience.` |
 
@@ -653,7 +699,10 @@ pasted under the wrong key. A severity level is quoted, since it cannot be one.
 - **One record per file.** A file that lists several personas is one page,
   and no rule reads it as several records.
 - **Only strings count.** A value that is neither a string nor a list of
-  strings adds no reference. The audience vocabulary validates the shape.
+  strings adds no reference. The audience vocabulary validates a page's
+  shape, and the record schemas validate a record's.
+- **No registered id names the record format.** Each repository that keeps
+  records writes its own schemas, or starts from this repository's three.
 - **Presence is meta's.** No rule requires a page to name a journey. A schema
   override with `required: [journeys]` does that.
 - **The body is never read.** A record's prose can drift from its `title` and
@@ -666,14 +715,15 @@ pasted under the wrong key. A severity level is quoted, since it cannot be one.
 | Option | Verdict |
 |---|---|
 | Keeping the records in the termbase | Rejected. Stress test 1 gives the reasons. |
-| Reusing `personas` and `audiences` on records for the parent | Rejected. They mean "serves", and they draw `location:external` warnings. Stress test 2 covers it. |
+| A built-in `manni:content-strategy:1.0.0` vocabulary, with a strict overlay, for the parent fields | Rejected. A record is not a docs page, and meta already validates any document against a schema an override names. Stress test 2 covers it. |
+| Applying the page vocabulary `manni:audience:1.0.0` to records | Rejected. A record serves no reader, and its own `personas:` would draw a `location:external` warning. Records take their own schema. Stress test 2 covers it. |
+| A singular `persona:` on a journey | Rejected. A journey can serve several personas. Stress test 9 covers it. |
 | A `strategy write` that regenerates the IA tables | Rejected. `get <id>` answers which pages serve a journey. Stress test 3 covers it. |
 | Several records per file, as `type: persona-set` | Deferred until someone asks for it. |
 | A rule requiring every page to carry `journeys` | Rejected. That is presence, which is meta's job. |
 | Graph typing for journeys, and `graph fill` drafting them | Out of scope. |
 | A `--type` filter on `list` | Rejected. The tree groups by type already. |
 | `strategy.paths` and `strategy.exclude` | Rejected. The set is the family `collections:`, as it is for term. |
-| A draft before 1.0.0 for the vocabulary | Rejected. The vocabulary ships with the domain that reads it. |
 
 ## Stress test
 
@@ -688,20 +738,30 @@ decided on 2026-10-21 that the strategy gets a domain of its own.
 data. The config keys, the `check` layout, the findings adapter and the input
 flags follow term.
 
-### 2. Why singular `audience` and `persona` fields?
+### 2. Why a schema per record type, not a built-in vocabulary?
 
-The plural page fields already mean "who this page serves". A record's parent
-is a different relation. A journey belongs to one persona, which is a fact
-about the strategy rather than about any page's readers.
+The first draft of this decision registered `manni:content-strategy:1.0.0`, a
+built-in vocabulary with a strict overlay, to declare the parent fields. The
+user decided on 2026-10-22 that each record type gets a schema of its own.
 
-The location settles it. `personas` is `x-manni-location: external` in
-`manni:audience:1.0.0`. A journey record that carried `personas:` in its own
-frontmatter would draw a `location:external` warning from `meta validate`. The
-parent belongs in the record's own file, beside its `type` and `id`.
+Normal docs pages keep the baked-in schemas. The default set describes pages,
+and nothing in it changes for the records.
 
-**Changed as a result:** the vocabulary declares `audience` and `persona`,
-each `x-manni-location: page`. A record's plural fields stay references, and
-they are checked like any page's.
+A record is not a docs page. It serves no reader, so `manni:audience:1.0.0`
+has no claim on it. The location shows why. That vocabulary puts `personas`
+at `x-manni-location: external`. A journey record that took it would draw a
+`location:external` warning on its own `personas:`. A record's parents belong
+in its own file, beside its `type` and `id`.
+
+Meta already validates any document against a schema an override names. The
+house schema `./docs/doc-frontmatter.schema.json` reaches the site's pages that
+way. Three more overrides need no new key, no registry row and no reference
+page. Each schema can also require what its own type needs, with no condition
+on `type`.
+
+**Changed as a result:** no built-in schema is added, and the registry keeps
+65 built-ins in eleven families. This repository ships three schemas, and its
+config names each one by path. Their fields are the ones Promptless keeps.
 
 ### 3. Why no `write`?
 
@@ -762,6 +822,26 @@ that keeps no personas. Checking every field from the first record would break
 that promise for a repository that keeps only journeys. The gate keeps it,
 field by field, until the records of that type exist.
 
+### 9. Why may a journey name several personas?
+
+A journey is an outcome, and more than one kind of reader can reach for it. A
+singular `persona:` would make the author pick one persona, or copy the
+journey once per persona. Either way the record says less than the author
+knows. Promptless's records list a journey's personas for the same reason.
+
+A persona keeps a singular `audience:`. An audience is a segment of readers,
+and a persona is one reader inside one segment.
+
+`missing-parent` follows the list. A page that names the journey passes when
+its `personas:` holds any one of them. Asking for all of them would make every
+page that serves the journey name every persona, whoever its readers are.
+
+**Changed as a result:** a journey names its parents in `personas:`, a list.
+The field is read once, as the parents, and not also as a reference. `list`
+puts the journey under each of its personas, and the JSON key is `"personas"`.
+Every journey in this repository names one persona today, as
+`personas: [maya]`.
+
 ## Verification
 
 ```bash
@@ -775,8 +855,10 @@ node dist/cli.js graph publish --collection site && node dist/cli.js graph check
 vale docs/proposals/0102-a-strategy-domain-holds-pages-to-their-personas-and-journeys.md docs/content-strategy docs/src/content/docs/strategy
 ```
 
-`meta validate` now covers the records. `docs:check-docevals` grades them
-under the `site` suite. The `llms.txt` and chunks from `graph publish` hold no
+`schemas:check` still counts 65 built-ins, because no built-in is added.
+`meta validate` checks each record against its own schema, through the three
+overrides, with 0 errors. `docs:check-docevals` grades the records under the
+`site` suite. The `llms.txt` and chunks from `graph publish` hold no
 `docs/content-strategy/` path.
 
 The dogfood step runs the finished change on this repository, and its output
@@ -786,7 +868,8 @@ goes in the pull request.
    `unserved-journey` and 44 `missing-parent` warnings, and exits `0`.
 2. After the IA move, it prints `✓ … no findings` and exits `0`. Then
    `strategy list | tail -3`, `strategy get m5` and `strategy get maya` show
-   the tree and the pages.
+   the tree and the pages. `strategy get m5 -f json` shows
+   `"personas": ["maya"]`.
 3. `node dist/cli.js status` shows the strategy row in play.
 4. `node dist/cli.js check` exits `0` with strategy run.
 5. With a page tagged `personas: [s17]`, `strategy check` exits `1` with the
@@ -797,8 +880,8 @@ goes in the pull request.
 - **A new domain.** `manni strategy` was an unknown command before, so no
   script ran it.
 - **A new optional key.** A config without `strategy:` reads exactly as before.
-- **An opt-in vocabulary.** The default set is unchanged. A repository lists
-  `manni:content-strategy:1.0.0` only where it keeps records.
+- **No built-in schema.** The registry and the default set are unchanged. The
+  record schemas live in this repository, and only its overrides name them.
 - **The audience vocabulary is unchanged.** `manni:audience:1.0.0` keeps its
   fields and their meaning. A repository with no records keeps free-form
   values, and no rule reads them.
@@ -821,6 +904,13 @@ goes in the pull request.
 - Good, because a typo in `personas:` fails with the name the author meant.
 - Good, because the "may dangle" promise holds for any repository that keeps
   no records.
+- Good, because the records add no built-in. Meta validates them through the
+  overrides it already has, and normal pages keep the baked-in schemas.
+- Good, because a journey can serve several personas, and a page that names
+  any one of them passes.
+- Bad, because each repository that keeps records writes its own schemas. No
+  registered id names the format, so two repositories' schemas can drift
+  apart.
 - Bad, because the strategy is now 82 small files rather than three documents.
   Reading it end to end takes `manni strategy list` or a folder walk.
 - Bad, because the new collection widens every bare run in this repository. A

@@ -32,8 +32,10 @@ const FIELD_TYPES: Readonly<Record<ReferenceField, RecordType>> = {
   personas: "persona",
   journeys: "journey",
   audience: "audience",
-  persona: "persona",
 };
+
+/** The type of a child's parents: an audience for a persona, a persona for a journey. */
+const parentTypeOf = (type: ChildType): RecordType => FIELD_TYPES[PARENTS[type]];
 
 /** What a set's records and pages say about each other, resolved once for `check`, `list` and `get`. */
 export interface StrategyIndex {
@@ -43,8 +45,8 @@ export interface StrategyIndex {
   resolve(type: RecordType, value: string): StrategyRecord | undefined;
   /** The first record of any type with this id, case-folded. */
   anyWithId(value: string): StrategyRecord | undefined;
-  /** The record's parent, when its parent field names one of the parent type. */
-  parentOf(record: StrategyRecord): StrategyRecord | undefined;
+  /** The records of the parent type the record's parent field names, each once, in the field's order. */
+  parentsOf(record: StrategyRecord): StrategyRecord[];
   /** The records whose parent field names this record, in set order. */
   childrenOf(record: StrategyRecord): StrategyRecord[];
   /** The pages that name this record directly, sorted. Records do not count. */
@@ -61,15 +63,16 @@ export function indexSet(set: StrategySet): StrategyIndex {
     if (!byId.has(fold(record.id))) byId.set(fold(record.id), record);
   }
   const resolveIn = (type: RecordType, value: string): StrategyRecord | undefined => byType.get(type)?.get(fold(value));
-  const parentOf = (record: StrategyRecord): StrategyRecord | undefined =>
-    record.type === "audience" || record.parent === undefined
-      ? undefined
-      : resolveIn(PARENTS[record.type], record.parent.value);
+  const parentsOf = (record: StrategyRecord): StrategyRecord[] => {
+    if (record.type === "audience") return [];
+    const type = parentTypeOf(record.type);
+    const found = record.parents.map((p) => resolveIn(type, p.value)).filter((r) => r !== undefined);
+    return [...new Set(found)];
+  };
 
   const children = new Map<StrategyRecord, StrategyRecord[]>();
   for (const record of set.records) {
-    const parent = parentOf(record);
-    if (parent !== undefined) children.set(parent, [...(children.get(parent) ?? []), record]);
+    for (const parent of parentsOf(record)) children.set(parent, [...(children.get(parent) ?? []), record]);
   }
   const pages = new Map<StrategyRecord, Set<string>>();
   for (const reference of set.references) {
@@ -85,7 +88,7 @@ export function indexSet(set: StrategySet): StrategyIndex {
     has: (type) => (byType.get(type)?.size ?? 0) > 0,
     resolve: resolveIn,
     anyWithId: (value) => byId.get(fold(value)),
-    parentOf,
+    parentsOf,
     childrenOf: (record) => children.get(record) ?? [],
     pagesNaming: (record) => [...(pages.get(record) ?? [])].sort(),
   };
@@ -116,10 +119,10 @@ function located(at: At): At {
   return { file: at.file, ...(at.line === undefined ? {} : { line: at.line }) };
 }
 
-/** The ancestor of `record` of type `type`, walking up the parent chain. */
+/** The ancestor of `record` of type `type`, walking up each record's first parent. */
 function ancestorOf(index: StrategyIndex, record: StrategyRecord, type: RecordType): StrategyRecord | undefined {
-  let current = index.parentOf(record);
-  while (current !== undefined && current.type !== type) current = index.parentOf(current);
+  let current = index.parentsOf(record)[0];
+  while (current !== undefined && current.type !== type) current = index.parentsOf(current)[0];
   return current;
 }
 
@@ -166,18 +169,22 @@ export function checkStrategySet(set: StrategySet, opts: CheckStrategySetOptions
       field: reference.field,
     });
   }
-  // ...and on each record's parent field.
+  // ...and on each value of a record's parent field.
   for (const record of set.records) {
-    if (record.type === "audience" || record.parent === undefined) continue;
+    if (record.type === "audience") continue;
     const field = PARENTS[record.type];
-    if (!index.has(field) || index.parentOf(record) !== undefined) continue;
-    drafts.push({
-      rule: "undefined-reference",
-      ...unresolved(field, record.parent.value, true),
-      ...located(record.parent),
-      id: record.id,
-      field,
-    });
+    const type = parentTypeOf(record.type);
+    if (!index.has(type)) continue;
+    for (const parent of record.parents) {
+      if (index.resolve(type, parent.value) !== undefined) continue;
+      drafts.push({
+        rule: "undefined-reference",
+        ...unresolved(field, parent.value, true),
+        ...located(parent),
+        id: record.id,
+        field,
+      });
+    }
   }
 
   // duplicate-id: on every record sharing the id, each naming the others.
@@ -202,7 +209,7 @@ export function checkStrategySet(set: StrategySet, opts: CheckStrategySetOptions
     }
   }
 
-  // missing-parent: per page, one finding per parent the page leaves out.
+  // missing-parent: per page, one finding per set of parents the page names none of.
   const byPage = new Map<string, typeof set.references>();
   for (const reference of set.references) {
     if (reference.record) continue;
@@ -211,21 +218,27 @@ export function checkStrategySet(set: StrategySet, opts: CheckStrategySetOptions
   for (const references of byPage.values()) {
     const named = (field: ReferenceField): Set<string> =>
       new Set(references.filter((r) => r.field === field).map((r) => fold(r.value)));
-    const reported = new Set<StrategyRecord>();
+    const reported = new Set<string>();
     for (const childType of ["journey", "persona"] as const satisfies readonly ChildType[]) {
-      const parentType = PARENTS[childType];
+      const parentType = parentTypeOf(childType);
       const parentField = PAGE_FIELDS[parentType];
       const has = named(parentField);
       for (const reference of references) {
         if (reference.field !== PAGE_FIELDS[childType]) continue;
         const child = index.resolve(childType, reference.value);
-        const parent = child === undefined ? undefined : index.parentOf(child);
-        if (child === undefined || parent === undefined || has.has(fold(parent.id)) || reported.has(parent)) continue;
-        reported.add(parent);
+        if (child === undefined) continue;
+        const parents = index.parentsOf(child);
+        const ids = parents.map((p) => `"${p.id}"`).join(", ");
+        const key = `${parentType} ${ids}`;
+        if (parents.length === 0 || parents.some((p) => has.has(fold(p.id))) || reported.has(key)) continue;
+        reported.add(key);
+        const one = parents.length === 1;
         drafts.push({
           rule: "missing-parent",
-          message: `${parentField}: does not name "${parent.id}", the ${parentType} of ${childType} "${child.id}".`,
-          fix: `Add it, or drop "${child.id}" from ${PAGE_FIELDS[childType]}:.`,
+          message: one
+            ? `${parentField}: does not name ${ids}, the ${parentType} of ${childType} "${child.id}".`
+            : `${parentField}: names none of ${ids}, the ${parentField} of ${childType} "${child.id}".`,
+          fix: `Add ${one ? "it" : "one"}, or drop "${child.id}" from ${PAGE_FIELDS[childType]}:.`,
           ...located(reference),
           field: parentField,
         });
@@ -236,11 +249,11 @@ export function checkStrategySet(set: StrategySet, opts: CheckStrategySetOptions
   // orphan-record, unserved-journey and unused-record: about whole records.
   for (const record of set.records) {
     const at = located(onRecord(record));
-    if (record.type !== "audience" && record.parent === undefined && index.has(PARENTS[record.type])) {
+    if (record.type !== "audience" && record.parents.length === 0 && index.has(parentTypeOf(record.type))) {
       const field = PARENTS[record.type];
       drafts.push({
         rule: "orphan-record",
-        message: `${field}: missing, so this ${record.type} belongs to no ${field}.`,
+        message: `${field}: missing, so this ${record.type} belongs to no ${parentTypeOf(record.type)}.`,
         fix: `Name one with ${field}:.`,
         ...at,
         id: record.id,

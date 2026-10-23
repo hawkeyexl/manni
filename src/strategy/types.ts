@@ -3,7 +3,8 @@
  * 0102). A record is a page declaring `type: audience`, `type: persona` or
  * `type: journey`. A reference is a value of a page's `audiences:`,
  * `personas:` or `journeys:`, read through meta's merged view so a value in a
- * `{page}.meta.yaml` counts.
+ * `{page}.meta.yaml` counts. A journey's own `personas:` is its parent field,
+ * not a reference.
  */
 import type { Guidance } from "../shared/guidance.js";
 import type { ConfigFile } from "../shared/config-file.js";
@@ -18,8 +19,11 @@ export type RecordType = (typeof RECORD_TYPES)[number];
 export const PAGE_FIELDS = { audience: "audiences", persona: "personas", journey: "journeys" } as const;
 export type PageField = (typeof PAGE_FIELDS)[RecordType];
 
-/** The type a record's parent is, and the singular field that names it. */
-export const PARENTS = { persona: "audience", journey: "persona" } as const;
+/**
+ * The field a record names its parents in: a persona's `audience:`, a
+ * journey's `personas:`. Either holds one string or a list.
+ */
+export const PARENTS = { persona: "audience", journey: "personas" } as const;
 export type ChildType = keyof typeof PARENTS;
 export type ParentField = (typeof PARENTS)[ChildType];
 
@@ -57,8 +61,8 @@ export interface StrategyRecord {
   line: number;
   /** Where `id:` is declared, when the record declares one. */
   idAt?: At;
-  /** `audience:` on a persona, `persona:` on a journey, when set. */
-  parent?: At & { value: string };
+  /** The values of `audience:` on a persona or `personas:` on a journey, each where it is declared. Empty on an audience. */
+  parents: (At & { value: string })[];
 }
 
 export interface StrategyReference {

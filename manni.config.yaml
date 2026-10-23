@@ -108,15 +108,16 @@ meta:
         - astro:starlight:0.41
         - manni:terminology:1.2.0
         - manni:terminology-strict:1.2.0
-    # The strategy records name their parent in `audience:` or `persona:`.
-    # The content-strategy vocabulary is not a default, so its overlay is
-    # listed by hand, as terminology's is.
-    - collection: strategy
-      defaults: true
-      strict: true
-      schemas:
-        - manni:content-strategy:1.0.0
-        - manni:content-strategy-strict:1.0.0
+    # The content strategy's records, one schema per record type. They are
+    # internal files, not docs pages, so they take their own schema and none
+    # of the defaults. A persona names its audience in `audience:`, and a
+    # journey the personas it serves in `personas:`.
+    - files: "docs/content-strategy/audiences/*.md"
+      schemas: [./docs/content-strategy/schemas/audience.schema.json]
+    - files: "docs/content-strategy/personas/*.md"
+      schemas: [./docs/content-strategy/schemas/persona.schema.json]
+    - files: "docs/content-strategy/journeys/*.md"
+      schemas: [./docs/content-strategy/schemas/journey.schema.json]
     # Every other published page. Each one must declare a non-empty title and
     # description, which the house schema requires.
     - collection: site

@@ -40,7 +40,6 @@ next-steps:
   - /manni/strategy/reference/rules/
 related-pages:
   - /manni/strategy/reference/rules/
-  - /manni/meta/reference/schemas/manni-content-strategy/
 risks: read-only
 last-updated: 2026-10-22
 ---
@@ -135,8 +134,10 @@ manni strategy list [paths...] [options]
 ### Output
 
 `pretty` prints the tree, then a count of each type. The number is how many
-pages name the record directly. A record whose parent is not in the set sits
-at the top level, and a record with no `title` shows its id:
+pages name the record directly. A journey that serves several personas sits
+under each of them, and the count holds it once. A record whose parents are
+not in the set sits at the top level, and a record with no `title` shows its
+id:
 
 ```
 record            pages  title
@@ -147,8 +148,8 @@ docs-engineers        2  Docs-as-code teams
 1 audience, 1 persona, 2 journeys
 ```
 
-`json` prints `{ "records": [...] }`, in the tree's order. Each record is the
-object `get -f json` prints.
+`json` prints `{ "records": [...] }`, in the tree's order, each record once.
+Each record is the object `get -f json` prints.
 
 ### Exit codes
 
@@ -159,7 +160,7 @@ object `get -f json` prints.
 
 ## `strategy get`
 
-Show one record, the record it belongs to, the records under it, and the
+Show one record, the records it belongs to, the records under it, and the
 pages that name it.
 
 ```sh
@@ -190,8 +191,9 @@ manni strategy get <id> [paths...] [options]
 ### Output
 
 `pretty` prints the title and where the record was read, then a row per
-field. A persona shows its `audience` and its `journeys`, and an audience its
-`personas`. The `pages` row prints `none` when no page names the record:
+field. A journey shows its `personas`, one per line. A persona shows its
+`audience` and its `journeys`, and an audience its `personas`. The `pages`
+row prints `none` when no page names the record:
 
 ```
 Maya, Documentation Engineer                  strategy/personas/maya.md:1
@@ -207,10 +209,10 @@ Maya, Documentation Engineer                  strategy/personas/maya.md:1
 
 `json` prints the record. `title` is always there: a record with no title
 gets its id, so `title` equal to `id` means none was written. `description`
-is there only when the record has one. A persona carries `audience`, and a journey
-`persona`, as written. `namedBy` holds `personas` on an audience, `journeys`
-on a persona, and `pages` always. Paths are relative to the working
-directory:
+is there only when the record has one. A persona carries `audience`, as
+written. A journey carries `personas`, always a list. `namedBy` holds
+`personas` on an audience, `journeys` on a persona, and `pages` always. Paths
+are relative to the working directory:
 
 ```json
 {
@@ -219,7 +221,7 @@ directory:
   "title": "Stand up metadata validation for my repo",
   "file": "strategy/journeys/m1.md",
   "line": 1,
-  "persona": "maya",
+  "personas": ["maya"],
   "namedBy": {
     "pages": ["docs/ci.md", "docs/guide.md"]
   }
@@ -287,8 +289,8 @@ prints the same line with zero counts:
 `id` when the finding is about one, and the `field` that breaks the rule when
 one does. `summary` holds `records`, `references`, `errors`, `warnings` and
 `notices`, and `baseline` when one was read or written. `references` counts
-every value of `audiences:`, `personas:`, `journeys:`, `audience:` and
-`persona:` the run read:
+every value of `audiences:`, `personas:`, `journeys:` and `audience:` the run
+read. A journey's own `personas:` counts once:
 
 ```json
 {

@@ -169,11 +169,11 @@ describe.skipIf(!gitAvailable())("runFamilyCheck", () => {
 
   it("strategy: a record that names no record of its parent's type fails the run", async () => {
     dir = fixtureRepo("everything");
-    edit(dir, "docs/strategy/m1.md", (t) => t.replace("persona: maya", "persona: mya"));
+    edit(dir, "docs/strategy/m1.md", (t) => t.replace("personas: [maya]", "personas: [mya]"));
     const run = await runFamilyCheck({ cwd: dir, scope: { kind: "all" } });
     expect(byCommand(run, "strategy check").status).toBe("fail");
     expect(strategyFindings(run)).toContainEqual(
-      expect.objectContaining({ rule: "undefined-reference", file: "docs/strategy/m1.md", field: "persona" }),
+      expect.objectContaining({ rule: "undefined-reference", file: "docs/strategy/m1.md", field: "personas" }),
     );
     expect(exitCodeFor(run)).toBe(1);
   });

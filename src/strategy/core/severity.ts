@@ -22,10 +22,10 @@ export const RULES_URI = "https://hawkeyexl.github.io/manni/strategy/reference/r
  */
 export const RULE_DESCRIPTIONS: Readonly<Record<StrategyRule, string>> = {
   "undefined-reference":
-    "A page's audiences:, personas: or journeys:, or a record's audience: or persona:, names no record of that type.",
+    "A page's audiences:, personas: or journeys:, or a record's audience: or personas:, names no record of that type.",
   "duplicate-id": "Two records share an id, ignoring case.",
   "missing-parent":
-    "A page names a journey whose persona its personas: lacks, or a persona whose audience its audiences: lacks.",
+    "A page names a journey but none of its personas in personas:, or a persona but not its audience in audiences:.",
   "orphan-record":
     "A persona names no audience, or a journey names no persona, while the set holds records of the parent type.",
   "unserved-journey": "No page names the journey in journeys:. Records do not count.",

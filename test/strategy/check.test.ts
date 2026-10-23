@@ -6,7 +6,8 @@ import { describe, expect, it } from "vitest";
 import { checkStrategySet, indexSet } from "../../src/strategy/core/check.js";
 import type { PageField, RecordType, StrategyRecord, StrategyReference, StrategySet } from "../../src/strategy/types.js";
 
-function rec(type: RecordType, id: string, parent?: string, extra: Partial<StrategyRecord> = {}): StrategyRecord {
+/** A record whose parents sit on line 4, one value per line after it. */
+function rec(type: RecordType, id: string, parents: string | string[] = [], extra: Partial<StrategyRecord> = {}): StrategyRecord {
   const file = `strategy/${type}s/${id}.md`;
   return {
     id,
@@ -14,7 +15,7 @@ function rec(type: RecordType, id: string, parent?: string, extra: Partial<Strat
     file,
     line: 1,
     idAt: { file, line: 3 },
-    ...(parent === undefined ? {} : { parent: { value: parent, file, line: 4 } }),
+    parents: [parents].flat().map((value, i) => ({ value, file, line: 4 + i })),
     ...extra,
   };
 }
@@ -87,12 +88,27 @@ describe("checkStrategySet", () => {
       set.references.push(ref("journeys", "m2"));
       const finding = checkStrategySet(set).find((f) => f.rule === "undefined-reference");
       expect(finding).toMatchObject({
-        message: 'persona: "mya" names no persona. Did you mean "maya"?',
+        message: 'personas: "mya" names no persona. Did you mean "maya"?',
         file: "strategy/journeys/m2.md",
         line: 4,
         id: "m2",
-        field: "persona",
+        field: "personas",
       });
+    });
+
+    it("fires once for the one bad value of a record's two parents, at that value's line", () => {
+      const set = joined();
+      set.records.push(rec("persona", "sara", "docs-engineers"), rec("journey", "m2", ["sara", "mya"]));
+      set.references.push(ref("personas", "sara", "docs/other.md"), ref("journeys", "m2", "docs/other.md"));
+      const found = checkStrategySet(set).filter((f) => f.rule === "undefined-reference");
+      expect(found).toEqual([
+        expect.objectContaining({
+          message: 'personas: "mya" names no persona. Did you mean "maya"?',
+          file: "strategy/journeys/m2.md",
+          line: 5,
+          field: "personas",
+        }),
+      ]);
     });
 
     it("compares ids ignoring case", () => {
@@ -154,6 +170,35 @@ describe("checkStrategySet", () => {
       );
     });
 
+    it("is satisfied by any one of a journey's personas", () => {
+      const set = joined();
+      set.records.push(rec("persona", "sara", "docs-engineers"), rec("journey", "m5", ["maya", "sara"]));
+      for (const persona of ["maya", "sara"]) {
+        set.references.push(
+          ref("audiences", "docs-engineers", `docs/${persona}.md`),
+          ref("personas", persona, `docs/${persona}.md`),
+          ref("journeys", "m5", `docs/${persona}.md`),
+        );
+      }
+      expect(rules(set)).not.toContain("missing-parent");
+    });
+
+    it("names every persona of a journey when the page names none of them", () => {
+      const set = joined();
+      set.records.push(rec("persona", "sara", "docs-engineers"), rec("journey", "m5", ["maya", "sara"]));
+      set.references.push(ref("audiences", "docs-engineers", "docs/other.md"), ref("journeys", "m5", "docs/other.md", 5));
+      const found = checkStrategySet(set).filter((f) => f.rule === "missing-parent");
+      expect(found).toEqual([
+        expect.objectContaining({
+          message:
+            'personas: names none of "maya", "sara", the personas of journey "m5". Add one, or drop "m5" from journeys:.',
+          file: "docs/other.md",
+          line: 5,
+          field: "personas",
+        }),
+      ]);
+    });
+
     it("does not apply to a record's own fields", () => {
       const set = joined();
       set.references.push(ref("journeys", "m1", "strategy/personas/maya.md", 6, true));
@@ -168,7 +213,7 @@ describe("checkStrategySet", () => {
       set.references.push(ref("personas", "devin", "docs/d.md"), ref("journeys", "d1", "docs/d.md"));
       const found = checkStrategySet(set).filter((f) => f.rule === "orphan-record");
       expect(found.map((f) => f.message)).toEqual([
-        "persona: missing, so this journey belongs to no persona. Name one with persona:.",
+        "personas: missing, so this journey belongs to no persona. Name one with personas:.",
         "audience: missing, so this persona belongs to no audience. Name one with audience:.",
       ]);
       expect(found.every((f) => f.severity === "warning" && f.line === 3)).toBe(true);
@@ -239,6 +284,17 @@ describe("indexSet", () => {
     if (audience === undefined || persona === undefined || journey === undefined) throw new Error("fixture");
     expect(index.pagesNaming(journey)).toEqual(["docs/a.md", "docs/page.md"]);
     expect(index.childrenOf(audience)).toEqual([persona]);
-    expect(index.parentOf(journey)).toBe(persona);
+    expect(index.parentsOf(journey)).toEqual([persona]);
+  });
+
+  it("files a record with two parents under each of them", () => {
+    const set = joined();
+    set.records.push(rec("persona", "sara", "docs-engineers"), rec("journey", "m5", ["maya", "sara"]));
+    const index = indexSet(set);
+    const [, maya, , sara, m5] = set.records;
+    if (maya === undefined || sara === undefined || m5 === undefined) throw new Error("fixture");
+    expect(index.parentsOf(m5)).toEqual([maya, sara]);
+    expect(index.childrenOf(maya)).toContain(m5);
+    expect(index.childrenOf(sara)).toEqual([m5]);
   });
 });

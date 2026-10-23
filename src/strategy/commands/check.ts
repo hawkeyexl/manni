@@ -42,7 +42,7 @@ export async function runCheck(opts: CheckOptions): Promise<StrategyReport> {
   }
   const { results: reported, baseline } = await settleBaseline(results, request, frame);
 
-  const parents = set.records.filter((r) => r.parent !== undefined).length;
+  const parents = set.records.reduce((n, r) => n + r.parents.length, 0);
   return {
     findings: reportedFindings(reported, origin, findings),
     results: reported,
@@ -51,7 +51,8 @@ export async function runCheck(opts: CheckOptions): Promise<StrategyReport> {
     frame,
     records: set.records.length,
     // Two kinds, both resolved: every audiences:, personas: and journeys:
-    // value (pages and records alike), plus each record's own parent field.
+    // value (pages and records alike), plus each value of a record's own
+    // parent field, which load-set keeps out of the references.
     references: set.references.length + parents,
     ...(baseline === undefined ? {} : { baseline }),
     found: findings.length,

@@ -39,7 +39,6 @@ next-steps:
   - /manni/strategy/reference/cli/
 related-pages:
   - /manni/strategy/reference/cli/
-  - /manni/meta/reference/schemas/manni-content-strategy/
 concepts:
   - validation
 last-updated: 2026-10-22
@@ -56,9 +55,9 @@ shows.
 
 | Rule | Default | Fires when |
 |---|---|---|
-| `undefined-reference` | error | A page's `audiences:`, `personas:` or `journeys:`, or a record's `audience:` or `persona:`, names no record of that type. |
+| `undefined-reference` | error | A page's `audiences:`, `personas:` or `journeys:`, or a record's `audience:` or `personas:`, names no record of that type. |
 | `duplicate-id` | error | Two records share an `id`, ignoring case. |
-| `missing-parent` | warning | A page names a journey whose persona its `personas:` lacks, or a persona whose audience its `audiences:` lacks. |
+| `missing-parent` | warning | A page names a journey but none of its personas in `personas:`, or a persona but not its audience in `audiences:`. |
 | `orphan-record` | warning | A persona names no audience, or a journey names no persona, while the set holds records of the parent type. |
 | `unserved-journey` | warning | No page names the journey in `journeys:`. Records do not count. |
 | `unused-record` | notice | No page and no record names an audience or a persona. |
@@ -68,7 +67,8 @@ shows.
 A record is a page that declares `type: audience`, `type: persona` or
 `type: journey`, in any format `manni meta` reads. Its `id` is its `id:`, or
 the file name without its extension when it has none. A persona names its
-audience in `audience:`, and a journey names its persona in `persona:`.
+audience in `audience:`. A journey names the personas it serves in
+`personas:`, as one string or a list.
 
 A reference is a value of a page's `audiences:`, `personas:` or `journeys:`,
 as one string or a list. The pages are read the way `manni meta validate`
@@ -90,12 +90,12 @@ $ manni strategy check
 docs/guide.md:5
   warning manni:strategy/missing-parent       personas: does not name "maya", the persona of journey "m1".
                                               Add it, or drop "m1" from journeys:.
-                                              manni:strategy missing-parent: A page names a journey whose persona its personas: lacks, or a persona whose audience its audiences: lacks.
+                                              manni:strategy missing-parent: A page names a journey but none of its personas in personas:, or a persona but not its audience in audiences:.
                                               Guide: https://hawkeyexl.github.io/manni/strategy/reference/rules/#missing-parent
   error   manni:strategy/undefined-reference  journeys: "m9" names no journey.
                                               Did you mean "m1"?
                                               Correct the value, or add a record with type: journey and id: m9.
-                                              manni:strategy undefined-reference: A page's audiences:, personas: or journeys:, or a record's audience: or persona:, names no record of that type.
+                                              manni:strategy undefined-reference: A page's audiences:, personas: or journeys:, or a record's audience: or personas:, names no record of that type.
                                               Guide: https://hawkeyexl.github.io/manni/strategy/reference/rules/#undefined-reference
 strategy/audiences/ci-engineers.md:1
   notice  manni:strategy/unused-record        no page and no record names this audience.
@@ -147,10 +147,11 @@ personas: "s17" is a journey, not a persona. Did you mean its persona, "sara"?
 A persona named in `journeys:` has no journey above it, so the message names
 the field it belongs in instead: `Move it to personas:.`
 
-A record's `audience:` or `persona:` is checked the same way:
+A record's `audience:` or `personas:` is checked the same way. Each value of
+a journey's `personas:` gets its own finding, on that value's line:
 
 ```
-persona: "mya" names no persona. Did you mean "maya"?
+personas: "mya" names no persona. Did you mean "maya"?
 ```
 
 ### `duplicate-id`
@@ -162,25 +163,32 @@ Give each record its own id.
 
 ### `missing-parent`
 
-A page that names a journey also names that journey's persona, and a page
-that names a persona also names its audience. The rule reads a page's own
-values and not a record's. It reports each missing parent once per page, on
-the line of the first value that implies it:
+A page that names a journey also names at least one of that journey's
+personas. A page that names a persona also names its audience. The rule
+reads a page's own values and not a record's. It reports each missing parent
+once per page, on the line of the first value that implies it:
 
 ```
 personas: does not name "maya", the persona of journey "m1". Add it, or drop "m1" from journeys:.
 audiences: does not name "schema-authors", the audience of persona "sara". Add it, or drop "sara" from personas:.
 ```
 
+A journey that serves several personas is satisfied by any one of them. When
+the page names none, the message lists them all:
+
+```
+personas: names none of "maya", "sara", the personas of journey "m5". Add one, or drop "m5" from journeys:.
+```
+
 ### `orphan-record`
 
-A persona with no `audience:`, or a journey with no `persona:`. It fires only
+A persona with no `audience:`, or a journey with no `personas:`. It fires only
 while the set holds a record of the parent type, so a set with no audience
 records has no orphan personas. Name the parent:
 
 ```
 audience: missing, so this persona belongs to no audience. Name one with audience:.
-persona: missing, so this journey belongs to no persona. Name one with persona:.
+personas: missing, so this journey belongs to no persona. Name one with personas:.
 ```
 
 ### `unserved-journey`

@@ -1,0 +1,103 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hawkeyexl.github.io/manni/content-strategy/persona.schema.json",
+  "title": "manni content strategy: persona record",
+  "description": "A content-strategy persona: one concrete reader within an audience. One record per file, under docs/content-strategy/personas/. Every field after `type`, `id` and `audience` is optional.",
+  "type": "object",
+  "required": [
+    "type",
+    "id",
+    "audience"
+  ],
+  "properties": {
+    "type": {
+      "const": "persona",
+      "description": "Marks the file as a persona record, which `manni strategy` reads."
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]*$",
+      "description": "The id pages and other records name this record by. Unique across every record."
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The record's name, as `manni strategy list` and `get` show it."
+    },
+    "description": {
+      "type": "string",
+      "minLength": 1,
+      "description": "One sentence that says who or what the record is."
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The persona's name and role, as a reader would say it."
+    },
+    "audience": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]*$",
+      "description": "The id of the audience record this persona belongs to. `manni strategy` builds its tree from this field."
+    },
+    "role": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The persona's job."
+    },
+    "team-context": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The team and product the persona works in."
+    },
+    "proficiency": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "description": "What the persona is already good at."
+    },
+    "prerequisites": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "description": "What the persona needs to know before the docs can help."
+    },
+    "goals": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "description": "What the persona is trying to achieve."
+    },
+    "pains": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "description": "What gets in the persona's way."
+    },
+    "content-types": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "description": "The kinds of content the persona needs."
+    },
+    "journeys": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z0-9][a-z0-9-]*$"
+      },
+      "uniqueItems": true,
+      "description": "The ids of the journey records this persona follows. `manni strategy` derives the same list from each journey's `personas:`, so this one is optional."
+    }
+  },
+  "additionalProperties": true
+}

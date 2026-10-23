@@ -184,16 +184,16 @@ export async function loadStrategySet(opts: LoadStrategySetOptions): Promise<Str
         file: label,
         line: 1,
         ...(declaredId === undefined ? {} : { idAt: at("/id") }),
+        parents:
+          type === "audience" ? [] : valuesOf(data, PARENTS[type]).map(({ value, pointer }) => ({ value, ...at(pointer) })),
       };
-      if (type !== "audience") {
-        const field = PARENTS[type];
-        const value = text(data[field]);
-        if (value !== undefined) record.parent = { value, ...at(`/${field}`) };
-      }
       set.records.push(record);
     }
 
+    // A journey's `personas:` is its parent field, read above, so it is not a reference too.
+    const parentField = isRecord && type !== "audience" ? PARENTS[type] : undefined;
     for (const field of Object.values(PAGE_FIELDS)) {
+      if (field === parentField) continue;
       for (const { value, pointer } of valuesOf(data, field)) {
         const reference: StrategyReference = { field, value, page: label, record: isRecord, ...at(pointer) };
         set.references.push(reference);

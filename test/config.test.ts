@@ -882,14 +882,21 @@ describe("the repository's own manni.config.yaml", () => {
     // `test/` against the docs frontmatter contract.
     const config = (await loadConfig(undefined, repoRoot))?.config;
     expect(config?.schemas).toBeUndefined();
-    // Every override takes the defaults and closes them (0070), which is
+    // Both docs overrides take the defaults and close them (0070), which is
     // what replaced the two hand-copied vocabulary lists the overrides once
     // carried. An override's `defaults` is false unless it says otherwise, so
     // dropping either key would silently shrink what the site is held to.
-    expect(config?.overrides).toHaveLength(3);
+    // The three content-strategy record overrides (0102) are not docs pages:
+    // each takes its own schema and none of the defaults.
+    expect(config?.overrides).toHaveLength(5);
+    const records = (config?.overrides ?? []).filter((ov) =>
+      ov.schemas.some((s) => s.startsWith("./docs/content-strategy/schemas/")),
+    );
+    expect(records).toHaveLength(3);
     for (const ov of config?.overrides ?? []) {
-      expect(ov.defaults).toBe(true);
-      expect(ov.strict).toBe(true);
+      const record = records.includes(ov);
+      expect(ov.defaults === true).toBe(!record);
+      expect(ov.strict === true).toBe(!record);
     }
 
     expect(
@@ -941,19 +948,14 @@ describe("the repository's own manni.config.yaml", () => {
       "astro:starlight:0.41",
       "tgdp:templates:1.1",
     ]);
-    // A strategy record takes the content-strategy vocabulary, which is not a
-    // default, so its overlay is named by hand, as terminology's is.
+    // A strategy record takes its record type's schema alone.
     expect(
       resolveSchemaSet({
         filePath: "docs/content-strategy/journeys/m5.md",
         config,
         memberOf: ["strategy"],
       }),
-    ).toEqual([
-      ...STRICT_DEFAULTS,
-      "manni:content-strategy:1.0.0",
-      "manni:content-strategy-strict:1.0.0",
-    ]);
+    ).toEqual(["./docs/content-strategy/schemas/journey.schema.json"]);
     // A file outside the collection is a member of nothing, so the override
     // cannot reach it and DEFAULT_SCHEMAS stands.
     expect(
