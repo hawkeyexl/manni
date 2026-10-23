@@ -34,7 +34,7 @@ WHERE s.type IN ('journey', 'persona')
 GROUP BY s.type, s.id
 UNION ALL
 SELECT 'unplanned', p._path, NULL, 1, 1, v.views, round(1.0 * v.exits / v.views, 2)
-FROM views v JOIN pages p ON p.url = v.url WHERE p.journeys IS NULL
+FROM views v JOIN pages p ON p.url = v.url WHERE coalesce(json_array_length(p.journeys), 0) = 0
 UNION ALL
 SELECT 'unmatched', v.url, NULL, 0, 0, v.views, NULL
 FROM views v WHERE v.url IS NULL OR v.url NOT IN (SELECT url FROM pages)

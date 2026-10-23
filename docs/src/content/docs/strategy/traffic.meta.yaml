@@ -16,7 +16,7 @@ docs/src/content/docs/strategy/traffic.mdx:
   provenance:
     - generated-by: Claude Opus 5.5
       lines: 2-290
-      integrity: sha256-a3f4a36d4463f36adfe4357e2de0edb53945414626a1456446314edd53e90b83
+      integrity: sha256-2caeafa34205f08f73d924bc5ff7746df629b95d700c6141107d99fef8c1feff
   owner:
     - "@hawkeyexl"
   created: 2026-10-23

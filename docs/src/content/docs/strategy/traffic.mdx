@@ -56,8 +56,8 @@ does not explain.
   [overview](/manni/strategy/#set-it-up) sets them up. The query reads both
   from the one `docs` table that `meta query` builds.
 - **A page-views export, as JSON.** It is a list of objects with exactly the
-  keys `page`, `views` and `exits`, and `exits` may be absent. `page` is the
-  path a reader saw, such as `/manni/strategy/`, never a full URL with a host.
+  keys `page`, `views` and `exits`. `exits` may be absent, and then every `exit_rate` is null.
+  `page` is the path a reader saw, such as `/manni/strategy/`, never a full URL with a host.
 - **The site's route.** It is the `basePath` and the `root` of the docs
   route in
   [`graph.routes`](/manni/graph/reference/configuration/#routes).
@@ -118,7 +118,7 @@ WHERE s.type IN ('journey', 'persona')
 GROUP BY s.type, s.id
 UNION ALL
 SELECT 'unplanned', p._path, NULL, 1, 1, v.views, round(1.0 * v.exits / v.views, 2)
-FROM views v JOIN pages p ON p.url = v.url WHERE p.journeys IS NULL
+FROM views v JOIN pages p ON p.url = v.url WHERE coalesce(json_array_length(p.journeys), 0) = 0
 UNION ALL
 SELECT 'unmatched', v.url, NULL, 0, 0, v.views, NULL
 FROM views v WHERE v.url IS NULL OR v.url NOT IN (SELECT url FROM pages)
@@ -240,7 +240,7 @@ one of four kinds.
 | `pages` | pages that name the record | `1` | `0` |
 | `measured` | those pages the export has a row for | `1` | `0` |
 | `views` | the views of those pages, `0` when none | the page's views | the URL's views |
-| `exit_rate` | their exits over their views, to two places, null with no views | the page's | null |
+| `exit_rate` | their exits over their views, to two places, null with no views or no `exits` | the page's | null |
 
 <Aside type="caution" title="The rows overlap">
 A page counts toward every journey and persona it names. Summing the journey

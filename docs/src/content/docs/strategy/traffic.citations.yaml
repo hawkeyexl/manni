@@ -11,9 +11,9 @@ docs/src/content/docs/strategy/traffic.mdx:
     - id: traffic-sql
       claim:
         lines: 41-83
-        integrity: sha256-71c1d64fa084e79ae26aecb5102f6cdefe8cefc373db110c08c15fb5a2bdabbf
+        integrity: sha256-c0a8d1b39f6202c5b8bbd1426bf7c51f54e1f457d2fc0a41fb477985799d5d52
       source:
         file: docs/content-strategy/traffic.sql
         lines: 1-41
-        integrity: sha256-95e18d1933d6ee59a5b2b0952a572110a7b12299d72c60fc94bd02e0704b5574
+        integrity: sha256-fcb559cc0ed23315b4882617c4ffcb0d47795add032207fde63066242c7d1544
       quote: true
