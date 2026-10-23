@@ -1,6 +1,6 @@
 # 0108: A claim can be a metadata value
 
-- **Status:** Proposed
+- **Status:** Implemented (#242)
 - **Serves:** Two people.
   - Sara · S19, "Rest each persona on evidence that still holds", a new
     journey. She owns `docs/content-strategy/`, and nothing ties a persona's
