@@ -9,15 +9,15 @@ export const TYPING_MS = 45;
 
 // Measured wall-clock latency, from media/capture-strategy/latency.txt.
 // Replayed at 1x: every run is under 0.5 s, so nothing is compressed.
-//   check-before  425 ms
-//   diff           68 ms
-//   check-after   393 ms
-//   list          494 ms
+//   check-before  406 ms
+//   diff           91 ms
+//   check-after   398 ms
+//   list          406 ms
 export const latency = {
-  checkBefore: Math.round(0.425 * FPS),
-  diff: Math.round(0.068 * FPS),
-  checkAfter: Math.round(0.393 * FPS),
-  list: Math.round(0.494 * FPS),
+  checkBefore: Math.round(0.406 * FPS),
+  diff: Math.round(0.091 * FPS),
+  checkAfter: Math.round(0.398 * FPS),
+  list: Math.round(0.406 * FPS),
   cat: 2,
   echo: 1,
 };
@@ -30,7 +30,7 @@ export const beats: Beat[] = [
     title: "A journey filed as a persona",
     type: { fontPx: 32, linePx: 45, cols: 54 },
     caption: "m1 is a journey, but the guide lists it as a persona.",
-    highlight: ["type: journey", "persona: maya", "personas: [m1]"],
+    highlight: ["type: journey", "personas: [maya]", "personas: [m1]"],
     commands: [
       { typed: "cat strategy/journeys/m1.md", output: captures["cat strategy/journeys/m1.md"], latencyFrames: latency.cat, holdFrames: 2.0 * FPS },
       { typed: "cat docs/guide.md", output: captures["cat docs/guide.md"], latencyFrames: latency.cat, holdFrames: 3.4 * FPS },

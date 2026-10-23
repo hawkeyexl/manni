@@ -1,6 +1,6 @@
 Docs teams write down whom their pages serve. Then the tags drift from it.
 
-New in manni, in beta: manni strategy. Your audiences, personas and journeys are records, one file each. A persona names its audience, and a journey names its persona.
+New in manni, in beta: manni strategy. Your audiences, personas and journeys are records, one file each. A persona names its audience, and a journey names its personas.
 
 `manni strategy check` holds every page's audiences:, personas: and journeys: to those records.
 

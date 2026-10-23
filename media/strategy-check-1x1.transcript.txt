@@ -1,6 +1,6 @@
 manni strategy, demo video transcript (silent video; text describes what is on screen)
 
-Frame: 1080x1080, 30 fps, 37.9 s. Every terminal line is real output. The CLI is
+Frame: 1080x1080, 30 fps, 37.8 s. Every terminal line is real output. The CLI is
 this branch's build, node dist/cli.js, typed as manni. It runs in
 media/scratch-strategy/, which media/capture-strategy/capture.sh stages from a byte
 copy of test/fixtures/strategy/clean/ with one page, docs/guide.md, swapped for
@@ -13,7 +13,7 @@ $ cat strategy/journeys/m1.md
 type: journey
 id: m1
 title: Stand up metadata validation for my repo
-persona: maya
+personas: [maya]
 ---
 $ cat docs/guide.md
 ---
@@ -22,7 +22,7 @@ audiences: [docs-engineers]
 personas: [m1]
 ---
 # Guide
-Highlighted rows: lines containing "type: journey", "persona: maya", "personas: [m1]"
+Highlighted rows: lines containing "type: journey", "personas: [maya]", "personas: [m1]"
 Caption: m1 is a journey, but the guide lists it as a persona.
 
 [0:09-0:20] Title: manni strategy check (2 / 4)
@@ -30,7 +30,7 @@ $ manni strategy check
 docs/guide.md:4
   error   manni:strategy/undefined-reference  personas: "m1" is a journey, not a persona.   ("error" in red)
                                               Did you mean its persona, "maya"?
-                                              manni:strategy undefined-reference: A page's audiences:, personas: or journeys:, or a record's audience: or persona:, names no record of that type.   (dim)
+                                              manni:strategy undefined-reference: A page's audiences:, personas: or journeys:, or a record's audience: or personas:, names no record of that type.   (dim)
                                               Guide: https://hawkeyexl.github.io/manni/strategy/reference/rules/#undefined-reference   (dim)
 strategy/journeys/m2.md:3
   warning manni:strategy/unserved-journey     no page names this journey in journeys:.   ("warning" in yellow)

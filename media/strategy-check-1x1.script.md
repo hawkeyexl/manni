@@ -33,7 +33,7 @@
 
 | # | Time | Title band | Caption band | Typed | On screen |
 |---|---|---|---|---|---|
-| 1 | 0:00–0:09 | A journey filed as a persona | m1 is a journey, but the guide lists it as a persona. | `cat strategy/journeys/m1.md`, then `cat docs/guide.md` | the journey record: `type: journey`, `id: m1`, `persona: maya`; the page: `personas: [m1]` |
+| 1 | 0:00–0:09 | A journey filed as a persona | m1 is a journey, but the guide lists it as a persona. | `cat strategy/journeys/m1.md`, then `cat docs/guide.md` | the journey record: `type: journey`, `id: m1`, `personas: [maya]`; the page: `personas: [m1]` |
 | 2 | 0:09–0:20 | manni strategy check | It suggests maya, and finds m2 with no page. Exit 1. | `manni strategy check`, then `echo $?` | `docs/guide.md:4`, red `error`, `personas: "m1" is a journey, not a persona.` and `Did you mean its persona, "maya"?`; `strategy/journeys/m2.md:3`, yellow `warning`, `no page names this journey in journeys:.`; dim rule and Guide lines; `1 error, 1 warning in 4 records`; `1` |
 | 3 | 0:20–0:31 | Fix the page, and it passes | The guide now names maya, and both journeys. Exit 0. | `git diff docs/guide.md`, `manni strategy check`, `echo $?` | `-personas: [m1]`, `+personas: [maya]`, `+journeys: [m1, m2]`; `✓ 4 records, 10 references, no findings`; `0` |
 | 4 | 0:31–0:38 | manni strategy list | Each record, and how many pages name it. m2 has one. | `manni strategy list` | the tree `docs-engineers` › `maya` › `m1`, `m2` with page counts 2, 2, 2, 1; `1 audience, 1 persona, 2 journeys` |
@@ -58,17 +58,17 @@ warning opened.
 ## Capture notes
 
 - **The CLI is this branch's build,** `node dist/cli.js`, typed as `manni`.
-  Its `--version` prints 4.17.0, the published version; semantic-release
+  Its `--version` prints 4.18.0, the published version; semantic-release
   bumps it when `strategy` ships. So no version is claimed on screen.
 - **Colour.** `media/capture/tty.cjs` tells the CLI it writes to a terminal.
   `git diff` gets `-c color.ui=always` for the same reason: the capture is a
   file, and that flag gives the colour git prints to a terminal.
 - **Latency is replayed at 1x** (`capture-strategy/latency.txt`): check
-  before 425 ms, diff 68 ms, check after 393 ms, list 494 ms. Nothing is
+  before 406 ms, diff 91 ms, check after 398 ms, list 406 ms. Nothing is
   compressed.
 - **The check's layout sets beat 2's size.** `strategy check` prints each
   message under a 46-column gutter, and its dim rule and Guide lines run to
-  193 and 133 characters. No legible size holds those on one row.
+  194 and 133 characters. No legible size holds those on one row.
 - **Font size is derived per beat, not chosen** (`node capture-strategy/cols.mjs 19`).
   - Beat 2: **19 px / 91 columns.** The largest size at which neither finding's
     first row wraps. At 20 px the error row breaks before `persona.`, an
@@ -117,7 +117,7 @@ prompt. That is the feature in one frame.
    URLs, broken after a `/`, named above.
 3. Captions on every beat, one line each, burned in and in the `.vtt` and
    `.srt`.
-4. `ffprobe`: 1080×1080, 30 fps, h264 yuv420p, AAC 48 kHz, 37.91 s.
+4. `ffprobe`: 1080×1080, 30 fps, h264 yuv420p, AAC 48 kHz, 37.82 s.
 5. The finished file's audio measures as a silent track at −91 dB. There is
    no narration, so no loudness pass.
 6. Accent `#58a6ff`, blue.
@@ -131,7 +131,7 @@ over.
 ```text
 Docs teams write down whom their pages serve. Then the tags drift from it.
 
-New in manni, in beta: manni strategy. Your audiences, personas and journeys are records, one file each. A persona names its audience, and a journey names its persona.
+New in manni, in beta: manni strategy. Your audiences, personas and journeys are records, one file each. A persona names its audience, and a journey names its personas.
 
 `manni strategy check` holds every page's audiences:, personas: and journeys: to those records.
 

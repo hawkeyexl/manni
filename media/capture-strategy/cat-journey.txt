@@ -2,5 +2,5 @@
 type: journey
 id: m1
 title: Stand up metadata validation for my repo
-persona: maya
+personas: [maya]
 ---
