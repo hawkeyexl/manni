@@ -1,6 +1,6 @@
 # 0105: A citation finding names the readers of its page
 
-- **Status:** Proposed
+- **Status:** Implemented (#240)
 - **Serves:**
   - Devin · D5, "Gate citations in CI without blocking on prose". A pull
     request reports the stale sentences and the readers they fail.
