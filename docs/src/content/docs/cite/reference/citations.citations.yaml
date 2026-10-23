@@ -507,9 +507,9 @@ docs/src/content/docs/cite/reference/citations.mdx:
         integrity: sha256-b74f182f1b0c8935f8dd5a4603d1c474dc60a23d3cdd8390048e8941f31e4523
       source:
         file: src/shared/code-regions.ts
-        lines: 33-100
-        integrity: sha256-4ce93e0962c299f6a4c38277e66406b492d6f5d4ff25d510b98528c6db3f8117
-        commit-sha: c4b30476c094517921ec4b766291759bc64feed8
+        lines: 33-105
+        integrity: sha256-1b805d84b4a81755d84fa5c9812956101a8b8f8cdafc7f0cb003f4e246acedf3
+        commit-sha: b5f92d6972ae322a69bbf08c6b895d319faf8dfd
     - id: sidecar-reading-every-collection
       claim:
         integrity: sha256-5cfd5e7f578297d8adfb156c11c648b255958f4a69de4690ebfcdb5657f32402
@@ -1361,6 +1361,6 @@ docs/src/content/docs/cite/reference/citations.mdx:
         integrity: sha256-af054a6b5d6950f6e532185931ae2257c7475038a5d88f365476d058f36307ac
       source:
         file: src/shared/code-regions.ts
-        lines: 41-67
-        integrity: sha256-48ba5397230e51d55cdca9055e0589173e2dd7225e4dd7ce73020f7afbc6e860
-        commit-sha: c4b30476c094517921ec4b766291759bc64feed8
+        lines: 41-72
+        integrity: sha256-e27a86e18cab461561f2ea5339954eb6b7868d360bbd26585507aaabd403a421
+        commit-sha: b5f92d6972ae322a69bbf08c6b895d319faf8dfd

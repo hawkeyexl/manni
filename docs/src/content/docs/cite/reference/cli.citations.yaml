@@ -648,9 +648,9 @@ docs/src/content/docs/cite/reference/cli.mdx:
         integrity: sha256-7924c2d48741075bc855af1e874f86e79ebd91cf057e3a654705cc50801a5ea6
       source:
         file: src/shared/code-regions.ts
-        lines: 72-100
+        lines: 78-106
         integrity: sha256-6a71f92fb33fd46147a0344e9bec3c6c8a527aab01dbb8c284ab004abb05aef8
-        commit-sha: c4b30476c094517921ec4b766291759bc64feed8
+        commit-sha: 5ce957aa589a7372f404e47c0562f15bbf620215
     - id: add-quote-compare
       claim:
         lines: 516
