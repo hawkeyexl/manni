@@ -6,16 +6,16 @@ docs/src/content/docs/family/reference/action.mdx:
       source:
         file: action.yml
         lines: 85-111
-        integrity: sha256-e03545cf9772b0e40c32375ed9a12b6f378100766268672eeaf4b3d49fee5a4f
-        commit-sha: e11739b7674773faf7d661b20556e580e5ca1b1f
+        integrity: sha256-836dab28cfff6450d29c201200e20b5742dc091f51a412ecd9cf273a5555e9af
+        commit-sha: 13e1b66ba66ec8dcaad71604abc443248a7e1b5a
     - id: action-hand-written-form-still-supported
       claim:
         integrity: sha256-76734bf517b87f2d6ffbf498219a69f044c5559115cd25068db80d2cc72f9741
       source:
         file: examples/manni.yml
         lines: 12-21
-        integrity: sha256-994735a807ffa10cca6727edfa09d86e63a5c4b8650d36c47447ca48344ea9ed
-        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+        integrity: sha256-026ea242bdd2ae555c1aba37c430f3089bb74428d71a3c1702a0746f1e3d6df9
+        commit-sha: 13e1b66ba66ec8dcaad71604abc443248a7e1b5a
     - id: action-version-input-picks-the-cli
       claim:
         integrity: sha256-0394f74111db68a8c5dfb3a9a18502ede257c8559ed0a6853ba6ac72234f0b68

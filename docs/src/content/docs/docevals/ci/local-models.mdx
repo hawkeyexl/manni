@@ -4,7 +4,7 @@ description: Run a llama-cpp judge in CI only on a runner with a GPU. On a CPU r
 type: how-to
 audiences:
   - ci-engineers
-last-updated: 2026-10-05
+last-updated: 2026-10-23
 ---
 
 A `llama-cpp` judge needs no secret and sends no page text anywhere. That makes it tempting for CI.
@@ -112,12 +112,12 @@ jobs:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0       # --since diffs against the base branch
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v7
         with:
           node-version: 24
           cache: npm
       - run: npm ci
-      - uses: actions/cache@v4
+      - uses: actions/cache@v6
         with:
           path: .manni/docevals/cache
           key: manni-docevals-${{ github.event.pull_request.number }}-${{ github.sha }}

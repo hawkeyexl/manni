@@ -12,7 +12,7 @@ concepts:
   - severity
   - focus node
   - coverage
-last-updated: 2026-10-21
+last-updated: 2026-10-23
 ---
 
 A pull request that breaks the docset's structure should be red before review.
@@ -42,7 +42,7 @@ jobs:
           # modified come from commits. A shallow clone degrades those
           # silently, so fetch the lot.
           fetch-depth: 0
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v7
         with:
           node-version: 24
       - run: npm ci
@@ -101,7 +101,7 @@ findings is the one worth uploading, so the upload step runs `if: always()`:
       - run: npx @hawkeyexl/manni graph build
       - name: Graph check
         run: npx @hawkeyexl/manni graph check -f sarif > graph.sarif
-      - uses: github/codeql-action/upload-sarif@v3
+      - uses: github/codeql-action/upload-sarif@v4
         if: always()
         with:
           sarif_file: graph.sarif
@@ -177,7 +177,7 @@ export to the job that already gated it:
 ```yaml
       - run: npx @hawkeyexl/manni graph export jsonld
       - run: npx @hawkeyexl/manni graph export search
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: graph
           path: graph/

@@ -38,8 +38,8 @@ function fixtureFor(parser: DocumentParser, stem: string): string | null {
   return null;
 }
 
-function lint(parser: DocumentParser, path: string, template: unknown): Finding[] {
-  const tree = parser.parse(readFileSync(path, "utf8"), path);
+async function lint(parser: DocumentParser, path: string, template: unknown): Promise<Finding[]> {
+  const tree = await parser.parse(readFileSync(path, "utf8"), path);
   return validateDocument(tree, template as Parameters<typeof validateDocument>[1]);
 }
 
@@ -65,7 +65,7 @@ describe.each(PARSERS.map((p) => [p.name, p] as const))(
       );
       const template = await loadTemplate("tgdp:how-to:1.6");
       expect(
-        lint(parser, path, template).map((f) => `${f.type}: ${f.message}`),
+        (await lint(parser, path, template)).map((f) => `${f.type}: ${f.message}`),
       ).toEqual([]);
     });
 
@@ -79,7 +79,7 @@ describe.each(PARSERS.map((p) => [p.name, p] as const))(
         `${parser.name} non-conforming fixture`,
       );
       const template = await loadTemplate("tgdp:how-to:1.6");
-      const findings = lint(parser, path, template);
+      const findings = await lint(parser, path, template);
 
       expect(findings).toHaveLength(1);
       expect(findings[0]).toMatchObject({
@@ -89,12 +89,12 @@ describe.each(PARSERS.map((p) => [p.name, p] as const))(
       });
     });
 
-    it("routes by the type its fixture declares", () => {
+    it("routes by the type its fixture declares", async () => {
       const path = defined(
         fixtureFor(parser, "how-to"),
         `${parser.name} conforming fixture`,
       );
-      const tree = parser.parse(readFileSync(path, "utf8"), path);
+      const tree = await parser.parse(readFileSync(path, "utf8"), path);
       expect(tree.format).toBe(parser.name);
       expect(tree.frontmatter?.["type"]).toBe("how-to");
     });

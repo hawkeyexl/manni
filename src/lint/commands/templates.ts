@@ -274,7 +274,7 @@ export async function runTemplatesInfer(
 
   let tree: DocumentTree;
   try {
-    tree = parser.parse(content, opts.page === STDIN ? "<stdin>" : opts.page);
+    tree = await parser.parse(content, opts.page === STDIN ? "<stdin>" : opts.page);
   } catch (err) {
     // A page that will not parse has no shape to infer, and the parser's own
     // message already names the file and the syntax it choked on.

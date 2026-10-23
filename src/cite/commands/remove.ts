@@ -286,7 +286,7 @@ export async function runRemove(opts: RemoveOptions): Promise<RemoveRun> {
       // reports the line the entry sat on before, from its origin. So the
       // answer is dropped here, and the index it is measured from is any
       // index at all.
-      else void (await manifests.write(owner, setup.sidecar.entry, kept, 0));
+      else await manifests.write(owner, setup.sidecar.entry, kept, 0);
     }
 
     const out: RemovePage = {

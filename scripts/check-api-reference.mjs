@@ -48,12 +48,17 @@ try {
   process.exit(2);
 }
 
-// The bundler emits one flat `export { A, type B, … };` at the end of the file.
-// `[^{}]` keeps this from swallowing a preceding declaration body, and the
-// trailing `;` keeps it from matching a re-export (`export { X } from "y"`).
-const statements = [...dts.matchAll(/export\s*\{([^{}]+)\}\s*;/g)];
-const last = statements.at(-1);
-if (!last) {
+// The bundler ends the file with flat export statements: tsup 8 wrote one
+// `export { A, type B, … };`, tsup 9 writes `export { A, … };` followed by
+// `export type { B, … };`. Only that trailing run is read, so a namespace's own
+// `export { … }` earlier in the file never counts. `[^{}]` keeps a match from
+// swallowing a declaration body, and the trailing `;` keeps it from matching a
+// re-export (`export { X } from "y"`).
+const FLAT_EXPORT = /export\s*(?:type\s+)?\{([^{}]+)\}\s*;/g;
+// FLAT_EXPORT's capture group rides along unused here: only the whole run is read.
+const tail = dts.match(new RegExp(`(?:${FLAT_EXPORT.source}\\s*)+$`))?.[0] ?? "";
+const statements = [...tail.matchAll(FLAT_EXPORT)];
+if (statements.length === 0) {
   // Passing here would be worse than having no guard at all: the page could
   // document nothing and still read as in sync.
   console.error(
@@ -73,8 +78,8 @@ if (!last) {
  * reaches a consumer.
  */
 const realExports = new Set(
-  last[1]
-    .split(",")
+  statements
+    .flatMap((s) => (s[1] ?? "").split(","))
     .map((n) =>
       n
         .trim()

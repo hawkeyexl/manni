@@ -21,8 +21,8 @@ function html(body: string, title = "Page"): string {
 }
 
 describe("analyzeDoc — sections from lint's tree", () => {
-  it("keeps an IRI-safe source id verbatim as the anchor", () => {
-    const doc = analyzeDoc(
+  it("keeps an IRI-safe source id verbatim as the anchor", async () => {
+    const doc = await analyzeDoc(
       html('<section id="GUID-A1B2-C3D4"><h1>How it works</h1><p>x</p></section>'),
       "guide.html",
       ALL,
@@ -33,8 +33,8 @@ describe("analyzeDoc — sections from lint's tree", () => {
     ]);
   });
 
-  it("slugs the title when the id is not IRI-safe", () => {
-    const doc = analyzeDoc(
+  it("slugs the title when the id is not IRI-safe", async () => {
+    const doc = await analyzeDoc(
       html('<h1 id="has space">Install Now</h1><h2 id="café">Verify</h2>'),
       "guide.html",
       ALL,
@@ -42,13 +42,13 @@ describe("analyzeDoc — sections from lint's tree", () => {
     expect(doc.sections.map((s) => s.slug)).toEqual(["install-now", "verify"]);
   });
 
-  it("slugs an id that would collide with a provenance fragment", () => {
-    const doc = analyzeDoc(html('<h1 id="prov.generation">Made</h1>'), "guide.html", ALL);
+  it("slugs an id that would collide with a provenance fragment", async () => {
+    const doc = await analyzeDoc(html('<h1 id="prov.generation">Made</h1>'), "guide.html", ALL);
     expect(doc.sections.map((s) => s.slug)).toEqual(["made"]);
   });
 
-  it("disambiguates duplicate ids, and slugs against ids in one namespace", () => {
-    const doc = analyzeDoc(
+  it("disambiguates duplicate ids, and slugs against ids in one namespace", async () => {
+    const doc = await analyzeDoc(
       html(
         '<h1 id="intro">A</h1><h2 id="intro">B</h2><h2>Intro</h2><h2 id="intro-2">C</h2>',
       ),
@@ -65,8 +65,8 @@ describe("analyzeDoc — sections from lint's tree", () => {
     ]);
   });
 
-  it("nests by level and orders siblings, as the Markdown path does", () => {
-    const doc = analyzeDoc(
+  it("nests by level and orders siblings, as the Markdown path does", async () => {
+    const doc = await analyzeDoc(
       html("<h1>Top</h1><h2>One</h2><h3>Deep</h3><h2>Two</h2>"),
       "guide.html",
       ALL,
@@ -80,8 +80,8 @@ describe("analyzeDoc — sections from lint's tree", () => {
     expect(doc.firstH1).toBe("Top");
   });
 
-  it("mints no section for the lead, and its headings stay top-level", () => {
-    const doc = analyzeDoc(
+  it("mints no section for the lead, and its headings stay top-level", async () => {
+    const doc = await analyzeDoc(
       html("<p>Lead prose.</p><h2>Later</h2>"),
       "guide.html",
       ALL,
@@ -91,10 +91,10 @@ describe("analyzeDoc — sections from lint's tree", () => {
     ]);
   });
 
-  it("mints no section, and no firstH1, for a title read from metadata", () => {
+  it("mints no section, and no firstH1, for a title read from metadata", async () => {
     // A `= Title`-less AsciiDoc page with a YAML title: lint adds a synthetic
     // H1 from it, which is not a heading the author wrote.
-    const doc = analyzeDoc(
+    const doc = await analyzeDoc(
       "---\ntitle: From metadata\n---\n\n== Section\n\nText.\n",
       "notes.adoc",
       ALL,
@@ -106,8 +106,8 @@ describe("analyzeDoc — sections from lint's tree", () => {
     ]);
   });
 
-  it("reads metadata with meta's extractor for the format", () => {
-    const doc = analyzeDoc(
+  it("reads metadata with meta's extractor for the format", async () => {
+    const doc = await analyzeDoc(
       html("<h1>T</h1>", "Head title").replace(
         "</head>",
         '<meta name="description" content="Said in a meta."></head>',
@@ -121,8 +121,8 @@ describe("analyzeDoc — sections from lint's tree", () => {
 });
 
 describe("analyzeDoc — links, images and code from lint's tree", () => {
-  it("resolves links across formats, keeping the anchor", () => {
-    const doc = analyzeDoc(
+  it("resolves links across formats, keeping the anchor", async () => {
+    const doc = await analyzeDoc(
       html(
         '<h1 id="t">T<a href="#t">¶</a></h1><p><a href="index.md">home</a> <a href="topic.dita#GUID-A1B2-C3D4">c</a> <a href="https://example.com/docs#section/sub">x</a></p>',
       ),
@@ -145,13 +145,13 @@ describe("analyzeDoc — links, images and code from lint's tree", () => {
     ]);
   });
 
-  it("reports a missing .html page as broken: an HTML page is a document now", () => {
-    const doc = analyzeDoc(html('<p><a href="gone.html">g</a></p>'), "guide.html", ALL);
+  it("reports a missing .html page as broken: an HTML page is a document now", async () => {
+    const doc = await analyzeDoc(html('<p><a href="gone.html">g</a></p>'), "guide.html", ALL);
     expect(doc.links).toEqual([{ raw: "gone.html", kind: "broken" }]);
   });
 
-  it("collects images and code languages, nested content included", () => {
-    const doc = analyzeDoc(
+  it("collects images and code languages, nested content included", async () => {
+    const doc = await analyzeDoc(
       html(
         '<h1>T</h1><img src="a.png" alt="a"><ul><li><pre><code class="language-bash">ls</code></pre></li></ul>',
       ),
@@ -162,10 +162,10 @@ describe("analyzeDoc — links, images and code from lint's tree", () => {
     expect(doc.codeLanguages).toEqual(["bash"]);
   });
 
-  it("names the format and the file when the parser throws, exit 2", () => {
+  it("names the format and the file when the parser throws, exit 2", async () => {
     let caught: unknown;
     try {
-      analyzeDoc("<concept><title>Unclosed", "topic.dita", ALL);
+      await analyzeDoc("<concept><title>Unclosed", "topic.dita", ALL);
     } catch (e) {
       caught = e;
     }
@@ -173,8 +173,8 @@ describe("analyzeDoc — links, images and code from lint's tree", () => {
     expect((caught as Error).message).toMatch(/^Could not parse xml in topic\.dita: /);
   });
 
-  it("parses by --as whatever the extension says", () => {
-    const doc = analyzeDoc(html("<h1>Forced</h1>"), "page.txt", ALL, { format: "html" });
+  it("parses by --as whatever the extension says", async () => {
+    const doc = await analyzeDoc(html("<h1>Forced</h1>"), "page.txt", ALL, { format: "html" });
     expect(doc.format).toBe("html");
     expect(doc.sections.map((s) => s.title)).toEqual(["Forced"]);
   });

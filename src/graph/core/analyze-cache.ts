@@ -83,7 +83,7 @@ export class AnalyzeCache {
   ) {}
 
   /** `parseBody`, served from the entry for `path` when its key matches. */
-  readonly parse = (content: string, path: string, format: DocFormat): DocBody => {
+  readonly parse = async (content: string, path: string, format: DocFormat): Promise<DocBody> => {
     const key = sha256(JSON.stringify([ENTRY_VERSION, this.version, format, path, content]));
     // Named by a digest, so a label's `..` or `:` cannot choose where it lands.
     const file = join(this.dir, `${sha256(path)}.json`);
@@ -92,7 +92,7 @@ export class AnalyzeCache {
       this.hits++;
       return cached;
     }
-    const body = parseBody(content, path, format);
+    const body = await parseBody(content, path, format);
     this.misses++;
     this.writes.push(this.write(file, JSON.stringify({ key, body })));
     return body;

@@ -13,7 +13,7 @@ lifecycle: published
 applies-to: ["domain:tracevals"]
 sample-questions: ["How do I run manni tracevals in GitHub Actions?", "How do I evaluate an untrusted trace safely?"]
 graph: { label: "Run it in CI", type: task }
-last-updated: 2026-10-20
+last-updated: 2026-10-23
 verified-by:
   - tool: doc-detective
     check: batch-corpus
@@ -187,7 +187,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v7
         with:
           node-version: 24
 
@@ -205,7 +205,7 @@ jobs:
       # most want to keep.
       - name: Publish the report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: tracevals-report
           path: tracevals-report.md
@@ -252,7 +252,7 @@ permissions:
           npx @hawkeyexl/manni tracevals run traces/refactor-session.jsonl             --deterministic-only -f sarif -o tracevals.sarif
         continue-on-error: true
 
-      - uses: github/codeql-action/upload-sarif@v3
+      - uses: github/codeql-action/upload-sarif@v4
         if: always()
         with:
           sarif_file: tracevals.sarif
@@ -314,7 +314,7 @@ rather than timestamps. The mechanics are the same three patterns above:
 
 ```yaml
       - name: Upload the session and its manifest
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: agent-session
           path: |

@@ -5,7 +5,7 @@ type: how-to
 audiences:
   - ci-engineers
   - docs-engineers
-last-updated: 2026-10-04
+last-updated: 2026-10-23
 ---
 
 A gate that is not in CI is a linter someone runs sometimes. This page is the GitHub Actions recipe;
@@ -30,7 +30,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v7
         with:
           node-version: 24
           cache: npm
@@ -38,7 +38,7 @@ jobs:
 
       # Persist the judge cache between runs — without it every push
       # re-judges the whole corpus and the bill is the story.
-      - uses: actions/cache@v4
+      - uses: actions/cache@v6
         with:
           path: .manni/docevals/cache
           key: manni-docevals-${{ hashFiles('manni.config.yaml') }}-${{ github.sha }}

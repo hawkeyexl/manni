@@ -18,14 +18,20 @@ docs/src/content/docs/a11y/ci/index.mdx:
       grader: ai
   provenance:
     - generated-by: Claude Fable 5.1
-      lines: 2-45
-      integrity: sha256-e80aad30835108b19b529973324f574fbdf1ccb5b3a439ebd3eefd30f7b989f7
+      lines: 2-34
+      integrity: sha256-cfbfa97075b8cb6ba8b4086a74836e5a0636dc4839650ade6b328671ccf7f52f
+    - generated-by: Claude Fable 5.1
+      lines: 36-45
+      integrity: sha256-536715e29fef174c3e8086e9996435b1a155dd86bc3835ea3ab84c1f0d4f4cf9
     - generated-by: Claude Opus 5.5
       lines: 47-50
       integrity: sha256-24b75fbc758d5ed6190fa64f28399a7ed382e9d0fbee1d3c0db3c37e1b3749f8
     - generated-by: Claude Fable 5.1
-      lines: 52-66
-      integrity: sha256-6fb55c24954bc1218b8a83d45191f950c1a4a589832d7edffaf63cfc6a31b061
+      lines: 52-62
+      integrity: sha256-ed879c62fd1672e4fb364cff8e15aedb756e4e6328aaf4f77a0905b84e56010d
+    - generated-by: Claude Fable 5.1
+      lines: 64-66
+      integrity: sha256-25d59caab2afb1d61c74ed5a8eff17d5af66495a99a6d1aceb09377875c692dc
     - generated-by: Claude Opus 5.5
       lines: 67-69
       integrity: sha256-ab6e9dff42d7080db45d31ccdb9639be819ee84187e13bc160a557988096f29b

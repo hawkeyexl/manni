@@ -123,10 +123,10 @@ function plainText(nodes: readonly ContentNode[]): string[] {
  * that section. A section's text starts with its title, as a Markdown slice
  * starts at its heading line.
  */
-function treeText(source: string, path: string): TreeText | undefined {
+async function treeText(source: string, path: string): Promise<TreeText | undefined> {
   const format = formatOf(path);
   if (format === "markdown" || format === "mdx") return undefined;
-  const minted = mintTreeSections(parseTree(source, path, format).sections);
+  const minted = mintTreeSections((await parseTree(source, path, format)).sections);
   const sections = new Map<string, string>();
   for (const [n, section] of minted.sections.entries()) {
     const own = plainText(minted.owned[n] ?? []);
@@ -150,11 +150,11 @@ function entry(
   return out;
 }
 
-export function buildSearchIndex(
+export async function buildSearchIndex(
   graph: GraphIndex,
   cwd: string,
   options: SearchIndexOptions = {},
-): SearchIndexDoc {
+): Promise<SearchIndexDoc> {
   const warnings = options.warnings ?? [];
   const readDoc =
     options.readDoc ??
@@ -203,7 +203,7 @@ export function buildSearchIndex(
     const tree =
       source === undefined || path === undefined
         ? undefined
-        : treeText(source, path);
+        : await treeText(source, path);
     if (tree) treeTextOf.set(doc, tree);
     const body =
       source === undefined

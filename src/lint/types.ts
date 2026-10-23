@@ -282,8 +282,12 @@ export interface DocumentParser {
    * clean run into a failure about files the user never asked to lint.
    */
   walkExtensions?: string[];
-  /** Parse raw file content into the generic tree. */
-  parse(content: string, filePath: string): DocumentTree;
+  /**
+   * Parse raw file content into the generic tree. AsciiDoc's parser returns a
+   * promise, because Asciidoctor loads a document asynchronously; the others
+   * return the tree itself. A caller awaits either.
+   */
+  parse(content: string, filePath: string): DocumentTree | Promise<DocumentTree>;
 }
 
 /**

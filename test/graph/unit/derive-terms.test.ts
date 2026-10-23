@@ -35,12 +35,14 @@ const TERMBASE: TermLabel[] = [
   { label: "Bolt", id: "bolt-de", language: "de" },
 ];
 
-function build(
+async function build(
   files: Record<string, string>,
   { derive = ON, termbase = TERMBASE }: { derive?: DeriveSource[]; termbase?: TermLabel[] } = {},
-): Quad[] {
+): Promise<Quad[]> {
   const paths = new Set(Object.keys(files));
-  const docs = Object.entries(files).map(([path, content]) => analyzeDoc(content, path, paths));
+  const docs = await Promise.all(
+    Object.entries(files).map(([path, content]) => analyzeDoc(content, path, paths)),
+  );
   return deriveGraph(docs, { baseIri: BASE, derive, termbase });
 }
 
@@ -55,8 +57,8 @@ const objects = (quads: Quad[], s: string, p: string) =>
   quads.filter((q) => q.s === s && q.p === p).map((q) => q.o);
 
 describe("term concepts", () => {
-  it("makes every term a concept in the scheme, one per id, labels tagged by language", () => {
-    const quads = build({ "a.md": "# A\n" });
+  it("makes every term a concept in the scheme, one per id, labels tagged by language", async () => {
+    const quads = await build({ "a.md": "# A\n" });
     expect(has(quads, C("widget"), `${NS.rdf}type`, iri(SKOS("Concept")))).toBe(true);
     expect(has(quads, C("widget"), SKOS("inScheme"), iri(SCHEME))).toBe(true);
     const prefLabels = objects(quads, C("widget"), SKOS("prefLabel"));
@@ -70,14 +72,14 @@ describe("term concepts", () => {
     expect(has(quads, C("token-x"), SKOS("definition"), lit("A bearer credential."))).toBe(true);
   });
 
-  it("does not make a see entry a concept, and gives its label to the target", () => {
-    const quads = build({ "a.md": "# A\n" });
+  it("does not make a see entry a concept, and gives its label to the target", async () => {
+    const quads = await build({ "a.md": "# A\n" });
     expect(quads.some((q) => q.s === C("pal"))).toBe(false);
     expect(has(quads, C("pluggable-auth-layer"), SKOS("altLabel"), lit("PAL"))).toBe(true);
   });
 
-  it("resolves term relations through the termbase, and mints the rest freeform", () => {
-    const quads = build({ "a.md": "# A\n" });
+  it("resolves term relations through the termbase, and mints the rest freeform", async () => {
+    const quads = await build({ "a.md": "# A\n" });
     expect(has(quads, C("widget"), SKOS("broader"), iri(C("token-x")))).toBe(true);
     expect(has(quads, C("token-x"), SKOS("narrower"), iri(C("widget")))).toBe(true);
     expect(has(quads, C("widget"), SKOS("related"), iri(C("gizmo")))).toBe(true);
@@ -85,10 +87,10 @@ describe("term concepts", () => {
     expect(has(quads, C("gizmo"), SKOS("prefLabel"), lit("Gizmo"))).toBe(true);
   });
 
-  it("keeps each language's notation when they differ, one triple per code", () => {
+  it("keeps each language's notation when they differ, one triple per code", async () => {
     // Different notation systems may each give the concept a code; SKOS allows
     // several notations on one concept, so both are kept.
-    const quads = build(
+    const quads = await build(
       { "a.md": "# A\n" },
       {
         termbase: [
@@ -101,8 +103,8 @@ describe("term concepts", () => {
     expect(codes.sort()).toEqual(["DIN-42", "OPT-1"]);
   });
 
-  it("carries a term's notation as a plain literal and each mapping as an IRI", () => {
-    const quads = build(
+  it("carries a term's notation as a plain literal and each mapping as an IRI", async () => {
+    const quads = await build(
       { "a.md": "# A\n" },
       {
         termbase: [
@@ -135,8 +137,8 @@ describe("term concepts", () => {
 });
 
 describe("one node per concept, however a page spells it", () => {
-  it("resolves a reference by label, id and alt-label, case-insensitive, adding no prefLabel", () => {
-    const quads = build({
+  it("resolves a reference by label, id and alt-label, case-insensitive, adding no prefLabel", async () => {
+    const quads = await build({
       "a.md": "---\nconcepts: [access TOKEN, token-x, auth plug-in]\n---\n# A\n",
     });
     expect(objects(quads, DOC("a.md"), `${NS.dcterms}subject`)).toEqual([
@@ -147,15 +149,15 @@ describe("one node per concept, however a page spells it", () => {
     expect(quads.some((q) => q.s === C("access-token"))).toBe(false);
   });
 
-  it("follows a see entry to its target", () => {
-    const quads = build({ "a.md": "---\nkeywords: [PAL]\n---\n# A\n" });
+  it("follows a see entry to its target", async () => {
+    const quads = await build({ "a.md": "---\nkeywords: [PAL]\n---\n# A\n" });
     expect(has(quads, DOC("a.md"), `${NS.dcterms}subject`, iri(C("pluggable-auth-layer")))).toBe(
       true,
     );
   });
 
-  it("prefers the page's own language, then any", () => {
-    const quads = build({
+  it("prefers the page's own language, then any", async () => {
+    const quads = await build({
       "de.md": "---\nlang: de\nconcepts: [Bolt]\n---\n# A\n",
       "en.md": "---\nlang: en-us\nconcepts: [Bolt]\n---\n# A\n",
       "fr.md": "---\nlang: fr\nconcepts: [Widget-Komponente]\n---\n# A\n",
@@ -165,8 +167,8 @@ describe("one node per concept, however a page spells it", () => {
     expect(objects(quads, DOC("fr.md"), `${NS.dcterms}subject`)).toEqual([iri(C("widget"))]);
   });
 
-  it("resolves a graph block's label and edges, and emits every edge both ways", () => {
-    const quads = build({
+  it("resolves a graph block's label and edges, and emits every edge both ways", async () => {
+    const quads = await build({
       "a.md":
         "---\ngraph:\n  label: OAuth\n  broader: [Access token]\n  narrower: [Refresh]\n  related-concepts: [PAL]\n---\n# A\n",
     });
@@ -177,8 +179,8 @@ describe("one node per concept, however a page spells it", () => {
     expect(objects(quads, C("token-x"), SKOS("prefLabel"))).toEqual([lit("Access token")]);
   });
 
-  it("gives a term page its term as primary topic", () => {
-    const quads = build({
+  it("gives a term page its term as primary topic", async () => {
+    const quads = await build({
       "glossary/token.md": "---\ntype: term\nid: token-x\nlabel: Access token\n---\n# T\n",
       "glossary/pal.md": "---\ntype: term\nlabel: Pluggable auth layer\n---\n# P\n",
     });
@@ -192,16 +194,16 @@ describe("one node per concept, however a page spells it", () => {
 });
 
 describe("top concepts", () => {
-  it("marks every concept with no broader concept, both ways round", () => {
-    const quads = build({ "a.md": "# A\n" });
+  it("marks every concept with no broader concept, both ways round", async () => {
+    const quads = await build({ "a.md": "# A\n" });
     expect(has(quads, C("token-x"), SKOS("topConceptOf"), iri(SCHEME))).toBe(true);
     expect(has(quads, SCHEME, SKOS("hasTopConcept"), iri(C("token-x")))).toBe(true);
     expect(has(quads, C("widget"), SKOS("topConceptOf"), iri(SCHEME))).toBe(false);
     expect(has(quads, SCHEME, SKOS("hasTopConcept"), iri(C("widget")))).toBe(false);
   });
 
-  it("applies to freeform concepts too, with no termbase", () => {
-    const quads = build(
+  it("applies to freeform concepts too, with no termbase", async () => {
+    const quads = await build(
       { "a.md": "---\ngraph:\n  label: Child\n  broader: [Parent]\n---\n# A\n" },
       { termbase: [] },
     );
@@ -212,8 +214,8 @@ describe("top concepts", () => {
 });
 
 describe("without the terms derive source", () => {
-  it("ignores the termbase and mints concepts from labels, as before", () => {
-    const quads = build(
+  it("ignores the termbase and mints concepts from labels, as before", async () => {
+    const quads = await build(
       { "a.md": "---\nconcepts: [Auth plug-in]\n---\n# A\n" },
       { derive: ["frontmatter", "tags"] },
     );

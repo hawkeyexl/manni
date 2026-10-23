@@ -401,7 +401,7 @@ describe("a bare list item counts the same in every format", () => {
     }
   });
 
-  it("agrees across markdown, html, xml, asciidoc, and rst", () => {
+  it("agrees across markdown, html, xml, asciidoc, and rst", async () => {
     const trees = [
       markdownParser.parse("# T\n\n## Steps\n\n- one\n- two\n", "a.md"),
       htmlParser.parse(
@@ -412,7 +412,7 @@ describe("a bare list item counts the same in every format", () => {
         '<topic id="t"><title>T</title><body><section><title>Steps</title><ul><li>one</li><li>two</li></ul></section></body></topic>',
         "a.dita",
       ),
-      asciidocParser.parse("= T\n\n== Steps\n\n* one\n* two\n", "a.adoc"),
+      await asciidocParser.parse("= T\n\n== Steps\n\n* one\n* two\n", "a.adoc"),
       rstParser.parse("T\n=\n\nSteps\n-----\n\n- one\n- two\n", "a.rst"),
     ];
 
@@ -428,8 +428,8 @@ describe("a bare list item counts the same in every format", () => {
 describe("metadata is read from both a fence and the format's own header", () => {
   // docmeta's AsciiDoc and reStructuredText extractors return the fence and
   // stop, so a page carrying both lost its native `:type:` and was skipped.
-  it("keeps `type` when an AsciiDoc page also has a fence", () => {
-    const tree = asciidocParser.parse(
+  it("keeps `type` when an AsciiDoc page also has a fence", async () => {
+    const tree = await asciidocParser.parse(
       "---\naudience: admins\n---\n= Title\n:type: how-to\n\nBody.\n",
       "a.adoc",
     );

@@ -78,7 +78,7 @@ export interface AnalyzeOptions {
    * How the body is parsed. Absent, `parseBody`. `graph build` passes a cache's
    * `parse` here, which returns what `parseBody` would (`analyze-cache.ts`).
    */
-  parse?: (content: string, path: string, format: DocFormat) => DocBody;
+  parse?: (content: string, path: string, format: DocFormat) => Promise<DocBody>;
 }
 
 /**
@@ -476,12 +476,12 @@ export function metadataOf(
 }
 
 /** Analyze one document. `allPaths` is the discovered corpus for link resolution. */
-export function analyzeDoc(
+export async function analyzeDoc(
   content: string,
   relPath: string,
   allPaths: ReadonlySet<string>,
   options: AnalyzeOptions = {},
-): DocModel {
+): Promise<DocModel> {
   const routes = options.routes ?? [];
   const path = normalizeDocPath(relPath);
   const format = formatOf(path, options.format);
@@ -489,9 +489,9 @@ export function analyzeDoc(
   // A tree format is parsed first, so a malformed page is reported as a parse
   // failure rather than as whatever the metadata reader tripped on. Markdown
   // keeps its order: its parse cannot fail where its frontmatter can.
-  let body = isTreeFormat(format) ? parse(content, path, format) : undefined;
+  let body = isTreeFormat(format) ? await parse(content, path, format) : undefined;
   const meta = metadataOf(content, path, format);
-  body ??= parse(content, path, format);
+  body ??= await parse(content, path, format);
 
   const links: DocLink[] = [];
   for (const target of body.linkTargets) {
@@ -546,11 +546,11 @@ function statementsOf(content: string, format: DocFormat): DocStatement[] {
 }
 
 /** Parse a page's body into its `DocBody`. `path` only names the page in an error. */
-export function parseBody(
+export async function parseBody(
   content: string,
   path: string,
   format: DocFormat,
-): DocBody {
+): Promise<DocBody> {
   if (isTreeFormat(format)) return parseTreeBody(content, path, format);
   const isMdx = format === "mdx";
   let tree: Root;
@@ -670,17 +670,17 @@ export function parseBody(
  * Lint's tree for `content`, parsed as `format`. A parser's throw names the
  * format and the file, and exits 2, as an MDX parse failure does.
  */
-export function parseTree(
+export async function parseTree(
   content: string,
   path: string,
   format: TreeFormat,
-): DocumentTree {
+): Promise<DocumentTree> {
   const parser = parserByName(format);
   if (parser === undefined) {
     throw new GraphError(`No parser reads ${format}.`);
   }
   try {
-    return parser.parse(content, path);
+    return await parser.parse(content, path);
   } catch (error) {
     throw new GraphError(
       `Could not parse ${format} in ${path}: ${errorMessage(error)}`,
@@ -820,12 +820,12 @@ function treeContent(sections: readonly SectionNode[]): ContentNode[] {
 }
 
 /** A non-Markdown page's body, from lint's tree. */
-function parseTreeBody(
+async function parseTreeBody(
   content: string,
   path: string,
   format: TreeFormat,
-): DocBody {
-  const tree = parseTree(content, path, format);
+): Promise<DocBody> {
+  const tree = await parseTree(content, path, format);
   const minted = mintTreeSections(tree.sections);
   const imageTargets: string[] = [];
   const codeLanguages = new Set<string>();

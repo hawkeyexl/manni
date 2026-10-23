@@ -58,9 +58,9 @@ docs/src/content/docs/meta/schemas/resolution.mdx:
         integrity: sha256-2d3bf8ee1ef457dfdcc8a9a50de585e8c6214ff8edef7beb8dd829abb7388bea
       source:
         file: src/meta/core/validator.ts
-        lines: 956-967
+        lines: 950-961
         integrity: sha256-9d3a4ada9bb23715cd386f470c57c2a7b2105a168eaf68bfb4cad5d2a633c4f8
-        commit-sha: cb74827009894c38f8646504ae9eb4a2745761a9
+        commit-sha: 13e1b66ba66ec8dcaad71604abc443248a7e1b5a
     - id: unresolvable-reference-stops-the-run
       claim:
         lines: 157
@@ -138,9 +138,9 @@ docs/src/content/docs/meta/schemas/resolution.mdx:
         integrity: sha256-5485b37446518c014aef7fa40133bf18123602a9b623010c31ca7c45ca3fbf32
       source:
         file: src/meta/core/validator.ts
-        lines: 951-953
+        lines: 946-948
         integrity: sha256-b8f39d6d21f30a400cabe25059d553fc2d70ec3f6633292881c053d55975c4ca
-        commit-sha: cb74827009894c38f8646504ae9eb4a2745761a9
+        commit-sha: 13e1b66ba66ec8dcaad71604abc443248a7e1b5a
     - id: override-names-files-or-a-collection
       claim:
         integrity: sha256-401ed52eea8df3f81275dc647e6806472c160ad2aa3fa3abdd8cb3373a0ba536
@@ -155,9 +155,9 @@ docs/src/content/docs/meta/schemas/resolution.mdx:
         integrity: sha256-37d61e4e607f0e04945799f07818bdbf05e6b26d86759c01d170573edf6dd667
       source:
         file: src/meta/core/validator.ts
-        lines: 951-953
+        lines: 946-948
         integrity: sha256-b8f39d6d21f30a400cabe25059d553fc2d70ec3f6633292881c053d55975c4ca
-        commit-sha: cb74827009894c38f8646504ae9eb4a2745761a9
+        commit-sha: 13e1b66ba66ec8dcaad71604abc443248a7e1b5a
     - id: precedence-is-not-a-merge
       claim:
         lines: 28

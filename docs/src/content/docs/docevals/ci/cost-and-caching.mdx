@@ -6,7 +6,7 @@ audiences:
   - ci-engineers
   - docs-engineers
   - schema-authors
-last-updated: 2026-09-13
+last-updated: 2026-10-23
 ---
 
 Model calls are per-invocation, so the risk is not one large bill. The risk is an *unpredictable* amount
@@ -110,7 +110,7 @@ Everything above assumes repeat runs are nearly free. A CI job that starts cold 
 the entire corpus on every push. The resulting bill is what makes someone delete the step.
 
 ```yaml
-      - uses: actions/cache@v4
+      - uses: actions/cache@v6
         with:
           path: .manni/docevals/cache
           key: manni-docevals-${{ hashFiles('manni.config.yaml') }}-${{ github.sha }}

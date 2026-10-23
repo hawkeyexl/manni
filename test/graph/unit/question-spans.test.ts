@@ -10,7 +10,7 @@ import { GraphIndex } from "../../../src/graph/runtime/graph.js";
 const DOC = "urn:manni:graph:doc/guide.html";
 
 describe("sectionSpans for a tree format", () => {
-  it("spans each heading down to the line before the next heading", () => {
+  it("spans each heading down to the line before the next heading", async () => {
     const html = [
       "<html><body>", // 1
       "<h2>First</h2>", // 2
@@ -20,7 +20,7 @@ describe("sectionSpans for a tree format", () => {
       "<p>Three.</p>", // 6
       "</body></html>", // 7
     ].join("\n");
-    const spans = sectionSpans(GraphIndex.fromQuads([]), DOC, "guide.html", html, [
+    const spans = await sectionSpans(GraphIndex.fromQuads([]), DOC, "guide.html", html, [
       `${DOC}#first`,
       `${DOC}#second`,
     ]);

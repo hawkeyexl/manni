@@ -10,11 +10,14 @@ docs/src/content/docs/docevals/ci/index.mdx:
       lines: 2-22
       integrity: sha256-a98dea6a931437ff0eb697841802ab0256bc7cdacbff9bc14e5d02b9604da103
     - generated-by: Claude Opus 5
-      lines: 23-24
-      integrity: sha256-02da42da10010f0fe8da04bebdff8b7ac66c204c1b4c2e09898563e9e82bf577
+      lines: 23
+      integrity: sha256-58f00e46fdbbb68a75f1437f9f5dfcade0928cfd0a7553c1b8ab4520a4c96642
     - generated-by: Claude Fable 5.1
-      lines: 25-55
-      integrity: sha256-9e3505339a9f8a18987bf947acb50f323b16e79fe1f29a444bfaec4e563de2ca
+      lines: 25-31
+      integrity: sha256-13753e0d18bb7b083809dba22a38d6c6f3611512d368672d06615f18322a788c
+    - generated-by: Claude Fable 5.1
+      lines: 33-55
+      integrity: sha256-da778aebca4bbf4ef2db023f0b7c9a9326610b41a491732d31aaf53cfa869560
     - generated-by: Claude Fable 5.1
       lines: 60-74
       integrity: sha256-bbe35b4c337236388f8ec9e5108e2fec7897fef002b4588a4d386ce5191dc76d

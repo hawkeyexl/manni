@@ -53,7 +53,7 @@ jobs:
           # repository's own history, and a shallow checkout is refused by
           # design (proposal 0040, decision 6).
           fetch-depth: 0
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v7
         with:
           node-version: 24
           cache: npm
@@ -97,7 +97,7 @@ jobs:
       # marked AVOID upstream for that reason.
       #
       # A warm run adds roughly ten seconds. A cold one adds a couple of minutes.
-      - uses: actions/cache@v4
+      - uses: actions/cache@v6
         with:
           path: ~/.hawkeyexl-inference
           key: inference-local-granite-4.1-3b-q2-${{ runner.os }}

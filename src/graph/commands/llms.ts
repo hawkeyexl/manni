@@ -123,7 +123,7 @@ export async function exportLlms(opts: LlmsOptions): Promise<{ pages: number; wa
   const paths = pages.map((p) => p.path);
   const view = await openMetaView(opts.source, cwd, paths, sources);
   const models = await withExternalMetadata(
-    pages.map((p) => analyzeDoc(p.content, p.path, new Set(paths), { routes })),
+    await Promise.all(pages.map((p) => analyzeDoc(p.content, p.path, new Set(paths), { routes }))),
     view,
   );
 

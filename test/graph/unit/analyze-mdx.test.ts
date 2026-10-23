@@ -15,8 +15,8 @@ import { GraphError } from "../../../src/graph/types.js";
 const corpus = new Set(["docs/guide.md", "docs/other.md", "docs/target.mdx"]);
 
 describe("analyzeDoc over .mdx", () => {
-  it("derives a link from an href attribute on a JSX element", () => {
-    const doc = analyzeDoc(
+  it("derives a link from an href attribute on a JSX element", async () => {
+    const doc = await analyzeDoc(
       `import { LinkCard } from '@astrojs/starlight/components';\n\n` +
         `<LinkCard title="Other" href="other.md" />\n`,
       "docs/guide.mdx",
@@ -27,9 +27,9 @@ describe("analyzeDoc over .mdx", () => {
     expect(doc.links[0]?.resolvedPath).toBe("docs/other.md");
   });
 
-  it("derives an image from a src attribute on an image element", () => {
+  it("derives an image from a src attribute on an image element", async () => {
     for (const element of ["img", "Image"]) {
-      const doc = analyzeDoc(
+      const doc = await analyzeDoc(
         `<${element} src="img/arch.png" alt="Architecture" />\n`,
         "docs/guide.mdx",
         corpus,
@@ -38,7 +38,7 @@ describe("analyzeDoc over .mdx", () => {
     }
   });
 
-  it("does not call every src an image", () => {
+  it("does not call every src an image", async () => {
     // HTML's `src` is the generic external-resource attribute — iframe, video,
     // script, audio, source, embed all use it. Emitting `schema:image` for a
     // YouTube embed or a script tag would be a wrong type assertion, not a
@@ -48,13 +48,13 @@ describe("analyzeDoc over .mdx", () => {
       `<video src="demo.mp4" />\n`,
       `<script src="analytics.js" />\n`,
     ]) {
-      const doc = analyzeDoc(source, "docs/guide.mdx", corpus);
+      const doc = await analyzeDoc(source, "docs/guide.mdx", corpus);
       expect(doc.images).toEqual([]);
     }
   });
 
-  it("reaches a JSX element nested inside another", () => {
-    const doc = analyzeDoc(
+  it("reaches a JSX element nested inside another", async () => {
+    const doc = await analyzeDoc(
       `<CardGrid>\n  <LinkCard href="other.md" />\n</CardGrid>\n`,
       "docs/guide.mdx",
       corpus,
@@ -62,8 +62,8 @@ describe("analyzeDoc over .mdx", () => {
     expect(doc.links.map((l) => l.raw)).toEqual(["other.md"]);
   });
 
-  it("still derives ordinary Markdown links and headings from .mdx", () => {
-    const doc = analyzeDoc(
+  it("still derives ordinary Markdown links and headings from .mdx", async () => {
+    const doc = await analyzeDoc(
       `# Guide\n\nSee [other](other.md) and <LinkCard href="target.mdx" />.\n`,
       "docs/guide.mdx",
       corpus,
@@ -75,10 +75,10 @@ describe("analyzeDoc over .mdx", () => {
     ]);
   });
 
-  it("skips an expression attribute rather than guessing its value", () => {
+  it("skips an expression attribute rather than guessing its value", async () => {
     // `href={route}` is not knowable without evaluating the module; asserting a
     // wrong edge confidently is worse than asserting none.
-    const doc = analyzeDoc(
+    const doc = await analyzeDoc(
       `<LinkCard href={route} />\n`,
       "docs/guide.mdx",
       corpus,
@@ -86,8 +86,8 @@ describe("analyzeDoc over .mdx", () => {
     expect(doc.links).toEqual([]);
   });
 
-  it("classifies an absolute JSX href as external", () => {
-    const doc = analyzeDoc(
+  it("classifies an absolute JSX href as external", async () => {
+    const doc = await analyzeDoc(
       `<LinkCard href="https://example.com/x" />\n`,
       "docs/guide.mdx",
       corpus,
@@ -103,16 +103,16 @@ describe("unparseable .mdx", () => {
   // the contract reserves for findings), and never name the offending file.
   const bad = `# Bad\n\n<LinkCard href="x">\n`;
 
-  it("raises a GraphError rather than letting the parser throw", () => {
-    expect(() => analyzeDoc(bad, "docs/broken.mdx", corpus)).toThrow(
+  it("raises a GraphError rather than letting the parser throw", async () => {
+    await expect(analyzeDoc(bad, "docs/broken.mdx", corpus)).rejects.toThrow(
       GraphError,
     );
   });
 
-  it("names the file and the parser's reason", () => {
+  it("names the file and the parser's reason", async () => {
     let message = "";
     try {
-      analyzeDoc(bad, "docs/broken.mdx", corpus);
+      await analyzeDoc(bad, "docs/broken.mdx", corpus);
     } catch (error) {
       message = (error as Error).message;
     }
@@ -122,8 +122,8 @@ describe("unparseable .mdx", () => {
 });
 
 describe("analyzeDoc over .md is unaffected", () => {
-  it("treats JSX-looking text as ordinary content, not attributes", () => {
-    const doc = analyzeDoc(
+  it("treats JSX-looking text as ordinary content, not attributes", async () => {
+    const doc = await analyzeDoc(
       `# Guide\n\n<LinkCard href="other.md" />\n`,
       "docs/guide.md",
       corpus,
@@ -133,8 +133,8 @@ describe("analyzeDoc over .md is unaffected", () => {
     expect(doc.firstH1).toBe("Guide");
   });
 
-  it("parses prose containing braces, which MDX would treat as an expression", () => {
-    const doc = analyzeDoc(
+  it("parses prose containing braces, which MDX would treat as an expression", async () => {
+    const doc = await analyzeDoc(
       `# Guide\n\nUse {placeholder} in the template, then see [other](other.md).\n`,
       "docs/guide.md",
       corpus,
@@ -145,14 +145,14 @@ describe("analyzeDoc over .md is unaffected", () => {
 });
 
 describe("analyzeDoc's format", () => {
-  it("is mdx for a .mdx path and markdown for a .md path", () => {
-    expect(analyzeDoc("# A\n", "docs/guide.mdx", corpus).format).toBe("mdx");
-    expect(analyzeDoc("# A\n", "docs/guide.md", corpus).format).toBe("markdown");
+  it("is mdx for a .mdx path and markdown for a .md path", async () => {
+    expect((await analyzeDoc("# A\n", "docs/guide.mdx", corpus)).format).toBe("mdx");
+    expect((await analyzeDoc("# A\n", "docs/guide.md", corpus)).format).toBe("markdown");
   });
 
-  it("is what --as names, whatever the path says", () => {
+  it("is what --as names, whatever the path says", async () => {
     expect(
-      analyzeDoc("# A\n", "docs/guide.md", corpus, { format: "mdx" }).format,
+      (await analyzeDoc("# A\n", "docs/guide.md", corpus, { format: "mdx" })).format,
     ).toBe("mdx");
   });
 });

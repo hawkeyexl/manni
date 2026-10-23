@@ -23,7 +23,7 @@ function recordingView(formats: string[]): MetaPageView {
 describe("withExternalMetadata", () => {
   it("hands meta each page in the format graph parsed it as", async () => {
     const paths = new Set(["docs/a.md", "docs/b.mdx"]);
-    const docs = [...paths].map((p) => analyzeDoc("---\ntitle: T\n---\n", p, paths));
+    const docs = await Promise.all([...paths].map((p) => analyzeDoc("---\ntitle: T\n---\n", p, paths)));
     const formats: string[] = [];
     await withExternalMetadata(docs, recordingView(formats));
     expect(formats).toEqual(["markdown", "mdx"]);

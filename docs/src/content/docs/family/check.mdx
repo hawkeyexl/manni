@@ -15,7 +15,7 @@ prerequisites: ["meta-reference-configuration"]
 next-steps: ["family-claude-code", "family-reference-cli"]
 sample-questions: ["How do I run every manni check in one CI step?", "What does a skipped line in the manni check report mean?", "Why did manni check skip meta in my repository?"]
 graph: { label: "Gate every check a repo has set up", type: task }
-last-updated: 2026-10-22
+last-updated: 2026-10-23
 tags:
   - ci-cd
   - cli
@@ -188,7 +188,7 @@ The same gate without the Action is a `run:` step. Redirect stdin from
 pipe, reading it for a Claude Code hook.
 
 ```yaml title=".github/workflows/docs.yml"
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v7
         with:
           node-version: 24
 
@@ -244,7 +244,7 @@ jobs:
           format: sarif
           output-file: manni.sarif
       - if: ${{ !cancelled() && hashFiles('manni.sarif') != '' }}
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: manni.sarif
 ```

@@ -21,6 +21,6 @@ docs/src/content/docs/site/annotate/index.mdx:
     - "@hawkeyexl"
   provenance:
     - generated-by: Claude Opus 5.5
-      lines: 2-142
-      integrity: sha256-d3f4d7aa229b7338a53e169b5dd1c6afed60d3324e5aa44f09472676487a80f7
+      lines: 2-149
+      integrity: sha256-bccefa44b07f4a5f1a9f4e3154d181cb75482a2c2175d26910da3a7ac66f8849
   created: 2026-10-21

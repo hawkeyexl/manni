@@ -542,8 +542,8 @@ describe("heading shapes the build titles in plain text", () => {
    * The title a section carries is what `analyzeDoc` reads through remark, so
    * the slice has to find a heading from that title whatever its source shape.
    */
-  const ownTextOfEach = (md: string): Array<string | undefined> => {
-    const doc = analyzeDoc(md, "docs/a.md", new Set(["docs/a.md"]));
+  const ownTextOfEach = async (md: string): Promise<Array<string | undefined>> => {
+    const doc = await analyzeDoc(md, "docs/a.md", new Set(["docs/a.md"]));
     const seen = new Map<string, number>();
     return doc.sections.map((s) => {
       const key = `${String(s.level)}:${s.title.toLowerCase()}`;
@@ -566,30 +566,30 @@ describe("heading shapes the build titles in plain text", () => {
     ["a three-space indent", "   ## Indented\n\nBody."],
     ["setext level 1", "Setext One\n==========\n\nBody."],
     ["setext level 2", "Setext Two\n---\n\nBody."],
-  ])("finds a heading with %s", (_shape, md) => {
-    const [own] = ownTextOfEach(md);
+  ])("finds a heading with %s", async (_shape, md) => {
+    const [own] = await ownTextOfEach(md);
     expect(own).toBeDefined();
     expect(own).toContain("Body.");
   });
 
-  it("ends a setext section at the next heading, and an ATX one at a setext", () => {
+  it("ends a setext section at the next heading, and an ATX one at a setext", async () => {
     const md = "# Top\n\nTop body.\n\nNext\n----\n\nNext body.\n\n## Last\n\nLast body.";
-    expect(ownTextOfEach(md)).toEqual([
+    expect(await ownTextOfEach(md)).toEqual([
       "# Top\n\nTop body.",
       "Next\n----\n\nNext body.",
       "## Last\n\nLast body.",
     ]);
   });
 
-  it("does not read frontmatter's closing --- as a setext heading", () => {
+  it("does not read frontmatter's closing --- as a setext heading", async () => {
     const md = "---\ntitle: Page\n---\n\n# Real\n\nBody.";
     expect(sectionOwnText(md, "title: Page", 2)).toBeUndefined();
-    expect(ownTextOfEach(md)).toEqual(["# Real\n\nBody."]);
+    expect(await ownTextOfEach(md)).toEqual(["# Real\n\nBody."]);
   });
 
-  it("does not read a thematic break after a blank line as a heading", () => {
+  it("does not read a thematic break after a blank line as a heading", async () => {
     const md = "# Top\n\nProse.\n\n---\n\nMore prose.";
-    expect(ownTextOfEach(md)).toEqual([md]);
+    expect(await ownTextOfEach(md)).toEqual([md]);
   });
 
   it("ends the preamble at a setext or indented heading", () => {

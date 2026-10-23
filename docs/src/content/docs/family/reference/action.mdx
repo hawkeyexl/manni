@@ -288,7 +288,7 @@ jobs:
           format: sarif
           output-file: manni.sarif
       - if: ${{ !cancelled() && hashFiles('manni.sarif') != '' }}
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: manni.sarif
 ```
@@ -369,7 +369,7 @@ shows the same steps with `meta validate`:
 - uses: actions/checkout@v7
   with:
     fetch-depth: 0
-- uses: actions/setup-node@v6
+- uses: actions/setup-node@v7
   with:
     node-version: 24
 - run: npx -y @hawkeyexl/manni check --format github < /dev/null

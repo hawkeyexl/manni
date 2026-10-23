@@ -113,7 +113,7 @@ export class FillGuard {
    * other page is parsed by its extension, as `build` reads it. A page that
    * will not read or analyze is left out and listed in `unreadable`.
    */
-  static create(
+  static async create(
     files: string[],
     cwd: string,
     config: GraphConfig,
@@ -128,7 +128,7 @@ export class FillGuard {
       format?: DocFormat;
       inputs?: ReadonlySet<string>;
     } = {},
-  ): FillGuard {
+  ): Promise<FillGuard> {
     const sources = config.build.derive.filter((s) =>
       GUARD_SOURCES.includes(s),
     );
@@ -149,7 +149,7 @@ export class FillGuard {
       try {
         guard.models.set(
           path,
-          analyzeDoc(
+          await analyzeDoc(
             inline.get(path) ?? readFileSync(resolve(cwd, path), "utf8"),
             path,
             guard.allPaths,
@@ -267,7 +267,7 @@ export class FillGuard {
         current,
         { force: this.force },
       );
-      const model = analyzeDoc(
+      const model = await analyzeDoc(
         applied.content,
         path,
         this.allPaths,
@@ -315,10 +315,10 @@ export class FillGuard {
   }
 
   /** Fold an accepted (written or would-be-written) doc into guard state. */
-  commit(path: string, content: string): void {
+  async commit(path: string, content: string): Promise<void> {
     this.models.set(
       path,
-      analyzeDoc(content, path, this.allPaths, this.analyzeOptions),
+      await analyzeDoc(content, path, this.allPaths, this.analyzeOptions),
     );
     this.baselineKeys = null;
   }
