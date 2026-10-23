@@ -60,6 +60,13 @@ export default defineConfig({
 });
 ```
 
+Astro 7.3 and later run `rehypePlugins` through `@astrojs/markdown-remark`,
+which they no longer install, so add it to the site:
+
+```console
+$ npm install @astrojs/markdown-remark
+```
+
 Annotate removes every stamp after the join, so none reaches the deployed
 site. Load the plugin only where annotate runs.
 

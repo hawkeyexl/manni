@@ -169,7 +169,6 @@ export async function exportChunks(opts: ChunksOptions): Promise<ChunksResult> {
     if (model === undefined) continue;
     const refs = view.refsFor(page.path, model.frontmatter);
     const { $schema: _schema, ...own } = model.frontmatter;
-    void _schema;
     const metadata = plain(await deliveredFields(own, refs, view.validator)) as Record<string, unknown>;
     pageMetadata[page.path] = { metadata };
     const { bodyLine } = bodyOf(page.content, model.format);
