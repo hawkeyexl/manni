@@ -214,48 +214,48 @@ describe("xml links and ids", () => {
 describe("asciidoc links and ids", () => {
   const parse = (adoc: string) => asciidocParser.parse(adoc, "page.adoc");
 
-  it("collects link targets from paragraphs, titles and list items", () => {
-    const tree = parse(
+  it("collects link targets from paragraphs, titles and list items", async () => {
+    const tree = await parse(
       `= Doc\n\n== Use https://example.com[the site]\n\nSee link:guide.html[Guide].\n\n` +
         `* item <<install>>\n`,
     );
     expect(targets(tree)).toEqual(["https://example.com", "guide.html", "#install"]);
   });
 
-  it("keeps a cross-file xref's .adoc suffix", () => {
-    const tree = parse(`= Doc\n\nSee xref:other.adoc#sec[Other] and xref:more.adoc[].\n`);
+  it("keeps a cross-file xref's .adoc suffix", async () => {
+    const tree = await parse(`= Doc\n\nSee xref:other.adoc#sec[Other] and xref:more.adoc[].\n`);
     expect(targets(tree)).toEqual(["other.adoc#sec", "more.adoc"]);
   });
 
-  it("decodes entities in an href", () => {
-    const tree = parse(`= Doc\n\nlink:a.html?x=1&y=2[q]\n`);
+  it("decodes entities in an href", async () => {
+    const tree = await parse(`= Doc\n\nlink:a.html?x=1&y=2[q]\n`);
     expect(targets(tree)).toEqual(["a.html?x=1&y=2"]);
   });
 
-  it("never reads an include, and does not count it as a link", () => {
+  it("never reads an include, and does not count it as a link", async () => {
     const dir = mkdtempSync(join(tmpdir(), "manni-adoc-include-"));
     const secret = join(dir, "secret.adoc").replace(/\\/g, "/");
     writeFileSync(secret, "== Leaked\n\nleaked text\n");
-    const tree = parse(`= Doc\n\ninclude::${secret}[]\n`);
+    const tree = await parse(`= Doc\n\ninclude::${secret}[]\n`);
     expect(all(tree.sections).map((s) => s.title)).not.toContain("Leaked");
     expect(JSON.stringify(tree.sections)).not.toContain("leaked text");
     expect(targets(tree)).toEqual([]);
   });
 
-  it("does not count a footnote reference as a link", () => {
-    const tree = parse(`= Doc\n\nText.footnote:[A note.]\n`);
+  it("does not count a footnote reference as a link", async () => {
+    const tree = await parse(`= Doc\n\nText.footnote:[A note.]\n`);
     expect(targets(tree)).toEqual([]);
   });
 
-  it("gives a section its explicit or generated id, and leaves the slug alone", () => {
-    const tree = parse(`= Doc\n\n[[get-started]]\n== Install it\n\n== Second\n`);
+  it("gives a section its explicit or generated id, and leaves the slug alone", async () => {
+    const tree = await parse(`= Doc\n\n[[get-started]]\n== Install it\n\n== Second\n`);
     expect(section(tree, "Install it").id).toBe("get-started");
     expect(section(tree, "Install it").slug).toBe("install-it");
     expect(section(tree, "Second").id).toBe("_second");
   });
 
-  it("positions a link on its block's line", () => {
-    const tree = parse(`= Doc\n\nfirst\n\nsee https://example.com[x]\n`);
+  it("positions a link on its block's line", async () => {
+    const tree = await parse(`= Doc\n\nfirst\n\nsee https://example.com[x]\n`);
     expect(at(tree.links, 0, "link").position.start.line).toBe(5);
   });
 });

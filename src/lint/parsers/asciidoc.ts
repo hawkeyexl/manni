@@ -28,8 +28,7 @@
  *    is unaffected, so the body still indexes the original file. Both readings
  *    run, and the results merge.
  */
-import { createRequire } from "node:module";
-import type asciidoctor from "@asciidoctor/core";
+import type * as Asciidoctor from "@asciidoctor/core";
 import { extractFrontmatter, extractorForExtension } from "../../meta/index.js";
 import type {
   AdmonitionNode,
@@ -59,28 +58,19 @@ import {
  * Only the parser is wanted here. The meta-package adds `@asciidoctor/cli`
  * (and yargs) plus the ejs, nunjucks and pug template engines, none of which
  * this file can reach - 63 lockfile entries that installed with manni so that
- * one `.adoc` file could be read. The core is the same Asciidoctor at the same
- * version, published as a real ESM module, so the default import is the
- * factory with no CJS interop to undo.
+ * one `.adoc` file could be read. The core is the same Asciidoctor, published
+ * as an ESM module with no dependencies of its own.
  *
- * Stay on 3.x. `@asciidoctor/core@4` is a rewrite whose `load()` returns a
- * promise, and `DocumentParser.parse` is synchronous for every format. Moving
- * to it would also drop `@asciidoctor/opal-runtime` and with it the deprecated
- * `glob`/`inflight` pair, which 3.x still brings in on its own.
- *
- * Required on the first `.adoc` file rather than imported: Asciidoctor and the
- * Opal runtime cost every `manni lint` and `manni check` run a tenth of a
- * second, and most never read AsciiDoc. `parse` is synchronous, so this is
- * the package's own CommonJS build through `require`, not `await import()`.
+ * Imported on the first `.adoc` file rather than at startup: most `manni lint`
+ * and `manni check` runs never read AsciiDoc, and none of them should pay to
+ * load it. Its `load()` is asynchronous, which is why this parser's `parse`
+ * returns a promise where the other formats return the tree.
  */
-let processor: ReturnType<typeof asciidoctor> | undefined;
+let asciidoctor: Promise<typeof Asciidoctor> | undefined;
 
-function getProcessor(): ReturnType<typeof asciidoctor> {
-  if (processor === undefined) {
-    const factory = createRequire(import.meta.url)("@asciidoctor/core") as typeof asciidoctor;
-    processor = factory();
-  }
-  return processor;
+function getAsciidoctor(): Promise<typeof Asciidoctor> {
+  asciidoctor ??= import("@asciidoctor/core");
+  return asciidoctor;
 }
 
 /**
@@ -97,32 +87,32 @@ interface AdocNode {
   getLineNumber?(): number | undefined;
   getBlocks?(): unknown[];
   getLevel?(): number;
-  getTitle?(): string | undefined;
+  getTitle?(): string | null | undefined;
   getSource?(): string;
-  getContent?(): string;
+  getContent?(): Promise<string>;
   getAttribute?(name: string): unknown;
   getItems?(): unknown[];
-  getRows?(): AdocRows;
+  rows?: AdocRows;
 }
 
 /** A list item. Its principal text is not among its blocks. */
 interface AdocItem {
   getLineNumber?(): number | undefined;
-  getText(): string;
+  getText(): string | null;
   getBlocks(): unknown[];
 }
 
 /** A table cell, from either a head, body or foot row. */
 interface AdocCell {
   getLineNumber?(): number | undefined;
-  getText(): string;
+  getText(): string | null;
 }
 
-/** `Table#getRows()`'s own shape: the three row groups, each an array of cell rows. */
+/** `Table#rows`: the three row groups, each an array of cell rows. */
 interface AdocRows {
-  getHead(): AdocCell[][];
-  getBody(): AdocCell[][];
-  getFoot(): AdocCell[][];
+  head: AdocCell[][];
+  body: AdocCell[][];
+  foot: AdocCell[][];
 }
 
 interface AdocDocument extends AdocNode {
@@ -240,7 +230,7 @@ const NAMED_ENTITIES: Record<string, string> = {
  * That is Asciidoctor's conversion, not ours, and it exposes no way to ask for
  * a title with quotes substituted but replacements skipped.
  */
-function flattenInline(html: string | undefined): string {
+function flattenInline(html: string | null | undefined): string {
   if (!html) return "";
   return decodeEntities(html.replace(/<[^>]*>/g, ""));
 }
@@ -263,14 +253,6 @@ interface Harvested {
   line: number;
 }
 
-/**
- * Link targets harvested by `inline` during the current `parse`. Module state
- * rather than a parameter threaded through every draft function, which is
- * safe only because `parse` is synchronous and never re-entered: it resets
- * this on the way in and reads it on the way out.
- */
-let harvested: Harvested[] = [];
-
 const ANCHOR = /<a\s([^>]*)>/gi;
 const HREF = /(?:^|\s)href="([^"]*)"/;
 const CLASS = /(?:^|\s)class="([^"]*)"/;
@@ -283,15 +265,19 @@ const CLASS = /(?:^|\s)class="([^"]*)"/;
  * Two kinds of anchor are not links: `include`, which is how secure mode
  * renders an `include::` it refused to read, and `footnote`, which points at
  * the footnote list a full HTML conversion would append, not at any section.
+ *
+ * `links` belongs to one `parse` and is passed down the walk. Two parses can be
+ * in flight at once, because `load()` is asynchronous, so module state would
+ * hand one page's links to another.
  */
-function inline(html: string | undefined, line: number): string {
+function inline(html: string | null | undefined, line: number, links: Harvested[]): string {
   for (const match of (html ?? "").matchAll(ANCHOR)) {
     const attrs = match[1] ?? "";
     const href = HREF.exec(attrs)?.[1];
     if (href === undefined) continue;
     const classes = (CLASS.exec(attrs)?.[1] ?? "").split(/\s+/);
     if (classes.includes("include") || classes.includes("footnote")) continue;
-    harvested.push({ target: decodeEntities(href), line });
+    links.push({ target: decodeEntities(href), line });
   }
   return flattenInline(html);
 }
@@ -354,7 +340,7 @@ function stringAttribute(node: AdocNode, name: string): string | undefined {
   return typeof value === "string" && value.length > 0 ? value : undefined;
 }
 
-function draftList(node: AdocNode, ordered: boolean): Draft {
+async function draftList(node: AdocNode, ordered: boolean, links: Harvested[]): Promise<Draft> {
   const items: DraftItem[] = [];
 
   for (const raw of node.getItems?.() ?? []) {
@@ -362,16 +348,17 @@ function draftList(node: AdocNode, ordered: boolean): Draft {
     if (!item) continue;
 
     const line = lineOf(item);
-    const text = inline(item.getText(), line);
+    const text = inline(item.getText(), line, links);
     const children: Draft[] = [];
 
     // An item's principal text is not one of its blocks, but mdast puts it in
     // a paragraph child - so `lists: {items: {paragraphs: {min: 1}}}` counts
     // the same thing in both formats only if we put it there too.
     if (text.length > 0) children.push({ kind: "paragraph", line, text });
-    collect(
+    await collect(
       item.getBlocks().map(asNode).filter((n): n is AdocNode => n !== null),
       children,
+      links,
     );
 
     items.push({ line, text, children });
@@ -385,9 +372,9 @@ function draftList(node: AdocNode, ordered: boolean): Draft {
  * at document level, reused for a container whose content is content in its
  * own right (an admonition, a blockquote) rather than a section's directly.
  */
-function draftChildren(node: AdocNode): Draft[] {
+async function draftChildren(node: AdocNode, links: Harvested[]): Promise<Draft[]> {
   const children: Draft[] = [];
-  collect(childrenOf(node), children);
+  await collect(childrenOf(node), children, links);
   return children;
 }
 
@@ -422,42 +409,46 @@ function admonitionVariant(node: AdocNode): AdmonitionNode["variant"] | null {
  * would double the content. A simple one (`NOTE: text`) has no blocks at all;
  * its only content is `getContent()`, exactly as a paragraph's is.
  */
-function draftAdmonition(node: AdocNode, variant: AdmonitionNode["variant"]): Draft {
-  const children = draftChildren(node);
+async function draftAdmonition(
+  node: AdocNode,
+  variant: AdmonitionNode["variant"],
+  links: Harvested[],
+): Promise<Draft> {
+  const children = await draftChildren(node, links);
   if (children.length === 0) {
-    const text = inline(node.getContent?.(), lineOf(node));
+    const text = inline(await node.getContent?.(), lineOf(node), links);
     if (text.length > 0) children.push({ kind: "paragraph", line: lineOf(node), text });
   }
   return { kind: "admonition", line: lineOf(node), variant, children };
 }
 
 /** A quote block's content, by the same two-form rule as an admonition's. */
-function draftBlockquote(node: AdocNode): Draft {
-  const children = draftChildren(node);
+async function draftBlockquote(node: AdocNode, links: Harvested[]): Promise<Draft> {
+  const children = await draftChildren(node, links);
   if (children.length === 0) {
-    const text = inline(node.getContent?.(), lineOf(node));
+    const text = inline(await node.getContent?.(), lineOf(node), links);
     if (text.length > 0) children.push({ kind: "paragraph", line: lineOf(node), text });
   }
   return { kind: "blockquote", line: lineOf(node), children };
 }
 
-function draftTable(node: AdocNode): Draft {
-  const rows = node.getRows?.();
+function draftTable(node: AdocNode, links: Harvested[]): Draft {
+  const rows = node.rows;
   const toRow = (header: boolean) => (cells: AdocCell[]): DraftRow => ({
     line: cells[0]?.getLineNumber?.() ?? lineOf(node),
     header,
     cells: cells.map((cell) => {
       const line = cell.getLineNumber?.() ?? lineOf(node);
-      return { line, text: inline(cell.getText(), line) };
+      return { line, text: inline(cell.getText(), line, links) };
     }),
   });
   return {
     kind: "table",
     line: lineOf(node),
     rows: [
-      ...(rows?.getHead().map(toRow(true)) ?? []),
-      ...(rows?.getBody().map(toRow(false)) ?? []),
-      ...(rows?.getFoot().map(toRow(false)) ?? []),
+      ...(rows?.head.map(toRow(true)) ?? []),
+      ...(rows?.body.map(toRow(false)) ?? []),
+      ...(rows?.foot.map(toRow(false)) ?? []),
     ],
   };
 }
@@ -467,11 +458,10 @@ function draftTable(node: AdocNode): Draft {
  *
  * `getItems()` does not hand back `ListItem`s for a `dlist` the way it does
  * for a `ulist`/`olist`; each entry is a `[terms, description]` tuple, and a
- * missing description arrives as AsciiDoctor's own `nil`, which is a real
- * object in the JS bridge rather than `null` or `undefined` - `asItem` rejects
- * it the same way it rejects anything else with no `getText`.
+ * missing description arrives as `null`, which `asItem` rejects the same way
+ * it rejects anything else with no `getText`.
  */
-function draftDefinitionList(node: AdocNode): Draft {
+async function draftDefinitionList(node: AdocNode, links: Harvested[]): Promise<Draft> {
   const items: DraftDefinitionItem[] = [];
 
   for (const entry of node.getItems?.() ?? []) {
@@ -486,17 +476,18 @@ function draftDefinitionList(node: AdocNode): Draft {
     const children: Draft[] = [];
     const desc = asItem(rawDesc);
     if (desc) {
-      const text = inline(desc.getText(), lineOf(desc));
+      const text = inline(desc.getText(), lineOf(desc), links);
       if (text.length > 0) children.push({ kind: "paragraph", line: lineOf(desc), text });
-      collect(
+      await collect(
         desc.getBlocks().map(asNode).filter((n): n is AdocNode => n !== null),
         children,
+        links,
       );
     }
 
     items.push({
       line: lineOf(first),
-      term: terms.map((t) => inline(t.getText(), lineOf(t))).join(", "),
+      term: terms.map((t) => inline(t.getText(), lineOf(t), links)).join(", "),
       children,
     });
   }
@@ -505,13 +496,13 @@ function draftDefinitionList(node: AdocNode): Draft {
 }
 
 /** One block, or null when the content model has no kind for it. */
-function draftOf(node: AdocNode): Draft | null {
+async function draftOf(node: AdocNode, links: Harvested[]): Promise<Draft | null> {
   switch (node.getContext()) {
     case "paragraph":
       return {
         kind: "paragraph",
         line: lineOf(node),
-        text: inline(node.getContent?.(), lineOf(node)),
+        text: inline(await node.getContent?.(), lineOf(node), links),
       };
     case "listing":
     case "literal": {
@@ -526,19 +517,19 @@ function draftOf(node: AdocNode): Draft | null {
       };
     }
     case "ulist":
-      return draftList(node, false);
+      return draftList(node, false, links);
     case "olist":
-      return draftList(node, true);
+      return draftList(node, true, links);
     case "table":
-      return draftTable(node);
+      return draftTable(node, links);
     case "admonition": {
       const variant = admonitionVariant(node);
-      return variant ? draftAdmonition(node, variant) : null;
+      return variant ? draftAdmonition(node, variant, links) : null;
     }
     case "image": {
       const url = stringAttribute(node, "target");
       if (!url) return null;
-      const title = inline(node.getTitle?.(), lineOf(node));
+      const title = inline(node.getTitle?.(), lineOf(node), links);
       return {
         kind: "image",
         line: lineOf(node),
@@ -548,9 +539,9 @@ function draftOf(node: AdocNode): Draft | null {
       };
     }
     case "quote":
-      return draftBlockquote(node);
+      return draftBlockquote(node, links);
     case "dlist":
-      return draftDefinitionList(node);
+      return draftDefinitionList(node, links);
     default:
       // Sidebars, thematic breaks, verses, and the rest the content model
       // does not name. Skipped whole: their children are not the section's
@@ -579,7 +570,7 @@ function draftOf(node: AdocNode): Draft | null {
  *    default branch, which is the line mdast draws around a blockquote. So a
  *    node still reporting `open` is the bare attach-blocks form by elimination.
  */
-function collect(nodes: AdocNode[], out: Draft[]): void {
+async function collect(nodes: AdocNode[], out: Draft[], links: Harvested[]): Promise<void> {
   for (const node of nodes) {
     const context = node.getContext();
 
@@ -593,19 +584,19 @@ function collect(nodes: AdocNode[], out: Draft[]): void {
         // Asciidoctor's `=` title is level 0, so every level is one shallower
         // than the heading level the rest of the tool speaks in.
         level: (node.getLevel?.() ?? 0) + 1,
-        title: inline(node.getTitle?.(), lineOf(node)),
+        title: inline(node.getTitle?.(), lineOf(node), links),
         ...(id ? { id } : {}),
       });
-      collect(childrenOf(node), out);
+      await collect(childrenOf(node), out, links);
       continue;
     }
 
     if (context === "preamble" || context === "open") {
-      collect(childrenOf(node), out);
+      await collect(childrenOf(node), out, links);
       continue;
     }
 
-    const draft = draftOf(node);
+    const draft = await draftOf(node, links);
     if (draft) out.push(draft);
   }
 }
@@ -868,10 +859,10 @@ function metadata(content: string, filePath: string, index: LineIndex): Metadata
 // Parser
 // ---------------------------------------------------------------------------
 
-function load(content: string, filePath: string): AdocDocument {
-  const asciidoc = getProcessor();
+async function load(content: string, filePath: string): Promise<AdocDocument> {
+  const asciidoc = await getAsciidoctor();
   try {
-    return asciidoc.load(content, {
+    return (await asciidoc.load(content, {
       // Without this every block's `getLineNumber()` is undefined and there are
       // no positions to derive at all.
       sourcemap: true,
@@ -887,7 +878,7 @@ function load(content: string, filePath: string): AdocDocument {
         // `other.html`, so a harvested link names the file that exists.
         relfilesuffix: ".adoc",
       },
-    }) as unknown as AdocDocument;
+    })) as unknown as AdocDocument;
   } catch (err) {
     // Asciidoctor recovers from malformed *documents* - it warns about an
     // unterminated block and carries on - so this fires when the loader itself
@@ -908,11 +899,11 @@ function load(content: string, filePath: string): AdocDocument {
  * heading for it would both invent a section and block the frontmatter title
  * those attributes may be carrying.
  */
-function headerDraft(doc: AdocDocument): Draft | null {
+function headerDraft(doc: AdocDocument, links: Harvested[]): Draft | null {
   if (!doc.hasHeader()) return null;
   const header = asNode(doc.getHeader());
   if (!header) return null;
-  const title = inline(header.getTitle?.(), lineOf(header));
+  const title = inline(header.getTitle?.(), lineOf(header), links);
   if (title.length === 0) return null;
   return {
     kind: "heading",
@@ -922,15 +913,15 @@ function headerDraft(doc: AdocDocument): Draft | null {
   };
 }
 
-function parse(content: string, filePath: string): DocumentTree {
-  const doc = load(content, filePath);
+async function parse(content: string, filePath: string): Promise<DocumentTree> {
+  const doc = await load(content, filePath);
   const index = lineIndex(content);
 
-  harvested = [];
+  const harvested: Harvested[] = [];
   const drafts: Draft[] = [];
-  const header = headerDraft(doc);
+  const header = headerDraft(doc, harvested);
   if (header) drafts.push(header);
-  collect(childrenOf(doc), drafts);
+  await collect(childrenOf(doc), drafts, harvested);
   // Stable, so links on one line keep their order. Needed at all because a
   // description list's terms are read after its body.
   const links = harvested
@@ -956,7 +947,7 @@ function parse(content: string, filePath: string): DocumentTree {
   };
 }
 
-export const asciidocParser: DocumentParser = {
+export const asciidocParser = {
   name: "asciidoc",
   label: "AsciiDoc",
   kinds: [
@@ -975,4 +966,4 @@ export const asciidocParser: DocumentParser = {
   ],
   extensions: [".adoc", ".asciidoc"],
   parse,
-};
+} satisfies DocumentParser;

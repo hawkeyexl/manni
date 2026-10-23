@@ -26,7 +26,6 @@ const HEAVY = [
   "@axe-core/playwright",
   "axe-core",
   "@asciidoctor/core",
-  "@asciidoctor/opal-runtime",
   "n3",
   "rdf-validate-shacl",
   "@tpluscode/rdf-ns-builders",

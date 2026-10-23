@@ -162,19 +162,19 @@ function searchIndexDigest(raw: string): string {
  * fan-out is unconditional, including for a monolingual corpus: one rule beats
  * a filename that changes shape the day someone adds a translation.
  */
-function runSearchIndex(
+async function runSearchIndex(
   cwd: string,
   sources: string,
   graphPath: string,
   out?: string,
-): ExportResult {
+): Promise<ExportResult> {
   const store = loadGraph(graphPath);
   const graph = GraphIndex.fromQuads(
     storeToQuads(store),
     Object.fromEntries(PREFIXES),
   );
   const warnings: string[] = [];
-  const index = buildSearchIndex(graph, sources, { warnings });
+  const index = await buildSearchIndex(graph, sources, { warnings });
   const byLanguage = partitionByLanguage(graph, index);
   const docCounts = documentsByLanguage(graph);
 

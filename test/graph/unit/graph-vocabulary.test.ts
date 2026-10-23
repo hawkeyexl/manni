@@ -367,7 +367,7 @@ meta-provenance:
 # Configuration
 `;
 
-  it("validates against the graph draft and derives nothing from it", () => {
+  it("validates against the graph draft and derives nothing from it", async () => {
     const ajv = new Ajv2020({
       allErrors: true,
       allowUnionTypes: true,
@@ -384,8 +384,8 @@ meta-provenance:
     // everything but the content hash, which hashes the bytes, must match.
     const PLAIN = "---\ntitle: Configuration\n---\n\n# Configuration\n";
     const path = "docs/configuration.md";
-    const derived = (content: string): string[] =>
-      deriveGraph([analyzeDoc(content, path, new Set([path]))], {
+    const derived = async (content: string): Promise<string[]> =>
+      deriveGraph([await analyzeDoc(content, path, new Set([path]))], {
         baseIri: "https://example.com/graph/",
         derive: ["frontmatter", "sections", "provenance"],
         toolVersion: "0.0.0-test",
@@ -393,8 +393,8 @@ meta-provenance:
         .filter((q) => q.p !== `${NS.graph}contentHash`)
         .map((q) => JSON.stringify(q))
         .sort();
-    const stray = derived(STRAY);
-    expect(stray).toEqual(derived(PLAIN));
+    const stray = await derived(STRAY);
+    expect(stray).toEqual(await derived(PLAIN));
     // Not an empty comparison: the page itself is in both graphs.
     expect(stray.some((q) => q.includes(`${NS.graph}path`))).toBe(true);
   });

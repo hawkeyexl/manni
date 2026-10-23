@@ -209,18 +209,18 @@ function lastLine(position: Position): number {
  * Each graph section of a page, with the file lines its own text spans: its
  * heading down to the next heading of any rank, as the search index slices it.
  */
-export function sectionSpans(
+export async function sectionSpans(
   graph: GraphIndex,
   doc: string,
   path: string,
   content: string,
   sections: readonly string[],
-): { iri: string; span: PageLines }[] {
+): Promise<{ iri: string; span: PageLines }[]> {
   const format = formatOf(path);
   const out: { iri: string; span: PageLines }[] = [];
   if (isTreeFormat(format)) {
     const known = new Set(sections);
-    const minted = mintTreeSections(parseTree(content, path, format).sections);
+    const minted = mintTreeSections((await parseTree(content, path, format)).sections);
     for (const [n, section] of minted.sections.entries()) {
       const iri = `${doc}#${section.slug}`;
       const node = minted.nodes[n];
@@ -305,7 +305,7 @@ async function readPages(
 ): Promise<{
   pages: Page[];
   contents: Map<string, string>;
-  pageAt: (abs: string) => Page | undefined;
+  pageAt: (abs: string) => Promise<Page | undefined>;
 }> {
   const contents = new Map<string, string>();
   const onDisk: { doc: string; path: string }[] = [];
@@ -339,22 +339,26 @@ async function readPages(
     else sectionsOf.set(doc, [section]);
   }
 
-  const records = new Map<string, Page>();
-  const record = (doc: string, path: string, questions: SampleQuestion[]): Page => {
-    const known = records.get(doc);
-    if (known) return known;
+  const readRecord = async (doc: string, path: string, questions: SampleQuestion[]): Promise<Page> => {
     const content = contents.get(path) ?? "";
     const { bodyLine, body } = bodyOf(content, formatOf(path));
     const tag = graph.literal(doc, LANGUAGE);
-    const page: Page = {
+    return {
       doc,
       path,
       language: tag === undefined ? UNDETERMINED : canonicalLanguageTag(tag),
       bodyLine,
       body,
-      sections: sectionSpans(graph, doc, path, content, sectionsOf.get(doc) ?? []),
+      sections: await sectionSpans(graph, doc, path, content, sectionsOf.get(doc) ?? []),
       questions,
     };
+  };
+  // The promise is kept, so concurrent asks for one page share one record.
+  const records = new Map<string, Promise<Page>>();
+  const record = (doc: string, path: string, questions: SampleQuestion[]): Promise<Page> => {
+    const known = records.get(doc);
+    if (known) return known;
+    const page = readRecord(doc, path, questions);
     records.set(doc, page);
     return page;
   };
@@ -369,15 +373,15 @@ async function readPages(
     const own = metadataOf(content, path, format);
     const { data } = await mergePage(meta, path, own.data, own.present, format);
     const questions = readSampleQuestions(data["sample-questions"]);
-    if (questions.length > 0) pages.push(record(doc, path, questions));
+    if (questions.length > 0) pages.push(await record(doc, path, questions));
   }
   pages.sort((a, b) => byCodeUnit(a.path, b.path));
   return {
     pages,
     contents,
-    pageAt: (abs) => {
+    pageAt: async (abs) => {
       const hit = byAbs.get(abs);
-      return hit && record(hit.doc, hit.path, []);
+      return hit && (await record(hit.doc, hit.path, []));
     },
   };
 }
@@ -558,7 +562,7 @@ export async function askSampleQuestions(
       // Missing pages were said once already, so the index's own warnings go.
       byLanguage = partitionByLanguage(
         graph,
-        buildSearchIndex(graph, sources, { readDoc: (p) => contents.get(p) }),
+        await buildSearchIndex(graph, sources, { readDoc: (p) => contents.get(p) }),
       );
       manifest = readManifest(indexDir);
     }
@@ -846,7 +850,7 @@ export async function askSampleQuestions(
         continue;
       }
       const [firstAnswer] = q.answers;
-      const firstPage = firstAnswer && pageAt(resolve(configDir, firstAnswer.file));
+      const firstPage = firstAnswer && (await pageAt(resolve(configDir, firstAnswer.file)));
       const language =
         q.language !== undefined ? canonicalLanguageTag(q.language) : (firstPage?.language ?? UNDETERMINED);
       const tests: number[] = [];
@@ -857,7 +861,7 @@ export async function askSampleQuestions(
         summary.answers.pinned += 1;
         if (draft) summary.answers.unreviewed += 1;
         const abs = resolve(configDir, pin.file);
-        const page = pageAt(abs);
+        const page = await pageAt(abs);
         if (page === undefined) {
           if (existsSync(abs)) {
             // On disk, but in no collection the graph was built from. Its
@@ -1011,10 +1015,10 @@ export async function exportSampleQuestions(
   for (const set of sets) {
     const slugger = new GithubSlugger();
     for (const q of set.questions) {
-      const expected = q.answers.map((pin): ExportedAnswer => {
+      const expected = await Promise.all(q.answers.map(async (pin): Promise<ExportedAnswer> => {
         const reviewed = q.reviewed && pin.reviewed;
         const abs = resolve(configDir, pin.file);
-        const page = pageAt(abs);
+        const page = await pageAt(abs);
         if (page) return pinned(page, pin.file, pin, reviewed);
         // A page outside the graph has no node to name, and its freshness is
         // not checked, since that needs the page's graph record. A page that
@@ -1022,9 +1026,9 @@ export async function exportSampleQuestions(
         const gone = !existsSync(abs);
         if (gone) stale += 1;
         return { file: pin.file, lines: spellLines(pin.lines), reviewed, ...(gone ? { stale: true as const } : {}) };
-      });
+      }));
       const [firstAnswer] = q.answers;
-      const firstPage = firstAnswer && pageAt(resolve(configDir, firstAnswer.file));
+      const firstPage = firstAnswer && (await pageAt(resolve(configDir, firstAnswer.file)));
       const language =
         q.language !== undefined ? canonicalLanguageTag(q.language) : (firstPage?.language ?? UNDETERMINED);
       write(`${set.label}#${slugger.slug(q.question)}`, q.question, language, q.reviewed, expected);

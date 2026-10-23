@@ -135,7 +135,7 @@ export async function exportChunks(opts: ChunksOptions): Promise<ChunksResult> {
   const routes = routesFrom(config, sources);
   const view = await openMetaView(opts.source, cwd, paths, sources);
   const models = await withExternalMetadata(
-    pages.map((p) => analyzeDoc(p.content, p.path, allPaths, { routes })),
+    await Promise.all(pages.map((p) => analyzeDoc(p.content, p.path, allPaths, { routes }))),
     view,
   );
 
@@ -206,7 +206,7 @@ export async function exportChunks(opts: ChunksOptions): Promise<ChunksResult> {
         .map((b) => ({ lines: `${String(b.start)}-${String(b.end)}`, status: b.status, data: b.data })),
     });
 
-    for (const passage of passagesOf(graph, page, model, bodyLine, language, metadata, bySection)) {
+    for (const passage of await passagesOf(graph, page, model, bodyLine, language, metadata, bySection)) {
       const vector = vectors?.byId.get(passage.id);
       rows.push({
         id: passage.id,
@@ -289,7 +289,7 @@ function languageOf(graph: GraphIndex, doc: string): string {
 }
 
 /** A document's passage, then each section's, in document order. */
-function passagesOf(
+async function passagesOf(
   graph: GraphIndex,
   page: { doc: string; path: string; content: string },
   model: DocModel,
@@ -297,7 +297,7 @@ function passagesOf(
   language: string,
   metadata: Record<string, unknown>,
   bySection: ReadonlyMap<string, Record<string, unknown>[]>,
-): Passage[] {
+): Promise<Passage[]> {
   const out: Passage[] = [];
   const fileLines = page.content.split(/\r?\n/);
   const body = fileLines.slice(bodyLine - 1).join("\n").trimEnd();
@@ -320,7 +320,7 @@ function passagesOf(
   if (isTreeFormat(format)) {
     // A tree section's own span, widened over the sections nested in it: the
     // ones after it of a deeper level, up to the next of its own or higher.
-    const own = new Map(sectionSpans(graph, page.doc, page.path, page.content, sections).map((s) => [s.iri, s.span]));
+    const own = new Map((await sectionSpans(graph, page.doc, page.path, page.content, sections)).map((s) => [s.iri, s.span]));
     const levels = sections.map((iri) => Number.parseInt(graph.literal(iri, LEVEL) ?? "", 10));
     for (const [i, iri] of sections.entries()) {
       const span = own.get(iri);
@@ -534,7 +534,7 @@ async function datesByPage(
   }
   for (const result of derived.results) {
     const content = readFileSync(resolve(sources, result.file), "utf8");
-    const page = analyzeDoc(content, result.file, new Set([result.file])).frontmatter;
+    const page = (await analyzeDoc(content, result.file, new Set([result.file]))).frontmatter;
     const date = (field: "created" | "last-updated"): DerivedDate => {
       const f = result.fields.find((x) => x.field === field);
       const asserted = f?.asserted ?? page[field];

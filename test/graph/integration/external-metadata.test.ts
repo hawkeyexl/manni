@@ -77,7 +77,7 @@ describe("graph build reads external metadata", () => {
   it("filters a manifest's field by the same x-manni-graph-output mark", async () => {
     const dir = copy();
     const view = await openMetaView({}, dir, [QUERY]);
-    const doc = analyzeDoc(readFileSync(join(dir, QUERY), "utf8"), QUERY, new Set([QUERY]));
+    const doc = await analyzeDoc(readFileSync(join(dir, QUERY), "utf8"), QUERY, new Set([QUERY]));
     const [merged] = await withExternalMetadata([doc], view);
     expect(merged?.frontmatter).toHaveProperty("owner");
     const [out] = await suppressGraphOutput(merged === undefined ? [] : [merged], view);

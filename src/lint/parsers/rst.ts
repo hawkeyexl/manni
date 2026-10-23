@@ -1440,7 +1440,7 @@ function readMetadata(content: string, filePath: string, src: Source): Metadata 
   };
 }
 
-export const rstParser: DocumentParser = {
+export const rstParser = {
   name: "rst",
   label: "reStructuredText",
   kinds: [
@@ -1494,4 +1494,4 @@ export const rstParser: DocumentParser = {
       ),
     };
   },
-};
+} satisfies DocumentParser;

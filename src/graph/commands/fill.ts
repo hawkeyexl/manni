@@ -491,7 +491,7 @@ export async function runFill(opts: FillOptions = {}): Promise<FillReport> {
   if (stdinContent !== undefined) inline.set(STDIN_PATH, stdinContent);
   const guard =
     !opts.noValidateGraph && config.fill.validateGraph
-      ? FillGuard.create(
+      ? await FillGuard.create(
           guardFiles.filter((path) => !mergeErrors.has(path)),
           base,
           { ...config, routes: routesFrom(config, base) },
@@ -873,8 +873,8 @@ export async function runFill(opts: FillOptions = {}): Promise<FillReport> {
     // Lazy: a *cached* proposal can carry sections, so the slugs still need
     // checking outside the cache-miss branch — but a sections-off run that hits
     // the cache should not pay for a full markdown parse it never reads.
-    let docModel: DocModel | undefined;
-    const doc = (): DocModel =>
+    let docModel: Promise<DocModel> | undefined;
+    const doc = (): Promise<DocModel> =>
       (docModel ??= analyzeDoc(effective, path, allPaths, analyzeOptions));
 
     if (proposal === undefined) {
@@ -905,7 +905,7 @@ export async function runFill(opts: FillOptions = {}): Promise<FillReport> {
       const run = await completeValidatedJSON<Record<string, unknown>>({
         provider: getProvider(),
         system: SYSTEM_PROMPT,
-        user: buildUserPrompt(doc(), content, missing, {
+        user: buildUserPrompt(await doc(), content, missing, {
           sections: withSections,
         }),
         schema: proposalSchema(missing, { sections: sectionFields }),
@@ -939,7 +939,7 @@ export async function runFill(opts: FillOptions = {}): Promise<FillReport> {
     // fields (ADR 01032).
     const unknownSlugs: string[] = [];
     if (withSections) {
-      const realSlugs = new Set(doc().sections.map((s) => s.slug));
+      const realSlugs = new Set((await doc()).sections.map((s) => s.slug));
       for (const entry of Array.isArray(proposal["sections"])
         ? (proposal["sections"] as Array<Record<string, unknown>>)
         : []) {
@@ -1194,7 +1194,7 @@ export async function runFill(opts: FillOptions = {}): Promise<FillReport> {
     }
     // Fold the accepted result into the guard even on --dry-run, so the dry
     // run predicts exactly what a real run would accept and reject.
-    guard?.commit(path, applied.content);
+    await guard?.commit(path, applied.content);
     return {
       after: pageContent,
       merged: applied.content,

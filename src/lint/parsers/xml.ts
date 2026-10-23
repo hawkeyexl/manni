@@ -1440,7 +1440,7 @@ export function parseXml(
   };
 }
 
-export const xmlParser: DocumentParser = {
+export const xmlParser = {
   name: "xml",
   label: "XML",
   kinds: [
@@ -1478,4 +1478,4 @@ export const xmlParser: DocumentParser = {
    */
   walkExtensions: [".dita", ".ditamap"],
   parse: (content, filePath) => parseXml(content, filePath),
-};
+} satisfies DocumentParser;

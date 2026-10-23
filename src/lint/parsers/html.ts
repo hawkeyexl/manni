@@ -836,7 +836,7 @@ function parseHtml(content: string, filePath: string): DocumentTree {
   };
 }
 
-export const htmlParser: DocumentParser = {
+export const htmlParser = {
   name: "html",
   label: "HTML",
   kinds: [
@@ -855,4 +855,4 @@ export const htmlParser: DocumentParser = {
   ],
   extensions: [".html", ".htm"],
   parse: parseHtml,
-};
+} satisfies DocumentParser;

@@ -19,12 +19,12 @@ const ALL_SOURCES: DeriveSource[] = [
 
 function docs(files: Record<string, string>) {
   const paths = new Set(Object.keys(files));
-  return Object.entries(files).map(([path, content]) =>
-    analyzeDoc(content, path, paths),
+  return Promise.all(
+    Object.entries(files).map(([path, content]) => analyzeDoc(content, path, paths)),
   );
 }
 
-function graph(
+async function graph(
   files: Record<string, string>,
   sources = ALL_SOURCES,
   extra: {
@@ -32,8 +32,8 @@ function graph(
     gitHistory?: GitHistory;
     qualified?: boolean;
   } = {},
-): Quad[] {
-  return deriveGraph(docs(files), {
+): Promise<Quad[]> {
+  return deriveGraph(await docs(files), {
     baseIri: BASE,
     derive: sources,
     toolVersion: extra.toolVersion ?? "0.0.0-test",
@@ -62,23 +62,23 @@ const lit = (value: string, datatype?: string): Term =>
 const DOC = `${BASE}doc/docs/a.md`;
 
 describe("deriveGraph — document basics", () => {
-  it("types every doc and records its path", () => {
-    const g = graph({ "docs/a.md": "# A\n" });
+  it("types every doc and records its path", async () => {
+    const g = await graph({ "docs/a.md": "# A\n" });
     expect(has(g, DOC, `${NS.rdf}type`, iri(`${NS.graph}Document`))).toBe(true);
     expect(has(g, DOC, `${NS.graph}path`, lit("docs/a.md"))).toBe(true);
   });
 
-  it("maps frontmatter title, falling back to first H1", () => {
-    const g1 = graph({
+  it("maps frontmatter title, falling back to first H1", async () => {
+    const g1 = await graph({
       "docs/a.md": "---\ntitle: FM Title\n---\n\n# H1 Title\n",
     });
     expect(has(g1, DOC, `${NS.dcterms}title`, lit("FM Title"))).toBe(true);
-    const g2 = graph({ "docs/a.md": "# H1 Title\n" });
+    const g2 = await graph({ "docs/a.md": "# H1 Title\n" });
     expect(has(g2, DOC, `${NS.dcterms}title`, lit("H1 Title"))).toBe(true);
   });
 
-  it("maps description, creator (as agent node), dates, and language", () => {
-    const g = graph({
+  it("maps description, creator (as agent node), dates, and language", async () => {
+    const g = await graph({
       "docs/a.md":
         "---\ndescription: Desc\nauthor: Jane Doe\ndate: 2026-05-01\nupdated: 2026-07-01\nlang: en\n---\n",
     });
@@ -105,15 +105,15 @@ describe("deriveGraph — document basics", () => {
     expect(has(g, DOC, `${NS.dcterms}language`, lit("en"))).toBe(true);
   });
 
-  it("derives sample-questions as graph:sampleQuestion, one literal per question", () => {
-    const one = graph({
+  it("derives sample-questions as graph:sampleQuestion, one literal per question", async () => {
+    const one = await graph({
       "docs/a.md": "---\nsample-questions: How do I retry?\n---\n",
     });
     expect(
       one.filter((q) => q.p === `${NS.graph}sampleQuestion`).map((q) => q.o),
     ).toEqual([{ kind: "literal", value: "How do I retry?" }]);
 
-    const tagged = graph({
+    const tagged = await graph({
       "docs/a.md":
         "---\nlang: de-de\nsample-questions:\n  - Wie?\n  - Warum?\n---\n",
     });
@@ -128,8 +128,8 @@ describe("deriveGraph — document basics", () => {
     ]);
   });
 
-  it("derives only the question text of an object item, never its pins (0087)", () => {
-    const g = graph({
+  it("derives only the question text of an object item, never its pins (0087)", async () => {
+    const g = await graph({
       "docs/a.md": [
         "---",
         "sample-questions:",
@@ -151,7 +151,7 @@ describe("deriveGraph — document basics", () => {
     ).toEqual(["How do I retry?", "How many retries?"]);
     expect(g.some((q) => q.o.value.startsWith("sha256-"))).toBe(false);
 
-    const single = graph({
+    const single = await graph({
       "docs/a.md": "---\nsample-questions:\n  question: Alone?\n---\n",
     });
     expect(
@@ -159,16 +159,16 @@ describe("deriveGraph — document basics", () => {
     ).toEqual(["Alone?"]);
   });
 
-  it("derives no sample question without the frontmatter source", () => {
-    const g = graph(
+  it("derives no sample question without the frontmatter source", async () => {
+    const g = await graph(
       { "docs/a.md": "---\nsample-questions: How do I retry?\n---\n" },
       ["sections"],
     );
     expect(g.some((q) => q.p === `${NS.graph}sampleQuestion`)).toBe(false);
   });
 
-  it("reads stewardship's created and last-updated as the document's dates", () => {
-    const g = graph({
+  it("reads stewardship's created and last-updated as the document's dates", async () => {
+    const g = await graph({
       "docs/a.md": "---\ncreated: 2026-05-01\nlast-updated: 2026-07-01\n---\n",
     });
     expect(
@@ -179,8 +179,8 @@ describe("deriveGraph — document basics", () => {
     ).toBe(true);
   });
 
-  it("prefers stewardship's spelling over the other date aliases", () => {
-    const g = graph({
+  it("prefers stewardship's spelling over the other date aliases", async () => {
+    const g = await graph({
       "docs/a.md": [
         "---",
         "date: 2026-01-01",
@@ -199,22 +199,22 @@ describe("deriveGraph — document basics", () => {
     expect(values(`${NS.dcterms}modified`)).toEqual(["2026-07-01"]);
   });
 
-  it("falls back through updated, lastmod and modified, in that order", () => {
-    const modified = (fm: string) =>
-      graph({ "docs/a.md": `---\n${fm}\n---\n` })
+  it("falls back through updated, lastmod and modified, in that order", async () => {
+    const modified = async (fm: string) =>
+      (await graph({ "docs/a.md": `---\n${fm}\n---\n` }))
         .filter((q) => q.s === DOC && q.p === `${NS.dcterms}modified`)
         .map((q) => q.o.value);
     expect(
-      modified("updated: 2026-02-02\nlastmod: 2026-03-03\nmodified: 2026-04-04"),
+      await modified("updated: 2026-02-02\nlastmod: 2026-03-03\nmodified: 2026-04-04"),
     ).toEqual(["2026-02-02"]);
-    expect(modified("lastmod: 2026-03-03\nmodified: 2026-04-04")).toEqual([
+    expect(await modified("lastmod: 2026-03-03\nmodified: 2026-04-04")).toEqual([
       "2026-03-03",
     ]);
-    expect(modified("modified: 2026-04-04")).toEqual(["2026-04-04"]);
+    expect(await modified("modified: 2026-04-04")).toEqual(["2026-04-04"]);
   });
 
-  it("serializes Date frontmatter values as ISO 8601 (TOML frontmatter)", () => {
-    const g = graph({
+  it("serializes Date frontmatter values as ISO 8601 (TOML frontmatter)", async () => {
+    const g = await graph({
       "docs/a.md": '+++\ntitle = "T"\ndate = 2024-01-05T10:00:00Z\n+++\n',
     });
     expect(
@@ -227,8 +227,8 @@ describe("deriveGraph — document basics", () => {
     ).toBe(true);
   });
 
-  it("supports authors arrays (agent node per author, converging)", () => {
-    const g = graph({
+  it("supports authors arrays (agent node per author, converging)", async () => {
+    const g = await graph({
       "docs/a.md": "---\nauthors: [Jane, Sam]\n---\n",
       "docs/b.md": "---\nauthor: Jane\n---\n",
     });
@@ -244,8 +244,8 @@ describe("deriveGraph — document basics", () => {
     expect(janeTypes).toHaveLength(1);
   });
 
-  it("reads the name of a person object among authors", () => {
-    const g = graph({
+  it("reads the name of a person object among authors", async () => {
+    const g = await graph({
       "docs/a.md":
         "---\nauthors:\n  - name: Jane\n    email: jane@example.com\n  - Sam\n  - email: nobody@example.com\n---\n",
     });
@@ -258,22 +258,22 @@ describe("deriveGraph — document basics", () => {
     ]);
   });
 
-  it("reads a single person object as the author", () => {
-    const g = graph({ "docs/a.md": "---\nauthors:\n  name: Jane\n---\n" });
+  it("reads a single person object as the author", async () => {
+    const g = await graph({ "docs/a.md": "---\nauthors:\n  name: Jane\n---\n" });
     expect(
       has(g, DOC, `${NS.dcterms}creator`, iri(`${BASE}agent/person/jane`)),
     ).toBe(true);
   });
 
-  it("writes a person object's name as the creator literal with provenance off", () => {
-    const g = graph({ "docs/a.md": "---\nauthors:\n  - name: Jane\n---\n" }, [
+  it("writes a person object's name as the creator literal with provenance off", async () => {
+    const g = await graph({ "docs/a.md": "---\nauthors:\n  - name: Jane\n---\n" }, [
       "frontmatter",
     ]);
     expect(has(g, DOC, `${NS.dcterms}creator`, lit("Jane"))).toBe(true);
   });
 
-  it("falls back to creator literals when the provenance source is off", () => {
-    const g = graph({ "docs/a.md": "---\nauthor: Jane\n---\n" }, [
+  it("falls back to creator literals when the provenance source is off", async () => {
+    const g = await graph({ "docs/a.md": "---\nauthor: Jane\n---\n" }, [
       "frontmatter",
     ]);
     expect(has(g, DOC, `${NS.dcterms}creator`, lit("Jane"))).toBe(true);
@@ -283,15 +283,15 @@ describe("deriveGraph — document basics", () => {
 });
 
 describe("deriveGraph — provenance", () => {
-  it("types every doc as prov:Entity when the source is on", () => {
-    const g = graph({ "docs/a.md": "# A\n" });
+  it("types every doc as prov:Entity when the source is on", async () => {
+    const g = await graph({ "docs/a.md": "# A\n" });
     expect(has(g, DOC, `${NS.rdf}type`, iri(`${NS.prov}Entity`))).toBe(true);
-    const off = graph({ "docs/a.md": "# A\n" }, ["frontmatter"]);
+    const off = await graph({ "docs/a.md": "# A\n" }, ["frontmatter"]);
     expect(has(off, DOC, `${NS.rdf}type`, iri(`${NS.prov}Entity`))).toBe(false);
   });
 
-  it("maps graph.derived-from to resolved docs, URLs, and broken links", () => {
-    const g = graph({
+  it("maps graph.derived-from to resolved docs, URLs, and broken links", async () => {
+    const g = await graph({
       "docs/a.md":
         '---\ngraph:\n  derived-from: [b.md, "https://example.org/spec", missing.md]\n---\n',
       "docs/b.md": "# B\n",
@@ -305,11 +305,11 @@ describe("deriveGraph — provenance", () => {
     expect(has(g, DOC, `${NS.graph}brokenLink`, lit("missing.md"))).toBe(true);
   });
 
-  it("maps the machines of page-level provenance to a generation activity", () => {
+  it("maps the machines of page-level provenance to a generation activity", async () => {
     // There is no page-level `generated-by` any more (proposal 0046): the
     // machines that wrote a page are the distinct `generated-by` values across
     // its `provenance` entries, and the harvest reads them there.
-    const g = graph({
+    const g = await graph({
       "docs/a.md": `---\nprovenance:\n  - generated-by: claude-sonnet-4-5\n    lines: 1\n    integrity: sha256-${"a".repeat(64)}\n---\n`,
       "docs/b.md": `---\nprovenance:\n  - generated-by: gpt-4o\n    lines: 1\n    integrity: sha256-${"b".repeat(64)}\n---\n`,
     });
@@ -340,10 +340,10 @@ describe("deriveGraph — provenance", () => {
     ).toBe(true);
   });
 
-  it("emits one generation activity per page, associated with every machine", () => {
+  it("emits one generation activity per page, associated with every machine", async () => {
     // One activity IRI, however many machines wrote the page: a single-model
     // page emits exactly what a page-level `generated-by` used to.
-    const g = graph({
+    const g = await graph({
       "docs/a.md": `---\nprovenance:\n  - generated-by: gpt-4o\n    lines: 1\n    integrity: sha256-${"a".repeat(64)}\n  - generated-by: claude-sonnet-4-5\n    lines: 3\n    integrity: sha256-${"b".repeat(64)}\n---\n`,
     });
     const activity = `${DOC}#prov.generation`;
@@ -359,8 +359,8 @@ describe("deriveGraph — provenance", () => {
     );
   });
 
-  it("collapses two provenance entries naming one machine into one association", () => {
-    const g = graph({
+  it("collapses two provenance entries naming one machine into one association", async () => {
+    const g = await graph({
       "docs/a.md": `---\nprovenance:\n  - generated-by: gpt-4o\n    lines: 1\n    integrity: sha256-${"a".repeat(64)}\n  - generated-by: gpt-4o\n    lines: "5-7"\n    integrity: sha256-${"b".repeat(64)}\n---\n`,
     });
     const activity = `${DOC}#prov.generation`;
@@ -374,8 +374,8 @@ describe("deriveGraph — provenance", () => {
     ).toHaveLength(1);
   });
 
-  it("keeps a '## Generation' heading distinct from the generation activity", () => {
-    const g = graph({
+  it("keeps a '## Generation' heading distinct from the generation activity", async () => {
+    const g = await graph({
       "docs/a.md": `---\nprovenance:\n  - generated-by: gpt-4o\n    lines: 1\n    integrity: sha256-${"a".repeat(64)}\n---\n\n## Generation\n`,
     });
     const section = `${DOC}#generation`;
@@ -394,8 +394,8 @@ describe("deriveGraph — provenance", () => {
     );
   });
 
-  it("maps meta-provenance /graph/ pointers to per-model fill activities, not shared subjects", () => {
-    const g = graph({
+  it("maps meta-provenance /graph/ pointers to per-model fill activities, not shared subjects", async () => {
+    const g = await graph({
       "docs/a.md":
         "---\nmeta-provenance:\n  - generated-by: claude-sonnet-4-5\n    fields: [/graph/label]\n  - generated-by: gpt-4o\n    fields: [/graph/concepts]\ngraph:\n  label: Config\n  concepts: [shared-tag]\n---\n",
       "docs/b.md": "---\ntags: [shared-tag]\n---\n",
@@ -441,8 +441,8 @@ describe("deriveGraph — provenance", () => {
     ).toBe(false);
   });
 
-  it("ignores graph.provenance, which the vocabulary does not have", () => {
-    const g = graph({
+  it("ignores graph.provenance, which the vocabulary does not have", async () => {
+    const g = await graph({
       "docs/a.md":
         "---\ngraph:\n  provenance:\n    - generated-by: claude-sonnet-4-5\n      fields: [concepts]\n---\n",
     });
@@ -455,8 +455,8 @@ describe("deriveGraph — provenance", () => {
     expect(g.some((q) => q.p === `${NS.graph}filledField`)).toBe(false);
   });
 
-  it("skips a meta-provenance pointer that is not graph's", () => {
-    const g = graph({
+  it("skips a meta-provenance pointer that is not graph's", async () => {
+    const g = await graph({
       "docs/a.md":
         "---\nmeta-provenance:\n  - generated-by: m1\n    fields: [/intent, /title, /kgx/label]\ngraph:\n  label: Config\n---\n",
     });
@@ -464,8 +464,8 @@ describe("deriveGraph — provenance", () => {
     expect(g.some((q) => q.s === `${DOC}#prov.graph-fill.m1`)).toBe(false);
   });
 
-  it("reads a deep pointer's first segment as the filled field", () => {
-    const g = graph({
+  it("reads a deep pointer's first segment as the filled field", async () => {
+    const g = await graph({
       "docs/a.md":
         "---\nmeta-provenance:\n  - generated-by: m1\n    fields: [/graph/sections/install/type, /graph/sections/setup/type]\ngraph:\n  label: Config\n---\n",
     });
@@ -475,8 +475,8 @@ describe("deriveGraph — provenance", () => {
     expect(g.filter((q) => q.p === `${NS.graph}filledField`)).toHaveLength(1);
   });
 
-  it("unescapes a pointer segment per RFC 6901", () => {
-    const g = graph({
+  it("unescapes a pointer segment per RFC 6901", async () => {
+    const g = await graph({
       "docs/a.md":
         "---\nmeta-provenance:\n  - generated-by: m1\n    fields: [/graph/alt~1labels, /graph/a~0b]\ngraph:\n  label: Config\n---\n",
     });
@@ -489,9 +489,9 @@ describe("deriveGraph — provenance", () => {
     ).toBe(true);
   });
 
-  it("emits per-field confidence as a decimal on the fill-field entry (ADR 01015)", () => {
+  it("emits per-field confidence as a decimal on the fill-field entry (ADR 01015)", async () => {
     // 0046 keys confidence by the pointer, not by the field name.
-    const g = graph({
+    const g = await graph({
       "docs/a.md":
         "---\nmeta-provenance:\n  - generated-by: m1\n    fields: [/graph/label]\n    confidence:\n      /graph/label: 0.9\ngraph:\n  label: Config\n---\n",
     });
@@ -501,8 +501,8 @@ describe("deriveGraph — provenance", () => {
     ).toBe(true);
   });
 
-  it("emits the graph-level build activity with tool agent and prov:used edges", () => {
-    const g = graph({ "docs/a.md": "# A\n" }, ALL_SOURCES, {
+  it("emits the graph-level build activity with tool agent and prov:used edges", async () => {
+    const g = await graph({ "docs/a.md": "# A\n" }, ALL_SOURCES, {
       toolVersion: "1.2.3",
     });
     const graphNode = `${BASE}graph`;
@@ -524,9 +524,9 @@ describe("deriveGraph — provenance", () => {
     expect(has(g, tool, `${NS.graph}version`, lit("1.2.3"))).toBe(true);
   });
 
-  it("adds prov:endedAtTime only when git history provides a head time", () => {
+  it("adds prov:endedAtTime only when git history provides a head time", async () => {
     const time = "2026-07-20T12:00:00-07:00";
-    const g = graph({ "docs/a.md": "# A\n" }, ALL_SOURCES, {
+    const g = await graph({ "docs/a.md": "# A\n" }, ALL_SOURCES, {
       gitHistory: { headTime: time, files: new Map() },
     });
     expect(
@@ -537,12 +537,12 @@ describe("deriveGraph — provenance", () => {
         lit(time, `${NS.xsd}dateTime`),
       ),
     ).toBe(true);
-    const without = graph({ "docs/a.md": "# A\n" });
+    const without = await graph({ "docs/a.md": "# A\n" });
     expect(without.some((q) => q.p === `${NS.prov}endedAtTime`)).toBe(false);
   });
 
-  it("maps declared graph.revision-of like derived-from: resolved, URL, or broken", () => {
-    const g = graph({
+  it("maps declared graph.revision-of like derived-from: resolved, URL, or broken", async () => {
+    const g = await graph({
       "docs/a.md":
         "---\ngraph:\n  revision-of: [old.md, https://example.org/v1, gone.md]\n---\n",
       "docs/old.md": "# Old\n",
@@ -556,7 +556,7 @@ describe("deriveGraph — provenance", () => {
     expect(has(g, DOC, `${NS.graph}brokenLink`, lit("gone.md"))).toBe(true);
   });
 
-  it("fills dates from git history only when frontmatter has none", () => {
+  it("fills dates from git history only when frontmatter has none", async () => {
     const gitHistory: GitHistory = {
       files: new Map([
         [
@@ -570,7 +570,7 @@ describe("deriveGraph — provenance", () => {
         ],
       ]),
     };
-    const g = graph({ "docs/a.md": "# A\n" }, ALL_SOURCES, { gitHistory });
+    const g = await graph({ "docs/a.md": "# A\n" }, ALL_SOURCES, { gitHistory });
     expect(
       has(
         g,
@@ -596,7 +596,7 @@ describe("deriveGraph — provenance", () => {
       ),
     ).toBe(true);
 
-    const fmWins = graph(
+    const fmWins = await graph(
       { "docs/a.md": "---\ndate: 2025-05-05\nupdated: 2025-06-06\n---\n" },
       ALL_SOURCES,
       { gitHistory },
@@ -616,7 +616,7 @@ describe("deriveGraph — provenance", () => {
     ).toBe(true);
   });
 
-  it("derives prov:wasRevisionOf edges from git renames", () => {
+  it("derives prov:wasRevisionOf edges from git renames", async () => {
     const gitHistory: GitHistory = {
       files: new Map([
         [
@@ -628,7 +628,7 @@ describe("deriveGraph — provenance", () => {
         ],
       ]),
     };
-    const g = graph({ "docs/a.md": "# A\n" }, ALL_SOURCES, { gitHistory });
+    const g = await graph({ "docs/a.md": "# A\n" }, ALL_SOURCES, { gitHistory });
     const old = `${BASE}doc/docs/old-name.md`;
     expect(has(g, DOC, `${NS.prov}wasRevisionOf`, iri(old))).toBe(true);
     expect(
@@ -637,16 +637,16 @@ describe("deriveGraph — provenance", () => {
     expect(has(g, old, `${NS.rdf}type`, iri(`${NS.prov}Entity`))).toBe(true);
   });
 
-  it("emits no graph-level block when the provenance source is off", () => {
-    const g = graph({ "docs/a.md": "# A\n" }, ["frontmatter", "tags"]);
+  it("emits no graph-level block when the provenance source is off", async () => {
+    const g = await graph({ "docs/a.md": "# A\n" }, ["frontmatter", "tags"]);
     expect(g.some((q) => q.s === `${BASE}graph`)).toBe(false);
     expect(g.some((q) => q.s === `${BASE}activity/build`)).toBe(false);
   });
 });
 
 describe("deriveGraph — qualified provenance", () => {
-  it("qualifies author attribution with a deterministic node and role", () => {
-    const g = graph(
+  it("qualifies author attribution with a deterministic node and role", async () => {
+    const g = await graph(
       { "docs/a.md": "---\nauthor: Jane Doe\n---\n" },
       ALL_SOURCES,
       {
@@ -673,8 +673,8 @@ describe("deriveGraph — qualified provenance", () => {
     ).toBe(true);
   });
 
-  it("qualifies generation and build associations", () => {
-    const g = graph(
+  it("qualifies generation and build associations", async () => {
+    const g = await graph(
       {
         "docs/a.md": `---\nprovenance:\n  - generated-by: model-x\n    lines: 1\n    integrity: sha256-${"a".repeat(64)}\n---\n`,
       },
@@ -714,8 +714,8 @@ describe("deriveGraph — qualified provenance", () => {
     expect(has(g, buildAssoc, `${NS.prov}hadRole`, iri(ROLE.tool))).toBe(true);
   });
 
-  it("emits zero qualified triples when the flag is off", () => {
-    const g = graph({
+  it("emits zero qualified triples when the flag is off", async () => {
+    const g = await graph({
       "docs/a.md": "---\nauthor: Jane\ngenerated-by: m\n---\n",
     });
     expect(g.some((q) => q.p.includes("qualified"))).toBe(false);
@@ -724,8 +724,8 @@ describe("deriveGraph — qualified provenance", () => {
 });
 
 describe("deriveGraph — tags and concepts", () => {
-  it("mints one concept per tag with subject edges and a scheme", () => {
-    const g = graph({ "docs/a.md": "---\ntags: [setup]\n---\n" });
+  it("mints one concept per tag with subject edges and a scheme", async () => {
+    const g = await graph({ "docs/a.md": "---\ntags: [setup]\n---\n" });
     const concept = `${BASE}concept/setup`;
     expect(has(g, DOC, `${NS.dcterms}subject`, iri(concept))).toBe(true);
     expect(has(g, concept, `${NS.rdf}type`, iri(`${NS.skos}Concept`))).toBe(
@@ -740,8 +740,8 @@ describe("deriveGraph — tags and concepts", () => {
     ).toBe(true);
   });
 
-  it("identical tags across docs converge on one concept", () => {
-    const g = graph({
+  it("identical tags across docs converge on one concept", async () => {
+    const g = await graph({
       "docs/a.md": "---\ntags: [setup]\n---\n",
       "docs/b.md": "---\nkeywords: [setup]\n---\n",
     });
@@ -751,15 +751,15 @@ describe("deriveGraph — tags and concepts", () => {
     expect(conceptQuads).toHaveLength(1);
   });
 
-  it("emits no scheme when no concepts exist", () => {
-    const g = graph({ "docs/a.md": "# A\n" });
+  it("emits no scheme when no concepts exist", async () => {
+    const g = await graph({ "docs/a.md": "# A\n" });
     expect(g.some((q) => q.s === `${BASE}scheme`)).toBe(false);
   });
 });
 
 describe("deriveGraph — sections", () => {
-  it("nests sections under doc and parent sections with level and order", () => {
-    const g = graph({ "docs/a.md": "# A\n\n## B\n" });
+  it("nests sections under doc and parent sections with level and order", async () => {
+    const g = await graph({ "docs/a.md": "# A\n\n## B\n" });
     const secA = `${DOC}#a`;
     const secB = `${DOC}#b`;
     expect(has(g, secA, `${NS.rdf}type`, iri(`${NS.graph}Section`))).toBe(true);
@@ -775,8 +775,8 @@ describe("deriveGraph — sections", () => {
 });
 
 describe("deriveGraph — links", () => {
-  it("maps internal links to doc references, resolving anchors to sections", () => {
-    const g = graph({
+  it("maps internal links to doc references, resolving anchors to sections", async () => {
+    const g = await graph({
       "docs/a.md":
         "[to b](b.md)\n[to sec](b.md#setup)\n[dead anchor](b.md#nope)\n",
       "docs/b.md": "## Setup\n",
@@ -791,8 +791,8 @@ describe("deriveGraph — links", () => {
     );
   });
 
-  it("maps external links and broken links", () => {
-    const g = graph({
+  it("maps external links and broken links", async () => {
+    const g = await graph({
       "docs/a.md": "[x](https://example.org/x)\n[gone](missing.md)\n",
     });
     expect(
@@ -803,8 +803,8 @@ describe("deriveGraph — links", () => {
 });
 
 describe("deriveGraph — graph sub-key (SKOS fields)", () => {
-  it("mints a primary topic concept with labels and relations", () => {
-    const g = graph({
+  it("mints a primary topic concept with labels and relations", async () => {
+    const g = await graph({
       "docs/a.md":
         "---\ngraph:\n  label: Configuration\n  alt-labels: [config]\n  broader: [Administration]\n  related-concepts: [Installation]\n  concepts: [reference]\n---\n",
     });
@@ -833,15 +833,15 @@ describe("deriveGraph — graph sub-key (SKOS fields)", () => {
 });
 
 describe("deriveGraph — iiRDS Core/Software typing (ADR 01012)", () => {
-  it("references the published topic-type IRI", () => {
-    const g = graph({ "docs/a.md": "---\ngraph:\n  type: task\n---\n" });
+  it("references the published topic-type IRI", async () => {
+    const g = await graph({ "docs/a.md": "---\ngraph:\n  type: task\n---\n" });
     expect(
       has(g, DOC, `${NS.iirds}has-topic-type`, iri(`${NS.iirds}GenericTask`)),
     ).toBe(true);
   });
 
-  it("mints a ProductVariant node per applies-to label", () => {
-    const g = graph({
+  it("mints a ProductVariant node per applies-to label", async () => {
+    const g = await graph({
       "docs/a.md": "---\ngraph:\n  applies-to: [SP-X100, SP-X200]\n---\n",
     });
     for (const [slug, label] of [
@@ -859,8 +859,8 @@ describe("deriveGraph — iiRDS Core/Software typing (ADR 01012)", () => {
     }
   });
 
-  it("splits software-domain values across their two predicates", () => {
-    const g = graph({
+  it("splits software-domain values across their two predicates", async () => {
+    const g = await graph({
       "docs/a.md":
         "---\ngraph:\n  about-product-lifecycle: [deployment, update]\n  about-product-aspect: [interface]\n---\n",
     });
@@ -885,8 +885,8 @@ describe("deriveGraph — iiRDS Core/Software typing (ADR 01012)", () => {
     ).toBe(true);
   });
 
-  it("emits no iiRDS triples when neither the graph block nor the page types it", () => {
-    const g = graph({ "docs/a.md": "# A\n" });
+  it("emits no iiRDS triples when neither the graph block nor the page types it", async () => {
+    const g = await graph({ "docs/a.md": "# A\n" });
     expect(g.some((q) => q.p.startsWith(NS.iirds))).toBe(false);
     expect(
       g.some((q) => q.o.kind === "iri" && q.o.value.startsWith(NS.iirdsSft)),
@@ -903,8 +903,8 @@ describe("deriveGraph — the harvest rule (ADR 01024)", () => {
   const TOPIC_TYPE = `${NS.iirds}has-topic-type`;
   const VARIANT = `${NS.iirds}relates-to-product-variant`;
 
-  it("derives graph.type from the page's type when the block is silent", () => {
-    const g = graph({ "docs/a.md": "---\ntype: how-to\n---\n\n# A\n" });
+  it("derives graph.type from the page's type when the block is silent", async () => {
+    const g = await graph({ "docs/a.md": "---\ntype: how-to\n---\n\n# A\n" });
     expect(has(g, DOC, TOPIC_TYPE, iri(`${NS.iirds}GenericTask`))).toBe(true);
   });
 
@@ -914,20 +914,20 @@ describe("deriveGraph — the harvest rule (ADR 01024)", () => {
     ["explanation", "GenericConcept"],
     ["reference", "GenericReference"],
     ["troubleshooting", "GenericTroubleshooting"],
-  ])("maps the page type %s onto iirds:%s", (pageType, expected) => {
-    const g = graph({ "docs/a.md": `---\ntype: ${pageType}\n---\n\n# A\n` });
+  ])("maps the page type %s onto iirds:%s", async (pageType, expected) => {
+    const g = await graph({ "docs/a.md": `---\ntype: ${pageType}\n---\n\n# A\n` });
     expect(has(g, DOC, TOPIC_TYPE, iri(`${NS.iirds}${expected}`))).toBe(true);
   });
 
-  it("derives nothing from a page type with no iiRDS counterpart", () => {
+  it("derives nothing from a page type with no iiRDS counterpart", async () => {
     // Inventing a topic type for an unmapped value would put a claim in the
     // graph nobody made. Silence is the correct output.
-    const g = graph({ "docs/a.md": "---\ntype: blog-post\n---\n\n# A\n" });
+    const g = await graph({ "docs/a.md": "---\ntype: blog-post\n---\n\n# A\n" });
     expect(g.some((q) => q.p === TOPIC_TYPE)).toBe(false);
   });
 
-  it("lets an explicit graph.type win over the page's type", () => {
-    const g = graph({
+  it("lets an explicit graph.type win over the page's type", async () => {
+    const g = await graph({
       "docs/a.md": "---\ntype: how-to\ngraph:\n  type: reference\n---\n\n# A\n",
     });
     expect(has(g, DOC, TOPIC_TYPE, iri(`${NS.iirds}GenericReference`))).toBe(
@@ -936,15 +936,15 @@ describe("deriveGraph — the harvest rule (ADR 01024)", () => {
     expect(has(g, DOC, TOPIC_TYPE, iri(`${NS.iirds}GenericTask`))).toBe(false);
   });
 
-  it("harvests page-level applies-to, and lets the block override it", () => {
-    const fallback = graph({
+  it("harvests page-level applies-to, and lets the block override it", async () => {
+    const fallback = await graph({
       "docs/a.md": "---\napplies-to: [SP-X100]\n---\n\n# A\n",
     });
     expect(has(fallback, DOC, VARIANT, iri(`${BASE}product/sp-x100`))).toBe(
       true,
     );
 
-    const deeper = graph({
+    const deeper = await graph({
       "docs/a.md":
         "---\napplies-to: [SP-X100]\ngraph:\n  applies-to: [SP-X200]\n---\n\n# A\n",
     });
@@ -955,8 +955,8 @@ describe("deriveGraph — the harvest rule (ADR 01024)", () => {
     );
   });
 
-  it("harvests page-level not-applicable-to, and lets the block override it", () => {
-    const fallback = graph({
+  it("harvests page-level not-applicable-to, and lets the block override it", async () => {
+    const fallback = await graph({
       "docs/a.md": "---\nnot-applicable-to: [SP-X300]\n---\n\n# A\n",
     });
     expect(
@@ -968,7 +968,7 @@ describe("deriveGraph — the harvest rule (ADR 01024)", () => {
       ),
     ).toBe(true);
 
-    const deeper = graph({
+    const deeper = await graph({
       "docs/a.md":
         "---\nnot-applicable-to: [SP-X300]\ngraph:\n  not-applicable-to: [SP-X400]\n---\n\n# A\n",
     });
@@ -982,15 +982,15 @@ describe("deriveGraph — the harvest rule (ADR 01024)", () => {
     ).toBe(false);
   });
 
-  it("harvests page-level concepts, and lets graph.concepts override them", () => {
-    const fallback = graph({
+  it("harvests page-level concepts, and lets graph.concepts override them", async () => {
+    const fallback = await graph({
       "docs/a.md": "---\nconcepts: [caching]\n---\n\n# A\n",
     });
     expect(
       has(fallback, DOC, `${NS.dcterms}subject`, iri(`${BASE}concept/caching`)),
     ).toBe(true);
 
-    const deeper = graph({
+    const deeper = await graph({
       "docs/a.md":
         "---\nconcepts: [caching]\ngraph:\n  concepts: [indexing]\n---\n\n# A\n",
     });
@@ -1002,10 +1002,10 @@ describe("deriveGraph — the harvest rule (ADR 01024)", () => {
     ).toBe(false);
   });
 
-  it("keeps tags/keywords harvesting alongside the concepts fact", () => {
+  it("keeps tags/keywords harvesting alongside the concepts fact", async () => {
     // `tags` is dockg's own derive source, a different fact from `concepts` —
     // deeper-wins governs the graph/page concepts pair, not this union.
-    const g = graph({
+    const g = await graph({
       "docs/a.md": "---\ntags: [setup]\ngraph:\n  concepts: [indexing]\n---\n",
     });
     expect(
@@ -1016,8 +1016,8 @@ describe("deriveGraph — the harvest rule (ADR 01024)", () => {
     ).toBe(true);
   });
 
-  it("harvests page-level supersedes as prov:wasRevisionOf", () => {
-    const g = graph({
+  it("harvests page-level supersedes as prov:wasRevisionOf", async () => {
+    const g = await graph({
       "docs/a.md": "---\nsupersedes: [b.md]\n---\n\n# A\n",
       "docs/b.md": "# B\n",
     });
@@ -1026,8 +1026,8 @@ describe("deriveGraph — the harvest rule (ADR 01024)", () => {
     ).toBe(true);
   });
 
-  it("lets graph.revision-of win over the page's supersedes", () => {
-    const g = graph({
+  it("lets graph.revision-of win over the page's supersedes", async () => {
+    const g = await graph({
       "docs/a.md":
         "---\nsupersedes: [b.md]\ngraph:\n  revision-of: [c.md]\n---\n\n# A\n",
       "docs/b.md": "# B\n",
@@ -1041,10 +1041,10 @@ describe("deriveGraph — the harvest rule (ADR 01024)", () => {
     ).toBe(false);
   });
 
-  it("does not harvest docmeta:structure's own fields", () => {
+  it("does not harvest docmeta:structure's own fields", async () => {
     // prerequisites / next-steps / related-pages belong to another vocabulary.
     // Harvesting them here would claim a fact this one does not own.
-    const g = graph({
+    const g = await graph({
       "docs/a.md":
         "---\nprerequisites: [b.md]\nnext-steps: [b.md]\nrelated-pages: [b.md]\n---\n\n# A\n",
       "docs/b.md": "# B\n",
@@ -1053,8 +1053,8 @@ describe("deriveGraph — the harvest rule (ADR 01024)", () => {
     expect(g.some((q) => q.p === `${NS.dcterms}references`)).toBe(false);
   });
 
-  it("normalizes the single-string shorthand on every list field", () => {
-    const g = graph({
+  it("normalizes the single-string shorthand on every list field", async () => {
+    const g = await graph({
       "docs/a.md":
         "---\ngraph:\n  label: Config\n  alt-labels: config\n  broader: Admin\n  applies-to: SP-X100\n  about-product-aspect: interface\n---\n",
     });
@@ -1069,8 +1069,8 @@ describe("deriveGraph — the harvest rule (ADR 01024)", () => {
     ).toBe(true);
   });
 
-  it("never harvests into section typing — sections stay explicit-only", () => {
-    const g = graph({
+  it("never harvests into section typing — sections stay explicit-only", async () => {
+    const g = await graph({
       "docs/a.md":
         "---\ntype: how-to\napplies-to: [SP-X100]\ngraph:\n  sections:\n    install:\n      type: reference\n---\n\n## Install\n",
     });
@@ -1084,8 +1084,8 @@ describe("deriveGraph — the harvest rule (ADR 01024)", () => {
 });
 
 describe("deriveGraph — negative scope (ADR 01014)", () => {
-  it("emits notApplicableToVariant + a ProductVariant node, and not-about-product-aspect", () => {
-    const g = graph({
+  it("emits notApplicableToVariant + a ProductVariant node, and not-about-product-aspect", async () => {
+    const g = await graph({
       "docs/a.md":
         "---\ngraph:\n  not-applicable-to: [SP-X300]\n  not-about-product-aspect: [architecture]\n---\n",
     });
@@ -1105,10 +1105,10 @@ describe("deriveGraph — negative scope (ADR 01014)", () => {
     ).toBe(true);
   });
 
-  it("converges a variant used by both applies-to and not-applicable-to on one node", () => {
+  it("converges a variant used by both applies-to and not-applicable-to on one node", async () => {
     // (A self-contradiction the SHACL sh:disjoint rule rejects — but derive
     // still emits both edges to one shared ProductVariant node.)
-    const g = graph({
+    const g = await graph({
       "docs/a.md":
         "---\ngraph:\n  applies-to: [SP-X1]\n  not-applicable-to: [SP-X1]\n---\n",
     });
@@ -1122,8 +1122,8 @@ describe("deriveGraph — negative scope (ADR 01014)", () => {
     );
   });
 
-  it("attaches negative scope to a section too", () => {
-    const g = graph({
+  it("attaches negative scope to a section too", async () => {
+    const g = await graph({
       "docs/a.md":
         "---\ngraph:\n  sections:\n    install:\n      not-applicable-to: [SP-X9]\n      not-about-product-aspect: [interface]\n---\n\n# A\n\n## Install\n",
     });
@@ -1146,8 +1146,8 @@ describe("deriveGraph — negative scope (ADR 01014)", () => {
     ).toBe(true);
   });
 
-  it("emits no negative-scope triples when the fields are absent", () => {
-    const g = graph({ "docs/a.md": "---\ngraph:\n  type: task\n---\n" });
+  it("emits no negative-scope triples when the fields are absent", async () => {
+    const g = await graph({ "docs/a.md": "---\ngraph:\n  type: task\n---\n" });
     expect(g.some((q) => q.p === `${NS.graph}notApplicableToVariant`)).toBe(
       false,
     );
@@ -1158,8 +1158,8 @@ describe("deriveGraph — negative scope (ADR 01014)", () => {
 describe("deriveGraph — section-level metadata (ADR 01013)", () => {
   const SEC = `${DOC}#install`;
 
-  it("attaches iiRDS typing and concepts to the matching section node", () => {
-    const g = graph({
+  it("attaches iiRDS typing and concepts to the matching section node", async () => {
+    const g = await graph({
       "docs/a.md":
         "---\ngraph:\n  sections:\n    install:\n      type: reference\n      applies-to: [SP-X200]\n      about-product-aspect: [interface]\n      concepts: [setup]\n---\n\n# A\n\n## Install\n",
     });
@@ -1187,8 +1187,8 @@ describe("deriveGraph — section-level metadata (ADR 01013)", () => {
     ).toBe(true);
   });
 
-  it("emits graph:brokenSectionRef for a key naming no heading", () => {
-    const g = graph({
+  it("emits graph:brokenSectionRef for a key naming no heading", async () => {
+    const g = await graph({
       "docs/a.md":
         "---\ngraph:\n  sections:\n    nope:\n      type: task\n---\n\n# A\n\n## Install\n",
     });
@@ -1197,8 +1197,8 @@ describe("deriveGraph — section-level metadata (ADR 01013)", () => {
     expect(g.some((q) => q.p === `${NS.iirds}has-topic-type`)).toBe(false);
   });
 
-  it("does not leak the document's typing onto sections (explicit-only)", () => {
-    const g = graph({
+  it("does not leak the document's typing onto sections (explicit-only)", async () => {
+    const g = await graph({
       "docs/a.md": "---\ngraph:\n  type: task\n---\n\n# A\n\n## Install\n",
     });
     // The doc is typed; the section is not.
@@ -1210,14 +1210,14 @@ describe("deriveGraph — section-level metadata (ADR 01013)", () => {
     ).toBe(false);
   });
 
-  it("emits no section metadata when graph.sections is absent", () => {
-    const g = graph({ "docs/a.md": "# A\n\n## Install\n" });
+  it("emits no section metadata when graph.sections is absent", async () => {
+    const g = await graph({ "docs/a.md": "# A\n\n## Install\n" });
     expect(g.some((q) => q.p === `${NS.graph}brokenSectionRef`)).toBe(false);
     expect(g.some((q) => q.s === SEC && q.p.startsWith(NS.iirds))).toBe(false);
   });
 
-  it("requires the sections source (no section nodes, no metadata or broken ref)", () => {
-    const g = graph(
+  it("requires the sections source (no section nodes, no metadata or broken ref)", async () => {
+    const g = await graph(
       {
         "docs/a.md":
           "---\ngraph:\n  sections:\n    install:\n      type: task\n    nope:\n      type: task\n---\n\n# A\n\n## Install\n",
@@ -1230,11 +1230,11 @@ describe("deriveGraph — section-level metadata (ADR 01013)", () => {
     expect(g.some((q) => q.s === SEC)).toBe(false);
   });
 
-  it("gates section typing on the sections source, independent of frontmatter", () => {
+  it("gates section typing on the sections source, independent of frontmatter", async () => {
     // ADR 01013's deliberate asymmetry: with `frontmatter` off but `sections`
     // on, the section still gets its iiRDS typing even though the document's
     // own graph typing (under `frontmatter`) does not.
-    const g = graph(
+    const g = await graph(
       {
         "docs/a.md":
           "---\ngraph:\n  type: concept\n  sections:\n    install:\n      type: task\n---\n\n# A\n\n## Install\n",
@@ -1257,8 +1257,8 @@ describe("deriveGraph — section-level metadata (ADR 01013)", () => {
 });
 
 describe("deriveGraph — images, code, derive toggles", () => {
-  it("maps images and code languages", () => {
-    const g = graph({
+  it("maps images and code languages", async () => {
+    const g = await graph({
       "docs/a.md": "![i](img/x.png)\n\n```python\np\n```\n",
     });
     expect(
@@ -1267,8 +1267,8 @@ describe("deriveGraph — images, code, derive toggles", () => {
     expect(has(g, DOC, `${NS.graph}codeLanguage`, lit("python"))).toBe(true);
   });
 
-  it("respects derive source toggles", () => {
-    const g = graph(
+  it("respects derive source toggles", async () => {
+    const g = await graph(
       { "docs/a.md": "---\ntitle: T\ntags: [x]\n---\n\n## S\n" },
       ["frontmatter"],
     );
@@ -1277,8 +1277,8 @@ describe("deriveGraph — images, code, derive toggles", () => {
     expect(g.some((q) => q.p === `${NS.dcterms}hasPart`)).toBe(false);
   });
 
-  it("deduplicates repeated quads", () => {
-    const g = graph({
+  it("deduplicates repeated quads", async () => {
+    const g = await graph({
       "docs/a.md": "[x](b.md)\n[y](b.md)\n",
       "docs/b.md": "# B\n",
     });
@@ -1307,13 +1307,13 @@ describe("deriveGraph — localization (ADR 01037)", () => {
   });
 
   /** Like `graph()`, but the docs are analyzed against route mappings. */
-  function localized(
+  async function localized(
     files: Record<string, string>,
     routes: RouteMapping[],
-  ): Quad[] {
+  ): Promise<Quad[]> {
     const paths = new Set(Object.keys(files));
-    const models = Object.entries(files).map(([path, content]) =>
-      analyzeDoc(content, path, paths, { routes }),
+    const models = await Promise.all(
+      Object.entries(files).map(([path, content]) => analyzeDoc(content, path, paths, { routes })),
     );
     return deriveGraph(models, {
       baseIri: BASE,
@@ -1324,23 +1324,23 @@ describe("deriveGraph — localization (ADR 01037)", () => {
 
   const LOCALE_ROUTES = [route("docs/de", "/de", "de"), route("docs", "")];
 
-  it("labels a document with the language of its enclosing route", () => {
-    const g = localized(
+  it("labels a document with the language of its enclosing route", async () => {
+    const g = await localized(
       { "docs/de/a.md": "# A\n", "docs/a.md": "# A\n" },
       LOCALE_ROUTES,
     );
     expect(has(g, DE_DOC, `${NS.dcterms}language`, lit("de"))).toBe(true);
   });
 
-  it("derives no language when no route and no page declares one", () => {
-    const g = localized({ "docs/a.md": "# A\n" }, LOCALE_ROUTES);
+  it("derives no language when no route and no page declares one", async () => {
+    const g = await localized({ "docs/a.md": "# A\n" }, LOCALE_ROUTES);
     expect(
       g.some((q) => q.s === EN_DOC && q.p === `${NS.dcterms}language`),
     ).toBe(false);
   });
 
-  it("lets page frontmatter override the route language", () => {
-    const g = localized(
+  it("lets page frontmatter override the route language", async () => {
+    const g = await localized(
       { "docs/de/a.md": "---\nlang: de-AT\n---\n\n# A\n" },
       LOCALE_ROUTES,
     );
@@ -1348,8 +1348,8 @@ describe("deriveGraph — localization (ADR 01037)", () => {
     expect(has(g, DE_DOC, `${NS.dcterms}language`, lit("de"))).toBe(false);
   });
 
-  it("writes the canonical spelling of a tag, so en-us and en-US are one locale", () => {
-    const g = localized(
+  it("writes the canonical spelling of a tag, so en-us and en-US are one locale", async () => {
+    const g = await localized(
       {
         "docs/de/a.md": "# A\n",
         "docs/a.md": "---\nlang: en-us\n---\n\n# A\n",
@@ -1360,13 +1360,13 @@ describe("deriveGraph — localization (ADR 01037)", () => {
     expect(has(g, DE_DOC, `${NS.dcterms}language`, lit("de-AT"))).toBe(true);
   });
 
-  it("keeps a tag Intl cannot read as written, for the tag check to report", () => {
-    const g = localized({ "docs/a.md": "---\nlang: en_US\n---\n\n# A\n" }, []);
+  it("keeps a tag Intl cannot read as written, for the tag check to report", async () => {
+    const g = await localized({ "docs/a.md": "---\nlang: en_US\n---\n\n# A\n" }, []);
     expect(has(g, EN_DOC, `${NS.dcterms}language`, lit("en_US"))).toBe(true);
   });
 
-  it("inherits the nearest enclosing route that declares a language", () => {
-    const g = localized({ "docs/api/a.md": "# A\n" }, [
+  it("inherits the nearest enclosing route that declares a language", async () => {
+    const g = await localized({ "docs/api/a.md": "# A\n" }, [
       route("docs/api", "/api"),
       route("docs", "", "en"),
     ]);
@@ -1375,8 +1375,8 @@ describe("deriveGraph — localization (ADR 01037)", () => {
     ).toBe(true);
   });
 
-  it("links a translation to its source in both directions", () => {
-    const g = localized(
+  it("links a translation to its source in both directions", async () => {
+    const g = await localized(
       {
         "docs/a.md": "# A\n",
         "docs/de/a.md": "---\ntranslation-of: ../a.md\n---\n\n# A\n",
@@ -1391,8 +1391,8 @@ describe("deriveGraph — localization (ADR 01037)", () => {
     );
   });
 
-  it("lists every translation on the source document", () => {
-    const g = localized(
+  it("lists every translation on the source document", async () => {
+    const g = await localized(
       {
         "docs/a.md": "# A\n",
         "docs/de/a.md": "---\ntranslation-of: docs/a.md\n---\n\n# A\n",
@@ -1410,8 +1410,8 @@ describe("deriveGraph — localization (ADR 01037)", () => {
     expect(translations.sort()).toEqual([DE_DOC, FR_DOC].sort());
   });
 
-  it("records an unresolvable translation-of as a broken link", () => {
-    const g = localized(
+  it("records an unresolvable translation-of as a broken link", async () => {
+    const g = await localized(
       { "docs/de/a.md": "---\ntranslation-of: ../missing.md\n---\n\n# A\n" },
       LOCALE_ROUTES,
     );
@@ -1423,9 +1423,9 @@ describe("deriveGraph — localization (ADR 01037)", () => {
     ).toBe(false);
   });
 
-  it("emits no inverse for a translation-of naming a URL outside the corpus", () => {
+  it("emits no inverse for a translation-of naming a URL outside the corpus", async () => {
     const url = "https://example.org/en/a";
-    const g = localized(
+    const g = await localized(
       { "docs/de/a.md": `---\ntranslation-of: ${url}\n---\n\n# A\n` },
       LOCALE_ROUTES,
     );

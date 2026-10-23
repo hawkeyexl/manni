@@ -24,9 +24,9 @@ async function parseOnce(
   path: string,
   format: "markdown" | "mdx" = "markdown",
   version?: string,
-): Promise<{ cache: AnalyzeCache; body: ReturnType<typeof parseBody> }> {
+): Promise<{ cache: AnalyzeCache; body: Awaited<ReturnType<typeof parseBody>> }> {
   const cache = new AnalyzeCache(dir, version);
-  const body = cache.parse(content, path, format);
+  const body = await cache.parse(content, path, format);
   await cache.flush();
   return { cache, body };
 }
@@ -36,7 +36,7 @@ describe("AnalyzeCache", () => {
     const dir = tempDir();
     const cold = await parseOnce(dir, PAGE, "docs/a.md");
     expect(cold.cache.misses).toBe(1);
-    expect(cold.body).toEqual(parseBody(PAGE, "docs/a.md", "markdown"));
+    expect(cold.body).toEqual(await parseBody(PAGE, "docs/a.md", "markdown"));
 
     const warm = await parseOnce(dir, PAGE, "docs/a.md");
     expect(warm.cache.hits).toBe(1);
@@ -93,7 +93,7 @@ describe("AnalyzeCache", () => {
 
     const again = await parseOnce(dir, PAGE, "docs/a.md");
     expect(again.cache.misses).toBe(1);
-    expect(again.body).toEqual(parseBody(PAGE, "docs/a.md", "markdown"));
+    expect(again.body).toEqual(await parseBody(PAGE, "docs/a.md", "markdown"));
     const healed = await parseOnce(dir, PAGE, "docs/a.md");
     expect(healed.cache.hits).toBe(1);
   });

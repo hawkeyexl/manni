@@ -144,12 +144,15 @@ export async function buildGraph(opts: BuildOptions = {}): Promise<BuiltGraph> {
     ...(format === undefined ? {} : { format }),
     parse: cache.parse,
   };
-  const read = files.map((path) =>
+  // `async`, so a read that throws rejects inside `Promise.all` rather than
+  // escaping `map` and leaving earlier pages' rejections unhandled.
+  const pending = files.map(async (path) =>
     analyzeDoc(readFileSync(resolve(base, path), "utf8"), path, allPaths, analyzeOptions),
   );
   if (usingStdin && opts.stdinContent !== undefined) {
-    read.push(analyzeDoc(opts.stdinContent, STDIN_PATH, allPaths, analyzeOptions));
+    pending.push(analyzeDoc(opts.stdinContent, STDIN_PATH, allPaths, analyzeOptions));
   }
+  const read = await Promise.all(pending);
 
   // A page's metadata is what `manni meta validate` reads: its frontmatter
   // plus every key a manifest of its collections owns (proposal 0047), merged

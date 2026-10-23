@@ -28,7 +28,7 @@ async function harvested(configFile: string | undefined): Promise<string[]> {
     configFile === undefined ? { noConfig: true } : { configPath: configFile },
     fixture,
   );
-  const doc = analyzeDoc(
+  const doc = await analyzeDoc(
     readFileSync(join(fixture, PAGE), "utf8"),
     PAGE,
     new Set([PAGE]),
@@ -76,7 +76,7 @@ describe("graph build reads its output marks from meta's schema set (0074)", () 
       "Run the installer.",
       "",
     ].join("\n");
-    const doc = analyzeDoc(content, PAGE, new Set([PAGE]));
+    const doc = await analyzeDoc(content, PAGE, new Set([PAGE]));
     const view = await openMetaView({ configPath: "manni.config.yaml" }, fixture, [PAGE]);
     const [out] = await suppressGraphOutput([doc], view);
     expect(Object.keys(out?.statements?.[0]?.data ?? {}).sort()).toEqual([
