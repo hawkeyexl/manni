@@ -1,6 +1,6 @@
 # 0109: `manni check` ranks findings by the readers they reach
 
-- **Status:** Proposed
+- **Status:** Implemented (#243)
 - **Serves:**
   - Maya · M33, "Fix a red run in the order its readers feel it". A run
     that fails several checks says which journeys it breaks, worst first.
