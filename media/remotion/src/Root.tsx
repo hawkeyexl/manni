@@ -145,7 +145,7 @@ const DemoStrategy: React.FC = () => (
 
 /**
  * evidence-pins-1x1: 19 px / 91 columns for beat 4, derived in
- * media/evidence-pins/evidence-pins-1x1.script.md (media/evidence-pins/cols.mjs).
+ * media/evidence-pins/evidence-pins-1x1.script.md (media/evidence-pins/capture/cols.mjs).
  * Beats 1, 2, 3 and 5 carry their own sizes (src/evidence-pins/beats.ts).
  * Ligatures off: the record's `---` fences and the diff's `---` header would draw as one rule.
  */

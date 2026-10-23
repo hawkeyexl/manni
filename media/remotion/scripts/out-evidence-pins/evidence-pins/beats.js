@@ -10,7 +10,7 @@ Object.defineProperty(exports, "FPS", { enumerable: true, get: function () { ret
 // Typing speed for this video (design.md: 35-70 ms). The cite add line is 92
 // characters, so the floor of the range.
 exports.TYPING_MS = 35;
-// Measured wall-clock latency, from media/evidence-pins/latency.txt.
+// Measured wall-clock latency, from media/evidence-pins/capture/latency.txt.
 // Replayed at 1x: every run is under 0.7 s, so nothing is compressed.
 //   add             489 ms
 //   check-current   405 ms
@@ -33,7 +33,7 @@ exports.latency = {
 const THEO = "records/personas/theo.md";
 const NOTE = "research/contributor.md";
 // Type size per beat, derived from each beat's own lines by
-// media/evidence-pins/cols.mjs. Beat 4 takes the video's 19 px from Root.tsx:
+// media/evidence-pins/capture/cols.mjs. Beat 4 takes the video's 19 px from Root.tsx:
 // its moved pin row is 87 characters, and every larger size leaves one word
 // alone on a row. The others need not shrink with it.
 exports.beats = [

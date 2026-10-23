@@ -11,7 +11,7 @@
   when the note stops saying what the pain claims.
 - **Assets:** `media/evidence-pins/evidence-pins-1x1.mp4` (not committed),
   `.thumb.png`, `.vtt`, `.srt`, `.transcript.txt`, `.post.txt`, this file, and
-  the capture sources beside it. In `media/remotion/`, the files are
+  the capture sources in `capture/`. In `media/remotion/`, the files are
   `src/evidence-pins/`, `scripts/{captures,vtt,transcript}-evidence-pins.*` and
   the `EvidencePinsDemo` composition in `src/Root.tsx`. No GIF and no
   storyboard. The brief asked for neither, and one shot type, a terminal,
@@ -20,7 +20,7 @@
   112 px with an `n / 5` counter, caption band 86 px, accent `#58a6ff` blue.
   Never red, green, yellow or cyan. The frame already holds a green `✓`, a red
   `✗`, a cyan pin id, and the red and green lines of each diff.
-- **Material.** `test/fixtures/strategy/evidence/`, staged by `capture.sh` into
+- **Material.** `test/fixtures/strategy/evidence/`, staged by `capture/capture.sh` into
   `media/scratch-evidence-pins/` (gitignored by `media/scratch-*/`). The
   scratch copy is its own git repository with one baseline commit, so cite
   pins the commit. It holds the persona `theo` with two pains, the audience
@@ -60,7 +60,7 @@ the run exits 1 with `source-changed`.
   heading still carries the date. The fixture's longer path wrapped every pin
   row at a legible size. The fixture's `cite.repos` entry goes unused, since
   the scratch copy is one repository and the note is cited by its path there.
-- **The edits are files beside the script.** `theo.reordered.md` is the
+- **The edits are files in `capture/`.** `theo.reordered.md` is the
   fixture's persona with its two pains swapped. `note.edited.md` is the
   fixture's note with line 3 rewritten. Each is copied in before its diff.
 - **Colour.** `media/capture/tty.cjs` tells the CLI it writes to a terminal.
@@ -68,11 +68,11 @@ the run exits 1 with `source-changed`.
 - **The edits are uncommitted,** so cite reports `changed since <sha>, 0
   commits`. The sha is the scratch repository's one commit. It changes on
   every capture.
-- **Latency is replayed at 1x,** as `latency.txt` measured it. Each command
+- **Latency is replayed at 1x,** as `capture/latency.txt` measured it. Each command
   took under 0.7 s, so nothing is compressed.
 - **Typing at 35 ms,** the floor of design.md's range. The `cite add` line is
   92 characters.
-- **Font size is derived per beat, not chosen** (`node evidence-pins/cols.mjs`
+- **Font size is derived per beat, not chosen** (`node evidence-pins/capture/cols.mjs`
   from `media/`). Beat 1 takes 27 px, the largest at which no frontmatter
   line wraps. Beat 2 takes 29 px and beat 3 takes 26 px. Beat 4 takes 19 px /
   91 columns. Its moved pin row is 87 characters, and every larger size
@@ -85,8 +85,8 @@ the run exits 1 with `source-changed`.
 ```bash
 # from the repo root
 npm run build
-bash media/evidence-pins/capture.sh          # stages media/scratch-evidence-pins, captures every byte
-cd media && node evidence-pins/cols.mjs      # re-derive the font sizes, per beat
+bash media/evidence-pins/capture/capture.sh  # stages media/scratch-evidence-pins, captures every byte
+cd media && node evidence-pins/capture/cols.mjs  # re-derive the font sizes, per beat
 
 cd remotion
 npm ci

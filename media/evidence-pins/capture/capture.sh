@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # evidence-pins-1x1: capture every real byte the video replays.
 # Run from the repo root after `npm run build`:
-#   bash media/evidence-pins/capture.sh
+#   bash media/evidence-pins/capture/capture.sh
 #
 # The demo repository is media/scratch-evidence-pins/ (gitignored by
 # media/scratch-*/). It is a copy of test/fixtures/strategy/evidence/: an
@@ -10,9 +10,9 @@
 # with one baseline commit, so cite pins the commit. The note is cited by its
 # path in that repository, so the fixture's cite.repos entry goes unused.
 set -euo pipefail
-cd "$(dirname "$0")/../.."
+cd "$(dirname "$0")/../../.."
 REPO="$(pwd)"
-C="$REPO/media/evidence-pins"
+C="$REPO/media/evidence-pins/capture"
 DEMO="$REPO/media/scratch-evidence-pins"
 THEO=records/personas/theo.md
 NOTE=research/contributor.md

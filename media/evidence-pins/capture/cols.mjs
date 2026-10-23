@@ -6,11 +6,11 @@
 // rows fit the 838 px terminal area, no token hard-breaks, and no wrapped line
 // leaves one word alone on its last row. Beat 1 may not wrap at all.
 //
-// Run from media/: node evidence-pins/cols.mjs [px]
+// Run from media/: node evidence-pins/capture/cols.mjs [px]
 import { readFileSync } from "node:fs";
 const strip = (s) => s.replace(/\x1b\[[0-9;]*m/g, "");
 const rd = (f) =>
-  strip(readFileSync("evidence-pins/" + f, "utf8"))
+  strip(readFileSync("evidence-pins/capture/" + f, "utf8"))
     .replace(/\r/g, "")
     .replace(/\n$/, "")
     .split("\n");

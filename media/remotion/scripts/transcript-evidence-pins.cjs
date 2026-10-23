@@ -12,10 +12,10 @@ let out = `manni cite, demo video transcript (silent video; text describes what 
 
 Frame: 1080x1080, 30 fps, ${total} s. Every terminal line is real output. The CLI is
 this branch's build, node dist/cli.js, typed as manni. It runs in
-media/scratch-evidence-pins/, which media/evidence-pins/capture.sh stages from a
+media/scratch-evidence-pins/, which media/evidence-pins/capture/capture.sh stages from a
 copy of test/fixtures/strategy/evidence/ with its research note moved to
 research/contributor.md, then commits as one baseline. The reordered persona
-and the edited note are media/evidence-pins/theo.reordered.md and note.edited.md,
+and the edited note are theo.reordered.md and note.edited.md in media/evidence-pins/capture/,
 copied in before each diff. Each command appears after its measured latency, at 1x.
 
 `;
