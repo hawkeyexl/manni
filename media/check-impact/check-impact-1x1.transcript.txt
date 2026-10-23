@@ -1,0 +1,93 @@
+manni check, demo video transcript (silent video; text describes what is on screen)
+
+Frame: 1080x1080, 30 fps, 36.7 s. Every terminal line is real output. The CLI is
+this branch's build, node dist/cli.js, typed as manni. It runs in
+media/scratch-check-impact/, a clone of the manni repository at 9caf1313 with
+one commit on top: it rewords line 2 of the doc comment in
+src/meta/core/resolve-schema.ts. Six citations pin a range holding that line,
+three of them on pages that serve journey m1. Each run waited longer than the
+replay shows; a note under the command states the real time, and only the wait
+is cut. Lines in [brackets] are those notes, not output.
+
+[0:00-0:06] Title: One red run (1 / 4)
+$ manni check
+[42.5 s run; the wait is cut to 1.5 s]
+(2696 lines of output scroll past)
+On screen when the output settles:
+  m4      Retrofit a docset that never had metadata, without breaking our data policy        2 warnings on 2 pages
+  m25     Catch a broken rule before the agent hands back                                    2 warnings on 1 page
+  s3      Version and evolve the schema safely                                               2 warnings on 2 pages
+  s14     Change the artifact-evals standard without breaking what exists                    2 warnings on 2 pages
+  d13     Publish the graph for retrieval                                                    1 warning and 1 notice on 1 page
+  m8      See which lines a machine wrote, and catch them changing                           1 warning on 1 page
+  m27     Draft the questions readers ask, review them, and keep them true as pages change   1 warning on 1 page
+  m31     Pin a fact to the sentence it is about                                             1 warning on 1 page
+  s15     Grow the words our pages use into a governed vocabulary and a checked graph        3 notices on 1 page
+
+7 checks over 345 files: 1 failed, 1 skipped
+$ 
+Highlighted rows: lines containing "checks over 345 files"
+Caption: manni check runs every check. 2,696 lines go by.
+
+[0:06-0:12] Title: Who the red run hurts (2 / 4)
+The view scrolls back to the roll-up's heading:
+The pages with findings serve 4 personas and 48 journeys.
+  devin   Devin, Platform / CI Engineer                                                      3 errors, 172 warnings and 63 notices on 88 pages
+  maya    Maya, Documentation Engineer                                                       3 errors, 151 warnings and 58 notices on 101 pages
+  sara    Sara, Schema Author / Information Architect                                        2 errors, 124 warnings and 62 notices on 97 pages
+  theo    Theo, Doc Contributor                                                              1 error, 95 warnings and 31 notices on 61 pages
+  m1      Stand up metadata validation for my repo                                           3 errors, 9 warnings and 3 notices on 6 pages
+  s1      Define our metadata standard as a schema                                           1 error, 32 warnings and 30 notices on 31 pages
+  d1      Add the gate to our CI platform                                                    1 error, 23 warnings and 8 notices on 8 pages
+  d3      Feed results into our tooling                                                      1 error, 14 warnings and 2 notices on 4 pages
+  t1      Fix a failing metadata check fast                                                  1 error, 4 warnings and 3 notices on 3 pages
+  d2      Govern one schema across many repos                                                1 error, 3 warnings and 3 notices on 2 pages
+Highlighted rows: lines containing "The pages with findings serve", "Stand up metadata validation for my repo"
+Caption: Readers ranked worst first. M1 tops the journeys.
+
+[0:12-0:22] Title: M1's pages, for a script (3 / 4)
+$ manni check -f json | jq -r '.impact[] | select(.id == "m1") | .pages[]'
+[26.8 s run; the wait is cut to 1.5 s]
+docs/src/content/docs/meta/get-started/index.mdx
+docs/src/content/docs/meta/reference/configuration.mdx
+docs/src/content/docs/meta/reference/schemas/index.mdx
+docs/src/content/docs/meta/set-up/config.mdx
+docs/src/content/docs/meta/set-up/external-metadata.mdx
+docs/src/content/docs/meta/set-up/index.mdx
+Caption: The same roll-up in JSON. jq lists M1's six pages.
+
+[0:22-0:37] Title: Re-mint, then rerun (4 / 4)
+$ manni cite update --accept | tail -n 1
+[7.0 s run; the wait is cut to 1 s]
+6 citations rewritten in 6 files, 0 skipped
+$ manni check
+[21.2 s run; the wait is cut to 1.5 s]
+(2650 lines of output scroll past)
+On screen when the output settles:
+  m25     Catch a broken rule before the agent hands back                                    2 warnings on 1 page
+  s3      Version and evolve the schema safely                                               2 warnings on 2 pages
+  s14     Change the artifact-evals standard without breaking what exists                    2 warnings on 2 pages
+  d4      Enforce rules that span files                                                      1 warning and 2 notices on 2 pages
+  d13     Publish the graph for retrieval                                                    1 warning and 1 notice on 1 page
+  m8      See which lines a machine wrote, and catch them changing                           1 warning on 1 page
+  m27     Draft the questions readers ask, review them, and keep them true as pages change   1 warning on 1 page
+  m31     Pin a fact to the sentence it is about                                             1 warning on 1 page
+  s15     Grow the words our pages use into a governed vocabulary and a checked graph        3 notices on 1 page
+
+7 checks over 345 files: 0 failed, 1 skipped
+$ 
+The view scrolls back to the roll-up's heading:
+The pages with findings serve 4 personas and 48 journeys.
+  devin   Devin, Platform / CI Engineer                                                      172 warnings and 63 notices on 87 pages
+  maya    Maya, Documentation Engineer                                                       151 warnings and 58 notices on 100 pages
+  sara    Sara, Schema Author / Information Architect                                        124 warnings and 62 notices on 97 pages
+  theo    Theo, Doc Contributor                                                              95 warnings and 31 notices on 61 pages
+  s1      Define our metadata standard as a schema                                           32 warnings and 30 notices on 31 pages
+  d1      Add the gate to our CI platform                                                    23 warnings and 8 notices on 7 pages
+  d7      Gate accessibility in CI                                                           17 warnings and 9 notices on 6 pages
+  d14     Gate agent work in CI, offline                                                     17 warnings and 3 notices on 5 pages
+  t8      Read a failing session eval and decide what to do                                  16 warnings and 3 notices on 5 pages
+  d5      Gate citations in CI without blocking on prose                                     15 warnings and 11 notices on 8 pages
+Highlighted rows: lines containing "checks over 345 files", "The pages with findings serve"
+Caption: Re-mint the six pins. 0 failed, and M1 leaves the top.
+

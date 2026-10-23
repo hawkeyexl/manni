@@ -27,6 +27,7 @@ import { beats as citeReposBeats, totalFrames as citeReposTotalFrames, TYPING_MS
 import { beats as pluginMetadataBeats, totalFrames as pluginMetadataTotalFrames, TYPING_MS as pluginMetadataTypingMs } from "./plugin-metadata/beats";
 import { beats as strategyBeats, totalFrames as strategyTotalFrames, TYPING_MS as strategyTypingMs } from "./strategy/beats";
 import { beats as citeImpactBeats, totalFrames as citeImpactTotalFrames, TYPING_MS as citeImpactTypingMs } from "./cite-impact/beats";
+import { beats as checkImpactBeats, totalFrames as checkImpactTotalFrames, TYPING_MS as checkImpactTypingMs } from "./check-impact/beats";
 
 /** sidecar-url-1x1: 23 px / 75 columns, derived in media/sidecar-url-1x1.script.md. */
 const DemoUrl: React.FC = () => <DemoView beats={urlBeats} fontPx={23} linePx={32} cols={75} />;
@@ -152,8 +153,21 @@ const DemoCiteImpact: React.FC = () => (
   <DemoView beats={citeImpactBeats} fontPx={22} linePx={31} cols={78} typingMs={citeImpactTypingMs} ligatures={false} />
 );
 
+/** check-impact-1x1: 28 px / 61 columns per beat, derived by media/check-impact/cols.mjs. */
+const DemoCheckImpact: React.FC = () => (
+  <DemoView beats={checkImpactBeats} fontPx={28} linePx={39} cols={61} typingMs={checkImpactTypingMs} ligatures={false} />
+);
+
 export const Root: React.FC = () => (
   <>
+    <Composition
+      id="CheckImpactDemo"
+      component={DemoCheckImpact}
+      width={1080}
+      height={1080}
+      fps={FPS}
+      durationInFrames={checkImpactTotalFrames}
+    />
     <Composition
       id="CiteImpactDemo"
       component={DemoCiteImpact}
