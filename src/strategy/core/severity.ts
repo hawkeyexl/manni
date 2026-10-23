@@ -28,7 +28,8 @@ export const RULE_DESCRIPTIONS: Readonly<Record<StrategyRule, string>> = {
     "A page names a journey but none of its personas in personas:, or a persona but not its audience in audiences:.",
   "orphan-record":
     "A persona names no audience, or a journey names no persona, while the set holds records of the parent type.",
-  "unserved-journey": "No page names the journey in journeys:. Records do not count.",
+  "unserved-journey":
+    "No page names the journey in journeys:. Records do not count, and a draft or archived journey is exempt.",
   "unused-record": "No page and no record names an audience or a persona.",
 };
 

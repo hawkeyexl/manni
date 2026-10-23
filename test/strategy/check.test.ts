@@ -247,6 +247,23 @@ describe("checkStrategySet", () => {
       set.references.push(ref("journeys", "m1", "strategy/personas/maya.md", 6, true));
       expect(rules(set)).toContain("unserved-journey");
     });
+
+    it("skips a draft journey and an archived one", () => {
+      const set = joined();
+      set.records.push(rec("journey", "m2", "maya", { lifecycle: "draft" }), rec("journey", "m3", "maya", { lifecycle: "archived" }));
+      expect(checkStrategySet(set)).toEqual([]);
+    });
+
+    it("still fires for a published, a deprecated and an unset journey", () => {
+      const set = joined();
+      set.records.push(
+        rec("journey", "m2", "maya", { lifecycle: "published" }),
+        rec("journey", "m3", "maya", { lifecycle: "deprecated" }),
+        rec("journey", "m4", "maya"),
+      );
+      const found = checkStrategySet(set).filter((f) => f.rule === "unserved-journey");
+      expect(found.map((f) => f.id)).toEqual(["m2", "m3", "m4"]);
+    });
   });
 
   describe("unused-record", () => {

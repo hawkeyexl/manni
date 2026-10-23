@@ -176,11 +176,13 @@ export async function loadStrategySet(opts: LoadStrategySetOptions): Promise<Str
       const declaredId = text(data["id"]);
       const title = text(data["title"]);
       const description = text(data["description"]);
+      const lifecycle = text(data["lifecycle"]);
       const record: StrategyRecord = {
         id: declaredId ?? stem(label),
         type,
         ...(title === undefined ? {} : { title }),
         ...(description === undefined ? {} : { description }),
+        ...(lifecycle === undefined ? {} : { lifecycle }),
         file: label,
         line: 1,
         ...(declaredId === undefined ? {} : { idAt: at("/id") }),

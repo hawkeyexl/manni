@@ -207,12 +207,25 @@ Maya, Documentation Engineer                  strategy/personas/maya.md:1
                 docs/guide.md
 ```
 
+A record that sets `lifecycle` shows it in a row after `description`. This
+journey is a draft, so no page names it yet:
+
+```
+Gate a new page on its journey                strategy/journeys/m3.md:1
+  type          journey
+  id            m3
+  description   A journey whose pages are still to be written.
+  lifecycle     draft
+  personas      maya  Maya, Documentation Engineer
+  pages         none
+```
+
 `json` prints the record. `title` is always there: a record with no title
 gets its id, so `title` equal to `id` means none was written. `description`
-is there only when the record has one. A persona carries `audience`, as
-written. A journey carries `personas`, always a list. `namedBy` holds
-`personas` on an audience, `journeys` on a persona, and `pages` always. Paths
-are relative to the working directory:
+and `lifecycle` are there only when the record has them. A persona carries
+`audience`, as written. A journey carries `personas`, always a list.
+`namedBy` holds `personas` on an audience, `journeys` on a persona, and
+`pages` always. Paths are relative to the working directory:
 
 ```json
 {
@@ -303,7 +316,7 @@ read. A journey's own `personas:` counts once:
       "guidance": {
         "id": "manni:strategy",
         "rule": "unserved-journey",
-        "description": "No page names the journey in journeys:. Records do not count.",
+        "description": "No page names the journey in journeys:. Records do not count, and a draft or archived journey is exempt.",
         "guide": "https://hawkeyexl.github.io/manni/strategy/reference/rules/#unserved-journey"
       },
       "file": "strategy/journeys/m2.md",
@@ -326,7 +339,7 @@ escaped, because a workflow command reads `:` as a separator. A clean run
 prints nothing:
 
 ```
-::warning file=strategy/journeys/m2.md,line=3,title=manni%3Astrategy/unserved-journey::no page names this journey in journeys:. Name it on the pages that serve it.%0Amanni:strategy unserved-journey: No page names the journey in journeys:. Records do not count.%0AGuide: https://hawkeyexl.github.io/manni/strategy/reference/rules/#unserved-journey
+::warning file=strategy/journeys/m2.md,line=3,title=manni%3Astrategy/unserved-journey::no page names this journey in journeys:. Name it on the pages that serve it.%0Amanni:strategy unserved-journey: No page names the journey in journeys:. Records do not count, and a draft or archived journey is exempt.%0AGuide: https://hawkeyexl.github.io/manni/strategy/reference/rules/#unserved-journey
 ```
 
 `sarif` and `junit` carry the same findings under the rule id

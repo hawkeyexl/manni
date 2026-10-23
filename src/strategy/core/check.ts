@@ -263,7 +263,9 @@ export function checkStrategySet(set: StrategySet, opts: CheckStrategySetOptions
     // Only the first record with an id is the one references resolve to.
     if (index.resolve(record.type, record.id) !== record) continue;
     const pages = index.pagesNaming(record);
-    if (record.type === "journey" && pages.length === 0) {
+    // A draft journey is not live yet, and an archived one no longer is, so neither owes a page.
+    const live = record.lifecycle !== "draft" && record.lifecycle !== "archived";
+    if (record.type === "journey" && live && pages.length === 0) {
       drafts.push({
         rule: "unserved-journey",
         message: "no page names this journey in journeys:.",

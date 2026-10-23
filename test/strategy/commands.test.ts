@@ -173,6 +173,23 @@ describe("get", () => {
     });
   });
 
+  it("shows a lifecycle row and key when the record sets one", async () => {
+    const cwd = await docset({
+      "strategy/journeys/m2.md": page({ type: "journey", id: "m2", title: "Tighten the standard", personas: "[maya]", lifecycle: "draft" }),
+    });
+    const entry = await runGet({ cwd, inputs: [], id: "m2" });
+    expect(renderGetPretty(entry, { color: false }).split("\n").slice(1, 4)).toEqual([
+      "  type          journey",
+      "  id            m2",
+      "  lifecycle     draft",
+    ]);
+    expect(JSON.parse(renderGetJson(entry))).toMatchObject({ id: "m2", lifecycle: "draft" });
+    const { entries } = await runList({ cwd, inputs: [] });
+    const json = JSON.parse(renderListJson(entries)) as { records: Record<string, unknown>[] };
+    expect(json.records.find((r) => r["id"] === "m2")).toHaveProperty("lifecycle", "draft");
+    expect(json.records.find((r) => r["id"] === "m10")).not.toHaveProperty("lifecycle");
+  });
+
   it("lists every persona of a journey, one per line", async () => {
     const cwd = await docset({
       "strategy/personas/sara.md": page({ type: "persona", title: "Sara, Schema Author", audience: "docs-engineers" }),

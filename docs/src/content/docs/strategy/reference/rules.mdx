@@ -59,7 +59,7 @@ shows.
 | `duplicate-id` | error | Two records share an `id`, ignoring case. |
 | `missing-parent` | warning | A page names a journey but none of its personas in `personas:`, or a persona but not its audience in `audiences:`. |
 | `orphan-record` | warning | A persona names no audience, or a journey names no persona, while the set holds records of the parent type. |
-| `unserved-journey` | warning | No page names the journey in `journeys:`. Records do not count. |
+| `unserved-journey` | warning | No page names the journey in `journeys:`. Records do not count, and a draft or archived journey is exempt. |
 | `unused-record` | notice | No page and no record names an audience or a persona. |
 
 ## Records and references
@@ -104,7 +104,7 @@ strategy/audiences/ci-engineers.md:1
 strategy/journeys/d1.md:3
   warning manni:strategy/unserved-journey     no page names this journey in journeys:.
                                               Name it on the pages that serve it.
-                                              manni:strategy unserved-journey: No page names the journey in journeys:. Records do not count.
+                                              manni:strategy unserved-journey: No page names the journey in journeys:. Records do not count, and a draft or archived journey is exempt.
                                               Guide: https://hawkeyexl.github.io/manni/strategy/reference/rules/#unserved-journey
 strategy/journeys/m1.md:3
   error   manni:strategy/duplicate-id         id: "m1" is also the id of strategy/journeys/m2.md:3.
@@ -194,9 +194,26 @@ personas: missing, so this journey belongs to no persona. Name one with personas
 ### `unserved-journey`
 
 No page names the journey in `journeys:`. A record's own `journeys:` serves
-no reader, so it does not count. Name the journey on the pages that serve it.
-Raise the rule to `error` once every journey is served, so a new journey
-cannot land without a page.
+no reader, so it does not count. A journey can carry `lifecycle` from the
+[`manni:lifecycle:1.0.0`](/manni/meta/reference/schemas/manni-lifecycle/)
+vocabulary. A `draft` journey is not live yet, and an `archived` one no
+longer is, so the rule skips both.
+
+There are two fixes. Name the journey on the pages that serve it. Or, while
+those pages are still to be written, mark the journey `lifecycle: draft`:
+
+```yaml
+---
+type: journey
+id: m33
+title: Hold a new page to its journey
+personas: [maya]
+lifecycle: draft
+---
+```
+
+Raise the rule to `error` once every journey is served. A new journey then
+lands with a page that serves it, or as a draft.
 
 ### `unused-record`
 

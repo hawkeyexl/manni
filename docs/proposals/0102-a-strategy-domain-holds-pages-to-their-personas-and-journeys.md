@@ -127,7 +127,7 @@ starts from this repository as it is on `main`.
    docs/content-strategy/journeys/m10.md:3
      warning manni:strategy/unserved-journey     no page names this journey in journeys:.
                                                  Name it on the pages that serve it.
-                                                 manni:strategy unserved-journey: No page names the journey in journeys:. Records do not count.
+                                                 manni:strategy unserved-journey: No page names the journey in journeys:. Records do not count, and a draft or archived journey is exempt.
                                                  Guide: https://hawkeyexl.github.io/manni/strategy/reference/rules/#unserved-journey
    …
    docs/src/content/docs/tracevals/index.meta.yaml:2
@@ -156,7 +156,7 @@ starts from this repository as it is on `main`.
    `unserved-journey` on `docs/content-strategy/journeys/s17.md:3` until
    `strategy/index.meta.yaml` names `s17`. Then she sets
    `strategy.severity.unserved-journey: error`, so no journey can land without
-   a page.
+   a page unless it lands as a draft.
 
 8. Theo later tags a page `personas: [s17]`. `check` exits `1`:
 
@@ -245,9 +245,10 @@ This repository ships three schemas, in
 - The children lists, an audience's `personas` and a persona's `journeys`, are
   read as ordinary references. They are checked for resolving, as every
   reference is.
-- Each record type gets an override by path that names its schema. An
-  override's `defaults` is `false` unless set, so a record takes its one
-  schema and none of the defaults.
+- Each record type gets an override by path that names its schema. The
+  journeys override also names `manni:lifecycle:1.0.0`, which gives a journey
+  `lifecycle`. An override's `defaults` is `false` unless set, so a record
+  takes what its override names and none of the defaults.
 
 There are three reasons, and stress test 2 weighs them.
 
@@ -280,7 +281,7 @@ Each rule id is `manni:strategy/<rule>`. The levels are the family scale from
 | `duplicate-id` | error | Two records share an id, ignoring case. |
 | `missing-parent` | warning | A page names a journey but none of its personas in `personas:`, or a persona whose audience its `audiences:` lacks. |
 | `orphan-record` | warning | A persona names no audience, or a journey names no persona, while the set holds records of the parent type. |
-| `unserved-journey` | warning | No page names the journey in `journeys:`. Records do not count. |
+| `unserved-journey` | warning | No page names the journey in `journeys:`. Records do not count, and a draft or archived journey is exempt. |
 | `unused-record` | notice | No page and no record names an audience or a persona. |
 
 A finding about a value sits on the value's line. A finding about a whole
@@ -410,7 +411,9 @@ meta:
     - files: "docs/content-strategy/personas/*.md"
       schemas: [./docs/content-strategy/schemas/persona.schema.json]
     - files: "docs/content-strategy/journeys/*.md"
-      schemas: [./docs/content-strategy/schemas/journey.schema.json]
+      schemas:
+        - ./docs/content-strategy/schemas/journey.schema.json
+        - manni:lifecycle:1.0.0
     - collection: site                    # unchanged
       …
 
@@ -422,8 +425,8 @@ graph: …                                  # unchanged
 ```
 
 The three overrides use meta's existing `files:` and `schemas:` keys, so no
-meta key is new. None sets `defaults:`, so each record takes its one schema
-alone.
+meta key is new. None sets `defaults:`, so each record takes only the
+schemas its override lists.
 
 The `strategy:` section is optional, and every key has a default. Its keys
 mirror `term:`'s.
@@ -527,8 +530,9 @@ ci-engineers        129  Platform / CI engineers
 
 **`get -f pretty`** prints the title and where the record was read, then one
 row per field. A journey shows its `personas`. A persona shows its `audience`
-and its `journeys`, and an audience its `personas`. The `pages` row prints `none` when no page names the
-record.
+and its `journeys`, and an audience its `personas`. A record that sets
+`lifecycle` shows it in a row after `description`. The `pages` row prints
+`none` when no page names the record.
 
 ```text
 Maya, Documentation Engineer                  docs/content-strategy/personas/maya.md:1
@@ -559,8 +563,8 @@ Maya, Documentation Engineer                  docs/content-strategy/personas/may
 }
 ```
 
-`title` falls back to the id. `description` is there when the record has one.
-A persona carries `audience`, a string, and a journey carries `personas`, a
+`title` falls back to the id. `description` and `lifecycle` are there when the
+record has them. A persona carries `audience`, a string, and a journey carries `personas`, a
 list. `namedBy`
 holds `personas` on an audience, `journeys` on a persona, and `pages` always.
 Paths are relative to the working directory.
@@ -814,6 +818,14 @@ A repository that adopts records starts with gaps, as this one had 24. An
 error by default would turn its first run red for work the docs owe. The
 ratchet goes the other way. Once `check` is clean, `strategy.severity` raises
 the rule, and a new journey cannot land without a page.
+
+A raised rule also turns a journey red before its pages exist, which pushes
+authors to write journeys late. So the rule skips a journey whose `lifecycle`
+is `draft` or `archived`. That field is meta's `manni:lifecycle:1.0.0` rather
+than a new key, because its ladder already says whether something is live.
+
+**Changed as a result:** the journeys override lists `manni:lifecycle:1.0.0`,
+so `meta validate` checks the value against its enum.
 
 ### 8. Why are references gated on the records that exist?
 

@@ -948,14 +948,18 @@ describe("the repository's own manni.config.yaml", () => {
       "astro:starlight:0.41",
       "tgdp:templates:1.1",
     ]);
-    // A strategy record takes its record type's schema alone.
+    // A strategy record takes its record type's schema and none of the
+    // defaults. A journey also takes the lifecycle vocabulary, so a draft
+    // journey's `lifecycle:` is checked against its enum.
+    const journeySchemas = ["./docs/content-strategy/schemas/journey.schema.json", "manni:lifecycle:1.0.0"];
+    expect(records.find((ov) => ov.schemas.includes(journeySchemas[0] ?? "<missing>"))?.schemas).toEqual(journeySchemas);
     expect(
       resolveSchemaSet({
         filePath: "docs/content-strategy/journeys/m5.md",
         config,
         memberOf: ["strategy"],
       }),
-    ).toEqual(["./docs/content-strategy/schemas/journey.schema.json"]);
+    ).toEqual(journeySchemas);
     // A file outside the collection is a member of nothing, so the override
     // cannot reach it and DEFAULT_SCHEMAS stands.
     expect(

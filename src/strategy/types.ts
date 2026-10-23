@@ -56,6 +56,8 @@ export interface StrategyRecord {
   type: RecordType;
   title?: string;
   description?: string;
+  /** `lifecycle:`, from meta's `manni:lifecycle:1.0.0`. A `draft` or `archived` journey is exempt from `unserved-journey`. */
+  lifecycle?: string;
   /** The page the record was read from, as the run labels it. */
   file: string;
   line: number;

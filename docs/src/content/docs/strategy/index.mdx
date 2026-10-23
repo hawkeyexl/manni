@@ -91,6 +91,13 @@ personas: [sara]
 
 The prose below the frontmatter is the journey itself. No rule reads it.
 
+A journey can also carry `lifecycle`, from the
+[`manni:lifecycle:1.0.0`](/manni/meta/reference/schemas/manni-lifecycle/)
+vocabulary. A `draft` journey is not live yet, and an `archived` one no
+longer is. Neither is expected to have a page, so `check` skips both when it
+looks for an unserved journey. A journey can land as a draft before its pages
+exist.
+
 `manni meta validate` checks a record's fields against the schemas a repo
 applies through `meta.overrides`. This repository keeps one schema per record
 type, for an
@@ -99,7 +106,8 @@ a
 [persona](https://github.com/hawkeyexl/manni/blob/main/docs/content-strategy/schemas/persona.schema.json)
 and a
 [journey](https://github.com/hawkeyexl/manni/blob/main/docs/content-strategy/schemas/journey.schema.json).
-Three overrides apply them:
+Three overrides apply them. The journeys override also lists the lifecycle
+vocabulary, so a value such as `lifecycle: drafty` fails `meta validate`:
 
 ```yaml title="manni.config.yaml"
 meta:
@@ -109,7 +117,9 @@ meta:
     - files: "docs/content-strategy/personas/*.md"
       schemas: [./docs/content-strategy/schemas/persona.schema.json]
     - files: "docs/content-strategy/journeys/*.md"
-      schemas: [./docs/content-strategy/schemas/journey.schema.json]
+      schemas:
+        - ./docs/content-strategy/schemas/journey.schema.json
+        - manni:lifecycle:1.0.0
 ```
 
 ## What a page names
@@ -158,7 +168,7 @@ The overrides above then check each record's fields.
 The `strategy:` section is optional, because every key has a default. The
 [configuration reference](/manni/strategy/reference/cli/#configuration)
 lists the keys. This repository raises one rule, so a journey cannot land
-without a page that serves it:
+without a page that serves it, unless it lands as a draft:
 
 ```yaml title="manni.config.yaml"
 strategy:
@@ -272,7 +282,7 @@ edit that clears it. It also has the full run of the set above.
     of its type. That a record's `audience:` or `personas:` names one too.
     That no two records share an id, ignoring case. That a page naming a
     journey also names one of its personas, and a persona its audience. That
-    some page names every journey.
+    some page names every journey that is not a draft or archived.
   </Card>
   <Card title="It doesn't" icon="close">
     Read the prose of a record or a page. It doesn't require a page to carry

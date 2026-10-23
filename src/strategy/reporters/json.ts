@@ -13,6 +13,7 @@ export function recordJson(entry: RecordEntry): Record<string, unknown> {
   // `title` is never absent: an untitled record shows its id, as `list` does.
   const out: Record<string, unknown> = { id: record.id, type: record.type, title: titleOf(record) };
   if (record.description !== undefined) out["description"] = record.description;
+  if (record.lifecycle !== undefined) out["lifecycle"] = record.lifecycle;
   out["file"] = entry.file;
   out["line"] = record.line;
   // A journey's `personas` is always a list. A persona's `audience` is one value, as it is written.

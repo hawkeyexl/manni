@@ -211,7 +211,7 @@ describe("manni strategy (the ladder)", () => {
     writeFileSync(join(work, "clean", "docs", "guide.md"), "---\ntitle: Guide\naudiences: [docs-engineers]\npersonas: [maya]\njourneys: [m1]\n---\n");
     const warned = strategy(["check", "-f", "github"]);
     expect(warned.stdout).toBe(
-      "::warning file=strategy/journeys/m2.md,line=3,title=manni%3Astrategy/unserved-journey::no page names this journey in journeys:. Name it on the pages that serve it.%0Amanni:strategy unserved-journey: No page names the journey in journeys:. Records do not count.%0AGuide: https://hawkeyexl.github.io/manni/strategy/reference/rules/#unserved-journey\n",
+      "::warning file=strategy/journeys/m2.md,line=3,title=manni%3Astrategy/unserved-journey::no page names this journey in journeys:. Name it on the pages that serve it.%0Amanni:strategy unserved-journey: No page names the journey in journeys:. Records do not count, and a draft or archived journey is exempt.%0AGuide: https://hawkeyexl.github.io/manni/strategy/reference/rules/#unserved-journey\n",
     );
     expect(warned.status).toBe(0);
 

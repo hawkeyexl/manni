@@ -60,6 +60,7 @@ export function renderGetPretty(entry: RecordEntry, opts: { color: boolean }): s
     ["id", [record.id]],
   ];
   if (record.description !== undefined) rows.push(["description", [record.description]]);
+  if (record.lifecycle !== undefined) rows.push(["lifecycle", [record.lifecycle]]);
   if (record.type !== "audience" && record.parents.length > 0) {
     // A value no record answers to shows as written.
     const shown = record.parents.map(
