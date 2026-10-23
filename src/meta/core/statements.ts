@@ -468,6 +468,7 @@ function attributesOf(tag: string): Map<string, { value: string; at: number }> {
   for (const m of tag.slice(from).matchAll(ATTRIBUTE)) {
     const [whole, name = "", double, single] = m;
     const value = double ?? single ?? "";
+    // `at` is the value's first character in `tag`, just past its opening quote.
     if (!out.has(name)) out.set(name, { value, at: from + m.index + whole.length - value.length - 1 });
   }
   return out;

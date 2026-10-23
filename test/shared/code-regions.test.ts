@@ -4,7 +4,7 @@
  * fences, so a page that documents either syntax yields nothing.
  */
 import { describe, expect, it } from "vitest";
-import { codeEndAt, codeRegions } from "../../src/shared/code-regions.js";
+import { closesFence, codeEndAt, codeRegions } from "../../src/shared/code-regions.js";
 
 /** The text of each region, which is easier to read than offsets. */
 const texts = (text: string, format: string, spans?: boolean): string[] =>
@@ -103,5 +103,19 @@ describe("codeEndAt", () => {
     expect(codeEndAt(regions, 5)).toBeUndefined();
     expect(codeEndAt(regions, 11)).toBe(12);
     expect(codeEndAt(regions, 0)).toBeUndefined();
+  });
+});
+
+describe("closesFence", () => {
+  it.each([
+    ["the same run", "```", "```", true],
+    ["a longer run", "````", "```", true],
+    ["an indented closer", "   ```", "```", true],
+    ["trailing whitespace", "```  ", "```", true],
+    ["a shorter run", "```", "````", false],
+    ["an info string", "```js", "```", false],
+    ["the other fence character", "~~~", "```", false],
+  ])("closes on %s: %j after %j is %s", (_, line, open, closes) => {
+    expect(closesFence(line, open)).toBe(closes);
   });
 });

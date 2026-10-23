@@ -45,7 +45,13 @@ export const FENCE_OPENER = /^[ \t]*(`{3,}|~{3,})/;
 const ASCIIDOC_DELIMITER = /^([-.+/=*_])\1{3,}[ \t]*$/;
 /** The delimiter characters of the blocks whose content is not prose. */
 const VERBATIM = new Set(["-", ".", "+", "/"]);
-/** A line a two-line title can be: not a comment, a block title or an attribute line. */
+/**
+ * A line a two-line title can be. It starts with none of these: whitespace (an
+ * indented literal), `.` (a block title), `/` (a comment) or `[` (an attribute
+ * line). A line starting with `+` is not excluded, so a `====` under a
+ * forced-break continuation of similar length reads as an underline. No real
+ * page puts one there.
+ */
 const TITLE_TEXT = /^[^\s./[]/;
 /** Formats where a backtick span is inline code. */
 const SPAN_FORMATS = new Set(["markdown", "mdx", "asciidoc", "rst"]);
