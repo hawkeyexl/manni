@@ -1313,9 +1313,9 @@ docs/src/content/docs/meta/reference/cli.mdx:
         integrity: sha256-6cb348ba5c4bc940657dadfa19ce5a7377da187a269a7b1de0f172fa19318523
       source:
         file: src/shared/pin.ts
-        lines: 286-288
+        lines: 290-292
         integrity: sha256-aa3738f0cf8767b0332b75a3ebcbd3438c3b02cb1ebc20c808b700139410a2db
-        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
+        commit-sha: 34611bc58c4898d3b0694d1e29e054e8ac96b327
     - id: derive-writes-by-default
       claim:
         lines: 1135-1136

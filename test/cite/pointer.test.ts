@@ -26,7 +26,7 @@ import { renderCheckJson } from "../../src/cite/reporters/json.js";
 import { renderCheckPretty, renderUpdatePretty } from "../../src/cite/reporters/pretty.js";
 import { renderCheckSarif } from "../../src/cite/reporters/sarif.js";
 import { CiteError } from "../../src/cite/errors.js";
-import { valuePin } from "../../src/shared/pin.js";
+import { canonicalValue, valuePin } from "../../src/shared/pin.js";
 import type { AddOptions, CheckRun } from "../../src/cite/types.js";
 import { commitAll, gitAvailable, makeTempRepo, removeTempRepo } from "../helpers/temp-repo.js";
 
@@ -126,6 +126,11 @@ describe("the value pin", () => {
       sha('{"10":true,"2":null,"a":[1,"x"],"b":1}'),
     );
     expect(valuePin([{ z: "é", y: 1.5 }])).toBe(sha('[{"y":1.5,"z":"é"}]'));
+  });
+
+  it("refuses an absent value rather than pinning it like null", () => {
+    expect(() => canonicalValue(undefined)).toThrow("Cannot pin an absent value.");
+    expect(() => valuePin(undefined)).toThrow("Cannot pin an absent value.");
   });
 });
 

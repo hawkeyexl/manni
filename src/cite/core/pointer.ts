@@ -85,12 +85,12 @@ export function spellPointer(pointer: string): string {
   return `#${pointer}`;
 }
 
-/** Classify a pointer claim against the page's metadata now. */
-export function pointerClaimEnd(page: PageCitations, entry: PageCitation): ClaimEnd {
-  const claim = entry.citation.claim;
-  const pointer = claim?.pointer ?? "";
-  const pin = claim?.integrity;
+/** Classify a pointer claim against the page's metadata now, `pointer` being the entry's `claim.pointer`. */
+export function pointerClaimEnd(page: PageCitations, entry: PageCitation, pointer: string): ClaimEnd {
+  const pin = entry.citation.claim?.integrity;
   const { metadata } = page;
+  // `lineFor` gives a missing array element its nearest parent's line, so the
+  // `?? 1` fallback applies only when the pointer has no parent in scope.
   const line = (at: string): string => String(metadata.lineFor(at) ?? 1);
   const end: ClaimEnd = { pointer, fileLines: line(pointer), status: "changed" };
   const here = valueAt(metadata.data, pointer);

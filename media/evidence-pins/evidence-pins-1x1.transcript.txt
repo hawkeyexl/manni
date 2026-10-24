@@ -1,0 +1,99 @@
+manni cite, demo video transcript (silent video; text describes what is on screen)
+
+Frame: 1080x1080, 30 fps, 40.0 s. Every terminal line is real output. The CLI is
+this branch's build, node dist/cli.js, typed as manni. It runs in
+media/scratch-evidence-pins/, which media/evidence-pins/capture/capture.sh stages from a
+copy of test/fixtures/strategy/evidence/ with its research note moved to
+research/contributor.md, then commits as one baseline. The reordered persona
+and the edited note are theo.reordered.md and note.edited.md in media/evidence-pins/capture/,
+copied in before each diff. Each command appears after its measured latency, at 1x.
+
+[0:00-0:04] Title: A persona's pains (1 / 5)
+$ cat records/personas/theo.md
+---
+type: persona
+id: theo
+title: Theo, Doc Contributor
+description: Theo opened a pull request and met a failing check.
+audience: contributors
+pains:
+  - Error messages are terse with no remediation hint.
+  - He does not know which schema fired.
+---
+# Theo
+
+Theo fixes the failure and moves on.
+Highlighted rows: lines containing "pains:", "  - Error messages are terse"
+Caption: A persona makes claims. What do they rest on?
+
+[0:04-0:12] Title: manni cite add (2 / 5)
+$ manni cite add records/personas/theo.md#/pains/0 research/contributor.md:3 --id terse-messages
+Using manni.config.yaml (.)
+records/personas/theo.md: added terse-messages to records/personas/theo.citations.yaml:3 (claim at /pains/0, sha256-c1ac46fc…; source research/contributor.md:3 "- The error named the field and said nothing about the fix.", sha256-13745edd…, c54fa28)
+Highlighted rows: lines containing "added terse-messages"
+Caption: Pin the first pain to line 3 of an interview note.
+
+[0:12-0:17] Title: manni cite check (3 / 5)
+$ manni cite check records/personas/theo.md
+Using manni.config.yaml (.)
+✓ records/personas/theo.md   records/personas/theo.citations.yaml   (✓ in green)
+    ✓ terse-messages   #/pains/0 current   research/contributor.md:3 current   (✓ in green)
+
+1 file checked, 1 passed, 0 failed, 0 findings   (green)
+Highlighted rows: lines containing "#/pains/0 current"
+Caption: The pain and its evidence both read current.
+
+[0:17-0:29] Title: The pains reorder (4 / 5)
+$ git diff -U1 records/personas/theo.md
+diff --git a/records/personas/theo.md b/records/personas/theo.md
+index 983d0de..cf8125c 100644
+--- a/records/personas/theo.md
++++ b/records/personas/theo.md
+@@ -7,4 +7,4 @@ audience: contributors
+ pains:
+-  - Error messages are terse with no remediation hint.   (red)
+   - He does not know which schema fired.
++  - Error messages are terse with no remediation hint.   (green)
+ ---
+$ manni cite check records/personas/theo.md
+Using manni.config.yaml (.)
+ℹ records/personas/theo.md   records/personas/theo.citations.yaml   (ℹ dim)
+    ℹ terse-messages   #/pains/0 moved -> #/pains/1   research/contributor.md:3 current   (ℹ dim)
+      Run manni cite update.
+      manni:cite claim-moved: The pinned metadata value sits at another pointer.   (dim)
+      Guide: https://hawkeyexl.github.io/manni/cite/fix/#claim-moved   (dim)
+
+1 file checked, 1 passed, 0 failed, 1 finding (1 notice)   (green)
+$ manni cite update records/personas/theo.md
+Using manni.config.yaml (.)
+records/personas/theo.md: terse-messages claim #/pains/0 -> #/pains/1 (moved)
+1 citation rewritten in 1 file, 0 skipped   (green)
+Highlighted rows: lines containing "#/pains/0 moved -> #/pains/1", "claim #/pains/0 -> #/pains/1"
+Caption: The pin follows the moved value. update rewrites it.
+
+[0:29-0:40] Title: The evidence changes (5 / 5)
+$ git diff research/contributor.md
+diff --git a/research/contributor.md b/research/contributor.md
+index d9b8603..c9e33bd 100644
+--- a/research/contributor.md
++++ b/research/contributor.md
+@@ -1,4 +1,4 @@
+ # Contributor interview, 2026-09-12
+ 
+-- The error named the field and said nothing about the fix.
++- The error named the field and said how to fix it.   (green)
+ - They could not tell which schema the rule came from.
+$ manni cite check records/personas/theo.md
+Using manni.config.yaml (.)
+✗ records/personas/theo.md   records/personas/theo.citations.yaml   (✗ in red)
+    ✗ terse-messages   #/pains/1 current   research/contributor.md:3 changed since c54fa28, 0 commits   (✗ in red)
+      Check the sentence against the source, then run manni cite update --accept --only terse-messages.
+      manni:cite source-changed: The cited lines are not what they were.   (dim)
+      Guide: https://hawkeyexl.github.io/manni/cite/fix/#source-changed   (dim)
+
+1 file checked, 0 passed, 1 failed, 1 finding   (red)
+$ echo $?
+1
+Highlighted rows: lines containing "+- The error named", "changed since", "manni:cite source-changed"
+Caption: The evidence changed, so the check fails. Exit 1.
+

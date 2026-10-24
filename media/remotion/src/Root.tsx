@@ -26,6 +26,7 @@ import { beats as findingsBeats, totalFrames as findingsTotalFrames, TYPING_MS a
 import { beats as citeReposBeats, totalFrames as citeReposTotalFrames, TYPING_MS as citeReposTypingMs } from "./cite-repos/beats";
 import { beats as pluginMetadataBeats, totalFrames as pluginMetadataTotalFrames, TYPING_MS as pluginMetadataTypingMs } from "./plugin-metadata/beats";
 import { beats as strategyBeats, totalFrames as strategyTotalFrames, TYPING_MS as strategyTypingMs } from "./strategy/beats";
+import { beats as evidencePinsBeats, totalFrames as evidencePinsTotalFrames, TYPING_MS as evidencePinsTypingMs } from "./evidence-pins/beats";
 import { beats as personasBeats, totalFrames as personasTotalFrames, TYPING_MS as personasTypingMs } from "./personas/beats";
 
 /** sidecar-url-1x1: 23 px / 75 columns, derived in media/sidecar-url-1x1.script.md. */
@@ -141,6 +142,16 @@ const DemoPluginMetadata: React.FC = () => <DemoView beats={pluginMetadataBeats}
  */
 const DemoStrategy: React.FC = () => (
   <DemoView beats={strategyBeats} fontPx={19} linePx={27} cols={91} typingMs={strategyTypingMs} ligatures={false} breakAfter="/" />
+);
+
+/**
+ * evidence-pins-1x1: 19 px / 91 columns for beat 4, derived in
+ * media/evidence-pins/evidence-pins-1x1.script.md (media/evidence-pins/capture/cols.mjs).
+ * Beats 1, 2, 3 and 5 carry their own sizes (src/evidence-pins/beats.ts).
+ * Ligatures off: the record's `---` fences and the diff's `---` header would draw as one rule.
+ */
+const DemoEvidencePins: React.FC = () => (
+  <DemoView beats={evidencePinsBeats} fontPx={19} linePx={27} cols={91} typingMs={evidencePinsTypingMs} ligatures={false} />
 );
 
 /**
@@ -354,6 +365,14 @@ export const Root: React.FC = () => (
       height={1080}
       fps={FPS}
       durationInFrames={strategyTotalFrames}
+    />
+    <Composition
+      id="EvidencePinsDemo"
+      component={DemoEvidencePins}
+      width={1080}
+      height={1080}
+      fps={FPS}
+      durationInFrames={evidencePinsTotalFrames}
     />
     <Composition
       id="PersonaJudgeDemo"
