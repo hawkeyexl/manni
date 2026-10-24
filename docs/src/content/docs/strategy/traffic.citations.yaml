@@ -5,9 +5,9 @@ docs/src/content/docs/strategy/traffic.mdx:
         integrity: sha256-12638732c5d97df83a1112acd5d44170423d421c67662a990866e48d1ddc61b1
       source:
         file: manni.config.yaml
-        lines: 295-297
+        lines: 298-300
         integrity: sha256-9b62e293d17aaa09d4aea6de8e20daeeb3c221799755a9a74a12efcf8e58cb8f
-        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
+        commit-sha: 42554ee9e1e907848f445fb2f83571e8daa3e803
     - id: traffic-sql
       claim:
         lines: 41-83

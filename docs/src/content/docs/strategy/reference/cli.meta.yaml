@@ -20,8 +20,35 @@ docs/src/content/docs/strategy/reference/cli.mdx:
       grader: ai
   provenance:
     - generated-by: Claude Opus 5.5
-      lines: 2-378
-      integrity: sha256-e047f405b60cf82d74566336f713286474f1afef6b6892b3cd99fcc85d915d64
+      lines: 2-104
+      integrity: sha256-472a7838476388cb39f190cf3755cfbd7a84ccadd3132d1f173b140f31abebd9
+    - generated-by: Claude Opus 5.5
+      lines: 119-189
+      integrity: sha256-cbee006ccc99a92927ba35a22b1a6c2a2cab3863a60eb94ae03e10be2b7bc605
+    - generated-by: Claude Opus 5.5
+      lines: 220-239
+      integrity: sha256-d70035d33f533dfe8fd7dd7b6ded9abe4ca74da2abefc3ee7df63ef82739dfae
+    - generated-by: Claude Opus 5.5
+      lines: 269-276
+      integrity: sha256-e9eecc48a20aa179fc327a31acc6fac111fa4764ff7caff857ef07dbe0a2b9e3
+    - generated-by: Claude Opus 5.5
+      lines: 281-324
+      integrity: sha256-233f472167a1c015807b2003775db5f619b37395d5cdfc2e9d9be5b41e9851b2
+    - generated-by: Claude Opus 5.5
+      lines: 333-335
+      integrity: sha256-884ab7dd8003d65a38d3c044504684ca5edc93324ead9b59e08fa5403112bf00
+    - generated-by: Claude Opus 5.5
+      lines: 343-426
+      integrity: sha256-3cda4e11c8b6f449867936fdcda79d6cc65c00d0e66948188d7489e267003145
+    - generated-by: Claude Opus 5.5
+      lines: 428
+      integrity: sha256-f1b901847390b0ed7e374e7c1e464ec17b46a427c487a5ad6cbd2906405083d5
+    - generated-by: Claude Opus 5.5
+      lines: 439-461
+      integrity: sha256-9f8cc39cff8bdd86827887a9ed7d6286913f36f450eed6cf4ef099888699c450
+    - generated-by: Claude Opus 5.5
+      lines: 464-469
+      integrity: sha256-2e0e9a2c748d0ac4236cd014b04a6e05d6708d692b2e5b36dac3996f28c4a0a0
   owner:
     - "@hawkeyexl"
   created: 2026-10-22
