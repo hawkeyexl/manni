@@ -5,7 +5,7 @@ docs/src/content/docs/family/check.mdx:
         integrity: sha256-48f5dddb5a9aa63ef574e586bede0857b8dd0ad4e6f4a680b76492d9a251211f
       source:
         file: src/family/commands/check.ts
-        lines: 577-585
+        lines: 578-586
         integrity: sha256-7a04d871f71069e98bd72ea4c9cbeb810e872bc1893c54eea73045ba402d05b2
     - id: family-check-worst-first
       claim:
