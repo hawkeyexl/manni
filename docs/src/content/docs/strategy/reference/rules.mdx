@@ -85,6 +85,27 @@ Every id compares ignoring case. A field is checked only when the set holds a
 record of that field's type. A docset with persona records and no audience
 records keeps a free-form `audiences:`, and no rule reads it.
 
+### Borrowed records
+
+{/* cite borrowed-boundary */}
+A record or page read from outside the run's directory is borrowed. The run's
+directory is the config file's, or the working directory when no config file
+governs the run. A file is outside it when its path from there starts with
+`..`, or sits on another drive.
+
+A path typed on the command line resolves from the working directory. So a
+run over typed paths also owns the working directory, wherever `-c` puts the
+config file.
+
+{/* cite borrowed-dropped */}
+A borrowed file resolves references like any other, and no rule files a
+finding in it. A local page's typo still fails against borrowed records, with
+its did-you-mean. A borrowed journey no page names draws no
+`unserved-journey`, and a borrowed persona no page names draws no
+`unused-record`. A borrowed journey's steps are each `unchecked`, so no step
+rule fires. [Share one strategy across repositories](/manni/strategy/#share-one-strategy-across-repositories)
+sets it up.
+
 ## Steps
 
 A journey can carry `steps:`, its stages in order, each with the page that
@@ -241,6 +262,17 @@ Reported on every record that shares the id, each naming the others with
 their file and line. Ids compare ignoring case, so `M1` and `m1` collide.
 Two files with no `id:` and the same name in different folders collide too.
 Give each record its own id.
+
+{/* cite duplicate-borrowed-fix */}
+A borrowed record draws no finding. When every other record with the id is
+borrowed, the fix on the owned record says to remove the copy:
+
+```
+id: "maya" is also the id of ../manni/docs/content-strategy/personas/maya.md:3. That record is borrowed from outside this repository. Remove this copy, or give it its own id.
+```
+
+When another owned record shares the id too, each owned record keeps
+`Give each record its own id.`
 
 ### `missing-parent`
 

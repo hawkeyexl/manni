@@ -1,0 +1,51 @@
+Borrowed strategy records, demo video transcript (silent video; text describes what is on screen)
+
+Frame: 1080x1080, 30 fps, 33.7 s. Every terminal line is real output, captured by
+media/strategy-shared/capture/capture.sh in two checkouts side by side. manni holds a copy of
+this repository's strategy records and docs pages. manni-plugin borrows manni's records through
+its strategy collection, and keeps an old copy of persona maya. Beats 1 and 2 run inside
+manni-plugin, and beat 3 runs in the folder that holds both. `manni` is this branch's built CLI.
+
+[0:00-0:10] Title: A kept copy of Maya (1 / 3)
+$ manni strategy check
+strategy/personas/maya.md:3
+  error   manni:strategy/duplicate-id         id: "maya" is also the id of ../manni/docs/content-strategy/personas/maya.md:3.
+                                              That record is borrowed from outside this repository.
+                                              Remove this copy, or give it its own id.
+                                              manni:strategy duplicate-id: Two records share an id, ignoring case.
+                                              Guide: https://hawkeyexl.github.io/manni/strategy/reference/rules/#duplicate-id
+
+1 error in 87 records (85 borrowed)
+$ echo $?
+1
+Highlighted rows: lines containing "strategy/personas/maya.md:3", "Remove this copy"
+Caption: Two Mayas. The check names the copy.
+
+[0:10-0:21] Title: Remove the copy (2 / 3)
+$ git rm strategy/personas/maya.md
+rm 'strategy/personas/maya.md'
+$ manni strategy check
+✓ 86 records (85 borrowed), 92 references, no findings
+$ echo $?
+0
+Highlighted rows: lines containing "(85 borrowed)"
+Caption: One Maya, read from manni.
+
+[0:21-0:34] Title: Pages per journey, per repo (3 / 3)
+$ cd ..
+$ for r in manni manni-plugin; do (cd $r && manni strategy list -f json > ../$r.json); done
+$ node -e 'const p = {}; for (const f of ["manni", "manni-plugin"]) for (const r of require(`./${f}.json`).records) (p[r.id] ??= {})[f] = r.namedBy.pages.length; for (const id of ["d16", "m1", "p1", "t1"]) console.log(JSON.stringify({ id, pages: p[id] }))'
+{"id":"d16","pages":{"manni":3,"manni-plugin":1}}
+{"id":"m1","pages":{"manni":10,"manni-plugin":1}}
+{"id":"p1","pages":{"manni-plugin":1}}
+{"id":"t1","pages":{"manni":4,"manni-plugin":1}}
+Highlighted rows: lines containing "{\"id\":"
+Caption: Coverage across products, as data.
+
+Beat 3: each repository's strategy list -f json lists every record with the pages that name
+it. The node -e line joins the two files by id and prints pages per repository for four journeys.
+The strategy docs do the same join with jq, which the capture machine does not have. The line is
+pasted, not typed, because it is 254 characters long.
+
+Colour: the error label is red and the check mark green, as the CLI prints them. The file name in
+beat 1 is bold, and the rule and Guide lines are dim.

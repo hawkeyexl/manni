@@ -37,6 +37,8 @@ export interface StrategyReport {
   frame: FingerprintContext;
   /** Records in the set. */
   records: number;
+  /** Records the run read from outside its directory. */
+  borrowed: number;
   /** Values of audiences:, personas:, journeys: and audience: the run read. */
   references: number;
   /** Steps on the set's journeys, each held to the page it names. */
@@ -67,14 +69,18 @@ function toFieldError(finding: StrategyFinding): FieldError {
   return error;
 }
 
-/** One result per file: every record's file, every file a reference was read from, and every file a finding sits in. */
+/**
+ * One result per owned file: every record's file, every file a reference was
+ * read from, and every file a finding sits in. A borrowed file has none.
+ */
 export function toResults(
   set: StrategySet,
   findings: readonly StrategyFinding[],
+  owns: (file: string) => boolean = () => true,
 ): { results: ValidationResult[]; origin: Map<FieldError, StrategyFinding> } {
   const origin = new Map<FieldError, StrategyFinding>();
   const byFile = new Map<string, FieldError[]>();
-  for (const { file } of [...set.records, ...set.references]) if (!byFile.has(file)) byFile.set(file, []);
+  for (const { file } of [...set.records, ...set.references]) if (!byFile.has(file) && owns(file)) byFile.set(file, []);
   for (const finding of findings) {
     const error = toFieldError(finding);
     origin.set(error, finding);

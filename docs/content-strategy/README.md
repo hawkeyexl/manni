@@ -65,6 +65,8 @@ A journey can land before its pages exist. Give it `lifecycle: draft`, and `mann
 
 A journey's `steps:` record the path through its pages, in order. Write a step per stage of the journey's body. Name each stage's page by its route, as `next-steps:` does, or by its repo path. `manni strategy get <id>` then prints the steps with each one's state and page, and `list` adds a column of served steps. `manni strategy check` holds every step to its page. A `doc` that names no page is an error. A page that leaves the journey out of its own `journeys:` is a warning, so add the journey to that page. A step with `exists: false` is a notice until its page is written. Copy a step's `doc` from the site, never from memory.
 
+Another docset can borrow these records from a checkout beside this one. Its `strategy` collection names these three folders as directories. Its `manni strategy check` resolves its pages against them and files no finding in them, so their findings stay this repository's to fix. The [strategy overview](https://hawkeyexl.github.io/manni/strategy/#share-one-strategy-across-repositories) shows the layout.
+
 ### Evidence
 
 Every persona and audience pins its claims to the evidence they rest on, and its schema requires at least one pin. Pin a goal or a pain by its pointer, and a line of the body by its line.

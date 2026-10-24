@@ -7,7 +7,7 @@
  * `--baseline` writes into it and some rungs edit a config.
  */
 import { execSync, spawnSync } from "node:child_process";
-import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -396,6 +396,117 @@ describe("manni strategy (journey steps)", () => {
     // The runner prefixes each stderr line, as it does for `manni graph build` on the same config.
     expect(r.stderr).toMatch(/^manni: Invalid config in .*manni\.config\.yaml:\nmanni: {3}\/graph\/routes\/0: must have required property 'root'\n$/);
   });
+});
+
+describe("manni strategy (borrowed records, proposal 0112)", () => {
+  const consumer = (): string => join(work, "shared", "consumer");
+  const owner = (...parts: string[]): string => join(work, "shared", "owner", ...parts);
+  /** The record files under the owner's three folders, read at test time. */
+  const ownerRecords = (): number =>
+    ["audiences", "personas", "journeys"].reduce((n, dir) => n + readdirSync(owner(dir)).filter((f) => f.endsWith(".md")).length, 0);
+  const edit = (path: string, from: string, to: string): void => {
+    writeFileSync(path, readFileSync(path, "utf8").replace(from, to));
+  };
+  const manniIn = (args: string[], cwd: string): Run => {
+    const r = spawnSync(process.execPath, [manni, ...args], { cwd, encoding: "utf8", env: { ...process.env, NO_COLOR: "1" } });
+    return { stdout: r.stdout, stderr: r.stderr, status: r.status ?? 1 };
+  };
+  type Findings = { findings: { rule: string; file: string; line: number; message: string }[]; summary: Record<string, unknown> };
+
+  it("check exits 0, and the pretty line counts the borrowed records", () => {
+    const r = strategy(["check"], { cwd: consumer() });
+    expect(r.status).toBe(0);
+    expect(r.stdout).toMatch(new RegExp(`^✓ \\d+ records \\(${String(ownerRecords())} borrowed\\), \\d+ references, no findings\\n$`));
+  });
+
+  it("check -f json carries summary.borrowed, and no finding sits under ../owner", () => {
+    const clean = JSON.parse(strategy(["check", "-f", "json"], { cwd: consumer() }).stdout) as Findings;
+    expect(clean.summary["borrowed"]).toBe(ownerRecords());
+    expect(Object.keys(clean.summary).slice(0, 3)).toEqual(["records", "borrowed", "references"]);
+    // A typo on the consumer's page, and a broken value in a borrowed record.
+    edit(join(consumer(), "docs", "page.md"), "personas: [maya]", "personas: [mya]");
+    edit(owner("journeys", "j2.md"), "personas: [maya]", "personas: [nobody]");
+    const r = strategy(["check", "-f", "json"], { cwd: consumer() });
+    expect(r.status).toBe(1);
+    const json = JSON.parse(r.stdout) as Findings;
+    expect(
+      json.findings.some((f) => f.rule === "undefined-reference" && f.file === "docs/page.md" && f.message.includes('Did you mean "maya"?')),
+    ).toBe(true);
+    expect(json.findings.every((f) => !f.file.startsWith("../owner"))).toBe(true);
+  });
+
+  it("check -f junit has no testcase, -f github no annotation and -f sarif no result, for a borrowed file", () => {
+    edit(owner("journeys", "j2.md"), "personas: [maya]", "personas: [nobody]");
+    const junit = strategy(["check", "-f", "junit"], { cwd: consumer() });
+    expect(junit.stdout).toContain("<testcase");
+    expect(junit.stdout).not.toContain("../owner");
+    expect(strategy(["check", "-f", "github"], { cwd: consumer() })).toMatchObject({ status: 0, stdout: "" });
+    const sarif = strategy(["check", "-f", "sarif"], { cwd: consumer() });
+    expect(sarif.status).toBe(0);
+    expect(sarif.stdout).not.toContain("../owner");
+  });
+
+  it("a kept copy of a borrowed record gets the borrowed duplicate-id fix, exit 1", () => {
+    mkdirSync(join(consumer(), "strategy", "personas"));
+    cpSync(owner("personas", "maya.md"), join(consumer(), "strategy", "personas", "maya.md"));
+    const paths = ["../owner/audiences/", "../owner/personas/", "../owner/journeys/", "strategy/", "docs/"];
+    const r = strategy(["check", ...paths, "-f", "json"], { cwd: consumer() });
+    expect(r.status).toBe(1);
+    expect((JSON.parse(r.stdout) as Findings).findings.map((f) => [f.rule, f.file, f.line, f.message])).toEqual([
+      [
+        "duplicate-id",
+        "strategy/personas/maya.md",
+        3,
+        'id: "maya" is also the id of ../owner/personas/maya.md:3. That record is borrowed from outside this repository. Remove this copy, or give it its own id.',
+      ],
+    ]);
+  });
+
+  it("an owned journey no page names still draws unserved-journey", () => {
+    writeFileSync(join(consumer(), "strategy", "journeys", "p2.md"), "---\ntype: journey\nid: p2\npersonas: [maya]\n---\n");
+    const json = JSON.parse(strategy(["check", "-f", "json"], { cwd: consumer() }).stdout) as Findings;
+    expect(json.findings.map((f) => [f.rule, f.file])).toEqual([["unserved-journey", "strategy/journeys/p2.md"]]);
+  });
+
+  it("get maya prints the borrowed file and the consumer's page", () => {
+    const r = strategy(["get", "maya"], { cwd: consumer() });
+    expect(r.status).toBe(0);
+    expect(r.stdout).toContain("../owner/personas/maya.md:1");
+    expect(r.stdout).toMatch(/^ {2}pages {9}docs\/page\.md$/m);
+  });
+
+  it("get j1 shows each borrowed step unchecked with no coverage line, and list no steps column", () => {
+    const r = strategy(["get", "j1"], { cwd: consumer() });
+    expect(r.status).toBe(0);
+    expect(r.stdout).toContain("  steps         1  unchecked  Read the guide\n");
+    expect(r.stdout).toContain("                2  unchecked  Write a tutorial\n");
+    expect(r.stdout).not.toContain("served");
+    const json = JSON.parse(strategy(["get", "j1", "-f", "json"], { cwd: consumer() }).stdout) as { steps: { state: string }[] };
+    expect(json.steps.map((s) => s.state)).toEqual(["unchecked", "unchecked"]);
+    expect(json).not.toHaveProperty("coverage");
+    expect(strategy(["list"], { cwd: consumer() }).stdout).not.toMatch(/^record.*steps/);
+  });
+
+  it("-c missing.config.yaml exits 2 with File not found", () => {
+    const r = strategy(["check", "-c", "missing.config.yaml"], { cwd: consumer() });
+    expect(r.status).toBe(2);
+    expect(r.stderr).toContain("File not found");
+    expect(r.stderr).toContain("../nowhere/personas/");
+  });
+
+  it("meta validate exits 0, judging the owned journey by the owner's schema and never a borrowed record", () => {
+    const r = manniIn(["meta", "validate", "-f", "json"], consumer());
+    expect(r.status).toBe(0);
+    const json = JSON.parse(r.stdout) as { results: { file: string; schemas: string[] }[] };
+    expect(json.results.map((x) => x.file).sort()).toEqual(["docs/page.md", "strategy/journeys/p1.md"]);
+    expect(json.results.find((x) => x.file === "strategy/journeys/p1.md")?.schemas).toEqual(["../owner/schemas/journey.schema.json"]);
+  });
+
+  it("this repository's own check carries no borrowed key", () => {
+    const json = manniIn(["strategy", "check", "-f", "json"], root);
+    expect((JSON.parse(json.stdout) as Findings).summary).not.toHaveProperty("borrowed");
+    expect(manniIn(["strategy", "check"], root).stdout).not.toContain("borrowed");
+  }, 180000);
 });
 
 describe("manni strategy (usage errors)", () => {

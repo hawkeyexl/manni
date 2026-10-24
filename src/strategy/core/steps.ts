@@ -21,6 +21,8 @@ export interface StepContext {
   from?: string;
   /** The directory the run's labels are relative to. */
   base?: string;
+  /** Whether the run owns a file. A borrowed journey's steps name its owner's pages, so each is `unchecked`. */
+  owns?: (file: string) => boolean;
 }
 
 /** Each journey with steps to its steps, resolved, in order. */
@@ -74,6 +76,10 @@ export function resolveSteps(set: StrategySet, ctx: StepContext = {}, index: Str
   const out = new Map<StrategyRecord, ResolvedStep[]>();
   for (const record of set.records) {
     if (record.type !== "journey" || record.steps === undefined) continue;
+    if (ctx.owns?.(record.file) === false) {
+      out.set(record, record.steps.map((step): ResolvedStep => ({ ...step, state: "unchecked" })));
+      continue;
+    }
     const naming = new Set(index.pagesNaming(record).map(posix));
     out.set(
       record,

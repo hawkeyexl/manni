@@ -1,0 +1,17 @@
+timing check-copy-1 694 ms
+timing check-copy-2 744 ms
+timing check-copy-3 770 ms
+check-copy exit 1 812 ms
+rm exit 0 72 ms
+check-borrowed exit 0 627 ms
+timing check-borrowed-1 577 ms
+timing check-borrowed-2 622 ms
+timing check-borrowed-3 632 ms
+lists exit 0 2535 ms
+timing lists-1 2247 ms
+timing lists-2 2497 ms
+timing lists-3 2388 ms
+join exit 0 155 ms
+timing join-1 123 ms
+timing join-2 160 ms
+timing join-3 123 ms

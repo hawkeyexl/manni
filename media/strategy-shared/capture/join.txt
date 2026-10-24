@@ -1,0 +1,1 @@
+node -e 'const p = {}; for (const f of ["manni", "manni-plugin"]) for (const r of require(`./${f}.json`).records) (p[r.id] ??= {})[f] = r.namedBy.pages.length; for (const id of ["d16", "m1", "p1", "t1"]) console.log(JSON.stringify({ id, pages: p[id] }))'

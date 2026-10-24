@@ -20,14 +20,15 @@ export interface CheckOptions extends StrategyCommandOptions {
 }
 
 export async function runCheck(opts: CheckOptions): Promise<StrategyReport> {
-  const { cwd, run, set, steps } = await loadStrategy(opts);
+  const { cwd, run, set, steps, owns } = await loadStrategy(opts);
   const config = run.config;
   const findings = checkStrategySet(set, {
     ...(config?.severity === undefined ? {} : { severity: config.severity }),
     steps,
     pagePath: (page) => displayPath(page, cwd, run.base),
+    owns,
   });
-  const { results, origin } = toResults(set, findings);
+  const { results, origin } = toResults(set, findings, owns);
 
   // Fingerprints must not depend on where the command was run from.
   const frame = { cwd, base: run.configDir ?? cwd, runBase: run.base };
@@ -54,11 +55,13 @@ export async function runCheck(opts: CheckOptions): Promise<StrategyReport> {
     summary: summarize(reported, baseline),
     frame,
     records: set.records.length,
+    borrowed: set.records.filter((r) => !owns(r.file)).length,
     // Two kinds, both resolved: every audiences:, personas: and journeys:
     // value (pages and records alike), plus each value of a record's own
     // parent field, which load-set keeps out of the references.
     references: set.references.length + parents,
-    steps: [...steps.values()].reduce((n, s) => n + s.length, 0),
+    // Only an owned journey's steps are held to their pages.
+    steps: [...steps].reduce((n, [record, s]) => n + (owns(record.file) ? s.length : 0), 0),
     ...(baseline === undefined ? {} : { baseline }),
     found: findings.length,
     cwd,

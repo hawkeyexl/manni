@@ -1,0 +1,12 @@
+{
+  "checkCopy": "\u001b[1mstrategy/personas/maya.md:3\u001b[22m\n  \u001b[31merror  \u001b[39m manni:strategy/duplicate-id         id: \"maya\" is also the id of ../manni/docs/content-strategy/personas/maya.md:3.\n                                              That record is borrowed from outside this repository.\n                                              Remove this copy, or give it its own id.\n                                              \u001b[2mmanni:strategy duplicate-id: Two records share an id, ignoring case.\u001b[22m\n                                              \u001b[2mGuide: https://hawkeyexl.github.io/manni/strategy/reference/rules/#duplicate-id\u001b[22m\n\n1 error in 87 records (85 borrowed)\n",
+  "rm": "rm 'strategy/personas/maya.md'\n",
+  "checkBorrowed": "\u001b[32m✓\u001b[39m 86 records (85 borrowed), 92 references, no findings\n",
+  "lists": "",
+  "joinTyped": "node -e 'const p = {}; for (const f of [\"manni\", \"manni-plugin\"]) for (const r of require(`./${f}.json`).records) (p[r.id] ??= {})[f] = r.namedBy.pages.length; for (const id of [\"d16\", \"m1\", \"p1\", \"t1\"]) console.log(JSON.stringify({ id, pages: p[id] }))'",
+  "join": "{\"id\":\"d16\",\"pages\":{\"manni\":3,\"manni-plugin\":1}}\n{\"id\":\"m1\",\"pages\":{\"manni\":10,\"manni-plugin\":1}}\n{\"id\":\"p1\",\"pages\":{\"manni-plugin\":1}}\n{\"id\":\"t1\",\"pages\":{\"manni\":4,\"manni-plugin\":1}}\n",
+  "exits": {
+    "checkCopy": "1",
+    "checkBorrowed": "0"
+  }
+}

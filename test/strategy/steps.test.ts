@@ -6,7 +6,7 @@
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import type { RouteMapping } from "../../src/graph/core/config.js";
-import { loadStrategy } from "../../src/strategy/commands/run.js";
+import { loadStrategy, ownedIn } from "../../src/strategy/commands/run.js";
 import { coverageOf, resolveSteps, stepsNeedRoutes } from "../../src/strategy/core/steps.js";
 import type { StrategyRecord, StrategySet, StrategyStep } from "../../src/strategy/types.js";
 
@@ -211,5 +211,44 @@ describe("loading steps from the fixture", () => {
     expect(resolveSteps(set).get(record)).toEqual([]);
     const { set: loaded } = await loadStrategy({ cwd: FIXTURE, inputs: ["strategy/"] });
     expect(loaded.records.find((r) => r.type === "persona")?.steps).toBeUndefined();
+  });
+});
+
+describe("resolveSteps: a borrowed journey (proposal 0112)", () => {
+  it("marks every step unchecked, with no page, however its doc would resolve here", () => {
+    const set = setWith([step({ doc: "docs/guide.md" }, 1), step({ exists: false }, 2), step({ doc: "docs/gone.md" }, 3)]);
+    const [record] = set.records;
+    if (record === undefined) throw new Error("fixture");
+    const owned = resolveSteps(set, { owns: () => true }).get(record);
+    expect(owned?.map((s) => s.state)).toEqual(["served", "unwritten", "broken"]);
+    const borrowed = resolveSteps(set, { owns: (file) => file !== record.file }).get(record);
+    expect(borrowed?.map((s) => [s.state, s.page])).toEqual([
+      ["unchecked", undefined],
+      ["unchecked", undefined],
+      ["unchecked", undefined],
+    ]);
+  });
+});
+
+describe("ownedIn: the run's directory", () => {
+  const dir = resolve("/work/repo");
+  const owns = ownedIn([dir], dir);
+
+  it("owns a file inside the directory, and stdin", () => {
+    expect([owns("docs/page.md"), owns("..repo/x.md"), owns("<stdin>")]).toEqual([true, true, true]);
+  });
+
+  it("borrows a file above the directory, or on another drive", () => {
+    expect([owns("../manni/personas/maya.md"), owns(".."), owns(resolve("/elsewhere/x.md"))]).toEqual([false, false, false]);
+    if (process.platform === "win32") expect(ownedIn(["C:\\work"], "C:\\work")("D:\\manni\\maya.md")).toBe(false);
+  });
+
+  it("resolves a label from the run's base, which may sit below the directory", () => {
+    expect(ownedIn([dir], resolve(dir, "sub"))("../docs/page.md")).toBe(true);
+  });
+
+  it("owns a file inside any of its directories, as a typed run owns the working directory", () => {
+    const both = ownedIn([resolve(dir, "elsewhere"), dir], dir);
+    expect([both("docs/page.md"), both("elsewhere/x.md"), both("../manni/maya.md")]).toEqual([true, true, false]);
   });
 });

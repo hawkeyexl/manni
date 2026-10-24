@@ -26,7 +26,7 @@ export interface RecordEntry {
   depth: number;
   /** A journey's steps, each `page` relative to the working directory. Only when it has steps. */
   steps?: ResolvedStep[];
-  /** Served steps over steps, beside `steps`. */
+  /** Served steps over steps, beside `steps`. A borrowed journey has none. */
   coverage?: { served: number; steps: number };
 }
 
@@ -50,6 +50,7 @@ export function entriesOf(
   index: StrategyIndex = indexSet(set),
   // `runList` always passes steps resolved with the run's routes. This default has none, so every route step is `unchecked`.
   stepMap: StepMap = resolveSteps(set, {}, index),
+  owns: (file: string) => boolean = () => true,
 ): RecordEntry[] {
   const entries: RecordEntry[] = [];
   const visit = (record: StrategyRecord, depth: number): void => {
@@ -65,7 +66,7 @@ export function entriesOf(
       pages: index.pagesNaming(record).map((page) => displayPath(page, cwd, base)),
       file: displayPath(record.file, cwd, base),
       depth,
-      ...(steps.length === 0 ? {} : { steps, coverage: coverageOf(steps) }),
+      ...(steps.length === 0 ? {} : { steps, ...(owns(record.file) ? { coverage: coverageOf(steps) } : {}) }),
     });
     for (const child of children) visit(child, depth + 1);
   };
@@ -78,6 +79,6 @@ export function entriesOf(
 }
 
 export async function runList(opts: StrategyCommandOptions): Promise<ListReport> {
-  const { cwd, run, set, steps } = await loadStrategy(opts);
-  return { entries: entriesOf(set, cwd, run.base, indexSet(set), steps), set };
+  const { cwd, run, set, steps, owns } = await loadStrategy(opts);
+  return { entries: entriesOf(set, cwd, run.base, indexSet(set), steps, owns), set };
 }

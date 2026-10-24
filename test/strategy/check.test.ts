@@ -452,3 +452,122 @@ describe("indexSet", () => {
     expect(index.childrenOf(sara)).toEqual([m5]);
   });
 });
+
+describe("borrowed records (proposal 0112)", () => {
+  /** A record read from another checkout, beside this one. */
+  const borrowed = (type: RecordType, id: string, parents: string | string[] = []): StrategyRecord => {
+    const record = rec(type, id, parents);
+    const file = `../manni/${type}s/${id}.md`;
+    return { ...record, file, idAt: { file, line: 3 }, parents: record.parents.map((p) => ({ ...p, file })) };
+  };
+  const owns = (file: string): boolean => !file.startsWith("../");
+  const check = (set: StrategySet) => checkStrategySet(set, { owns });
+
+  /** manni's audience, persona and two journeys, borrowed; the page serves m1 only. */
+  function shared(): StrategySet {
+    return {
+      records: [
+        borrowed("audience", "docs-engineers"),
+        borrowed("persona", "maya", "docs-engineers"),
+        borrowed("journey", "m1", "maya"),
+        borrowed("journey", "m2", "maya"),
+      ],
+      references: [ref("audiences", "docs-engineers"), ref("personas", "maya"), ref("journeys", "m1")],
+    };
+  }
+
+  it("files no finding in a borrowed file, whatever the rules say there", () => {
+    const set = shared();
+    set.records.push(borrowed("persona", "sara", "nobody"), borrowed("journey", "m3"));
+    expect(checkStrategySet(set).some((f) => !owns(f.file))).toBe(true);
+    expect(check(set)).toEqual([]);
+  });
+
+  it("draws unserved-journey on an owned journey no page names, never on a borrowed one", () => {
+    const set = shared();
+    set.records.push(rec("journey", "p1", "maya"));
+    expect(check(set).map((f) => [f.rule, f.file])).toEqual([["unserved-journey", "strategy/journeys/p1.md"]]);
+  });
+
+  it("counts a borrowed page naming an owned journey", () => {
+    const set = shared();
+    set.records.push(rec("journey", "p1", "maya"));
+    set.references.push(ref("journeys", "p1", "../manni/docs/page.md"));
+    expect(check(set)).toEqual([]);
+  });
+
+  it("resolves a local page's values against borrowed records, and reports a miss with its did-you-mean", () => {
+    const set = shared();
+    set.references.push(ref("personas", "mya", "docs/other.md"));
+    const found = check(set);
+    expect(found.map((f) => [f.rule, f.file])).toEqual([["undefined-reference", "docs/other.md"]]);
+    expect(found[0]?.message).toContain('Did you mean "maya"?');
+  });
+
+  it("leaves a borrowed record's undefined value unreported", () => {
+    const set = shared();
+    set.records.push(borrowed("journey", "m4", ["maya", "nobody"]));
+    set.references.push(ref("journeys", "m4"));
+    expect(check(set)).toEqual([]);
+  });
+
+  it("reports missing-parent on a local page from borrowed parents", () => {
+    const set = shared();
+    set.references.push(ref("journeys", "m2", "docs/other.md"));
+    expect(check(set).map((f) => [f.rule, f.file, f.message])).toEqual([
+      ["missing-parent", "docs/other.md", 'personas: does not name "maya", the persona of journey "m2". Add it, or drop "m2" from journeys:.'],
+    ]);
+  });
+
+  it("reports orphan-record on an owned journey while only borrowed personas exist", () => {
+    const set = shared();
+    set.records.push(rec("journey", "p1"));
+    set.references.push(ref("journeys", "p1"));
+    expect(check(set).map((f) => [f.rule, f.file])).toEqual([["orphan-record", "strategy/journeys/p1.md"]]);
+  });
+
+  describe("duplicate-id", () => {
+    const dupes = (set: StrategySet) => check(set).filter((f) => f.rule === "duplicate-id");
+
+    it("files one finding, on the owned copy, telling it to go", () => {
+      const set = shared();
+      set.records.push(rec("persona", "maya", "docs-engineers"));
+      const found = dupes(set);
+      expect(found.map((f) => [f.file, f.line, f.message, f.key])).toEqual([
+        [
+          "strategy/personas/maya.md",
+          3,
+          'id: "maya" is also the id of ../manni/personas/maya.md:3. That record is borrowed from outside this repository. Remove this copy, or give it its own id.',
+          'id: "maya" is also the id of ../manni/personas/maya.md:3.',
+        ],
+      ]);
+      expect(found[0]?.severity).toBe("error");
+    });
+
+    it("keeps the old fix on each owned record when another owned record shares the id", () => {
+      const set = shared();
+      set.records.push(
+        rec("persona", "maya", "docs-engineers"),
+        rec("persona", "maya", "docs-engineers", { file: "strategy/personas/maya-old.md", idAt: { file: "strategy/personas/maya-old.md", line: 3 } }),
+      );
+      const found = dupes(set);
+      expect(found.map((f) => f.file)).toEqual(["strategy/personas/maya-old.md", "strategy/personas/maya.md"]);
+      for (const finding of found) expect(finding.message).toMatch(/\. Give each record its own id\.$/);
+    });
+
+    it("reports nothing when only borrowed records share the id", () => {
+      const set = shared();
+      set.records.push(borrowed("journey", "m1", "maya"));
+      expect(dupes(set)).toEqual([]);
+    });
+  });
+
+  it("never files a finding outside the run's directory", () => {
+    const set = shared();
+    set.records.push(rec("persona", "maya"), borrowed("journey", "m9", "nobody"), rec("journey", "p1"));
+    set.references.push(ref("journeys", "zz", "../manni/docs/x.md"), ref("personas", "zz"));
+    const found = check(set);
+    expect(found.length).toBeGreaterThan(0);
+    expect(found.every((f) => owns(f.file))).toBe(true);
+  });
+});

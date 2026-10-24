@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/strategy/journey.schema.json",
+  "title": "Journey",
+  "description": "A journey record: its type, id, title and personas.",
+  "type": "object",
+  "required": ["type", "id", "title", "personas"],
+  "properties": {
+    "type": { "const": "journey" },
+    "id": { "type": "string" },
+    "title": { "type": "string" },
+    "personas": { "type": "array", "items": { "type": "string" }, "minItems": 1 }
+  }
+}

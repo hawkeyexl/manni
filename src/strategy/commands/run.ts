@@ -3,7 +3,7 @@
  * the set. Kept free of commander and of stdout, so a core is called directly
  * by its tests; the CLI reads stdin once and hands it in.
  */
-import { isAbsolute, relative, resolve } from "node:path";
+import { isAbsolute, relative, resolve, sep } from "node:path";
 import { loadConfig } from "../../graph/core/config.js";
 import { routesFrom } from "../../graph/core/discover.js";
 import { resolveStrategyRun } from "../core/config.js";
@@ -43,6 +43,23 @@ export interface LoadedStrategy {
   set: StrategySet;
   /** Each journey's steps, resolved against the run's pages. */
   steps: StepMap;
+  /** Whether the run owns a file it read. One it does not own is borrowed. */
+  owns: (file: string) => boolean;
+}
+
+/**
+ * Whether a label sits inside one of `dirs`, the run's directory: the config
+ * file's, else the working directory. A file outside, above it or on another
+ * drive, is borrowed (proposal 0112), the boundary `isMember` draws.
+ */
+export function ownedIn(dirs: readonly string[], base: string): (file: string) => boolean {
+  return (file) => {
+    if (file.startsWith("<")) return true;
+    return dirs.some((dir) => {
+      const rel = relative(dir, resolve(base, file));
+      return !isAbsolute(rel) && rel !== ".." && !rel.startsWith(`..${sep}`);
+    });
+  };
 }
 
 export async function loadStrategy(opts: StrategyCommandOptions): Promise<LoadedStrategy> {
@@ -70,8 +87,12 @@ export async function loadStrategy(opts: StrategyCommandOptions): Promise<Loaded
   });
   // `graph:` is read only when a step names a `/` route, and through graph's own loader.
   const routes = stepsNeedRoutes(set) && run.configPath !== undefined ? routesFrom(loadConfig(run.configPath, cwd), run.base) : [];
-  const steps = resolveSteps(set, { routes, from: run.configDir ?? cwd, base: run.base });
-  return { cwd, run, set, steps };
+  // A path the operator typed resolves from the working directory, so a typed
+  // run owns that directory too, as it did when `-c` names a config elsewhere.
+  const dir = run.configDir ?? cwd;
+  const owns = ownedIn(run.fromCollections ? [dir] : [dir, cwd], run.base);
+  const steps = resolveSteps(set, { routes, from: dir, base: run.base, owns });
+  return { cwd, run, set, steps, owns };
 }
 
 /** `value` when it is one of `allowed`, else the family's unknown-format refusal. */
