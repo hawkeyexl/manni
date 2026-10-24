@@ -10,6 +10,14 @@ function sample(expected: EvaluationCase["expected"]): EvaluationCase {
   };
 }
 
+function validationFixture() {
+  return {
+    schemaVersion: 1,
+    provenance: { graphDigest: `sha256-${"a".repeat(64)}`, generatedFrom: "repository graph", seedQuestions: ["key"], sourceIRIs: ["urn:source:1"] },
+    cases: Array.from({ length: 20 }, (_, index) => ({ ...sample({ requiredTerms: ["rotate"], allowedCommands: ["manni key rotate"] }), id: `case-${index}` })),
+  };
+}
+
 describe("fixed browser-model evaluation grading", () => {
   it("accepts an exact command with the supporting citation despite prose and formatting variation", () => {
     const testCase = sample({ requiredTerms: ["manni key rotate"], citationIds: ["1"], allowedCommands: ["manni key", "manni key rotate"] });
@@ -96,6 +104,57 @@ describe("fixed browser-model evaluation grading", () => {
       });
       expect(gradeAnswer({ ...testCase, input: { ...testCase.input, messages } }, testCase.referenceAnswer), testCase.id).toEqual({ pass: true, issues: [], critical: false });
     }
+  });
+
+  it.each([
+    { messages: [] },
+    { messages: [{ role: "system", content: "Use the evidence." }] },
+    { messages: [{ role: "user", content: " \n\t " }] },
+    { messages: [{ role: "system", content: "" }, { role: "user", content: "Which command?" }] },
+    { messages: [{ role: "assistant", content: "manni key rotate" }] },
+  ])("rejects missing, blank, or unsupported frozen message input: %j", ({ messages }) => {
+    const manifest = validationFixture();
+    const candidate = { ...manifest, cases: manifest.cases.map((testCase) => ({ ...testCase, input: { ...testCase.input, messages } })) };
+    expect(validateEvaluationFixture(candidate).join(" ")).toMatch(/invalid frozen messages/i);
+  });
+
+  it("requires at least one delivered evidence source and rejects blank source metadata", () => {
+    const manifest = validationFixture();
+    const withoutEvidence = { ...manifest, cases: manifest.cases.map((testCase) => ({ ...testCase, input: { ...testCase.input, sources: [], included: 0 } })) };
+    expect(validateEvaluationFixture(withoutEvidence).join(" ")).toMatch(/passage counts|evidence source/i);
+    for (const key of ["iri", "title", "sourceUrl"]) {
+      const blankSource = { ...manifest, cases: manifest.cases.map((testCase) => ({ ...testCase, input: { ...testCase.input, sources: testCase.input.sources.map((source) => ({ ...source, [key]: " \t " })) } })) };
+      expect(validateEvaluationFixture(blankSource).join(" "), key).toMatch(/invalid source/i);
+    }
+  });
+
+  it.each([
+    { allowedCommands: [] },
+    { requiredTerms: [], anyOf: [], counts: [], abstain: false, allowedCommands: [] },
+    { citationIds: ["1"], citationAnyOf: ["1"], excludedClaims: ["invented"], allowedCommands: ["manni key rotate"] },
+    { requiredTerms: [" \t "], allowedCommands: [] },
+    { anyOf: [[" "]], allowedCommands: [] },
+    { counts: [{ value: 3, labels: [" "] }], allowedCommands: [] },
+    { requiredTerm: ["rotate"], allowedCommands: [] },
+  ])("rejects cases without a substantive fact, count, or abstention criterion: %j", (expected) => {
+    const manifest = validationFixture();
+    const candidate = { ...manifest, cases: manifest.cases.map((testCase) => ({ ...testCase, expected })) };
+    expect(validateEvaluationFixture(candidate).join(" ")).toMatch(/substantive answer criterion/i);
+  });
+
+  it.each([
+    { requiredTerms: ["rotate"], allowedCommands: [] },
+    { anyOf: [["rotate", "replace"]], allowedCommands: [] },
+    { counts: [{ value: 0, labels: ["dependent passages"] }], allowedCommands: [] },
+    { abstain: true, allowedCommands: [] },
+  ])("accepts each supported substantive criterion without requiring a command: %j", (expected) => {
+    const manifest = validationFixture();
+    expect(validateEvaluationFixture({ ...manifest, cases: manifest.cases.map((testCase) => ({ ...testCase, expected })) })).toEqual([]);
+  });
+
+  it("rejects an unknown graph operation before the runner starts", () => {
+    const manifest = validationFixture();
+    expect(validateEvaluationFixture({ ...manifest, cases: manifest.cases.map((testCase) => ({ ...testCase, operation: "invented" })) }).join(" ")).toMatch(/invalid operation/i);
   });
 
   it("validates frozen input byte ceilings, citation support and unique cases", () => {

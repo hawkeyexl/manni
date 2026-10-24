@@ -91,7 +91,10 @@ export function gradeAnswer(testCase, answer) {
 }
 
 const record = (value) => typeof value === "object" && value !== null && !Array.isArray(value);
-const strings = (value) => Array.isArray(value) && value.every((item) => typeof item === "string");
+const nonblank = (value) => typeof value === "string" && value.trim().length > 0;
+const strings = (value) => Array.isArray(value) && value.every(nonblank);
+const factGroup = (value) => strings(value) && value.length > 0;
+const countCriterion = (value) => record(value) && Number.isInteger(value.value) && value.value >= 0 && factGroup(value.labels);
 
 /** Validate the portable, frozen input manifest before any model download. */
 export function validateEvaluationFixture(fixture) {
@@ -110,12 +113,12 @@ export function validateEvaluationFixture(fixture) {
     const input = testCase.input;
     const expected = testCase.expected;
     if (!record(input) || !Array.isArray(input.messages) || !Array.isArray(input.sources) || !record(expected)) { issues.push(`${label}: missing input or expected answer.`); continue; }
-    if (!input.messages.every((m) => record(m) && ["system", "user"].includes(m.role) && typeof m.content === "string")) issues.push(`${label}: invalid frozen messages.`);
+    if (!input.messages.every((m) => record(m) && ["system", "user"].includes(m.role) && nonblank(m.content)) || !input.messages.some((m) => record(m) && m.role === "user" && nonblank(m.content))) issues.push(`${label}: invalid frozen messages.`);
     else if (input.messages.reduce((sum, m) => sum + Buffer.byteLength(m.content, "utf8"), 0) > 3000) issues.push(`${label}: input exceeds 3000 UTF-8 bytes.`);
-    if (!Number.isInteger(input.included) || input.included !== input.sources.length || !Number.isInteger(input.omitted) || input.omitted < 0) issues.push(`${label}: invalid input passage counts.`);
+    if (!Number.isInteger(input.included) || input.included < 1 || input.included !== input.sources.length || !Number.isInteger(input.omitted) || input.omitted < 0) issues.push(`${label}: invalid input passage counts.`);
     const sourceIds = new Set();
     for (const source of input.sources) {
-      if (!record(source) || typeof source.id !== "string" || !/^\d+$/.test(source.id) || ["iri", "title", "sourceUrl"].some((key) => typeof source[key] !== "string")) { issues.push(`${label}: invalid source.`); continue; }
+      if (!record(source) || typeof source.id !== "string" || !/^\d+$/.test(source.id) || ["iri", "title", "sourceUrl"].some((key) => !nonblank(source[key]))) { issues.push(`${label}: invalid source.`); continue; }
       if (sourceIds.has(source.id)) issues.push(`${label}: duplicate source id ${source.id}.`);
       sourceIds.add(source.id);
     }
@@ -124,9 +127,12 @@ export function validateEvaluationFixture(fixture) {
     }
     if (Array.isArray(expected.citationIds) && expected.citationIds.some((id) => !sourceIds.has(id))) issues.push(`${label}: expected citation is absent from frozen sources.`);
     if (Array.isArray(expected.citationAnyOf) && expected.citationAnyOf.some((id) => !sourceIds.has(id))) issues.push(`${label}: expected alternative citation is absent from frozen sources.`);
-    if ("anyOf" in expected && (!Array.isArray(expected.anyOf) || !expected.anyOf.every((group) => strings(group) && group.length > 0))) issues.push(`${label}: invalid expected.anyOf.`);
-    if ("counts" in expected && (!Array.isArray(expected.counts) || !expected.counts.every((count) => record(count) && Number.isInteger(count.value) && count.value >= 0 && strings(count.labels) && count.labels.length > 0))) issues.push(`${label}: invalid expected.counts.`);
+    if ("anyOf" in expected && (!Array.isArray(expected.anyOf) || !expected.anyOf.every(factGroup))) issues.push(`${label}: invalid expected.anyOf.`);
+    if ("counts" in expected && (!Array.isArray(expected.counts) || !expected.counts.every(countCriterion))) issues.push(`${label}: invalid expected.counts.`);
     if ("abstain" in expected && typeof expected.abstain !== "boolean") issues.push(`${label}: invalid expected.abstain.`);
+    const hasFacts = factGroup(expected.requiredTerms) || (Array.isArray(expected.anyOf) && expected.anyOf.some(factGroup));
+    const hasCount = Array.isArray(expected.counts) && expected.counts.some(countCriterion);
+    if (!hasFacts && !hasCount && expected.abstain !== true) issues.push(`${label}: missing substantive answer criterion.`);
   }
   return issues;
 }

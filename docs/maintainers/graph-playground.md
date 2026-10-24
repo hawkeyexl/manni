@@ -55,7 +55,7 @@ check that publishes a subset of the docs, publish `--collection site` again.
 Run the helper and runtime tests after building the package:
 
 ```sh
-npx vitest run test/docs/retrieve-prototype-data.test.ts test/graph/integration/runtime-bundle.test.ts test/graph/integration/retrieve.test.ts test/graph/integration/retrieve-cli.test.ts
+npx vitest run test/docs test/graph/integration/runtime-bundle.test.ts test/graph/integration/retrieve.test.ts test/graph/integration/retrieve-cli.test.ts
 npm run typecheck
 npm run lint
 npm --prefix docs run check
@@ -67,19 +67,27 @@ node dist/cli.js cite check
 npm run docs:check-graph
 ```
 
-Dogfood the published site in a browser: run all four calls, follow a passage's
-node, inspect a refusal and an invalid metadata condition, and check both themes
-and a narrow viewport. Follow passage, citation and model-source links to confirm
+Dogfood the published site in a browser. Run all four calls and follow a
+passage's node. Inspect a refusal and an invalid metadata condition. Check both
+themes and a narrow viewport. Follow passage, citation and model-source links to confirm
 that they resolve to published pages and the intended heading fragments. Without WebGPU, enabling answers must report the missing
 capability while retrieval continues working. A normal lookup must request no
 model assets.
 
 A mock does not validate WebLLM. In a browser with a real WebGPU adapter, enable
-the model, cancel and retry its load, then ask both a question about the returned
-counts and a question whose answer occurs in a returned passage. Inspect the
+the model, then cancel and retry its load. Ask a question about the returned
+counts and another whose answer occurs in a returned passage. Inspect the
 exact prompt and its numbered sources alongside the answer. Check interruption
 and unloading. Small-model answers are experimental: a successful download and
 nonempty output alone do not establish that an answer follows the evidence.
+
+The model adapter regressions exercise the actual adapter with an injected worker
+and SDK, so root tests need no model download or docs-only dependency. They cover
+cancellation during reset, stream startup and streaming, plus incomplete output.
+The evaluation fixture validator rejects empty prompts, missing evidence and
+cases without a fact, count or abstention criterion before downloading models.
+These review fixes do not change the frozen comparison inputs, answers or scores;
+the audit fingerprints identify the implementation used for that comparison.
 
 ## Approved model-selection plan (2026-10-24)
 
@@ -92,8 +100,8 @@ changing it. This section records that plan before any default change.
 Maya starts with this repository's published site artifact, runs `lookup` for a
 docs question, and inspects its passages and proof. The evaluator freezes twenty
 questions with their exact evidence messages, including questions the evidence
-cannot answer. She runs every candidate over those same messages, compares the
-answers with the returned values, and chooses a model only if it meets the
+cannot answer. She runs every candidate over those same messages and compares the
+answers with the returned values. She chooses a model only if it meets the
 quality gates below. This separates the generator's behavior from retrieval.
 
 ### Candidate models and inference settings
@@ -184,13 +192,13 @@ Grade these behaviors separately, retaining the full answer for review:
   including stale verdicts and the difference between a record and a guarantee.
 
 Automated checks pin exact facts and source IDs. Review the retained answers
-against their evidence as well: a valid source ID does not prove that the source
-supports a claim, and an exact command match does not excuse extra invented
+against their evidence as well. A valid source ID does not prove that the source
+supports a claim. An exact command match does not excuse extra invented
 commands. Fabricated commands or citations reject a candidate regardless of its
 aggregate score. A candidate that cannot load, errors, or exhausts its output before an
 answer is complete does not count as passing that case. Prefer a candidate that
 passes the grounding gates and improves the relevant categories over the
-baseline; if none qualifies, report that result rather than declaring a winner.
+baseline. If none qualifies, report that result rather than declaring a winner.
 A single seeded twenty-case run is a focused local comparison, not a universal
 model ranking or a guarantee of production answer quality.
 
@@ -217,7 +225,7 @@ Every runner option is optional:
 | `--out <path>` | Repository-relative path | `.tmp/graph-playground-model-evaluation.json` | Save JSON; Markdown uses the same basename plus `-summary.md`. |
 | `--profile <path>` | Repository-relative path | `.tmp/graph-playground-evaluation-browser` | Retain the browser's model cache between runs. |
 | `--channel <name>` | Browser channel name | `msedge` | Choose an installed WebGPU-capable browser. |
-| `--port <number>` | Port number | `4338` | Serve the local SDK harness on a stable cache origin. |
+| `--port <number>` | Port number | `4338` | Serve the local SDK test page on a stable cache origin. |
 | `--case-timeout-ms <ms>` | Milliseconds | `120000` | Limit one case's execution time. |
 | `--load-timeout-ms <ms>` | Milliseconds | `300000` | Limit one model load. |
 | `-h`, `--help` | Boolean | `false` | Print usage and exit without loading a model. |
@@ -229,7 +237,7 @@ node scripts/evaluate-graph-playground.mjs --models Qwen3-1.7B-q4f32_1-MLC,Qwen3
 ```
 
 The runner uses real WebGPU and external model downloads. It is a manual opt-in
-utility and is excluded from hermetic `npm test`. It serves its local harness on
+utility and is excluded from hermetic `npm test`. It serves its local test page on
 port 4338 and keeps a browser profile under
 `.tmp/graph-playground-evaluation-browser`. It writes the full result to
 `.tmp/graph-playground-model-evaluation.json` and a compact table to
@@ -278,8 +286,9 @@ Deterministic screening and semantic review are different measurements. The
 review was an **agent answer-by-answer review**, not a human review; the primary
 agent also inspected all twenty answers from the selected model. The committed
 [audit](graph-playground-model-review.json) preserves all eighty full raw and
-visible answers, exact question/input hashes, original and current machine
-grades, per-case reviewed verdicts and reasons, sampler settings and measurements.
+visible answers, exact question/input hashes, and original and current machine
+grades. It also retains per-case reviewed verdicts and reasons, sampler settings
+and measurements.
 The input messages and expectations remain in the committed fixture. Full
 network-event detail remains in the local raw report named above.
 
@@ -320,7 +329,7 @@ Agent-reviewed category scores retain the fixed fixture's categories:
 All four tensor-cache checks were cold. This run used Windows, Edge
 156.0.4314.42, WebLLM 0.2.86 and an NVIDIA Lovelace adapter. Medians below are
 across twenty cases on this machine. “First raw token” is the first nonempty
-streamed content, which can include the empty SDK transport marker; it is not
+streamed content, which can include the empty SDK transport marker. It is not
 necessarily the first visible answer token. Warm-load performance was not
 measured. These are observed local measurements, not a promised user latency.
 
@@ -342,7 +351,7 @@ start with an empty `<think></think>` block. The tested
 partial streaming prefix. Actual nonempty reasoning and output truncation still
 fail the non-thinking protocol. Raw and normalized answers and original grades
 are retained. A numeric-only grading correction and this transport correction
-were applied consistently to the saved outputs; the frozen prompts,
+were applied consistently to the saved outputs. The frozen prompts,
 expectations, model settings and generated answers were not tuned after the
 results. `test/docs/retrieve-prototype-answer.test.ts` covers the formatter.
 
@@ -373,5 +382,5 @@ answers remain explicitly optional and experimental.
 - [x] Passage, citation and model-source links resolve to the actual published
   pages and headings, using the tested `retrieve-prototype-links.ts` mapping.
 - [x] Dogfooding on the published site demonstrates a grounded command answer,
-  correct counts, valid sources, missing-answer abstention, cancellation,
-  retry, answer interruption and unloading with the selected real model.
+  correct counts, valid sources and missing-answer abstention. It also demonstrates
+  cancellation, retry, answer interruption and unloading with the selected real model.

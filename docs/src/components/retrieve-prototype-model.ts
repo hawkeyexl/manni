@@ -35,16 +35,31 @@ export async function loadLocalModel(progress: (text: string) => void, signal: A
           messages: input.messages,
           ...MODEL_REQUEST_OPTIONS,
         });
+        const iterator = stream[Symbol.asyncIterator]();
         let text = "";
-        for await (const chunk of stream) {
-          const delta = chunk.choices[0]?.delta;
-          text += delta?.content ?? "";
-          if (hasModelReasoning(text) || (delta && "reasoning_content" in delta && typeof delta.reasoning_content === "string" && delta.reasoning_content.trim() !== "")) {
-            throw new Error("The model emitted reasoning while direct answers were requested. Try again.");
+        try {
+          // Stop may arrive while the worker initializes the stream. Do not
+          // advance it: the SDK resets its interrupt flag on the first next().
+          while (!stopRequested) {
+            const next = await iterator.next();
+            if (next.done || stopRequested) break;
+            const choice = next.value.choices[0];
+            if (choice?.finish_reason === "length") {
+              throw new Error("The answer reached its output limit and may be incomplete. Try a shorter question.");
+            }
+            const delta = choice?.delta;
+            text += delta?.content ?? "";
+            if (hasModelReasoning(text) || (delta && "reasoning_content" in delta && typeof delta.reasoning_content === "string" && delta.reasoning_content.trim() !== "")) {
+              throw new Error("The model emitted reasoning while direct answers were requested. Try again.");
+            }
+            update(modelAnswerText(text));
           }
-          update(modelAnswerText(text));
+          return modelAnswerText(text);
+        } finally {
+          // Also release a stream stopped before its first chunk or after an
+          // error, so it cannot leave the worker's generator or lock behind.
+          await iterator.return?.();
         }
-        return modelAnswerText(text);
       },
       stop: () => { stopRequested = true; engine.interruptGenerate(); },
       dispose: () => worker.terminate(),

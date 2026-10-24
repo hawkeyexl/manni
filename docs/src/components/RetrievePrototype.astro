@@ -140,6 +140,11 @@ const manifest = `${import.meta.env.BASE_URL.replace(/\/$/, "")}/graph/chunks.js
       return element;
     };
     const queryForm = get<HTMLFormElement>(".query-form");
+    const optionsPanel = get<HTMLDetailsElement>(".options-panel");
+    // Native validation must expose the field before the browser focuses it.
+    queryForm.addEventListener("invalid", (event) => {
+      if (event.target instanceof Element && optionsPanel.contains(event.target)) optionsPanel.open = true;
+    }, true);
     const answerForm = get<HTMLFormElement>(".answer-form");
     const fields = get<HTMLFieldSetElement>(".query-fields");
     const operation = get<HTMLSelectElement>("[name=operation]");
