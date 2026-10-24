@@ -4,7 +4,8 @@
  * whose parents are not in the set sits at the top level.
  */
 import { indexSet, type StrategyIndex } from "../core/check.js";
-import { RECORD_TYPES, type StrategyRecord, type StrategySet } from "../types.js";
+import { coverageOf, resolveSteps, type StepMap } from "../core/steps.js";
+import { RECORD_TYPES, type ResolvedStep, type StrategyRecord, type StrategySet } from "../types.js";
 import { displayPath, loadStrategy, type StrategyCommandOptions } from "./run.js";
 
 export const LIST_FORMATS = ["pretty", "json"] as const;
@@ -23,6 +24,10 @@ export interface RecordEntry {
   file: string;
   /** Its depth in the tree. */
   depth: number;
+  /** A journey's steps, each `page` relative to the working directory. Only when it has steps. */
+  steps?: ResolvedStep[];
+  /** Served steps over steps, beside `steps`. */
+  coverage?: { served: number; steps: number };
 }
 
 export interface ListReport {
@@ -38,10 +43,21 @@ function sorted(records: readonly StrategyRecord[]): StrategyRecord[] {
 }
 
 /** Every record, each with its parents, children and pages, parents before their children. */
-export function entriesOf(set: StrategySet, cwd: string, base: string, index: StrategyIndex = indexSet(set)): RecordEntry[] {
+export function entriesOf(
+  set: StrategySet,
+  cwd: string,
+  base: string,
+  index: StrategyIndex = indexSet(set),
+  // `runList` always passes steps resolved with the run's routes. This default has none, so every route step is `unchecked`.
+  stepMap: StepMap = resolveSteps(set, {}, index),
+): RecordEntry[] {
   const entries: RecordEntry[] = [];
   const visit = (record: StrategyRecord, depth: number): void => {
     const children = sorted(index.childrenOf(record));
+    const resolved = stepMap.get(record) ?? [];
+    const steps = resolved.map((step) =>
+      step.page === undefined ? step : { ...step, page: displayPath(step.page, cwd, base) },
+    );
     entries.push({
       record,
       parents: index.parentsOf(record),
@@ -49,6 +65,7 @@ export function entriesOf(set: StrategySet, cwd: string, base: string, index: St
       pages: index.pagesNaming(record).map((page) => displayPath(page, cwd, base)),
       file: displayPath(record.file, cwd, base),
       depth,
+      ...(steps.length === 0 ? {} : { steps, coverage: coverageOf(steps) }),
     });
     for (const child of children) visit(child, depth + 1);
   };
@@ -61,6 +78,6 @@ export function entriesOf(set: StrategySet, cwd: string, base: string, index: St
 }
 
 export async function runList(opts: StrategyCommandOptions): Promise<ListReport> {
-  const { cwd, run, set } = await loadStrategy(opts);
-  return { entries: entriesOf(set, cwd, run.base), set };
+  const { cwd, run, set, steps } = await loadStrategy(opts);
+  return { entries: entriesOf(set, cwd, run.base, indexSet(set), steps), set };
 }

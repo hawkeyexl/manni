@@ -63,6 +63,11 @@ export interface Beat {
    * the last line containing it is the top row (SCROLL_FRAMES long).
    */
   scroll?: true | string;
+  /**
+   * Wrapped rows continue at this column when it is deeper than the line's own
+   * indent: the gutter a CLI prints its own continuation lines under.
+   */
+  hang?: number;
 }
 
 /** A scroll-back's length: ~0.6 s. */

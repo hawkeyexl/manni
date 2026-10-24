@@ -12,7 +12,7 @@ import { checkStrategySet } from "../core/check.js";
 import { DEFAULT_STRATEGY_BASELINE_PATH } from "../core/config.js";
 import { StrategyError } from "../errors.js";
 import { reportedFindings, summarize, toResults, type StrategyReport } from "./findings.js";
-import { loadStrategy, type StrategyCommandOptions } from "./run.js";
+import { displayPath, loadStrategy, type StrategyCommandOptions } from "./run.js";
 
 export interface CheckOptions extends StrategyCommandOptions {
   /** `--baseline`. */
@@ -20,9 +20,13 @@ export interface CheckOptions extends StrategyCommandOptions {
 }
 
 export async function runCheck(opts: CheckOptions): Promise<StrategyReport> {
-  const { cwd, run, set } = await loadStrategy(opts);
+  const { cwd, run, set, steps } = await loadStrategy(opts);
   const config = run.config;
-  const findings = checkStrategySet(set, config?.severity === undefined ? {} : { severity: config.severity });
+  const findings = checkStrategySet(set, {
+    ...(config?.severity === undefined ? {} : { severity: config.severity }),
+    steps,
+    pagePath: (page) => displayPath(page, cwd, run.base),
+  });
   const { results, origin } = toResults(set, findings);
 
   // Fingerprints must not depend on where the command was run from.
@@ -54,6 +58,7 @@ export async function runCheck(opts: CheckOptions): Promise<StrategyReport> {
     // value (pages and records alike), plus each value of a record's own
     // parent field, which load-set keeps out of the references.
     references: set.references.length + parents,
+    steps: [...steps.values()].reduce((n, s) => n + s.length, 0),
     ...(baseline === undefined ? {} : { baseline }),
     found: findings.length,
     cwd,

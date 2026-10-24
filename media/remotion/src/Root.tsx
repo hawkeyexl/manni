@@ -25,6 +25,7 @@ import { beats as graphFormatsBeats, totalFrames as graphFormatsTotalFrames, TYP
 import { beats as findingsBeats, totalFrames as findingsTotalFrames, TYPING_MS as findingsTypingMs } from "./findings/beats";
 import { beats as citeReposBeats, totalFrames as citeReposTotalFrames, TYPING_MS as citeReposTypingMs } from "./cite-repos/beats";
 import { beats as pluginMetadataBeats, totalFrames as pluginMetadataTotalFrames, TYPING_MS as pluginMetadataTypingMs } from "./plugin-metadata/beats";
+import { beats as strategyStepsBeats, totalFrames as strategyStepsTotalFrames, TYPING_MS as strategyStepsTypingMs } from "./strategy-steps/beats";
 import { beats as strategyBeats, totalFrames as strategyTotalFrames, TYPING_MS as strategyTypingMs } from "./strategy/beats";
 import { beats as citeImpactBeats, totalFrames as citeImpactTotalFrames, TYPING_MS as citeImpactTypingMs } from "./cite-impact/beats";
 import { beats as checkImpactBeats, totalFrames as checkImpactTotalFrames, TYPING_MS as checkImpactTypingMs } from "./check-impact/beats";
@@ -156,6 +157,16 @@ const DemoCiteImpact: React.FC = () => (
 /** check-impact-1x1: 28 px / 61 columns per beat, derived by media/check-impact/cols.mjs. */
 const DemoCheckImpact: React.FC = () => (
   <DemoView beats={checkImpactBeats} fontPx={28} linePx={39} cols={61} typingMs={checkImpactTypingMs} ligatures={false} />
+);
+
+/**
+ * strategy-steps-1x1: 19 px / 91 columns for beat 2, derived in media/strategy-steps-1x1.script.md
+ * (media/capture-strategy-steps/cols.mjs). Beat 2 wraps under strategy check's 46-column gutter
+ * (hang), and its Guide URLs break after a "/". Beats 1, 3 and 4 carry their own sizes
+ * (src/strategy-steps/beats.ts). Ligatures off: the record's `---` fences would draw as one rule.
+ */
+const DemoStrategySteps: React.FC = () => (
+  <DemoView beats={strategyStepsBeats} fontPx={19} linePx={27} cols={91} typingMs={strategyStepsTypingMs} ligatures={false} breakAfter="/" />
 );
 
 export const Root: React.FC = () => (
@@ -375,6 +386,14 @@ export const Root: React.FC = () => (
       height={1080}
       fps={FPS}
       durationInFrames={strategyTotalFrames}
+    />
+    <Composition
+      id="StrategyStepsDemo"
+      component={DemoStrategySteps}
+      width={1080}
+      height={1080}
+      fps={FPS}
+      durationInFrames={strategyStepsTotalFrames}
     />
   </>
 );
