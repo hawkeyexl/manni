@@ -1,0 +1,87 @@
+manni strategy, journey steps: demo video transcript (silent video; text describes what is on screen)
+
+Frame: 1080x1080, 30 fps, 34.4 s. Every terminal line is real output. The CLI is
+this branch's build, node dist/cli.js, typed as manni. It runs in
+media/scratch-strategy-steps/, which media/capture-strategy-steps/capture.sh stages
+from a copy of test/fixtures/strategy/steps/ with strategy/journeys/m1.md trimmed to
+four steps (media/capture-strategy-steps/m1.before.md). The edit in beat 3 is
+media/capture-strategy-steps/reference.after.md copied over docs/reference.md.
+Each command appears after its measured latency, at 1x.
+
+[0:00-0:07] Title: A journey lists its steps (1 / 4)
+$ cat strategy/journeys/m1.md
+---
+type: journey
+id: m1
+title: Stand up metadata validation for my repo
+personas: [maya]
+steps:
+  - stage: Read the guide
+    doc: docs/guide.md
+  - stage: Add the CI step
+    doc: /site/ci/
+  - stage: Look up a flag
+    doc: docs/reference.md
+  - stage: Work through the tutorial
+    doc: /site/tutorial/
+    exists: false
+---
+Highlighted rows: lines containing "steps:", "doc: docs/reference.md", "exists: false"
+Caption: A journey lists the pages it walks through, in order.
+
+[0:07-0:19] Title: manni strategy check (2 / 4)
+$ manni strategy check
+strategy/journeys/m1.md:12
+  warning manni:strategy/missing-journey      step 3: docs/reference.md does not name "m1" in journeys:.   ("warning" in yellow)
+                                              Add it to that page's journeys:, or point the step at a page that does.
+                                              manni:strategy missing-journey: A step's page does not name the journey in journeys:.   (dim)
+                                              Guide: https://hawkeyexl.github.io/manni/strategy/reference/rules/#missing-journey   (dim)
+strategy/journeys/m1.md:13
+  notice  manni:strategy/unwritten-step       step 4: doc "/site/tutorial/" names a page that does not exist.   ("notice" in cyan)
+                                              manni:strategy unwritten-step: A step says exists: false, or has no doc.   (dim)
+                                              Guide: https://hawkeyexl.github.io/manni/strategy/reference/rules/#unwritten-step   (dim)
+
+1 warning, 1 notice in 4 records
+$ echo $?
+0
+Highlighted rows: lines containing "does not name \"m1\"", "names a page that does not exist"
+Caption: Step 3's page skips m1. Step 4 is unwritten. Exit 0.
+
+[0:19-0:26] Title: The page joins the journey (3 / 4)
+$ git diff docs/reference.md
+diff --git a/docs/reference.md b/docs/reference.md
+index 18ed218..a3056a6 100644
+--- a/docs/reference.md
++++ b/docs/reference.md
+@@ -1,4 +1,7 @@   (cyan)
+ ---
+ title: Reference
++audiences: [docs-engineers]   (green)
++personas: [maya]   (green)
++journeys: [m1]   (green)
+ ---
+ # Reference
+Highlighted rows: lines containing "+journeys: [m1]"
+Caption: The reference page names m1, its persona and audience.
+
+[0:26-0:34] Title: manni strategy get m1 (4 / 4)
+$ manni strategy get m1
+Stand up metadata validation for my repo      strategy/journeys/m1.md:1
+  type          journey
+  id            m1
+  personas      maya  Maya, Documentation Engineer
+  steps         3 of 4 served
+                1  served     Read the guide
+                              docs/guide.md
+                2  served     Add the CI step
+                              docs/ci/index.md
+                3  served     Look up a flag
+                              docs/reference.md
+                4  unwritten  Work through the tutorial
+                              /site/tutorial/
+  pages         docs/ci/index.md
+                docs/guide.md
+                docs/reference.md
+Highlighted rows: lines containing "3 of 4 served", "unwritten"
+Caption: Coverage, in order: 3 of 4 served, 1 unwritten.
+

@@ -1,0 +1,16 @@
+[1mStand up metadata validation for my repo    [22m  [2mstrategy/journeys/m1.md:1[22m
+  type          journey
+  id            m1
+  personas      maya  Maya, Documentation Engineer
+  steps         3 of 4 served
+                1  served     Read the guide
+                              [2mdocs/guide.md[22m
+                2  served     Add the CI step
+                              [2mdocs/ci/index.md[22m
+                3  served     Look up a flag
+                              [2mdocs/reference.md[22m
+                4  unwritten  Work through the tutorial
+                              [2m/site/tutorial/[22m
+  pages         docs/ci/index.md
+                docs/guide.md
+                docs/reference.md

@@ -1,8 +1,10 @@
 docs/src/content/docs/meta/ci/index.mdx:
   personas:
     - devin
+    - maya
   journeys:
     - d1
+    - m1
   visibility: public
   review-interval: P180D
   eval-suite: meta

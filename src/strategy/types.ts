@@ -38,6 +38,10 @@ export const STRATEGY_RULES = [
   "orphan-record",
   "unserved-journey",
   "unused-record",
+  "broken-step",
+  "stale-step",
+  "missing-journey",
+  "unwritten-step",
 ] as const;
 export type StrategyRule = (typeof STRATEGY_RULES)[number];
 
@@ -65,6 +69,35 @@ export interface StrategyRecord {
   idAt?: At;
   /** The values of `audience:` on a persona or `personas:` on a journey, each where it is declared. Empty on an audience. */
   parents: (At & { value: string })[];
+  /** A journey's `steps:`, when it carries at least one mapping. Never set on an audience or a persona. */
+  steps?: StrategyStep[];
+}
+
+/**
+ * One item of a journey's `steps:` (proposal 0106). A field that is not of
+ * its type reads as absent; the shape is meta's to validate.
+ */
+export interface StrategyStep {
+  /** The step's position in `steps:`, from 1. */
+  n: number;
+  stage?: string;
+  doc?: string;
+  exists?: boolean | "partial";
+  note?: string;
+  /** Where the step starts. */
+  file: string;
+  line?: number;
+  docAt?: At;
+  existsAt?: At;
+}
+
+/** What `strategy` makes of a step's `doc` and `exists`. */
+export type StepState = "served" | "unclaimed" | "partial" | "unwritten" | "broken" | "unchecked";
+
+export interface ResolvedStep extends StrategyStep {
+  state: StepState;
+  /** The page `doc` names, as a label of the run, when it names one. */
+  page?: string;
 }
 
 export interface StrategyReference {
@@ -82,6 +115,8 @@ export interface StrategyReference {
 export interface StrategySet {
   records: StrategyRecord[];
   references: StrategyReference[];
+  /** The labels of the run's inputs that are not records: what a step's `doc` may name. Absent reads as none. */
+  pages?: string[];
 }
 
 export interface StrategyFinding {
@@ -99,7 +134,7 @@ export interface StrategyFinding {
   /** The record the finding is about, when it is about one. */
   id?: string;
   /** The field that breaks the rule, when one does. */
-  field?: ReferenceField;
+  field?: ReferenceField | "steps";
 }
 
 /** The `strategy:` section. Every key is optional. */
