@@ -1,176 +1,470 @@
 ---
 /**
- * A prototype search box for the "Retrieve from a script" page (proposal
- * 0090). It is docs-site code only: manni ships no UI, the package does not
- * export this, and the page labels it "Prototype". It is built from the
- * public `createRetriever().lookup()`, imported from the built runtime bundle,
- * so the root `npm run build` has to run before the site builds, as the Docs
- * workflow already does.
- *
- * Lexical only (`embed: false`), and nothing loads until the first search.
- * The artifact comes from `graph publish --out docs/public/graph`; where that
- * did not run, the status line says the artifact could not load.
+ * Docs-only host of the public browser retriever. The runtime stays neutral;
+ * optional generation is a separate, lazily loaded WebLLM worker.
+ * Build manni and publish the site collection before building the docs.
  */
 const manifest = `${import.meta.env.BASE_URL.replace(/\/$/, "")}/graph/chunks.json`;
 ---
 
 <section class="retrieve-prototype not-content" data-retrieve-prototype data-manifest={manifest} aria-labelledby="retrieve-prototype-label">
-  <p class="label" id="retrieve-prototype-label">Prototype: ask this site's docs</p>
-  <form>
-    <label for="retrieve-prototype-question">Question</label>
-    <div class="row">
-      <input id="retrieve-prototype-question" name="question" type="search" required autocomplete="off" />
-      <button type="submit">Look up</button>
-    </div>
+  <h3 id="retrieve-prototype-label">Graph playground <span class="badge">Proof of concept</span></h3>
+  <p>Run a browser graph function on this site's docs. Inspect what came back, then optionally ask a local model about it.</p>
+  <noscript>This playground needs JavaScript. The examples above work in your own script.</noscript>
+  <form class="query-form">
+    <fieldset class="query-fields">
+      <legend>1. Run a graph function</legend>
+      <label for="graph-operation">Function</label>
+      <select id="graph-operation" name="operation">
+        <option value="lookup">lookup — matches, context and dependents</option>
+        <option value="retrieve">retrieve — build a passage bundle</option>
+        <option value="traverse">traverse — follow a node's links</option>
+        <option value="impact">impact — find a node's dependents</option>
+      </select>
+      <div class="question-field">
+        <label for="graph-question">Question</label>
+        <input id="graph-question" name="question" type="search" value="How do I rotate the encryption key?" required autocomplete="off" />
+      </div>
+      <div class="node-field" hidden>
+        <label for="graph-node">Node IRI or path</label>
+        <input id="graph-node" name="node" type="text" placeholder="Run lookup, then choose Use this node on a passage" />
+      </div>
+      <p class="operation-help muted"></p>
+      <details class="options-panel">
+        <summary>Function options</summary>
+        <fieldset class="steering">
+          <legend>Scope and budget</legend>
+          <div class="grid">
+            <label>Language <input name="lang" type="text" placeholder="Automatic" /></label>
+            <label>Product variant <input name="variant" type="text" placeholder="Any" /></label>
+            <label>Software subject <input name="softwareSubject" type="text" placeholder="Any" /></label>
+            <label>Depth <input name="depth" type="number" min="0" max="10" value="1" required /></label>
+            <label>Character budget <input name="maxChars" type="number" min="1" max="50000" value="6000" required /></label>
+            <label class="walk-option">Node limit <input name="limit" type="number" min="1" max="200" value="20" required /></label>
+          </div>
+          <label for="graph-where">Metadata conditions (JSON array)</label>
+          <textarea id="graph-where" name="where" rows="2" placeholder='[{"field":"type","value":"how-to"}]'></textarea>
+          <div class="row">
+            <label class="check"><input name="drifted" type="checkbox" /> Withhold drifted passages</label>
+            <label class="check"><input name="failing" type="checkbox" /> Withhold failing passages</label>
+          </div>
+          <div class="traverse-option">
+            <label for="graph-predicates">Predicates (comma-separated)</label>
+            <input id="graph-predicates" name="predicates" type="text" placeholder="Leave empty for the runtime defaults" />
+            <label class="check"><input name="reverse" type="checkbox" /> Follow links in reverse</label>
+          </div>
+        </fieldset>
+      </details>
+      <p class="muted">Search uses lexical matching. No embedding model is downloaded.</p>
+      <button type="submit" class="run">Run lookup</button>
+    </fieldset>
   </form>
-  <p class="status" role="status" aria-live="polite"></p>
-  <ol class="results"></ol>
+  <p class="status" role="status" aria-live="polite">Ready. The first run downloads this site's graph artifact.</p>
+  <div class="output" hidden>
+    <details open><summary>JavaScript call</summary><pre tabindex="0" class="call"></pre></details>
+    <details class="passages-panel"><summary>Returned passages</summary><ol class="results"></ol></details>
+    <details><summary>Citations</summary><ol class="citations"></ol></details>
+    <details><summary>Trace</summary><pre tabindex="0" class="trace"></pre></details>
+    <details><summary>Full returned value (JSON)</summary><pre tabindex="0" class="raw"></pre></details>
+  </div>
+  <form class="answer-form">
+    <fieldset>
+      <legend>2. Ask about the returned values (optional)</legend>
+      <p>WebLLM runs Llama 3.2 1B on your device in a worker. Enabling it downloads several hundred MB of model assets, which your browser may cache. It needs WebGPU and HTTPS or localhost. Questions and passages stay in your browser.</p>
+      <div class="row">
+        <button type="button" class="enable">Enable local answers</button>
+        <button type="button" class="unload" disabled>Unload model</button>
+      </div>
+      <p class="model-status" role="status" aria-live="polite">Local answers are off.</p>
+      <label for="graph-followup">Question about this result</label>
+      <textarea id="graph-followup" name="followup" rows="2" maxlength="500" placeholder="What does this result tell me?" required></textarea>
+      <div class="row">
+        <button type="submit" class="ask" disabled>Ask about result</button>
+        <button type="button" class="stop" disabled>Stop answer</button>
+      </div>
+      <p class="evidence-status muted">Run a function first. Only a bounded selection of its returned values is sent to the small model.</p>
+      <details class="prompt-panel" hidden><summary>Exact model input</summary><pre tabindex="0" class="prompt"></pre></details>
+      <div class="answer-output" hidden>
+        <p><strong>Experimental model answer — check it against the passages.</strong></p>
+        <div class="answer" tabindex="0"></div>
+        <p class="muted">Sources supplied to the model:</p>
+        <ol class="answer-sources"></ol>
+      </div>
+    </fieldset>
+  </form>
 </section>
 
 <script>
   import { createRetriever } from "../../../dist/graph/runtime.js";
+  import type { Retriever, WithholdReason, WhereCondition } from "../../../dist/graph/runtime.js";
+  import { buildAnswerInput, resultPassages } from "./retrieve-prototype-data";
+  import type { Operation, Result } from "./retrieve-prototype-data";
+  import type { loadLocalModel } from "./retrieve-prototype-model";
 
-  type Retriever = Awaited<ReturnType<typeof createRetriever>>;
-  type Result = Awaited<ReturnType<Retriever["lookup"]>>;
-  type Passage = Result["matches"]["passages"][number];
+  type Model = Awaited<ReturnType<typeof loadLocalModel>>;
+  const descriptions: Record<Operation, string> = {
+    lookup: "Lookup returns all three sections using the published defaults. It takes a question only.",
+    retrieve: "Retrieve starts from a question and lets you steer the scope and character budget.",
+    traverse: "Traverse follows links outward from a node. Find an IRI with lookup, then choose Use this node.",
+    impact: "Impact follows dependencies inward from a node. Find an IRI with lookup, then choose Use this node.",
+  };
 
-  const sections = [
-    ["matches", "match"],
-    ["traversal", "context"],
-    ["impact", "dependent"],
-  ] as const;
-
-  function pins(p: Passage): string {
-    const { total, current, error } = p.provenance.pins;
-    if (total === 0) return "no pins";
-    return error > 0 ? `${current} of ${total} pins current, ${error} error` : `${current} of ${total} pins current`;
+  function textElement(tag: string, text: string, className = "") {
+    const element = document.createElement(tag);
+    element.textContent = text;
+    element.className = className;
+    return element;
   }
 
-  function item(p: Passage, role: string): HTMLLIElement {
-    const li = document.createElement("li");
-    const head = document.createElement("p");
-    const badge = document.createElement("span");
-    badge.className = "badge";
-    badge.textContent = role;
-    const title = document.createElement("strong");
-    title.textContent = p.title;
-    head.append(badge, " ", title);
-    const meta = document.createElement("p");
-    meta.className = "meta";
-    const pinBadge = document.createElement("span");
-    pinBadge.className = "badge";
-    pinBadge.textContent = pins(p);
-    meta.append(pinBadge, ` ${p.page.replace(/^docs\/src\/content\/docs\//, "")}, lines ${p.lines}`);
-    if (p.text === null) meta.append(", text not included: over the budget");
-    li.append(head, meta);
-    return li;
+  // Both model output and artifact values are plain text. A source is clickable
+  // only when it resolves to HTTP(S), never a script URL from a returned value.
+  function sourceLink(title: string, sourceUrl: string) {
+    const element = document.createElement("a");
+    try {
+      const url = new URL(sourceUrl, window.location.href);
+      if (url.protocol !== "http:" && url.protocol !== "https:") return textElement("span", title);
+      element.href = url.href;
+    } catch { return textElement("span", title); }
+    element.textContent = title;
+    return element;
   }
 
   for (const root of document.querySelectorAll<HTMLElement>("[data-retrieve-prototype]")) {
-    const form = root.querySelector("form");
-    const input = root.querySelector("input");
-    const status = root.querySelector(".status");
-    const list = root.querySelector(".results");
-    const manifest = root.dataset.manifest;
-    if (!form || !input || !status || !list || manifest === undefined) continue;
+    const get = <T extends Element>(selector: string) => {
+      const element = root.querySelector<T>(selector);
+      if (!element) throw new Error(`Playground element missing: ${selector}`);
+      return element;
+    };
+    const queryForm = get<HTMLFormElement>(".query-form");
+    const answerForm = get<HTMLFormElement>(".answer-form");
+    const fields = get<HTMLFieldSetElement>(".query-fields");
+    const operation = get<HTMLSelectElement>("[name=operation]");
+    const question = get<HTMLInputElement>("[name=question]");
+    const node = get<HTMLInputElement>("[name=node]");
+    const followup = get<HTMLTextAreaElement>("[name=followup]");
+    const status = get<HTMLElement>(".status");
+    const modelStatus = get<HTMLElement>(".model-status");
+    const ask = get<HTMLButtonElement>(".ask");
+    const enable = get<HTMLButtonElement>(".enable");
+    const unload = get<HTMLButtonElement>(".unload");
+    const stop = get<HTMLButtonElement>(".stop");
     let docs: Promise<Retriever> | undefined;
+    let snapshot: { operation: Operation; result: Result } | undefined;
+    let model: Model | undefined;
+    let running = false;
+    let generating = false;
+    let loading = false;
+    let loadController: AbortController | undefined;
+    let defaultFollowup = "";
+    let stopped = false;
+    let disposed = false;
 
-    form.addEventListener("submit", (event) => {
-      event.preventDefault();
-      const question = input.value.trim();
-      if (question === "") return;
+    const selected = (): Operation => {
+      const value = operation.value;
+      return value === "retrieve" || value === "traverse" || value === "impact" ? value : "lookup";
+    };
+    const input = (name: string) => get<HTMLInputElement>(`[name=${name}]`);
+    const value = (name: string) => get<HTMLInputElement | HTMLTextAreaElement>(`[name=${name}]`).value.trim();
+    const updateActions = () => {
+      ask.disabled = !model || !snapshot || !!snapshot.result.refusal || !resultPassages(snapshot.result).some((p) => p.text) || running || generating;
+      enable.disabled = !!model || loading;
+      unload.disabled = (!model && !loading) || generating;
+      unload.textContent = loading ? "Cancel download" : "Unload model";
+      stop.disabled = !generating;
+      fields.disabled = running || generating;
+      followup.disabled = generating;
+      for (const button of root.querySelectorAll<HTMLButtonElement>(".results button")) button.disabled = running || generating;
+    };
+    const updateOperation = () => {
+      const op = selected();
+      const walk = op === "traverse" || op === "impact";
+      get<HTMLElement>(".question-field").hidden = walk;
+      get<HTMLElement>(".node-field").hidden = !walk;
+      question.required = !walk;
+      node.required = walk;
+      input("limit").disabled = !walk;
+      get<HTMLFieldSetElement>(".steering").disabled = op === "lookup";
+      for (const element of root.querySelectorAll<HTMLElement>(".walk-option")) element.hidden = !walk;
+      for (const element of root.querySelectorAll<HTMLElement>(".traverse-option")) element.hidden = op !== "traverse";
+      get<HTMLElement>(".operation-help").textContent = descriptions[op];
+      get<HTMLButtonElement>(".run").textContent = `Run ${op}`;
+    };
+    operation.addEventListener("change", updateOperation);
+    updateOperation();
+
+    function clearAnswer() {
+      get<HTMLElement>(".answer-output").hidden = true;
+      get<HTMLElement>(".answer").textContent = "";
+      get<HTMLElement>(".prompt-panel").hidden = true;
+      get<HTMLElement>(".answer-sources").replaceChildren();
+    }
+
+    function readOptions(op: Operation) {
+      const options: NonNullable<Parameters<Retriever["traverse"]>[1]> = {
+        depth: Number(value("depth")), maxChars: Number(value("maxChars")),
+      };
+      for (const name of ["lang", "variant", "softwareSubject"] as const) {
+        const held = value(name);
+        if (held) options[name] = held;
+      }
+      if (value("where")) {
+        const parsed: unknown = JSON.parse(value("where"));
+        if (!Array.isArray(parsed) || !parsed.every((item: unknown) =>
+          typeof item === "object" && item !== null && "field" in item && "value" in item &&
+          typeof item.field === "string" && typeof item.value === "string")) {
+          throw new Error('Metadata conditions must be a JSON array of {"field":"…","value":"…"}.');
+        }
+        options.where = parsed as WhereCondition[];
+      }
+      const withhold: WithholdReason[] = [];
+      if (input("drifted").checked) withhold.push("drifted");
+      if (input("failing").checked) withhold.push("failing");
+      if (withhold.length) options.withhold = withhold;
+      if (op === "traverse" || op === "impact") options.limit = Number(value("limit"));
+      if (op === "traverse") {
+        if (value("predicates")) options.predicates = value("predicates").split(",").map((p) => p.trim()).filter(Boolean);
+        if (input("reverse").checked) options.reverse = true;
+      }
+      return options;
+    }
+
+    function render(result: Result) {
+      get<HTMLElement>(".passages-panel summary").textContent = `Returned passages (${resultPassages(result).length})`;
+      const list = get<HTMLOListElement>(".results");
       list.replaceChildren();
-      status.textContent = "Looking up…";
+      for (const passage of resultPassages(result)) {
+        const li = document.createElement("li");
+        const citation = result.citations.find((c) => c.iri === passage.iri);
+        const heading = textElement("p", "", "passage-title");
+        heading.append(textElement("span", passage.role, "badge"), " ",
+          sourceLink(passage.title, citation?.sourceUrl ?? passage.iri));
+        const { total, current, error } = passage.provenance.pins;
+        li.append(heading,
+          textElement("p", `${passage.page}, lines ${passage.lines}. Pins: ${current}/${total} current; ${error} errors.`, "muted"),
+          textElement("code", passage.iri, "node-iri"));
+        const use = document.createElement("button");
+        use.type = "button";
+        use.textContent = "Use this node";
+        use.addEventListener("click", () => {
+          operation.value = "traverse";
+          node.value = passage.iri;
+          updateOperation();
+          node.focus();
+        });
+        li.append(use);
+        const details = document.createElement("details");
+        details.append(textElement("summary", passage.text === null ? "Text omitted by the runtime budget" : "Passage text and proof"));
+        const text = textElement("pre", passage.text ?? "No text returned.");
+        text.tabIndex = 0;
+        const proof = textElement("pre", JSON.stringify(passage.provenance, null, 2));
+        proof.tabIndex = 0;
+        details.append(text, proof);
+        li.append(details);
+        list.append(li);
+      }
+      const citations = get<HTMLOListElement>(".citations");
+      citations.replaceChildren();
+      for (const citation of result.citations) {
+        const li = document.createElement("li");
+        li.append(sourceLink(citation.title ?? citation.iri, citation.sourceUrl));
+        citations.append(li);
+      }
+      get<HTMLElement>(".trace").textContent = JSON.stringify(result.trace, null, 2);
+      get<HTMLElement>(".raw").textContent = JSON.stringify(result, null, 2);
+      if (result.refusal) {
+        status.textContent = `Refused (${result.refusal.reason}): ${result.refusal.detail}`;
+      } else if ("matches" in result) {
+        status.textContent = `${result.matches.passages.length} matches, ${result.traversal.passages.length} context passages, ${result.impact.passages.length} dependents.`;
+      } else {
+        status.textContent = `${result.context.length} passages returned${result.truncated ? "; character budget reached" : ""}.`;
+      }
+      get<HTMLElement>(".output").hidden = false;
+    }
+
+    queryForm.addEventListener("submit", (event) => {
+      event.preventDefault();
+      if (running || generating) return;
+      const op = selected();
+      const argument = (op === "traverse" || op === "impact" ? node.value : question.value).trim();
+      if (!argument) return;
+      // Read controls before disabling them; each response belongs to this call.
+      let options: ReturnType<typeof readOptions> = {};
+      try { if (op !== "lookup") options = readOptions(op); }
+      catch (error) { status.textContent = `Invalid options: ${error instanceof Error ? error.message : String(error)}`; return; }
+      snapshot = undefined;
+      clearAnswer();
+      get<HTMLElement>(".output").hidden = true;
+      running = true;
+      updateActions();
+      status.textContent = `Running ${op}… The first run loads the graph and passages.`;
+      get<HTMLElement>(".evidence-status").textContent = "Waiting for the new result.";
+      get<HTMLElement>(".call").textContent = `const docs = await createRetriever({ manifest: ${JSON.stringify(root.dataset.manifest)}, embed: false });\nconst result = await docs.${op}(${JSON.stringify(argument)}${op === "lookup" ? "" : `, ${JSON.stringify(op === "retrieve" ? { ...options, mode: "lexical" } : options, null, 2)}`});`;
       void (async () => {
         try {
-          docs ??= createRetriever({ manifest, embed: false });
-          const result = await (await docs).lookup(question);
-          if (result.refusal) {
-            status.textContent = `No passage answers it (${result.refusal.reason}).`;
-            return;
+          docs ??= createRetriever({ manifest: root.dataset.manifest ?? "", embed: false });
+          const retriever = await docs;
+          const result = op === "lookup" ? await retriever.lookup(argument)
+            : op === "retrieve" ? await retriever.retrieve(argument, { ...options, mode: "lexical" })
+            : op === "traverse" ? await retriever.traverse(argument, options)
+            : await retriever.impact(argument, options);
+          if (disposed) return;
+          snapshot = { operation: op, result };
+          render(result);
+          if (!followup.value.trim() || followup.value === defaultFollowup) {
+            defaultFollowup = op === "lookup" || op === "retrieve" ? argument : "What does this result tell me about this node?";
+            followup.value = defaultFollowup;
           }
-          for (const [section, role] of sections) {
-            for (const p of result[section].passages) list.append(item(p, role));
-          }
-          status.textContent = `${result.matches.passages.length} matches, ${result.traversal.passages.length} reached outward, ${result.impact.passages.length} depend on them.`;
+          get<HTMLElement>(".evidence-status").textContent = result.refusal
+            ? "This result is a refusal. No model answer is generated."
+            : "The model answers from this result. You can ask a follow-up question without running retrieval again.";
         } catch (error) {
           docs = undefined;
-          status.textContent = `The prototype could not load this site's chunk artifact: ${error instanceof Error ? error.message : String(error)}`;
-        }
+          status.textContent = `Could not run ${op}: ${error instanceof Error ? error.message : String(error)}. Check that graph publish --collection site has run before serving the docs.`;
+          get<HTMLElement>(".evidence-status").textContent = "Run a function successfully before asking the model.";
+        } finally { running = false; updateActions(); }
       })();
     });
+
+    enable.addEventListener("click", () => {
+      if (loading || model) return;
+      if (!window.isSecureContext || !("gpu" in navigator)) {
+        modelStatus.textContent = "Local answers need WebGPU in a secure browser context (HTTPS or localhost). Graph functions still work.";
+        return;
+      }
+      loading = true;
+      loadController = new AbortController();
+      updateActions();
+      modelStatus.textContent = "Loading WebLLM and downloading the small model…";
+      void (async () => {
+        try {
+          const { loadLocalModel } = await import("./retrieve-prototype-model");
+          const controller = loadController;
+          if (!controller) return;
+          const loaded = await loadLocalModel((text) => { modelStatus.textContent = text; }, controller.signal);
+          if (disposed) { loaded.dispose(); return; }
+          model = loaded;
+          modelStatus.textContent = "Llama 3.2 1B is ready on your device. Ask about the returned values.";
+        } catch (error) {
+          modelStatus.textContent = error instanceof DOMException && error.name === "AbortError" ? "Model download cancelled. Graph functions still work." : `Could not load the model: ${error instanceof Error ? error.message : String(error)}. You can retry; graph functions still work.`;
+        } finally { loading = false; loadController = undefined; updateActions(); }
+      })();
+    });
+
+    unload.addEventListener("click", () => {
+      if (loading) { loadController?.abort(); return; }
+      model?.dispose();
+      model = undefined;
+      modelStatus.textContent = "Model unloaded. Downloaded assets may remain in your browser's cache.";
+      updateActions();
+    });
+    stop.addEventListener("click", () => {
+      stopped = true;
+      model?.stop();
+      modelStatus.textContent = "Stopping the answer…";
+    });
+
+    answerForm.addEventListener("submit", (event) => {
+      event.preventDefault();
+      if (!model || !snapshot || generating || running) return;
+      const activeModel = model;
+      let evidence: ReturnType<typeof buildAnswerInput>;
+      try { evidence = buildAnswerInput(snapshot.result, followup.value.trim(), snapshot.operation); }
+      catch (error) { get<HTMLElement>(".evidence-status").textContent = error instanceof Error ? error.message : String(error); return; }
+      clearAnswer();
+      generating = true;
+      stopped = false;
+      updateActions();
+      get<HTMLElement>(".prompt-panel").hidden = false;
+      get<HTMLElement>(".prompt").textContent = JSON.stringify(evidence.messages, null, 2);
+      get<HTMLElement>(".evidence-status").textContent = `${evidence.included} passages supplied; ${evidence.omitted} omitted from the model input. Text may be shortened; inspect the exact model input. The full result remains above.`;
+      get<HTMLElement>(".answer-output").hidden = false;
+      for (const source of evidence.sources) {
+        const li = document.createElement("li");
+        li.append(sourceLink(`[${source.id}] ${source.title}`, source.sourceUrl));
+        get<HTMLOListElement>(".answer-sources").append(li);
+      }
+      modelStatus.textContent = "Answering from the displayed result…";
+      void (async () => {
+        try {
+          const answer = await activeModel.answer(evidence, (text) => { get<HTMLElement>(".answer").textContent = text; });
+          modelStatus.textContent = stopped ? "Answer stopped. The text above may be incomplete." : answer ? "Answer complete. Check its claims against the returned passages." : "The model returned no answer.";
+        } catch (error) {
+          modelStatus.textContent = `Could not generate an answer: ${error instanceof Error ? error.message : String(error)}`;
+          activeModel.dispose();
+          model = undefined;
+        } finally { generating = false; updateActions(); }
+      })();
+    });
+    const dispose = () => { disposed = true; loadController?.abort(); model?.dispose(); };
+    window.addEventListener("pagehide", (event) => {
+      // A cached document resumes these closures and its worker on Back.
+      if (!event.persisted) dispose();
+    });
+    document.addEventListener("astro:before-swap", dispose, { once: true });
+    updateActions();
   }
 </script>
 
 <style>
   .retrieve-prototype {
+    --play-accent: #58a6ff;
+    --play-bg: #171717;
+    --play-text: #ffffff;
+    --play-muted: #d5dbe3;
     border: 1px solid var(--sl-color-gray-5);
     border-radius: 0.5rem;
     padding: 1rem;
     margin-top: 1.5rem;
-  }
-  .label {
-    font-weight: 600;
-    color: var(--sl-color-white);
-    margin: 0 0 0.75rem;
-  }
-  .row {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    margin-top: 0.25rem;
-  }
-  input {
-    flex: 1 1 12rem;
-    min-width: 0;
-    padding: 0.4rem 0.6rem;
-    border: 1px solid var(--sl-color-gray-3);
-    border-radius: 0.25rem;
-    background: var(--sl-color-black);
-    color: var(--sl-color-white);
-    font: inherit;
-  }
-  button {
-    padding: 0.4rem 1rem;
-    border: 0;
-    border-radius: 0.25rem;
-    background: var(--sl-color-text-accent);
-    color: var(--sl-color-black);
-    font: inherit;
-    font-weight: 600;
-    cursor: pointer;
-  }
-  input:focus-visible,
-  button:focus-visible {
-    outline: 2px solid var(--sl-color-text-accent);
-    outline-offset: 2px;
-  }
-  .status {
-    margin: 0.75rem 0 0;
-  }
-  .results {
-    list-style: none;
-    padding: 0;
-    margin: 0.5rem 0 0;
-  }
-  .results li {
-    border-top: 1px solid var(--sl-color-gray-5);
-    padding: 0.5rem 0;
-  }
-  .results p {
-    margin: 0;
+    color: var(--play-text);
+    background: var(--play-bg);
+    font-family: "JetBrains Mono", var(--sl-font-system-mono, monospace);
     overflow-wrap: anywhere;
   }
-  .meta {
-    font-size: var(--sl-text-sm);
+  :global([data-theme="light"]) .retrieve-prototype {
+    --play-accent: #0969da;
+    --play-bg: #ffffff;
+    --play-text: #1f2328;
+    --play-muted: #59636e;
   }
-  .badge {
-    display: inline-block;
-    padding: 0 0.4rem;
-    border: 1px solid var(--sl-color-gray-4);
-    border-radius: 0.25rem;
-    background: var(--sl-color-gray-6);
-    color: var(--sl-color-white);
-    font-size: var(--sl-text-xs);
+  h3 { font-size: 1.15rem; margin: 0; }
+  p { margin: 0.75rem 0; }
+  fieldset { min-width: 0; margin: 1rem 0 0; padding: 0.75rem; border: 1px solid var(--sl-color-gray-5); }
+  legend { padding: 0 0.35rem; font-weight: 600; }
+  .query-fields { padding: 0; border: 0; }
+  label { display: block; margin: 0.65rem 0 0.25rem; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr)); gap: 0 0.75rem; }
+  .row { display: flex; flex-wrap: wrap; gap: 0.5rem 1rem; align-items: center; margin-top: 0.75rem; }
+  input:not([type="checkbox"]), select, textarea {
+    display: block; width: 100%; min-width: 0; padding: 0.45rem 0.6rem;
+    border: 1px solid var(--play-muted); border-radius: 0.25rem;
+    background: var(--play-bg); color: var(--play-text); font: inherit;
   }
+  input::placeholder, textarea::placeholder { color: var(--play-muted); opacity: 1; }
+  .check { display: flex; align-items: center; gap: 0.5rem; }
+  button {
+    padding: 0.45rem 0.75rem; margin-top: 0.5rem;
+    border: 1px solid var(--play-accent); border-radius: 0.25rem;
+    background: var(--play-bg); color: var(--play-accent); font: inherit;
+    font-weight: 600; cursor: pointer;
+  }
+  button:disabled { opacity: 0.6; cursor: default; }
+  :is(input, select, textarea, button, summary, pre, .answer):focus-visible {
+    outline: 2px solid var(--play-accent); outline-offset: 3px;
+  }
+  details { margin-top: 0.75rem; }
+  summary { cursor: pointer; }
+  .muted { color: var(--play-muted); font-size: 0.875rem; }
+  .badge { display: inline-block; border: 1px solid var(--play-muted); padding: 0.05rem 0.3rem; font-size: 0.8rem; font-weight: 400; }
+  .results { list-style: none; padding: 0; margin: 0.75rem 0; }
+  .results :global(li) { border-top: 1px solid var(--play-muted); padding: 0.75rem 0; }
+  .results :global(p) { margin: 0.25rem 0; }
+  :global(.retrieve-prototype .node-iri) { display: block; font-size: 0.8rem; white-space: normal; background: transparent; }
+  :global(.retrieve-prototype a) { color: var(--play-accent); }
+  :global(.retrieve-prototype pre) {
+    max-height: 24rem; max-width: 100%; overflow: auto; white-space: pre-wrap;
+    overflow-wrap: anywhere; font: inherit; font-size: 0.85rem; padding: 0.75rem;
+    background: #171717; color: #ffffff; border: 1px solid var(--play-muted);
+  }
+  .answer { white-space: pre-wrap; padding: 0.75rem 0; }
+  [hidden] { display: none !important; }
 </style>

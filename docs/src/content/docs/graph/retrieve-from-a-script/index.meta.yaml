@@ -5,8 +5,14 @@ docs/src/content/docs/graph/retrieve-from-a-script/index.mdx:
     - m29
   provenance:
     - generated-by: Claude Opus 5.5
-      lines: 2-251
-      integrity: sha256-7f5057f6325aa570c52f29a6556aa16e2cb2ff03b65bba1d775cddcc72b7b4b3
+      lines: 2-244
+      integrity: sha256-ace182dcec962417237dc04f3838bdadb4f90bfe862f03f644435335cb69105b
+    - generated-by: GPT-6
+      lines: 246-289
+      integrity: sha256-3497df3379ccd7db576b1f850aa8cc6b6783662ac70572568d5d53f7fc6d6d26
+    - generated-by: Claude Opus 5.5
+      lines: 291
+      integrity: sha256-94df24df1645209a48b8bc64dcad6d9872252401128fa9132143ea98d3936c68
   owner:
     - "@hawkeyexl"
   created: 2026-10-21

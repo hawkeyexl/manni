@@ -8,7 +8,7 @@ audiences:
   - docs-engineers
 lifecycle: published
 action: develop
-last-updated: 2026-10-21
+last-updated: 2026-10-24
 ---
 
 import RetrievePrototype from "../../../../components/RetrievePrototype.astro";
@@ -255,9 +255,49 @@ A refusal comes back in the result. Two errors throw instead:
 
 ## Try it on this site
 
-The box below is a prototype on this site, built from
-`createRetriever().lookup()` in lexical mode. It is not part of manni, and the
-package does not export it. The first search downloads this site's artifact,
-several megabytes, so it takes a moment.
+The playground below runs the four `createRetriever` calls against this site's
+published docs. Start with `lookup` and a question such as "How do I rotate the
+encryption key?". Open a returned passage to read its text, pins and dates, then
+inspect the call example, citations, trace or complete JSON result.
+
+- **`lookup(question)`** returns matches, outward context and dependents in one
+  call, using the artifact's published settings.
+- **`retrieve(question, options)`** lets you set the language, scope, depth,
+  character budget, metadata filters and trust floor for a question.
+- **`traverse(node, options)`** follows edges from a node. Choose **Use this node**
+  on a passage to fill its IRI, then run the walk. You can limit the predicates
+  with a comma-separated list or reverse the direction.
+- **`impact(node, options)`** starts from a node and finds what depends on it.
+
+The controls for options are disabled for `lookup`, whose public method takes
+only a question. The [library API reference](/manni/graph/reference/library-api/#served-passages)
+lists the options each call accepts. The first run downloads this site's graph
+and passage artifact, several megabytes. Retrieval uses `embed: false`, so it
+runs by lexical match without downloading an embedding model.
+
+### Ask a local model about the result
+
+After a call returns text, you can enable the optional model and ask a question
+about that result. **Enable local answers** downloads the small
+`Llama-3.2-1B-Instruct-q4f32_1-MLC` model and its runtime; allow several hundred
+megabytes on first use. [WebLLM](https://github.com/mlc-ai/web-llm) runs it in a
+Web Worker using WebGPU, which needs a compatible browser on HTTPS or localhost.
+The question and result stay in your browser, with no API key or inference
+backend.
+
+The prompt preview shows the exact messages the model receives. It includes a
+bounded selection of the returned passages and their proof, and reports how
+many passages were omitted to fit the model. A refusal or a result without
+usable text cannot produce an answer. The answer's numbered sources refer to
+that selection, so you can compare it with the original passages.
+
+Answers are experimental and unchecked: a small model can misunderstand the
+passages or cite the wrong source. Read the returned text and proof when the
+answer matters. **Cancel download** stops a model download in progress.
+**Unload model** releases the model's worker and GPU memory; downloaded assets
+may remain in the browser's cache.
+
+This playground is docs-site code. The manni package exports the retrieval
+functions; the page supplies the UI and optional answer model.
 
 <RetrievePrototype />

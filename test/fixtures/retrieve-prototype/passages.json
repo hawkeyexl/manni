@@ -1,0 +1,7 @@
+{
+  "passages": [
+    { "iri": "https://docs.example/graph/key#rotate", "title": "Rotate the key", "page": "key/rotate.mdx", "lines": "4-7", "text": "Run manni key rotate to replace the encryption key.", "sourceUrl": "https://docs.example/key/rotate/#rotate" },
+    { "iri": "https://docs.example/graph/key#scope", "title": "Key scope", "page": "key/scope.mdx", "lines": "8-10", "text": "The family shares one encryption key.", "sourceUrl": "https://docs.example/key/scope/" },
+    { "iri": "https://docs.example/graph/cite#key", "title": "Citation secrets", "page": "cite/key.mdx", "lines": "2-3", "text": "Citation paths can be encrypted with the family key.", "sourceUrl": "https://docs.example/cite/key/" }
+  ]
+}
