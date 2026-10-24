@@ -301,6 +301,10 @@ export const FIX_SKILL = "manni:fix";
 /** The sentence the briefing and every hook block end on. */
 export const FIX_SENTENCE = `The ${FIX_SKILL} skill says how to repair each finding.`;
 
+/** The briefing's line when strategy is in play, which means a record exists. */
+const STRATEGY_SENTENCE =
+  "Pages name their readers and jobs in audiences:, personas: and journeys:. Write each page for the ones it names; manni strategy list prints every record.";
+
 /** The set-wide checks a stop runs whenever the tree changed, as the briefing names them. */
 const TREE_WIDE: ReadonlyArray<readonly [Domain, string]> = [
   // A source edit can drift any citation.
@@ -330,6 +334,8 @@ export function agentLines(report: StatusReport): string {
   return [
     `After you edit a file in ${names}, manni check runs on it, and errors come back to you at once.`,
     `Before you finish, manni check runs on every file you changed${plus}.${also} You get one repair pass.`,
+    // A Write of a new page has no Read, so the briefing is what reaches it.
+    ...(inPlay.has("strategy") ? [STRATEGY_SENTENCE] : []),
     FIX_SENTENCE,
   ].join("\n");
 }

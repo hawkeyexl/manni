@@ -8,8 +8,11 @@ docs/src/content/docs/graph/serve/index.mdx:
       lines: 2-23
       integrity: sha256-5ac615ebd07b47285615d80a8daa2f69ebfcdde46656884a26d190685fbe7d68
     - generated-by: Claude Opus 5.5
-      lines: 28-176
-      integrity: sha256-3d3ae5195ee8b96e013d30f769d5aa40a41f379769d25a53c30e7851f22e57c9
+      lines: 28-86
+      integrity: sha256-f9218d9b465e091a3b24ffb2bcb4762de4e98885a9d9c3a64da7569303beb55f
+    - generated-by: Claude Opus 5.5
+      lines: 91-177
+      integrity: sha256-48547d25e0ba49ef70421288ac6c387d30e1dfb71e5d773455bee0d93dca39d7
   owner:
     - "@hawkeyexl"
   created: 2026-10-21

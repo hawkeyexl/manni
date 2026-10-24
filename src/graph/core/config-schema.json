@@ -23,6 +23,10 @@
       "type": "string",
       "minLength": 1
     },
+    "authoring": {
+      "type": "boolean",
+      "description": "Whether a build carries author-facing content: the strategy records, typed, and every value a page's schemas mark x-manni-location: external. Default true. false leaves both out of every build, and --no-authoring does so for one run."
+    },
     "questionFiles": {
       "type": "array",
       "items": {

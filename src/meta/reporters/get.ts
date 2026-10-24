@@ -155,6 +155,10 @@ export function renderGet(
       const data = s.data === null ? c.red("(not one JSON object)") : JSON.stringify(s.data);
       lines.push(`${c.dim(`${r.file}:`)} statement at line ${String(s.line)} (${span}${scope}, ${s.status}) ${data}`);
     }
+    // The strategy records the page names: a reference each, never content.
+    for (const record of r.records ?? []) {
+      lines.push(`${c.dim(`${r.file}:`)} record ${record.type} ${record.id} ${record.file}`);
+    }
   }
   return lines.join("\n");
 }

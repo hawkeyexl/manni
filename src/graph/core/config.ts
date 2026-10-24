@@ -132,6 +132,13 @@ export interface GraphConfig {
   baseIri: string;
   /** Output path of the built Turtle file, relative to configDir. */
   out: string;
+  /**
+   * `graph.authoring` (proposal 0110): whether a build carries author-facing
+   * content, the strategy records and every value a page's schemas mark
+   * `x-manni-location: external`. Default `true`. `--no-authoring` sets it
+   * `false` for one run.
+   */
+  authoring: boolean;
   routes: RouteMapping[];
   /**
    * Golden-set files, as the config names them, relative to `configDir`
@@ -395,6 +402,7 @@ interface RawGraphConfig {
   model?: string;
   baseIri?: string;
   out?: string;
+  authoring?: boolean;
   routes?: RawRouteMapping[];
   questionFiles?: string[];
   build?: { derive?: DeriveSource[] };
@@ -597,6 +605,7 @@ export function parseConfigSection(
     providers: file.providers ?? {},
     baseIri: resolveBaseIri(r.baseIri),
     out: r.out ?? "graph/graph.ttl",
+    authoring: r.authoring ?? true,
     routes: (r.routes ?? []).map((m) => ({
       basePath: normalizeBasePath(m.basePath ?? "/"),
       root: m.root

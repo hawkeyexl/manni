@@ -32,6 +32,7 @@ import { byCodeUnit } from "../core/sort.js";
 import type { WithholdReason } from "../runtime/chunks.js";
 import { parseChunksManifest, type LookupResult, type PassageBundle, type WhereCondition } from "../runtime/retrieve.js";
 import { GraphError } from "../types.js";
+import { NO_AUTHORING_NEEDS_PUBLISH } from "../core/graph-output.js";
 import { CHUNKS_MANIFEST } from "./chunks.js";
 import { runPublish, type PublishOptions } from "./publish.js";
 import { lookupIn, openArtifact, retrieveIn, traverseIn, type Artifact, type ArtifactOptions } from "./retrieve.js";
@@ -42,6 +43,12 @@ export interface ServeOptions extends ArtifactOptions {
   withhold?: WithholdReason[];
   /** `--publish`: publish a stale artifact behind the handshake, and again after the checkout changes. */
   publish?: boolean;
+  /**
+   * `--no-authoring` passes `false` (proposal 0110): what `--publish` builds
+   * leaves author-facing content out. It overrides `graph.authoring`, and
+   * needs `publish`.
+   */
+  authoring?: boolean;
 }
 
 /** The SDK pieces serve uses, as one injectable seam. */
@@ -467,6 +474,7 @@ function publisher(opts: ServeOptions, seams: ServeSeams): Publisher {
       await publish({
         ...source,
         out: index,
+        ...(opts.authoring === undefined ? {} : { authoring: opts.authoring }),
         say: (kind, message) => {
           if (kind === "warning") warn(message);
           else notice(message);
@@ -537,6 +545,7 @@ function publisher(opts: ServeOptions, seams: ServeSeams): Publisher {
  * the handshake.
  */
 export async function runServe(opts: ServeOptions, seams: ServeSeams = {}): Promise<number> {
+  if (opts.authoring === false && opts.publish !== true) throw new GraphError(NO_AUTHORING_NEEDS_PUBLISH);
   if (opts.publish === true && opts.graph !== undefined) {
     throw new GraphError(
       "--publish writes graph.ttl into the index directory, so it cannot be combined with --graph. Use --index to choose the directory.",

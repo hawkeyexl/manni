@@ -7,6 +7,7 @@ import { buildProgram } from "../src/cli.js";
 import { EDIT_TOOLS } from "../src/family/commands/check.js";
 import { FIX_SKILL } from "../src/family/commands/status.js";
 import { supportedExtensions } from "../src/meta/extractors/index.js";
+import { RECORD_FIELDS } from "../src/shared/reference-fields.js";
 
 const ROOT = resolve(import.meta.dirname, "..");
 const LAUNCHER = "${CLAUDE_PLUGIN_ROOT}/hooks/manni.mjs";
@@ -180,6 +181,32 @@ describe("manni plugin", () => {
     const { EXTENSIONS } = (await import(pathToFileURL(script).href)) as { EXTENSIONS: string[] };
     const norm = (list: readonly string[]) => [...new Set(list.map((e) => e.toLowerCase()))].sort();
     expect(norm(EXTENSIONS)).toEqual(norm(supportedExtensions()));
+  });
+
+  // The Read hook's key fields: what the page is, whether it is current, and
+  // whom it serves. The plugin cannot import manni, so it pins them, and a
+  // vocabulary version that adds a field fails here until the hook follows.
+  it("pins the Read hook's key fields to manni:core, manni:lifecycle and the record fields", async () => {
+    const newest = (vocabulary: string): string[] => {
+      const dir = join(ROOT, "src/meta/schemas", vocabulary);
+      const version = (f: string): number[] => f.replace(/\.json$/, "").split(".").map(Number);
+      const files = readdirSync(dir)
+        .filter((f) => /^\d+\.\d+\.\d+\.json$/.test(f))
+        .sort((a, b) => {
+          const [x, y] = [version(a), version(b)];
+          return (x[0] ?? 0) - (y[0] ?? 0) || (x[1] ?? 0) - (y[1] ?? 0) || (x[2] ?? 0) - (y[2] ?? 0);
+        });
+      const schema = JSON.parse(readFileSync(join(dir, files.at(-1) ?? ""), "utf8")) as {
+        properties: Record<string, unknown>;
+      };
+      return Object.keys(schema.properties);
+    };
+    const script = join(pluginDir, "hooks/page-metadata.mjs");
+    const { KEY_FIELDS, LIMIT } = (await import(pathToFileURL(script).href)) as { KEY_FIELDS: string[]; LIMIT: number };
+    const expected = new Set([...newest("core"), ...newest("lifecycle"), ...Object.keys(RECORD_FIELDS)]);
+    expect(new Set(KEY_FIELDS)).toEqual(expected);
+    expect(KEY_FIELDS).toHaveLength(expected.size);
+    expect(LIMIT).toBe(10_000);
   });
 
   // The graph server reads the project and keeps a published graph in the

@@ -368,6 +368,36 @@ edit that clears it. It also has the full run of the set above.
   </Card>
 </CardGrid>
 
+## The strategy in the graph
+
+[`manni graph build`](/manni/graph/) types every record in its build. An
+audience becomes a `schema:Audience`, a persona a `schema:PeopleAudience`,
+and a journey a `graph:Journey`. Each node sits at
+`{baseIri}strategy/{type}/{id}`. A page's `journeys:` become
+`dcterms:isPartOf` edges, and its `audiences:` and `personas:` become
+`schema:audience` edges. So the graph answers which pages serve a journey:
+
+```console
+$ manni graph build -o .manni/graph/internal/graph.ttl
+Wrote .manni/graph/internal/graph.ttl (344 docs, 23395 triples, 560 concepts (50 from the termbase), 82 strategy records)
+
+$ manni graph traverse -g .manni/graph/internal/graph.ttl https://hawkeyexl.github.io/manni/id/strategy/journey/s17 --reverse --predicates dcterms:isPartOf
+https://hawkeyexl.github.io/manni/id/strategy/journey/s17 — Hold the pages to the strategy they were written for
+  https://hawkeyexl.github.io/manni/id/doc/docs/src/content/docs/strategy/index.mdx — manni strategy
+  https://hawkeyexl.github.io/manni/id/doc/docs/src/content/docs/strategy/reference/cli.mdx — CLI reference
+  https://hawkeyexl.github.io/manni/id/doc/docs/src/content/docs/strategy/reference/rules.mdx — Check rules
+
+4 nodes, 3 hops, 0 excluded
+```
+
+An edge needs the record it names in the build. A value no record declares
+derives nothing, and `check` reports it here as `undefined-reference`.
+
+Records are author-facing, so `graph build --no-authoring` leaves them out.
+This repository's site publishes only its `site` collection, which holds no
+record. [How manni graph works](/manni/graph/get-started/how-graph-works/#the-content-strategy)
+lists every triple a record derives.
+
 ## With the other domains
 
 The domain is in play once a collection holds a record. `manni status` then
@@ -376,3 +406,9 @@ shows the strategy row, with a count of each type. `manni check` runs
 [Gate every check](/manni/family/check/) covers the family verbs, and
 the [family CLI reference](/manni/family/reference/cli/) has the in-play
 rule for each domain.
+
+`manni meta get` names the records a page names, one
+[`record` line](/manni/meta/reference/cli/#output) each, with the record's type, id
+and file. The Claude Code plugin hands an agent the same references when it
+reads the page, as [Keep an agent's docs green](/manni/family/claude-code/)
+shows.

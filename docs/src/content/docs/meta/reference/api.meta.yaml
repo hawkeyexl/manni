@@ -50,7 +50,7 @@ docs/src/content/docs/meta/reference/api.mdx:
       integrity: sha256-a8c607bcf59bdb45516c8100c1d055d5a406aa5175529777b3e093e23371faeb
     - generated-by: Claude Opus 5.5
       lines: 39-40
-      integrity: sha256-86c62a2f3c0b900e24127d016f70d47066a1298a6de0b4d38bdbe276d9f18aa1
+      integrity: sha256-2ab4a4dc99ceccaeb9cff8527748e64e1d712a98225dc119092b9c3ea5480c4e
     - generated-by: Claude Fable 5.1
       lines: 41
       integrity: sha256-00b675a26b9656f63f6bf9402728b7882ae4bc6b5c8445811aeda9785aff00b0

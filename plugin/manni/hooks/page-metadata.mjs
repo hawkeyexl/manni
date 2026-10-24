@@ -8,6 +8,12 @@
 // fields. SessionStart after a compaction: forgets what this session was
 // given, so the next Read of each page carries its metadata again.
 //
+// A page whose fields name strategy records, by `get`'s `records`, gets more:
+// its key fields first, one `<type> <id> <file>` reference per record, and a
+// reply kept under Claude Code's limit by leaving out whole non-key fields,
+// largest first, with a closing line naming them. Every other page gets the
+// stored fields in page order, as they are.
+//
 // Every other case is silent. It never blocks a Read and never writes to
 // stderr, and it exits 0 whatever happens.
 //
@@ -23,6 +29,26 @@ export const EXTENSIONS = [
   ".md", ".markdown", ".mdx", ".adoc", ".asciidoc", ".rst",
   ".xml", ".dita", ".ditamap", ".html", ".htm",
 ];
+
+/**
+ * The fields a reply for a page that names a record never leaves out, and
+ * lists first. Pinned by test/plugin.test.ts to the union of three sources,
+ * since the plugin cannot import manni:
+ * - the newest manni:core vocabulary's properties: what the page is;
+ * - the newest manni:lifecycle vocabulary's properties: whether it is current;
+ * - RECORD_FIELDS in src/shared/reference-fields.ts: whom it serves.
+ */
+export const KEY_FIELDS = [
+  "title", "description", "id", "type", "keywords", "language",
+  "lifecycle", "replaced-by", "supersedes", "remove-by",
+  "audiences", "personas", "journeys", "audience",
+];
+
+/** Claude Code's cap on one additionalContext string, as the reply's `.length`. */
+export const LIMIT = 10_000;
+
+const REFERENCES_LEAD =
+  "The page names these records. Read a record's file for its details, or run manni strategy get <id>, which also lists the pages that name it:";
 
 /** Whether meta reads a file with this path's extension. */
 export function isDocument(path) {
@@ -105,21 +131,69 @@ async function onRead(envelope) {
   if (typeof file !== "string" || !Array.isArray(collections) || collections.length === 0) return;
   if (typeof values !== "object" || values === null || Object.keys(values).length === 0) return;
 
-  const json = JSON.stringify(values);
-  const hash = sha(json);
+  const first = `Metadata for ${file}, from the page and its sidecars:`;
+  const changed = `Metadata for ${file} changed since it was last given here. This replaces it:`;
+  // A page that names no record gets 0103's reply: every field, in page order.
+  const records = referencesOf(entry.records);
+  const body = records.length === 0 ? JSON.stringify(values) : packed(file, values, records, changed);
+  const hash = sha(body);
   // Claude Code sets `agent_id` on a hook fired inside a subagent, which has a
   // context of its own. The outermost session carries none, so it is "main".
   const marker = join(sessionDir(envelope.session_id), `${sha(envelope.agent_id ?? "main")}-${sha(abs)}`);
   const stored = readMarker(marker);
   if (stored === hash) return;
   writeMarker(marker, hash);
-  const lead =
-    stored === undefined
-      ? `Metadata for ${file}, from the page and its sidecars:`
-      : `Metadata for ${file} changed since it was last given here. This replaces it:`;
+  const lead = stored === undefined ? first : changed;
   process.stdout.write(
-    JSON.stringify({ hookSpecificOutput: { hookEventName: "PostToolUse", additionalContext: `${lead}\n${json}` } }),
+    JSON.stringify({ hookSpecificOutput: { hookEventName: "PostToolUse", additionalContext: `${lead}\n${body}` } }),
   );
+}
+
+/** The `<type> <id> <file>` line of each well-formed reference `get` gave. */
+function referencesOf(records) {
+  if (!Array.isArray(records)) return [];
+  return records
+    .filter((r) => [r?.type, r?.id, r?.file].every((part) => typeof part === "string"))
+    .map((r) => `${r.type} ${r.id} ${r.file}`);
+}
+
+/** `a`, `a and b`, `a, b and c`. */
+function prose(items) {
+  return items.length <= 1 ? (items[0] ?? "") : `${items.slice(0, -1).join(", ")} and ${items.at(-1)}`;
+}
+
+/**
+ * The reply after its lead, for a page that names records: the page JSON with
+ * key fields first, the references, and a closing line when a field was left
+ * out. While the reply under the longer lead passes LIMIT, the largest
+ * remaining non-key field leaves, a tie going to the later field. A key field
+ * and a reference never leave, and a value is never cut.
+ */
+function packed(file, values, records, longestLead) {
+  const fields = Object.keys(values);
+  const order = [...fields.filter((f) => KEY_FIELDS.includes(f)), ...fields.filter((f) => !KEY_FIELDS.includes(f))];
+  const left = [];
+  const build = () => {
+    const kept = Object.fromEntries(order.filter((f) => !left.includes(f)).map((f) => [f, values[f]]));
+    const lines = [JSON.stringify(kept), REFERENCES_LEAD, ...records];
+    if (left.length > 0) {
+      const out = fields.filter((f) => left.includes(f));
+      lines.push(
+        `This leaves out ${prose(out)} to stay under Claude Code's limit of 10,000 characters. manni meta get ${out.join(",")} --no-derived ${file} prints them.`,
+      );
+    }
+    return lines.join("\n");
+  };
+  let body = build();
+  while (`${longestLead}\n${body}`.length > LIMIT) {
+    const size = (f) => JSON.stringify({ [f]: values[f] }).length;
+    const candidates = order.filter((f) => !KEY_FIELDS.includes(f) && !left.includes(f));
+    if (candidates.length === 0) break;
+    // reduce keeps the later field on a tie.
+    left.push(candidates.reduce((a, b) => (size(b) >= size(a) ? b : a)));
+    body = build();
+  }
+  return body;
 }
 
 async function main() {
