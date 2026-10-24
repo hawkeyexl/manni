@@ -103,7 +103,8 @@ export async function runPublish(opts: PublishOptions = {}): Promise<PublishRepo
         format,
         ...(out === undefined ? {} : { out }),
         ...(format === "chunks" && opts.evals !== undefined ? { evals: opts.evals } : {}),
-        ...(authoring ? {} : { authoring }),
+        // The build already left author-facing content out of the graph the others reserialize.
+        ...(!authoring && (format === "chunks" || format === "llms") ? { authoring } : {}),
       });
       return { detail: detail(r), files: r.files, warnings: r.warnings, ...(r.notices === undefined ? {} : { notices: r.notices }) };
     });

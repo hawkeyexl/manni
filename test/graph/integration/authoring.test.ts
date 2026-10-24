@@ -1,7 +1,7 @@
 /**
  * `--no-authoring` through the built CLI (proposal 0110): what a run without
- * author-facing content writes and prints, the two usage errors, and the
- * warning a configured evals report gets.
+ * author-facing content writes and prints, its usage errors, and the warning
+ * a configured evals report gets.
  *
  * The fixture is committed in a temporary repository, so cite resolves the
  * page's pin and the chunk rows carry it by default.
@@ -152,6 +152,17 @@ describe("usage errors and the evals warning", () => {
     const r = graph(["export", "chunks", "--no-authoring", "--evals", "evals.json"], dir);
     expect(r.status).toBe(2);
     expect(r.stderr).toBe(EVALS);
+  });
+
+  it("refuses --no-authoring on an export target that writes the graph as built, exit 2", () => {
+    for (const target of ["jsonld", "iirds", "search", "questions"]) {
+      const r = graph(["export", target, "--no-authoring"], dir);
+      expect(r.status).toBe(2);
+      expect(r.stdout).toBe("");
+      expect(r.stderr).toBe(
+        "manni: --no-authoring applies only to graph export chunks and llms; the others write the graph as built, so build it with --no-authoring.\n",
+      );
+    }
   });
 
   it("refuses serve --no-authoring without --publish, exit 2", () => {

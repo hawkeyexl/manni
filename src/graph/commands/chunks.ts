@@ -146,6 +146,7 @@ export async function exportChunks(opts: ChunksOptions): Promise<ChunksResult> {
   );
   // Without author-facing content (proposal 0110), a strategy record is no
   // passage, and a page keeps only what it carries for its readers.
+  // Unset means the default, which is on.
   const authoring = opts.authoring !== false;
   if (!authoring) {
     const kept = models.flatMap((m, i) => {

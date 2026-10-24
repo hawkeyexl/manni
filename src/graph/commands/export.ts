@@ -10,7 +10,7 @@ import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { GraphError } from "../types.js";
 import { loadRunConfig } from "../core/config.js";
-import { EVALS_ARE_AUTHOR_FACING } from "../core/graph-output.js";
+import { EVALS_ARE_AUTHOR_FACING, NO_AUTHORING_EXPORT } from "../core/graph-output.js";
 import { documentBase } from "../core/discover.js";
 import { emitJsonLd } from "../core/emit-jsonld.js";
 import { emitRdfXml } from "../core/emit-rdfxml.js";
@@ -277,6 +277,10 @@ export async function runExport(opts: ExportOptions): Promise<ExportResult> {
   }
   if (opts.evals !== undefined && opts.format !== "chunks") {
     throw new GraphError("--evals applies only to graph export chunks.");
+  }
+  // Only chunks and llms read the pages, so only they can leave author-facing content out.
+  if (opts.authoring === false && opts.format !== "chunks" && opts.format !== "llms") {
+    throw new GraphError(NO_AUTHORING_EXPORT);
   }
 
   const config = loadRunConfig(

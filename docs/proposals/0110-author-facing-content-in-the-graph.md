@@ -134,14 +134,18 @@ Its passages carry no pins and no eval verdicts.
    verdicts, which are author-facing, and this run leaves author-facing
    content out." A configured `graph.export.chunks.evals` warns once and
    exits 0. `serve --no-authoring` without `--publish` exits 2: "--no-authoring
-   decides what --publish builds, so it needs --publish."
+   decides what --publish builds, so it needs --publish." `export
+   --no-authoring` exits 2 on a target other than `chunks` and `llms`. It
+   says the flag "applies only to graph export chunks and llms", and to
+   build the graph with it for the others.
 
 ## Known limits
 
 - **`export` reserializes the graph it is given.** On `export`, the flag
   shapes what `chunks` and `llms` read from the pages. `jsonld`, `iirds`,
-  `search` and `questions` write the graph as it was built. A reader-only
-  graph comes from a `--no-authoring` build or publish.
+  `search` and `questions` write the graph as it was built, so they refuse
+  the flag with exit 2. A reader-only graph comes from a `--no-authoring`
+  build or publish.
 - **Passage text is the page's text.** An inline `meta` statement sits in the
   body, so its comment stays in a passage's text, while its fields leave the
   row.

@@ -117,6 +117,10 @@ export const EVALS_ARE_AUTHOR_FACING =
 export const CONFIGURED_EVALS_LEFT_OUT =
   "graph.export.chunks.evals is set, but eval verdicts are author-facing, so this run leaves them out.";
 
+/** `export --no-authoring` on a target that reserializes the built graph: exit 2. */
+export const NO_AUTHORING_EXPORT =
+  "--no-authoring applies only to graph export chunks and llms; the others write the graph as built, so build it with --no-authoring.";
+
 /** `serve --no-authoring` without `--publish`: exit 2. */
 export const NO_AUTHORING_NEEDS_PUBLISH = "--no-authoring decides what --publish builds, so it needs --publish.";
 

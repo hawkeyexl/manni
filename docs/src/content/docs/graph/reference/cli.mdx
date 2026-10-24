@@ -1526,14 +1526,14 @@ An unknown target is **exit 2**, with the allowed set named.
 | `-g, --graph` | `<path>` | config `out` | The built Turtle file to read. |
 | `-o, --out` | `<path>` | the graph path with the target's extension; `questions.jsonl` beside the graph for `questions`; `llms.txt` beside the graph for `llms`; the graph's directory for `search` and `chunks` | Where to write. For `search` and `chunks` it names a directory, because each writes more than one file. |
 | `--evals` | `<path>` | config `export.chunks.evals` | A docevals JSON report, as `manni docevals run -f json` writes it. It fills each chunk record's `evals`. Any target but `chunks` refuses it with **exit 2**. |
-| `--no-authoring` | n/a | config `authoring`, else on | Leave author-facing content out of what `chunks` and `llms` read from the pages. |
+| `--no-authoring` | n/a | config `authoring`, else on | Leave author-facing content out of what `chunks` and `llms` read from the pages. Any other target refuses it with **exit 2**. |
 
 `chunks` and `llms` read the pages as well as the graph, so `--no-authoring`
 shapes them. They skip strategy records and drop every value marked
 `x-manni-location: external`. The chunks carry no pins and no eval verdicts.
 `jsonld`, `iirds`, `search` and `questions` reserialize the graph as it was
-built. A reader-only graph of those comes from a `--no-authoring` build or
-publish.
+built, so they refuse the flag. A reader-only graph of those comes from a
+`--no-authoring` build or publish.
 
 ### The question set
 
@@ -1730,6 +1730,7 @@ the export. The rest leave the exit code at 0.
 | `git cannot read this directory (<git's reason>), so records carry no commit and no derived dates.` | notice, said once |
 | `2 pages differ from 26dad159, so their records describe uncommitted text.` | warning |
 | `--evals applies only to graph export chunks.` | **exit 2** |
+| `--no-authoring applies only to graph export chunks and llms; the others write the graph as built, so build it with --no-authoring.` | **exit 2** |
 | `--evals attaches eval verdicts, which are author-facing, and this run leaves author-facing content out.` | **exit 2** |
 | `graph.export.chunks.evals is set, but eval verdicts are author-facing, so this run leaves them out.` | warning, said once |
 
