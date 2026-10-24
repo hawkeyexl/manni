@@ -121,14 +121,19 @@ describe("manni test tasks, against a fake Claude Code", () => {
   let repo: string;
   let bin: string;
 
-  /** The fake: writes its argv beside the run, then the stream with `__RUN__` as its temp directory. */
+  /**
+   * The fake: writes its argv beside the run, then the stream with `__RUN__` as
+   * its temp directory. The streams were recorded on Windows, so off Windows
+   * their `\\` separators become `/`, as `recordedStream` does for the unit tests.
+   */
   const FAKE = [
     'const { readFileSync, writeFileSync } = require("node:fs");',
     'const { dirname, join } = require("node:path");',
     "const root = dirname(process.cwd());",
     'writeFileSync(join(process.env.FAKE_CLAUDE_OUT, "argv.json"), JSON.stringify(process.argv.slice(2)));',
     'const raw = readFileSync(process.env.FAKE_CLAUDE_STREAM, "utf8");',
-    'process.stdout.write(raw.replaceAll("__RUN__", JSON.stringify(root).slice(1, -1)));',
+    'const placed = raw.replaceAll("__RUN__", JSON.stringify(root).slice(1, -1));',
+    String.raw`process.stdout.write(process.platform === "win32" ? placed : placed.replaceAll("\\\\", "/"));`,
     "process.exitCode = Number(process.env.FAKE_CLAUDE_EXIT ?? 0);",
   ].join("\n");
 

@@ -11,7 +11,7 @@
  */
 import { spawn } from "node:child_process";
 import { readFileSync, statSync } from "node:fs";
-import { dirname, extname, isAbsolute, join, relative, resolve, sep } from "node:path";
+import { isAbsolute, join, relative, sep, win32 } from "node:path";
 import type { ExecResult } from "@hawkeyexl/inference";
 import { outputTail, realExec } from "../../shared/exec.js";
 import { TestError } from "../errors.js";
@@ -221,14 +221,14 @@ export function claudeLaunchFor(
   for (const entry of host.path.split(";")) {
     const dir = entry.replace(/^"(.*)"$/, "$1");
     if (dir === "") continue;
-    const exe = join(dir, "claude.exe");
+    const exe = win32.join(dir, "claude.exe");
     if (host.isFile(exe)) return { command: exe, args, viaShim: false };
-    const shim = join(dir, "claude.cmd");
+    const shim = win32.join(dir, "claude.cmd");
     if (!host.isFile(shim)) continue;
     const target = /"%~?dp0%?\\([^"]+)"/.exec(host.read(shim))?.[1];
-    const abs = target === undefined ? undefined : resolve(dirname(shim), target);
+    const abs = target === undefined ? undefined : win32.resolve(win32.dirname(shim), target);
     if (abs !== undefined && host.isFile(abs)) {
-      const ext = extname(abs).toLowerCase();
+      const ext = win32.extname(abs).toLowerCase();
       if (ext === ".js" || ext === ".cjs" || ext === ".mjs") {
         return { command: process.execPath, args: [abs, ...args], viaShim: false };
       }

@@ -4,7 +4,7 @@
  * the progress lines, and how a run's end is read from its `result` event.
  * Nothing here starts a real `claude`.
  */
-import { join } from "node:path";
+import { join, win32 } from "node:path";
 import { describe, expect, it } from "vitest";
 import type { ExecResult } from "@hawkeyexl/inference";
 import {
@@ -107,14 +107,14 @@ describe("claudeLaunchFor", () => {
   });
 
   it("runs a claude.exe on PATH directly", () => {
-    expect(claudeLaunchFor(["-p"], host({ [join("C:\\tools", "claude.exe")]: "" })).command).toBe(
-      join("C:\\tools", "claude.exe"),
+    expect(claudeLaunchFor(["-p"], host({ [win32.join("C:\\tools", "claude.exe")]: "" })).command).toBe(
+      win32.join("C:\\tools", "claude.exe"),
     );
   });
 
   it("runs the script an npm shim points at with node", () => {
-    const shim = join("C:\\npm", "claude.cmd");
-    const script = join("C:\\npm", "node_modules", "@anthropic-ai", "claude-code", "cli.js");
+    const shim = win32.join("C:\\npm", "claude.cmd");
+    const script = win32.join("C:\\npm", "node_modules", "@anthropic-ai", "claude-code", "cli.js");
     const launch = claudeLaunchFor(
       ["-p"],
       host({ [shim]: '"%_prog%"  "%dp0%\\node_modules\\@anthropic-ai\\claude-code\\cli.js" %*', [script]: "" }),
@@ -123,7 +123,7 @@ describe("claudeLaunchFor", () => {
   });
 
   it("falls back to the shim when it names nothing runnable", () => {
-    expect(claudeLaunchFor(["-p"], host({ [join("C:\\npm", "claude.cmd")]: "@echo off" })).viaShim).toBe(true);
+    expect(claudeLaunchFor(["-p"], host({ [win32.join("C:\\npm", "claude.cmd")]: "@echo off" })).viaShim).toBe(true);
   });
 });
 
