@@ -324,9 +324,9 @@ docs/src/content/docs/cite/set-up/require-citations.mdx:
         integrity: sha256-245bd41e0f01cd238c3f0385b0ce31b029d4bd4ac49fdabdc5beb5037f41e96d
       source:
         file: src/shared/pin.ts
-        lines: 289-293
+        lines: 293-297
         integrity: sha256-de5bee244e013b069ce1271b23257819a4f54b3732f152a598173d5f5231de84
-        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
+        commit-sha: 34611bc58c4898d3b0694d1e29e054e8ac96b327
     - id: range-refused-by-add-src
       claim:
         lines: 275-276

@@ -110,7 +110,7 @@ export function claimEnd(
   // `anchor-invalid`, and neither anchor is judged.
   if (claim.pointer !== undefined) {
     return marker === undefined
-      ? pointerClaimEnd(page, entry)
+      ? pointerClaimEnd(page, entry, claim.pointer)
       : { pointer: claim.pointer, status: "skipped" };
   }
 

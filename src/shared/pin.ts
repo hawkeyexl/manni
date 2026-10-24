@@ -94,9 +94,13 @@ export function hashLines(joined: string, key?: string): string {
  * A value as RFC 8785 serializes it, for the values a metadata block holds:
  * `JSON.stringify` with every object's keys sorted by UTF-16 code unit. Built
  * by hand, because a JS object puts integer-like keys first whatever order
- * they are inserted in. A string keeps its quotes.
+ * they are inserted in. A string keeps its quotes. `JSON.stringify` writes a
+ * non-finite number (`Infinity`, `NaN`) as `null`, so such a value pins the
+ * same as `null`. An absent value (`undefined`) throws: it must not pin like
+ * `null`, and `JSON.stringify` would return no string at all.
  */
 export function canonicalValue(value: unknown): string {
+  if (value === undefined) throw new Error("Cannot pin an absent value.");
   if (Array.isArray(value)) return `[${value.map(canonicalValue).join(",")}]`;
   if (typeof value === "object" && value !== null && !(value instanceof Date)) {
     const record = value as Record<string, unknown>;

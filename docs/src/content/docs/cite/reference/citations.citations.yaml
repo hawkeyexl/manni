@@ -109,17 +109,17 @@ docs/src/content/docs/cite/reference/citations.mdx:
         integrity: sha256-f0b31b584b893618fc7ebeef0a6cdbc4ff1bda9b7b0005f45ebb9bcb76f66ee8
       source:
         file: src/shared/pin.ts
-        lines: 255-263
+        lines: 259-267
         integrity: sha256-c40857342d353fe49971e8f755271c14ab4e0f69f46722e95c5d1668d4dfaaaa
-        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
+        commit-sha: 34611bc58c4898d3b0694d1e29e054e8ac96b327
     - id: body-lines-to-file
       claim:
         integrity: sha256-f0b31b584b893618fc7ebeef0a6cdbc4ff1bda9b7b0005f45ebb9bcb76f66ee8
       source:
         file: src/shared/pin.ts
-        lines: 265-268
+        lines: 269-272
         integrity: sha256-dd48c4d277d143abe45b26473bb2511cdf43e6213eca52789065f6533fc38fa5
-        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
+        commit-sha: 34611bc58c4898d3b0694d1e29e054e8ac96b327
     - id: reports-file-lines
       claim:
         integrity: sha256-042fe8246a96269833bd4fcf914b5770ca2bc434a7025620f3bef7dde712f554
@@ -295,9 +295,9 @@ docs/src/content/docs/cite/reference/citations.mdx:
         integrity: sha256-c097ebb5077971b4309eac7fa9b3d83cb2f1f401647f2060589ce5379a1681c8
       source:
         file: src/shared/pin.ts
-        lines: 120-124
+        lines: 124-128
         integrity: sha256-2f18c20277529995f3d4ce40e2b7d99c58e4631743d2b87d59b990d5a2bbbb59
-        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
+        commit-sha: 34611bc58c4898d3b0694d1e29e054e8ac96b327
     - id: pin-prefix-mismatch
       claim:
         integrity: sha256-c097ebb5077971b4309eac7fa9b3d83cb2f1f401647f2060589ce5379a1681c8
@@ -591,9 +591,9 @@ docs/src/content/docs/cite/reference/citations.mdx:
         integrity: sha256-77e836b16c8ad45402763ef55d40762588faa728bcf75e8d2b26bc68d1eec167
       source:
         file: src/cite/commands/add.ts
-        lines: 316-320
+        lines: 315-319
         integrity: sha256-9d81911c49b21d3f8001946237fa953738c8649a3a600db39c73d98de0c02149
-        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
+        commit-sha: 34611bc58c4898d3b0694d1e29e054e8ac96b327
     - id: rule-severity-off
       claim:
         integrity: sha256-c60bdd0074109f77f6c686d5d6b7d89dbe1c4a9095782859e2ef7fb535ff07f3
@@ -791,33 +791,33 @@ docs/src/content/docs/cite/reference/citations.mdx:
         integrity: sha256-3c10a1c91fb4d3b5bee120d2bb2d33286768b463c78185bbfadadd7c211e0480
       source:
         file: src/shared/pin.ts
-        lines: 172-187
+        lines: 176-191
         integrity: sha256-681fd9e7ca54fad5671e643db74b619d50cf64d71d18d63eeb1c87db82af8e8e
-        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
+        commit-sha: 34611bc58c4898d3b0694d1e29e054e8ac96b327
     - id: move-window-2000
       claim:
         integrity: sha256-3c10a1c91fb4d3b5bee120d2bb2d33286768b463c78185bbfadadd7c211e0480
       source:
         file: src/shared/pin.ts
-        lines: 126-127
+        lines: 130-131
         integrity: sha256-faff3d04b02bfd1d921fcd8302939c974841a08e190c54162c326acb5f41241a
-        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
+        commit-sha: 34611bc58c4898d3b0694d1e29e054e8ac96b327
     - id: move-search-band
       claim:
         integrity: sha256-3c10a1c91fb4d3b5bee120d2bb2d33286768b463c78185bbfadadd7c211e0480
       source:
         file: src/shared/pin.ts
-        lines: 189-199
+        lines: 193-203
         integrity: sha256-e753460a97a7cebe2b938ec0b34cd636542c825bd77f2bca9cc25d0d4534b269
-        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
+        commit-sha: 34611bc58c4898d3b0694d1e29e054e8ac96b327
     - id: move-budget-64mib
       claim:
         integrity: sha256-3c10a1c91fb4d3b5bee120d2bb2d33286768b463c78185bbfadadd7c211e0480
       source:
         file: src/shared/pin.ts
-        lines: 128-129
+        lines: 132-133
         integrity: sha256-0b82d3fd1e62563ec95025bca08f2617f7684570b78cd1edeb934b6978b12bc4
-        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
+        commit-sha: 34611bc58c4898d3b0694d1e29e054e8ac96b327
     - id: move-budget-truncated
       claim:
         integrity: sha256-3c10a1c91fb4d3b5bee120d2bb2d33286768b463c78185bbfadadd7c211e0480
@@ -946,9 +946,9 @@ docs/src/content/docs/cite/reference/citations.mdx:
         integrity: sha256-6c76ea11f0af6ee1c21db83e83e57f8ee466aec7de3e46e0f1f199b70d0ecba3
       source:
         file: src/cite/commands/add.ts
-        lines: 387-395
+        lines: 388-396
         integrity: sha256-ba16a2e2063d0fbf9215cca117c5539bf9a2223ace142312c5841267bd216074
-        commit-sha: 3925fe76d4b5c1b3995acda16bb88cb379b42e85
+        commit-sha: 34611bc58c4898d3b0694d1e29e054e8ac96b327
     - id: rule-id-prefix
       claim:
         integrity: sha256-ebd7a8017a8988fc369330e03abd9beae75035a28f6e1da2dc928c9cc7c4fc83

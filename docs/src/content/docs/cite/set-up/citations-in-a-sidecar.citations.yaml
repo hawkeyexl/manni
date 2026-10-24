@@ -115,17 +115,17 @@ docs/src/content/docs/cite/set-up/citations-in-a-sidecar.mdx:
         integrity: sha256-2d63a4da3009bf1f5e17b9a23d05e2b37eb277f97f10a1b67586bf22f8a72185
       source:
         file: src/cite/commands/add.ts
-        lines: 623-628
+        lines: 626-631
         integrity: sha256-ff987f589d06254e69ecf44d2527ba5f2109ff3b61a441a615850c2294db1bdc
-        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
+        commit-sha: 34611bc58c4898d3b0694d1e29e054e8ac96b327
     - id: add-manifest-page-untouched
       claim:
         integrity: sha256-2977cf6675401bbcfea1fabe5d3ad2010064dfa709ec9b1639c746b214bcc7ff
       source:
         file: src/cite/commands/add.ts
-        lines: 653-658
+        lines: 656-661
         integrity: sha256-a9f66060a0b6e07b3220f2b2e49f7c7140e3a1aa79c7962efb05b08c4808904e
-        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
+        commit-sha: 34611bc58c4898d3b0694d1e29e054e8ac96b327
     - id: update-writes-manifest-once
       claim:
         integrity: sha256-7d71b96f86296b130361168ab9c1b767db29471688a6687c270e431713685c18
@@ -174,9 +174,9 @@ docs/src/content/docs/cite/set-up/citations-in-a-sidecar.mdx:
         integrity: sha256-9e416e10a9615c13e4c4bc46464e230b4e497b128593de8b5bee5e7ac7b082d8
       source:
         file: src/cite/commands/add.ts
-        lines: 316-321
+        lines: 315-320
         integrity: sha256-4adf11aca6f35daa21236bc43dec45cfc6ad4652ffeca3ef815a6293c6942ad4
-        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
+        commit-sha: 34611bc58c4898d3b0694d1e29e054e8ac96b327
     - id: orphan-whole-collection
       claim:
         lines: 396-397

@@ -115,13 +115,12 @@ function recordContent(label: string, content: string, as: string | undefined): 
 
 /**
  * The refusal for a pointer that cannot be a claim, `at` being the page and
- * the pointer as the caller spelled them. Undefined when it names a value
- * that can be pinned.
+ * the pointer as the caller spelled them, and `held` the value it names in
+ * the page's metadata. Undefined when that value can be pinned.
  */
-function pointerRefusal(page: PageCitations, pointer: string, at: string): string | undefined {
+function pointerRefusal(held: { value: unknown } | undefined, pointer: string, at: string): string | undefined {
   if (!isPointer(pointer)) return `Invalid pointer "${pointer}": write ~ as ~0 and / as ~1.`;
   if (underCitations(pointer)) return `${at} is a citation, not a claim.`;
-  const held = valueAt(page.metadata.data, pointer);
   if (held === undefined) return `${at} names no value in the page's metadata.`;
   if (isEncryptedValue(held.value)) {
     return `${at} holds an encrypted value. A claim's pin is public, so cite a plain value.`;
@@ -343,8 +342,10 @@ export async function runAdd(opts: AddOptions): Promise<AddResult> {
   if (marker && pointer !== undefined) {
     throw new CiteError("--marker anchors body text, so it takes page lines, not a pointer.");
   }
+  // The value the pointer names, looked up once: the refusals check it, and the claim hashes it.
+  const held = pointer === undefined ? undefined : valueAt(page.metadata.data, pointer);
   if (pointer !== undefined) {
-    const refused = pointerRefusal(page, pointer, `${label}#${pointer}`);
+    const refused = pointerRefusal(held, pointer, `${label}#${pointer}`);
     if (refused !== undefined) throw new CiteError(refused);
   }
   if (marker && pageLines === undefined) {
@@ -565,8 +566,10 @@ export async function runAdd(opts: AddOptions): Promise<AddResult> {
     claim = { lines: lineSpec(toBodyLines(pageLines, page.bodyLine)), integrity: pin };
     elsewhere = otherClaimSpans(lines, pageLines, pin, page.bodyLine);
   } else if (pointer !== undefined) {
-    // The refusals above settled that the pointer names a plain value.
-    claim = { pointer, integrity: valuePin(valueAt(page.metadata.data, pointer)?.value) };
+    // The refusals above settled that the pointer names a plain value, so
+    // this throw is unreachable. It keeps an absent value from being hashed.
+    if (held === undefined) throw new CiteError(`${label}#${pointer} names no value in the page's metadata.`);
+    claim = { pointer, integrity: valuePin(held.value) };
   }
 
   const mint = (key: string | undefined, encrypt: boolean): Promise<Citation> =>
