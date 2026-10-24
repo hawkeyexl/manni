@@ -42,7 +42,7 @@ describe.skipIf(!gitAvailable())("runStatus", () => {
       { name: "strategy", status: "in-play", reason: "1 audience, 1 persona, 1 journey" },
       { name: "graph", status: "in-play", reason: "graph: section" },
       { name: "a11y", status: "not-checked", reason: "needs a running site and a browser", next: "Run manni site preview, then manni a11y check." },
-      { name: "test", status: "not-checked", reason: "runs the shell steps the pages carry", next: "Run manni test run with Doc Detective installed." },
+      { name: "test", status: "not-checked", reason: "runs the pages' shell steps and synthetic users", next: "Run manni test procedures or manni test tasks." },
       { name: "tracevals", status: "not-checked", reason: "judges recorded sessions with a model", next: "Run manni tracevals run over sessions, or add tracevals.runtime to judge each turn." },
     ]);
   });
@@ -50,7 +50,7 @@ describe.skipIf(!gitAvailable())("runStatus", () => {
   it("never runs test: Doc Detective executes the pages' steps, so it says what to run instead", async () => {
     dir = fixtureRepo("only-graph");
     const report = await runStatus({ cwd: dir });
-    expect(report.domains.find((d) => d.name === "test")).toEqual({ name: "test", status: "not-checked", reason: "runs the shell steps the pages carry", next: "Run manni test run with Doc Detective installed." });
+    expect(report.domains.find((d) => d.name === "test")).toEqual({ name: "test", status: "not-checked", reason: "runs the pages' shell steps and synthetic users", next: "Run manni test procedures or manni test tasks." });
   });
 
   it("names what is not set up, why, and what would set it up", async () => {

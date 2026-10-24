@@ -1,0 +1,9 @@
+df1 (beats 2-3) was not run under `time`. Its elapsed time comes from the run
+directory it wrote, .manni/test/tasks/20261023T144849Z-task-theo/ (mtimes, -0700):
+
+  brief.md      07:48:50   the run starts
+  trace.jsonl   07:49:19   Claude Code's last event (the report says 0m 28s)
+  derived.json  08:01:26   written after the judge returns (src/test/commands/tasks.ts)
+
+So the run took about 12.6 minutes: 28 s of Claude Code, then about 12 minutes
+of deriving and judging with the auto-selected claude-cli judge.

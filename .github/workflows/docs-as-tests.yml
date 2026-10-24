@@ -6,7 +6,7 @@ name: Docs as tests
 # any published package, prefetches and caches a local model so even the
 # `fill` procedures execute end to end with no credentials, and then replays
 # the inline tests embedded in the docs (.mdx) under docs/src/content/docs/.
-# Doc Detective is the runner, reached through `manni test run`; the thing
+# Doc Detective is the runner, reached through `manni test procedures`; the thing
 # being tested is the documentation.
 # The build + link steps are required: dist/ is gitignored and manni is
 # unpublished, so the tests would have nothing to run without them.
@@ -22,7 +22,7 @@ on:
       # The docevals pages' steps run against this corpus and its config.
       - "test/docevals/fixtures/**"
       - "test/tracevals/fixtures/**"
-      # The test pages' steps run `manni test run` on these.
+      # The test pages' steps run `manni test procedures` on these.
       - "test/test/fixtures/**"
       - ".doc-detective.json"
       - ".github/workflows/docs-as-tests.yml"
@@ -116,7 +116,7 @@ jobs:
           --provider llama-cpp
           --model granite-4.1-3b-q2
           --fields title --dry-run --no-cache
-      # `manni test run` is the runner's front end (proposal 0085): it runs
+      # `manni test procedures` is the runner's front end (proposal 0085): it runs
       # Doc Detective, which reads .doc-detective.json from the repo root, and
       # turns each failing step into an annotation on the page that broke.
       # `--progress` streams Doc Detective's own log into the job output, which
@@ -131,6 +131,6 @@ jobs:
       # traces matched. The tracevals pages say this is what the workflow does,
       # so the two must stay in step.
       - name: Run the docs' tests
-        run: manni test run -f github --progress
+        run: manni test procedures -f github --progress
         env:
           CLAUDE_CONFIG_DIR: test/tracevals/fixtures/home/.claude

@@ -3,7 +3,7 @@ import {
   escapeWorkflowCommandProperty,
 } from "../../shared/github.js";
 import { guidanceLines } from "../../shared/guidance.js";
-import type { TestRunResult } from "../commands/run.js";
+import type { ProceduresResult } from "../commands/procedures.js";
 import { findingMessage } from "./finding.js";
 import { summaryLine } from "./summary.js";
 
@@ -11,7 +11,7 @@ import { summaryLine } from "./summary.js";
  * One workflow command per FAIL or WARNING step, then the summary line. The
  * step's action and its guide follow the message after `%0A`.
  */
-export function renderGithub(result: TestRunResult): string {
+export function renderGithub(result: ProceduresResult): string {
   const commands = result.findings.map((f) => {
     const level = f.result === "FAIL" ? "error" : "warning";
     const props = [

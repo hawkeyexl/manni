@@ -1,0 +1,526 @@
+---
+title: Attempt a task as a persona
+description: "Have a synthetic user play one of your personas and attempt a task from a page, read its account, fix the page, and say what done means in a golden journey."
+sidebar:
+  label: Attempt a task as a persona
+type: how-to
+id: test-attempt-a-task
+keywords:
+  - test tasks
+  - synthetic user
+  - persona
+  - golden set
+  - journey
+  - Claude Code
+language: en
+audiences:
+  - schema-authors
+  - docs-engineers
+intent: Find out whether a persona can finish a task with the docs, fix what stops it, and keep the task as a golden journey that reruns on demand.
+lifecycle: published
+applies-to:
+  - domain:test
+next-steps:
+  - test-reference-cli
+  - strategy
+risks:
+  - open-world
+  - cost-incurring
+sample-questions:
+  - How do I find out whether a reader can finish a task with my docs?
+  - Which evals does manni test tasks judge when I declare none?
+  - How do I keep a synthetic task so it reruns before every release?
+  - How do I give a persona a constraint, such as avoiding the terminal?
+graph:
+  label: Attempt a task as a persona
+  type: task
+last-updated: 2026-10-23
+tags:
+  - testing
+  - synthetic-users
+  - personas
+  - journeys
+action: develop
+prerequisites:
+  - test
+related-pages:
+  - test-reference-cli
+  - strategy
+  - meta-reference-configuration
+---
+
+import { Aside, CardGrid, LinkCard } from '@astrojs/starlight/components';
+
+<Aside type="note" title="Beta">
+`manni test` is in beta. Its commands, config keys and output can change in
+any release, without notice.
+</Aside>
+
+You wrote the page, so you cannot read it as a newcomer does. The gap a
+newcomer falls into is the one its author cannot see. `manni test tasks` has a
+synthetic user read the page instead. It plays one of your personas, attempts
+a task you give it in plain text, and says where the page lost it.
+
+This page follows two tasks on this repository's own docs. Theo, a
+contributor with a red check, fixes it from the [fix page](/manni/meta/fix/).
+A newcomer installs manni from the [get started page](/manni/meta/get-started/).
+Each task found a gap in its page, and each page was fixed. Then Theo's task
+became a journey that reruns on demand.
+
+<Aside type="note" title="Where this output came from">
+A run needs Claude Code and a model, and the docs-as-tests job has neither. So
+the commands here are not replayed by CI. The output below is captured from
+runs on this repository. A run's turns, timings, verdicts and account differ
+every time. Two excerpts come from earlier runs, before their pages were
+fixed, and each says so.
+</Aside>
+
+## Before you start
+
+- **Claude Code**, on your `PATH` and signed in. The synthetic user is Claude
+  Code, run headless. It uses your sign-in, and none of your settings,
+  plugins, hooks or MCP servers.
+
+  ```sh
+  npm install -g @anthropic-ai/claude-code
+  ```
+
+- **A judge.** manni judges each run with the family's judge, from
+  `--provider` or [`providers:`](/manni/meta/reference/configuration/#providers).
+  [Choose a provider](/manni/docevals/judge/choose-a-provider/) covers each
+  one.
+- **Persona records**, to play someone in particular. Without one, the
+  synthetic user is a newcomer to the product.
+  [`manni strategy`](/manni/strategy/) keeps personas and journeys as records.
+
+## Ask as a persona
+
+Theo's pull request fails the docs check. The workspace below is a small
+repository whose one page lacks a `description`. Name the page he starts
+from, the persona, the workspace, and the task in his own words:
+
+```sh
+manni test tasks docs/src/content/docs/meta/fix/index.mdx --persona theo \
+  --workspace test/test/fixtures/tasks/red-pr \
+  --task "The docs check on my pull request fails with: docs/install.md (root) must have required property 'description' (line 1) [manni:core:1.0.0]. Make it pass."
+```
+
+- **A page path** starts the synthetic user in a copy of the source. manni
+  copies the docs beside the workspace, and points it at the page's copy. It
+  never sees your checkout.
+- **`--task`** is what it wants, in its own words. You declare no evals.
+- **`--persona theo`** is who it plays. It is told the fields of Theo's
+  record, and never the body.
+- **`--workspace`** is the state it starts from. manni copies the directory
+  fresh into a temporary directory for each run.
+
+On a terminal, each action it takes streams to stderr. Theo reads the fix
+page, runs the check, edits the file, and runs the check again:
+
+```text
+task as theo: starting in a fresh copy of test/test/fixtures/tasks/red-pr
+  theo › Read ../docs/meta/fix/index.mdx
+  theo › Bash ls -la && find . -maxdepth 3 -not -path '*/node_modules*' | head -50
+  theo › Bash cat manni.config.yaml; echo ----; cat docs/install.md
+  theo › Bash npx --yes @hawkeyexl/manni meta validate docs/install.md; echo "exit=$?"
+  theo › Edit docs/install.md
+  theo › Bash npx --yes @hawkeyexl/manni meta validate docs/install.md; echo "exit=$?"; npx --
+```
+
+## Read the report
+
+When the run ends, manni judges what it left behind. The report is on stdout:
+
+```text
+task · The docs check on my pull request fails with: docs/install.m… · as theo
+  start     docs/src/content/docs/meta/fix/index.mdx
+  docs      meta/fix/index.mdx
+  changed   docs/install.md
+  7 turns · 0m 37s
+  PASS completed             docs/src/content/docs/meta/fix/index.mdx:1
+  PASS followed-the-docs     docs/src/content/docs/meta/fix/index.mdx:1
+  PASS constraint            docs/content-strategy/personas/theo.md:12
+  PASS constraint            docs/content-strategy/personas/theo.md:13
+  Account
+    It passes now. I added one line to the frontmatter of `docs/install.md`:
+    …
+    **What helped:**
+    - The "Decode the error line" table. It told me `(root)` plus `(line 1)`
+    means a field is missing entirely, not set wrong, so I didn't go hunting
+    for a bad value.
+    …
+  trace     .manni/test/tasks/20261024T012259Z-task-theo/trace.jsonl
+
+1 run: 1 passed
+```
+
+Read it from the bottom of the block up.
+
+- **The account** is the synthetic user's last message. It says what it did,
+  what helped and what confused it. Gaps in the page show up here first.
+- **The two `constraint` lines** come from Theo's record. Each asks whether
+  he kept one of its constraints.
+- **`followed-the-docs`** passes when every step came from the docs the reader
+  had, or from what its persona already knows.
+- **`completed`** asks whether the reader completed the task, in the task's
+  own words. It points at line 1 of the start page.
+
+`docs` lists the pages the judge saw, and `changed` the files the reader
+changed. The run exits `0`. Only an `error`-severity eval fails a run, and
+`completed` is the one error here. The other three are warnings. The trace is
+saved under `.manni/`, beside the config file, for a closer look.
+
+`completed` judges the task's words and nothing more. Anything else that done
+means, such as the one file a fix may change, goes in a
+[golden journey](#keep-the-task-as-a-golden-journey).
+
+## Find the gap in the account
+
+Every eval can pass while the page still has a gap. The run above is on the
+fix page as it reads now. This excerpt is from an earlier run on this
+repository, before the page was fixed:
+
+```text
+task · The docs check on my pull request fails with: docs/install.m… · as theo
+  start     docs/src/content/docs/meta/fix/index.mdx
+  …
+  Account
+    It passes now. I added one line to the frontmatter in `docs/install.md`:
+    …
+    **What confused me:**
+    - My error said `(line 1)`, but the docs say a missing required field has
+    no line number. For a second I wondered if something was wrong with line 1
+    itself, like the `---` fence. It turned out to be a plain missing field.
+    I'd guess line 1 means the frontmatter block, but the docs should say so.
+    …
+  trace     .manni/test/tasks/20261023T144849Z-task-theo/trace.jsonl
+```
+
+Theo guessed right about `(line 1)`, and the next contributor might not. The
+fix page's "Decode the error line" table now says a missing required field
+shows the line where the frontmatter starts. The run in the last section read
+that table, and its account names it as what helped.
+
+## Catch a guess
+
+Sometimes the reader finishes by guessing, and `followed-the-docs` says so.
+Serve the site in one terminal. In another, hand a newcomer the get started
+page's URL and a task:
+
+```sh
+manni site preview
+manni test tasks http://127.0.0.1:4321/manni/meta/get-started/ --task "Install manni and check which version you have"
+```
+
+- **The URL** is where the synthetic user starts. It fetches the page, and
+  follows the site's links from there.
+- **No `--persona`**, so it plays a newcomer to the product.
+
+This excerpt is from an earlier run on this repository, before the page said
+how to check the version:
+
+```text
+task · Install manni and check which version you have · as newcomer
+  start     http://127.0.0.1:4321/manni/meta/get-started/
+  5 turns · 0m 44s
+  …
+  WARN followed-the-docs     (no location)
+       Every step the reader took came from the docs it had, or from what the
+       persona already knows. It did not guess or lean on outside knowledge.
+       AI judge: fail (confidence 0.97). The critical step of checking the
+       installed version was accomplished by guessing `--version` based on
+       outside knowledge about common CLI conventions ('most command-line
+       tools use it'), not from the documentation. The reader explicitly
+       acknowledged the docs did not provide this information and that they
+       guessed based on general knowledge of command-line tools.
+  Account
+    I got it done. manni is installed and I have **version 4.20.0**.
+    …
+    **Where I got stuck**
+    I didn't get stuck on installing. The problem was the second half of my
+    task: the Get started page never says how to check which version you have.
+    I guessed `--version` because most command-line tools use it, and it
+    worked. I looked for `--version` on the CLI reference page, but the
+    address I guessed didn't turn up a mention, so I gave up looking.
+    …
+    **What confused me**
+    - There's no "confirm the install worked" step, like `manni --version`,
+    right after the install command. That's the first thing a newcomer wants
+    to do.
+    …
+  trace     .manni/test/tasks/20261023T150535Z-task-newcomer/trace.jsonl
+
+1 run: 1 passed · 1 warning
+```
+
+The reader found the version with `--version`, a habit from other tools. The
+task got done, and the docs did not do it. A warning never fails a run, so
+this one exits `0`. A URL start has no file to point at, so each eval reads
+`(no location)`.
+
+The account asks for a step that confirms the install. The get started page
+now has one, right after the install command:
+
+```md title="docs/src/content/docs/meta/get-started/index.mdx"
+To confirm it worked, print the version. A global install answers to
+`manni`, and `npx` runs the same check without one.
+```
+
+Run the same command again. Both evals pass, and the account follows the new
+step:
+
+```text
+task · Install manni and check which version you have · as newcomer
+  start     http://127.0.0.1:4321/manni/meta/get-started/
+  5 turns · 0m 39s
+  PASS completed             (no location)
+  PASS followed-the-docs     (no location)
+  Account
+    I got it done. manni is installed and reports version **4.20.0**.
+    …
+    3. I ran `manni --version`, as the page says to, and it printed `4.20.0`.
+    …
+  trace     .manni/test/tasks/20261024T022407Z-task-newcomer/trace.jsonl
+
+1 run: 1 passed
+```
+
+## Give the persona constraints
+
+A persona's record carries who the person is in fields. The synthetic user
+is told the `title`, `description`, `role`, `team-context`, `proficiency`,
+`prerequisites`, `goals`, `pains` and `constraints`. Move the facts about the
+person out of the record's body and into fields, because the body is never
+told. Body prose often says how the person uses the product, and that is what
+the docs must teach.
+
+```yaml title="docs/content-strategy/personas/theo.md"
+---
+type: persona
+id: theo
+title: Theo, Doc Contributor
+description: Theo is a developer or technical writer who opened a PR.
+audience: contributors
+goals:
+  - Find the field his check named, fix it, confirm locally, and move on.
+pains:
+  - He doesn't know which schema fired or why the rule exists.
+constraints:
+  - Reads only the pages the fix needs, never the rest of the documentation.
+  - Won't install anything globally to fix someone else's check.
+---
+```
+
+A constraint is what the person avoids or insists on, one sentence each.
+Theo's two are lines 12 and 13, and the run above judged both. He read only
+the fix page, and ran manni through `npx`. A technical writer who stays out of
+the terminal reads like this:
+
+```yaml
+constraints:
+  - Avoids terminal commands.
+  - Prefers a web UI whenever the product offers one.
+```
+
+The synthetic user is told each constraint, and each is judged after the run
+as a warning. It keeps every tool, so a docs set with no web path pushes it
+into the terminal. The warning says so.
+
+To give it a browser for the web path, name an MCP config in
+`tools.claude-code.mcpConfig`. Its servers are the only ones the synthetic
+user gets:
+
+```yaml title="manni.config.yaml"
+tools:
+  claude-code:
+    mcpConfig: .mcp.tasks.json
+```
+
+```json title=".mcp.tasks.json"
+{
+  "mcpServers": {
+    "playwright": { "command": "npx", "args": ["@playwright/mcp@latest"] }
+  }
+}
+```
+
+## Keep the task as a golden journey
+
+A task worth asking once is worth asking before every release. Journeys are
+the golden set of synthetic tasks. A journey record already says who is
+trying to do what. With `evals:` it also says what done looks like, and
+`manni test tasks` reruns it on demand.
+
+Theo's task means more than its words say. The only change should be the
+missing field, and he should confirm the fix before he pushes. A write-in
+task never judges either one. So Sara writes them into the journey Theo
+depends on, T1, from what done means for him.
+
+The task's text becomes the record's `trigger`, and `success-criteria` says
+when he is done. An `ai` eval costs a judge call on every run, so each of
+T1's `evals:` uses a deterministic grader. A `command` runs the check, a
+`regex` reads the field, and `tool-order` asks whether he checked after his
+edit.
+
+```yaml title="docs/content-strategy/journeys/t1.md"
+---
+type: journey
+id: t1
+title: Fix a failing metadata check fast
+description: Theo lands on the docs from a red CI check or a search and needs a clear map from the error to the field to fix.
+personas: [theo]
+trigger: "The docs check on his pull request failed with: docs/install.md (root) must have required property 'description' (line 1) [manni:core:1.0.0]"
+entry-point: docs/src/content/docs/meta/fix/index.mdx
+success-criteria: The check passes on his repo, and the only change is the missing field in docs/install.md.
+workspace: test/test/fixtures/tasks/red-pr
+evals:
+  - id: check-passes
+    assertion: manni meta validate passes on the repo after the fix.
+    grader: command
+    command: [npx, --yes, "@hawkeyexl/manni", meta, validate]
+    timeout-ms: 120000
+  - id: description-added
+    assertion: docs/install.md has a non-empty description in its frontmatter.
+    grader: regex
+    target: { source: file, path: docs/install.md }
+    options: { pattern: "^description: \\S", flags: m }
+  - id: confirmed-locally
+    assertion: Theo ran the check after his fix.
+    grader: tool-order
+    options: { before: Edit, after: Bash, afterInputMatch: "meta validate" }
+---
+```
+
+Each field has one use in a run.
+
+- `title` is the task, and `trigger` is what started it.
+- `entry-point` is where the synthetic user starts, as a path or a URL.
+- `success-criteria` tells it when it is done, and is judged as the `success`
+  eval.
+- `workspace` is the directory copied fresh for each run.
+- `evals:` are graded after each run. Declaring them puts the journey in the
+  golden set.
+
+The [CLI reference](/manni/test/reference/cli/#what-a-journey-supplies) lists
+the graders an eval can use, and the three it cannot.
+
+From now on the journey is the test:
+
+```console
+$ manni test tasks --journey t1
+t1 · Fix a failing metadata check fast · as theo
+  start     docs/src/content/docs/meta/fix/index.mdx
+  docs      meta/fix/index.mdx
+  changed   docs/install.md
+  7 turns · 0m 41s
+  PASS success               docs/content-strategy/journeys/t1.md:9
+  PASS check-passes          docs/content-strategy/journeys/t1.md:12
+  PASS description-added     docs/content-strategy/journeys/t1.md:17
+  PASS confirmed-locally     docs/content-strategy/journeys/t1.md:22
+  PASS followed-the-docs     docs/content-strategy/journeys/t1.md:4
+  PASS constraint            docs/content-strategy/personas/theo.md:12
+  PASS constraint            docs/content-strategy/personas/theo.md:13
+  Account
+    Done. The check passes, and the only change in my repo is one line in
+    `docs/install.md`:
+    …
+  trace     .manni/test/tasks/20261023T151137Z-t1-theo/trace.jsonl
+
+1 run: 1 passed
+```
+
+To ask whether the page serves another persona, name them. This runs T1 as
+Maya. Her record declares no constraints, so her run judges none:
+
+```console
+$ manni test tasks --journey t1 --persona maya
+t1 · Fix a failing metadata check fast · as maya
+  start     docs/src/content/docs/meta/fix/index.mdx
+  docs      meta/fix/index.mdx
+  changed   docs/install.md
+  6 turns · 0m 28s
+  PASS success               docs/content-strategy/journeys/t1.md:9
+  PASS check-passes          docs/content-strategy/journeys/t1.md:12
+  PASS description-added     docs/content-strategy/journeys/t1.md:17
+  PASS confirmed-locally     docs/content-strategy/journeys/t1.md:22
+  PASS followed-the-docs     docs/content-strategy/journeys/t1.md:4
+  Account
+    Done. The check passes, and the only change is the missing field.
+    …
+  trace     .manni/test/tasks/20261023T151620Z-t1-maya/trace.jsonl
+
+1 run: 1 passed
+```
+
+A bare `manni test tasks` runs every journey that declares `evals:`, which is
+the whole golden set. Here that is T1 alone. In the `github` format, a set
+that passes prints its total and nothing else:
+
+```console
+$ manni test tasks -f github
+1 run: 1 passed
+```
+
+## Turns and cost
+
+Every run is a Claude Code session, plus the judge calls for its evals. Runs
+go one after another, so a golden set of ten journeys with two personas each
+is twenty sessions.
+
+- **Turns.** `tools.claude-code.maxTurns` caps each session, `50` by
+  default. A run that reaches it is judged like any other, and its block
+  says `stopped at the 50-turn limit`.
+- **Model.** `tools.claude-code.model` picks the synthetic user's model.
+  `--model` picks the judge's.
+- **Spend.** `-f json` reports each run's tokens in `usage`, and its cost when
+  Claude Code reports one. This is T1's run as Theo, from a bare
+  `manni test tasks -f json`:
+
+  ```json
+        "turns": 6,
+        "durationMs": 27092,
+        "stoppedAtLimit": false,
+        "usage": {
+          "inputTokens": 8,
+          "outputTokens": 1377,
+          "costUsd": 0.1557432
+        },
+  ```
+
+```yaml title="manni.config.yaml"
+tools:
+  claude-code:
+    model: sonnet
+    maxTurns: 30
+```
+
+## Run it safely
+
+<Aside type="caution" title="The synthetic user runs what the docs say">
+It runs the commands the docs tell it to, with your privileges and your
+network. Its working directory is a temporary copy, but its terminal is not
+confined. A global npm install lands in the run's temporary directory and
+goes with it. Anything else it installs or changes stays changed. Run tasks
+from docs you do not trust in CI or in a container.
+</Aside>
+
+[`manni check`](/manni/family/check/) never runs `manni test tasks`. A task
+runs only when someone asks for it.
+
+<CardGrid>
+  <LinkCard
+    title="CLI reference"
+    href="/manni/test/reference/cli/#test-tasks"
+    description="Every flag of test tasks, what manni passes Claude Code, what the judge sees, the output formats, and every message."
+  />
+  <LinkCard
+    title="manni strategy"
+    href="/manni/strategy/"
+    description="Keep audiences, personas and journeys as records, and check every page against them."
+  />
+  <LinkCard
+    title="tools: configuration"
+    href="/manni/meta/reference/configuration/#tools"
+    description="The tools.claude-code keys: the synthetic user's model, its turn limit and its MCP servers."
+  />
+</CardGrid>

@@ -1,0 +1,1 @@
+inference: provider "auto" — auto-selected "claude-cli". Pass an explicit `provider` to pin it.

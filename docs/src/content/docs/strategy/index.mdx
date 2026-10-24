@@ -53,7 +53,7 @@ risks: read-only
 concepts:
   - validation
   - metadata
-last-updated: 2026-10-23
+last-updated: 2026-10-24
 ---
 
 import { Aside, Card, CardGrid, LinkCard } from '@astrojs/starlight/components';
@@ -97,6 +97,19 @@ vocabulary. A `draft` journey is not live yet, and an `archived` one no
 longer is. Neither is expected to have a page, so `check` skips both when it
 looks for an unserved journey. A journey can land as a draft before its pages
 exist.
+
+Records also carry the fields
+[`manni test tasks`](/manni/test/attempt-a-task/) reads, where a synthetic
+user attempts a journey as one of its personas. No `strategy` rule reads them.
+
+- A journey's `trigger`, `entry-point` and `success-criteria` tell the
+  synthetic user what started the task, where to begin, and when it is done.
+- A journey's `workspace` names the directory each run starts from.
+- A journey's `evals:` are eval entries that say what done looks like.
+  Journeys that declare `evals:` are the golden set, which a bare
+  `manni test tasks` runs.
+- A persona's `goals`, `pains` and `constraints` tell the synthetic user who
+  it plays. Each constraint is judged after the run, as a warning.
 
 `manni meta validate` checks a record's fields against the schemas a repo
 applies through `meta.overrides`. This repository keeps one schema per record

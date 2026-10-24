@@ -1,26 +1,31 @@
 docs/src/content/docs/test/reference/cli.mdx:
-  personas: ["devin", "maya"]
-  journeys: ["d17"]
+  personas: ["devin", "maya", "sara"]
+  journeys: ["d17", "s18"]
   visibility: public
   review-interval: P180D
   source-of-truth:
     - path: "src/test/cli.ts"
-    - path: "src/test/commands/run.ts"
+    - path: "src/test/commands/procedures.ts"
     - path: "src/shared/tools.ts"
+    - path: "src/test/core/judge-run.ts"
   eval-suite: test
   evals:
     - id: compose-command
-      assertion: "A reader can compose a manni test run command from the documented arguments and flags."
+      assertion: "A reader can compose a manni test procedures command from the documented arguments and flags."
       type: capability
       grader: ai
     - id: read-message
-      assertion: "A reader can match a manni test run message to its cause and its exit code."
+      assertion: "A reader can match a manni test procedures message to its cause and its exit code."
+      type: capability
+      grader: ai
+    - id: evals-per-run
+      assertion: "A reader can say which evals a manni test tasks run gets, and where each one comes from."
       type: capability
       grader: ai
   provenance:
     - generated-by: Claude Opus 5.5
-      lines: 2-314
-      integrity: sha256-444f40ea6f819789a2123450f4fa2a70de5a4a36300425669655a8d4eaceab42
+      lines: 2-986
+      integrity: sha256-aa74b1babf2c29c3b34b08aecb8c68e5df6c081f1828d6a6457a873a031f652e
   owner:
     - "@hawkeyexl"
   created: 2026-10-05

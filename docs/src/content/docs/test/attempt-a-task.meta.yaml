@@ -1,0 +1,29 @@
+docs/src/content/docs/test/attempt-a-task.mdx:
+  personas:
+    - sara
+    - maya
+  journeys:
+    - s18
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: src/test/cli.ts
+    - path: src/test/core/judge-run.ts
+    - path: src/shared/tools.ts
+  eval-suite: test
+  evals:
+    - id: first-task
+      assertion: A reader can run manni test tasks on a page with a plain-text task and a persona, and say what each part of the report means.
+      type: capability
+      grader: ai
+    - id: write-journey-evals
+      assertion: A reader can write a journey's evals from what done means for its persona, and run that journey with manni test tasks.
+      type: capability
+      grader: ai
+  owner:
+    - "@hawkeyexl"
+  created: 2026-10-23
+  provenance:
+    - generated-by: Claude Opus 5.5
+      lines: 2-476
+      integrity: sha256-7f1098dbd4ae4252bc14b279ef095caf7fae2d156db2f33333790d9ab81e1b46

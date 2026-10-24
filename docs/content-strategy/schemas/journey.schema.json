@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://hawkeyexl.github.io/manni/content-strategy/journey.schema.json",
   "title": "manni content strategy: journey record",
-  "description": "A content-strategy journey: an end-to-end outcome a persona reaches with the docs. One record per file, under docs/content-strategy/journeys/. Every field after `type`, `id` and `personas` is optional.",
+  "description": "A content-strategy journey: an end-to-end outcome a persona reaches with the docs. One record per file, under docs/content-strategy/journeys/. Every field after `type`, `id` and `personas` is optional. A journey that declares `evals` belongs to the golden set, which a bare `manni test tasks` runs.",
   "type": "object",
   "required": [
     "type",
@@ -22,7 +22,7 @@
     "title": {
       "type": "string",
       "minLength": 1,
-      "description": "The record's name, as `manni strategy list` and `get` show it."
+      "description": "The record's name, as `manni strategy list` and `get` show it. `manni test tasks --journey` tells it to the synthetic user as the task."
     },
     "description": {
       "type": "string",
@@ -42,17 +42,102 @@
     "trigger": {
       "type": "string",
       "minLength": 1,
-      "description": "What starts the journey."
+      "description": "What starts the journey, in the reader's words. `manni test tasks` tells it to the synthetic user as what started the task."
     },
     "entry-point": {
       "type": "string",
       "minLength": 1,
-      "description": "The page the journey starts on, as a path or URL."
+      "description": "The page the journey starts on, as a path or URL. A path resolves against the config file's directory. `manni test tasks` starts the synthetic user there when no page is passed."
     },
     "success-criteria": {
       "type": "string",
       "minLength": 1,
-      "description": "What the persona has when the journey succeeds."
+      "description": "What the persona has when the journey succeeds. `manni test tasks` tells it to the synthetic user as when it is done, and judges it after each run as the `success` eval."
+    },
+    "workspace": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The directory the synthetic user starts from, relative to the config file's directory. `manni test tasks` copies it fresh into a temporary directory for each run. Absent, each run starts in an empty directory."
+    },
+    "evals": {
+      "type": "array",
+      "description": "The journey's golden evals. `manni test tasks` grades each one against the run's trace and workspace after every run. Declaring them puts the journey in the golden set, which a bare `manni test tasks` runs. Each entry is a tracevals eval entry.",
+      "items": {
+        "type": "object",
+        "required": [
+          "id"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9-]*$",
+            "description": "The eval's id, in kebab-case. Unique within the list."
+          },
+          "assertion": {
+            "type": "string",
+            "minLength": 1,
+            "description": "What the eval proves. For `grader: ai` it is the claim the judge decides."
+          },
+          "grader": {
+            "enum": [
+              "ai",
+              "command",
+              "regex",
+              "file-access",
+              "tool-usage",
+              "tool-order",
+              "turn-count",
+              "cost"
+            ],
+            "description": "How the eval is graded. Default `ai`."
+          },
+          "command": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1,
+            "description": "For `grader: command`: the argv to run in the run's workspace. `{trace}` in an argument is the run's trace path."
+          },
+          "success-exit-codes": {
+            "type": "array",
+            "items": {
+              "type": "integer"
+            },
+            "minItems": 1,
+            "description": "For `grader: command`: the exit codes that pass. Default `[0]`."
+          },
+          "timeout-ms": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "For `grader: command`: how long the command may run, in milliseconds. Default 30000."
+          },
+          "severity": {
+            "enum": [
+              "notice",
+              "warning",
+              "error"
+            ],
+            "description": "How much a failure counts. Only an `error` fails the run. Default `error`."
+          },
+          "target": {
+            "description": "For `ai` and `regex`: what the grader reads. `transcript`, `last-message`, `files`, or `{ source: file, path }` for one file in the workspace."
+          },
+          "options": {
+            "type": "object",
+            "description": "The grader's own options, as tracevals takes them."
+          },
+          "evidence": {
+            "description": "What the judge should look for, for `grader: ai`."
+          },
+          "examples": {
+            "type": "object",
+            "description": "Passing and failing examples for `grader: ai`, as `pass` and `fail`."
+          }
+        },
+        "additionalProperties": true,
+        "description": "Other keys of the artifact-evals entry, such as type, weight and skip, pass here, and manni test tasks checks the entry against that vocabulary."
+      }
     },
     "steps": {
       "type": "array",

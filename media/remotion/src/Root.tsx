@@ -25,6 +25,7 @@ import { beats as graphFormatsBeats, totalFrames as graphFormatsTotalFrames, TYP
 import { beats as findingsBeats, totalFrames as findingsTotalFrames, TYPING_MS as findingsTypingMs } from "./findings/beats";
 import { beats as citeReposBeats, totalFrames as citeReposTotalFrames, TYPING_MS as citeReposTypingMs } from "./cite-repos/beats";
 import { beats as pluginMetadataBeats, totalFrames as pluginMetadataTotalFrames, TYPING_MS as pluginMetadataTypingMs } from "./plugin-metadata/beats";
+import { beats as tasksBeats, totalFrames as tasksTotalFrames, TYPING_MS as tasksTypingMs } from "./tasks/beats";
 import { beats as strategyBeats, totalFrames as strategyTotalFrames, TYPING_MS as strategyTypingMs } from "./strategy/beats";
 
 /** sidecar-url-1x1: 23 px / 75 columns, derived in media/sidecar-url-1x1.script.md. */
@@ -141,6 +142,14 @@ const DemoPluginMetadata: React.FC = () => <DemoView beats={pluginMetadataBeats}
 const DemoStrategy: React.FC = () => (
   <DemoView beats={strategyBeats} fontPx={19} linePx={27} cols={91} typingMs={strategyTypingMs} ligatures={false} breakAfter="/" />
 );
+
+/**
+ * test-tasks-1x1: 21 px / 82 columns, derived in media/test-tasks-1x1.script.md
+ * (media/capture-tasks/cols.mjs). The account is wrapped at 78 by the report, so it
+ * never re-wraps, and every progress line breaks before its temp path, not after it. Ligatures off: the account's `---` and
+ * the progress lines' `&&` and `-->` are characters in a terminal.
+ */
+const DemoTasks: React.FC = () => <DemoView beats={tasksBeats} fontPx={21} linePx={30} cols={82} typingMs={tasksTypingMs} ligatures={false} />;
 
 export const Root: React.FC = () => (
   <>
@@ -343,6 +352,14 @@ export const Root: React.FC = () => (
       height={1080}
       fps={FPS}
       durationInFrames={strategyTotalFrames}
+    />
+    <Composition
+      id="TestTasksDemo"
+      component={DemoTasks}
+      width={1080}
+      height={1080}
+      fps={FPS}
+      durationInFrames={tasksTotalFrames}
     />
   </>
 );

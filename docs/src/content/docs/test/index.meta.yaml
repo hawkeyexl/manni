@@ -1,26 +1,31 @@
 docs/src/content/docs/test/index.mdx:
-  personas: ["devin", "maya"]
-  journeys: ["d17"]
+  personas: ["devin", "maya", "sara"]
+  journeys: ["d17", "s18"]
   visibility: public
   review-interval: P180D
   source-of-truth:
-    - path: "src/test/commands/run.ts"
+    - path: "src/test/commands/procedures.ts"
     - path: "src/test/core/doc-detective.ts"
     - path: "src/test/reporters/"
+    - path: "src/test/core/judge-run.ts"
   eval-suite: test
   evals:
     - id: input-precedence
-      assertion: "A reader can say which files manni test run tests when given paths, a collection, or nothing."
+      assertion: "A reader can say which files manni test procedures tests when given paths, a collection, or nothing."
       type: capability
       grader: ai
     - id: gate-in-ci
-      assertion: "A reader can add manni test run to a CI job and say what each of its exit codes means."
+      assertion: "A reader can add manni test procedures to a CI job and say what each of its exit codes means."
+      type: capability
+      grader: ai
+    - id: two-verbs
+      assertion: "A reader can say what manni test tasks checks that manni test procedures does not."
       type: capability
       grader: ai
   provenance:
     - generated-by: Claude Opus 5.5
-      lines: 2-154
-      integrity: sha256-7a59e92cc85261b413e44b045438fa20c2b9e9cf8443cb6d62284c522b839885
+      lines: 2-189
+      integrity: sha256-5675bb464582ab85903852dde13830f0150e6598d038bb598a0eeec02737f161
   owner:
     - "@hawkeyexl"
   created: 2026-10-05

@@ -1,0 +1,6 @@
+task as newcomer: starting in an empty directory
+  newcomer › Bash curl -s http://127.0.0.1:4321/manni/meta/get-started/ | sed 's/<[^>]*>//g' | gre
+  newcomer › Bash node --version; npm --version
+  newcomer › Bash npm install -g @hawkeyexl/manni 2>&1 | tail -20
+  newcomer › Bash manni --version
+inference: provider "auto" — auto-selected "claude-cli". Pass an explicit `provider` to pin it.

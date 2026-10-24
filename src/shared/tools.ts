@@ -46,14 +46,29 @@ export interface DocDetectiveToolConfig {
   config?: string;
 }
 
+/** Claude Code's settings under `tools.claude-code`, for `manni test tasks`'s synthetic user. */
+export interface ClaudeCodeToolConfig {
+  /** Passed as `--model`. Unset means Claude Code's own default. */
+  model?: string;
+  /** Passed as `--max-turns`. Unset means {@link DEFAULT_CLAUDE_CODE_MAX_TURNS}. */
+  maxTurns?: number;
+  /** MCP servers the synthetic user gets, as written, relative to `manni.config.yaml`. */
+  mcpConfig?: string;
+}
+
+/** The synthetic user's turn limit when `tools.claude-code.maxTurns` is unset. */
+export const DEFAULT_CLAUDE_CODE_MAX_TURNS = 50;
+
 /** The document's top-level `tools:`, one namespace per outside tool. */
 export interface ToolsConfig {
   vale?: ValeToolConfig;
   "dita-ot"?: DitaOtToolConfig;
   "doc-detective"?: DocDetectiveToolConfig;
+  "claude-code"?: ClaudeCodeToolConfig;
 }
 
-const TOOL_KEYS = ["vale", "dita-ot", "doc-detective"] as const;
+const TOOL_KEYS = ["vale", "dita-ot", "doc-detective", "claude-code"] as const;
+const CLAUDE_CODE_KEYS = ["model", "maxTurns", "mcpConfig"] as const;
 
 function isMapping(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -107,7 +122,39 @@ export function parseTools(
       toError,
     );
   }
+  if (Object.hasOwn(raw, "claude-code")) {
+    tools["claude-code"] = parseClaudeCode(raw["claude-code"], source, toError);
+  }
   return tools;
+}
+
+/** `tools.claude-code`, the one namespace with more than one key. */
+function parseClaudeCode(
+  raw: unknown,
+  source: string,
+  toError: (message: string) => Error,
+): ClaudeCodeToolConfig {
+  if (!isMapping(raw)) {
+    throw toError(`${source}: tools.claude-code must be a mapping.`);
+  }
+  rejectUnknownKeys(raw, CLAUDE_CODE_KEYS, "tools.claude-code", source, toError);
+  const out: ClaudeCodeToolConfig = {};
+  for (const key of ["model", "mcpConfig"] as const) {
+    if (!Object.hasOwn(raw, key)) continue;
+    const value = raw[key];
+    if (typeof value !== "string" || value.trim() === "") {
+      throw toError(`${source}: tools.claude-code.${key} must be a non-empty string.`);
+    }
+    out[key] = value;
+  }
+  if (Object.hasOwn(raw, "maxTurns")) {
+    const value = raw["maxTurns"];
+    if (typeof value !== "number" || !Number.isInteger(value) || value < 1) {
+      throw toError(`${source}: tools.claude-code.maxTurns must be a positive integer.`);
+    }
+    out.maxTurns = value;
+  }
+  return out;
 }
 
 /**
@@ -175,6 +222,17 @@ export function docDetectiveConfigPath(
   configDir: string,
 ): string | undefined {
   const config = tools["doc-detective"]?.config;
+  if (config === undefined) return undefined;
+  return fromConfigDir(config, configDir);
+}
+
+/**
+ * The absolute path of the MCP config Claude Code's synthetic user gets,
+ * resolved against the directory of the config file that declared it.
+ * `undefined` when none is set, which means no MCP servers.
+ */
+export function claudeCodeMcpConfigPath(tools: ToolsConfig, configDir: string): string | undefined {
+  const config = tools["claude-code"]?.mcpConfig;
   if (config === undefined) return undefined;
   return fromConfigDir(config, configDir);
 }
