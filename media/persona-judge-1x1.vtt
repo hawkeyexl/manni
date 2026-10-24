@@ -1,0 +1,24 @@
+WEBVTT
+
+NOTE Captions are burned into persona-judge-1x1.mp4 (LinkedIn autoplays muted). This sidecar carries the same text for players and for hosts that accept a caption track. Silent video: there is no narration and no sound, and the terminal text is in the transcript.
+
+1
+00:00:00.000 --> 00:00:06.533
+One eval reads as Theo
+readers: personas on one eval. The page names theo.
+
+2
+00:00:06.533 --> 00:00:21.333
+manni docevals run
+Read as theo: FAIL. The untagged eval passes. Exit 1.
+
+3
+00:00:21.333 --> 00:00:27.100
+Speak to Theo's pains
+He can't tell which schema fired. Now the page says.
+
+4
+00:00:27.100 --> 00:00:38.467
+Run it again
+Passes, read as theo. Exit 0. Waits shown 3.5x faster.
+

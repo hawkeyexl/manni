@@ -7,6 +7,7 @@ audience: contributors
 goals:
   - Find the field his check named, fix it, confirm locally, and move on.
 pains:
+  - Error messages are terse with no obvious remediation hint.
   - He doesn't know which schema fired or why the rule exists.
 constraints:
   - Reads only the pages the fix needs, never the rest of the documentation.
@@ -14,13 +15,6 @@ constraints:
 ---
 
 Theo is a developer or technical writer who opened a PR. The manni meta check is red. He has low context on the tool and is not interested in learning it. He wants to fix the one thing blocking his PR.
-
-**Goal:** understand the specific error, find the offending field and line in his file, fix it, confirm locally, and move on.
-
-**Pains:**
-- Error messages are terse with no obvious remediation hint.
-- He doesn't know which schema fired or why that rule exists.
-- He doesn't want to read the full documentation. He wants a targeted answer.
 
 **How he uses manni meta.** He follows the error link, or searches, to reach the fix-it page. He maps the error to a field and file location, then applies the fix. He runs `npx @hawkeyexl/manni meta validate <file>` locally to confirm green, and he is done.
 

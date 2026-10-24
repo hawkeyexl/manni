@@ -1,0 +1,18 @@
+[1mdocs/one-reader.md[22m
+  [31mFAIL[39m names-schema[2m [auto-fail][22m[2m (read as theo)[22m  [2mdocs/one-reader.md:6[22m
+       AI judge: fail (confidence 0.70). Edit the page so the assertion holds.
+       Observed: No statement on which schema fired is present in the page content.
+       Reasoning: The assertion requires the documentation to explicitly identify the schema that triggered the failure. The provided page only contains instructions to fix the failing field and run a validation command, without any mention of the specific schema that caused the issue.
+[2m       votes pass:0 fail:1 partial:0[22m
+[2m       docs/one-reader.md names-schema: The page names the schema that fired.[22m
+[2m       Guide: https://hawkeyexl.github.io/manni/docevals/fix/[22m
+  [32mpass[39m plain-judge[2m [auto-pass][22m  [2mdocs/one-reader.md:11[22m
+[2mnotice[22m docs/one-reader.md:6 Eval "names-schema": ai-graded evals work best with examples.pass/examples.fail
+[2mnotice[22m docs/one-reader.md:11 Eval "plain-judge": ai-graded evals work best with examples.pass/examples.fail
+
+[1mSuites[22m
+  default: 1/2 passed — 50% vs target 100% [31mbelow target[39m
+
+[2mJudged 2 evals (0 cached), 1,088 tokens[22m
+
+real	0m8.172s

@@ -22,22 +22,22 @@ docs/src/content/docs/strategy/index.mdx:
       grader: ai
   provenance:
     - generated-by: Claude Opus 5.5
-      lines: 2-211
-      integrity: sha256-d13e88a6212a3ee2fd0b33a1f3eea337909db580615cd86eaceeb44a3dc11df8
+      lines: 2-215
+      integrity: sha256-213f1e5457a413de86f0e130250b5d3dae666c5d81201faaefd61e20c61709bd
     - generated-by: Claude Opus 5.5
-      lines: 268-279
+      lines: 272-283
       integrity: sha256-45e0791d9910fe17ab43db2d39dd506e92a282e1ac2695af525cd0e351e50307
     - generated-by: Claude Opus 5.5
-      lines: 281-303
-      integrity: sha256-b96d050d60169007ac20fb421f3ec2f41e00777def242f0b5b79411183a17a6b
+      lines: 285-312
+      integrity: sha256-ebb8f9623e19b480d286cc60bd4ccd6e2583f57bd908cdecee8d7da525cb188b
     - generated-by: Claude Opus 5.5
-      lines: 306-312
+      lines: 315-321
       integrity: sha256-7689a5527f6cac4ec90729897a10545c8f91f5e2e3479422dd6f27ec8f799199
     - generated-by: Claude Opus 5.5
-      lines: 344-351
+      lines: 353-360
       integrity: sha256-b047495005d5f5805fc16843b7a032ff282f90d83a4b06fee9a69967fbeda5e2
     - generated-by: Claude Opus 5.5
-      lines: 362-372
+      lines: 371-381
       integrity: sha256-ac23adb220efc372c476ee4891ec7e9a13435ae2346c8b199cf25a0048aa2b18
   owner:
     - "@hawkeyexl"

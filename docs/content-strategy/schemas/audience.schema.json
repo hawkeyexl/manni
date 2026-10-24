@@ -2,11 +2,12 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://hawkeyexl.github.io/manni/content-strategy/audience.schema.json",
   "title": "manni content strategy: audience record",
-  "description": "A content-strategy audience: a group of readers the docs serve. One record per file, under docs/content-strategy/audiences/. Every field after `type` and `id` is optional.",
+  "description": "A content-strategy audience: a group of readers the docs serve. One record per file, under docs/content-strategy/audiences/. Every field after `type`, `id` and `citations` is optional.",
   "type": "object",
   "required": [
     "type",
-    "id"
+    "id",
+    "citations"
   ],
   "properties": {
     "type": {
@@ -79,6 +80,9 @@
     "underrepresented": {
       "type": "boolean",
       "description": "Whether the docs serve this audience less than its weight."
+    },
+    "citations": {
+      "description": "The evidence the record's claims rest on. Each entry pins a line of the body to a line of an interview note, ticket export, transcript or analytics export. manni:citations:1.3.0 gives its shape."
     }
   },
   "additionalProperties": true

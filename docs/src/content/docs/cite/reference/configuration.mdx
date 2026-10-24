@@ -27,7 +27,7 @@ sample-questions:
 graph:
   label: Configuration reference
   type: reference
-last-updated: 2026-10-22
+last-updated: 2026-10-23
 tags:
   - configuration
   - reference
@@ -370,7 +370,7 @@ exit code. `off` is not reported at all. The rules themselves are defined on the
 [citations reference](/manni/cite/reference/citations/#statuses-and-rules).
 
 {/* cite fourteen-rules */}
-`severity:` takes exactly these sixteen names. `current` and `skipped` are
+`severity:` takes exactly these seventeen names. `current` and `skipped` are
 statuses, per end, and neither is a rule, so neither can be named here.
 
 | Rule | Default | Why |
@@ -384,6 +384,7 @@ statuses, per end, and neither is a rule, so neither can be named here.
 | `claim-moved-ambiguous` | `warning` | The pinned text sits in more than one place, and the tool will not guess. |
 | `claim-reanchored` | `notice` | The words the pin covered are unchanged since the claim's baseline, and only the layout moved. `update` re-pins it. |
 | `claim-changed` | `warning` | It fires on an edit to the words the pin covered, a typo fix included. Set it to `error` to have every such edit reviewed. |
+| `claim-missing` | `warning` | On a record, a pointer claim's value is gone, so the entry points at nothing. `remove` clears it. |
 | `marker-orphan` | `error` | A marker names an id no entry has. |
 | `marker-invalid` | `error` | A marker the tool cannot read, including one carrying JSON. |
 | `marker-repeated` | `warning` | Two markers name one id; the first anchors it. |

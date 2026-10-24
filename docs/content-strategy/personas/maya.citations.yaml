@@ -1,0 +1,11 @@
+docs/content-strategy/personas/maya.md:
+  citations:
+    - id: fill-egress
+      claim:
+        lines: 19
+        integrity: sha256-47e374c12a4eb269ac8bbc452c82b39d8c937d40168c4f0ec9e2913057c8a275
+      source:
+        file: docs/proposals/0012-fill-cost-and-privacy.md
+        lines: 10-11
+        integrity: sha256-b112e540cf496ee740b6f600fafd3f81902586505103d962cefbcc5786384b47
+        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb

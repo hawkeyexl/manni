@@ -1,0 +1,11 @@
+docs/content-strategy/audiences/ci-engineers.md:
+  citations:
+    - id: machine-output
+      claim:
+        lines: 2
+        integrity: sha256-6807242faf450ec7c698110f65794253bbdec26b523e521a90ecee7fe34b2267
+      source:
+        file: docs/proposals/0003-sarif-and-junit-reporters.md
+        lines: 20-21
+        integrity: sha256-0dfcc4f722ce6f75115805ef171404738952a4fbebca66bc1e51446b60dabfba
+        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb

@@ -28,6 +28,7 @@ import { spellLines, toBodyLines } from "../../shared/pin.js";
 import { claimEnd } from "./claims.js";
 import { hashLines, splitLines } from "./hash.js";
 import { readPage } from "./page.js";
+import { spellPointer, valueAt, valueText } from "./pointer.js";
 import { parseLines } from "./range.js";
 import { misplacedMarkerAt, movedUnit, unitText } from "./reanchor.js";
 import { shortCommit } from "./spell.js";
@@ -219,7 +220,8 @@ function pinOf(lines: readonly string[], span: PageLines): string | undefined {
 
 /** Where the pin sat in one older page, or why the walk should stop. */
 type FoundAt =
-  | { kind: "found"; span: PageLines; lines: string[] }
+  /** `at` labels a value a pointer claim found, as `#/pains/0`, in place of `span`. */
+  | { kind: "found"; span: PageLines; lines: string[]; at?: string }
   | { kind: "absent" }
   /** The marker that anchors the entry is not in that page, so nothing older can hold it. */
   | { kind: "no-marker" };
@@ -236,7 +238,8 @@ interface ThenPage {
 function readThen(input: ClaimHistoryInput, text: string): ThenPage | undefined {
   const then = readPage(input.page.file, text, { format: input.page.format });
   const lines = splitLines(then.content);
-  if (input.entry.citation.claim?.lines !== undefined) return { page: then, lines };
+  const claim = input.entry.citation.claim;
+  if (claim?.lines !== undefined || claim?.pointer !== undefined) return { page: then, lines };
   const id = input.entry.citation.id;
   if (id === undefined) return undefined;
   const marker = then.statements.find(
@@ -275,6 +278,13 @@ function anchorHeldAt(input: ClaimHistoryInput, then: ThenPage): FoundAt {
   const end = claimEnd(then.page, was, then.lines, split);
   if (end === null || (end.status !== "current" && end.status !== "moved")) {
     return { kind: "absent" };
+  }
+  // A metadata value held the pin where the classifier found it (0108).
+  if (end.pointer !== undefined) {
+    const at = end.newPointer ?? end.pointer;
+    const held = valueAt(then.page.metadata.data, at);
+    if (held === undefined) return { kind: "absent" };
+    return { kind: "found", span: { start: 1, end: 1 }, lines: [valueText(held.value)], at: spellPointer(at) };
   }
   // Which of the two specs held depends on the anchor and the status, so the
   // pin says: it is the one it matches.
@@ -385,7 +395,7 @@ export async function claimHistory(input: ClaimHistoryInput): Promise<ClaimHisto
       words: claimWords(found.lines, format),
       pageWords: claimWords(then.lines.slice(then.page.bodyLine - 1), format),
       lines: found.lines,
-      at: spellLines(found.span),
+      at: found.at ?? spellLines(found.span),
     };
   };
 
@@ -512,6 +522,12 @@ export function refineClaim(input: RefineClaimInput): ClaimEnd {
       stripMarkers(now, format).join("\n") === stripMarkers(history.lines, format).join("\n");
     const at = claim.fileLines ?? history.at;
     return withDiff(same ? { ...base, status: "reanchored" } : base, { at, lines: now });
+  }
+
+  // A metadata value is never reanchored: it is the value now, against the
+  // value then, labelled by its pointer (0108).
+  if (claim.pointer !== undefined) {
+    return withDiff(base, { at: spellPointer(claim.pointer), lines: claim.text ?? [] });
   }
 
   // A marker travels with its text, so the span it anchors now is the claim.

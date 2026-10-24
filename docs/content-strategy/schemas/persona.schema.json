@@ -2,12 +2,13 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://hawkeyexl.github.io/manni/content-strategy/persona.schema.json",
   "title": "manni content strategy: persona record",
-  "description": "A content-strategy persona: one concrete reader within an audience. One record per file, under docs/content-strategy/personas/. Every field after `type`, `id` and `audience` is optional.",
+  "description": "A content-strategy persona: one concrete reader within an audience. One record per file, under docs/content-strategy/personas/. Every field after `type`, `id`, `audience` and `citations` is optional.",
   "type": "object",
   "required": [
     "type",
     "id",
-    "audience"
+    "audience",
+    "citations"
   ],
   "properties": {
     "type": {
@@ -22,17 +23,17 @@
     "title": {
       "type": "string",
       "minLength": 1,
-      "description": "The record's name, as `manni strategy list` and `get` show it."
+      "description": "The record's name, as `manni strategy list` and `get` show it. The docevals judge reads it for an eval with `readers: personas`."
     },
     "description": {
       "type": "string",
       "minLength": 1,
-      "description": "One sentence that says who or what the record is."
+      "description": "One sentence that says who or what the record is. The docevals judge reads it for an eval with `readers: personas`."
     },
     "name": {
       "type": "string",
       "minLength": 1,
-      "description": "The persona's name and role, as a reader would say it."
+      "description": "The persona's name and role, as a reader would say it. The docevals judge reads it for an eval with `readers: personas`."
     },
     "audience": {
       "type": "string",
@@ -42,12 +43,12 @@
     "role": {
       "type": "string",
       "minLength": 1,
-      "description": "The persona's job."
+      "description": "The persona's job. The docevals judge reads it for an eval with `readers: personas`."
     },
     "team-context": {
       "type": "string",
       "minLength": 1,
-      "description": "The team and product the persona works in."
+      "description": "The team and product the persona works in. The docevals judge reads it for an eval with `readers: personas`."
     },
     "proficiency": {
       "type": "array",
@@ -55,7 +56,7 @@
         "type": "string",
         "minLength": 1
       },
-      "description": "What the persona is already good at."
+      "description": "What the persona is already good at. The docevals judge reads it for an eval with `readers: personas`."
     },
     "prerequisites": {
       "type": "array",
@@ -63,7 +64,7 @@
         "type": "string",
         "minLength": 1
       },
-      "description": "What the persona needs to know before the docs can help."
+      "description": "What the persona needs to know before the docs can help. The docevals judge reads it for an eval with `readers: personas`."
     },
     "goals": {
       "type": "array",
@@ -71,7 +72,7 @@
         "type": "string",
         "minLength": 1
       },
-      "description": "What the persona is trying to achieve."
+      "description": "What the persona is trying to achieve, one claim per item. A citation pins an item as `/goals/<n>`. The docevals judge reads it for an eval with `readers: personas`."
     },
     "pains": {
       "type": "array",
@@ -79,7 +80,7 @@
         "type": "string",
         "minLength": 1
       },
-      "description": "What gets in the persona's way."
+      "description": "What gets in the persona's way, one claim per item. A citation pins an item as `/pains/<n>`. The docevals judge reads it for an eval with `readers: personas`."
     },
     "constraints": {
       "type": "array",
@@ -95,7 +96,7 @@
         "type": "string",
         "minLength": 1
       },
-      "description": "The kinds of content the persona needs."
+      "description": "The kinds of content the persona needs. The docevals judge reads it for an eval with `readers: personas`."
     },
     "journeys": {
       "type": "array",
@@ -105,6 +106,9 @@
       },
       "uniqueItems": true,
       "description": "The ids of the journey records this persona follows. `manni strategy` derives the same list from each journey's `personas:`, so this one is optional."
+    },
+    "citations": {
+      "description": "The evidence the record's claims rest on. Each entry pins a goal, a pain or a line of the body to a line of an interview note, ticket export, transcript or analytics export. manni:citations:1.3.0 gives its shape."
     }
   },
   "additionalProperties": true

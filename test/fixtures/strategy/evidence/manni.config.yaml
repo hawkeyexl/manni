@@ -1,0 +1,24 @@
+# Evidence-pinned personas (proposal 0108). Each record's pins live in a
+# `{page}.citations.yaml` beside it, the persona schema requires them, and the
+# evidence is a folder of interview notes with no git.
+collections:
+  - name: site
+    paths:
+      - "pages/**/*.md"
+  - name: strategy
+    paths:
+      - "records/**/*.md"
+    externalMetadata:
+      - file: "{page}.citations.yaml"
+        keys: [citations]
+
+meta:
+  overrides:
+    - files: "records/personas/*.md"
+      schemas:
+        - ./schemas/persona.schema.json
+        - manni:citations:1.3.0
+
+cite:
+  repos:
+    research: research

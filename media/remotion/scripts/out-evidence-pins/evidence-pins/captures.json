@@ -1,0 +1,19 @@
+{
+    "catPersona": "---\ntype: persona\nid: theo\ntitle: Theo, Doc Contributor\ndescription: Theo opened a pull request and met a failing check.\naudience: contributors\npains:\n  - Error messages are terse with no remediation hint.\n  - He does not know which schema fired.\n---\n# Theo\n\nTheo fixes the failure and moves on.\n",
+    "add": "Using manni.config.yaml (.)\nrecords/personas/theo.md: added terse-messages to records/personas/theo.citations.yaml:3 (claim at /pains/0, sha256-c1ac46fc…; source research/contributor.md:3 \"- The error named the field and said nothing about the fix.\", sha256-13745edd…, c54fa28)\n",
+    "check-current": "Using manni.config.yaml (.)\n\u001b[32m✓\u001b[39m records/personas/theo.md   \u001b[2mrecords/personas/theo.citations.yaml\u001b[22m\n    \u001b[32m✓\u001b[39m \u001b[36mterse-messages\u001b[39m   #/pains/0 current   research/contributor.md:3 current\n\n\u001b[32m1 file checked, 1 passed, 0 failed, 0 findings\u001b[39m\n",
+    "diff-persona": "\u001b[1mdiff --git a/records/personas/theo.md b/records/personas/theo.md\u001b[m\n\u001b[1mindex 983d0de..cf8125c 100644\u001b[m\n\u001b[1m--- a/records/personas/theo.md\u001b[m\n\u001b[1m+++ b/records/personas/theo.md\u001b[m\n\u001b[36m@@ -7,4 +7,4 @@\u001b[m \u001b[maudience: contributors\u001b[m\n pains:\u001b[m\n\u001b[31m-  - Error messages are terse with no remediation hint.\u001b[m\n   - He does not know which schema fired.\u001b[m\n\u001b[32m+\u001b[m\u001b[32m  - Error messages are terse with no remediation hint.\u001b[m\n ---\u001b[m\n",
+    "check-moved": "Using manni.config.yaml (.)\n\u001b[2mℹ\u001b[22m records/personas/theo.md   \u001b[2mrecords/personas/theo.citations.yaml\u001b[22m\n    \u001b[2mℹ\u001b[22m \u001b[36mterse-messages\u001b[39m   #/pains/0 moved -> #/pains/1   research/contributor.md:3 current\n      Run manni cite update.\n      \u001b[2mmanni:cite claim-moved: The pinned metadata value sits at another pointer.\u001b[22m\n      \u001b[2mGuide: https://hawkeyexl.github.io/manni/cite/fix/#claim-moved\u001b[22m\n\n\u001b[32m1 file checked, 1 passed, 0 failed, 1 finding (1 notice)\u001b[39m\n",
+    "update": "Using manni.config.yaml (.)\nrecords/personas/theo.md: \u001b[36mterse-messages\u001b[39m claim #/pains/0 -> #/pains/1 (moved)\n\u001b[32m1 citation rewritten in 1 file, 0 skipped\u001b[39m\n",
+    "diff-note": "\u001b[1mdiff --git a/research/contributor.md b/research/contributor.md\u001b[m\n\u001b[1mindex d9b8603..c9e33bd 100644\u001b[m\n\u001b[1m--- a/research/contributor.md\u001b[m\n\u001b[1m+++ b/research/contributor.md\u001b[m\n\u001b[36m@@ -1,4 +1,4 @@\u001b[m\n # Contributor interview, 2026-09-12\u001b[m\n \u001b[m\n\u001b[31m-- The error named the field and said nothing about the fix.\u001b[m\n\u001b[32m+\u001b[m\u001b[32m- The error named the field and said how to fix it.\u001b[m\n - They could not tell which schema the rule came from.\u001b[m\n",
+    "check-changed": "Using manni.config.yaml (.)\n\u001b[31m✗\u001b[39m records/personas/theo.md   \u001b[2mrecords/personas/theo.citations.yaml\u001b[22m\n    \u001b[31m✗\u001b[39m \u001b[36mterse-messages\u001b[39m   #/pains/1 current   research/contributor.md:3 changed since c54fa28, 0 commits\n      Check the sentence against the source, then run manni cite update --accept --only terse-messages.\n      \u001b[2mmanni:cite source-changed: The cited lines are not what they were.\u001b[22m\n      \u001b[2mGuide: https://hawkeyexl.github.io/manni/cite/fix/#source-changed\u001b[22m\n\n\u001b[31m1 file checked, 0 passed, 1 failed, 1 finding\u001b[39m\n",
+    "exits": {
+        "add": "0",
+        "check-current": "0",
+        "diff-persona": "0",
+        "check-moved": "0",
+        "update": "0",
+        "diff-note": "0",
+        "check-changed": "1"
+    }
+}

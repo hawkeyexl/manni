@@ -451,6 +451,7 @@ export default defineConfig({
           items: [
             { label: "Overview", link: "/strategy/" },
             { label: "Measure against traffic", link: "/strategy/traffic/" },
+            { label: "Rest personas on evidence", link: "/strategy/evidence/" },
             {
               label: "Reference",
               collapsed: true,

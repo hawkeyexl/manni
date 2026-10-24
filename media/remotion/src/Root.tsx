@@ -28,6 +28,8 @@ import { beats as pluginMetadataBeats, totalFrames as pluginMetadataTotalFrames,
 import { beats as tasksBeats, totalFrames as tasksTotalFrames, TYPING_MS as tasksTypingMs } from "./tasks/beats";
 import { beats as strategyStepsBeats, totalFrames as strategyStepsTotalFrames, TYPING_MS as strategyStepsTypingMs } from "./strategy-steps/beats";
 import { beats as strategyBeats, totalFrames as strategyTotalFrames, TYPING_MS as strategyTypingMs } from "./strategy/beats";
+import { beats as evidencePinsBeats, totalFrames as evidencePinsTotalFrames, TYPING_MS as evidencePinsTypingMs } from "./evidence-pins/beats";
+import { beats as personasBeats, totalFrames as personasTotalFrames, TYPING_MS as personasTypingMs } from "./personas/beats";
 import { beats as citeImpactBeats, totalFrames as citeImpactTotalFrames, TYPING_MS as citeImpactTypingMs } from "./cite-impact/beats";
 import { beats as checkImpactBeats, totalFrames as checkImpactTotalFrames, TYPING_MS as checkImpactTypingMs } from "./check-impact/beats";
 import { beats as pluginRecordsBeats, totalFrames as pluginRecordsTotalFrames, TYPING_MS as pluginRecordsTypingMs } from "./plugin-records/beats";
@@ -146,6 +148,26 @@ const DemoPluginMetadata: React.FC = () => <DemoView beats={pluginMetadataBeats}
  */
 const DemoStrategy: React.FC = () => (
   <DemoView beats={strategyBeats} fontPx={19} linePx={27} cols={91} typingMs={strategyTypingMs} ligatures={false} breakAfter="/" />
+);
+
+/**
+ * evidence-pins-1x1: 19 px / 91 columns for beat 4, derived in
+ * media/evidence-pins/evidence-pins-1x1.script.md (media/evidence-pins/capture/cols.mjs).
+ * Beats 1, 2, 3 and 5 carry their own sizes (src/evidence-pins/beats.ts).
+ * Ligatures off: the record's `---` fences and the diff's `---` header would draw as one rule.
+ */
+const DemoEvidencePins: React.FC = () => (
+  <DemoView beats={evidencePinsBeats} fontPx={19} linePx={27} cols={91} typingMs={evidencePinsTypingMs} ligatures={false} />
+);
+
+/**
+ * persona-judge-1x1: 21 px / 82 columns for beat 2, derived in media/persona-judge-1x1.script.md
+ * (media/capture-personas/cols.mjs). The judge's reasoning and the notices wrap at spaces;
+ * no result row wraps. Beats 1, 3 and 4 carry their own sizes (src/personas/beats.ts).
+ * Ligatures off: the page's `---` fences would draw as one rule.
+ */
+const DemoPersonas: React.FC = () => (
+  <DemoView beats={personasBeats} fontPx={21} linePx={29} cols={82} typingMs={personasTypingMs} ligatures={false} />
 );
 
 /**
@@ -415,6 +437,22 @@ export const Root: React.FC = () => (
       height={1080}
       fps={FPS}
       durationInFrames={strategyTotalFrames}
+    />
+    <Composition
+      id="EvidencePinsDemo"
+      component={DemoEvidencePins}
+      width={1080}
+      height={1080}
+      fps={FPS}
+      durationInFrames={evidencePinsTotalFrames}
+    />
+    <Composition
+      id="PersonaJudgeDemo"
+      component={DemoPersonas}
+      width={1080}
+      height={1080}
+      fps={FPS}
+      durationInFrames={personasTotalFrames}
     />
     <Composition
       id="TestTasksDemo"

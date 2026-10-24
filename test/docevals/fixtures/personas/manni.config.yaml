@@ -1,0 +1,28 @@
+# Persona-aware judging (proposal 0111). An `ai` eval with
+# `options: { readers: personas }` is judged as the page's personas, read from
+# the `strategy` collection's records. Every page under docs/ is one shape of
+# the opt-in, or of the fall-back to today's judge.
+#
+# `pages` keeps one page's `personas:` in a manifest beside it, and that
+# manifest owns no eval key, so only `personas` brings it into a run.
+collections:
+  - name: pages
+    paths:
+      - "docs/*.md"
+    externalMetadata:
+      - file: "{page}.meta.yaml"
+        keys: [personas]
+  - name: strategy
+    paths:
+      - "strategy/*.md"
+
+docevals:
+  evals:
+    reader-can-finish:
+      assertion: A reader can finish the task this page describes without leaving it.
+      grader: ai
+      options:
+        readers: personas
+  judge:
+    ensembleRuns: 1
+    cacheDir: .manni/docevals/cache

@@ -118,7 +118,8 @@ async function quoteFindings(
   result: CitationResult,
 ): Promise<{ rule: CiteRule; message: string; line?: number }[]> {
   const { citation } = entry;
-  if (citation.quote !== true || result.anchor === null) return [];
+  // A quote with a pointer is `anchor-invalid` already, page-side (0108).
+  if (citation.quote !== true || result.anchor === null || citation.claim?.pointer !== undefined) return [];
   const id = citation.id;
   const named = (text: string): string => (id === undefined ? text : `${id}: ${text}`);
   const { page } = input;
@@ -192,7 +193,8 @@ function anchorOf(
   page: PageCitations,
 ): Pick<CitationResult, "anchor" | "markerLine" | "anchorLine"> {
   const { citation, marker } = entry;
-  const hasLines = citation.claim?.lines !== undefined;
+  // A pointer places the claim as lines do: on the value's line (0108).
+  const hasLines = citation.claim?.lines !== undefined || citation.claim?.pointer !== undefined;
   const out: Pick<CitationResult, "anchor" | "markerLine" | "anchorLine"> = { anchor: null };
   if (marker !== undefined) out.markerLine = marker.line;
   // Lines and a marker both is `anchor-invalid`: neither anchor is trusted.
@@ -360,7 +362,8 @@ export async function checkCitations(
 
   findings.push(...findingsFor(results, severity));
   // Every finding names its rule, what it means and its section of the fix page.
-  for (const finding of findings) finding.guidance = guidanceFor(finding.rule);
+  // A pointer claim's finding says what its rule means for a metadata value.
+  for (const finding of findings) finding.guidance ??= guidanceFor(finding.rule);
 
   // History is read for a citation with a commit, for every source whose pin
   // no longer holds where it was recorded, commit or not (0097), and for every

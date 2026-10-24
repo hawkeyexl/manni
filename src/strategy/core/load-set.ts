@@ -215,6 +215,7 @@ export async function loadStrategySet(opts: LoadStrategySetOptions): Promise<Str
           declares.type === "audience"
             ? []
             : valuesOf(data, PARENTS[declares.type]).map(({ value, pointer }) => ({ value, ...at(pointer) })),
+        data,
         ...(steps.length === 0 ? {} : { steps }),
       };
       set.records.push(record);

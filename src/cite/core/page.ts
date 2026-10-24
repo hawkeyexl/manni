@@ -17,6 +17,8 @@ import { extname } from "node:path";
 import * as Ajv2020Ns from "ajv/dist/2020.js";
 import type { ValidateFunction } from "ajv/dist/2020.js";
 import citationsSchema from "../../meta/schemas/citations/1.2.0.json" with { type: "json" };
+import recordCitationsSchema from "../../meta/schemas/citations/1.3.0.json" with { type: "json" };
+import { RECORD_TYPES } from "../../strategy/types.js";
 import {
   extractorForExtension,
   locateFrontmatter,
@@ -87,21 +89,31 @@ export function ownedMessage(owner: { file: string; collection: string }): strin
 type AjvCtor = typeof import("ajv/dist/2020.js").default;
 const Ajv2020 = Ajv2020Ns.default as unknown as AjvCtor;
 
-let entryValidator: ValidateFunction | undefined;
+const entryValidators = new Map<string, ValidateFunction>();
 
-function compileEntryValidator(): ValidateFunction {
-  if (entryValidator) return entryValidator;
+function compileEntryValidator(schema: { $id: string }): ValidateFunction {
+  const held = entryValidators.get(schema.$id);
+  if (held) return held;
   const ajv = new Ajv2020({ allErrors: false, strict: false });
-  ajv.addSchema(citationsSchema);
-  entryValidator = ajv.compile({
-    $ref: `${citationsSchema.$id}#/$defs/citationEntry`,
-  });
-  return entryValidator;
+  ajv.addSchema(schema);
+  const made = ajv.compile({ $ref: `${schema.$id}#/$defs/citationEntry` });
+  entryValidators.set(schema.$id, made);
+  return made;
 }
 
-/** Ajv validation of one entry object against `$defs.citationEntry`; the first error text, or undefined. */
-export function validateEntry(entry: unknown): string | undefined {
-  const validate = compileEntryValidator();
+/** Whether a page's own metadata makes it a strategy record: `type` is audience, persona or journey (0102 decision 1). */
+export function isStrategyRecord(data: Record<string, unknown>): boolean {
+  return (RECORD_TYPES as readonly unknown[]).includes(data.type);
+}
+
+/**
+ * Ajv validation of one entry object against `$defs.citationEntry`; the first
+ * error text, or undefined. A strategy record's entries are read under
+ * `manni:citations:1.3.0`, which adds `claim.pointer` (proposal 0108). Every
+ * other page's are read under 1.2.0, as before.
+ */
+export function validateEntry(entry: unknown, record = false): string | undefined {
+  const validate = compileEntryValidator(record ? recordCitationsSchema : citationsSchema);
   if (validate(entry)) return undefined;
   const first = validate.errors?.[0];
   if (!first) return "invalid entry";
@@ -135,6 +147,7 @@ function toCitation(entry: Record<string, unknown>): Citation {
     if (typeof claim.lines === "number" || typeof claim.lines === "string") {
       citation.claim.lines = claim.lines;
     }
+    if (typeof claim.pointer === "string") citation.claim.pointer = claim.pointer;
   }
   if (typeof entry.quote === "boolean") citation.quote = entry.quote;
   return citation;
@@ -243,6 +256,9 @@ export function readPage(
     ? 0
     : (locateFrontmatter(content)?.closeEnd ?? 0);
   const bodyLine = bodyLineOf(content, bodyOffset);
+  // The test is per page, so a repository with records keeps every other
+  // page's behaviour (proposal 0108).
+  const record = isStrategyRecord(data);
 
   const findings: CitationFinding[] = [];
   const citations: PageCitation[] = [];
@@ -295,7 +311,25 @@ export function readPage(
     if (origin.kind === "manifest") where.file = origin.file;
 
     const entry = input.entry;
-    const error = validateEntry(entry);
+    // A claim with both places is 1.3.0's `not`, which Ajv would word as
+    // "must NOT be valid"; this says which two keys to choose between.
+    if (
+      record &&
+      isRecord(entry) &&
+      isRecord(entry.claim) &&
+      entry.claim.lines !== undefined &&
+      entry.claim.pointer !== undefined
+    ) {
+      const id = typeof entry.id === "string" ? entry.id : undefined;
+      findings.push(
+        finding("entry-invalid", named(id, "claim has lines and a pointer. Keep one."), {
+          ...where,
+          ...subjectOf(entry),
+        }),
+      );
+      return;
+    }
+    const error = validateEntry(entry, record);
     if (error !== undefined || !isRecord(entry)) {
       findings.push(finding("entry-invalid", error ?? "must be object", { ...where, ...subjectOf(entry) }));
       return;
@@ -465,6 +499,26 @@ export function readPage(
     if (origin.line !== undefined) subject.line = origin.line;
     if (origin.kind === "manifest") subject.file = origin.file;
 
+    if (citation.claim?.pointer !== undefined) {
+      // A pointer places the claim in the metadata, so a marker or a quote,
+      // which both anchor body text, cannot work beside it (proposal 0108).
+      if (marker !== undefined) {
+        const onPage: FindingExtra = { index: origin.index, line: marker.line, src: subject.src };
+        if (citation.id !== undefined) onPage.id = citation.id;
+        findings.push(
+          finding("anchor-invalid", `${citation.id ?? "the entry"} has a claim pointer and a marker. Keep one.`, onPage),
+        );
+      } else if (citation.quote === true) {
+        findings.push(
+          finding(
+            "anchor-invalid",
+            named(citation.id, "a quote's claim is a fenced block, so it takes claim.lines, not claim.pointer."),
+            subject,
+          ),
+        );
+      }
+      continue;
+    }
     if (citation.claim?.lines !== undefined && marker !== undefined) {
       // A marker names an id, so an entry with both always has one. The
       // finding sits on the marker, which is the half a reader can see.
@@ -499,5 +553,7 @@ export function readPage(
     citations,
     statements,
     findings: findings.sort(byLine),
+    metadata: extracted,
+    record,
   };
 }

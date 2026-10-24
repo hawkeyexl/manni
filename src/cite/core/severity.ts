@@ -28,6 +28,7 @@ export const DEFAULT_SEVERITY: Readonly<Record<CiteRule, CiteSeverity>> = {
   "claim-moved-ambiguous": "warning",
   "claim-reanchored": "notice",
   "claim-changed": "warning",
+  "claim-missing": "warning",
   "marker-orphan": "error",
   "marker-invalid": "error",
   "marker-repeated": "warning",
@@ -56,6 +57,7 @@ export const RULE_DESCRIPTIONS: Readonly<Record<CiteRule, string>> = {
   "claim-moved-ambiguous": "The pinned page text now occurs in more than one place.",
   "claim-reanchored": "The pinned words are unchanged, and only the layout around them moved.",
   "claim-changed": "The sentence was edited since it was pinned.",
+  "claim-missing": "The pinned metadata value is gone from the record.",
   "marker-orphan": "A marker names an id no entry has.",
   "marker-invalid": "A marker the tool cannot read, including one carrying JSON.",
   "marker-repeated": "Two markers name one id.",
@@ -65,12 +67,23 @@ export const RULE_DESCRIPTIONS: Readonly<Record<CiteRule, string>> = {
   "quote-drift": "The fenced block does not reproduce the cited lines.",
 };
 
-/** The rule behind a finding: what it means, and its section of the fix page. */
-export function guidanceFor(rule: CiteRule): Guidance {
+/**
+ * What a claim rule means when the claim is a metadata value (proposal 0108).
+ * A body-line claim keeps `RULE_DESCRIPTIONS`; the fix page's "It means" cell
+ * holds both, today's first.
+ */
+export const POINTER_RULE_DESCRIPTIONS: Readonly<Partial<Record<CiteRule, string>>> = {
+  "claim-moved": "The pinned metadata value sits at another pointer.",
+  "claim-moved-ambiguous": "The pinned metadata value now occurs at more than one pointer.",
+  "claim-changed": "The metadata value was edited since it was pinned.",
+};
+
+/** The rule behind a finding: what it means, and its section of the fix page. `pointer` is a pointer claim's finding. */
+export function guidanceFor(rule: CiteRule, pointer = false): Guidance {
   return {
     id: RULE_ID_PREFIX,
     rule,
-    description: RULE_DESCRIPTIONS[rule],
+    description: (pointer ? POINTER_RULE_DESCRIPTIONS[rule] : undefined) ?? RULE_DESCRIPTIONS[rule],
     guide: `${FIX_URI}#${rule}`,
   };
 }

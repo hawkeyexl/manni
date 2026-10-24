@@ -33,7 +33,7 @@ sample-questions:
 graph:
   label: CLI reference
   type: reference
-last-updated: 2026-10-23
+last-updated: 2026-10-24
 tags:
   - cli
   - reference
@@ -240,14 +240,15 @@ status that follows is the claim's.
 
 A changed or reanchored claim carries its baseline, as the source column does.
 A reanchored claim that stores its own lines names the run it moves onto, and
-one a marker anchors reads `marker :14 reanchored since 3f9c2a1`. Three more
-forms the claim column takes:
+one a marker anchors reads `marker :14 reanchored since 3f9c2a1`. Four more
+forms the claim column takes, the last on a record only:
 
 | Claim column | When |
 |---|---|
 | `:9 changed since 3f9c2a1, uncommitted` | The working tree holds the change. It never reads `0 commits`. |
 | `:9 changed (history unavailable; fetch-depth: 0)` | A shallow checkout, or the 256-commit cap. |
 | `:9 changed` | No git, or no commit held the pin. |
+| `#/pains/0 current` | A claim that is a metadata value on a record. Its status reads `moved -> #/pains/1`, `moved-ambiguous (#/goals/0, #/pains/1)`, `changed` or `missing`. |
 
 Three run notices go to stderr, once per run. The third is the source end's
 own, for a source whose history ends before the pin held:
@@ -380,7 +381,22 @@ are now, and `claim` itself is `null` for a bare pin. A moved end adds
 `newLines`, a moved source end `newSrc` too, and an ambiguous one
 `candidates`. A moved source that changed file names the new path in
 `newSrc`, encrypted where the entry's own source is. A changed source end
-adds `newLines` when the in-range search found its span. A citation a marker anchors adds a `marker` object. It carries
+adds `newLines` when the in-range search found its span. On a record, a pointer claim carries `pointer` in place of `lines`, and a
+moved one adds `newPointer`. Its `candidates` are pointers, and its `status`
+may read `missing`. The citation's `at` is the file line of the value now:
+
+```json
+{
+  "id": "unknown-schema",
+  "origin": { "kind": "manifest", "file": "records/personas/theo.citations.yaml", "line": 13 },
+  "anchor": "claim",
+  "at": 8,
+  "claim": { "status": "moved", "pointer": "/pains/1", "newPointer": "/pains/0" },
+  "source": { "src": "research:notes/2026-09-12-contributor.md:4", "repo": "research", "status": "current", "commitSha": "9b50d4c7…" }
+}
+```
+
+A citation a marker anchors adds a `marker` object. It carries
 the marker's `line`. When the marker sits inside a paragraph it also carries
 a `misplaced` object, with the paragraph's `unit` and the `to` line the
 marker takes:
@@ -635,7 +651,7 @@ manni cite add <page>[:L|:L1-L2] <src> [options]
 
 | Argument | Description |
 |---|---|
-| `<page>[:L\|:L1-L2]` | The page to cite from, relative to the working directory, and the claim's lines as an editor numbers them. Only a trailing `:L` or `:L1-L2` is read as lines, so a path that carries a colon keeps it. Without lines, the entry is a bare pin. `-` reads the page from stdin and writes the rewritten page to stdout, with the report on stderr; that needs `--as`, and `-:L` carries lines. |
+| `<page>[:L\|:L1-L2]` or `<record>#<pointer>` | The page to cite from, relative to the working directory, with the claim. `page:L` or `page:L1-L2` names body lines as an editor numbers them. Only a trailing `:L` or `:L1-L2` is read as lines, so a path that carries a colon keeps it. `record#/pointer` names a value on an audience, persona or journey record, such as `theo.md#/pains/0`. The text after the first `#/` is the pointer, and it is read only when the file before it is a record. On any other page the whole argument is a path. Without lines or a pointer, the entry is a bare pin. `-` reads the page from stdin and writes the rewritten page to stdout, with the report on stderr; that needs `--as`, and `-:L` carries lines. |
 | `<src>` | The source: `path`, `path:L` or `path:L1-L2`, relative to the [root](#where-sources-resolve-from). Or `repo:path` with the same line forms, for a checkout in `cite.repos` or `--repo`. Or an encrypted `~source` with the same line forms. A bare path pins the whole file. `L2` before `L1`, a range longer than 5,000 lines and a line past the end of the file are refused (exit 2). So is a path that no checkout tracks, and an encrypted source that the current key can't decrypt. A plain path the root lacks is looked up in each declared repo. When one repo tracks it the entry gets that `repo`, and when several do `add` refuses. |
 
 ### Options
@@ -689,6 +705,7 @@ manni cite add docs/limits.md:30 lib/limits.ts:8-12 --id timeouts --marker
 manni cite add docs/limits.md:30 lib/limits.ts:9 --id backoff --marker    # joins the marker there
 manni cite add docs/limits.md:14-18 lib/limits.ts:1-3 --quote      # the block that reproduces it
 manni cite add docs/limits.md:9 lib/limits.ts:2 --dry-run          # preview the diff
+manni cite add docs/personas/theo.md#/pains/0 notes/2026-09-12.md:3-4 --id terse-messages   # a value on a record
 MANNI_ENCRYPTION_KEY=$KEY manni cite add docs/limits.md:9 lib/limits.ts:2 --root ../code
 manni cite add docs/limits.md:17 sdk:src/client.ts:2 --id retries # a source in the sdk checkout
 cat page.md | manni cite add -:9 lib/limits.ts:2 --as markdown > out.md
@@ -705,6 +722,7 @@ docs/limits.md: added a bare pin to frontmatter (source lib/limits.ts, sha256-ae
 docs/limits.md: added timeouts to frontmatter; marker at line 30, claim pinned at lines 31-34 (sha256-c41f09aa…; source lib/limits.ts:8-12 "export const TIMEOUTS = {", sha256-78af1d33…, 3f9c2a1)
 docs/limits.md: added backoff to frontmatter; joined the marker at line 30, claim pinned at lines 31-34 (sha256-c41f09aa…; source lib/limits.ts:9 "const BACKOFF = 2;", sha256-78af1d33…, 3f9c2a1)
 docs/limits.md: added an entry to frontmatter (claim lines 14-18, a block that reproduces lib/limits.ts:1-3)
+records/personas/theo.md: added terse-messages to records/personas/theo.citations.yaml:3 (claim at /pains/0, sha256-c1ac46fc…; source research:notes/2026-09-12-contributor.md:3 "- The error named the field and said nothing about the fix.", sha256-13745edd…, 9b50d4c)
 ```
 
 The line says `joined the marker` when the id went into a marker already
@@ -752,6 +770,24 @@ manni: docs/limits.md already has an entry fetch-timeout.
 manni: docs/limits.md already has an entry for lines 9-10 and lib/limits.ts:2 (fetch-timeout).
 manni: docs/limits.md already has a bare pin for lib/limits.ts (/citations/0).
 ```
+
+On a record, the frontmatter refusal names the value's pointer, and a
+pointer has refusals of its own:
+
+```
+manni: records/personas/theo.md:8 is in the frontmatter. Cite the value there as records/personas/theo.md#/pains/0.
+manni: records/personas/theo.md:1 is in the frontmatter, and starts no value. Cite a value as records/personas/theo.md#/<key>.
+manni: records/personas/theo.md#/pains/9 names no value in the page's metadata.
+manni: records/personas/theo.md#/citations/0 is a citation, not a claim.
+manni: records/personas/theo.md#/owner holds an encrypted value. A claim's pin is public, so cite a plain value.
+manni: records/personas/theo.md#/pains is empty.
+manni: Invalid pointer "/pains/0~2": write ~ as ~0 and / as ~1.
+manni: --marker anchors body text, so it takes page lines, not a pointer.
+manni: records/personas/theo.md already has an entry for /pains/0 and research:notes/2026-09-12-contributor.md:3 (terse-messages).
+```
+
+On a page that is not a record, the whole argument is a path, so
+`cite add page.md#/title …` reads `manni: File not found: "page.md#/title"`.
 
 A duplicate is named by the existing entry's id, or by `/citations/N` when it
 has none. The source is compared as the entry spells it, so an encrypted
@@ -827,10 +863,11 @@ run rewrites nothing.
 | `source-changed`, `source-never-true` | Skipped, and reported. | `source.integrity` re-minted, and `source.commit-sha` set to `HEAD` where the entry already has one. Where the finding named a span, the re-mint covers that span and `source.lines` is rewritten to it. |
 | `source-moved-ambiguous` | Skipped. The tool will not guess which copy. Widen the range and re-add. | The same. |
 | `source-missing` | Skipped. A path that is gone cannot be rewritten. `add` is the remedy. | The same. |
-| `claim-moved` | `claim.lines` rewritten to the new body lines. | The same. |
+| `claim-moved` | `claim.lines` rewritten to the new body lines. A pointer claim has `claim.pointer` rewritten to the new pointer. | The same. |
 | `claim-reanchored` | `claim.integrity` re-minted over the text the anchor covers now. An entry with claim lines has them rewritten to the run its words sit on. | The same. |
-| `claim-changed` | Skipped, and reported. | `claim.integrity` re-minted over the paragraph or fenced block now at the claim's first line. A claim sharing no sentence with its baseline is refused. |
+| `claim-changed` | Skipped, and reported. | `claim.integrity` re-minted over the paragraph or fenced block now at the claim's first line. A claim sharing no sentence with its baseline is refused. A pointer claim is re-pinned over the value now at its pointer, under the same guard. |
 | `claim-moved-ambiguous` | Skipped. The same text sits in more than one place. | The same. |
+| `claim-missing` | Skipped. The pinned value is gone from the record, and `remove` is the remedy. | The same. |
 | `current` | Left alone. | Left alone. |
 | `marker-misplaced`, the claim `current` or `moved` | The marker moves to where `cite add --marker` writes it, and `claim.integrity` is re-pinned over the paragraph it now anchors. | The same. |
 | `marker-misplaced`, the claim `changed` | Skipped. The marker stays, and both findings are reported. | The marker moves, and the claim is re-pinned over the paragraph. |
@@ -940,6 +977,17 @@ names its own entry, so each bypasses. The line says `replaced` rather than
 docs/limits.md: fetch-timeout claim at line 9 re-pinned (replaced; now "Retries are capped at three.")
 ```
 
+A pointer claim on a record meets the word test alone, because a value is
+most often one sentence and any edit changes it. Its lines name the pointer,
+and the log prints the value now pinned:
+
+```
+records/personas/theo.md: terse-messages claim at #/pains/1 re-pinned (changed; now "Error messages are terse and name no fix.")
+```
+
+A value that keeps under half the pinned value's words is skipped with
+`that value now holds text sharing <n>% of the claim's words`.
+
 #### How far the first guard reaches
 
 The guard refuses a claim whose line shares no sentence with the claim at its
@@ -983,6 +1031,15 @@ docs/limits.md: host-scope marker line 44 -> 41 (misplaced)
 docs/limits.md: host-scope claim re-pinned over lines 42-47 (moved; was lines 45-47, lines 42-44 newly pinned)
 docs/limits.md: page-order claim lines 41-42 -> 44-45 (shifted by a marker)
 7 citations rewritten in 1 file, 0 skipped
+```
+
+On a record, a moved pointer claim is rewritten, and a missing one is
+skipped with its remedy:
+
+```
+records/personas/theo.md: terse-messages claim #/pains/1 -> #/pains/0 (moved)
+records/personas/theo.md: unknown-schema  ↕ skipped: unknown-schema: the value pinned at #/pains/0 is gone. Run manni cite remove --only unknown-schema. If the claim still stands, cite add it at its pointer now.
+1 citation rewritten in 1 file, 1 skipped
 ```
 
 A claim whose words held names the baseline they held against, and a

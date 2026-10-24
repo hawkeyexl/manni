@@ -5,7 +5,7 @@ type: reference
 audiences:
   - docs-engineers
   - ci-engineers
-last-updated: 2026-10-22
+last-updated: 2026-10-23
 ---
 
 Verified against `src/docevals/reporters/` and `src/docevals/types.ts`, with samples captured from real runs against
@@ -194,6 +194,15 @@ captured run:
        Guide: https://hawkeyexl.github.io/manni/docevals/fix/
 ```
 
+A judged eval read as its page's personas carries a dim tag after the zone, and before
+`(human-reviewed)` when a review resolved it. See
+[Judge a page as its readers](/manni/docevals/judge/#judge-a-page-as-its-readers).
+
+```text
+  FAIL fix-and-rerun [auto-fail] (read as theo)  docs/src/content/docs/meta/fix/index.meta.yaml:16
+  pass x [human-review] (read as theo, maya) (human-reviewed)  docs/x.meta.yaml:9
+```
+
 | Outcome | First line under the eval |
 |---|---|
 | Judged `fail` | `AI judge: fail (confidence N). Edit the page so the assertion holds.` |
@@ -283,6 +292,7 @@ passing `names-an-action`.
 |---|---|
 | `outcome` | `pass`, `fail`, `needs-review`, `skipped`, or `error`. |
 | `consensus` | Present for ai-graded evals only. |
+| `personas` | The persona record ids the judge read the page as, in the page's order. Present only on a judged result of an eval with `readers: personas` whose page names a persona record. Absent otherwise. |
 | `findings` | Present for command/tool evals that produced findings. |
 | `generated` | True when this run generated the eval's check script. |
 | `via` | `"human-review"` when a persisted review resolved the outcome. |
@@ -401,6 +411,17 @@ the page. An annotation placed there points at the wrong line of the wrong file:
   "line": 2,
   "level": "error",
   "message": "Unknown suite \"reference\" (not defined in manni.config.yaml)"
+}
+```
+
+Where persona records exist, an `ai` eval whose `readers` option is anything but `personas` is an
+`error` here, and the run exits `1`:
+
+```json
+{
+  "file": "docs/src/content/docs/meta/fix/index.mdx",
+  "level": "error",
+  "message": "Eval \"fix-and-rerun\": ai options.readers must be one of: personas"
 }
 ```
 

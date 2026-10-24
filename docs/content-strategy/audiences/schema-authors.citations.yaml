@@ -1,0 +1,11 @@
+docs/content-strategy/audiences/schema-authors.md:
+  citations:
+    - id: evolve-safely
+      claim:
+        lines: 2
+        integrity: sha256-5e6059f26f82aa345b1e50e0610097f2ef0572195ac7afc1fedf33b6a5462f73
+      source:
+        file: docs/proposals/0001-validation-baseline.md
+        lines: 21-25
+        integrity: sha256-41760c659d68f598e26db361ad780017fa93bea0cd4be116910a46f132de4317
+        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb

@@ -1,0 +1,11 @@
+docs/content-strategy/personas/sara.md:
+  citations:
+    - id: stricter-field
+      claim:
+        pointer: /pains/2
+        integrity: sha256-93bccf601ca0834e49259c5a90b8e21fb43f472d480c6b5bcfff847d0886ae98
+      source:
+        file: docs/proposals/0001-validation-baseline.md
+        lines: 21-25
+        integrity: sha256-41760c659d68f598e26db361ad780017fa93bea0cd4be116910a46f132de4317
+        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb

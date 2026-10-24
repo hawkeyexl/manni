@@ -1,0 +1,11 @@
+docs/content-strategy/audiences/docs-engineers.md:
+  citations:
+    - id: enforced-automatically
+      claim:
+        lines: 2
+        integrity: sha256-5eb52e6e17ef565f1e6b8dd5ce347c8c4ec4d17cad6fbae3d3bf04f0e712d971
+      source:
+        file: docs/proposals/0001-validation-baseline.md
+        lines: 21-25
+        integrity: sha256-41760c659d68f598e26db361ad780017fa93bea0cd4be116910a46f132de4317
+        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb

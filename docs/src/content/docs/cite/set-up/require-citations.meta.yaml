@@ -147,8 +147,11 @@ docs/src/content/docs/cite/set-up/require-citations.mdx:
       lines: 203-215
       integrity: sha256-0ec07ec27bc74154ad80a620a2c333adfd5367ace714671bd6d6e4c4d9487549
     - generated-by: Claude Opus 5
-      lines: 217-221
-      integrity: sha256-168f8e68f36ae6238977078c41f2623c89118358eb341c7fb9e6e202889c5598
+      lines: 217-220
+      integrity: sha256-845f54908e8406ed1a3046d9e3d6117d076d3b1d76dbc5ff4a6878faa9a84073
+    - generated-by: Claude Opus 5.5
+      lines: 221
+      integrity: sha256-654b360781d4576cb7c66d797ad044c09df4637538f3f13b12757fe014d00ba6
     - generated-by: Claude Fable 5.1
       lines: 222-237
       integrity: sha256-e13f9ff42304dc860e9a65ef12c578689e92472756c3779f2a7965a7d6d607e2

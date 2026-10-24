@@ -30,6 +30,7 @@ import {
   misplacedMarkerAt,
   type MisplacedMarker,
 } from "./reanchor.js";
+import { pointerClaimEnd } from "./pointer.js";
 import {
   anchoredLines,
   fenceAround,
@@ -105,6 +106,13 @@ export function claimEnd(
   const claim = citation.claim;
   if (claim === undefined) return null;
   const body = page.bodyLine;
+  // A metadata value (proposal 0108). With a marker beside it the entry is
+  // `anchor-invalid`, and neither anchor is judged.
+  if (claim.pointer !== undefined) {
+    return marker === undefined
+      ? pointerClaimEnd(page, entry, claim.pointer)
+      : { pointer: claim.pointer, status: "skipped" };
+  }
 
   if (claim.lines !== undefined) {
     const recorded = parseLines(claim.lines);

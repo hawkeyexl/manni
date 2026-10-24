@@ -47,8 +47,11 @@ docs/src/content/docs/cite/set-up/index.mdx:
       lines: 109-116
       integrity: sha256-26a4b0e0a35a2732331c735d50b24fdea3186c5657a561e2e77487337c004504
     - generated-by: Claude Fable 5.1
-      lines: 119-146
-      integrity: sha256-1b1e086bed5b6c3aa8351af052e790ad0d493ebdd7aff45797ca7d1ae9d8f25b
+      lines: 119-131
+      integrity: sha256-0db44aaab364d82498b02255a9265943dc9859ebd7e0f749aaa627c65c9924ac
+    - generated-by: Claude Fable 5.1
+      lines: 134-146
+      integrity: sha256-7ebf2ff5bd640601a9d011a33a7b46288b2e13d7b995644e1d88d9c1554f41aa
     - generated-by: Claude Opus 5
       lines: 148-149
       integrity: sha256-91d3d75dfcab100b1da53ea91e398da109fe1103cc6089be831df979f292171b

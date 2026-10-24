@@ -115,6 +115,23 @@ describe("resolvePage", () => {
     expect(plan.evals.filter((e) => e.name === "central-tool")).toHaveLength(1);
   });
 
+  it("merges a use: reference's options.readers over a library eval's options (proposal 0111)", () => {
+    const config = parseDocevalsConfig(
+      [
+        "evals:",
+        "  reader-can-finish:",
+        "    assertion: A reader can finish the task.",
+        "    options: { readers: persona, other: kept }",
+      ].join("\n"),
+      "/fake/manni.config.yaml",
+    );
+    const plan = resolvePage(
+      page(["evals:", "  - use: reader-can-finish", "    options: { readers: personas }"].join("\n")),
+      config,
+    );
+    expect(plan.evals[0]?.options).toEqual({ readers: "personas", other: "kept" });
+  });
+
   it("carries a reference's weight onto the suite eval", () => {
     // `weight` is the override that says how much a config-defined check
     // counts *for this page*, and `use:` is how most pages join a suite at

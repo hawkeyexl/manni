@@ -5,7 +5,10 @@
  * frontmatter and MDX noise stripped.
  *
  * PROMPT_VERSION is part of every cache key — bump it whenever the prompt
- * changes so stale cached verdicts never survive a prompt revision.
+ * changes so stale cached verdicts never survive a prompt revision. The one
+ * exception is the readers section (proposal 0111): only an opted-in eval
+ * carries it, and its key hashes the section's own text, so editing that
+ * wording invalidates exactly the verdicts it reached.
  */
 import type { ResolvedEval } from "../core/resolve.js";
 import { partLabel } from "../core/split.js";
@@ -61,10 +64,73 @@ export function cleanBody(body: string): string {
   return out.join("\n").replace(/\n{3,}/g, "\n\n").trim();
 }
 
+/**
+ * The persona fields the judge reads, in the order it reads them, each with
+ * its label (proposal 0111). These are the descriptive fields this
+ * repository's `persona.schema.json` adopted. Every other field is left out:
+ * a structural one says nothing about the reader, and a bookkeeping one, such
+ * as `citations`, would churn the cache key of every opted-in eval.
+ */
+const READER_FIELDS: readonly (readonly [string, string])[] = [
+  ["name", "Name"],
+  ["role", "Role"],
+  ["team-context", "Team context"],
+  ["proficiency", "Proficiency"],
+  ["prerequisites", "Prerequisites"],
+  ["goals", "Goals"],
+  ["pains", "Pains"],
+  ["content-types", "Content types"],
+];
+
+const READERS_FRAMING =
+  "This page is written for the readers below. Where the assertion speaks of a reader, it means each of them. " +
+  "It holds only when it holds for every one. The readers add no requirement the assertion does not state.";
+
+/** A reader to render: a persona record's id and its merged metadata. */
+export interface ReaderRecord {
+  id: string;
+  data: Record<string, unknown>;
+}
+
+/** One non-blank string, or `undefined`. */
+function line(value: unknown): string | undefined {
+  return typeof value === "string" && value.trim() !== "" ? value : undefined;
+}
+
+/**
+ * One field, whatever the schema says its type is: a string is one line, a
+ * list of strings is a labelled list, and anything else is left out.
+ */
+function field(label: string, value: unknown): string[] {
+  const one = line(value);
+  if (one !== undefined) return [`${label}: ${one}`];
+  if (!Array.isArray(value)) return [];
+  const items = value.filter((v): v is string => line(v) !== undefined);
+  return items.length > 0 ? [`${label}:`, ...items.map((item) => `- ${item}`)] : [];
+}
+
+/**
+ * The `# Readers` section an opted-in eval's prompt carries. It is never
+ * stored: the cache key hashes this text, so an edited record, or an edit to
+ * this wording, re-judges exactly the evals it reached.
+ */
+export function renderReaders(records: readonly ReaderRecord[]): string {
+  const parts = ["# Readers", "", READERS_FRAMING];
+  for (const { id, data } of records) {
+    parts.push("", `## ${line(data["title"]) ?? id}`);
+    const description = line(data["description"]);
+    if (description !== undefined) parts.push("", description);
+    const block = READER_FIELDS.flatMap(([key, label]) => field(label, data[key]));
+    if (block.length > 0) parts.push("", ...block);
+  }
+  return parts.join("\n");
+}
+
 export function buildUserContent(
   ev: ResolvedEval,
   body: string,
   targetLabel = "body",
+  readers?: string,
 ): string {
   const parts: string[] = [
     `# Assertion`,
@@ -85,6 +151,9 @@ export function buildUserContent(
       parts.push(`A failing page: ${anchor}`);
     }
   }
+  // Only an eval under proposal 0111's rule has readers; every other prompt
+  // is the one it always was.
+  if (readers !== undefined) parts.push("", readers);
   // Name what the judge is looking at. Told only "page content" while being
   // handed a frontmatter block or a companion file, a judge reasons about the
   // wrong thing and says so confidently.

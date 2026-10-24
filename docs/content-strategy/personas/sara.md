@@ -4,16 +4,15 @@ id: sara
 title: Sara, Schema Author / Information Architect
 description: Sara defines what the metadata means.
 audience: schema-authors
+goals:
+  - Encode the metadata standard as a JSON Schema, wire it to the right documents, and evolve it safely as requirements change.
+pains:
+  - Dialect confusion. The differences between draft-07 and 2020-12 trip her up.
+  - Precedence uncertainty. She isn't sure whether `$schema` in a file overrides the config, or the other way around.
+  - Shipping a stricter required field without breaking every existing repo overnight.
 ---
 
 Sara defines what the metadata *means*. That covers which fields are required and which are recommended, what value formats are acceptable, and the versioning policy for the standard. She has medium-to-high proficiency and understands data modeling, and she is actively learning JSON Schema's finer points.
-
-**Goal:** encode the metadata standard as a JSON Schema, wire it to the right documents, and evolve it safely as requirements change.
-
-**Pains:**
-- Dialect confusion. The differences between draft-07 and 2020-12 trip her up.
-- Precedence uncertainty. She isn't sure whether `$schema` in a file overrides the config, or the other way around.
-- Shipping a stricter required field without breaking every existing repo overnight.
 
 **How she uses manni meta.** She authors schemas, starting from the OKF built-in or from scratch. She wires them to directories via config overrides, tests resolution, and manages upgrades with versioned URLs.
 

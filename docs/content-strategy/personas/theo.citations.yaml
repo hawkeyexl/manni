@@ -1,0 +1,20 @@
+docs/content-strategy/personas/theo.md:
+  citations:
+    - id: terse-messages
+      claim:
+        pointer: /pains/0
+        integrity: sha256-fc979f4d440929dd9cb856437e0397563f24e9a73687389e23fae7cb4623d2a9
+      source:
+        file: docs/proposals/0089-findings-say-what-to-do.md
+        lines: 35
+        integrity: sha256-3361f9a59c1c6da0a31c37c7a7f30250da8675f44531e28d33b2313c278a4b62
+        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
+    - id: unknown-schema
+      claim:
+        pointer: /pains/1
+        integrity: sha256-80465ee5908321f5b3a3fc72242123989538da62e9e1f08f320195bc20908fdc
+      source:
+        file: docs/proposals/0089-findings-say-what-to-do.md
+        lines: 34
+        integrity: sha256-c8e7c844986aa4a256e6a0bdc76a0c686d180fd6f75fc8d8d303e3c202ec8d76
+        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb

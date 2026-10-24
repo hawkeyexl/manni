@@ -1,0 +1,29 @@
+docs/content-strategy/personas/devin.md:
+  citations:
+    - id: config-sprawl
+      claim:
+        pointer: /pains/0
+        integrity: sha256-39112d19c5c8f97a048c0d0a090c28568c5e87d28eb8699faa54c5a11d1de3d2
+      source:
+        file: docs/proposals/0041-collections.md
+        lines: 45-50
+        integrity: sha256-ec071774a425fa96c5fec97ea1d616e0c9f81cf3feaed5c8e4d3835236d70a96
+        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
+    - id: machine-output
+      claim:
+        pointer: /pains/1
+        integrity: sha256-b37aef5c50443d8c0fb045d7d72fa66c05b79a48ec34bbce57ec26f16e4ef728
+      source:
+        file: docs/proposals/0003-sarif-and-junit-reporters.md
+        lines: 20-21
+        integrity: sha256-0dfcc4f722ce6f75115805ef171404738952a4fbebca66bc1e51446b60dabfba
+        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
+    - id: fill-egress
+      claim:
+        lines: 15
+        integrity: sha256-3725cc7d74c12a7b82ab1e0a30e08511781c4ecf35bf3f70ceb178bd4344541b
+      source:
+        file: docs/proposals/0012-fill-cost-and-privacy.md
+        lines: 10-11
+        integrity: sha256-b112e540cf496ee740b6f600fafd3f81902586505103d962cefbcc5786384b47
+        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb

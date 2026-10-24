@@ -1,0 +1,15 @@
+A persona says error messages are terse. Says who?
+
+New in manni, a citation's claim can be a metadata value.
+
+On a persona, audience or journey record, manni cite add pins a value to the evidence it rests on. A JSON Pointer names the value, as in theo.md#/pains/0.
+
+Here the first pain is pinned to a line of an interview note. The pains then swap places. The check says the value moved to #/pains/1, and cite update rewrites the pointer.
+
+Then someone edits the note. The check fails with source-changed and exits 1, so the claim gets looked at again.
+
+Pages that are not records behave exactly as before.
+
+Real output from a real test fixture. Only the input is staged.
+
+npm i -g @hawkeyexl/manni · manni cite add

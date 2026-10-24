@@ -5,7 +5,7 @@ type: reference
 audiences:
   - docs-engineers
   - schema-authors
-last-updated: 2026-10-22
+last-updated: 2026-10-23
 ---
 
 Eval declarations live in page frontmatter under three keys, validated against
@@ -92,8 +92,9 @@ its manifests own. The resolved plan is therefore the same before and after the 
 every collection the config declares, whatever `--collection` or the positional paths selected.
 `--no-config`, a config with no collections, and a page in no collection each mean frontmatter alone.
 
-Another vocabulary marks keys this tool reads. `provenance` and `meta-provenance` are
-`external` in ai-context. A manifest may hold those without holding the eval keys.
+Other vocabularies mark keys this tool reads. `provenance` and `meta-provenance` are
+`external` in ai-context. `personas` is `external` in audience, and an eval with
+`readers: personas` reads it. A manifest may hold those without holding the eval keys.
 
 Writers follow the same rule. `fill`, `generate` and `promote --write` put each key where its
 location says, so the page and the manifest never both hold it. See

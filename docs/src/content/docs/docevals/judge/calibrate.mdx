@@ -4,7 +4,7 @@ description: Seed a golden set from your own reviews, confirm it, and get an agr
 type: how-to
 audiences:
   - schema-authors
-last-updated: 2026-09-13
+last-updated: 2026-10-23
 ---
 
 Calibration turns "we think the judge is reasonable" into an agreement rate and a false-positive
@@ -253,6 +253,9 @@ The golden set is a fixture, and fixtures go stale:
 - **Model or provider change.** Different model, different verdicts. Re-run before trusting the gate.
 - **Assertion changes.** The rewrite you made to fix agreement needs to be measured.
 - **Judge prompt revisions.** These invalidate cached verdicts by design.
+- **Persona edits.** A golden case on an eval with `readers: personas` is judged as the page's
+  personas, as `run` judges it. Editing one of those records re-judges the case, and agreement can
+  move. Cases on other evals do not.
 - **Corpus drift.** Pages your cases reference get rewritten. `content-hash` catches this for you
   now. Those cases report `[stale]` instead of quietly certifying prose nobody verified. Re-read the
   page, record a fresh review, and `--seed` again to pick up the new hash.
