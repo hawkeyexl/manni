@@ -77,6 +77,10 @@ async function copyDocs(page: string, file: ConfigFile | null, docsDir: string):
     const abs = files.map((f) => resolve(dir, f));
     if (!abs.some((f) => samePath(f, page))) continue;
     const base = globBase(collection.paths, dir);
+    // A start page outside the base would have no place in the copy, so its
+    // own directory is copied instead, below.
+    const pageRel = copyPathFor(base, page);
+    if (pageRel === undefined) break;
     for (const f of abs) {
       const rel = copyPathFor(base, f);
       if (rel === undefined) continue;
@@ -84,7 +88,7 @@ async function copyDocs(page: string, file: ConfigFile | null, docsDir: string):
       await mkdir(dirname(dest), { recursive: true });
       await cp(f, dest);
     }
-    return relative(base, page);
+    return pageRel;
   }
   await cp(dirname(page), docsDir, { recursive: true, filter: keep });
   return basename(page);

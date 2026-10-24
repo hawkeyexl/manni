@@ -25,7 +25,7 @@ function items(label: string, values: string[]): string[] {
 
 function whoYouAre(persona: TaskPersona | null): string[] {
   if (persona === null) return [NEWCOMER];
-  const lines = [[persona.title ?? persona.id, persona.description].filter((v) => v !== undefined).join(". ")];
+  const lines = [[persona.title ?? persona.id, persona.description].filter((v): v is string => v !== undefined).join(". ")];
   if (persona.role !== undefined) lines.push(`Role: ${persona.role}`);
   if (persona.teamContext !== undefined) lines.push(`Team: ${persona.teamContext}`);
   lines.push(
