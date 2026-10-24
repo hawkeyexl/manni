@@ -27,6 +27,7 @@ import { beats as citeReposBeats, totalFrames as citeReposTotalFrames, TYPING_MS
 import { beats as pluginMetadataBeats, totalFrames as pluginMetadataTotalFrames, TYPING_MS as pluginMetadataTypingMs } from "./plugin-metadata/beats";
 import { beats as strategyBeats, totalFrames as strategyTotalFrames, TYPING_MS as strategyTypingMs } from "./strategy/beats";
 import { beats as evidencePinsBeats, totalFrames as evidencePinsTotalFrames, TYPING_MS as evidencePinsTypingMs } from "./evidence-pins/beats";
+import { beats as personasBeats, totalFrames as personasTotalFrames, TYPING_MS as personasTypingMs } from "./personas/beats";
 
 /** sidecar-url-1x1: 23 px / 75 columns, derived in media/sidecar-url-1x1.script.md. */
 const DemoUrl: React.FC = () => <DemoView beats={urlBeats} fontPx={23} linePx={32} cols={75} />;
@@ -151,6 +152,16 @@ const DemoStrategy: React.FC = () => (
  */
 const DemoEvidencePins: React.FC = () => (
   <DemoView beats={evidencePinsBeats} fontPx={19} linePx={27} cols={91} typingMs={evidencePinsTypingMs} ligatures={false} />
+);
+
+/**
+ * persona-judge-1x1: 21 px / 82 columns for beat 2, derived in media/persona-judge-1x1.script.md
+ * (media/capture-personas/cols.mjs). The judge's reasoning and the notices wrap at spaces;
+ * no result row wraps. Beats 1, 3 and 4 carry their own sizes (src/personas/beats.ts).
+ * Ligatures off: the page's `---` fences would draw as one rule.
+ */
+const DemoPersonas: React.FC = () => (
+  <DemoView beats={personasBeats} fontPx={21} linePx={29} cols={82} typingMs={personasTypingMs} ligatures={false} />
 );
 
 export const Root: React.FC = () => (
@@ -362,6 +373,14 @@ export const Root: React.FC = () => (
       height={1080}
       fps={FPS}
       durationInFrames={evidencePinsTotalFrames}
+    />
+    <Composition
+      id="PersonaJudgeDemo"
+      component={DemoPersonas}
+      width={1080}
+      height={1080}
+      fps={FPS}
+      durationInFrames={personasTotalFrames}
     />
   </>
 );

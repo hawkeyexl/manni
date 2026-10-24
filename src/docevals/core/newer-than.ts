@@ -31,7 +31,11 @@ const GIT_TIMEOUT_MS = 30_000;
 export interface PageAgeInput {
   /** Absolute path of the page file. */
   page: string;
-  /** Absolute paths (or URLs) of the manifests that supplied its eval keys. */
+  /**
+   * Absolute paths (or URLs) of the manifests that supplied its eval keys,
+   * and of the persona records an opted-in eval reads the page as
+   * (proposal 0111).
+   */
   manifests: readonly string[];
 }
 

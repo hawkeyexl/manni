@@ -238,6 +238,7 @@ export function makeJudge(deps: JudgeStageDeps): JudgeFn {
         temperature,
         judgeCacheBody(chunkChars, selected.text),
         ev,
+        ev.readers?.section,
       );
       const cached = cache.get(key) !== undefined;
 
@@ -321,7 +322,9 @@ export function makeJudge(deps: JudgeStageDeps): JudgeFn {
       const runs = await runEnsemble({
         provider: judgeProvider,
         system: JUDGE_SYSTEM_PROMPT,
-        user: buildUserContent(ev, judged, judgedLabel),
+        // Readers enter only this final call. Evidence gathering above quotes
+        // what bears on the assertion, whoever reads it (proposal 0111).
+        user: buildUserContent(ev, judged, judgedLabel, ev.readers?.section),
         runs: runsPerEval,
         temperature,
         schema: verdictSchema,
@@ -351,6 +354,7 @@ export function makeJudge(deps: JudgeStageDeps): JudgeFn {
         grader: ev.grader,
         file: plan.page.file,
         outcome,
+        ...(ev.readers === undefined ? {} : { personas: ev.readers.personas }),
         consensus,
         via,
         ...(preference

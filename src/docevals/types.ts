@@ -108,6 +108,12 @@ export interface EvalResult {
    */
   guidance?: Guidance | null;
   outcome: "pass" | "fail" | "needs-review" | "skipped" | "error";
+  /**
+   * The persona record ids the judge read the page as, in the page's order
+   * (proposal 0111). Present only on a judged result of an eval with
+   * `readers: personas` whose page names a persona record.
+   */
+  personas?: string[];
   /** Present for ai-graded evals. */
   consensus?: ConsensusResult;
   /** Present for command/tool-graded evals that produced findings. */

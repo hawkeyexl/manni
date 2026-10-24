@@ -4,7 +4,7 @@ description: Clear the review queue, make verdicts persist, and know when a repe
 type: how-to
 audiences:
   - schema-authors
-last-updated: 2026-09-13
+last-updated: 2026-10-23
 ---
 
 The human-review zone is where the judge routes what it is not confident about. That is the design
@@ -57,6 +57,9 @@ changes, the review is silently ignored and the eval returns to needs-review.
 That second property is what makes the first one safe. Without it, persistence would be a way to
 accumulate stale approvals. A page reviewed once in 2024 would pass forever, regardless of what
 happened to it since.
+
+A review keys on the page body alone. On an eval with `readers: personas`, editing a persona record
+re-judges the eval, and an existing review still applies when the new verdict lands in review.
 
 Commit `reviews.yaml`. It is team state, not a cache. See
 [Files and state](/manni/docevals/reference/files-and-state/).

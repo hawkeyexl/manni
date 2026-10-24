@@ -14,7 +14,7 @@ docs/src/content/docs/docevals/evals/write-good-assertions.mdx:
       lines: 48
       integrity: sha256-af70a53d39fd1ffa05fffca7f55e85355fb8de8a65c76e4bf6893e0cbb859b61
     - generated-by: Claude Fable 5.1
-      lines: 50-129
+      lines: 58-137
       integrity: sha256-b751cbe7b415b29b279c8dc43e36ece3dc151df2d7450bad45be6ce41e053ea7
   owner:
     - "@hawkeyexl"

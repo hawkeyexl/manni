@@ -76,6 +76,23 @@ export interface ResolvedEval {
    * records one.
    */
   location: EvalLocation;
+  /**
+   * Who the judge reads the page as (proposal 0111). Set by
+   * `core/readers.ts` in a judged run, and only on an `ai` eval carrying
+   * `options: { readers: personas }` whose page names a persona record.
+   * Absent everywhere else, which is today's judge.
+   */
+  readers?: Readers;
+}
+
+/** The persona records an opted-in eval's judge reads the page as. */
+export interface Readers {
+  /** Record ids, in the page's order, spelled as the records spell them. */
+  personas: string[];
+  /** The rendered `# Readers` section, which the cache key hashes. */
+  section: string;
+  /** Absolute paths of the record files, which `--since` and `--newer-than` count. */
+  files: string[];
 }
 
 /** A file, and the 1-based line in it when one is known. */

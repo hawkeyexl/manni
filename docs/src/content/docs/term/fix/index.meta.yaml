@@ -17,10 +17,14 @@ docs/src/content/docs/term/fix/index.mdx:
       assertion: A reader can decode a manni:term annotation and find the rule it names.
       type: capability
       grader: ai
+      options:
+        readers: personas
     - id: fix-and-confirm
       assertion: A reader can make the edit a finding asks for and confirm it with a green local run.
       type: capability
       grader: ai
+      options:
+        readers: personas
   provenance:
     - generated-by: Claude Opus 5
       lines: 2-22

@@ -4,11 +4,12 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { computeConsensus, zoneFor } from "@hawkeyexl/inference";
 import { makeJudge } from "../../../src/docevals/judge/judge.js";
-import { PROMPT_VERSION } from "../../../src/docevals/judge/prompt.js";
+import { PROMPT_VERSION, renderReaders } from "../../../src/docevals/judge/prompt.js";
+import { cacheKey, judgeCacheBody } from "../../../src/docevals/judge/cache.js";
 import { MockProvider, mockVerdict } from "@hawkeyexl/inference";
 import { parseDocevalsConfig } from "../helpers/config.js";
 import { resolvePage } from "../../../src/docevals/core/resolve.js";
-import { recordReview } from "../../../src/docevals/core/reviews.js";
+import { contentHash, recordReview } from "../../../src/docevals/core/reviews.js";
 import { stripFrontmatterBlock, type PageFile } from "../../../src/docevals/core/discover.js";
 import { extractFrontmatter } from "../../../src/meta/index.js";
 import type { JudgeRun } from "../../../src/docevals/types.js";
@@ -301,5 +302,186 @@ describe("makeJudge", () => {
     const judge = makeJudge({ provider, root: tempRoot() });
     const results = await judge([makeTarget("Body.")], config, { runs: 5 });
     expect(results[0]?.consensus?.runs).toHaveLength(5);
+  });
+});
+
+// --- readers (proposal 0111) ---
+
+const THEO = {
+  id: "theo",
+  data: {
+    type: "persona",
+    id: "theo",
+    title: "Theo, Doc Contributor",
+    description: "Theo is a developer or technical writer who opened a PR.",
+    audience: "contributors",
+    goals: ["Fix the one failing field."],
+    pains: ["Error messages are terse.", "He does not know which schema fired."],
+    citations: [{ claim: "never rendered" }],
+  },
+};
+const MAYA = { id: "maya", data: { title: "Maya, Documentation Engineer", description: "Maya owns the pipeline." } };
+
+function withReaders(target: GraderTarget, records: { id: string; data: Record<string, unknown> }[]): GraderTarget {
+  target.eval.readers = {
+    personas: records.map((r) => r.id),
+    section: renderReaders(records),
+    files: records.map((r) => `/fake/${r.id}.md`),
+  };
+  return target;
+}
+
+describe("renderReaders", () => {
+  it("renders the framing, then each reader's descriptive fields in a fixed order", () => {
+    expect(renderReaders([THEO, MAYA])).toBe(
+      [
+        "# Readers",
+        "",
+        "This page is written for the readers below. Where the assertion speaks of a reader, it means each of them. It holds only when it holds for every one. The readers add no requirement the assertion does not state.",
+        "",
+        "## Theo, Doc Contributor",
+        "",
+        "Theo is a developer or technical writer who opened a PR.",
+        "",
+        "Goals:",
+        "- Fix the one failing field.",
+        "Pains:",
+        "- Error messages are terse.",
+        "- He does not know which schema fired.",
+        "",
+        "## Maya, Documentation Engineer",
+        "",
+        "Maya owns the pipeline.",
+      ].join("\n"),
+    );
+  });
+
+  it("renders every descriptive field, and nothing structural", () => {
+    const section = renderReaders([
+      {
+        id: "pat",
+        data: {
+          type: "persona",
+          id: "pat",
+          audience: "a",
+          journeys: ["j"],
+          lifecycle: "active",
+          name: "Pat",
+          role: "Writer",
+          "team-context": "Docs team.",
+          proficiency: ["Markdown."],
+          prerequisites: ["A repo."],
+          goals: ["Ship."],
+          pains: ["Drift."],
+          "content-types": ["Guides."],
+          extra: "dropped",
+          description: { not: "a string" },
+        },
+      },
+    ]);
+    expect(section).toContain(
+      "## pat\n\nName: Pat\nRole: Writer\nTeam context: Docs team.\nProficiency:\n- Markdown.\nPrerequisites:\n- A repo.\nGoals:\n- Ship.\nPains:\n- Drift.\nContent types:\n- Guides.",
+    );
+    for (const absent of ["active", "dropped", "audience", "journeys", "a string", "[object"]) {
+      expect(section).not.toContain(absent);
+    }
+  });
+});
+
+describe("makeJudge with readers", () => {
+  const config = parseDocevalsConfig("", "/fake/manni.config.yaml");
+
+  it("puts the section between # Anchors and # Page content, and tags the result", async () => {
+    const provider = new MockProvider([mockVerdict("pass", 0.95)]);
+    const results = await makeJudge({ provider, root: tempRoot() })([withReaders(makeTarget("Body."), [THEO])], config, {});
+    const user = provider.requests[0]?.user ?? "";
+    const anchors = user.indexOf("# Anchors");
+    const readers = user.indexOf("# Readers");
+    const content = user.indexOf("# Page content");
+    expect(anchors).toBeGreaterThan(-1);
+    expect(readers).toBeGreaterThan(anchors);
+    expect(content).toBeGreaterThan(readers);
+    expect(user).toContain("## Theo, Doc Contributor");
+    expect(user).not.toContain("never rendered");
+    expect(results[0]?.personas).toEqual(["theo"]);
+  });
+
+  it("sends a not-opted-in eval today's prompt, and gives its result no personas", async () => {
+    const provider = new MockProvider([mockVerdict("pass", 0.95)]);
+    const results = await makeJudge({ provider, root: tempRoot() })([makeTarget("Body.")], config, {});
+    expect(provider.requests[0]?.user).toBe(
+      "# Assertion\nThe page satisfies the claim.\n\n# Anchors\nA passing page: yes\nA failing page: no\n\n# Page content\n\nBody.",
+    );
+    expect(results[0]).not.toHaveProperty("personas");
+  });
+
+  it("renders two readers in the page's order", async () => {
+    const provider = new MockProvider([mockVerdict("pass", 0.95)]);
+    await makeJudge({ provider, root: tempRoot() })([withReaders(makeTarget("Body."), [MAYA, THEO])], config, {});
+    const user = provider.requests[0]?.user ?? "";
+    expect(user.indexOf("## Maya")).toBeLessThan(user.indexOf("## Theo"));
+  });
+
+  it("keeps the evidence prompts of a split page reader-free", async () => {
+    const provider = new MockProvider([
+      { json: { supports: ["a"], contradicts: [] } },
+      { json: { supports: ["b"], contradicts: [] } },
+      mockVerdict("pass", 0.95),
+    ]);
+    const body = ["Line one is long enough.", "Line two is long enough."].join("\n");
+    await makeJudge({ provider, root: tempRoot() })([withReaders(makeTarget(body), [THEO])], config, {
+      chunkChars: 30,
+      runs: 1,
+    });
+    const last = provider.requests.at(-1);
+    const evidence = provider.requests.slice(0, -1);
+    expect(evidence.length).toBeGreaterThan(1);
+    expect(evidence.every((r) => !r.user.includes("# Readers"))).toBe(true);
+    expect(last?.user).toContain("# Readers");
+  });
+
+  it("re-judges an opted-in eval when a persona field changes, and replays every other key", async () => {
+    const root = tempRoot();
+    const first = new MockProvider([mockVerdict("pass", 0.95)]);
+    await makeJudge({ provider: first, root })(
+      [withReaders(makeTarget("Body."), [THEO]), makeTarget("Body.", "other")],
+      config,
+      {},
+    );
+    const edited = { ...THEO, data: { ...THEO.data, pains: ["Error messages are terse."] } };
+    const second = new MockProvider([mockVerdict("pass", 0.95)]);
+    const results = await makeJudge({ provider: second, root })(
+      [withReaders(makeTarget("Body."), [edited]), makeTarget("Body.", "other")],
+      config,
+      {},
+    );
+    expect(results[0]?.consensus?.runs.every((r) => r.cached)).toBe(false);
+    expect(results[1]?.consensus?.runs.every((r) => r.cached)).toBe(true);
+  });
+
+  it("keys a reader-bearing eval apart, and leaves the reader-free key as it was", () => {
+    const t = makeTarget("Body.");
+    const body = judgeCacheBody(config.judge.chunkChars, "Body.");
+    const without = cacheKey("mock", "m", 3, 0, body, t.eval);
+    expect(cacheKey("mock", "m", 3, 0, body, t.eval, undefined)).toBe(without);
+    expect(cacheKey("mock", "m", 3, 0, body, t.eval, renderReaders([THEO]))).not.toBe(without);
+  });
+
+  it("still applies a human review after a persona edit, because a review keys on the page body", async () => {
+    const root = tempRoot();
+    const target = withReaders(makeTarget("Reviewed body."), [THEO]);
+    recordReview(root, {
+      file: target.plan.page.file,
+      evalName: target.eval.name,
+      contentHash: contentHash(target.plan.page.body),
+      verdict: "pass",
+    });
+    const edited = withReaders(makeTarget("Reviewed body."), [
+      { ...THEO, data: { ...THEO.data, goals: ["Something else."] } },
+    ]);
+    const provider = new MockProvider([mockVerdict("pass", 0.95), mockVerdict("fail", 0.95), mockVerdict("pass", 0.95)]);
+    const results = await makeJudge({ provider, root })([edited], config, {});
+    expect(results[0]?.outcome).toBe("pass");
+    expect(results[0]?.via).toBe("human-review");
   });
 });

@@ -188,6 +188,7 @@ export async function loadStrategySet(opts: LoadStrategySetOptions): Promise<Str
         ...(declaredId === undefined ? {} : { idAt: at("/id") }),
         parents:
           type === "audience" ? [] : valuesOf(data, PARENTS[type]).map(({ value, pointer }) => ({ value, ...at(pointer) })),
+        data,
       };
       set.records.push(record);
     }

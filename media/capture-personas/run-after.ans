@@ -1,0 +1,12 @@
+[1mdocs/one-reader.md[22m
+  [32mpass[39m names-schema[2m [auto-pass][22m[2m (read as theo)[22m  [2mdocs/one-reader.md:6[22m
+  [32mpass[39m plain-judge[2m [auto-pass][22m  [2mdocs/one-reader.md:11[22m
+[2mnotice[22m docs/one-reader.md:6 Eval "names-schema": ai-graded evals work best with examples.pass/examples.fail
+[2mnotice[22m docs/one-reader.md:11 Eval "plain-judge": ai-graded evals work best with examples.pass/examples.fail
+
+[1mSuites[22m
+  default: 2/2 passed — 100% vs target 100% [32mok[39m
+
+[2mJudged 2 evals (0 cached), 1,127 tokens[22m
+
+real	0m8.095s

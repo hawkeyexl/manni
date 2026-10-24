@@ -23,6 +23,7 @@ import { loadConfig } from "../core/config.js";
 import { readPage } from "../core/discover.js";
 import { loadExternalReader } from "../core/external.js";
 import { resolvePage } from "../core/resolve.js";
+import { resolveReaders } from "../core/readers.js";
 import { contentHash, loadReviews } from "../core/reviews.js";
 import { makeJudge } from "../judge/judge.js";
 import { isTurnBudgetSkip } from "../judge/budget.js";
@@ -372,6 +373,14 @@ export async function runCalibrate(
   }
 
   if (targets.length > 0) {
+    // A golden case on an opted-in eval measures the judge `run` would use,
+    // readers and all (proposal 0111). A bad `readers` value has no report to
+    // land in here; `run` reports it.
+    await resolveReaders(
+      targets.map((t) => t.plan),
+      config,
+      cwd,
+    );
     const judge =
       options.judge ??
       makeJudge({

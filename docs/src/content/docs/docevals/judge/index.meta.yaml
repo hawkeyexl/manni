@@ -31,7 +31,7 @@ docs/src/content/docs/docevals/judge/index.mdx:
       lines: 72-111
       integrity: sha256-bb52937a411672fa33b0a0b1402e57e20b7d19d05f515be7c1f6055ce9af16e5
     - generated-by: Claude Fable 5.1
-      lines: 113-127
+      lines: 190-204
       integrity: sha256-9d4c7baa710a4d4c8529db7f90bbdfc8336534b7d3404f29ea15f8c407a7399c
   owner:
     - "@hawkeyexl"

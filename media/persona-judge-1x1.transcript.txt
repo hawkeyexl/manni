@@ -1,0 +1,95 @@
+manni docevals, readers: personas, demo video transcript (silent video; text describes what is on screen)
+
+Frame: 1080x1080, 30 fps, 38.5 s. Every terminal line is real output. The CLI is
+this branch's build, node dist/cli.js, typed as manni. It runs in
+media/scratch-persona-evals/, which media/capture-personas/stage.sh stages from a
+byte copy of test/docevals/fixtures/personas/. Its config names the repository's
+local judge (llama-cpp, granite-4.1-3b-q2) and lowers autoFail to 0.7, and
+docs/one-reader.md is media/capture-personas/one-reader.before.md. The edit in beat 3
+copies one-reader.after.md over it. Each judged run took about 8.1 s; the replay
+shortens that wait by 3.5x, and bash's own "real" line shows the true time.
+
+[0:00-0:07] Title: One eval reads as Theo (1 / 4)
+$ cat docs/one-reader.md
+---
+title: One reader
+personas:
+  - theo
+evals:
+  - id: names-schema
+    assertion: The page names the schema that fired.
+    grader: ai
+    options:
+      readers: personas
+  - id: plain-judge
+    assertion: The page names the command that reruns the check.
+    grader: ai
+---
+
+# One reader
+
+Fix the field, then run `manni meta validate`.
+Highlighted rows: lines containing "readers: personas", "- theo"
+Caption: readers: personas on one eval. The page names theo.
+
+[0:07-0:21] Title: manni docevals run (2 / 4)
+$ time manni docevals run docs/one-reader.md --ai-only
+docs/one-reader.md
+  FAIL names-schema [auto-fail] (read as theo)  docs/one-reader.md:6   ("FAIL" in red)
+       AI judge: fail (confidence 0.70). Edit the page so the assertion holds.
+       Observed: No statement on which schema fired is present in the page content.
+       Reasoning: The assertion requires the documentation to explicitly identify the schema that triggered the failure. The provided page only contains instructions to fix the failing field and run a validation command, without any mention of the specific schema that caused the issue.
+       votes pass:0 fail:1 partial:0   (dim)
+       docs/one-reader.md names-schema: The page names the schema that fired.   (dim)
+       Guide: https://hawkeyexl.github.io/manni/docevals/fix/   (dim)
+  pass plain-judge [auto-pass]  docs/one-reader.md:11   ("pass" in green)
+notice docs/one-reader.md:6 Eval "names-schema": ai-graded evals work best with examples.pass/examples.fail
+notice docs/one-reader.md:11 Eval "plain-judge": ai-graded evals work best with examples.pass/examples.fail
+
+Suites
+  default: 1/2 passed — 50% vs target 100% below target   ("below target" in red)
+
+Judged 2 evals (0 cached), 1,088 tokens
+
+real	0m8.172s
+$ echo $?
+1
+Highlighted rows: lines containing "(read as theo)", "No statement on which schema fired", "0m8."
+Caption: Read as theo: FAIL. The untagged eval passes. Exit 1.
+
+[0:21-0:27] Title: Speak to Theo's pains (3 / 4)
+$ git diff docs/one-reader.md
+diff --git a/docs/one-reader.md b/docs/one-reader.md
+index 464e1f2..c9defc3 100644
+--- a/docs/one-reader.md
++++ b/docs/one-reader.md
+@@ -15,4 +15,6 @@ evals:
+ 
+ # One reader
+ 
+-Fix the field, then run `manni meta validate`.   (red)
++Each error names its schema, then the field and what it needs:   (green)
++`/title is required (schema: house)`. Add that field to the   (green)
++page's frontmatter, then run `manni meta validate`.   (green)
+Highlighted rows: lines containing "names its schema", "schema: house"
+Caption: He can't tell which schema fired. Now the page says.
+
+[0:27-0:38] Title: Run it again (4 / 4)
+$ time manni docevals run docs/one-reader.md --ai-only
+docs/one-reader.md
+  pass names-schema [auto-pass] (read as theo)  docs/one-reader.md:6   ("pass" in green)
+  pass plain-judge [auto-pass]  docs/one-reader.md:11   ("pass" in green)
+notice docs/one-reader.md:6 Eval "names-schema": ai-graded evals work best with examples.pass/examples.fail
+notice docs/one-reader.md:11 Eval "plain-judge": ai-graded evals work best with examples.pass/examples.fail
+
+Suites
+  default: 2/2 passed — 100% vs target 100% ok   ("ok" in green)
+
+Judged 2 evals (0 cached), 1,127 tokens
+
+real	0m8.095s
+$ echo $?
+0
+Highlighted rows: lines containing "(read as theo)", "0m8."
+Caption: Passes, read as theo. Exit 0. Waits shown 3.5x faster.
+
