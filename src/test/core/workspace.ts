@@ -11,7 +11,7 @@ import { createHash } from "node:crypto";
 import { realpathSync, statSync } from "node:fs";
 import { cp, mkdir, mkdtemp, readdir, readFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { basename, dirname, join, relative, resolve, sep } from "node:path";
+import { basename, dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import picomatch from "picomatch";
 import { resolveTargetSet } from "../../meta/internal.js";
 import { selectCollections } from "../../shared/collections.js";
@@ -78,7 +78,9 @@ async function copyDocs(page: string, file: ConfigFile | null, docsDir: string):
     if (!abs.some((f) => samePath(f, page))) continue;
     const base = globBase(collection.paths, dir);
     for (const f of abs) {
-      const dest = join(docsDir, relative(base, f));
+      const rel = copyPathFor(base, f);
+      if (rel === undefined) continue;
+      const dest = join(docsDir, rel);
       await mkdir(dirname(dest), { recursive: true });
       await cp(f, dest);
     }
@@ -86,6 +88,17 @@ async function copyDocs(page: string, file: ConfigFile | null, docsDir: string):
   }
   await cp(dirname(page), docsDir, { recursive: true, filter: keep });
   return basename(page);
+}
+
+/**
+ * Where a collection file goes inside the docs copy, relative to the copy, or
+ * `undefined` for a file that resolves outside the collection's base (through
+ * a symlink, or on another drive). Nothing is ever written outside the copy.
+ */
+export function copyPathFor(base: string, file: string): string | undefined {
+  const rel = relative(base, file);
+  if (rel === "" || isAbsolute(rel) || rel === ".." || rel.startsWith(`..${sep}`)) return undefined;
+  return rel;
 }
 
 function samePath(a: string, b: string): boolean {

@@ -7,7 +7,7 @@ import { tmpdir } from "node:os";
 import { join, relative, sep } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { findConfigFile } from "../../src/shared/config-file.js";
-import { prepareRun, workspaceChanges } from "../../src/test/core/workspace.js";
+import { copyPathFor, prepareRun, workspaceChanges } from "../../src/test/core/workspace.js";
 import { writeTree } from "./task-run.js";
 
 const REPO = join(import.meta.dirname, "fixtures", "tasks", "repo");
@@ -47,6 +47,21 @@ describe("prepareRun", () => {
     expect(run.docsDir).toBeNull();
     expect(run.startCopy).toBeNull();
     expect(existsSync(join(run.root, "docs"))).toBe(false);
+  });
+});
+
+// A collection file that resolves outside the copy's base (a symlink, another
+// drive) is skipped, so nothing is ever written outside the run's docs copy.
+describe("copyPathFor", () => {
+  const base = join(tmpdir(), "site", "docs");
+
+  it("places a file under the base at its path below the base", () => {
+    expect(copyPathFor(base, join(base, "meta", "fix.md"))).toBe(join("meta", "fix.md"));
+  });
+
+  it("skips a file outside the base", () => {
+    expect(copyPathFor(base, join(tmpdir(), "site", "secrets.md"))).toBeUndefined();
+    expect(copyPathFor(base, join(tmpdir(), "elsewhere", "page.md"))).toBeUndefined();
   });
 });
 

@@ -321,7 +321,6 @@ interface RunContext {
   opts: RunTasksOptions;
 }
 
-/** A run id not yet used under `dir`: two runs in one second get `-2`, `-3`. */
 /** A path a journey names, resolved; one that is not there is a broken record. */
 function recordedPath(
   key: string,
