@@ -26,7 +26,8 @@ import type { GraphConfig } from "../core/config.js";
 import { documentBase, routesFrom } from "../core/discover.js";
 import { emitJsonLd } from "../core/emit-jsonld.js";
 import { openMetaView, withExternalMetadata, type MetaViewSource } from "../core/external.js";
-import { deliveredFields } from "../core/graph-output.js";
+import { CONFIGURED_EVALS_LEFT_OUT, deliveredFields, userFacing } from "../core/graph-output.js";
+import { readRecord } from "../../shared/reference-fields.js";
 import { STDIN_PATH } from "../core/iri.js";
 import { loadGraph, storeToQuads } from "../core/load.js";
 import {
@@ -83,6 +84,12 @@ export interface ChunksOptions {
   outDir: string;
   /** The docevals report: `--evals` as typed (from `cwd`), else the config's (from its directory). */
   evals?: { label: string; path: string };
+  /**
+   * `false` reads the pages as a `--no-authoring` build does (proposal 0110):
+   * no strategy record, no external value, no pin and no eval verdict.
+   * Default `true`.
+   */
+  authoring?: boolean;
 }
 
 export interface ChunksResult {
@@ -119,7 +126,7 @@ export async function exportChunks(opts: ChunksOptions): Promise<ChunksResult> {
   const sources = documentBase(config, {}, cwd);
 
   // The pages the graph holds that are on disk, as the build labelled them.
-  const pages: { doc: string; path: string; content: string }[] = [];
+  let pages: { doc: string; path: string; content: string }[] = [];
   for (const doc of graph.instancesOf(DOCUMENT)) {
     const path = graph.literal(doc, PATH);
     if (path === undefined || path === STDIN_PATH) continue;
@@ -128,16 +135,31 @@ export async function exportChunks(opts: ChunksOptions): Promise<ChunksResult> {
     pages.push({ doc, path, content: readFileSync(abs, "utf8") });
   }
   pages.sort((a, b) => byCodeUnit(a.path, b.path));
-  const paths = pages.map((p) => p.path);
 
   // What `build` reads: each page's own model, its manifests merged in.
-  const allPaths = new Set(paths);
+  const allPaths = new Set(pages.map((p) => p.path));
   const routes = routesFrom(config, sources);
-  const view = await openMetaView(opts.source, cwd, paths, sources);
-  const models = await withExternalMetadata(
+  const view = await openMetaView(opts.source, cwd, [...allPaths], sources);
+  let models = await withExternalMetadata(
     await Promise.all(pages.map((p) => analyzeDoc(p.content, p.path, allPaths, { routes }))),
     view,
   );
+  // Without author-facing content (proposal 0110), a strategy record is no
+  // passage, and a page keeps only what it carries for its readers.
+  // Unset means the default, which is on.
+  const authoring = opts.authoring !== false;
+  if (!authoring) {
+    const kept = models.flatMap((m, i) => {
+      const page = pages[i];
+      return page === undefined || readRecord(m.frontmatter, m.path) !== undefined ? [] : [{ page, model: m }];
+    });
+    pages = kept.map((k) => k.page);
+    models = await userFacing(
+      kept.map((k) => k.model),
+      view,
+    );
+  }
+  const paths = pages.map((p) => p.path);
 
   const git = await gitState(sources, paths);
   if (git.reason !== undefined) {
@@ -150,10 +172,13 @@ export async function exportChunks(opts: ChunksOptions): Promise<ChunksResult> {
   }
   const worktree = git.commit === null ? null : git.dirty.size > 0 ? "modified" : "clean";
 
-  const pins = await pinsByPage(opts, sources, paths, new Map(models.map((m) => [m.path, m.frontmatter])));
-  const dates = await datesByPage(opts, sources, paths, git.commit !== null);
-  const evals = readEvals(opts, sources, pages, warnings);
+  const metadataByPage = new Map(models.map((m) => [m.path, m.frontmatter]));
+  // Pins and eval verdicts are author-facing: a run without them reads neither.
+  const pins = authoring ? await pinsByPage(opts, sources, paths, metadataByPage) : new Map<string, Pin[]>();
+  const dates = await datesByPage(opts, sources, paths, git.commit !== null, authoring ? undefined : metadataByPage);
+  const evals = authoring ? readEvals(opts, sources, pages, warnings) : undefined;
   if (opts.evals === undefined) warnings.push("no docevals report is configured, so records carry no eval verdicts.");
+  else if (!authoring) warnings.push(CONFIGURED_EVALS_LEFT_OUT);
 
   const vectors = readVectors(opts.outDir);
   if (vectors === undefined) {
@@ -506,12 +531,16 @@ function summarize(pins: readonly Pin[], start: number, end: number): PinSummary
 
 // ---- dates -------------------------------------------------------------------
 
-/** What `manni meta derive` would stamp for `created` and `last-updated`, compared with each page. */
+/**
+ * What `manni meta derive` would stamp for `created` and `last-updated`, compared with each page.
+ * `pages`, when given, is what each page asserts, in place of what its file and manifests hold.
+ */
 async function datesByPage(
   opts: ChunksOptions,
   sources: string,
   paths: readonly string[],
   inGit: boolean,
+  pages?: ReadonlyMap<string, Record<string, unknown>>,
 ): Promise<Map<string, ProvenanceRecord["dates"]>> {
   const out = new Map<string, ProvenanceRecord["dates"]>();
   if (paths.length === 0 || !inGit) return out;
@@ -534,11 +563,14 @@ async function datesByPage(
   }
   for (const result of derived.results) {
     const content = readFileSync(resolve(sources, result.file), "utf8");
-    const page = (await analyzeDoc(content, result.file, new Set([result.file]))).frontmatter;
+    const page = pages?.get(result.file) ?? (await analyzeDoc(content, result.file, new Set([result.file]))).frontmatter;
     const date = (field: "created" | "last-updated"): DerivedDate => {
       const f = result.fields.find((x) => x.field === field);
-      const asserted = f?.asserted ?? page[field];
-      const day = f === undefined || f.evidence === "uncommitted body change" ? null : asWritten(f.derived);
+      const asserted = pages === undefined ? (f?.asserted ?? page[field]) : page[field];
+      // Without author-facing content, a `created` the field stamped is the
+      // field's value, so it goes with the field (proposal 0110).
+      const fromField = pages !== undefined && field === "created" && f?.evidence?.startsWith("stamped") === true;
+      const day = f === undefined || f.evidence === "uncommitted body change" || fromField ? null : asWritten(f.derived);
       // No derived day, nothing to compare the page against: no stamp either.
       if (day === null) return { day, stamp: null };
       const stamp: DerivedDate["stamp"] =

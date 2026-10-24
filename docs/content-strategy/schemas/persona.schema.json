@@ -82,6 +82,14 @@
       },
       "description": "What gets in the persona's way, one claim per item. A citation pins an item as `/pains/<n>`. The docevals judge reads it for an eval with `readers: personas`."
     },
+    "constraints": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "description": "What the persona avoids or insists on, one sentence each. `manni test tasks` tells them to the synthetic user, and judges each one after the run as a warning."
+    },
     "content-types": {
       "type": "array",
       "items": {

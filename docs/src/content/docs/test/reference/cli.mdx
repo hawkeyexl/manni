@@ -1,22 +1,23 @@
 ---
 title: CLI reference
-description: "Every manni test command, argument, and flag (run), with the input precedence, the output formats, the exit codes, every message, and the examples."
+description: "Every manni test command, argument, and flag (procedures and tasks), with the inputs, the output formats, the exit codes, every message, and the examples."
 id: "test-reference-cli"
 type: "reference"
-keywords: ["test run", "options", "output formats", "exit codes", "Doc Detective"]
+keywords: ["test procedures", "test tasks", "synthetic user", "options", "output formats", "exit codes", "Doc Detective", "Claude Code"]
 language: en
-audiences: ["ci-engineers", "docs-engineers"]
-intent: "Look up every argument, flag, output format, exit code and message of manni test run."
+audiences: ["ci-engineers", "docs-engineers", "schema-authors"]
+intent: "Look up every argument, flag, output format, exit code and message of manni test procedures and manni test tasks."
 lifecycle: published
 applies-to: ["domain:test"]
 risks: ["open-world"]
-sample-questions: ["What flags does manni test run accept?", "Which inputs does manni test run test when I give it no paths?", "Why did manni test run exit 2?"]
+sample-questions: ["What flags does manni test procedures accept?", "Which inputs does manni test procedures test when I give it no paths?", "Why did manni test procedures exit 2?", "What does manni test tasks pass Claude Code?", "Which evals does a manni test tasks run get?"]
 graph: { label: "CLI reference", type: reference }
-last-updated: 2026-10-20
+last-updated: 2026-10-24
 tags:
   - cli
   - testing
   - doc-detective
+  - synthetic-users
   - reference
   - exit-codes
 action: remember
@@ -34,13 +35,15 @@ verified-by:
     docs:check-cli), enforced in CI. Keep flags, arguments, and defaults in
     sync with the code; descriptions are free-form. */}
 
-manni test exposes one subcommand, [`run`](#test-run). It runs Doc Detective
-over the docs and reports the results in the family contract. There is no
+manni test exposes two subcommands. [`procedures`](#test-procedures) runs
+Doc Detective over the docs. [`tasks`](#test-tasks) has a synthetic user
+attempt a task from them. Both report in the family contract. There is no
 default subcommand. `manni test docs/` is a usage error, and the verb is
 always spelled.
 
 ```sh
-manni test [options] run [paths...] [command options]
+manni test [options] procedures [paths...] [command options]
+manni test [options] tasks [targets...] [command options]
 ```
 
 ## Global options
@@ -54,7 +57,7 @@ Global options are accepted before the subcommand.
 
 ## `test`
 
-The procedure-test domain. Every command on this page lives under it. `test`
+The docs-testing domain. Every command on this page lives under it. `test`
 accepts its own `-V, --version`, which reports the manni version, and
 `-h, --help`. Run with no subcommand it prints usage, exit `2`.
 
@@ -64,14 +67,14 @@ manni test [options] <command> [command options] [arguments]
 
 `test` has no options of its own beyond those two.
 
-## `test run`
+## `test procedures`
 
 Start Doc Detective, read the results file it writes, and report every
 failing or warning step. Doc Detective's exit code says only whether it ran.
 The verdict comes from its results.
 
 ```sh
-manni test run [paths...] [options]
+manni test procedures [paths...] [options]
 ```
 
 ### Arguments
@@ -158,7 +161,7 @@ Detective's docs. A step that fails the same way in several contexts, such as
 two browsers, is listed once.
 
 ```console
-$ manni test run test/test/fixtures/fail.md
+$ manni test procedures test/test/fixtures/fail.md
 test/test/fixtures/fail.md
   4  FAIL     Returned exit code 1. Expected one of [0]. Fix the step, fix the procedure it documents, or report a product regression.
               Doc Detective runShell
@@ -170,7 +173,7 @@ test/test/fixtures/fail.md
 A run with no failing or warning step prints the summary line alone:
 
 ```console
-$ manni test run test/test/fixtures/pass.md
+$ manni test procedures test/test/fixtures/pass.md
 1 test: 1 passed, 0 failed, 0 warnings, 0 skipped
 ```
 
@@ -183,13 +186,13 @@ each command into an annotation on the page and line. The message carries the
 same text and lines as `pretty`, joined by `%0A`.
 
 {/* test {"testId":"test-reference-cli","description":"The reference's examples: the github format on fail.md exits 1, pass.md exits 0, and stdin is a usage error."} */}
-{/* step {"description":"The github format writes an error annotation on the failing line, exit 1.","runShell":{"command":"npx @hawkeyexl/manni test run test/test/fixtures/fail.md -f github --no-progress","exitCodes":[1],"stdio":"::error file=test/test/fixtures/fail.md,line=4"}} */}
-{/* step {"description":"A passing page exits 0 in the github format, with the summary line alone.","runShell":{"command":"npx @hawkeyexl/manni test run test/test/fixtures/pass.md -f github --no-progress","exitCodes":[0],"stdio":"1 test: 1 passed"}} */}
-{/* step {"description":"Stdin is a usage error, exit 2.","runShell":{"command":"npx @hawkeyexl/manni test run -","exitCodes":[2],"stdio":"Doc Detective has no stdin"}} */}
+{/* step {"description":"The github format writes an error annotation on the failing line, exit 1.","runShell":{"command":"npx @hawkeyexl/manni test procedures test/test/fixtures/fail.md -f github --no-progress","exitCodes":[1],"stdio":"::error file=test/test/fixtures/fail.md,line=4"}} */}
+{/* step {"description":"A passing page exits 0 in the github format, with the summary line alone.","runShell":{"command":"npx @hawkeyexl/manni test procedures test/test/fixtures/pass.md -f github --no-progress","exitCodes":[0],"stdio":"1 test: 1 passed"}} */}
+{/* step {"description":"Stdin is a usage error, exit 2.","runShell":{"command":"npx @hawkeyexl/manni test procedures -","exitCodes":[2],"stdio":"Doc Detective has no stdin"}} */}
 {/* test end */}
 
 ```console
-$ manni test run test/test/fixtures/fail.md -f github
+$ manni test procedures test/test/fixtures/fail.md -f github
 ::error file=test/test/fixtures/fail.md,line=4,title=Doc Detective::Returned exit code 1. Expected one of [0]. Fix the step, fix the procedure it documents, or report a product regression.%0ADoc Detective runShell%0AGuide: https://docs.doc-detective.com/docs/actions/runshell
 1 test: 0 passed, 1 failed, 0 warnings, 0 skipped
 ```
@@ -259,16 +262,16 @@ Every message below exits `2` and is printed on stderr, prefixed `manni: `.
 | When | Message |
 |---|---|
 | `doc-detective` is not on `PATH` | `doc-detective is not on PATH. Install Doc Detective (npm install -g doc-detective) to run doc tests.` |
-| No paths, no `--collection`, and no Doc Detective config | `test run needs paths or a Doc Detective config. Pass paths, or add .doc-detective.json.` |
+| No paths, no `--collection`, and no Doc Detective config | `test procedures needs paths or a Doc Detective config. Pass paths, or add .doc-detective.json.` |
 | A named path does not exist | `File not found: "<path>". Check the path. Named paths resolve from the working directory.`, or `Files not found: "<a>", "<b>". Check the paths. Named paths resolve from the working directory.` for more than one |
 | The paths match no files | `No files matched. Patterns tried: "<path>". Pass --allow-empty if that is expected.` |
-| `-` is given | `test run reads files; Doc Detective has no stdin. Pass a path.` |
+| `-` is given | `test procedures reads files; Doc Detective has no stdin. Pass a path.` |
 | `--collection` with paths | `--collection selects a configured collection; it cannot be combined with paths.` |
 | `--collection` with no manni config | `--collection needs a config file to select from.` |
 | An unknown collection | `no collection named "<name>" in manni.config.yaml. Configured: site.`, with a `did you mean` hint for a name that differs only in case |
 | The collections match no files | `--collection matched no files. Pass --allow-empty if that is expected.` |
 | `tools.doc-detective.config` names a missing file | `manni.config.yaml: tools.doc-detective.config "<path>" does not exist.` |
-| The config has a `test:` section | `manni.config.yaml: test has no keys. Doc Detective's settings live under tools.doc-detective.` |
+| The config has a `test:` section | `manni.config.yaml: test has no keys. Doc Detective's settings live under tools.doc-detective, and Claude Code's under tools.claude-cli.` |
 | Doc Detective exits non-zero | `Doc Detective failed (exit <n>):`, then the tail of its output. `killed before exiting` replaces `exit <n>` when it had no exit code. |
 | No results file, or one that does not parse | `Doc Detective wrote no results to read. Run doc-detective directly to see why.` |
 | No tests in the inputs | `Doc Detective found no tests in the inputs. Pass --allow-empty if that is expected.` |
@@ -287,58 +290,728 @@ lists those messages.
 The minimum, one page:
 
 ```sh
-manni test run docs/guide.md
+manni test procedures docs/guide.md
 ```
 
 Doc Detective's config input, from `.doc-detective.json` in the working
 directory or from `tools.doc-detective.config`:
 
 ```sh
-manni test run
+manni test procedures
 ```
 
 The pages a configured collection names, with every other setting from Doc
 Detective's config:
 
 ```sh
-manni test run --collection site
+manni test procedures --collection site
 ```
 
 The CI form, with annotations and a live log:
 
 ```sh
-manni test run -f github --progress
+manni test procedures -f github --progress
 ```
 
 The scripting form. Doc Detective's report is on stdout, and the exit code is
 the verdict:
 
 ```sh
-manni test run -f json > results.json
+manni test procedures -f json > results.json
 ```
 
 Every option at once. Positional paths are the alternative to `--collection`:
 
 ```sh
-manni test run --collection site --collection guides -c ci/manni.config.yaml -f github --allow-empty --no-progress --no-color
+manni test procedures --collection site --collection guides -c ci/manni.config.yaml -f github --allow-empty --no-progress --no-color
 ```
 
 The usage errors, each exit `2`:
 
 ```console
-$ manni test run
-manni: test run needs paths or a Doc Detective config. Pass paths, or add .doc-detective.json.
-$ manni test run -
-manni: test run reads files; Doc Detective has no stdin. Pass a path.
-$ manni test run docs/ --collection site
+$ manni test procedures
+manni: test procedures needs paths or a Doc Detective config. Pass paths, or add .doc-detective.json.
+$ manni test procedures -
+manni: test procedures reads files; Doc Detective has no stdin. Pass a path.
+$ manni test procedures docs/ --collection site
 manni: --collection selects a configured collection; it cannot be combined with paths.
-$ manni test run --collection Site
+$ manni test procedures --collection Site
 manni: no collection named "Site" in manni.config.yaml. Configured: site. Names are case-sensitive; did you mean "site"?
-$ manni test run docs/ -f sarif
+$ manni test procedures docs/ -f sarif
 manni: Unknown --format "sarif". Use pretty | json | github.
-$ manni test run docs/
+$ manni test procedures docs/
 manni: doc-detective is not on PATH. Install Doc Detective (npm install -g doc-detective) to run doc tests.
 ```
 
 The first runs in a directory with no Doc Detective config, and the last on a
 machine without Doc Detective.
+
+## `test tasks`
+
+Have a synthetic user attempt a task from a page or a journey, then judge its
+trace and workspace against the docs. The synthetic user is Claude Code, run
+headless in a temporary directory. It plays a persona record when the run
+names one. A judge then decides each eval from what the run left behind.
+
+```sh
+manni test tasks [targets...] [options]
+```
+
+A run needs Claude Code on `PATH`, signed in, and a judge provider. The
+[attempt a task](/manni/test/attempt-a-task/) page walks through a first run.
+
+### Arguments
+
+| Argument | Required | Description |
+|---|---|---|
+| `[targets...]` | no | Page paths and `http(s)://` URLs, space-separated. Each is a start, where the synthetic user begins, and each makes its own run. Omitted: each journey's `entry-point`. |
+
+### Options
+
+| Option | Argument | Default | Description |
+|---|---|---|---|
+| `--task` | `<text>` | none | The task in plain text, in the reader's words. Needs at least one target. Cannot be combined with `--journey`. |
+| `--journey` | `<id>` | the golden set | A journey record to run as the task. Repeatable, one id per occurrence, and one run per journey. With neither `--task` nor `--journey`, every journey that declares `evals:` runs. |
+| `--persona` | `<id>` | the journey's `personas` | A persona record for the synthetic user to play. Repeatable, one id per occurrence, and one run per persona. A `--task` with no `--persona` runs as a newcomer. |
+| `--workspace` | `<dir>` | the journey's `workspace:`, else empty | The directory the synthetic user starts in. It is copied fresh into a temporary directory for each run, and the original is never touched. |
+| `-c, --config` | `<path>` | the nearest `manni.config.yaml` | The manni config file to read. It supplies the collections that hold the records and the docs, `tools.claude-cli` and `providers:`. |
+| `-f, --format` | `<format>` | `pretty` | Output format: `pretty`, `json` or `github`. See [output formats](#output-formats-1). |
+| `--provider` | `<name>` | the family's precedence | The judge's provider, as in docevals and tracevals. It overrides [`providers:`](/manni/meta/reference/configuration/#providers). |
+| `--model` | `<id>` | the provider's | The judge's model. The synthetic user's model is `tools.claude-cli.model`. |
+| `--keep` | n/a | off | Keep each run's temporary directory, and print its workspace path to stderr. |
+| `--allow-empty` | n/a | off | Treat an empty golden set as success, exit `0`. |
+| `--progress` | n/a | on a terminal | Stream each action the synthetic user takes to stderr. |
+| `--no-progress` | n/a | off | Never stream the synthetic user's actions. |
+| `--no-color` | n/a | off | Disable colored output. Color applies to the `pretty` output only, on a TTY, and never under `NO_COLOR`; the same [rules](/manni/meta/reference/output-and-exit-codes/#color-behavior) as the metadata tool. |
+
+### How runs are assembled
+
+A run is one start, one task and one persona, or no persona. manni runs every
+combination, one after another.
+
+- **The task.** `--task`, or each `--journey`. With neither, the golden set
+  runs, which is every journey record that declares `evals:`.
+- **The start.** Each target. With none, the journey's `entry-point`.
+- **The persona.** Each `--persona`. With none, each of the journey's
+  `personas`. A `--task` with no `--persona` runs as a newcomer, with no
+  persona.
+
+So `--journey t1 --persona theo --persona maya` is two runs. Two targets with
+two personas make four.
+
+Journeys and personas are the strategy records the config's collections hold,
+as [`manni strategy`](/manni/strategy/) reads them. A journey's `entry-point`
+and `workspace` resolve against the config file's directory.
+
+### What a journey supplies
+
+| Field | How `test tasks` uses it |
+|---|---|
+| `title` | The task, as told to the synthetic user. |
+| `trigger` | What started the task, told to the synthetic user. |
+| `entry-point` | The start when no target is passed, as a path or a URL. |
+| `success-criteria` | When the task is done, told to the synthetic user. It is judged after each run as the `success` eval. |
+| `personas` | Who the synthetic user plays when no `--persona` is passed, one run each. |
+| `workspace` | The directory it starts in when no `--workspace` is passed. |
+| `evals` | The journey's golden evals, graded after each run. Declaring them puts the journey in the golden set. |
+
+The journey's `description` and body are not told to the synthetic user.
+
+An `evals:` entry is a tracevals
+[eval entry](/manni/tracevals/reference/evals-schema/#object-form), with an
+`id` in kebab-case that is unique in the list. Eight graders apply: `ai`,
+`command`, `regex`, `file-access`, `tool-usage`, `tool-order`, `turn-count` and
+`cost`. Three are refused. Nobody reviews a synthetic run, so `human` cannot
+grade one. It has no skills, so `skill-invoked` has nothing to find. Its last
+message is its account, so `json-output` has nothing to parse.
+
+Graders read the workspace as their project root. A `command` runs there, and
+`files` and `{ source: file, path }` read it. `{trace}` in a command is the
+run's trace path. The [graders reference](/manni/tracevals/reference/graders/)
+has each grader's options.
+
+```yaml title="docs/content-strategy/journeys/t1.md"
+---
+type: journey
+id: t1
+title: Fix a failing metadata check fast
+description: Theo lands on the docs from a red CI check or a search and needs a clear map from the error to the field to fix.
+personas: [theo]
+trigger: "The docs check on his pull request failed with: docs/install.md (root) must have required property 'description' (line 1) [manni:core:1.0.0]"
+entry-point: docs/src/content/docs/meta/fix/index.mdx
+success-criteria: The check passes on his repo, and the only change is the missing field in docs/install.md.
+workspace: test/test/fixtures/tasks/red-pr
+evals:
+  - id: check-passes
+    assertion: manni meta validate passes on the repo after the fix.
+    grader: command
+    command: [npx, --yes, "@hawkeyexl/manni", meta, validate]
+    timeout-ms: 120000
+  - id: description-added
+    assertion: docs/install.md has a non-empty description in its frontmatter.
+    grader: regex
+    target: { source: file, path: docs/install.md }
+    options: { pattern: "^description: \\S", flags: m }
+  - id: confirmed-locally
+    assertion: Theo ran the check after his fix.
+    grader: tool-order
+    options: { before: Edit, after: Bash, afterInputMatch: "meta validate" }
+---
+```
+
+### What a persona supplies
+
+The synthetic user is told the persona's `title`, `description`, `role`,
+`team-context`, `proficiency`, `prerequisites`, `goals`, `pains` and
+`constraints`. It is never told the body. A persona's prose often says how the
+person uses the product, which is what the docs must teach. A persona with
+only `title` and `description` still runs.
+
+Each of the persona's `constraints` is also judged after the run, as a
+`constraint` warning.
+
+### What a start means
+
+- **A URL.** The synthetic user is told to start there, and fetches it.
+- **A path.** manni copies the docs into a `docs/` folder beside the
+  workspace, and tells the synthetic user to start at the page's copy. It
+  copies the collection that holds the page, or the page's directory when no
+  collection holds it. The synthetic user never sees your checkout.
+
+A path start reads source, so components and links read as they are written.
+To test what readers see, serve the site and pass its URL.
+
+### What manni passes Claude Code
+
+Each run gets a fresh temporary directory:
+
+```text
+<tmp>/manni-task-XXXX/
+  workspace/   a copy of the seed; Claude Code's working directory
+  docs/        a copy of the docs, for a path start only
+  global/      the npm global prefix for this run
+  role.md      the role prompt below
+```
+
+Claude Code is found on `PATH`, as Doc Detective is. manni starts it like
+this:
+
+```text
+claude -p
+  --output-format stream-json --verbose
+  --no-session-persistence
+  --setting-sources ""
+  --append-system-prompt-file <tmp>/role.md
+  --tools Read,Write,Edit,Glob,Grep,Bash,WebFetch
+  --allowedTools Read,Write,Edit,Glob,Grep,Bash,WebFetch[,mcp__<each server in mcpConfig>]
+  --permission-mode dontAsk
+  --strict-mcp-config [--mcp-config <tools.claude-cli.mcpConfig>]
+  --max-turns <tools.claude-cli.maxTurns>
+  [--model <tools.claude-cli.model>]
+  [--add-dir <tmp>/docs]
+cwd:   <tmp>/workspace
+stdin: the task brief below
+env:   NPM_CONFIG_PREFIX=<tmp>/global, with its bin directory first on PATH
+```
+
+- **None of your setup.** `--setting-sources ""` loads none of your Claude
+  Code settings. So none of your plugins, hooks or MCP servers reach the
+  synthetic user. It does use your Claude Code sign-in.
+- **Seven tools.** The synthetic user has Read, Write, Edit, Glob, Grep, Bash
+  and WebFetch, plus the servers `tools.claude-cli.mcpConfig` names.
+  `--tools` hides every other tool, web search included, because the test is
+  whether these docs are enough. Bash is the one terminal on every platform,
+  so a journey's `tool-order` eval can name it.
+- **Global installs stay in the run.** Docs often say `npm install -g`.
+  `NPM_CONFIG_PREFIX` sends a global npm install to the run's `global/`
+  directory, which goes when the run does.
+
+The role prompt, `role.md`:
+
+```text
+You are taking part in a usability test of some documentation. You are playing
+a person, not an assistant. Stay in that person's shoes for the whole session.
+
+Who you are:
+<title>. <description>
+Role: <role>
+Team: <team-context>
+Already good at: <proficiency, one per line>
+Knows before starting: <prerequisites>
+Wants: <goals>
+Frustrated by: <pains>
+Your constraints:
+- <each constraint>
+
+How to work:
+- Use what the documentation tells you, and what this person would already know.
+- Nobody is available to answer questions. When stuck, do what this person
+  would do, or give up.
+- The current directory is yours. Treat the documentation as read-only.
+- When you finish or give up, end with a short account in this person's voice:
+  whether you got it done, where you got stuck, and what in the docs helped or
+  confused you.
+```
+
+Each line under "Who you are" appears only when its field is set. With no
+persona, that section reads `Someone new to this product, with the task below
+and no other context.`
+
+The task brief, on stdin:
+
+```text
+<the --task text, or the journey's title>
+What started this: <trigger>
+You're done when: <success-criteria>
+Start here: <URL>  |  Start here: ../docs/<page path in the copy>
+```
+
+The two middle lines appear only for a journey that sets the field.
+
+### What manni keeps
+
+The trace is Claude Code's stdout stream. manni saves it as
+`.manni/test/tasks/<run-id>/trace.jsonl`, beside the config file. `role.md`
+and `brief.md` sit beside it.
+`<run-id>` is `<UTC timestamp>-<journey id or "task">-<persona id or "newcomer">`.
+
+The temporary directory is removed after judging. `--keep` keeps it, and
+prints its workspace path to stderr.
+
+### Safety
+
+The synthetic user runs the commands the docs tell it to, with your
+privileges and your network. Doc Detective's shell steps do the same. Its
+working directory is a temporary copy, but its terminal is not confined. A
+global npm install stays in the run, and anything else it changes stays
+changed.
+
+Run tasks from docs you do not trust in CI or in a container.
+[`manni check`](/manni/family/check/) never runs `manni test tasks`.
+
+### What the judge sees
+
+Every judged eval gets the same evidence, gathered after the run.
+
+- **The trace.** Each user, assistant and tool event. Each tool result is cut
+  to 2,000 characters.
+- **The workspace.** The files the run added, changed or removed against the
+  seed. Each added or changed text file's contents are cut to 4,000
+  characters, and 20,000 in all.
+- **The docs the reader had.** The start page and every page it opened, as
+  the trace recorded them, from a Read of the docs copy or a WebFetch result.
+  They are cut to 40,000 characters in all, start page first. The output
+  lists them under `docs`.
+
+The judge is the family's. `--provider` and `--model` come first, then
+`providers:`, then `auto`. Each verdict is `pass`, `fail` or `needs-review`,
+with a confidence and its reasoning. [Choose a
+provider](/manni/docevals/judge/choose-a-provider/) covers each provider.
+
+### Evals on every run
+
+| Eval | When | Grader | Severity | Annotated at |
+|---|---|---|---|---|
+| `success` | The journey sets `success-criteria`. | `ai` | error | Its line in the journey. |
+| Each `evals:` entry | The journey declares them. | Its own | Its own | Its line in the journey. |
+| `completed` | The run has neither of the above, as every `--task` run does. | `ai` | error | The task's source. |
+| `followed-the-docs` | Always. | `ai` | warning | The task's source. |
+| `constraint` | Once per persona constraint. | `ai` | warning | Its line in the persona. |
+
+The task's source is the journey's `title:` line, or line 1 of the start page.
+A URL start has no location.
+
+`success` asserts the journey's `success-criteria`, and `constraint` asserts
+the constraint. `completed` asserts the task in its own words:
+
+```text
+The reader completed the task: <the --task text, or the journey's title>
+```
+
+`followed-the-docs` asserts this:
+
+```text
+Every step the reader took came from the docs it had, or from what the persona already knows. It did not guess or lean on outside knowledge.
+```
+
+It is what makes a success mean the docs worked. An agent that already knows
+the product could finish without them.
+
+`completed` judges the task's words and nothing more. A criterion beyond them,
+such as the one file a fix may change, belongs in a journey's
+`success-criteria` or `evals:`.
+
+A run **passes** when no `error`-severity eval failed, errored or needs
+review. `needs-review` fails the run, as `manni tracevals run` does by
+default.
+
+### Output formats
+
+All output goes to stdout. Progress, the `--keep` paths and every error go to
+stderr. The examples below are captured from runs on this repository.
+
+**`pretty`** prints one block per run, then a total. This is a `--task` run
+as Theo, from the fix page:
+
+````text
+task · The docs check on my pull request fails with: docs/install.m… · as theo
+  start     docs/src/content/docs/meta/fix/index.mdx
+  docs      meta/fix/index.mdx
+  changed   docs/install.md
+  7 turns · 0m 37s
+  PASS completed             docs/src/content/docs/meta/fix/index.mdx:1
+  PASS followed-the-docs     docs/src/content/docs/meta/fix/index.mdx:1
+  PASS constraint            docs/content-strategy/personas/theo.md:12
+  PASS constraint            docs/content-strategy/personas/theo.md:13
+  Account
+    It passes now. I added one line to the frontmatter of `docs/install.md`:
+
+    ```yaml
+    description: Explains how to install the widget by running its installer.
+    ```
+
+    I ran the check with `npx` (nothing installed globally) before and after
+    the fix:
+    - **Before:** I got the same error CI showed, `(root) must have required
+    property 'description' (line 1) [manni:core:1.0.0]`, with exit code 1.
+    - **After:** `✓ docs/install.md`, "1 file checked, 1 passed, 0 failed, 0
+    errors", exit code 0. I ran it on the single file and again with no path
+    from the repo root, which the docs say checks the same files CI does. Both
+    passed.
+
+    **What helped:**
+    - The "Decode the error line" table. It told me `(root)` plus `(line 1)`
+    means a field is missing entirely, not set wrong, so I didn't go hunting
+    for a bad value.
+    - The "Missing a required field" section had the exact fix, and the
+    "Reproduce and confirm locally" steps gave me a local check that needed no
+    install.
+    - The hint printed under the error ("One full non-empty sentence saying
+    what the page is for") told me what to write. I didn't have to open the
+    schema's reference page.
+
+    **What confused me:**
+    - I still don't know why `manni:core:1.0.0` ran. Our `manni.config.yaml`
+    only lists a collection of paths and doesn't name a schema, so I'm
+    guessing it's a default. The fix page never says what applies when the
+    config names no schema. It sends that question to the "how schema
+    resolution works" page, and I didn't open it because the fix didn't need
+    it.
+    - The page's main example uses `google:okf:0.1` and `type`, not the schema
+    that actually fired for me. I only found `manni:core` asking for
+    `description` in the "No frontmatter at all" example.
+    - The `fill` section seemed like more than I needed. It sends your page to
+    an AI model or downloads a local one, which is a lot for adding one line
+    to someone else's repo, so I skipped it.
+
+    All done. Moving on.
+  trace     .manni/test/tasks/20261024T012259Z-task-theo/trace.jsonl
+
+1 run: 1 passed
+````
+
+A warning that fails prints its assertion and the judge's reasoning. This
+excerpt is from an earlier run on this repository, before the get started page
+said how to check the version:
+
+```text
+task · Install manni and check which version you have · as newcomer
+  start     http://127.0.0.1:4321/manni/meta/get-started/
+  5 turns · 0m 44s
+  …
+  WARN followed-the-docs     (no location)
+       Every step the reader took came from the docs it had, or from what the
+       persona already knows. It did not guess or lean on outside knowledge.
+       AI judge: fail (confidence 0.97). The critical step of checking the
+       installed version was accomplished by guessing `--version` based on
+       outside knowledge about common CLI conventions ('most command-line
+       tools use it'), not from the documentation. The reader explicitly
+       acknowledged the docs did not provide this information and that they
+       guessed based on general knowledge of command-line tools.
+  …
+1 run: 1 passed · 1 warning
+```
+
+A block's first line is the journey id or `task`, the journey's title or the
+task's first 60 characters, and the persona or `newcomer`.
+
+- `docs` lists each page the judge read, relative to the docs root.
+- `added`, `changed` and `removed` each appear only when the run left such a
+  file.
+- Each eval prints `PASS`, `FAIL`, `ERROR`, `REVIEW` or `SKIP`. A failing `warning`
+  eval prints `WARN`, and a failing `notice` eval `NOTE`. Anything but `PASS`
+  adds its assertion and the judge's verdict or the grader's message.
+- `stopped at the <n>-turn limit` appears when the run reached
+  `tools.claude-cli.maxTurns`.
+- `Account` is the synthetic user's last message.
+- `kept` names the workspace path under `--keep`.
+
+Zero counts in the total are dropped.
+
+**`json`** prints one object. This one is a bare run of the golden set, shortened here to one eval:
+
+```json
+{
+  "runs": [
+    {
+      "id": "20261024T022822Z-t1-theo",
+      "journey": "t1",
+      "task": "Fix a failing metadata check fast",
+      "persona": "theo",
+      "start": "docs/src/content/docs/meta/fix/index.mdx",
+      "workspace": "test/test/fixtures/tasks/red-pr",
+      "kept": null,
+      "trace": ".manni/test/tasks/20261024T022822Z-t1-theo/trace.jsonl",
+      "turns": 6,
+      "durationMs": 27092,
+      "stoppedAtLimit": false,
+      "usage": {
+        "inputTokens": 8,
+        "outputTokens": 1377,
+        "costUsd": 0.1557432
+      },
+      "docs": [
+        "meta/fix/index.mdx"
+      ],
+      "changes": {
+        "added": [],
+        "changed": [
+          "docs/install.md"
+        ],
+        "removed": []
+      },
+      "account": "Done. The check is green, and the only change is one line in `docs/install.md`: …",
+      "evals": [
+        {
+          "id": "success",
+          "grader": "ai",
+          "severity": "error",
+          "assertion": "The check passes on his repo, and the only change is the missing field in docs/install.md.",
+          "location": {
+            "file": "docs/content-strategy/journeys/t1.md",
+            "line": 9
+          },
+          "outcome": "pass",
+          "message": "Both conditions were fully met: (1) the validation check passes as confirmed by exit code 0 and the success summary, and (2) the only change was adding the missing 'description' field to docs/install.md. No other files were touched, and no other fields were modified.",
+          "consensus": {
+            "votes": {
+              "pass": 3,
+              "fail": 0,
+              "partial": 0,
+              "error": 0
+            },
+            "meanConfidence": 0.9666666666666667
+          }
+        }
+      ],
+      "outcome": "pass"
+    }
+  ],
+  "summary": {
+    "runs": 1,
+    "passed": 1,
+    "failed": 0,
+    "warnings": 0
+  },
+  "exitCode": 0
+}
+```
+
+- `journey` is `null` for `--task`, and `persona` is `null` for a newcomer.
+- `kept` is the kept workspace path under `--keep`, else `null`.
+- `usage.costUsd` is present only when Claude Code reports it.
+- `location` is `null` for an eval annotated at a URL start.
+- `consensus` appears on judged evals only.
+- Each eval's `outcome` is `pass`, `fail`, `error`, `needs-review` or `skipped`. A `skipped` eval, such as `cost` on a stream with no cost, never fails a run.
+
+**`github`** writes one workflow command per eval that did not pass, at its
+location, then the total line. An eval with no location gets no `file=`. A
+`needs-review` eval prints as `::error`, because it fails the run.
+
+```text
+::warning file=<file>,line=<line>,title=manni test tasks::<journey id or "task"> as <persona or "newcomer">: <eval id> <what happened>
+```
+
+A run where every eval passed writes the total line alone, as this bare run of the golden set did:
+
+```text
+1 run: 1 passed
+```
+
+### Progress
+
+With progress on, each run prints a start line to stderr, then one line per
+tool call:
+
+```text
+task as newcomer: starting in an empty directory
+  newcomer › Bash curl -s http://127.0.0.1:4321/manni/meta/get-started/ | sed 's/<[^>]*>//g' | gre
+  newcomer › Bash node --version; npm --version
+  newcomer › Bash npm install -g @hawkeyexl/manni 2>&1 | tail -20
+  newcomer › Bash manni --version
+```
+
+A run with no workspace says `starting in an empty directory`. Each tool line
+carries the first 80 characters of the tool's main input. Progress is on by
+default when stderr is a terminal. `--progress` turns it on anywhere, and
+`--no-progress` turns it off.
+
+`--keep` prints one line per run to stderr, such as
+`manni: kept t1 as theo's workspace: <absolute path>`.
+
+### Exit codes
+
+| Code | Meaning |
+|---|---|
+| `0` | Every run passed. Warnings and notices pass. Also an empty golden set with `--allow-empty`. |
+| `1` | A run failed. An `error`-severity eval in it failed, errored or needs review. |
+| `2` | Usage, config or record error, Claude Code missing or stopping without a result, or no judge available. One line on stderr, prefixed `manni: `. |
+
+A run that reaches the turn limit is judged, not an error. A run where Claude
+Code exits without a result stops the command with exit `2`. That covers a
+machine that is not signed in, an API error and a crash.
+
+### Messages
+
+Every message below exits `2` and is printed on stderr, prefixed `manni: `.
+
+| When | Message |
+|---|---|
+| A bare run, and no journey declares `evals:` | `nothing to run: no journey declares evals:. Pass --task with a page or URL, or --journey <id>.` With `--allow-empty`, stdout prints `No tasks to run.` and the exit is `0`. |
+| A target with neither `--task` nor `--journey` | `a start page needs a task. Pass --task "<what the reader wants>" or --journey <id>.` |
+| `--task` with no target | `--task needs a page or URL to start from.` |
+| `--task` and `--journey` together | `--task and --journey both name the task. Pass one.` |
+| `-` as a target | `manni test tasks reads no stdin. Pass a page path or URL.` |
+| A path target that does not exist | `File not found: "<path>". Check the path. Named paths resolve from the working directory.` |
+| An id with no record | `no record "t9". 82 records; did you mean "t1"?` |
+| An id of the wrong record type | `"m1" is a journey; --persona takes a persona.`, or `"theo" is a persona; --journey takes a journey.` |
+| A journey with no start | `journey "t1" has no entry-point:. Add one to docs/content-strategy/journeys/t1.md, or pass the page to start from.` |
+| A journey names a persona with no record | `journey "t1" names persona "tim", which has no record.` |
+| A grader that cannot grade a task | `docs/content-strategy/journeys/t1.md:19: evals[1].grader "human" cannot grade a task. Use ai, command, regex, file-access, tool-usage, tool-order, turn-count or cost.` |
+| An eval with no `id` | `docs/content-strategy/journeys/t1.md:12: evals[0] needs an id.` |
+| Two evals with one `id` | `docs/content-strategy/journeys/t1.md:17: evals[1].id "check-passes" repeats evals[0].` |
+| A grader's options are invalid | The grader's own message, after `<file>:<line>: evals[<n>]`. The [graders reference](/manni/tracevals/reference/graders/#shared-validation-messages) lists them. |
+| `evals:` that is not a list | `docs/content-strategy/journeys/t1.md:11: evals must be a list of eval entries.` |
+| An eval entry the vocabulary refuses | The first schema error, after `<file>:<line>: evals[<n>]`, such as `evals[0].severity must be equal to one of the allowed values.` |
+| A workspace that does not exist | `docs/content-strategy/journeys/t1.md:10: workspace "test/x" does not exist.`, or `--workspace "test/x" does not exist.` |
+| An entry point that does not exist | `docs/content-strategy/journeys/t1.md:8: entry-point "docs/x.mdx" does not exist.` |
+| `tools.claude-cli.mcpConfig` is not JSON | `manni.config.yaml: tools.claude-cli.mcpConfig "<path>" is not a JSON file Claude Code can read.` |
+| `claude` is not on `PATH` | `Claude Code is not on PATH. Install it with npm install -g @anthropic-ai/claude-code, sign in, and run again.` |
+| Claude Code exits without a result | `Claude Code stopped without a result for t1 as theo:`, then what Claude Code said, such as `Not logged in · Please run /login`, or else the last lines of its stderr. |
+| `tools.claude-cli.model` is not a string | `manni.config.yaml: tools.claude-cli.model must be a non-empty string.` |
+| `tools.claude-cli.maxTurns` is not a positive integer | `manni.config.yaml: tools.claude-cli.maxTurns must be a positive integer.` |
+| `tools.claude-cli.mcpConfig` names a missing file | `manni.config.yaml: tools.claude-cli.mcpConfig "<path>" does not exist.` |
+| An unknown key under `tools.claude-cli` | `manni.config.yaml: tools.claude-cli has unknown key "<key>". Supported keys: model, maxTurns, mcpConfig.` |
+| The config has a `test:` section | `manni.config.yaml: test has no keys. Doc Detective's settings live under tools.doc-detective, and Claude Code's under tools.claude-cli.` |
+| An unknown `--format` | `Unknown --format "<format>". Use pretty \| json \| github.` |
+
+No judge provider at all prints the family's provider message,
+which [Choose a provider](/manni/docevals/judge/choose-a-provider/#no-provider-at-all)
+shows.
+
+One warning leaves the exit code and the report alone. A process the synthetic
+user started, such as a browser, can outlive the run and hold a file in its
+temp directory. Windows then refuses the removal, and manni says so on stderr:
+
+```text
+manni: could not remove <temp dir> after t1 as theo: EBUSY: resource busy or locked, rmdir '<path>'. A process the synthetic user started may still hold it; remove it by hand.
+```
+
+### Parity with the other domains
+
+- **No `--collection`.** Journeys and personas come from the strategy records,
+  wherever the config's collections hold them. A path start copies the
+  collection that holds the page.
+- **No `-` for stdin.** A start is a page or a URL, so `-` is a usage error.
+- **No `--as`, `--ext` or `--exclude`.** A target is where a reader starts,
+  not a set of files to read.
+- **`--provider` and `--model` mean the judge**, as in every domain with one.
+  The synthetic user's model is set only in `tools.claude-cli.model`.
+
+### Examples
+
+One page, one plain-text task, a newcomer and an empty workspace:
+
+```sh
+manni test tasks docs/src/content/docs/meta/get-started/index.mdx --task "Install manni and check which version you have"
+```
+
+The served site instead of source, with `manni site preview` running:
+
+```sh
+manni test tasks http://127.0.0.1:4321/manni/meta/get-started/ --task "Install manni and check which version you have"
+```
+
+As a persona, from a seeded workspace:
+
+```sh
+manni test tasks docs/src/content/docs/meta/fix/index.mdx --persona theo --workspace test/test/fixtures/tasks/red-pr --task "My PR's docs check fails. Make it pass."
+```
+
+A golden journey. The task, start, personas, workspace and evals come from
+the record:
+
+```sh
+manni test tasks --journey t1
+```
+
+The same journey from another page:
+
+```sh
+manni test tasks docs/src/content/docs/meta/index.mdx --journey t1
+```
+
+One task, two readers, which makes two runs:
+
+```sh
+manni test tasks --journey t1 --persona theo --persona maya
+```
+
+The whole golden set, every journey that declares `evals:`:
+
+```sh
+manni test tasks
+```
+
+The CI form:
+
+```sh
+manni test tasks -f github --no-progress
+```
+
+The scripting form. It prints each run's outcome and cost:
+
+```sh
+manni test tasks -f json --no-progress | jq '[.runs[] | {journey, persona, outcome, costUsd: .usage.costUsd}]'
+```
+
+Every option at once. `--task` is the alternative to `--journey`:
+
+```sh
+manni test tasks docs/src/content/docs/meta/fix/index.mdx --journey t1 --persona theo --persona maya --workspace test/test/fixtures/tasks/red-pr -c manni.config.yaml -f json --provider anthropic --model claude-sonnet-5-5 --keep --progress --no-color
+```
+
+The usage errors, each exit `2`:
+
+```console
+$ manni test tasks docs/guide.mdx
+manni: a start page needs a task. Pass --task "<what the reader wants>" or --journey <id>.
+$ manni test tasks --task "Install it"
+manni: --task needs a page or URL to start from.
+$ manni test tasks docs/guide.mdx --task "Install it" --journey t1
+manni: --task and --journey both name the task. Pass one.
+$ manni test tasks --journey theo
+manni: "theo" is a persona; --journey takes a journey.
+$ manni test tasks --journey m1
+manni: journey "m1" has no entry-point:. Add one to docs/content-strategy/journeys/m1.md, or pass the page to start from.
+$ manni test tasks
+manni: nothing to run: no journey declares evals:. Pass --task with a page or URL, or --journey <id>.
+$ manni test tasks --journey t1
+manni: Claude Code is not on PATH. Install it with npm install -g @anthropic-ai/claude-code, sign in, and run again.
+$ manni test tasks -f sarif
+manni: Unknown --format "sarif". Use pretty | json | github.
+```
+
+The sixth runs where no journey declares `evals:`, and the seventh on a
+machine without Claude Code. `manni test run` is not a command, so it gets
+commander's `error: unknown command 'run'`, exit `2`.

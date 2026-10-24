@@ -1,0 +1,32 @@
+{
+  "internal": "manni: no docevals report is configured, so records carry no eval verdicts.\nmanni: no vector sidecar, so chunks carry no vectors and retrieval is lexical only; configure graph.embed to add them.\nmanni: 82 pages are under no route, so llms.txt leaves them out.\nbuild     graph.ttl: 344 pages, 23413 triples, 82 strategy records\nexport    search.und.json, search.en.json, localizations.json: 3108 entries\nskipped   embed: no graph.embed section\nexport    graph.jsonld: 3274 nodes\nexport    chunks.json, chunks.und.jsonl, chunks.en.jsonl: 2543 chunks, 0 withheld\nexport    llms.txt: 262 pages\nskipped   iirds: no graph.export.iirds section\nPublished 9 files to .manni/graph/internal/.\n\nreal\t0m11.687s\nuser\t0m0.015s\nsys\t0m0.000s\n",
+  "traverse": "https://hawkeyexl.github.io/manni/id/strategy/journey/d11 — Bound what the eval gate can spend and what it can execute\n  https://hawkeyexl.github.io/manni/id/doc/docs/src/content/docs/docevals/ci/cost-and-caching.mdx — Caching and turn budgets\n  https://hawkeyexl.github.io/manni/id/doc/docs/src/content/docs/docevals/ci/local-models.mdx — Local models and CI\n  https://hawkeyexl.github.io/manni/id/doc/docs/src/content/docs/docevals/ci/untrusted-pull-requests.mdx — Untrusted pull requests\n  https://hawkeyexl.github.io/manni/id/doc/docs/src/content/docs/docevals/reference/configuration.mdx — Configuration reference\n\n5 nodes, 4 hops, 0 excluded\n",
+  "readers": "manni: no docevals report is configured, so records carry no eval verdicts.\nmanni: no vector sidecar, so chunks carry no vectors and retrieval is lexical only; configure graph.embed to add them.\nbuild     graph.ttl: 262 pages, 21021 triples\nexport    search.en.json, localizations.json: 3026 entries\nskipped   embed: no graph.embed section\nexport    graph.jsonld: 3110 nodes\nexport    chunks.json, chunks.en.jsonl: 2461 chunks, 0 withheld\nexport    llms.txt: 262 pages\nskipped   iirds: no graph.export.iirds section\nPublished 7 files to .manni/graph/readers/.\n\nreal\t0m9.111s\nuser\t0m0.000s\nsys\t0m0.015s\n",
+  "query": "No matches.\n",
+  "server": [
+    {
+      "ms": 842,
+      "line": "manni: publishing the graph before serving it: ../../../../../../../HAWKEY~1/AppData/Local/Temp/manni/graph/1b1e36253fe824df/chunks.json does not exist."
+    },
+    {
+      "ms": 9526,
+      "line": "manni: no docevals report is configured, so records carry no eval verdicts."
+    },
+    {
+      "ms": 9546,
+      "line": "manni: no vector sidecar, so chunks carry no vectors and retrieval is lexical only; configure graph.embed to add them."
+    },
+    {
+      "ms": 11713,
+      "line": "manni: 82 pages are under no route, so llms.txt leaves them out."
+    },
+    {
+      "ms": 11828,
+      "line": "manni: published the graph in 11.0s."
+    },
+    {
+      "ms": 11853,
+      "line": "manni: serving lookup, retrieve, traverse and impact over stdio from ../../../../../../../HAWKEY~1/AppData/Local/Temp/manni/graph/1b1e36253fe824df/chunks.json."
+    }
+  ]
+}

@@ -57,8 +57,8 @@ collections:
       - file: "{page}.meta.yaml"
   # The content strategy, one record per audience, persona and journey
   # (proposal 0102). `manni strategy check` holds every page's audiences:,
-  # personas: and journeys: to these records. They are not published, so the
-  # Docs workflow's `graph publish --collection site` leaves them out.
+  # personas: and journeys: to these records. The Docs workflow's
+  # `graph publish --collection site` leaves them out.
   #
   # Each record's evidence pins live beside it in `{record}.citations.yaml`,
   # written and checked by `manni cite` (proposal 0108). A persona pins its
@@ -299,6 +299,11 @@ graph:
   # project controls. They do not dereference: the IRIs identify, and the
   # pages and chunk rows carry the content.
   baseIri: https://hawkeyexl.github.io/manni/id/
+
+  # The graph carries author-facing content by default: the strategy records,
+  # typed, and every field a schema prefers in a sidecar. The Docs workflow
+  # publishes `--collection site`, which holds no record. `--no-authoring`
+  # builds a graph of what the pages themselves carry.
 
   # In the site's public folder, which is gitignored there: `manni graph
   # publish` writes the graph, the chunks, the search index and llms.txt

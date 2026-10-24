@@ -24,7 +24,7 @@ describe("parseConfig", () => {
       "provenance",
       "terms",
     ]);
-    // empty = use the shapes bundled with manni (shapes/graph/shapes-1.2.0.ttl)
+    // empty = use the shapes bundled with manni (shapes/graph/shapes-1.3.0.ttl)
     expect(c.check.shapes).toEqual([]);
     expect(c.fill.validateGraph).toBe(true);
     // Opinionated defaults (ADR 01009/01010), minus the switch 0051 §6
@@ -252,6 +252,17 @@ describe("parseConfig", () => {
       expect(() => parseConfig(text, "/tmp/manni.config.yaml")).toThrow(GraphError);
     },
   );
+
+  // Author-facing content is on by default (proposal 0110), and `false`
+  // leaves it out of every build.
+  it("defaults authoring to true and parses false", () => {
+    expect(parseConfig("", "/tmp/manni.config.yaml").authoring).toBe(true);
+    expect(parseConfig("authoring: false\n", "/tmp/manni.config.yaml").authoring).toBe(false);
+  });
+
+  it.each(["authoring: no-thanks\n", "authoring: 0\n", "authoring: null\n"])("rejects %j", (text) => {
+    expect(() => parseConfig(text, "/tmp/manni.config.yaml")).toThrow(GraphError);
+  });
 
   it("normalizes baseIri with a trailing slash", () => {
     const c = parseConfig(

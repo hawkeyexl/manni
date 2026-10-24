@@ -1,0 +1,8 @@
+task as theo: starting in a fresh copy of test/test/fixtures/tasks/red-pr
+  theo › Read ../docs/meta/fix/index.mdx
+  theo › Bash find . -maxdepth 3 -not -path '*/node_modules*' | head -50
+  theo › Bash cat -A docs/install.md | head -30; echo ----; cat manni.config.yaml
+  theo › Edit docs/install.md
+  theo › Bash npx --yes @hawkeyexl/manni meta validate docs/install.md; echo "exit=$?"
+  theo › Bash npx --yes @hawkeyexl/manni meta validate; echo "exit=$?"
+inference: provider "auto" — auto-selected "claude-cli". Pass an explicit `provider` to pin it.

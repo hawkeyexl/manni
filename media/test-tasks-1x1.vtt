@@ -1,0 +1,29 @@
+WEBVTT
+
+NOTE Captions are burned into test-tasks-1x1.mp4 (LinkedIn autoplays muted). This sidecar carries the same text for players and for hosts that accept a caption track. Silent video: there is no narration, and the terminal text is in the transcript.
+
+1
+00:00:00.000 --> 00:00:07.667
+A red docs check
+Theo's pull request is red: install.md has no description. Will the fix page get him through?
+
+2
+00:00:07.667 --> 00:00:13.933
+Hand Theo the task
+Claude Code plays Theo in a fresh copy of his repo. Real run: 28 s, then 12 min of judging.
+
+3
+00:00:13.933 --> 00:00:20.867
+Where Theo got stuck
+His account flags a docs bug: the error said (line 1), but the page said missing fields have no line number.
+
+4
+00:00:20.867 --> 00:00:29.767
+Same task, fixed page
+A write-in task is judged on completion and adherence: Theo did it, by the docs, within his constraints.
+
+5
+00:00:29.767 --> 00:00:43.833
+Kept as golden journey T1
+After the docs fix, the task runs as journey t1: seven evals pass, exit 0.
+

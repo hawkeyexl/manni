@@ -1,8 +1,9 @@
 /**
  * The fields whose values name something else in the docset: a glossary term,
- * or a page. Stated once, so `term` and `meta` read the same list. `term check`
- * reads the concept fields as references into the termbase, and `meta fill`
- * offers each kind its valid values.
+ * a page, or a strategy record. Stated once, so `term`, `strategy` and `meta`
+ * read the same list. `term check` reads the concept fields as references
+ * into the termbase, `meta fill` offers each kind its valid values, and
+ * `meta get` names the records the record fields name.
  *
  * A field is a path from the page root, so `graph.concepts` is
  * `["graph", "concepts"]`.
@@ -31,6 +32,59 @@ export const PAGE_FIELDS: readonly FieldPath[] = [
   ["replaced-by"],
   ["supersedes"],
 ];
+
+/** The strategy record types (proposal 0102), parent first. */
+export const RECORD_TYPES = ["audience", "persona", "journey"] as const;
+export type RecordType = (typeof RECORD_TYPES)[number];
+
+/**
+ * The fields whose values name strategy records, and the record type each
+ * names. A page names its readers and jobs in the first three. A persona
+ * names its audience in `audience:`, and a journey its personas in
+ * `personas:`.
+ */
+export const RECORD_FIELDS = {
+  audiences: "audience",
+  personas: "persona",
+  journeys: "journey",
+  audience: "audience",
+} as const satisfies Record<string, RecordType>;
+export type RecordField = keyof typeof RECORD_FIELDS;
+
+/** Whether `field` names records. */
+export function isRecordField(field: string): field is RecordField {
+  return Object.hasOwn(RECORD_FIELDS, field);
+}
+
+/** Whether `value` is a record type. */
+export function isRecordType(value: unknown): value is RecordType {
+  return typeof value === "string" && (RECORD_TYPES as readonly string[]).includes(value);
+}
+
+/** Whether two record ids are one id. Ids compare ignoring case. */
+export function sameRecordId(a: string, b: string): boolean {
+  return a.toLowerCase() === b.toLowerCase();
+}
+
+/** The file name without its extension. No `node:path`, so a browser bundle can import this file. */
+function stem(label: string): string {
+  const name = label.split(/[\\/]/).at(-1) ?? label;
+  const dot = name.lastIndexOf(".");
+  return dot > 0 ? name.slice(0, dot) : name;
+}
+
+/**
+ * The record a page's own data declares, or `undefined` when its `type:` is
+ * no record type. The id is the declared `id:`, or the file name without its
+ * extension when the record declares none. `label` is the page's path.
+ */
+export function readRecord(data: Record<string, unknown>, label: string): { type: RecordType; id: string } | undefined {
+  const type = data["type"];
+  if (!isRecordType(type)) return undefined;
+  const declared = data["id"];
+  const id = typeof declared === "string" && declared.trim() !== "" ? declared : stem(label);
+  return { type, id };
+}
 
 /** The field's JSON Pointer: `/graph/concepts`. */
 export function fieldPointer(path: FieldPath): string {

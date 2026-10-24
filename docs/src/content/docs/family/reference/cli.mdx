@@ -121,7 +121,7 @@ in play. `status` prints the next step under the reason.
 | `strategy` | The collections hold at least one record, a page of type `audience`, `persona` or `journey`. | `strategy check` | `no strategy records in any collection` | `Add a page with type: journey to a collection.` |
 | `graph` | `graph:` exists. | `graph build` in memory, writing no file, then `graph check` | `no graph: section` | `Run manni graph init to add a starter graph: section.` |
 | `a11y` | Never. `check` does not run it, since it needs a built site and a browser. | none | `needs a running site and a browser` | `Run manni site preview, then manni a11y check.` |
-| `test` | Never. `check` does not run it, since Doc Detective runs the shell steps the pages carry. | none | `runs the shell steps the pages carry` | `Run manni test run with Doc Detective installed.` |
+| `test` | Never. `check` does not run it, since it runs the pages' shell steps and synthetic users. | none | `runs the pages' shell steps and synthetic users` | `Run manni test procedures or manni test tasks.` |
 | `tracevals` | Only under a Claude Code hook, only when `tracevals:` holds a `runtime:` section, and only when [`MANNI_TRACEVALS_HOOKS`](#manni_tracevals_hooks) is `1`. A bare `check` never runs it, since it needs recorded sessions and a model. | none on the command line | `judges recorded sessions with a model`. With `runtime:` present and the variable not `1`: `runtime evals are set up, and turned off here`. | `Run manni tracevals run over sessions, or add tracevals.runtime to judge each turn.` With `runtime:` present and the variable not `1`: `Turn on the manni plugin's tracevals option, or set MANNI_TRACEVALS_HOOKS=1.` |
 
 `check` reads only the files that belong to a collection declared under
@@ -282,8 +282,8 @@ graph      not set up    no graph: section
                          Run manni graph init to add a starter graph: section.
 a11y       not checked   needs a running site and a browser
                          Run manni site preview, then manni a11y check.
-test       not checked   runs the shell steps the pages carry
-                         Run manni test run with Doc Detective installed.
+test       not checked   runs the pages' shell steps and synthetic users
+                         Run manni test procedures or manni test tasks.
 tracevals  not checked   judges recorded sessions with a model
                          Run manni tracevals run over sessions, or add tracevals.runtime to judge each turn.
 # exit 0
@@ -487,8 +487,8 @@ graph      not set up    no graph: section
                          Run manni graph init to add a starter graph: section.
 a11y       not checked   needs a running site and a browser
                          Run manni site preview, then manni a11y check.
-test       not checked   runs the shell steps the pages carry
-                         Run manni test run with Doc Detective installed.
+test       not checked   runs the pages' shell steps and synthetic users
+                         Run manni test procedures or manni test tasks.
 tracevals  not checked   judges recorded sessions with a model
                          Run manni tracevals run over sessions, or add tracevals.runtime to judge each turn.
 # exit 0

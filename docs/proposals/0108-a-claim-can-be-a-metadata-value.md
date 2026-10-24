@@ -2,7 +2,7 @@
 
 - **Status:** Implemented (#242)
 - **Serves:** Two people.
-  - Sara · S19, "Rest each persona on evidence that still holds", a new
+  - Sara · S20, "Rest each persona on evidence that still holds", a new
     journey. She owns `docs/content-strategy/`, and nothing ties a persona's
     pains to what they rest on.
   - Maya · M5, "Pin a claim and catch it going stale". A pin now reaches a

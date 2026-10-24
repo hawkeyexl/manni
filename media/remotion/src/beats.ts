@@ -29,7 +29,15 @@ export interface Command {
   more?: { afterFrames: number; output: string }[];
   /** The command is still running when the beat ends (a server): no prompt follows. */
   running?: boolean;
+  /**
+   * The command lands whole, as a paste does, instead of being typed. For a
+   * command too long to type inside the video's length. Default off.
+   */
+  paste?: boolean;
 }
+
+/** Frames a pasted command takes to land. */
+export const PASTE_FRAMES = 3;
 
 export interface Beat {
   title: string;
@@ -50,6 +58,13 @@ export interface Beat {
    * the video's. For a video whose widest beat would shrink every other beat.
    */
   type?: { fontPx: number; linePx: number; cols: number };
+  /**
+   * Scrollback: at frame `at` of the beat, the view scrolls so the first row
+   * containing `toRow` sits at the top of the terminal, or with `bottom`, the
+   * last row of the first logical line containing it sits at the bottom. For
+   * output taller than the frame. Chrome only: the bytes are untouched.
+   */
+  scroll?: { at: number; toRow: string; bottom?: boolean }[];
   /**
    * Wrapped rows continue at this column when it is deeper than the line's own
    * indent: the gutter a CLI prints its own continuation lines under.
@@ -122,7 +137,7 @@ export function timeline(beat: Beat, typingMs = TYPING_MS): { commands: CommandT
   let t = beat.continues ? 4 : IDLE_START_FRAMES;
   const commands: CommandTimeline[] = beat.commands.map((c) => {
     const typeStart = t;
-    const enterAt = typeStart + typingFrames(c.typed, typingMs) + ENTER_PAUSE_FRAMES;
+    const enterAt = typeStart + (c.paste ? PASTE_FRAMES : typingFrames(c.typed, typingMs)) + ENTER_PAUSE_FRAMES;
     const outputAt = enterAt + c.latencyFrames;
     const later = (c.more ?? []).reduce((a, m) => a + m.afterFrames, 0);
     const end = outputAt + later + c.holdFrames;

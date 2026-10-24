@@ -1,0 +1,58 @@
+task · The docs check on my pull request fails with: docs/install.m… · as theo
+  start     docs/src/content/docs/meta/fix/index.mdx
+  docs      meta/fix/index.mdx
+  changed   docs/install.md
+  7 turns · 0m 28s
+  evals derived from the task and the docs above
+  PASS added-description-to-frontmatter     docs/src/content/docs/meta/fix/index.mdx:1
+  PASS ran-validate-locally                 docs/src/content/docs/meta/fix/index.mdx:1
+  PASS validate-exit-zero                   docs/src/content/docs/meta/fix/index.mdx:1
+  PASS validate-shows-passed                docs/src/content/docs/meta/fix/index.mdx:1
+  PASS followed-the-docs                    docs/src/content/docs/meta/fix/index.mdx:1
+  WARN constraint                           docs/content-strategy/personas/theo.md:12
+       Reads only what the fix needs, never the full documentation.
+       AI judge: fail (confidence 0.93). The trace contains direct evidence of
+       a full-file read. The Read tool result states '22573 more characters
+       left out', proving the agent loaded the entire documentation page
+       rather than using targeted reads (grep, offset/limit parameters, or
+       searching for specific sections). While the agent successfully
+       completed the task, it violated the explicit instruction to avoid
+       reading the full documentation.
+  PASS constraint                           docs/content-strategy/personas/theo.md:13
+  Account
+    It passes now. I added one line to the frontmatter in `docs/install.md`:
+
+    ```yaml
+    description: Install the widget by running its installer.
+    ```
+
+    I ran `npx @hawkeyexl/manni meta validate` on the file and again with no
+    path, which the docs say checks the same files CI does. Both runs said "1
+    passed" and exited 0. I didn't install anything globally, since npx
+    handled it.
+
+    **What helped:**
+    - The "Missing a required field" section matched my error right away:
+    `(root)` means the field is missing, and the fix is to add it to the
+    frontmatter.
+    - The "No frontmatter at all" example shows the exact help line for
+    `description` under `manni:core:1.0.0`: "One full non-empty sentence
+    saying what the page is for." That told me what to write.
+    - The "Reproduce and confirm locally" steps were short and worked exactly
+    as written.
+
+    **What confused me:**
+    - My error said `(line 1)`, but the docs say a missing required field has
+    no line number. For a second I wondered if something was wrong with line 1
+    itself, like the `---` fence. It turned out to be a plain missing field.
+    I'd guess line 1 means the frontmatter block, but the docs should say so.
+    - My error didn't include the help text or the `Guide:` link that the docs
+    examples show. I only found what `description` is for because it happened
+    to be in a different example on the page.
+    - The page never explains why `manni:core` applies to my file. My
+    `manni.config.yaml` doesn't name a schema, so it must be a default. The
+    page sends me to the "how schema resolution works" page for that, but I
+    didn't read it because I didn't need it for the fix.
+  trace     .manni/test/tasks/20261023T144849Z-task-theo/trace.jsonl
+
+1 run: 1 passed · 1 warning

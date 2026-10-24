@@ -1,0 +1,23 @@
+# Author-facing content (proposal 0110). `docs/` holds a page with every kind
+# of value a schema marks `x-manni-location: external`, and `strategy/` holds
+# one record of each type. `plain/` holds neither, so a build of it alone is
+# byte-identical with and without `--no-authoring`.
+collections:
+  - name: pages
+    paths:
+      - "docs/**/*.md"
+  - name: plain
+    paths:
+      - "plain/**/*.md"
+  - name: strategy
+    paths:
+      - "strategy/**/*.md"
+
+# The house schema marks a value external below the top level, and one field
+# `x-manni-graph-output: false`, so both rules show in one page.
+meta:
+  schemas: ["./house.schema.json"]
+
+graph:
+  baseIri: https://example.com/graph/
+  out: graph.ttl

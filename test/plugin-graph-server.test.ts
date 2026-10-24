@@ -33,9 +33,15 @@ afterEach(() => {
 });
 
 describe("graph server plan", () => {
-  it("serves the project's own graph where collections and graph are set up", () => {
+  // Never beside graph.out (proposal 0110): a session's graph carries the
+  // author-facing content, and the site's folder is what deploys.
+  it("publishes into the plugin's data directory where collections and graph are set up", () => {
     const config = "collections:\n  - name: site\n    paths: [docs]\ngraph:\n  output: .manni/graph\n";
-    expect(serverPlan(config, PROJECT, {})).toEqual({ kind: "serve", args: ["graph", "serve", "--publish"] });
+    const data = resolve("/plugin-data");
+    expect(serverPlan(config, PROJECT, { CLAUDE_PLUGIN_DATA: data })).toEqual({
+      kind: "serve",
+      args: ["graph", "serve", "--publish", "-i", join(data, "graph", hash)],
+    });
   });
 
   it("publishes into the plugin's data directory where only collections are set up", () => {

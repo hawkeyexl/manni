@@ -3952,3 +3952,35 @@ describe("cli validate location warnings (0047, built bin)", () => {
     expect(readFileSync(join(dir, "docs", "install.md"), "utf8")).toBe(before);
   });
 });
+
+describe("get: the strategy records a page names", () => {
+  const FIXTURE = resolve(root, "test/fixtures/get-records");
+
+  it("prints a record line per named record, after the field lines", () => {
+    const r = run(["get", "personas,journeys", "docs/page.md", "--no-derived"], undefined, undefined, FIXTURE);
+    expect(r.status).toBe(0);
+    expect(r.stdout.trimEnd().split("\n")).toEqual([
+      "Using manni.config.yaml (.)",
+      'docs/page.md: personas=["Maya"]',
+      'docs/page.md: journeys=["m1","m9"]',
+      "docs/page.md: record persona maya strategy/personas/maya.md",
+      "docs/page.md: record journey m1 strategy/journeys/m1.md",
+    ]);
+  });
+
+  it("carries records in JSON, and none where nothing is named", () => {
+    const r = run(
+      ["get", "personas", "docs/page.md", "docs/plain.md", "--no-derived", "-f", "json"],
+      undefined,
+      undefined,
+      FIXTURE,
+    );
+    expect(r.status).toBe(0);
+    const [page, plain] = JSON.parse(r.stdout) as Record<string, unknown>[];
+    expect(page?.records).toEqual([{ type: "persona", id: "maya", file: "strategy/personas/maya.md" }]);
+    expect(plain).not.toHaveProperty("records");
+    const title = run(["get", "title", "docs/page.md", "--no-derived"], undefined, undefined, FIXTURE);
+    // Pretty output names the config on stdout, as every pretty get does.
+    expect(title.stdout.trimEnd()).toBe("Using manni.config.yaml (.)\ndocs/page.md: title=A page");
+  });
+});

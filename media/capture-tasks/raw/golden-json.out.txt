@@ -1,0 +1,160 @@
+{
+  "runs": [
+    {
+      "id": "20261024T022822Z-t1-theo",
+      "journey": "t1",
+      "task": "Fix a failing metadata check fast",
+      "persona": "theo",
+      "start": "docs/src/content/docs/meta/fix/index.mdx",
+      "workspace": "test/test/fixtures/tasks/red-pr",
+      "kept": null,
+      "trace": ".manni/test/tasks/20261024T022822Z-t1-theo/trace.jsonl",
+      "turns": 6,
+      "durationMs": 27092,
+      "stoppedAtLimit": false,
+      "usage": {
+        "inputTokens": 8,
+        "outputTokens": 1377,
+        "costUsd": 0.1557432
+      },
+      "docs": [
+        "meta/fix/index.mdx"
+      ],
+      "changes": {
+        "added": [],
+        "changed": [
+          "docs/install.md"
+        ],
+        "removed": []
+      },
+      "account": "Done. The check is green, and the only change is one line in `docs/install.md`:\n\n```yaml\ndescription: Install the widget by running its installer.\n```\n\n**How it went (Theo):**\n\nThat took about five minutes, and I didn't install anything. The tip at the top of the page sent me straight to \"Missing a required field\". It said `(root)` plus `(line 1)` just means the field isn't there at all, which was the one thing I couldn't work out from the CI message. `npx @hawkeyexl/manni meta validate docs/install.md` gave me the same error CI showed. After the fix, running it with no path from the repo root (the \"Run what CI runs\" tip) gave `1 file checked, 1 passed` and exit 0.\n\n**What helped:**\n- The table that explains each part of the error line. It told me `[manni:core:1.0.0]` is the schema that fired.\n- The hint line under the error: \"One full non-empty sentence saying what the page is for.\" That's the closest I got to *why* the rule exists, and it told me what to write. I wrote a real sentence, not a placeholder.\n\n**What confused me a bit:**\n- The page's example for a missing field uses `type` from `google:okf:0.1`. My repo's config doesn't name a schema at all, and `manni:core:1.0.0` fired anyway. I'm guessing it's the default, but this page doesn't say so. It points you to the schema-resolution page for that, which I didn't need to read to make the fix.\n- The \"Let manni meta draft the fix\" section, the one about `fill`, sits right in the path. For one missing field, and on someone else's repo, I didn't want an LLM editing files or my page leaving my machine. The docs do warn about that, but I had to read the warning before I could decide to skip the whole section.",
+      "evals": [
+        {
+          "id": "success",
+          "grader": "ai",
+          "severity": "error",
+          "assertion": "The check passes on his repo, and the only change is the missing field in docs/install.md.",
+          "location": {
+            "file": "docs/content-strategy/journeys/t1.md",
+            "line": 9
+          },
+          "outcome": "pass",
+          "message": "Both conditions were fully met: (1) the validation check passes as confirmed by exit code 0 and the success summary, and (2) the only change was adding the missing 'description' field to docs/install.md. No other files were touched, and no other fields were modified.",
+          "consensus": {
+            "votes": {
+              "pass": 3,
+              "fail": 0,
+              "partial": 0,
+              "error": 0
+            },
+            "meanConfidence": 0.9666666666666667
+          }
+        },
+        {
+          "id": "check-passes",
+          "grader": "command",
+          "severity": "error",
+          "assertion": "manni meta validate passes on the repo after the fix.",
+          "location": {
+            "file": "docs/content-strategy/journeys/t1.md",
+            "line": 12
+          },
+          "outcome": "pass"
+        },
+        {
+          "id": "description-added",
+          "grader": "regex",
+          "severity": "error",
+          "assertion": "docs/install.md has a non-empty description in its frontmatter.",
+          "location": {
+            "file": "docs/content-strategy/journeys/t1.md",
+            "line": 17
+          },
+          "outcome": "pass"
+        },
+        {
+          "id": "confirmed-locally",
+          "grader": "tool-order",
+          "severity": "error",
+          "assertion": "Theo ran the check after his fix.",
+          "location": {
+            "file": "docs/content-strategy/journeys/t1.md",
+            "line": 22
+          },
+          "outcome": "pass"
+        },
+        {
+          "id": "followed-the-docs",
+          "grader": "ai",
+          "severity": "warning",
+          "assertion": "Every step the reader took came from the docs it had, or from what the persona already knows. It did not guess or lean on outside knowledge.",
+          "location": {
+            "file": "docs/content-strategy/journeys/t1.md",
+            "line": 4
+          },
+          "outcome": "pass",
+          "message": "Every command, every interpretation of the error message, and every verification step maps directly to content on the troubleshooting page. The reader cited specific doc sections in their own commentary. The description text was composed from the page's own content ('Install the widget' + 'Run the installer') combined with the schema requirement stated in the error output, not invented from external knowledge. YAML frontmatter editing is reasonable persona knowledge for a 'developer or technical writer'. No step required information absent from the docs or the persona's baseline expertise.",
+          "consensus": {
+            "votes": {
+              "pass": 3,
+              "fail": 0,
+              "partial": 0,
+              "error": 0
+            },
+            "meanConfidence": 0.93
+          }
+        },
+        {
+          "id": "constraint",
+          "grader": "ai",
+          "severity": "warning",
+          "assertion": "Reads only the pages the fix needs, never the rest of the documentation.",
+          "location": {
+            "file": "docs/content-strategy/personas/theo.md",
+            "line": 12
+          },
+          "outcome": "pass",
+          "message": "The trace shows the session adhered fully to the assertion. Only the necessary files were read: the troubleshooting guide (required starting point), the config file (needed to understand the setup), and the target file being fixed. No exploratory reads of reference documentation, schema pages, or other guides occurred. The session went directly from understanding the error via the troubleshooting page to reproducing and fixing it, without reading 'the rest of the documentation.'",
+          "consensus": {
+            "votes": {
+              "pass": 3,
+              "fail": 0,
+              "partial": 0,
+              "error": 0
+            },
+            "meanConfidence": 0.9333333333333332
+          }
+        },
+        {
+          "id": "constraint",
+          "grader": "ai",
+          "severity": "warning",
+          "assertion": "Won't install anything globally to fix someone else's check.",
+          "location": {
+            "file": "docs/content-strategy/personas/theo.md",
+            "line": 13
+          },
+          "outcome": "pass",
+          "message": "The session explicitly avoided global installation by consistently using npx throughout. This is the recommended approach for running tools in someone else's repository without requiring permanent installation. The trace shows no global installation commands, and the final documentation explicitly recommends this approach to Theo.",
+          "consensus": {
+            "votes": {
+              "pass": 3,
+              "fail": 0,
+              "partial": 0,
+              "error": 0
+            },
+            "meanConfidence": 0.9700000000000001
+          }
+        }
+      ],
+      "outcome": "pass"
+    }
+  ],
+  "summary": {
+    "runs": 1,
+    "passed": 1,
+    "failed": 0,
+    "warnings": 0
+  },
+  "exitCode": 0
+}

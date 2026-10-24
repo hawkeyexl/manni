@@ -10,20 +10,27 @@ import type { Guidance } from "../shared/guidance.js";
 import type { ConfigFile } from "../shared/config-file.js";
 import type { CollectionConfig } from "../shared/collections.js";
 import type { Severity } from "../shared/severity.js";
+import { RECORD_TYPES, type RecordField, type RecordType } from "../shared/reference-fields.js";
 
-/** The three record types, parent first. */
-export const RECORD_TYPES = ["audience", "persona", "journey"] as const;
-export type RecordType = (typeof RECORD_TYPES)[number];
+/** The three record types, parent first, from `src/shared/reference-fields.ts`. */
+export { RECORD_TYPES, type RecordType };
 
-/** The page field that names records of each type. */
-export const PAGE_FIELDS = { audience: "audiences", persona: "personas", journey: "journeys" } as const;
+/** The page field that names records of each type. Each is a key of `RECORD_FIELDS`. */
+export const PAGE_FIELDS = {
+  audience: "audiences",
+  persona: "personas",
+  journey: "journeys",
+} as const satisfies Record<RecordType, RecordField>;
 export type PageField = (typeof PAGE_FIELDS)[RecordType];
 
 /**
  * The field a record names its parents in: a persona's `audience:`, a
  * journey's `personas:`. Either holds one string or a list.
  */
-export const PARENTS = { persona: "audience", journey: "personas" } as const;
+export const PARENTS = { persona: "audience", journey: "personas" } as const satisfies Record<
+  Exclude<RecordType, "audience">,
+  RecordField
+>;
 export type ChildType = keyof typeof PARENTS;
 export type ParentField = (typeof PARENTS)[ChildType];
 

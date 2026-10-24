@@ -1,6 +1,6 @@
 ---
 name: fix
-description: Repair manni findings in docs. Use after manni check or a hook reports errors in metadata, citations, terms, the content strategy, structure, evals or the graph, or after manni a11y check or manni test run fails.
+description: Repair manni findings in docs. Use after manni check or a hook reports errors in metadata, citations, terms, the content strategy, structure, evals or the graph, or after manni a11y check or manni test procedures fails.
 allowed-tools: Bash(npx manni *), Bash(node "${CLAUDE_PLUGIN_ROOT}/hooks/manni.mjs" *)
 ---
 
@@ -150,9 +150,9 @@ Fix the element in the page or in the layout that renders it. When one element f
 Never invent alt text, a label or a name the page does not justify. Ask the user for the words.
 Rebuild the site and run the same command again until it exits `0`.
 
-## test run
+## test procedures
 
-`manni check` does not run this. Do not run `manni test run` unless the user asks, because it runs the shell steps in the pages.
+`manni check` does not run this. Do not run `manni test procedures` unless the user asks, because it runs the shell steps in the pages.
 Each failure names the page, the step's line and what the step expected. Its last lines name the action and link its guide.
 Decide whether the step, the procedure it documents, or the product is wrong. Change the step and its prose together.
 If the product regressed, stop and tell the user. Never change an expectation only to match broken output.

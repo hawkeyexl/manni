@@ -1,0 +1,14 @@
+# The same document sets, with a docevals report configured for chunks. Eval
+# verdicts are author-facing, so a run that leaves that content out warns once
+# that it leaves them out.
+collections:
+  - name: plain
+    paths:
+      - "plain/**/*.md"
+
+graph:
+  baseIri: https://example.com/graph/
+  out: graph.ttl
+  export:
+    chunks:
+      evals: evals.json

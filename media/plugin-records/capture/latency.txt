@@ -1,0 +1,9 @@
+head 0 638ms
+get 0 8906ms
+read 0 16620ms
+big 0 10294ms
+wc 0 649ms
+tail 0 536ms
+timing1 get 8291ms read 3127ms big 2167ms
+timing2 get 1628ms read 1734ms big 2010ms
+timing3 get 1763ms read 1889ms big 1748ms

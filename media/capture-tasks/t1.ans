@@ -1,0 +1,63 @@
+t1 as theo: starting in a fresh copy of test/test/fixtures/tasks/red-pr
+  theo › Read ../docs/meta/fix/index.mdx
+  theo › Bash ls -la && cat docs/install.md 2>/dev/null | head -30
+  theo › Bash cat manni.config.yaml; ls -R docs; npx --yes @hawkeyexl/manni meta validate docs
+  theo › Edit docs/install.md
+  theo › Bash npx @hawkeyexl/manni meta validate docs/install.md; echo "exit $?"; npx @hawkeye
+[1mt1 · Fix a failing metadata check fast · as theo[22m
+  start     docs/src/content/docs/meta/fix/index.mdx
+  docs      meta/fix/index.mdx
+  changed   docs/install.md
+  6 turns · 0m 50s
+  [32mPASS[39m success               [2mdocs/content-strategy/journeys/t1.md:9[22m
+  [32mPASS[39m check-passes          [2mdocs/content-strategy/journeys/t1.md:12[22m
+  [32mPASS[39m description-added     [2mdocs/content-strategy/journeys/t1.md:17[22m
+  [32mPASS[39m confirmed-locally     [2mdocs/content-strategy/journeys/t1.md:22[22m
+  [32mPASS[39m followed-the-docs     [2mdocs/content-strategy/journeys/t1.md:4[22m
+  [32mPASS[39m constraint            [2mdocs/content-strategy/personas/theo.md:12[22m
+  [32mPASS[39m constraint            [2mdocs/content-strategy/personas/theo.md:13[22m
+  Account
+    I fixed it and the check passes now.
+
+    **What I changed:** I added one line to the frontmatter in
+    `docs/install.md`:
+    ```yaml
+    description: Install the widget by running its installer.
+    ```
+    Nothing else in the repo changed. `npx` didn't install anything globally,
+    and it didn't leave any files in the repo.
+
+    **How I confirmed it:** I ran `npx @hawkeyexl/manni meta validate
+    docs/install.md` first and got the same red error CI showed me, with exit
+    code 1. After the edit it printed `✓ docs/install.md`, `1 file checked, 1
+    passed, 0 failed, 0 errors` and exited 0. I also ran it with no path from
+    the repo root, which the page says checks the same files CI does, and that
+    passed too.
+
+    **What helped:**
+    - The "Missing a required field" section matched my error almost word for
+    word. It explains that `(root)` plus `(line 1)` means the field is missing
+    entirely, which is why there was no real line to point at.
+    - The "Reproduce and confirm locally" steps meant I could fix it with no
+    install, just `npx`.
+    - The local run showed more than the CI message I was handed. It printed
+    what `description` is for ("One full non-empty sentence saying what the
+    page is for"), so I knew a short phrase wouldn't be enough. That answered
+    my "why does this rule exist" question without reading anything else.
+
+    **What confused me a little:**
+    - All the examples on the page use `google:okf:0.1` and the field `type`,
+    but my error was `manni:core:1.0.0` and `description`. I still don't
+    really know why `manni:core` applied, since the config doesn't name a
+    schema. I assume it's a default, but I didn't go read the
+    schema-resolution page to find out.
+    - The page front-loads a lot I didn't need. "Let manni meta draft the fix"
+    sends the page to an LLM, and the page flags it as `risks: destructive`. I
+    skipped all of that. One sentence I can write myself in ten seconds.
+  trace     .manni/test/tasks/20261023T154750Z-t1-theo/trace.jsonl
+
+1 run: 1 passed
+
+real	5m9.767s
+user	0m0.015s
+sys	0m0.000s

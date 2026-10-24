@@ -1,0 +1,54 @@
+task · Install manni and check which version you have · as newcomer
+  start     http://127.0.0.1:4321/manni/meta/get-started/
+  5 turns · 0m 44s
+  evals derived from the task and the docs above
+  PASS installed-manni       (no location)
+  PASS checked-version       (no location)
+  PASS version-displayed     (no location)
+  WARN followed-the-docs     (no location)
+       Every step the reader took came from the docs it had, or from what the
+       persona already knows. It did not guess or lean on outside knowledge.
+       AI judge: fail (confidence 0.97). The critical step of checking the
+       installed version was accomplished by guessing `--version` based on
+       outside knowledge about common CLI conventions ('most command-line
+       tools use it'), not from the documentation. The reader explicitly
+       acknowledged the docs did not provide this information and that they
+       guessed based on general knowledge of command-line tools.
+  Account
+    I got it done. manni is installed and I have **version 4.20.0**.
+
+    **What I did**
+    1. I followed "Before you start" and ran `node --version`, which printed
+    v24.11.0. That meets the "Node.js 24 or newer" requirement.
+    2. I picked the "Global install" tab and ran `npm install -g
+    @hawkeyexl/manni`. It finished in about 14 seconds with no errors.
+    3. I ran `manni --version` and got `4.20.0` with exit code 0. `manni meta
+    --version` printed the same, and `npm ls -g @hawkeyexl/manni` confirmed
+    `@hawkeyexl/manni@4.20.0`.
+
+    **Where I got stuck**
+    I didn't get stuck on installing. The problem was the second half of my
+    task: the Get started page never says how to check which version you have.
+    I guessed `--version` because most command-line tools use it, and it
+    worked. I looked for `--version` on the CLI reference page, but the
+    address I guessed didn't turn up a mention, so I gave up looking.
+
+    **What helped**
+    - The Node version check up front was clear and saved me from a possible
+    failure.
+    - The two tabs (npx vs. global install), each with a one-line reason to
+    pick it, made the choice easy.
+    - The tip about adding `npx` in front of commands if you didn't install
+    globally was useful.
+
+    **What confused me**
+    - There's no "confirm the install worked" step, like `manni --version`,
+    right after the install command. That's the first thing a newcomer wants
+    to do.
+    - The page suggests npx runs "the latest version." If I'd gone that way, I
+    wouldn't know how to see which version I was actually running.
+    - The page also lists the sidebar navigation as a huge wall of links. It's
+    hard to scan for things like a CLI reference.
+  trace     .manni/test/tasks/20261023T150535Z-task-newcomer/trace.jsonl
+
+1 run: 1 passed · 1 warning

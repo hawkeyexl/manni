@@ -169,9 +169,9 @@ docs/src/content/docs/term/fix/index.mdx:
         integrity: sha256-c570764935a68237c4a64764a01cd00974abb12fd5270ffcaf89deff108acf2d
       source:
         file: src/shared/reference-fields.ts
-        lines: 18
+        lines: 19
         integrity: sha256-9426cc108ed63a136774fc49c6bca56ed49730bd99a696a4ccf699b2c2b85301
-        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
+        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
     - id: labels-fold-case
       claim:
         integrity: sha256-47ec782713b755e7ef7b3518ca21f62c8eba2e84ef8487f4e144ea128c805dc8

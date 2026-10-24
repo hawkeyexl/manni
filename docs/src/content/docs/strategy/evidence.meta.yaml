@@ -2,7 +2,7 @@ docs/src/content/docs/strategy/evidence.mdx:
   personas:
     - sara
   journeys:
-    - s19
+    - s20
   visibility: public
   review-interval: P180D
   source-of-truth:

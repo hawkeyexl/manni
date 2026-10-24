@@ -1,0 +1,4 @@
+# Maya in another case, and m9, which names no record.
+docs/page.md:
+  personas: [Maya]
+  journeys: [m1, m9]

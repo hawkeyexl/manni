@@ -1,0 +1,13 @@
+A docs graph serves two readers, and they should not see the same thing.
+
+The people who write the docs want the strategy behind each page. Who it serves, which journey it belongs to, when it was written. The people who read the docs want the pages.
+
+manni graph now keeps the two apart. A default build types every audience, persona and journey record. Each page links to the records it names. So one walk answers "which pages serve journey D11?"
+
+Add --no-authoring and the build leaves the records out. It drops every field the schemas keep in a sidecar too. That is the graph to hand a support bot or a search service outside the team.
+
+The Claude Code plugin's graph server now publishes into its own data directory, never into the folder your site deploys.
+
+The demo runs on manni's own docs: 344 pages, 82 strategy records.
+
+#docsascode #technicalwriting #knowledgegraph #ClaudeCode

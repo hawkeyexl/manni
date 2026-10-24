@@ -6,6 +6,7 @@
 import { closestName } from "../../shared/closest-name.js";
 import { indexSet } from "../core/check.js";
 import { StrategyError } from "../errors.js";
+import type { StrategyRecord } from "../types.js";
 import { entriesOf, type RecordEntry } from "./list.js";
 import { loadStrategy, plural, type StrategyCommandOptions } from "./run.js";
 
@@ -23,9 +24,14 @@ export async function runGet(opts: GetOptions): Promise<RecordEntry> {
   const found = index.anyWithId(opts.id);
   const entry = found === undefined ? undefined : entriesOf(set, cwd, run.base, index, steps).find((e) => e.record === found);
   if (entry !== undefined) return entry;
-  const ids = set.records.map((r) => r.id);
-  const nearest = closestName(opts.id.toLowerCase(), ids.map((id) => id.toLowerCase()));
-  const suggestion = ids.find((id) => id.toLowerCase() === nearest);
+  throw new StrategyError(unknownRecordMessage(opts.id, set.records));
+}
+
+/** `no record "t9". 82 records; did you mean "t1"?`: a miss, the set's size and the nearest id. */
+export function unknownRecordMessage(id: string, records: readonly StrategyRecord[]): string {
+  const ids = records.map((r) => r.id);
+  const nearest = closestName(id.toLowerCase(), ids.map((i) => i.toLowerCase()));
+  const suggestion = ids.find((i) => i.toLowerCase() === nearest);
   const hint = suggestion === undefined ? "." : `; did you mean "${suggestion}"?`;
-  throw new StrategyError(`no record "${opts.id}". ${plural(set.records.length, "record")}${hint}`);
+  return `no record "${id}". ${plural(records.length, "record")}${hint}`;
 }

@@ -53,7 +53,7 @@ describe.skipIf(!gitAvailable())("runStatus", () => {
       { name: "strategy", status: "in-play", reason: "1 audience, 1 persona, 1 journey" },
       { name: "graph", status: "in-play", reason: "graph: section" },
       { name: "a11y", status: "not-checked", reason: "needs a running site and a browser", next: "Run manni site preview, then manni a11y check." },
-      { name: "test", status: "not-checked", reason: "runs the shell steps the pages carry", next: "Run manni test run with Doc Detective installed." },
+      { name: "test", status: "not-checked", reason: "runs the pages' shell steps and synthetic users", next: "Run manni test procedures or manni test tasks." },
       { name: "tracevals", status: "not-checked", reason: "judges recorded sessions with a model", next: "Run manni tracevals run over sessions, or add tracevals.runtime to judge each turn." },
     ]);
   });
@@ -61,7 +61,7 @@ describe.skipIf(!gitAvailable())("runStatus", () => {
   it("never runs test: Doc Detective executes the pages' steps, so it says what to run instead", async () => {
     dir = fixtureRepo("only-graph");
     const report = await runStatus({ cwd: dir });
-    expect(report.domains.find((d) => d.name === "test")).toEqual({ name: "test", status: "not-checked", reason: "runs the shell steps the pages carry", next: "Run manni test run with Doc Detective installed." });
+    expect(report.domains.find((d) => d.name === "test")).toEqual({ name: "test", status: "not-checked", reason: "runs the pages' shell steps and synthetic users", next: "Run manni test procedures or manni test tasks." });
   });
 
   it("names what is not set up, why, and what would set it up", async () => {
@@ -379,9 +379,23 @@ describe("renderStatus", () => {
       "Before you finish, manni check runs on every file you changed, plus every citation and the content strategy. It checks the glossary too when you changed a page. You get one repair pass.",
     );
     const strategyOnly: StatusReport = { ...report, domains: [{ name: "strategy", status: "in-play", reason: "" }] };
-    expect(agentLines(strategyOnly).split("\n")[1]).toBe(
+    expect(agentLines(strategyOnly).split("\n")).toEqual([
+      "After you edit a file in site, manni check runs on it, and errors come back to you at once.",
       "Before you finish, manni check runs on every file you changed, plus the content strategy. You get one repair pass.",
-    );
+      "Pages name their readers and jobs in audiences:, personas: and journeys:. Write each page for the ones it names; manni strategy list prints every record.",
+      "The manni:fix skill says how to repair each finding.",
+    ]);
+    expect(agentLines(everything).split("\n").slice(2)).toEqual([
+      "Pages name their readers and jobs in audiences:, personas: and journeys:. Write each page for the ones it names; manni strategy list prints every record.",
+      "The manni:fix skill says how to repair each finding.",
+    ]);
+    // Strategy set up but not in play: today's three lines.
+    const strategyNotSetUp: StatusReport = {
+      ...report,
+      domains: [{ name: "strategy", status: "not-set-up", reason: "" }],
+    };
+    expect(agentLines(strategyNotSetUp)).toBe(agentLines(report));
+    expect(agentLines(report).split("\n")).toHaveLength(3);
     const graphOnly: StatusReport = { ...report, domains: [{ name: "graph", status: "in-play", reason: "" }] };
     expect(agentLines(graphOnly).split("\n")[1]).toBe(
       "Before you finish, manni check runs on every file you changed. You get one repair pass.",

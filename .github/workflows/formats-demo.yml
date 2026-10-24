@@ -104,6 +104,10 @@
 # carry a title and nothing else, because nothing there is about the default
 # schema set.
 #
+# `test/fixtures/get-records/` (0107) joins them. Its pages and records are
+# shaped for `manni meta get`'s record references, whose tests pin their
+# fields, so the default set reads them as missing a type or a description.
+#
 # `test/fixtures/get-parse-error/` is deliberately NOT excluded. Its unparseable
 # file is a real parse failure, which is exactly the explainable alert this
 # workflow exists to demonstrate — the same standing as `dd/malformed-yaml.md`.
@@ -184,6 +188,7 @@ jobs:
             --exclude "test/fixtures/statements/**" \
             --exclude "test/fixtures/strategy/**" \
             --exclude "test/fixtures/plugin-read/**" \
+            --exclude "test/fixtures/get-records/**" \
             --allow-empty -f sarif > manni.sarif
           echo "results=$(jq '.runs[0].results | length' manni.sarif)" >> "$GITHUB_OUTPUT"
 
@@ -263,6 +268,7 @@ jobs:
             --exclude "test/fixtures/verification/**" \
             --exclude "test/fixtures/statements/**" \
             --exclude "test/fixtures/strategy/**" \
+            --exclude "test/fixtures/get-records/**" \
             --allow-empty -f junit > manni-junit.xml
 
       # GitHub renders no JUnit natively. A third-party reporter action would be

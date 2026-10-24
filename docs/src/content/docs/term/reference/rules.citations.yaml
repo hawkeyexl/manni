@@ -336,9 +336,9 @@ docs/src/content/docs/term/reference/rules.mdx:
         integrity: sha256-e0f8f15f6ef892a072f4c4e1a8bd496782569d6aa6ac8aff66be995b5abe3048
       source:
         file: src/shared/reference-fields.ts
-        lines: 15
+        lines: 16
         integrity: sha256-a8d6ec8e404340085be3c69964bdb5f283411ae9f6ac76b69399b6654d980a4b
-        commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
+        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
     - id: page-names-resolve
       claim:
         integrity: sha256-8705025923eb387c7eae040c96829e4c4a39c5d927e70e1293e9434c5e8e2e50
