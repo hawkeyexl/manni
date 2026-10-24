@@ -4,6 +4,13 @@
 4.13.1. Entries below that version are docmeta releases; the repository
 history is the same one.
 
+## [4.20.1](https://github.com/hawkeyexl/manni/compare/v4.20.0...v4.20.1) (2026-10-24)
+
+
+### Bug Fixes
+
+* **plugin:** run a worktree's own manni, not the main checkout's ([#245](https://github.com/hawkeyexl/manni/issues/245)) ([1e20b79](https://github.com/hawkeyexl/manni/commit/1e20b79fa48d2d3952008fbb2f7cfc44d6e6f9d9))
+
 # [4.20.0](https://github.com/hawkeyexl/manni/compare/v4.19.0...v4.20.0) (2026-10-23)
 
 

@@ -213,6 +213,38 @@ describe("plugin hook launcher", () => {
     });
   });
 
+  /** A checkout of manni at `dir` whose built bin prints `name`. */
+  function builtManni(dir: string, name: string): void {
+    mkdirSync(join(dir, "dist"), { recursive: true });
+    writeFileSync(join(dir, "package.json"), JSON.stringify({ name: "@hawkeyexl/manni", bin: { manni: "dist/cli.js" } }));
+    writeFileSync(join(dir, "dist/cli.js"), `process.stdout.write(${JSON.stringify(name)});`);
+  }
+
+  // A worktree session gets CLAUDE_PROJECT_DIR naming the main checkout and a
+  // working directory in the worktree. Git writes the worktree's `.git` as a
+  // file pointing into the main repository's `.git/worktrees/`.
+  it("runs a worktree's own build, not the main checkout's", () => {
+    const main = tempDir();
+    builtManni(main, "main");
+    mkdirSync(join(main, ".git/worktrees/wt"), { recursive: true });
+    const worktree = join(main, ".claude/worktrees/wt");
+    builtManni(worktree, "worktree");
+    writeFileSync(join(worktree, ".git"), `gitdir: ${join(main, ".git/worktrees/wt").replaceAll("\\", "/")}\n`);
+    const r = launch(worktree, ["--version"], "", { CLAUDE_PROJECT_DIR: main });
+    expect(r).toMatchObject({ status: 0, stdout: "worktree" });
+  });
+
+  it("keeps the project's build when the working directory is a repository of its own inside it", () => {
+    const main = tempDir();
+    builtManni(main, "main");
+    mkdirSync(join(main, ".git"));
+    const nested = join(main, "media/scratch-demo");
+    builtManni(nested, "nested");
+    mkdirSync(join(nested, ".git"));
+    const r = launch(nested, ["--version"], "", { CLAUDE_PROJECT_DIR: main });
+    expect(r).toMatchObject({ status: 0, stdout: "main" });
+  });
+
   it("runs nothing in manni's own repository before it is built", () => {
     const dir = tempDir();
     writeFileSync(join(dir, "package.json"), JSON.stringify({ name: "@hawkeyexl/manni", bin: { manni: "dist/cli.js" } }));

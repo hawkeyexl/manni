@@ -53,7 +53,7 @@ risks: read-only
 concepts:
   - validation
   - metadata
-last-updated: 2026-10-23
+last-updated: 2026-10-24
 ---
 
 import { Aside, Card, CardGrid, LinkCard } from '@astrojs/starlight/components';
@@ -253,6 +253,14 @@ docs/guide.md:5
 That set breaks every rule once, so the run goes on to five findings about
 the records. It ends `3 errors, 3 warnings, 1 notice in 7 records`, and it
 exits `1` because of the errors. Warnings and notices never fail a run.
+
+## Measure it against readers
+
+The check says the pages agree with the records. It cannot say whether
+readers take the journeys.
+[Measure the strategy against reader traffic](/manni/strategy/traffic/)
+joins a page-views export to the records, for traffic per journey and per
+persona.
 
 ## Every finding has a rule
 
