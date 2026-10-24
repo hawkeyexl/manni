@@ -1,0 +1,333 @@
+---
+title: Measure the strategy against reader traffic
+description: "Join a page-views export to the audiences, personas and journeys a docset keeps as records, and read traffic per journey and per persona with manni meta query."
+type: how-to
+id: strategy-traffic
+keywords:
+  - analytics
+  - page views
+  - traffic per journey
+  - meta query
+  - exit rate
+language: en
+audiences:
+  - schema-authors
+intent: Turn a page-views export into traffic per journey and per persona, and name the traffic the strategy does not explain.
+lifecycle: published
+applies-to:
+  - domain:strategy
+  - domain:meta
+prerequisites:
+  - strategy
+next-steps:
+  - strategy-reference-cli
+related-pages:
+  - meta-reference-query
+  - graph-reference-configuration
+sample-questions:
+  - How many readers does each journey get?
+  - Which much-read pages name no journey?
+  - How do I join analytics to manni strategy records?
+graph:
+  label: Measure the strategy against reader traffic
+  type: task
+tags:
+  - content-strategy
+  - analytics
+  - sql
+action: appraise
+risks: read-only
+concepts:
+  - metadata
+last-updated: 2026-10-23
+---
+
+import { Aside, CardGrid, LinkCard } from '@astrojs/starlight/components';
+
+`manni strategy check` holds every page to the records it names. It cannot
+say whether readers take the journeys. This page joins a page-views export
+to the records, with `manni meta query` and one committed SQL file. The
+result is traffic per journey and per persona, plus the traffic the strategy
+does not explain.
+
+## What you need
+
+- **The records and the pages, as collections.** The
+  [overview](/manni/strategy/#set-it-up) sets them up. The query reads both
+  from the one `docs` table that `meta query` builds.
+- **A page-views export, as JSON.** It is a list of objects with exactly the
+  keys `page`, `views` and `exits`. `exits` may be absent, and then every `exit_rate` is null.
+  `page` is the path a reader saw, such as `/manni/strategy/`, never a full URL with a host.
+- **The site's route.** It is the `basePath` and the `root` of the docs
+  route in
+  [`graph.routes`](/manni/graph/reference/configuration/#routes).
+
+Save the export under `.manni/`, which this repository's `.gitignore` covers,
+so the numbers never reach a commit:
+
+```json title=".manni/views.json"
+[{"page":"/manni/","views":900,"exits":300},
+ {"page":"/manni/strategy/","views":120,"exits":30},
+ {"page":"/manni/strategy/reference/rules/","views":60,"exits":41},
+ {"page":"/manni/strategy/reference/cli/?q=list","views":45,"exits":20},
+ {"page":"/manni/cite/ci/stale-windows/","views":80,"exits":12},
+ {"page":"/manni/strategy/old-page/","views":7,"exits":7}]
+```
+
+Export only the pages with views. The command line has a ceiling, which
+[Limits](#limits) states.
+
+## The query
+
+This repository keeps the query in `docs/content-strategy/traffic.sql`:
+
+```sql title="docs/content-strategy/traffic.sql"
+-- Reader traffic per journey and per persona, from a page-views export.
+-- Bind the export with --param views:=<json>, a list of {page, views, exits}.
+-- The route is graph.routes in manni.config.yaml: its basePath and its root.
+WITH route(base, root) AS (VALUES ('/manni/', 'docs/src/content/docs')),
+views AS (
+  SELECT url, sum(views) AS views, sum(exits) AS exits
+  FROM (SELECT rtrim(replace(substr(value ->> 'page', 1, instr((value ->> 'page') || '?', '?') - 1), '.html', ''), '/') AS url,
+               value ->> 'views' AS views, value ->> 'exits' AS exits
+        FROM json_each($views))
+  GROUP BY url
+),
+pages AS (
+  SELECT _path, journeys, personas,
+         rtrim(base || CASE WHEN rest = 'index' THEN ''
+                            WHEN rest LIKE '%/index' THEN substr(rest, 1, length(rest) - 6)
+                            ELSE rest END, '/') AS url
+  FROM (SELECT _path, base,
+               CASE WHEN journeys IS NULL OR json_valid(journeys) THEN journeys ELSE json_array(journeys) END AS journeys,
+               CASE WHEN personas IS NULL OR json_valid(personas) THEN personas ELSE json_array(personas) END AS personas,
+               rtrim(substr(rtrim(_path, replace(_path, '.', '')), length(root) + 2), '.') AS rest
+        FROM docs, route WHERE _path LIKE root || '/%')
+),
+named AS (
+  SELECT 'journey' AS kind, lower(j.value) AS id, p.url FROM pages p, json_each(p.journeys) j
+  UNION ALL
+  SELECT 'persona', lower(x.value), p.url FROM pages p, json_each(p.personas) x
+)
+SELECT s.type AS kind, s.id AS id, s.title AS title, count(n.url) AS pages, count(v.url) AS measured,
+       coalesce(sum(v.views), 0) AS views, round(1.0 * sum(v.exits) / sum(v.views), 2) AS exit_rate
+FROM docs s
+LEFT JOIN named n ON n.kind = s.type AND n.id = lower(s.id)
+LEFT JOIN views v ON v.url = n.url
+WHERE s.type IN ('journey', 'persona')
+GROUP BY s.type, s.id
+UNION ALL
+SELECT 'unplanned', p._path, NULL, 1, 1, v.views, round(1.0 * v.exits / v.views, 2)
+FROM views v JOIN pages p ON p.url = v.url WHERE coalesce(json_array_length(p.journeys), 0) = 0
+UNION ALL
+SELECT 'unmatched', v.url, NULL, 0, 0, v.views, NULL
+FROM views v WHERE v.url IS NULL OR v.url NOT IN (SELECT url FROM pages)
+ORDER BY views DESC, kind, id
+```
+
+{/* cite route-from-graph-routes */}
+The `route` line is the one to edit. Here it holds `/manni/` and
+`docs/src/content/docs`, the `basePath` and `root` of this repository's
+`graph.routes`.
+
+The rest runs unchanged on any config, because it names no collection.
+
+- `views` drops a query string, a `.html` suffix and a trailing `/` from
+  each `page`, then sums the rows that land on one URL. So
+  `/manni/strategy/reference/cli/?q=list` counts toward the CLI reference.
+- `pages` derives each page's URL from its `_path`, as `graph.routes`
+  resolves it. An `index` file names its directory. A site whose index
+  files are `README` adds one `WHEN` arm for it.
+- A page whose `journeys:` or `personas:` is a bare string reads as a list
+  of one, as `manni strategy` reads it.
+- Records are the rows whose `type` is `journey` or `persona`. Their `id`
+  matches ignoring case, as `strategy` compares ids. A record with no `id:`
+  field gets no row.
+
+The query leaves audiences out. Adding them means carrying `audiences`
+through `pages` as `personas` is, one more arm in `named`, and `'audience'`
+in the `WHERE` list.
+
+## Run it
+
+From the repository root, in bash or Git Bash, pass the file as `--query`
+and the export as a JSON parameter. `--param name:=<json>` binds a parsed
+JSON value, as
+[bound parameters](/manni/meta/reference/query/#bound-parameters) describe:
+
+```console
+$ manni meta query --query "$(cat docs/content-strategy/traffic.sql)" \
+    --param "views:=$(cat .manni/views.json)"
+```
+
+Here the same SQL runs over a six-file fixture laid out like this
+repository, with a five-row export:
+
+```console
+$ manni meta query -c test/fixtures/strategy/traffic/manni.config.yaml \
+    --query "$(cat docs/content-strategy/traffic.sql)" \
+    --param "views:=$(cat test/fixtures/strategy/traffic/views.json)"
+Using manni.config.yaml (test/fixtures/strategy/traffic)
+kind       id                              title    pages  measured  views  exit_rate
+persona    maya                            Maya     3      3         170    0.52
+unplanned  docs/src/content/docs/index.md  (null)   1      1         100    0.6
+journey    m1                              Set up   2      2         70     0.4
+journey    m2                              Gate CI  1      1         30     0.6
+unmatched  /manni/gone                     (null)   0      0         5      (null)
+5 rows
+```
+
+The export has `/manni/ci/?ref=nav` and `/manni/ci/` as two rows. They sum
+to the one `ci/index.md` page, which counts toward both M1 and M2.
+
+Windows PowerShell 5.1 strips the quotes inside a native argument, so the
+export reaches manni as invalid JSON. Escape them:
+
+```powershell
+manni meta query --query (Get-Content docs/content-strategy/traffic.sql -Raw) `
+  --param ('views:=' + ((Get-Content .manni/views.json -Raw) -replace '"', '\"'))
+```
+
+PowerShell 7.3 and later, and Git Bash, need no escape.
+
+`-f csv` writes a spreadsheet, with an empty field for each null. Keep it
+under `.manni/` too:
+
+```console
+$ manni meta query -f csv --query "$(cat docs/content-strategy/traffic.sql)" \
+    --param "views:=$(cat .manni/views.json)" > .manni/traffic.csv
+```
+
+`-f json` prints a list of objects with the same keys, for a script.
+
+## Read the result
+
+This is the start of the six-row export's run over this repository's own
+pages and records:
+
+```console
+$ manni meta query --query "$(cat docs/content-strategy/traffic.sql)" \
+    --param "views:=$(cat .manni/views.json)"
+Using manni.config.yaml (.)
+kind       id                               title                                                                             pages  measured  views  exit_rate
+persona    sara                             Sara, Schema Author / Information Architect                                       153    4         1125   0.35
+persona    theo                             Theo, Doc Contributor                                                             84     3         1080   0.34
+persona    devin                            Devin, Platform / CI Engineer                                                     128    2         980    0.32
+persona    maya                             Maya, Documentation Engineer                                                      166    2         980    0.32
+unplanned  docs/src/content/docs/index.mdx  (null)                                                                            1      1         900    0.33
+journey    s17                              Hold the pages to the strategy they were written for                              3      3         225    0.4
+journey    d18                              Put a number on how long the docs were wrong                                      2      1         80     0.15
+journey    m5                               Pin a claim and catch it going stale                                              9      1         80     0.15
+journey    t1                               Fix a failing metadata check fast                                                 4      1         60     0.68
+unmatched  /manni/strategy/old-page         (null)                                                                            0      0         7      (null)
+…
+81 rows
+```
+
+The run exits `0`, and the rows sort by `views`, highest first. Each row is
+one of four kinds.
+
+| `kind` | One row per | `id` |
+|---|---|---|
+| `persona` | persona record | the record's `id` |
+| `journey` | journey record | the record's `id` |
+| `unplanned` | page in the export that names no journey | the page's repo path |
+| `unmatched` | URL in the export that maps to no page | the URL, without its trailing `/` |
+
+| Column | On a record's row | On an `unplanned` row | On an `unmatched` row |
+|---|---|---|---|
+| `title` | the record's `title` | null | null |
+| `pages` | pages that name the record | `1` | `0` |
+| `measured` | those pages the export has a row for | `1` | `0` |
+| `views` | the views of those pages, `0` when none | the page's views | the URL's views |
+| `exit_rate` | their exits over their views, to two places, null with no views or no `exits` | the page's | null |
+
+<Aside type="caution" title="The rows overlap">
+A page counts toward every journey and persona it names. Summing the journey
+rows counts a page once per journey it names, so the sum is not the site's
+traffic.
+</Aside>
+
+`exit_rate` has no direction on its own. A high rate on a journey's last page
+can mean readers got what they came for. On its first page it means they
+left. Read it against the order of the journey's pages.
+
+## Act on it
+
+Three kinds of row say the strategy is wrong.
+
+- **An `unplanned` page.** A read page names no journey, so the strategy does
+  not account for its traffic. Here it is the home page, which takes the most
+  views. Add the journeys it serves to its `journeys:`, in the page or its
+  `{page}.meta.yaml` sidecar. Then `manni strategy check` holds the new
+  values to the records.
+- **A journey with pages and no views.** Its pages exist, and no reader in
+  the export reached them. `-f json` and `jq` list them:
+
+  ```console
+  $ manni meta query -f json --query "$(cat docs/content-strategy/traffic.sql)" \
+      --param "views:=$(cat .manni/views.json)" 2>/dev/null \
+      | jq -r '.[] | select(.kind == "journey" and .pages > 0 and .views == 0) | .id'
+  d1
+  d10
+  d11
+  …
+  ```
+
+- **An `unmatched` URL.** A reader reached a path that maps to no page. It is
+  a renamed or deleted page, a stale link, or a missing redirect. Here it is
+  `/manni/strategy/old-page`.
+
+## Limits
+
+- **The command line has a ceiling.** The SQL and the export travel as
+  arguments. Linux allows 128 KiB per argument, and Windows allows 32,767
+  characters per command line. An export of one row for each of this
+  repository's 263 pages is about 18 KB. It runs from PowerShell 5.1 and
+  from Git Bash. A larger export fits a SQLite file: `--db` writes the
+  `docs` table to one, and `sqlite3` imports a CSV beside it.
+- **On Windows, run `manni`, not `npx`.** `npx` passes its arguments through
+  cmd.exe, which cuts an argument at its first line break. The query arrives
+  as its first comment line, and the run stops with
+  `SQL error: statement has been finalized`, exit `2`. A global install's
+  `manni` from Git Bash or PowerShell calls `node` directly.
+- **The records must be among the inputs.** Run with no paths, or select
+  both collections with `--collection`. With only the records selected, the
+  run stops with `SQL error: no such column: journeys`, exit `2`. Named paths
+  replace the collections, so they must name the records too.
+- **Views are not a funnel.** A page-views export has no sessions. The views
+  of one page over the views of another are two counts, not a drop-off.
+- **The export stays local.** The statement reads neither `derived` nor
+  `resolved`, so `meta query` makes no request to GitHub or GitLab. The
+  export travels only as an argument to a local process. On a shared
+  machine, other local users can read a process's arguments.
+- **A missing parameter is an error.** Leave off `--param views`, and the
+  run stops before it reads a file:
+
+  ```text
+  manni: The statement references $views with nothing bound — an unbound parameter binds NULL and matches nothing. Bind it with --param views=<value> (or `params` in the API).
+  ```
+
+  It exits `2`. An export that does not parse exits `2` too, and the message
+  quotes the export.
+
+<CardGrid>
+  <LinkCard
+    title="Bound parameters"
+    href="/manni/meta/reference/query/#bound-parameters"
+    description="How --param binds a string or a JSON value, and the refusals that keep a typo from passing."
+  />
+  <LinkCard
+    title="CLI reference"
+    href="/manni/strategy/reference/cli/"
+    description="list, get and check, with every flag, the strategy: keys and the exit codes."
+  />
+</CardGrid>
+
+{/* Doc Detective inline tests: verify this page's documented query against the
+    local build, exposed as `npx @hawkeyexl/manni` via `npm link`
+    (see .github/workflows/docs-as-tests.yml). Run with `npx doc-detective`.
+    Config: .doc-detective.json. */}
+{/* test {"testId":"strategy-traffic","description":"traffic.sql joins a page-views export to the strategy records."} */}
+{/* step {"description":"The committed SQL over the traffic fixture prints the unplanned page, M1's traffic and the unmatched URL, in views order.","runShell":{"command":"npx @hawkeyexl/manni meta query -c test/fixtures/strategy/traffic/manni.config.yaml --query \"$(cat docs/content-strategy/traffic.sql)\" --param \"views:=$(cat test/fixtures/strategy/traffic/views.json)\"","exitCodes":[0],"stdio":"/unplanned +docs\\/src\\/content\\/docs\\/index\\.md[\\s\\S]*journey +m1 +Set up +2 +2 +70 +0\\.4[\\s\\S]*unmatched +\\/manni\\/gone/"}} */}
+{/* test end */}

@@ -815,7 +815,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         file: src/meta/core/validator.ts
         lines: 1087-1097
         integrity: sha256-7c6875fb7c20e8e4f224fd456aa8f67de951850c6b8c747ca45ce59e8fb4e85a
-        commit-sha: 13e1b66ba66ec8dcaad71604abc443248a7e1b5a
+        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
     - id: owned-key-written-into-the-manifest
       claim:
         lines: 867-875
@@ -982,7 +982,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         file: src/meta/core/validator.ts
         lines: 1087-1097
         integrity: sha256-7c6875fb7c20e8e4f224fd456aa8f67de951850c6b8c747ca45ce59e8fb4e85a
-        commit-sha: 13e1b66ba66ec8dcaad71604abc443248a7e1b5a
+        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
     - id: external-metadata-exit-1-cases
       claim:
         lines: 1046
