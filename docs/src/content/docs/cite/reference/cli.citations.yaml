@@ -172,7 +172,7 @@ docs/src/content/docs/cite/reference/cli.mdx:
         file: src/cite/reporters/json.ts
         lines: 118-122
         integrity: sha256-b58d574c87357d901f05ad72cca45b1f09a94f5fc52cc13fbbe27e366f48de91
-        commit-sha: ddba7252337859626421b6060ae8952f93f61653
+        commit-sha: 9bae0b61238cacda61d680ec39caf453fc235e1e
     - id: json-summary-shape
       claim:
         integrity: sha256-0c3592bf78a96da79128f67c3e02ded810c6e4969095436cce2a2904239a13f5
@@ -213,7 +213,7 @@ docs/src/content/docs/cite/reference/cli.mdx:
         file: src/cite/reporters/github.ts
         lines: 55-73
         integrity: sha256-83936929c6c1d5df2f179df137b9c7265f6f6cce4112bbd9281f838fa546f26e
-        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
+        commit-sha: 9bae0b61238cacda61d680ec39caf453fc235e1e
     - id: github-sample-source-changed
       claim:
         lines: 372

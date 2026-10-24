@@ -598,7 +598,7 @@ docs/src/content/docs/cite/reference/configuration.mdx:
         file: src/cite/reporters/github.ts
         lines: 67-69
         integrity: sha256-25e5289c5ab9889a16c9e298a2dd4fd5956d83860c825bc32810c05253dcb9fe
-        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
+        commit-sha: 9bae0b61238cacda61d680ec39caf453fc235e1e
     - id: render-sarif-level
       claim:
         integrity: sha256-b106b076e141f208eef8d8bc229bb773f3b5a03316755de2a01b86779d286f84

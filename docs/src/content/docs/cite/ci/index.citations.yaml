@@ -146,7 +146,7 @@ docs/src/content/docs/cite/ci/index.mdx:
         file: src/cite/reporters/sarif.ts
         lines: 92-115
         integrity: sha256-50cd1a1719e5f366d3458ec4010049a9297a44c949770cb6eeada3348aa56892
-        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
+        commit-sha: 9bae0b61238cacda61d680ec39caf453fc235e1e
     - id: format-sarif-manifest-outside-repo
       claim:
         lines: 130
@@ -181,7 +181,7 @@ docs/src/content/docs/cite/ci/index.mdx:
         file: src/cite/reporters/github.ts
         lines: 52-71
         integrity: sha256-f62c7c839e8a3adab348190f51bc3cb71cb3859d4067bfeaf2e05640d785d9c2
-        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
+        commit-sha: 9bae0b61238cacda61d680ec39caf453fc235e1e
     - id: github-annotation-sample
       claim:
         lines: 52-53
@@ -190,7 +190,7 @@ docs/src/content/docs/cite/ci/index.mdx:
         file: src/cite/reporters/github.ts
         lines: 40-52
         integrity: sha256-781defb6d9cc0e1d7402944a96a5998d6febecb691ccb065356908d6cde9a883
-        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
+        commit-sha: 9bae0b61238cacda61d680ec39caf453fc235e1e
     - id: github-source-finding-message
       claim:
         integrity: sha256-ec037c6975035bafd5e922c81fc1d8e8a4e3e18472d803250edd087d7111ecd1
@@ -198,7 +198,7 @@ docs/src/content/docs/cite/ci/index.mdx:
         file: src/cite/reporters/github.ts
         lines: 40-52
         integrity: sha256-781defb6d9cc0e1d7402944a96a5998d6febecb691ccb065356908d6cde9a883
-        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
+        commit-sha: 9bae0b61238cacda61d680ec39caf453fc235e1e
     - id: github-claim-finding-as-is
       claim:
         integrity: sha256-ec037c6975035bafd5e922c81fc1d8e8a4e3e18472d803250edd087d7111ecd1
@@ -223,7 +223,7 @@ docs/src/content/docs/cite/ci/index.mdx:
         file: src/cite/reporters/github.ts
         lines: 64-69
         integrity: sha256-06daa6ab9827a11cbb86e97eb6d20f794c4c76fc52cccf3a8878ed983bcd55ed
-        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
+        commit-sha: 9bae0b61238cacda61d680ec39caf453fc235e1e
     - id: update-formats-pretty-json
       claim:
         integrity: sha256-5db597e1c4414850cc2f773866fd37f0ad9161e6a8324875a42439985de3c501
