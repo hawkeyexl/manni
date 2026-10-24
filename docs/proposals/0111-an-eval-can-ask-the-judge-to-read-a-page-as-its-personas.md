@@ -1,6 +1,6 @@
 # 0111: An eval can ask the judge to read a page as its personas
 
-- **Status:** Proposed
+- **Status:** Implemented (#244)
 - **Serves:** Sara, the schema author.
   - S8, "Write assertions the judge can decide". An assertion says "a
     reader", and the page says who.
