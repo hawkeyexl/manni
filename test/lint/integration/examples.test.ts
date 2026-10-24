@@ -47,7 +47,7 @@ const TEMPLATES = [
 ] as const;
 
 /** Parse a fixture with the parser its own extension selects. */
-function parseFixture(path: string): DocumentTree {
+async function parseFixture(path: string): Promise<DocumentTree> {
   const parser = defined(
     parserForExtension(extname(path)),
     `parser for extension of "${path}"`,
@@ -89,19 +89,19 @@ describe("worked example templates", () => {
   describe("examples/lint/manni-docs.yaml", () => {
     it("lints the page fallback clean", async () => {
       const template = await loadResolvedTemplate(`${file("manni-docs.yaml")}#page`);
-      const tree = parseFixture(fixture("manni-docs", "page-clean.md"));
+      const tree = await parseFixture(fixture("manni-docs", "page-clean.md"));
       expect(validateDocument(tree, template)).toEqual([]);
     });
 
     it("lints a get-started page clean", async () => {
       const template = await loadResolvedTemplate(`${file("manni-docs.yaml")}#get-started`);
-      const tree = parseFixture(fixture("manni-docs", "get-started-clean.md"));
+      const tree = await parseFixture(fixture("manni-docs", "get-started-clean.md"));
       expect(validateDocument(tree, template)).toEqual([]);
     });
 
     it("lints a cli-reference page clean", async () => {
       const template = await loadResolvedTemplate(`${file("manni-docs.yaml")}#cli-reference`);
-      const tree = parseFixture(fixture("manni-docs", "cli-reference-clean.md"));
+      const tree = await parseFixture(fixture("manni-docs", "cli-reference-clean.md"));
       expect(validateDocument(tree, template)).toEqual([]);
     });
 
@@ -109,7 +109,7 @@ describe("worked example templates", () => {
     // than "Option" | "Description".
     it("reports a Global options table with the wrong columns", async () => {
       const template = await loadResolvedTemplate(`${file("manni-docs.yaml")}#cli-reference`);
-      const tree = parseFixture(fixture("manni-docs", "cli-reference-defect.md"));
+      const tree = await parseFixture(fixture("manni-docs", "cli-reference-defect.md"));
       expect(projected(validateDocument(tree, template))).toEqual([
         {
           type: "tables_columns_error",
@@ -121,7 +121,7 @@ describe("worked example templates", () => {
 
     it("lints an overview page clean", async () => {
       const template = await loadResolvedTemplate(`${file("manni-docs.yaml")}#overview`);
-      const tree = parseFixture(fixture("manni-docs", "overview-clean.mdx"));
+      const tree = await parseFixture(fixture("manni-docs", "overview-clean.mdx"));
       expect(validateDocument(tree, template)).toEqual([]);
     });
   });
@@ -129,19 +129,19 @@ describe("worked example templates", () => {
   describe("examples/lint/doc-detective.yaml", () => {
     it("lints an action page clean", async () => {
       const template = await loadResolvedTemplate(`${file("doc-detective.yaml")}#action`);
-      const tree = parseFixture(fixture("doc-detective", "action-clean.md"));
+      const tree = await parseFixture(fixture("doc-detective", "action-clean.md"));
       expect(validateDocument(tree, template)).toEqual([]);
     });
 
     it("lints a schema-reference page clean", async () => {
       const template = await loadResolvedTemplate(`${file("doc-detective.yaml")}#schema-reference`);
-      const tree = parseFixture(fixture("doc-detective", "schema-reference-clean.md"));
+      const tree = await parseFixture(fixture("doc-detective", "schema-reference-clean.md"));
       expect(validateDocument(tree, template)).toEqual([]);
     });
 
     it("lints a how-to page clean", async () => {
       const template = await loadResolvedTemplate(`${file("doc-detective.yaml")}#how-to`);
-      const tree = parseFixture(fixture("doc-detective", "how-to-clean.md"));
+      const tree = await parseFixture(fixture("doc-detective", "how-to-clean.md"));
       expect(validateDocument(tree, template)).toEqual([]);
     });
 
@@ -149,7 +149,7 @@ describe("worked example templates", () => {
     // the `paragraphs` then `codeBlocks` sequence every step must hold.
     it("reports a step with no code block", async () => {
       const template = await loadResolvedTemplate(`${file("doc-detective.yaml")}#how-to`);
-      const tree = parseFixture(fixture("doc-detective", "how-to-defect.md"));
+      const tree = await parseFixture(fixture("doc-detective", "how-to-defect.md"));
       expect(projected(validateDocument(tree, template))).toEqual([
         {
           type: "content_order_error",
@@ -163,19 +163,19 @@ describe("worked example templates", () => {
   describe("examples/lint/nginx.yaml", () => {
     it("lints a fragment clean", async () => {
       const template = await loadResolvedTemplate(`${file("nginx.yaml")}#fragment`);
-      const tree = parseFixture(fixture("nginx", "fragment-clean.md"));
+      const tree = await parseFixture(fixture("nginx", "fragment-clean.md"));
       expect(validateDocument(tree, template)).toEqual([]);
     });
 
     it("lints a how-to page clean", async () => {
       const template = await loadResolvedTemplate(`${file("nginx.yaml")}#how-to`);
-      const tree = parseFixture(fixture("nginx", "how-to-clean.md"));
+      const tree = await parseFixture(fixture("nginx", "how-to-clean.md"));
       expect(validateDocument(tree, template)).toEqual([]);
     });
 
     it("lints release notes clean", async () => {
       const template = await loadResolvedTemplate(`${file("nginx.yaml")}#release-notes`);
-      const tree = parseFixture(fixture("nginx", "release-notes-clean.md"));
+      const tree = await parseFixture(fixture("nginx", "release-notes-clean.md"));
       expect(validateDocument(tree, template)).toEqual([]);
     });
 
@@ -184,7 +184,7 @@ describe("worked example templates", () => {
     // the matcher to coerce it onto instead.
     it("reports a version missing What's new", async () => {
       const template = await loadResolvedTemplate(`${file("nginx.yaml")}#release-notes`);
-      const tree = parseFixture(fixture("nginx", "release-notes-defect.md"));
+      const tree = await parseFixture(fixture("nginx", "release-notes-defect.md"));
       expect(projected(validateDocument(tree, template))).toEqual([
         {
           type: "missing_section",

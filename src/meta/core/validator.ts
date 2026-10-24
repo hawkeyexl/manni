@@ -724,7 +724,6 @@ export class Validator {
     refs: string[],
   ): Promise<Set<string>> {
     const { [FILE_SCHEMA_KEY]: _omit, ...subject } = data;
-    void _omit;
     const marks = new Set<string>();
     for (const ref of refs) {
       const fn = await this.compile(ref);
@@ -759,7 +758,6 @@ export class Validator {
     refs: string[],
   ): Promise<Map<string, LocationPreference>> {
     const { [FILE_SCHEMA_KEY]: _omit, ...subject } = data;
-    void _omit;
     const preferences = new Map<string, LocationPreference>();
     for (const ref of refs) {
       const fn = await this.compile(ref);
@@ -829,7 +827,6 @@ export class Validator {
     refs: string[],
   ): Promise<Map<string, boolean>> {
     const { [FILE_SCHEMA_KEY]: _omit, ...subject } = data;
-    void _omit;
     const preferences = new Map<string, boolean>();
     for (const ref of refs) {
       const fn = await this.compile(ref);
@@ -860,7 +857,6 @@ export class Validator {
    */
   async deliveryExclusions(data: Record<string, unknown>, refs: string[]): Promise<string[]> {
     const { [FILE_SCHEMA_KEY]: _omit, ...subject } = data;
-    void _omit;
     const output = new Map<string, boolean>();
     const location = new Map<string, FieldLocation>();
     for (const ref of refs) {
@@ -902,7 +898,6 @@ export class Validator {
    */
   async termMarks(data: Record<string, unknown>, refs: string[]): Promise<TermMarkHit[]> {
     const { [FILE_SCHEMA_KEY]: _omit, ...subject } = data;
-    void _omit;
     const hits: TermMarkHit[] = [];
     // One hit per (pointer, under) across the whole set: two schemas marking
     // the same field the same way are one mark, and the first ref governs.
@@ -951,7 +946,6 @@ export class Validator {
     // `$schema` is a docmeta directive, not part of the document's metadata —
     // strip it so schemas with additionalProperties:false don't flag it.
     const { [FILE_SCHEMA_KEY]: _omit, ...subject } = data;
-    void _omit;
 
     const errors: FieldError[] = [];
     for (const ref of refs) {

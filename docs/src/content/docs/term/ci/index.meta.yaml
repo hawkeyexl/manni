@@ -37,8 +37,14 @@ docs/src/content/docs/term/ci/index.mdx:
       lines: 47-52
       integrity: sha256-ecb6006e7e89872fc40a44e63b7df70965a6fb75cf4c0fa0e43db8f2f64516ec
     - generated-by: Claude Opus 5
-      lines: 56-150
-      integrity: sha256-e1e749a44d52c044552060ac1ee501ab9cc3d8534dad97bceb4747f53fa91081
+      lines: 56-102
+      integrity: sha256-46fa22bc4626eca4b05edcb24cae9e0c91f112339f16bea59f32018fd25bc032
+    - generated-by: Claude Opus 5
+      lines: 104-112
+      integrity: sha256-f29d4deea5fe193043e47a2d93f3e184c70f72f124283dee1d19e7c75bd30382
+    - generated-by: Claude Opus 5
+      lines: 114-150
+      integrity: sha256-241d2a97073fc0e8732b3fca1ad0627947190ea714ac2ce6bed921ef055ba42f
     - generated-by: Claude Opus 5
       lines: 152-201
       integrity: sha256-3a9810599f0daad70e8f51287a85ad51277a913dbc665e79d88a88bc502fbd71

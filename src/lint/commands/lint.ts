@@ -427,7 +427,7 @@ async function lintOne(
 ): Promise<LintFileResult> {
   let tree: DocumentTree;
   try {
-    tree = parser.parse(content, label);
+    tree = await parser.parse(content, label);
   } catch (err) {
     // A file that will not parse is that file's problem, not the run's: it is
     // reported and the run continues, so one broken page cannot hide the

@@ -109,9 +109,6 @@ docs/src/content/docs/cite/ci/index.mdx:
     - generated-by: Claude Fable 5.1
       lines: 168
       integrity: sha256-262a42f8b9c21bb7c020a821804b447012e9286f04fcc426e3e9235e29f726ce
-    - generated-by: Claude Opus 5
-      lines: 171
-      integrity: sha256-aa853a600f7011451207abd1bfadda599ac30be05fe3fe9ba093d50871dc6aa9
     - generated-by: Claude Fable 5.1
       lines: 172-177
       integrity: sha256-6ead849a5253d1ee110771ae72c5606e6c36f5a372398b841343aa71b092775a

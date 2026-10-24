@@ -30,7 +30,8 @@ on:
   # *how* this check runs is exercised before it merges; a change to what the
   # site contains is left to the schedule, by which time the deploy has
   # happened. A contributor should not see red for a finding they did not
-  # introduce and cannot fix from their branch.
+  # introduce and cannot fix from their branch, so on a pull request the check
+  # step lets findings through (see the step).
   pull_request:
     paths:
       - .github/workflows/a11y-live.yml
@@ -54,7 +55,7 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v7
         with:
           node-version: 24
           cache: npm
@@ -80,5 +81,19 @@ jobs:
       #
       # GitHub-hosted ubuntu runners ship Chrome, so there is no browser install
       # step; the analyzer finds it before falling back to Playwright's own.
+      #
+      # On a pull request, exit 1 passes. The live site is what `main` deployed,
+      # so its findings are not the branch's to fix, and the annotations still
+      # show them. Exit 2 still fails, because a run that cannot check the site
+      # is exactly what the pull_request trigger is here to catch.
       - name: Check the published docs site
-        run: node dist/cli.js a11y check https://hawkeyexl.github.io/manni/ -f github --progress
+        env:
+          EVENT: ${{ github.event_name }}
+        run: |
+          status=0
+          node dist/cli.js a11y check https://hawkeyexl.github.io/manni/ -f github --progress || status=$?
+          if [ "$status" -eq 1 ] && [ "$EVENT" = "pull_request" ]; then
+            echo "::notice::Findings on the live site do not fail a pull request; the schedule gates on them."
+            exit 0
+          fi
+          exit "$status"

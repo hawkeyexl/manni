@@ -30,7 +30,7 @@ sample-questions:
 graph:
   label: Public docs, private code
   type: task
-last-updated: 2026-10-22
+last-updated: 2026-10-23
 tags:
   - encryption
   - security
@@ -369,7 +369,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v7
         with:
           node-version: 24
       - run: npx -y @hawkeyexl/manni cite check --no-check-sources -f github
@@ -390,14 +390,14 @@ jobs:
           token: ${{ secrets.CODE_READ_TOKEN }}
           path: code
           fetch-depth: 0   # tells never-true from changed
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v7
         with:
           node-version: 24
       - working-directory: docs
         env:
           MANNI_ENCRYPTION_KEY: ${{ secrets.MANNI_ENCRYPTION_KEY }}
         run: npx -y @hawkeyexl/manni cite check --root ../code -f sarif > ../cite.sarif
-      - uses: github/codeql-action/upload-sarif@v3
+      - uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: cite.sarif
 ```
@@ -510,7 +510,7 @@ In GitHub Actions the private job checks out each repository at its own
           token: ${{ secrets.CODE_READ_TOKEN }}
           path: sdk
           fetch-depth: 0
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v7
         with:
           node-version: 24
       - working-directory: docs

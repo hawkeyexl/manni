@@ -96,19 +96,19 @@ const SHARED_KINDS: ContentKind[] = [
   "blockquote",
 ];
 
-export const markdownParser: DocumentParser = {
+export const markdownParser = {
   name: "markdown",
   label: "Markdown",
   kinds: SHARED_KINDS,
   extensions: [".md", ".markdown"],
   parse: (content, filePath) =>
     parseWith(markdownProcessor, "markdown", content, filePath),
-};
+} satisfies DocumentParser;
 
-export const mdxParser: DocumentParser = {
+export const mdxParser = {
   name: "mdx",
   label: "MDX",
   kinds: [...SHARED_KINDS, "element"],
   extensions: [".mdx"],
   parse: (content, filePath) => parseWith(mdxProcessor, "mdx", content, filePath),
-};
+} satisfies DocumentParser;

@@ -26,15 +26,15 @@ const PAGES = ["heading-statement.md", "graph-sections.md", "page.md", "fields.m
   (name) => `docs/${name}`,
 );
 
-function build(): Quad[] {
+async function build(): Promise<Quad[]> {
   const paths = new Set(PAGES);
-  const docs = PAGES.map((path) =>
-    analyzeDoc(readFileSync(join(fixture, path), "utf8"), path, paths),
+  const docs = await Promise.all(
+    PAGES.map((path) => analyzeDoc(readFileSync(join(fixture, path), "utf8"), path, paths)),
   );
   return deriveGraph(docs, { baseIri: BASE, derive: ALL_DERIVE_SOURCES });
 }
 
-const quads = build();
+const quads = await build();
 const doc = (name: string): string => `${BASE}doc/docs/${name}`;
 const g = (local: string): string => `${NS.graph}${local}`;
 const XSD_DATE = `${NS.xsd}date`;
@@ -70,10 +70,10 @@ describe("a heading statement (decision 10a)", () => {
     expect(triplesOf(inline)).toEqual(triplesOf(front));
   });
 
-  it("finds its section by the heading's line in a tree format too", () => {
+  it("finds its section by the heading's line in a tree format too", async () => {
     const path = "guide.adoc";
     const content = '= Guide\n\nLead.\n\n// (meta {"applies-to":["linux"]})\n== Install\n\nRun it.\n';
-    const docs = [analyzeDoc(content, path, new Set([path]))];
+    const docs = [await analyzeDoc(content, path, new Set([path]))];
     const out = deriveGraph(docs, { baseIri: BASE, derive: ALL_DERIVE_SOURCES });
     const [install] = docs[0]?.sections.filter((s) => s.title === "Install") ?? [];
     expect(install?.line).toBe(6);

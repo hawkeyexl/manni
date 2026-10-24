@@ -97,7 +97,7 @@ jobs:
       security-events: write
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v7
         with:
           node-version: '24'
 
@@ -112,7 +112,7 @@ jobs:
       # findings. Without both of these, nothing is ever uploaded.
       - name: Upload to code scanning
         if: always()
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: manni.sarif
           category: manni

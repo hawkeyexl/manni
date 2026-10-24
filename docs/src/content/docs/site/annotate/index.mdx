@@ -21,7 +21,7 @@ tags:
   - cite
   - build
 action: develop
-last-updated: 2026-10-22
+last-updated: 2026-10-23
 ---
 
 import ProvenancePrototype from "../../../../components/ProvenancePrototype.astro";
@@ -58,6 +58,13 @@ import manniLines from "@hawkeyexl/manni/site/rehype";
 export default defineConfig({
   markdown: { rehypePlugins: [manniLines] },
 });
+```
+
+Astro 7.3 and later run `rehypePlugins` through `@astrojs/markdown-remark`,
+which they no longer install, so add it to the site:
+
+```console
+$ npm install @astrojs/markdown-remark
 ```
 
 Annotate removes every stamp after the join, so none reaches the deployed

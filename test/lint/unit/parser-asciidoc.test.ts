@@ -54,7 +54,7 @@ function section(sections: SectionNode[], title: string): SectionNode {
 /** Findings as one readable line each, so a failure names what went wrong. */
 async function lint(file: string): Promise<string[]> {
   const path = join(fixtures, file);
-  const tree = asciidocParser.parse(await readFile(path, "utf8"), path);
+  const tree = await asciidocParser.parse(await readFile(path, "utf8"), path);
   const findings = validateDocument(tree, await loadTemplate("tgdp:how-to:1.6"));
   return findings.map((f) => `${f.position.start.line}: [${f.type}] ${f.message}`);
 }
@@ -87,8 +87,8 @@ describe("asciidoc parser", () => {
 
   // Asciidoctor's `=` title is level 0 and lives on the document rather than in
   // the block tree, so both the offset and the promotion have to be undone.
-  it("nests sections by level, with the document title as the H1", () => {
-    const tree = parse("= A\n\n== B\n\ntext\n\n=== C\n\n== D\n");
+  it("nests sections by level, with the document title as the H1", async () => {
+    const tree = await parse("= A\n\n== B\n\ntext\n\n=== C\n\n== D\n");
     expect(tree.format).toBe("asciidoc");
     expect(tree.sections.map((s) => s.title)).toEqual(["A"]);
     expect(at(tree.sections, 0, "section").level).toBe(1);
@@ -102,8 +102,8 @@ describe("asciidoc parser", () => {
     expect(section(tree.sections, "C").level).toBe(3);
   });
 
-  it("records order and parentSlug", () => {
-    const tree = parse("= A\n\n== B\n\n== D\n");
+  it("records order and parentSlug", async () => {
+    const tree = await parse("= A\n\n== B\n\n== D\n");
     const d = section(tree.sections, "D");
     expect(d.order).toBe(2);
     expect(d.parentSlug).toBe("a");
@@ -114,16 +114,16 @@ describe("asciidoc parser", () => {
 
   // Asciidoctor hands back titles as inline HTML, so flattening them is what
   // makes `heading: {const: "..."}` mean the same thing it does in Markdown.
-  it("flattens inline markup in a heading title", () => {
-    const tree = parse("= T\n\n== Use the `lint` *command*\n");
+  it("flattens inline markup in a heading title", async () => {
+    const tree = await parse("= T\n\n== Use the `lint` *command*\n");
     const root = at(tree.sections, 0, "document title section");
     const heading = at(root.sections, 0, "first subsection");
     expect(heading.title).toBe("Use the lint command");
     expect(heading.slug).toBe("use-the-lint-command");
   });
 
-  it("puts the preamble under a document title into the title's own content", () => {
-    const tree = parse("= A\n\nLead prose.\n\n== B\n\nmore\n");
+  it("puts the preamble under a document title into the title's own content", async () => {
+    const tree = await parse("= A\n\nLead prose.\n\n== B\n\nmore\n");
     const root = at(tree.sections, 0, "document title section");
     expect(root.children.map((n) => n.kind)).toEqual(["paragraph"]);
     expect(at(root.children, 0, "preamble paragraph").text).toBe("Lead prose.");
@@ -132,8 +132,8 @@ describe("asciidoc parser", () => {
 });
 
 describe("content kinds", () => {
-  it("classifies content generically, in document order", () => {
-    const tree = parse(
+  it("classifies content generically, in document order", async () => {
+    const tree = await parse(
       "= A\n\n== B\n\npara\n\n[source,js]\n----\ncode\n----\n\n* one\n* two\n",
     );
     expect(section(tree.sections, "B").children.map((n) => n.kind)).toEqual([
@@ -143,8 +143,8 @@ describe("content kinds", () => {
     ]);
   });
 
-  it("carries a listing's language and its unconverted source", () => {
-    const tree = parse("= A\n\n[source,bash]\n----\nls -l && echo 'a < b'\n----\n");
+  it("carries a listing's language and its unconverted source", async () => {
+    const tree = await parse("= A\n\n[source,bash]\n----\nls -l && echo 'a < b'\n----\n");
     const root = at(tree.sections, 0, "document title section");
     expect(at(root.children, 0, "listing block")).toMatchObject({
       kind: "codeBlock",
@@ -153,18 +153,18 @@ describe("content kinds", () => {
     });
   });
 
-  it("reads an unlabelled listing and a literal block as code with no language", () => {
-    const tree = parse("= A\n\n----\nplain\n----\n\n....\nliteral\n....\n");
+  it("reads an unlabelled listing and a literal block as code with no language", async () => {
+    const tree = await parse("= A\n\n----\nplain\n----\n\n....\nliteral\n....\n");
     const content = at(tree.sections, 0, "document title section").children;
     expect(content.map((n) => n.kind)).toEqual(["codeBlock", "codeBlock"]);
     expect(at(content, 0, "listing block")).not.toHaveProperty("language");
     expect(at(content, 1, "literal block")).not.toHaveProperty("language");
   });
 
-  it("distinguishes ordered from unordered lists", () => {
+  it("distinguishes ordered from unordered lists", async () => {
     // In separate sections deliberately: two adjacent lists with different
     // markers are one nested list to AsciiDoc, not two siblings.
-    const tree = parse("= A\n\n== U\n\n* one\n* two\n\n== O\n\n. first\n. second\n. third\n");
+    const tree = await parse("= A\n\n== U\n\n* one\n* two\n\n== O\n\n. first\n. second\n. third\n");
     const unordered = at(
       section(tree.sections, "U").children,
       0,
@@ -184,8 +184,8 @@ describe("content kinds", () => {
   // An item's principal text is not one of its blocks in Asciidoctor, but it is
   // a paragraph child in mdast - so `lists: {items: {paragraphs: ...}}` only
   // counts the same thing in both formats because the parser puts it there.
-  it("nests an item's own text and its attached blocks so item rules can run", () => {
-    const tree = parse("= A\n\n* item text\n+\n[source,js]\n----\nx\n----\n");
+  it("nests an item's own text and its attached blocks so item rules can run", async () => {
+    const tree = await parse("= A\n\n* item text\n+\n[source,js]\n----\nx\n----\n");
     const root = at(tree.sections, 0, "document title section");
     const list = at(root.children, 0, "list") as ListNode;
     const item = at(list.items, 0, "list item");
@@ -193,8 +193,8 @@ describe("content kinds", () => {
     expect(at(item.children, 0, "item text paragraph").text).toBe("item text");
   });
 
-  it("nests a list inside the item that carries it", () => {
-    const tree = parse("= A\n\n* outer\n. inner one\n. inner two\n");
+  it("nests a list inside the item that carries it", async () => {
+    const tree = await parse("= A\n\n* outer\n. inner one\n. inner two\n");
     const root = at(tree.sections, 0, "document title section");
     const list = at(root.children, 0, "list") as ListNode;
     const nested = at(
@@ -211,8 +211,8 @@ describe("content kinds", () => {
   // A sidebar and a thematic break have no kind in the content model at all -
   // unlike an admonition or a table, nothing names what they would even mean
   // as a rule, so they stay whole-subtree skipped.
-  it("skips block types the content model still does not describe", () => {
-    const tree = parse(
+  it("skips block types the content model still does not describe", async () => {
+    const tree = await parse(
       ["= A", "", "****", "a sidebar", "****", "", "'''", ""].join("\n"),
     );
     expect(at(tree.sections, 0, "document title section").children).toEqual([]);
@@ -220,8 +220,8 @@ describe("content kinds", () => {
 });
 
 describe("content kinds: table", () => {
-  it("marks the head row and leaves body rows unmarked", () => {
-    const tree = parse(
+  it("marks the head row and leaves body rows unmarked", async () => {
+    const tree = await parse(
       "= A\n\n[cols=\"1,1\"]\n|===\n| Name | Role\n\n| Ada | Engineer\n|===\n",
     );
     const table = at(
@@ -244,8 +244,8 @@ describe("content kinds: table", () => {
   // AsciiDoc treats a table's first row as its header only when the source
   // marks it so - a blank line under it, or `options="header"`. A table with
   // neither has no header row, which is a fact about the table.
-  it("reports no header row when the source names none", () => {
-    const tree = parse("= A\n\n|===\n| a | b\n| 1 | 2\n|===\n");
+  it("reports no header row when the source names none", async () => {
+    const tree = await parse("= A\n\n|===\n| a | b\n| 1 | 2\n|===\n");
     const table = at(
       at(tree.sections, 0, "document title section").children,
       0,
@@ -254,8 +254,8 @@ describe("content kinds: table", () => {
     expect(table.children.every((row) => !row.header)).toBe(true);
   });
 
-  it("flattens inline markup in a cell's text", () => {
-    const tree = parse(
+  it("flattens inline markup in a cell's text", async () => {
+    const tree = await parse(
       "= A\n\n[cols=\"1\",options=\"header\"]\n|===\n| Use `code`\n|===\n",
     );
     const table = at(
@@ -269,8 +269,8 @@ describe("content kinds: table", () => {
 });
 
 describe("content kinds: admonition", () => {
-  it("maps the source's own name onto the shared variant vocabulary", () => {
-    const tree = parse(
+  it("maps the source's own name onto the shared variant vocabulary", async () => {
+    const tree = await parse(
       [
         "= A",
         "",
@@ -303,8 +303,8 @@ describe("content kinds: admonition", () => {
     ]);
   });
 
-  it("carries a simple admonition's own text as a paragraph child", () => {
-    const tree = parse("= A\n\nNOTE: an aside.\n");
+  it("carries a simple admonition's own text as a paragraph child", async () => {
+    const tree = await parse("= A\n\nNOTE: an aside.\n");
     const admonition = at(
       at(tree.sections, 0, "document title section").children,
       0,
@@ -316,8 +316,8 @@ describe("content kinds: admonition", () => {
     );
   });
 
-  it("carries a compound admonition's real blocks, not a duplicate of them", () => {
-    const tree = parse(
+  it("carries a compound admonition's real blocks, not a duplicate of them", async () => {
+    const tree = await parse(
       "= A\n\n[TIP]\n====\nFirst.\n\nSecond.\n====\n",
     );
     const admonition = at(
@@ -334,8 +334,8 @@ describe("content kinds: admonition", () => {
 });
 
 describe("content kinds: image", () => {
-  it("reads a block image's target and alt", () => {
-    const tree = parse("= A\n\nimage::diagram.png[The system diagram]\n");
+  it("reads a block image's target and alt", async () => {
+    const tree = await parse("= A\n\nimage::diagram.png[The system diagram]\n");
     const image = at(
       at(tree.sections, 0, "document title section").children,
       0,
@@ -348,8 +348,8 @@ describe("content kinds: image", () => {
     });
   });
 
-  it("carries a title when the macro names one", () => {
-    const tree = parse(
+  it("carries a title when the macro names one", async () => {
+    const tree = await parse(
       "= A\n\nimage::diagram.png[The system diagram,title=Figure 1]\n",
     );
     const image = at(
@@ -362,8 +362,8 @@ describe("content kinds: image", () => {
 });
 
 describe("content kinds: blockquote", () => {
-  it("carries a quote block's own content as children", () => {
-    const tree = parse(
+  it("carries a quote block's own content as children", async () => {
+    const tree = await parse(
       "= A\n\n[quote, Ada Lovelace]\n____\nThe Analytical Engine weaves algebra.\n____\n",
     );
     const quote = at(
@@ -379,8 +379,8 @@ describe("content kinds: blockquote", () => {
 });
 
 describe("content kinds: definitionList", () => {
-  it("pairs a term with its description", () => {
-    const tree = parse(
+  it("pairs a term with its description", async () => {
+    const tree = await parse(
       "= A\n\nCPU:: Central Processing Unit\nRAM:: Random Access Memory\n",
     );
     const dlist = at(
@@ -403,8 +403,8 @@ describe("content kinds: definitionList", () => {
     );
   });
 
-  it("joins multiple terms sharing one description", () => {
-    const tree = parse("= A\n\nCPU::\nProcessor:: Does the computing.\n");
+  it("joins multiple terms sharing one description", async () => {
+    const tree = await parse("= A\n\nCPU::\nProcessor:: Does the computing.\n");
     const dlist = at(
       at(tree.sections, 0, "document title section").children,
       0,
@@ -413,8 +413,8 @@ describe("content kinds: definitionList", () => {
     expect(at(dlist.children, 0, "shared item").term).toBe("CPU, Processor");
   });
 
-  it("attaches a description's continuation block", () => {
-    const tree = parse(
+  it("attaches a description's continuation block", async () => {
+    const tree = await parse(
       "= A\n\nkey:: description\n+\n[source,bash]\n----\nmanni key set\n----\n",
     );
     const dlist = at(
@@ -431,9 +431,9 @@ describe("content kinds: definitionList", () => {
 });
 
 describe("positions", () => {
-  it("anchors a section on its own source line", () => {
+  it("anchors a section on its own source line", async () => {
     const adoc = "= A\n\n== B\n\npara\n\n== C\n\npara\n";
-    const tree = parse(adoc);
+    const tree = await parse(adoc);
     const b = section(tree.sections, "B");
     const heading = defined(b.titlePosition, "heading position");
     expect(heading.start.line).toBe(3);
@@ -443,9 +443,9 @@ describe("positions", () => {
     expect(heading.end.offset).toBe(adoc.indexOf("== B") + "== B".length);
   });
 
-  it("ends a section where the next sibling begins", () => {
+  it("ends a section where the next sibling begins", async () => {
     const adoc = "= A\n\n== B\n\npara\n\n\n\n== C\n\npara\n";
-    const tree = parse(adoc);
+    const tree = await parse(adoc);
     const siblings = at(tree.sections, 0, "document title section").sections;
     const b = at(siblings, 0, "section B");
     const c = at(siblings, 1, "section C");
@@ -457,9 +457,9 @@ describe("positions", () => {
     );
   });
 
-  it("ends the final section at the end of the document", () => {
+  it("ends the final section at the end of the document", async () => {
     const adoc = "= A\n\n== B\n\npara\n";
-    const tree = parse(adoc);
+    const tree = await parse(adoc);
     expect(section(tree.sections, "B").position.end.offset).toBe(adoc.length);
     expect(
       at(tree.sections, 0, "document title section").position.end.offset,
@@ -468,9 +468,9 @@ describe("positions", () => {
 
   // The pre-rewrite parser recovered offsets with `content.indexOf("== Setup")`,
   // which returns the first occurrence whichever section is being placed.
-  it("places repeated headings independently", () => {
+  it("places repeated headings independently", async () => {
     const adoc = "= A\n\n== Setup\n\none\n\n== Setup\n\ntwo\n";
-    const tree = parse(adoc);
+    const tree = await parse(adoc);
     const root = at(tree.sections, 0, "document title section");
     const first = at(root.sections, 0, "first Setup section");
     const second = at(root.sections, 1, "second Setup section");
@@ -490,9 +490,9 @@ describe("positions", () => {
 
   // ...and a heading carrying an id line is not written the way the
   // reconstructed marker assumed, so it never matched at all.
-  it("places a heading that carries a block attribute line", () => {
+  it("places a heading that carries a block attribute line", async () => {
     const adoc = "= A\n\n[#setup]\n== Setup\n\none\n";
-    const tree = parse(adoc);
+    const tree = await parse(adoc);
     const root = at(tree.sections, 0, "document title section");
     const setup = at(root.sections, 0, "Setup section");
     const heading = defined(setup.titlePosition, "heading position");
@@ -500,9 +500,9 @@ describe("positions", () => {
     expect(heading.start.offset).toBe(adoc.indexOf("== Setup"));
   });
 
-  it("gives content nodes spans that tile the section in document order", () => {
+  it("gives content nodes spans that tile the section in document order", async () => {
     const adoc = "= A\n\n== B\n\none\n\ntwo\n\n== C\n";
-    const tree = parse(adoc);
+    const tree = await parse(adoc);
     const b = section(tree.sections, "B");
     const one = at(b.children, 0, "first paragraph in B");
     const two = at(b.children, 1, "second paragraph in B");
@@ -516,8 +516,8 @@ describe("positions", () => {
 describe("document metadata", () => {
   // `extractFrontmatter` only ever reads a fenced block, so a parser that
   // called it alone would leave every real AsciiDoc page unrouted.
-  it("reads the native header, so a page can declare its doctype", () => {
-    const tree = parse("= Rotate a key\n:type: how-to\n:draft: true\n\n== Overview\n");
+  it("reads the native header, so a page can declare its doctype", async () => {
+    const tree = await parse("= Rotate a key\n:type: how-to\n:draft: true\n\n== Overview\n");
     expect(tree.frontmatter).toMatchObject({
       type: "how-to",
       draft: true,
@@ -529,14 +529,14 @@ describe("document metadata", () => {
     });
   });
 
-  it("keeps header attribute values typed rather than stringly", () => {
-    const tree = parse("= T\n:version: 2\n:draft: false\n\n== Overview\n");
+  it("keeps header attribute values typed rather than stringly", async () => {
+    const tree = await parse("= T\n:version: 2\n:draft: false\n\n== Overview\n");
     expect(tree.frontmatter).toMatchObject({ version: 2, draft: false });
   });
 
-  it("reads a fenced block, and positions the metadata on it", () => {
+  it("reads a fenced block, and positions the metadata on it", async () => {
     const adoc = "---\ntype: how-to\ntags:\n  - a\n  - b\n---\n\n= T\n\n== Overview\n";
-    const tree = parse(adoc);
+    const tree = await parse(adoc);
     expect(tree.frontmatter).toMatchObject({ type: "how-to", tags: ["a", "b"] });
     expect(
       Array.isArray(defined(tree.frontmatter, "frontmatter")["tags"]),
@@ -547,9 +547,9 @@ describe("document metadata", () => {
   // A `---` fence is a thematic break in AsciiDoc. Without `skip-front-matter`
   // the metadata would parse as body content - and the line numbers of
   // everything after it still have to index the original file.
-  it("keeps the fence out of the body without shifting line numbers", () => {
+  it("keeps the fence out of the body without shifting line numbers", async () => {
     const adoc = "---\ntype: how-to\n---\n\n= T\n\n== Overview\n\npara\n";
-    const tree = parse(adoc);
+    const tree = await parse(adoc);
     expect(tree.sections.map((s) => s.title)).toEqual(["T"]);
     const root = at(tree.sections, 0, "document title section");
     const overview = section(tree.sections, "Overview");
@@ -566,43 +566,43 @@ describe("document metadata", () => {
     ).toBe(9);
   });
 
-  it("reports no metadata when the file carries none", () => {
-    const tree = parse("== Overview\n\nprose\n");
+  it("reports no metadata when the file carries none", async () => {
+    const tree = await parse("== Overview\n\nprose\n");
     expect(tree.frontmatter).toBeNull();
     expect(tree.frontmatterPosition).toBeNull();
   });
 });
 
 describe("a metadata title standing in for a missing document title", () => {
-  it("becomes the top-level section", () => {
-    const tree = parse(":title: Rotate an API key\n:type: how-to\n\n== Overview\n\nWhy.\n");
+  it("becomes the top-level section", async () => {
+    const tree = await parse(":title: Rotate an API key\n:type: how-to\n\n== Overview\n\nWhy.\n");
     const root = at(tree.sections, 0, "document title section");
     expect(root.level).toBe(1);
     expect(root.title).toBe("Rotate an API key");
     expect(root.sections.map((s) => s.title)).toEqual(["Overview"]);
   });
 
-  it("is anchored on the header, where the title actually is", () => {
-    const tree = parse(":title: A\n\n== Overview\n");
+  it("is anchored on the header, where the title actually is", async () => {
+    const tree = await parse(":title: A\n\n== Overview\n");
     const root = at(tree.sections, 0, "document title section");
     expect(root.titlePosition?.start.line).toBe(1);
     expect(root.titlePosition?.start.offset).toBe(0);
   });
 
-  it("does not displace a real document title", () => {
-    const tree = parse("= From the body\n:title: From metadata\n\n== Overview\n");
+  it("does not displace a real document title", async () => {
+    const tree = await parse("= From the body\n:title: From metadata\n\n== Overview\n");
     expect(tree.sections.map((s) => s.title)).toEqual(["From the body"]);
   });
 
-  it("is not synthesized without a title", () => {
-    const tree = parse(":type: how-to\n\n== Overview\n");
+  it("is not synthesized without a title", async () => {
+    const tree = await parse(":type: how-to\n\n== Overview\n");
     const root = at(tree.sections, 0, "top-level section");
     expect(root.title).toBe("Overview");
     expect(root.level).toBe(2);
   });
 
-  it("takes the content before the first heading with it", () => {
-    const tree = parse(":title: A\n\nLead prose.\n\n== Overview\n");
+  it("takes the content before the first heading with it", async () => {
+    const tree = await parse(":title: A\n\nLead prose.\n\n== Overview\n");
     const root = at(tree.sections, 0, "document title section");
     expect(root.children.map((n) => n.kind)).toEqual(["paragraph"]);
     expect(root.sections.map((s) => s.title)).toEqual(["Overview"]);
@@ -612,13 +612,28 @@ describe("a metadata title standing in for a missing document title", () => {
 // Asciidoctor recovers from every malformed *document* it was given here - an
 // unterminated block warns and carries on - so the guard is what turns a
 // refusal by the loader itself into a named operational error rather than a
-// stack trace out of Opal.
-it("reports input Asciidoctor cannot load as an operational error naming the file", () => {
+// stack trace out of Asciidoctor.
+it("reports input Asciidoctor cannot load as an operational error naming the file", async () => {
   const notAString = 42 as unknown as string;
-  expect(() => asciidocParser.parse(notAString, "broken.adoc")).toThrow(LintError);
-  expect(() => asciidocParser.parse(notAString, "broken.adoc")).toThrow(
+  await expect(asciidocParser.parse(notAString, "broken.adoc")).rejects.toThrow(LintError);
+  await expect(asciidocParser.parse(notAString, "broken.adoc")).rejects.toThrow(
     /broken\.adoc: could not parse as asciidoc/,
   );
+});
+
+// Asciidoctor loads asynchronously, so two parses can be in flight at once, as
+// they are when `lint` reads a directory. Each must keep its own links.
+it("keeps each page's links its own when two parses run at once", async () => {
+  const pages = Array.from({ length: 4 }, (_, n) =>
+    [`= Page ${String(n)}`, "", `See link:page-${String(n)}.adoc[page ${String(n)}].`, ""].join("\n"),
+  );
+  const trees = await Promise.all(pages.map((page) => parse(page)));
+  expect(trees.map((tree) => tree.links.map((link) => link.target))).toEqual([
+    ["page-0.adoc"],
+    ["page-1.adoc"],
+    ["page-2.adoc"],
+    ["page-3.adoc"],
+  ]);
 });
 
 /**
@@ -630,7 +645,7 @@ it("reports input Asciidoctor cannot load as an operational error naming the fil
 describe("the AsciiDoc format fixtures, against tgdp:how-to:1.6", () => {
   it("routes how-to.adoc on the doctype in its header", async () => {
     const path = join(fixtures, "how-to.adoc");
-    const tree = asciidocParser.parse(await readFile(path, "utf8"), path);
+    const tree = await asciidocParser.parse(await readFile(path, "utf8"), path);
     expect(tree.frontmatter?.["type"]).toBe("how-to");
   });
 
@@ -671,14 +686,14 @@ describe("asciidoc parser: open blocks", () => {
     "",
   ].join("\n");
 
-  const steps = () => {
-    const tree = asciidocParser.parse(STEP, "t.adoc");
+  const steps = async () => {
+    const tree = await asciidocParser.parse(STEP, "t.adoc");
     const root = at(tree.sections, 0, "document title section");
     return at(root.sections, 0, "Steps section");
   };
 
-  it("shows a list item the blocks attached to it", () => {
-    const list = steps().children.find((c) => c.kind === "list");
+  it("shows a list item the blocks attached to it", async () => {
+    const list = (await steps()).children.find((c) => c.kind === "list");
     expect(list).toBeDefined();
     const items = (list as { items: { children: { kind: string }[] }[] }).items;
     expect(at(items, 0, "step item").children.map((c) => c.kind)).toEqual([
@@ -691,8 +706,8 @@ describe("asciidoc parser: open blocks", () => {
   // A `--` block turned into a real construct arrives with that construct's own
   // context - an admonition here - rather than staying `open`. Only the bare
   // attach-blocks form still reports `open` and is recursed through.
-  it("maps an admonition built from a -- block like any other admonition", () => {
-    const children = steps().children;
+  it("maps an admonition built from a -- block like any other admonition", async () => {
+    const children = (await steps()).children;
     expect(children.map((c) => c.kind)).toEqual(["list", "admonition"]);
     const admonition = at(children, 1, "admonition") as AdmonitionNode;
     expect(admonition.variant).toBe("note");

@@ -354,9 +354,6 @@ export function settleFindings(
     // A moved finding loses its guidance: the rule names the property inside
     // the encrypted value that failed, which says more than the page does.
     const { subject, file: _file, line: _line, col: _col, guidance, ...rest } = e;
-    void _file;
-    void _line;
-    void _col;
     out.push({
       ...rest,
       instancePath: inside,

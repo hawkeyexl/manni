@@ -478,9 +478,9 @@ docs/src/content/docs/meta/set-up/external-metadata.mdx:
         integrity: sha256-b703fb189e7b60d9d5e33c0c7a1508869101ab61fb8f444b79b2d85f005a5332
       source:
         file: src/meta/core/validator.ts
-        lines: 1093-1101
+        lines: 1087-1095
         integrity: sha256-5587f39084157694d729b2385ff6a7f3539c881f61e06a2e2053c1d1132d8918
-        commit-sha: cb74827009894c38f8646504ae9eb4a2745761a9
+        commit-sha: 13e1b66ba66ec8dcaad71604abc443248a7e1b5a
     - id: get-prints-manifest-supplied-value
       claim:
         integrity: sha256-14ad244fc010736bbb473235d7746a514acd806569f379a80ab6a90e679777d4

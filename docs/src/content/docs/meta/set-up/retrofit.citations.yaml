@@ -264,9 +264,9 @@ docs/src/content/docs/meta/set-up/retrofit.mdx:
         integrity: sha256-da59c96ff70a2697a0fc59ddb956d56bfb63ce8c342ba66732ba15070e980073
       source:
         file: src/meta/core/validator.ts
-        lines: 956-967
+        lines: 950-961
         integrity: sha256-9d3a4ada9bb23715cd386f470c57c2a7b2105a168eaf68bfb4cad5d2a633c4f8
-        commit-sha: cb74827009894c38f8646504ae9eb4a2745761a9
+        commit-sha: 13e1b66ba66ec8dcaad71604abc443248a7e1b5a
     - id: infer-out-refuses-to-overwrite
       claim:
         integrity: sha256-3746e1c609dd5cd8b56b88ec468eed1740a4bcc53e67a6b39f9520954e144f3c

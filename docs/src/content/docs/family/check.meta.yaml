@@ -83,8 +83,8 @@ docs/src/content/docs/family/check.mdx:
       lines: 143-152
       integrity: sha256-4fa1fa960a09bc5381c84fe9281d17bcbf0662e3f0add9cf36370c73ee5dc338
     - generated-by: Claude Sonnet 5.5
-      lines: 162-166
-      integrity: sha256-b288f6c28e37c0ed4ecc7262caef8ef808313244632331bacd6b2777beec4861
+      lines: 163-166
+      integrity: sha256-0a4b586336e3db7c14d1420c7c107cde25b93ff5b876372341ea1f6fcceabbe9
     - generated-by: Claude Sonnet 5.5
       lines: 168-191
       integrity: sha256-66d55893f3aad86ed64bf9613829469f2ab5bb395bbd497f4db74e9e89dc6e0c
@@ -95,8 +95,8 @@ docs/src/content/docs/family/check.mdx:
       lines: 201
       integrity: sha256-f9d150a75b81bb4029648130a347f1d7372c4aff37c7a85a6171d88060cd4c30
     - generated-by: Claude Opus 5.5
-      lines: 218-221
-      integrity: sha256-9cf97cee3c1c510c4e53f47110f23f6020d315cdcc3fe482bc52b8b306c49f15
+      lines: 219-221
+      integrity: sha256-531e51133261540f89f643bcdcf81d4fbf7fe167d91f107789324f22f0a82114
     - generated-by: Claude Opus 5.5
       lines: 228-230
       integrity: sha256-9e253b0d05efe11f77926e6495f825bcadd89958bdc427f8c21238b30f975f93

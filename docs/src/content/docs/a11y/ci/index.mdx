@@ -13,7 +13,7 @@ next-steps: ["a11y-get-started", "a11y-fix", "a11y-reference-cli"]
 related-pages: ["meta-ci"]
 sample-questions: ["How do I check the deployed site for accessibility on a schedule?", "How do I gate a pull request on accessibility before it deploys?", "What exit codes does manni a11y check return?"]
 graph: { label: "Gate accessibility in CI", type: task }
-last-updated: 2026-10-21
+last-updated: 2026-10-23
 tags:
   - github-actions
   - ci-cd
@@ -62,7 +62,7 @@ jobs:
   a11y:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v7
         with:
           node-version: 24
       - run: npx @hawkeyexl/manni a11y check https://docs.example.com/ -f github --progress
@@ -90,7 +90,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v7
         with:
           node-version: 24
           cache: npm

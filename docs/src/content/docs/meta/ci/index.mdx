@@ -27,7 +27,7 @@ sample-questions:
 graph:
   label: Add manni meta to CI (GitHub Actions)
   type: task
-last-updated: 2026-10-21
+last-updated: 2026-10-23
 tags:
   - github-actions
   - ci-cd
@@ -141,7 +141,7 @@ from [`examples/manni.yml`](https://github.com/hawkeyexl/manni/blob/main/example
        runs-on: ubuntu-latest
        steps:
          - uses: actions/checkout@v7
-         - uses: actions/setup-node@v6
+         - uses: actions/setup-node@v7
            with:
              node-version: 24
 
@@ -219,7 +219,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v7
         with:
           node-version: 24
       - name: Validate frontmatter
@@ -235,7 +235,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v7
         with:
           node-version: 24
 

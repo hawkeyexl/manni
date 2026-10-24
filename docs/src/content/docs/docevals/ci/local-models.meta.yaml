@@ -19,4 +19,4 @@ docs/src/content/docs/docevals/ci/local-models.mdx:
   provenance:
     - generated-by: Claude Opus 5.5
       lines: 2-124
-      integrity: sha256-405a0be2b602c5ec5ce7d92661b08232ebe8007a723d44e0042d7b31d8da4ae2
+      integrity: sha256-45d27da46e7a8bb051af19b45072a5a98ef85690402acc4285f4afda1daa7657
