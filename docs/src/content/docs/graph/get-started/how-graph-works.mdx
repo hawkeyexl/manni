@@ -20,7 +20,7 @@ concepts:
   - section
   - harvest rule
   - near miss
-last-updated: 2026-10-21
+last-updated: 2026-10-23
 ---
 
 You have built a graph and asked it a question. This page is the model behind
@@ -83,6 +83,7 @@ files it was given.
 | Concept scheme | The set the concepts belong to. |
 | Product variant | Named by `applies-to`. |
 | Agent | A person, an organization, or a software agent, from frontmatter or git. |
+| Audience, persona, journey | One per [strategy record](/manni/strategy/), a page declaring `type: audience`, `type: persona` or `type: journey`. |
 | Activity and attribution | The PROV record of what produced the graph and who wrote what. |
 
 Every node gets a **deterministic IRI**, derived from its path or its slug.
@@ -172,6 +173,46 @@ whose `graph:` block names no `label` has its term as its primary topic.
 
 [From tags to a knowledge graph](/manni/family/concept-lifecycle/) builds one
 scheme step by step, from freeform tags to term pages and a checked graph.
+
+## The content strategy
+
+A strategy record is a page that declares `type: audience`, `type: persona` or
+`type: journey`. Each one in the build mints a node at
+`{baseIri}strategy/{type}/{id}`, with the id the record declares, or its file
+name. The node's `dcterms:title` is the record's title. The record's own
+document points at it through `foaf:primaryTopic`, unless its `graph:` block
+names a `label`.
+
+| Record | Class |
+|---|---|
+| `type: audience` | `schema:Audience` |
+| `type: persona` | `schema:PeopleAudience` |
+| `type: journey` | `graph:Journey` |
+
+The fields that name records become edges, and every edge points away from
+pages:
+
+| Field | Triple |
+|---|---|
+| A persona's `audience` | `<persona> dcterms:isPartOf <audience>` |
+| A journey's `personas` | `<journey> schema:audience <persona>` |
+| A page's `audiences` and `personas` | `<page> schema:audience <audience or persona>` |
+| A page's `journeys` | `<page> dcterms:isPartOf <journey>` |
+
+```turtle
+<https://hawkeyexl.github.io/manni/id/strategy/persona/devin> a schema:PeopleAudience ;
+  dcterms:isPartOf <https://hawkeyexl.github.io/manni/id/strategy/audience/ci-engineers> ;
+  dcterms:title "Devin, Platform / CI Engineer" .
+```
+
+An edge needs a record of that type and id in the build, and ids compare
+ignoring case. An id no record declares derives nothing.
+[`manni strategy check`](/manni/strategy/) reports it as `undefined-reference`.
+The fields are read at the page level only.
+
+Records are author-facing content, so a `--no-authoring` build leaves them
+out. [A graph for readers](/manni/graph/publish/#a-graph-for-readers) says
+what else it leaves out.
 
 ## The `graph:` block
 

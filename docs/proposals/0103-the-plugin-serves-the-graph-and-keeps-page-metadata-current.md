@@ -1,6 +1,6 @@
 # 0103: The plugin serves the graph and keeps page metadata current
 
-- **Status:** Implemented (#235)
+- **Status:** Implemented (#235); superseded in part by [0110](0110-author-facing-content-in-the-graph.md)
 - **Serves:**
   - Maya · M24, "Let an agent keep the docs green while it writes them". The
     agent sees every field a page stores, wherever it is stored.

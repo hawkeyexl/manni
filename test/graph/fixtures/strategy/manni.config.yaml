@@ -1,0 +1,16 @@
+# Strategy typing (proposal 0110). Records sit in their own collection, as
+# they do in this repository. A bare build reads both collections, so the
+# records are in it and get typed. `--collection pages` builds without them.
+collections:
+  - name: pages
+    paths:
+      - "docs/**/*.md"
+  - name: strategy
+    paths:
+      - "strategy/**/*.md"
+
+graph:
+  baseIri: https://example.com/graph/
+  out: graph.ttl
+  build:
+    derive: [frontmatter, sections, links]

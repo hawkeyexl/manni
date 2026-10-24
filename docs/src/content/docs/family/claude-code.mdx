@@ -169,18 +169,25 @@ has changed. If one has, it publishes again and then answers. The agent's own
 edits reach `lookup` without a restart.
 
 ```text
-manni: publishing the graph before serving it: docs/public/graph/chunks.json does not exist.
-manni: published the graph in 11.3s.
-manni: serving lookup, retrieve, traverse and impact over stdio from docs/public/graph/chunks.json.
+manni: publishing the graph before serving it: <plugin data>/graph/3f9c0a1e7b2d4c58/chunks.json does not exist.
+manni: published the graph in 12.1s.
+manni: serving lookup, retrieve, traverse and impact over stdio from <plugin data>/graph/3f9c0a1e7b2d4c58/chunks.json.
 ```
 
 Those lines go to Claude Code's debug log, not to the agent.
 
-Where the graph goes depends on the config. With a `graph:` section, it goes
-where `graph.out` says, as `manni graph publish` writes it. Without one, it goes
-to the plugin's data directory, outside your working tree. The build's parse
-cache under `.manni/graph/analyze-cache/` ignores itself, so `git status` shows
-nothing new either way.
+The graph goes to the plugin's data directory, one folder per project,
+outside your working tree. It never goes beside `graph.out`, so a session
+never writes into the folder a site deploys. The server runs
+`manni graph serve --publish -i <plugin data>/graph/<hash>`, and the build's
+parse cache under `.manni/graph/analyze-cache/` ignores itself. So
+`git status` shows nothing new.
+
+The served graph carries author-facing content, as a default build does. That
+covers the [strategy records](/manni/strategy/#the-strategy-in-the-graph) and
+each passage's pins and eval verdicts. A local `manni site preview` serves the
+graph beside `graph.out`, so run `manni graph publish --collection site` before
+it.
 
 A repository with no `collections:` has nothing to build. The server then
 offers no tools and adds nothing to the agent's context.

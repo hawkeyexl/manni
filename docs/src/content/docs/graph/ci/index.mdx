@@ -76,7 +76,7 @@ Run both. Neither subsumes the other.
 
 ```console
 $ manni graph check -c test/graph/fixtures/dd/violations.config.yaml -f github
-::error file=violations/alpha.md::"Alpha" and "Beta" form a broader cycle, so each is its own ancestor. Remove one `broader` or `narrower` value on the cycle. (https://example.com/dd/concept/alpha)%0Amanni:graph-shapes:1.2.0 Concept-broader: A more general concept. A concept is never its own ancestor.%0AGuide: https://hawkeyexl.github.io/manni/graph/fix/
+::error file=violations/alpha.md::"Alpha" and "Beta" form a broader cycle, so each is its own ancestor. Remove one `broader` or `narrower` value on the cycle. (https://example.com/dd/concept/alpha)%0Amanni:graph-shapes:1.3.0 Concept-broader: A more general concept. A concept is never its own ancestor.%0AGuide: https://hawkeyexl.github.io/manni/graph/fix/
 ```
 
 The message ends with the focus node in parentheses. After each `%0A`, a line

@@ -142,6 +142,22 @@ $ manni graph build
 Wrote graph.ttl (6 docs, 110 triples, 3 concepts (2 from the termbase))
 ```
 
+When the build holds [strategy records](/manni/strategy/), the summary counts
+them last. One record reads `1 strategy record`, and a build with none leaves
+the clause out:
+
+```console
+$ manni graph build -o .manni/graph/internal/graph.ttl
+Wrote .manni/graph/internal/graph.ttl (344 docs, 23385 triples, 560 concepts (50 from the termbase), 82 strategy records)
+```
+
+A build carries author-facing content by default. That is the strategy
+records, typed, and every value a page's schemas mark
+`x-manni-location: external`, at any depth. `--no-authoring` leaves both out
+for one run, and [`graph.authoring`](/manni/graph/reference/configuration/)
+sets the default. [Publish the graph](/manni/graph/publish/#a-graph-for-readers)
+says what each derive source loses.
+
 Warnings go to stderr, so stdout stays the one-line summary. A degraded build
 is still a successful one. A repository git cannot read warns once and builds
 the rest. A near-miss frontmatter key warns and derives nothing. Neither
@@ -172,6 +188,7 @@ The graph check in `manni check` reads the same cache.
 | `--ext` | `<list>` | `.md,.markdown,.mdx,.html,.htm,.adoc,.asciidoc,.rst,.dita,.ditamap` | Extensions for directory walks and globs, comma-separated. |
 | `--allow-empty` | n/a | off | Zero matched files writes an empty graph and exits 0. |
 | `-o, --out` | `<path>` | config `out`, else `graph/graph.ttl` | Where to write the Turtle. The directory is created if it does not exist. |
+| `--no-authoring` | n/a | config `authoring`, else on | Leave out author-facing content: strategy records, and every value a page's schemas mark `x-manni-location: external`. |
 
 ## `graph check`
 
@@ -188,15 +205,15 @@ manni graph check [options]
 $ manni graph check -c test/graph/fixtures/dd/violations.config.yaml
 error: violations/alpha.md, violations/beta.md, violations/gamma.md: "Alpha" and "Beta" form a broader cycle, so each is its own ancestor. Remove one `broader` or `narrower` value on the cycle.
   at https://example.com/dd/concept/alpha skos:broader
-  manni:graph-shapes:1.2.0 Concept-broader: A more general concept. A concept is never its own ancestor.
+  manni:graph-shapes:1.3.0 Concept-broader: A more general concept. A concept is never its own ancestor.
   Guide: https://hawkeyexl.github.io/manni/graph/fix/
 error: violations/alpha.md, violations/beta.md, violations/gamma.md: A concept is related to a concept that is also broader than it. Remove one link: from `related-concepts` or `related-terms`, or from `broader` or `narrower`.
   at https://example.com/dd/concept/alpha skos:related
-  manni:graph-shapes:1.2.0 Concept-related: A concept on the same level as this one. It is never also an ancestor or a descendant.
+  manni:graph-shapes:1.3.0 Concept-related: A concept on the same level as this one. It is never also an ancestor or a descendant.
   Guide: https://hawkeyexl.github.io/manni/graph/fix/
 error: violations/alpha.md: The page lists a variant in both `applies-to` and `not-applicable-to`. Keep it only in the one that is true.
   at https://example.com/dd/doc/violations/alpha.md graph:notApplicableToVariant
-  manni:graph-shapes:1.2.0 Document-notApplicableToVariant: The product variants the page does not apply to. A variant cannot be in both lists.
+  manni:graph-shapes:1.3.0 Document-notApplicableToVariant: The product variants the page does not apply to. A variant cannot be in both lists.
   Guide: https://hawkeyexl.github.io/manni/graph/fix/
 
 3 errors, 0 warnings, 0 notices
@@ -227,7 +244,7 @@ lines as an object, or `null` when no shape judged it.
   "path": "https://hawkeyexl.github.io/manni/graph/ns#notApplicableToVariant",
   "docs": ["violations/alpha.md"],
   "guidance": {
-    "id": "manni:graph-shapes:1.2.0",
+    "id": "manni:graph-shapes:1.3.0",
     "rule": "Document-notApplicableToVariant",
     "description": "The product variants the page does not apply to. A variant cannot be in both lists.",
     "guide": "https://hawkeyexl.github.io/manni/graph/fix/"
@@ -511,17 +528,20 @@ manni graph shapes [options]
 
 ```console
 $ manni graph shapes
-manni:graph-shapes:1.2.0  (bundled)
+manni:graph-shapes:1.3.0  (bundled)
   Guide: https://hawkeyexl.github.io/manni/graph/fix/
   ActivityShape          prov:Activity                      A generation, fill or build run that manni records. manni writes it.
   AssociationShape       prov:Association                   The role an agent played in an activity. manni writes it.
   AttributionShape       prov:Attribution                   The role an author played on a page. manni writes it.
+  AudienceShape          schema:Audience                    An audience from the content strategy, one per audience record.
   BlockShape             graph:Block                        A paragraph, list or element that an inline meta statement describes.
   ConceptShape           skos:Concept                       A concept of the glossary, named by a term page, a graph label, a tag or a concepts entry.
   DocumentShape          graph:Document                     A page of the docset, as its frontmatter, links, headings and history describe it.
   FilledFieldEntryShape  objects of graph:filledFieldEntry  One field a graph fill run filled, with the model's confidence. manni writes it from meta-provenance.
+  JourneyShape           graph:Journey                      A journey from the content strategy, one per journey record.
   OrganizationShape      prov:Organization                  An organization credited on a page.
   PersonShape            prov:Person                        A person credited as an author of a page.
+  PersonaShape           schema:PeopleAudience              A persona from the content strategy, one per persona record.
   ProductVariantShape    iirds:ProductVariant               A product variant that pages name in applies-to or not-applicable-to.
   SchemeShape            skos:ConceptScheme                 The glossary that holds every concept of the docset. manni writes it.
   SectionShape           graph:Section                      A heading of a page, typed through graph.sections or a meta statement on the heading.
@@ -571,7 +591,7 @@ manni graph shapes show <shape> [options]
 
 ```console
 $ manni graph shapes show ConceptShape
-ConceptShape  manni:graph-shapes:1.2.0  skos:Concept, closed
+ConceptShape  manni:graph-shapes:1.3.0  skos:Concept, closed
   A concept of the glossary, named by a term page, a graph label, a tag or a concepts entry.
   Guide: https://hawkeyexl.github.io/manni/graph/fix/
 
@@ -623,7 +643,7 @@ and `graph.*` keys nest under `graph:`.
 ```console
 $ manni graph shapes show ConceptShape -f markdown
 ---
-# ConceptShape, manni:graph-shapes:1.2.0
+# ConceptShape, manni:graph-shapes:1.3.0
 # Guide: https://hawkeyexl.github.io/manni/graph/fix/
 graph:
   # Other names readers use for the concept. Search matches them too.
@@ -1269,6 +1289,7 @@ start. Publish's own report never reaches stdout. Its warnings go to stderr.
 | `-i, --index` | `<dir>` | beside the graph | The directory holding `chunks.json`, its rows and the search index. |
 | `--withhold` | `<list>` | none | Also leave out passages that are `drifted` or `failing` on every call, comma-separated and given once. No tool argument can loosen it. |
 | `--publish` | n/a | off | Publish the graph when its artifact is missing or older than the checkout, and again before any call made after the checkout changes. It connects at once, and calls wait for a publish in progress. |
+| `--no-authoring` | n/a | config `authoring`, else on | Publish without author-facing content, as `graph publish --no-authoring` does. Valid only with `--publish`. |
 
 With `--publish`, `-i` is the directory publish writes to, as its `-o`, and
 the one the server reads from. The server reads the graph from there too,
@@ -1353,6 +1374,7 @@ Each is **exit 2**, on stderr, before anything is served.
 | An artifact from another graph, without `--publish` | `manni: graph/chunks.json was built from another graph; run manni graph publish.` |
 | A bad `--withhold` value | `manni: --withhold takes drifted or failing, and got stale.` |
 | `--publish` with `-g` | `manni: --publish writes graph.ttl into the index directory, so it cannot be combined with --graph. Use --index to choose the directory.` |
+| `--no-authoring` without `--publish` | `manni: --no-authoring decides what --publish builds, so it needs --publish.` |
 
 ## `graph publish`
 
@@ -1408,6 +1430,25 @@ With `-f json` it prints the steps:
 
 `files` names each file relative to `out`.
 
+When the build holds strategy records, the build line counts them, as
+`build     graph.ttl: 344 pages, 23385 triples, 82 strategy records`. The
+build step's `detail` carries the same clause.
+
+`--no-authoring` publishes a graph without author-facing content, and every
+step reads that build. A `--no-authoring` run refuses `--evals` with
+**exit 2**, because eval verdicts are author-facing:
+
+```text
+manni: --evals attaches eval verdicts, which are author-facing, and this run leaves author-facing content out.
+```
+
+A configured `graph.export.chunks.evals` warns once instead, and the run
+exits 0:
+
+```text
+manni: graph.export.chunks.evals is set, but eval verdicts are author-facing, so this run leaves them out.
+```
+
 ### Options
 
 | Option | Argument | Default | Description |
@@ -1417,6 +1458,7 @@ With `-f json` it prints the steps:
 | `-o, --out` | `<dir>` | the directory of config `out` | The directory for every artifact. |
 | `--evals` | `<path>` | config `export.chunks.evals` | A docevals JSON report for the chunks step. |
 | `--collection` | `<name>` | every collection | A configured collection the build step reads. Repeatable, one name per occurrence. |
+| `--no-authoring` | n/a | config `authoring`, else on | Leave out author-facing content: strategy records, and every value a page's schemas mark `x-manni-location: external`. |
 | `-f, --format` | `<pretty\|json>` | `pretty` | Output format. |
 
 ## `graph embed`
@@ -1484,6 +1526,14 @@ An unknown target is **exit 2**, with the allowed set named.
 | `-g, --graph` | `<path>` | config `out` | The built Turtle file to read. |
 | `-o, --out` | `<path>` | the graph path with the target's extension; `questions.jsonl` beside the graph for `questions`; `llms.txt` beside the graph for `llms`; the graph's directory for `search` and `chunks` | Where to write. For `search` and `chunks` it names a directory, because each writes more than one file. |
 | `--evals` | `<path>` | config `export.chunks.evals` | A docevals JSON report, as `manni docevals run -f json` writes it. It fills each chunk record's `evals`. Any target but `chunks` refuses it with **exit 2**. |
+| `--no-authoring` | n/a | config `authoring`, else on | Leave author-facing content out of what `chunks` and `llms` read from the pages. |
+
+`chunks` and `llms` read the pages as well as the graph, so `--no-authoring`
+shapes them. They skip strategy records and drop every value marked
+`x-manni-location: external`. The chunks carry no pins and no eval verdicts.
+`jsonld`, `iirds`, `search` and `questions` reserialize the graph as it was
+built. A reader-only graph of those comes from a `--no-authoring` build or
+publish.
 
 ### The question set
 
@@ -1664,7 +1714,7 @@ current eval verdict that failed or errored. A stale verdict never counts.
 
 #### Messages
 
-Each goes to stderr, prefixed `manni: `. Only the three marked **exit 2** stop
+Each goes to stderr, prefixed `manni: `. Only the four marked **exit 2** stop
 the export. The rest leave the exit code at 0.
 
 | Message | Kind |
@@ -1680,6 +1730,8 @@ the export. The rest leave the exit code at 0.
 | `git cannot read this directory (<git's reason>), so records carry no commit and no derived dates.` | notice, said once |
 | `2 pages differ from 26dad159, so their records describe uncommitted text.` | warning |
 | `--evals applies only to graph export chunks.` | **exit 2** |
+| `--evals attaches eval verdicts, which are author-facing, and this run leaves author-facing content out.` | **exit 2** |
+| `graph.export.chunks.evals is set, but eval verdicts are author-facing, so this run leaves them out.` | warning, said once |
 
 Outside git the export still succeeds. Its records carry pins and evals, with
 no commit and no derived dates.
@@ -1799,7 +1851,9 @@ URL style of the framework `manni site` detects.
 
 {/* step {"description":"--collection cannot be combined with positional paths.","runShell":{"command":"manni graph build -c test/graph/fixtures/dd/docs.config.yaml --collection dd test/graph/fixtures/dd/docs","exitCodes":[2],"stdio":"cannot be combined with paths"}} */}
 
-{/* step {"description":"shapes lists the node shapes check runs, by file.","runShell":{"command":"manni graph shapes -c test/graph/fixtures/dd/docs.config.yaml","exitCodes":[0],"stdio":"manni:graph-shapes:1.2.0  (bundled)"}} */}
+{/* step {"description":"--no-authoring on serve decides what --publish builds.","runShell":{"command":"manni graph serve -c test/graph/fixtures/dd/docs.config.yaml --no-authoring","exitCodes":[2],"stdio":"--no-authoring decides what --publish builds, so it needs --publish."}} */}
+
+{/* step {"description":"shapes lists the node shapes check runs, by file.","runShell":{"command":"manni graph shapes -c test/graph/fixtures/dd/docs.config.yaml","exitCodes":[0],"stdio":"manni:graph-shapes:1.3.0  (bundled)"}} */}
 
 {/* step {"description":"shapes show prints every property a shape checks.","runShell":{"command":"manni graph shapes show DocumentShape -c test/graph/fixtures/dd/docs.config.yaml","exitCodes":[0],"stdio":"Document-language"}} */}
 

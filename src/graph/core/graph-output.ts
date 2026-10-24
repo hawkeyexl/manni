@@ -109,6 +109,52 @@ export async function deliveredFields(
   return copy;
 }
 
+/** `--evals` in a run that leaves author-facing content out (proposal 0110): exit 2. */
+export const EVALS_ARE_AUTHOR_FACING =
+  "--evals attaches eval verdicts, which are author-facing, and this run leaves author-facing content out.";
+
+/** `graph.export.chunks.evals` in such a run: a warning, said once. */
+export const CONFIGURED_EVALS_LEFT_OUT =
+  "graph.export.chunks.evals is set, but eval verdicts are author-facing, so this run leaves them out.";
+
+/** `serve --no-authoring` without `--publish`: exit 2. */
+export const NO_AUTHORING_NEEDS_PUBLISH = "--no-authoring decides what --publish builds, so it needs --publish.";
+
+/**
+ * `docs` as a `--no-authoring` build reads them (proposal 0110, D2): every
+ * value its schemas mark `x-manni-location: external` or
+ * `x-manni-graph-output: false` removed, at any depth, from the front matter
+ * and from each inline statement. It is the rule chunk metadata already
+ * follows, `deliveredFields`, so the graph and the chunks leave out the same
+ * values. A document whose schemas mark nothing it holds is returned as it
+ * came in.
+ *
+ * Strategy records are not this function's business. The build drops them
+ * before analysis, so a link to one resolves as a link outside the build.
+ */
+export async function userFacing(
+  docs: readonly DocModel[],
+  sets: Pick<MetaPageView, "validator" | "refsFor">,
+): Promise<DocModel[]> {
+  return Promise.all(
+    docs.map(async (doc) => {
+      const refs = sets.refsFor(doc.path, doc.frontmatter);
+      const frontmatter = await deliveredFields(doc.frontmatter, refs, sets.validator);
+      const statements =
+        doc.statements &&
+        (await Promise.all(
+          doc.statements.map(async (s) => {
+            const data = await deliveredFields(s.data, refs, sets.validator);
+            return data === s.data ? s : { ...s, data };
+          }),
+        ));
+      const same =
+        frontmatter === doc.frontmatter && (statements ?? []).every((s, i) => s === doc.statements?.[i]);
+      return same ? doc : { ...doc, frontmatter, ...(statements ? { statements } : {}) };
+    }),
+  );
+}
+
 /** Segment by segment, numbers as numbers, a prefix first. */
 function comparePaths(a: readonly string[], b: readonly string[]): number {
   for (let i = 0; i < Math.min(a.length, b.length); i++) {

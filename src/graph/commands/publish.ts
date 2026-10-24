@@ -13,6 +13,7 @@
 import { basename, dirname, join, relative, resolve } from "node:path";
 import { errorMessage } from "../../shared/errors.js";
 import { loadRunConfig } from "../core/config.js";
+import { EVALS_ARE_AUTHOR_FACING } from "../core/graph-output.js";
 import { GraphError } from "../types.js";
 import { runBuild } from "./build.js";
 import { runEmbed } from "./embed.js";
@@ -29,6 +30,8 @@ export interface PublishOptions {
   evals?: string;
   /** `--collection`, repeatable: the collections the build reads (default: every one). */
   collection?: string[];
+  /** `--no-authoring` passes `false` (proposal 0110). Overrides `graph.authoring`. */
+  authoring?: boolean;
   cwd?: string;
   /** Each step's warnings and notices, as they are said. */
   say?: (kind: "warning" | "notice", message: string) => void;
@@ -66,6 +69,8 @@ export async function runPublish(opts: PublishOptions = {}): Promise<PublishRepo
     },
     cwd,
   );
+  const authoring = opts.authoring ?? config.authoring;
+  if (!authoring && opts.evals !== undefined) throw new GraphError(EVALS_ARE_AUTHOR_FACING);
   const configured = resolve(cwd, config.out);
   const outDir = opts.out === undefined ? dirname(configured) : resolve(cwd, opts.out);
   const graph = join(outDir, basename(configured));
@@ -92,15 +97,32 @@ export async function runPublish(opts: PublishOptions = {}): Promise<PublishRepo
   };
   const exported = (format: ExportFormat, detail: (r: ExportResult) => string, out?: string) =>
     run(`export:${format}`, async () => {
-      const r = await runExport({ ...source, graph, format, ...(out === undefined ? {} : { out }), ...(format === "chunks" && opts.evals !== undefined ? { evals: opts.evals } : {}) });
+      const r = await runExport({
+        ...source,
+        graph,
+        format,
+        ...(out === undefined ? {} : { out }),
+        ...(format === "chunks" && opts.evals !== undefined ? { evals: opts.evals } : {}),
+        ...(authoring ? {} : { authoring }),
+      });
       return { detail: detail(r), files: r.files, warnings: r.warnings, ...(r.notices === undefined ? {} : { notices: r.notices }) };
     });
   const names = (r: ExportResult): string => r.files.map(shown).join(", ");
 
   await run("build", async () => {
     // Only the build reads documents; every later step reads what it built.
-    const r = await runBuild({ ...source, ...(opts.collection === undefined ? {} : { collection: opts.collection }), out: graph });
-    return { detail: `${shown(r.outPath)}: ${plural(r.docs, "page")}, ${plural(r.quads, "triple")}`, files: [r.outPath], warnings: r.warnings };
+    const r = await runBuild({
+      ...source,
+      ...(opts.collection === undefined ? {} : { collection: opts.collection }),
+      out: graph,
+      ...(authoring ? {} : { authoring }),
+    });
+    const records = r.strategyRecords > 0 ? `, ${plural(r.strategyRecords, "strategy record")}` : "";
+    return {
+      detail: `${shown(r.outPath)}: ${plural(r.docs, "page")}, ${plural(r.quads, "triple")}${records}`,
+      files: [r.outPath],
+      warnings: r.warnings,
+    };
   });
   await exported("search", (r) => `${names(r)}: ${String(r.nodes)} ${r.nodes === 1 ? "entry" : "entries"}`, outDir);
   if (config.declared.embed) {

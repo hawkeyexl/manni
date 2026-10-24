@@ -96,8 +96,9 @@ lists each reason it publishes.
 The [manni plugin](/manni/family/claude-code/#the-docs-graph-served-to-the-agent)
 registers this server as `plugin:manni:graph` and runs it with `--publish`. A
 repository with `collections:` needs no `.mcp.json` entry and no publish step.
-Without a `graph:` section, the plugin publishes into its own data directory,
-outside your working tree.
+The plugin publishes into its own data directory, outside your working tree,
+and never beside `graph.out`. A local site preview serves the graph beside `graph.out`, so
+it needs `manni graph publish --collection site` first.
 
 ## Ask one question
 
