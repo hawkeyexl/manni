@@ -45,6 +45,8 @@ import { claimWords, sharesSentence, wordShare } from "../core/history.js";
 import { mintSource } from "../core/mint.js";
 import { ManifestSet } from "../core/manifest.js";
 import { readPage } from "../core/page.js";
+import { valueAt, valueText } from "../core/pointer.js";
+import { valuePin } from "../../shared/pin.js";
 import {
   lineSpec,
   parseLines,
@@ -93,6 +95,8 @@ import {
 
 type Plan =
   | { kind: "claim-moved"; result: CitationResult; lines: LineSpec; from: string; to: string }
+  /** A metadata value that sits at another pointer now: only `claim.pointer` moves (0108). */
+  | { kind: "claim-pointer-moved"; result: CitationResult; from: string; to: string }
   /**
    * The pinned lines sit elsewhere in the file now. The entry is re-minted
    * over them, so its `lines`, its `integrity` and its `commit-sha` are three
@@ -252,6 +256,7 @@ function unitNoun(kind: ClaimUnit["kind"]): string {
 function settles(plan: Plan): string {
   switch (plan.kind) {
     case "claim-moved":
+    case "claim-pointer-moved":
       return "claim-moved";
     case "source-moved":
       return "source-moved";
@@ -284,6 +289,8 @@ function apply(content: string, format: string, plan: Plan): string {
     case "claim-moved":
     case "claim-shifted":
       return spliceEntryField(content, format, index, ["claim", "lines"], plan.lines);
+    case "claim-pointer-moved":
+      return spliceEntryField(content, format, index, ["claim", "pointer"], plan.to);
     case "claim-reanchored":
       return spliceEntryField(content, format, index, ["claim", "integrity"], plan.pin);
     case "claim-words-held": {
@@ -369,6 +376,12 @@ function applyToEntry(entry: unknown, plan: Plan): boolean {
       claim.lines = plan.lines;
       return true;
     }
+    case "claim-pointer-moved": {
+      const claim = end("claim");
+      if (claim === undefined) return false;
+      claim.pointer = plan.to;
+      return true;
+    }
     case "claim-reanchored": {
       const claim = end("claim");
       if (claim === undefined) return false;
@@ -441,6 +454,16 @@ function rewriteOf(plan: Plan): UpdateRewrite {
         fromLines: plan.from,
         toLines: plan.to,
       };
+    case "claim-pointer-moved":
+      return {
+        ...base,
+        end: "claim",
+        reason: "moved",
+        status: "moved",
+        from: plan.from,
+        to: plan.to,
+        pointer: plan.from,
+      };
     case "marker-moved": {
       const from = String(plan.from);
       const to = String(plan.to);
@@ -501,6 +524,7 @@ function rewriteOf(plan: Plan): UpdateRewrite {
         at: plan.at,
         commitSha: plan.commitSha,
         ...(plan.wordShare === undefined ? {} : { wordShare: plan.wordShare }),
+        ...(plan.result.claim?.pointer === undefined ? {} : { pointer: plan.result.claim.pointer }),
       };
     case "claim-shifted":
       return {
@@ -552,6 +576,7 @@ function rewriteOf(plan: Plan): UpdateRewrite {
         at: plan.unit.lines.start,
         text: quoted(plan.unit.text),
       };
+      if (plan.result.claim?.pointer !== undefined) out.pointer = plan.result.claim.pointer;
       // A re-pin over a unit wider than the stored lines names both spans.
       const stored = plan.result.claim?.fileLines;
       const now = spellLines(plan.unit.lines);
@@ -644,7 +669,10 @@ function replacementAt(
   if (was === undefined || commit === undefined) return undefined;
   const before = claimWords(was, format);
   const now = claimWords(text, format);
-  if (!sharesSentence(before, now)) return { commit };
+  // A metadata value is most often one sentence, which any edit at all makes
+  // a sentence the baseline never held. So a pointer claim is judged by word
+  // overlap alone (0108).
+  if (claim.pointer === undefined && !sharesSentence(before, now)) return { commit };
   const share = wordShare(before, now);
   if (share < CLAIM_WORD_SHARE) return { commit, share };
   return undefined;
@@ -977,6 +1005,10 @@ export async function runUpdate(opts: UpdateOptions): Promise<UpdateRun> {
   ): Promise<Plan[]> => {
     const out: Plan[] = [];
     const claim = result.claim;
+    // A metadata value that moved keeps its pin; only its pointer moves (0108).
+    if (claim?.pointer !== undefined && claim.status === "moved" && claim.newPointer !== undefined) {
+      out.push({ kind: "claim-pointer-moved", result, from: claim.pointer, to: claim.newPointer });
+    }
     // A marker-anchored claim has no `lines:` to splice; its repair is a
     // re-pin over the span the marker anchors, planned by the caller.
     if (
@@ -1127,9 +1159,46 @@ export async function runUpdate(opts: UpdateOptions): Promise<UpdateRun> {
     }
     if (!accept) return out;
 
+    // A metadata value edited in place is re-pinned over the value now at its
+    // pointer, under the same replacement guard a body claim has (0108).
+    if (claim?.pointer !== undefined && claim.status === "changed" && entry !== undefined) {
+      const held = valueAt(page.metadata.data, claim.pointer);
+      if (held !== undefined) {
+        const text = [valueText(held.value)];
+        const pin = valuePin(held.value);
+        const at = Number(claim.fileLines ?? "1");
+        const replaced = replacementAt(claim, text, page.format);
+        if (replaced !== undefined && only === undefined) {
+          out.push({
+            kind: "claim-replaced",
+            result,
+            at,
+            commitSha: replaced.commit,
+            ...(replaced.share === undefined ? {} : { wordShare: replaced.share }),
+            pin: entry.citation.claim?.integrity ?? "",
+            would: pin,
+          });
+        } else {
+          const plan: Plan = {
+            kind: "claim-accepted",
+            result,
+            unit: { lines: { start: at, end: at }, kind: "paragraph", text },
+            pin,
+          };
+          if (replaced !== undefined) plan.replaced = true;
+          out.push(plan);
+        }
+      }
+    }
     // A marker-anchored claim is re-pinned against the page the move left,
     // so the caller plans that one.
-    if (claim !== null && claim.status === "changed" && entry !== undefined && result.anchor !== "marker") {
+    if (
+      claim !== null &&
+      claim.pointer === undefined &&
+      claim.status === "changed" &&
+      entry !== undefined &&
+      result.anchor !== "marker"
+    ) {
       // The paragraph, block or row now at the claim's first line. Anything
       // else is left for a fresh `cite add`, and says why.
       // The span the claim holds now, and the line it starts on. A table keeps

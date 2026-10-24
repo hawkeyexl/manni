@@ -1,0 +1,4 @@
+exit: 0
+--- stdout
+--- stderr
+manni: No git root found; resolving src: paths from <dir>

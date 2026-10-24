@@ -53,13 +53,13 @@ docs/src/content/docs/meta/reference/schemas/manni-citations.mdx:
       lines: 340
       integrity: sha256-0611e239ff7234d3920912370207ae38af1c6061818a2ba5c9d277f16f460cad
     - generated-by: Claude Opus 5.5
-      lines: 343-368
-      integrity: sha256-a15f70ebe562493045ff14316dab4ae43dc6ae51807f283a258fc64d33e7307b
+      lines: 343-421
+      integrity: sha256-7a90fc9de3065d024fa374f79b2e1dbdb5e08d3e6fd3ff0b766667f5c97b747a
     - generated-by: Claude Opus 5.5
-      lines: 378-379
+      lines: 431-432
       integrity: sha256-3845d238891e4028bb4b4c908b968bb82c473052c364ac9ee94f28fd2b6fccf7
     - generated-by: Claude Opus 5.5
-      lines: 382-384
+      lines: 435-437
       integrity: sha256-a521e513efbdd485f65953fb13523734d98447694defd26da8afbed7cde633eb
   owner:
     - "@hawkeyexl"

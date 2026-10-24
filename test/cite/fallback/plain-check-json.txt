@@ -1,0 +1,44 @@
+exit: 1
+--- stdout
+{
+  "summary": {
+    "files": 2,
+    "passed": 1,
+    "failed": 1,
+    "errors": 1
+  },
+  "pages": [
+    {
+      "file": "plain-pointer.md",
+      "format": "markdown",
+      "citations": [],
+      "findings": [
+        {
+          "rule": "entry-invalid",
+          "ruleId": "manni:cite/entry-invalid",
+          "severity": "error",
+          "message": "/claim must NOT have additional properties",
+          "line": 7,
+          "id": "timeout",
+          "src": "src/limits.ts",
+          "index": 0,
+          "guidance": {
+            "id": "manni:cite",
+            "rule": "entry-invalid",
+            "description": "An entry is malformed, or an id is repeated.",
+            "guide": "https://hawkeyexl.github.io/manni/cite/fix/#entry-invalid"
+          }
+        }
+      ],
+      "notices": []
+    },
+    {
+      "file": "plain.md",
+      "format": "markdown",
+      "citations": [],
+      "findings": [],
+      "notices": []
+    }
+  ]
+}
+--- stderr

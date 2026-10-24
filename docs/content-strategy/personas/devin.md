@@ -4,16 +4,15 @@ id: devin
 title: Devin, Platform / CI Engineer
 description: Devin maintains CI/CD infrastructure for dozens of repos on a mix of GitHub Actions, GitLab CI, Jenkins, and pre-commit.
 audience: ci-engineers
+goals:
+  - Drop in a metadata gate that is identical everywhere, cheap to run, and feeds results into existing tooling without custom glue per repo.
+pains:
+  - "Per-tool config sprawl: different CI recipe for every linter/checker."
+  - Needs stable, documented exit codes and machine-readable output (JSON, annotation format) so results flow into dashboards and PR bots without fragile parsing.
+  - Wants one canonical schema shared across repos rather than copies that drift.
 ---
 
 Devin maintains CI/CD infrastructure for dozens of repos on a mix of GitHub Actions, GitLab CI, Jenkins, and pre-commit. He scripts everything and has high technical proficiency.
-
-**Goal:** drop in a metadata gate that is identical everywhere, cheap to run, and feeds results into existing tooling without custom glue per repo.
-
-**Pains:**
-- Per-tool config sprawl: different CI recipe for every linter/checker.
-- Needs stable, documented exit codes and machine-readable output (JSON, annotation format) so results flow into dashboards and PR bots without fragile parsing.
-- Wants one canonical schema shared across repos rather than copies that drift.
 
 **How he uses manni meta.** He installs via a CI step, sets flags, and plugs the exit code into a pipeline gate. He can also pass JSON output to a dashboard. He returns when a new CI platform is added or the output format changes.
 

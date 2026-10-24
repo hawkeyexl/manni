@@ -19,7 +19,7 @@ function step(fields: Partial<StrategyStep>, n = 1): StrategyStep {
 }
 
 function journey(steps: StrategyStep[], extra: Partial<StrategyRecord> = {}): StrategyRecord {
-  return { id: "m1", type: "journey", file: "strategy/journeys/m1.md", line: 1, parents: [], steps, ...extra };
+  return { id: "m1", type: "journey", file: "strategy/journeys/m1.md", line: 1, parents: [], data: {}, steps, ...extra };
 }
 
 /** `docs/guide.md` names m1; `docs/reference.md` names nothing. */

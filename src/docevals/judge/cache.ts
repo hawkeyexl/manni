@@ -103,6 +103,12 @@ export function cacheKey(
   temperature: number,
   body: JudgeCacheBody,
   ev: ResolvedEval,
+  /**
+   * The readers section of an eval under proposal 0111's rule. Absent for
+   * every other eval, whose key is the seven parts it always was. Parts are
+   * length-prefixed, so a key with the eighth can never equal one without.
+   */
+  readers?: string,
 ): string {
   const evalFingerprint = JSON.stringify({
     assertion: ev.assertion,
@@ -119,5 +125,6 @@ export function cacheKey(
     // Pre-hashed: page bodies are large and key parts should stay short.
     sha256(body),
     sha256(evalFingerprint),
+    ...(readers === undefined ? [] : [sha256(readers)]),
   ]);
 }

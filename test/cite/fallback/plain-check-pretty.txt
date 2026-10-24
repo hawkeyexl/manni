@@ -1,0 +1,10 @@
+exit: 1
+--- stdout
+✗ plain-pointer.md
+    ✗ timeout   /claim must NOT have additional properties   (line 7)
+      manni:cite entry-invalid: An entry is malformed, or an id is repeated.
+      Guide: https://hawkeyexl.github.io/manni/cite/fix/#entry-invalid
+✓ plain.md
+
+2 files checked, 1 passed, 1 failed, 1 finding
+--- stderr

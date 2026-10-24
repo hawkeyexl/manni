@@ -1,0 +1,9 @@
+exit: 0
+--- stdout
+✓ docs/pages/limits.md
+    ✓ timeout   :26 current   api:lib/limits.ts:2 current
+    ✓ retries   :28 current   sdk:src/client.ts:2 current
+
+1 file checked, 1 passed, 0 failed, 0 findings
+--- stderr
+manni: No git root found; resolving src: paths from <dir>

@@ -1,0 +1,39 @@
+# Persona-aware judging (proposal 0111). An `ai` eval with
+# `options: { readers: personas }` is judged as the page's personas, read from
+# the `strategy` collection's records. Every page under docs/ is one shape of
+# the opt-in, or of the fall-back to today's judge.
+#
+# `pages` keeps one page's `personas:` in a manifest beside it, and that
+# manifest owns no eval key, so only `personas` brings it into a run.
+collections:
+  - name: pages
+    paths:
+      - "docs/*.md"
+    externalMetadata:
+      - file: "{page}.meta.yaml"
+        keys: [personas]
+  - name: strategy
+    paths:
+      - "strategy/*.md"
+
+docevals:
+  # The demo's one change to the fixture's config: the local judge the
+  # repository's own config names, so the verdicts are real model calls.
+  provider: llama-cpp
+  model: granite-4.1-3b-q2
+  evals:
+    reader-can-finish:
+      assertion: A reader can finish the task this page describes without leaving it.
+      grader: ai
+      options:
+        readers: personas
+  judge:
+    ensembleRuns: 1
+    temperature: 0
+    # The demo's other change. This 3B model gives a page that falls short
+    # "partial" at 0.70 confidence, and a partial is a fail. At the default
+    # 0.8 that fail waits for a human review; here it lands. A pass still
+    # needs 0.8.
+    zones:
+      autoFail: 0.7
+    cacheDir: .manni/docevals/cache

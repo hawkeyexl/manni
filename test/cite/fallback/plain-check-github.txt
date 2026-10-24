@@ -1,0 +1,4 @@
+exit: 1
+--- stdout
+::error file=plain-pointer.md,line=7,title=manni%3Acite/entry-invalid::timeout (src/limits.ts): /claim must NOT have additional properties%0Amanni:cite entry-invalid: An entry is malformed, or an id is repeated.%0AGuide: https://hawkeyexl.github.io/manni/cite/fix/#entry-invalid
+--- stderr

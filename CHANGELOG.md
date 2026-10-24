@@ -4,6 +4,14 @@
 4.13.1. Entries below that version are docmeta releases; the repository
 history is the same one.
 
+# [4.24.0](https://github.com/hawkeyexl/manni/compare/v4.23.0...v4.24.0) (2026-10-24)
+
+
+### Features
+
+* **cite:** a claim can be a metadata value (0108) ([#242](https://github.com/hawkeyexl/manni/issues/242)) ([e938831](https://github.com/hawkeyexl/manni/commit/e9388316c721185044c2c16f35a31b957c3e1d41)), closes [#244](https://github.com/hawkeyexl/manni/issues/244)
+* **docevals:** an eval can ask the judge to read a page as its personas (0111) ([#244](https://github.com/hawkeyexl/manni/issues/244)) ([e0a0233](https://github.com/hawkeyexl/manni/commit/e0a0233ee7dca26e7bb6511a7e0c16338de274c0))
+
 # [4.23.0](https://github.com/hawkeyexl/manni/compare/v4.22.0...v4.23.0) (2026-10-24)
 
 

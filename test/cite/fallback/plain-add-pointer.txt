@@ -1,0 +1,4 @@
+exit: 2
+--- stdout
+--- stderr
+manni: File not found: "plain.md#/title". Check the path. Named paths resolve from the working directory.

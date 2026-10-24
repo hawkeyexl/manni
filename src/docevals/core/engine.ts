@@ -22,6 +22,7 @@ import {
 import { discoverPages } from "./discover.js";
 import { withExternalMetadata } from "./external.js";
 import { resolvePages, type EvalLocation, type ResolvedPagePlan } from "./resolve.js";
+import { resolveReaders } from "./readers.js";
 import {
   applyBaseline,
   buildBaseline,
@@ -539,11 +540,17 @@ export function applySinceScope(
 
 /**
  * The files whose change counts as the page's: its own, then every manifest
- * that supplied one of its eval keys. `external` is absent when the run loaded
- * no manifest at all (`withExternalMetadata` returns such pages untouched).
+ * that supplied one of its eval keys, and, in a judged run, the persona
+ * records an opted-in eval reads the page as (proposal 0111). `external` is
+ * absent when the run loaded no manifest at all (`withExternalMetadata`
+ * returns such pages untouched).
  */
 function scopeManifests(plan: ResolvedPagePlan): readonly string[] {
-  return plan.page.external?.evalManifests ?? [];
+  const manifests = plan.page.external?.evalManifests ?? [];
+  // The persona records an opted-in eval reads the page as (proposal 0111).
+  // Set only in a judged run, so every other page's scope is today's.
+  const records = [...new Set(plan.evals.flatMap((ev) => ev.readers?.files ?? []))];
+  return records.length === 0 ? manifests : [...manifests, ...records];
 }
 
 function sinceSelects(plan: ResolvedPagePlan, changed: Set<string>): boolean {
@@ -893,6 +900,13 @@ export async function runEvals(options: RunOptions = {}): Promise<EngineReport> 
       ...(options.aiOnly === true ? { aiOnly: true } : {}),
     }),
   );
+
+  // Who each opted-in eval's judge reads the page as (proposal 0111). Only a
+  // run that judges reads a record, and before scoping, so a page selected
+  // through its persona record is known to the scope below.
+  if (options.deterministicOnly !== true && options.judge !== undefined) {
+    problems.push(...(await resolveReaders(plans, config, cwd)));
+  }
 
   // Now that every page has been diagnosed, narrow what will actually be
   // graded. See the declaration above for why this cannot move earlier.

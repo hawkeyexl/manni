@@ -4,7 +4,7 @@ description: What makes a verdict reproducible, how the ensemble reaches consens
 type: concept
 audiences:
   - schema-authors
-last-updated: 2026-09-13
+last-updated: 2026-10-23
 ---
 
 Sooner or later someone senior asks the real question: **why should a model be allowed to block our
@@ -117,6 +117,83 @@ unchanged. The fix the sentence names is to give the eval a `model:` other than 
 author. For a criterion match, a person reviewing the eval and deleting its id from
 `meta-provenance` also clears it.
 :::
+
+## Judge a page as its readers
+
+An assertion that says "a reader" leaves the judge to imagine who that is. A page's `personas:`
+already says who. One option hands that to the judge, one eval at a time:
+
+```yaml
+evals:
+  - id: fix-and-rerun
+    assertion: A reader can fix a failing field and confirm the check passes locally.
+    grader: ai
+    options:
+      readers: personas
+```
+
+The option works in three places, with one meaning:
+
+| Where | What it opts in |
+|---|---|
+| An eval on a page or in its manifest | That eval, on that page |
+| A `docevals.evals` entry | That eval, on every page that runs it through a suite or a `use:` |
+| A `use:` reference | That page's use of the library eval. Its `options` merge over the library's, key by key. |
+
+### Where it runs, and where it falls back
+
+The judge reads the page as its personas only when all four of these hold:
+
+1. The run judges. `--deterministic-only` reads no record.
+2. The eval is `grader: ai` and carries `options: { readers: personas }`.
+3. At least one id in the page's `personas:` names a `type: persona` record in a declared
+   collection. Ids match ignoring case.
+4. The page is not itself a record.
+
+Anywhere else, the run is the one it was before the option existed. The prompt, the cache key, the
+output and the exit code are unchanged. Nothing warns about a page that names no persona, an id no
+record defines, or a repository with no records. `manni strategy check` reports a dangling id.
+
+A `readers` value other than `personas` is an error where persona records exist, and the run exits
+`1`. Where none exist, the option does nothing, as any option on an `ai` eval does. A misspelled
+key, such as `reader:`, is ignored everywhere.
+
+### What the judge reads
+
+The judge reads each persona's descriptive frontmatter fields, rendered into a `# Readers` section
+of its prompt. The record's body is never read, and every other field is left out.
+
+| Field | Rendered as |
+|---|---|
+| `title`, else the id | The reader's heading |
+| `description` | The paragraph under the heading |
+| `name`, `role`, `team-context` | `Name:`, `Role:` and `Team context:` lines |
+| `proficiency`, `prerequisites`, `goals`, `pains`, `content-types` | A labelled list each |
+
+A string renders as one line and a list of strings as a list. Any other value is left out. These
+are the field names this repository's persona schema uses. A schema with other names gives the
+judge only `title` and `description`.
+
+The prompt tells the judge the assertion holds only when it holds for every reader. A page naming
+three personas still gets one verdict per eval, and that eval costs what it did before.
+
+### Read the tag
+
+A judged result read as personas says so. Pretty adds the ids after the zone, and JSON adds a
+`personas` list to the result:
+
+```text
+  FAIL fix-and-rerun [auto-fail] (read as theo)  docs/src/content/docs/meta/fix/index.meta.yaml:16
+```
+
+No tag means the judge read no persona. After opting an eval in, look for the tag. If it is missing,
+the page names no record, or the run did not judge.
+
+Keep the fields short. A page naming four personas adds all their fields to each opted-in eval's
+prompt. A prompt too long for a small local model errors the eval.
+
+A library eval opts in every page that runs it. Run `manni docevals list --eval <id>` first, to see
+which pages re-judge once you opt it in.
 
 ## What runs where
 

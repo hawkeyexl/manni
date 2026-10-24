@@ -176,7 +176,9 @@ describe("manni cite (grammar)", () => {
     const help = run(["cite", "add", "--help"]).stdout;
     expect(help).toMatch(/^Usage: manni cite add \[options\] <page> <src>$/m);
     // Commander wraps the argument descriptions, so match the parts.
-    expect(help).toContain("the page to cite from, with the claim's lines");
+    expect(help).toContain("the page to cite from, with the claim:");
+    expect(help).toMatch(/record#\/pointer for a value\s+on an audience, persona or journey record/);
+    expect(help).toContain("manni cite add docs/personas/theo.md#/pains/0 notes/2026-09-12.md:3-4 --id terse-messages");
     expect(help).toMatch(/page:L or\s+page:L1-L2/);
     // The two options a claim used to reach the command through are gone.
     expect(help).not.toContain("--claim");
@@ -517,7 +519,7 @@ describe("manni cite (usage errors)", () => {
     const r = cite(["check", "--root", ".", "pages/current.md"]);
     expect(r.status).toBe(2);
     expect(r.stderr.split(/\r?\n/)[0]).toBe(
-      'manni: Unknown key "changed" under cite.severity: in manni.config.yaml. Supported keys: source-moved, source-moved-ambiguous, source-changed, source-never-true, source-missing, claim-moved, claim-moved-ambiguous, claim-reanchored, claim-changed, marker-orphan, marker-invalid, marker-repeated, marker-misplaced, anchor-invalid, entry-invalid, quote-drift.',
+      'manni: Unknown key "changed" under cite.severity: in manni.config.yaml. Supported keys: source-moved, source-moved-ambiguous, source-changed, source-never-true, source-missing, claim-moved, claim-moved-ambiguous, claim-reanchored, claim-changed, claim-missing, marker-orphan, marker-invalid, marker-repeated, marker-misplaced, anchor-invalid, entry-invalid, quote-drift.',
     );
   });
 

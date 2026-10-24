@@ -227,7 +227,26 @@ and Node touch.
 - Bump `PROMPT_VERSION` (`src/docevals/judge/prompt.ts`) whenever judge prompts
   change, and `FILL_PROMPT_VERSION` (`src/docevals/fill/prompt.ts`) whenever the
   fill prompt or `PROPOSAL_SCHEMA` changes. Each is part of its cache key, and
-  stale cached output otherwise survives a prompt revision.
+  stale cached output otherwise survives a prompt revision. The readers
+  section below is the one exception. It is keyed by its own text, framing
+  words included. Editing it re-judges exactly the evals it reached.
+- **Readers run only inside the fall-back rule** (proposal 0111). An eval is
+  judged as its page's personas only when all four hold. The run judges. The
+  eval is `ai` with `options: { readers: personas }`. An id in the page's
+  `personas:` resolves to a persona record in a declared collection. The page
+  is not itself a record. Everywhere else the prompt, cache key, JSON, pretty
+  line, stderr and exit are today's, byte for byte. So is the scope of
+  `--since` and `--newer-than`. `test/docevals/integration/personas.test.ts`
+  proves it.
+  `src/docevals/core/readers.ts` reads the records once per judged run, only
+  when some eval carries an `options.readers` key. It reads them through
+  strategy's own `loadStrategySet` over every declared collection, and
+  loading prints nothing. A missing, dangling or absent persona gets no
+  warning; `strategy check` owns those. A `readers` value other than
+  `personas` is an error only where persona records exist. The cache key gains
+  `sha256` of the rendered section as an eighth part under the rule.
+  `PROMPT_VERSION` stays where it is. Reviews and golden cases stay keyed on
+  the page body, so a persona edit re-judges and never re-queues a review.
 - **An errored judge run is never written to the cache** (`VerdictCache` in
   `src/docevals/judge/cache.ts`). The library's `runEnsemble` caches
   unconditionally and cannot tell a permanent failure from a transient one; we

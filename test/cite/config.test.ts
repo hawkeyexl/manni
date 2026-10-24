@@ -153,7 +153,6 @@ describe("parseCiteConfig", () => {
     for (const old of [
       "moved",
       "changed",
-      "claim-missing",
       "claim-ambiguous",
       "statement-orphan",
       "statement-invalid",

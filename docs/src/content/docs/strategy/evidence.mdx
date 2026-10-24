@@ -1,0 +1,429 @@
+---
+title: Rest personas on evidence
+description: "Pin each goal and pain of a persona to the interview line it came from, require the pins, and let manni cite check say when a claim stops holding."
+type: how-to
+id: strategy-evidence
+keywords:
+  - evidence
+  - personas
+  - citations
+  - JSON Pointer
+  - research
+language: en
+audiences:
+  - schema-authors
+intent: Pin each goal and pain of a strategy record to its evidence, require the pins, and keep them true as the record and the evidence change.
+lifecycle: published
+applies-to:
+  - domain:strategy
+  - domain:cite
+concepts:
+  - JSON Pointer
+  - metadata
+  - schema
+prerequisites:
+  - strategy
+related-pages:
+  - cite-reference-citations
+  - cite-fix
+  - cite-set-up-public-docs-private-code
+  - meta-reference-schemas-manni-citations
+next-steps:
+  - cite-fix
+  - cite-reference-citations
+sample-questions:
+  - How do I pin a persona's pain to the interview it came from?
+  - How do I require every persona to carry evidence?
+  - What does manni cite report when a pinned pain is deleted?
+graph:
+  label: Rest personas on evidence
+  type: task
+tags:
+  - content-strategy
+  - personas
+  - citations
+  - evidence
+action: develop
+risks: read-only
+last-updated: 2026-10-23
+---
+
+import { Aside, LinkCard } from '@astrojs/starlight/components';
+
+A persona's pains read like research. Nothing on the page says which
+interview each one came from, or whether that interview still says so. A
+pain written from a ticket two years ago looks exactly like one heard last
+week.
+
+This page pins each goal and pain of a strategy record to the lines of
+evidence it rests on. `manni cite check` then reports a claim whose evidence
+changed, vanished or moved. It also reports one whose record was reordered,
+reworded or cut. The samples run over a small repository, with records under
+`records/` and interview notes under `research/notes/`.
+
+## Where the evidence lives
+
+Evidence is any file `manni cite` can index. Choose its place for privacy.
+
+| Layout | What to set up |
+|---|---|
+| A tracked file in the docs repository, as this repository's proposals are | Nothing. Cite it by its path. |
+| A private checkout beside the docs | Name it under `cite.repos`, and add each pin with `--encrypt` so its path stays off the public sidecar. |
+| An export folder with no git, as a Dovetail or Notion export is | Name it under `cite.repos`. cite indexes a plain directory with a walk, and checks it without history. |
+
+A name under `cite.repos` is a directory, relative to the config file. This
+page's repository declares its notes that way:
+
+```yaml title="manni.config.yaml"
+cite:
+  repos:
+    research: research
+```
+
+Do not keep evidence in a gitignored folder of a public repository. Where git
+is available, cite reads tracked files only, so every pin into that folder
+reads `source-missing`.
+
+## Goals and pains as fields
+
+A claim about readers is one item of a list. Keep each goal under `goals:` and
+each pain under `pains:`, one claim per item, so each can carry its own pin:
+
+```markdown title="records/personas/theo.md"
+---
+type: persona
+id: theo
+title: Theo, Doc Contributor
+description: Theo opened a pull request and met a failing check.
+audience: contributors
+pains:
+  - Error messages are terse with no remediation hint.
+  - He does not know which schema fired.
+---
+# Theo
+
+Theo fixes the failure and moves on.
+```
+
+## Pin an item by its pointer
+
+A record is a page whose own metadata declares `type: audience`,
+`type: persona` or `type: journey`. On a record, `cite add` takes the claim
+as a JSON Pointer after `#`. The first pain is `#/pains/0`:
+
+```console
+$ manni cite add records/personas/theo.md#/pains/0 research:notes/2026-09-12-contributor.md:3 --id terse-messages
+records/personas/theo.md: added terse-messages to records/personas/theo.citations.yaml:3 (claim at /pains/0, sha256-c1ac46fc…; source research:notes/2026-09-12-contributor.md:3 "- The error named the field and said nothing about the fix.", sha256-13745edd…, 9b50d4c)
+```
+
+The quoted line is what the source range caught, so a mistyped range shows up
+at once. The entry lands in the record's sidecar, beside the page:
+
+```yaml title="records/personas/theo.citations.yaml"
+records/personas/theo.md:
+  citations:
+    - id: terse-messages
+      claim:
+        pointer: /pains/0
+        integrity: sha256-c1ac46fcd895d6fb26f1364c6ab3930ce3662689758855f7f66ffb89e5f09e73
+      source:
+        repo: research
+        file: notes/2026-09-12-contributor.md
+        lines: 3
+        integrity: sha256-13745edd5eea6e243c6d3682ebd5460c0377c323ea6bda3502b500e7364b5b1b
+        commit-sha: 9b50d4c7675b66a19676ccc18ffbb38d9a0efd1d
+```
+
+The claim's pin is the SHA-256 of the value's canonical JSON. A string is
+hashed with its quotes. The [citations
+reference](/manni/cite/reference/citations/#a-values-hash) states the rule.
+Pin the second pain the same way:
+
+```console
+$ manni cite add records/personas/theo.md#/pains/1 research:notes/2026-09-12-contributor.md:4 --id unknown-schema
+records/personas/theo.md: added unknown-schema to records/personas/theo.citations.yaml:13 (claim at /pains/1, sha256-43e1d442…; source research:notes/2026-09-12-contributor.md:4 "- They could not tell which schema the rule came from.", sha256-b312da4b…, 9b50d4c)
+```
+
+A frontmatter line is not a claim. Typed as `page:L`, it is refused, and the
+refusal names the pointer for the value on that line:
+
+```console
+$ manni cite add records/personas/theo.md:8 research:notes/2026-09-12-contributor.md:3
+manni: records/personas/theo.md:8 is in the frontmatter. Cite the value there as records/personas/theo.md#/pains/0.
+```
+
+The exit code is `2`, and nothing is written. On a page that is not a record,
+the whole argument is a path, so `page.md#/title` reads as a file that is not
+there.
+
+## Pin a line of the body
+
+A record's body can make a claim too. An audience often states it in prose.
+Cite a body line as on any page, by its line number:
+
+```console
+$ manni cite add records/audiences/contributors.md:9 research:notes/2026-09-12-contributor.md:3 --id one-failure
+records/audiences/contributors.md: added one-failure to records/audiences/contributors.citations.yaml:3 (claim at line 9, sha256-c08dd4a5…; source research:notes/2026-09-12-contributor.md:3 "- The error named the field and said nothing about the fix.", sha256-13745edd…, 9b50d4c)
+```
+
+## Require evidence
+
+Three settings make evidence part of the record. The record schema requires
+`citations`, and states no type for it, because the vocabulary does:
+
+```json title="schemas/persona.schema.json (excerpt)"
+{
+  "required": ["type", "audience", "citations"],
+  "properties": {
+    "citations": {
+      "description": "The evidence the record's claims rest on."
+    }
+  }
+}
+```
+
+The records' override lists `manni:citations:1.3.0` beside it. That version
+reads a claim pointer, and the default set's 1.2.0 does not. The `strategy`
+collection names the sidecar that keeps each record's pins:
+
+```yaml title="manni.config.yaml"
+collections:
+  - name: strategy
+    paths:
+      - "records/**/*.md"
+    externalMetadata:
+      - file: "{page}.citations.yaml"
+        keys: [citations]
+
+meta:
+  overrides:
+    - files: "records/personas/*.md"
+      schemas:
+        - ./schemas/persona.schema.json
+        - manni:citations:1.3.0
+```
+
+Before the first pin, `meta validate` fails the persona. The guidance line
+quotes the schema's `citations` description:
+
+```console
+$ manni meta validate records/
+✓ records/audiences/contributors.md
+✗ records/personas/theo.md
+    (root)  must have required property 'citations'  (line 1)  [./schemas/persona.schema.json]
+      ./schemas/persona.schema.json citations: The evidence the record's claims rest on.
+
+2 files checked, 1 passed, 1 failed, 1 error
+```
+
+The exit code is `1`. One pin satisfies it. The check works at page grain, so
+a pain that was never pinned is not reported.
+
+## Check it
+
+`cite check` reads every record in the collection:
+
+```console
+$ manni cite check --collection strategy
+✓ records/audiences/contributors.md   records/audiences/contributors.citations.yaml
+    ✓ one-failure   :9 current   research:notes/2026-09-12-contributor.md:3 current
+✓ records/personas/theo.md   records/personas/theo.citations.yaml
+    ✓ terse-messages   #/pains/0 current   research:notes/2026-09-12-contributor.md:3 current
+    ✓ unknown-schema   #/pains/1 current   research:notes/2026-09-12-contributor.md:4 current
+
+2 files checked, 2 passed, 0 failed, 0 findings
+```
+
+The claim column spells a pointer as `#/pains/0`, as it spells body lines as
+`:9`. Five things go wrong, and each has its own rule.
+
+| What happened | Rule | Severity | Fix |
+|---|---|---|---|
+| The evidence lines changed | `source-changed` | error | Read the evidence, then `cite update --accept --only <id>` |
+| The evidence file is gone | `source-missing` | error | `cite remove --only <id>`, then `cite add` against its new path |
+| The pains were reordered | `claim-moved` | notice | `cite update` |
+| A pain was reworded | `claim-changed` | warning | Read the evidence, then `cite update --accept --only <id>` |
+| A pain was deleted | `claim-missing` | warning | `cite remove --only <id>` |
+
+### Stale evidence
+
+The interview note was edited after the pain was pinned:
+
+```console
+$ manni cite check records/personas/theo.md
+✗ records/personas/theo.md   records/personas/theo.citations.yaml
+    ✗ terse-messages   #/pains/0 current   research:notes/2026-09-12-contributor.md:3 changed since 9b50d4c, 0 commits
+      Check the sentence against the source, then run manni cite update --accept --only terse-messages.
+```
+
+The exit code is `1`. Read the note. When the pain still holds, re-pin the
+evidence with `cite update --accept --only terse-messages`. When it does not,
+fix the pain first.
+
+### Vanished evidence
+
+The note was deleted from the repository. The pain is intact, and the
+finding is an error:
+
+```console
+$ manni cite check records/personas/theo.md
+✗ records/personas/theo.md   records/personas/theo.citations.yaml
+    ✗ terse-messages   #/pains/0 current   research:notes/2026-09-12-contributor.md:3 missing
+      Run manni cite remove --only terse-messages, then manni cite add against the file's new path.
+```
+
+A note renamed in a commit reads `source-moved` instead, a warning that
+`cite update` repairs.
+
+### A reordered list
+
+The two pains swapped places. Each value is intact at another pointer, so
+each pin reads `moved`:
+
+```console
+$ manni cite check records/personas/theo.md
+ℹ records/personas/theo.md   records/personas/theo.citations.yaml
+    ℹ terse-messages   #/pains/0 moved -> #/pains/1   research:notes/2026-09-12-contributor.md:3 current
+      Run manni cite update.
+    ℹ unknown-schema   #/pains/1 moved -> #/pains/0   research:notes/2026-09-12-contributor.md:4 current
+      Run manni cite update.
+```
+
+`update` rewrites the pointers, and changes nothing else:
+
+```console
+$ manni cite update records/personas/theo.md
+records/personas/theo.md: terse-messages claim #/pains/0 -> #/pains/1 (moved)
+records/personas/theo.md: unknown-schema claim #/pains/1 -> #/pains/0 (moved)
+2 citations rewritten in 1 file, 0 skipped
+```
+
+An edit to another key, such as `description:`, never moves a pointer.
+
+### A reworded pain
+
+A pain edited in place reads `changed`, and `--show-diff` prints the value
+before and after:
+
+```console
+$ manni cite check --show-diff records/personas/theo.md
+⚠ records/personas/theo.md   records/personas/theo.citations.yaml
+    ✓ unknown-schema   #/pains/0 current                              research:notes/2026-09-12-contributor.md:4 current
+    ↕ terse-messages   #/pains/1 changed since d572997, uncommitted   research:notes/2026-09-12-contributor.md:3 current
+      Check it still matches the source, then run manni cite update --accept --only terse-messages.
+      manni:cite claim-changed: The metadata value was edited since it was pinned.
+      Guide: https://hawkeyexl.github.io/manni/cite/fix/#claim-changed
+        --- records/personas/theo.md@d572997:#/pains/1
+        +++ records/personas/theo.md:#/pains/1
+        -Error messages are terse with no remediation hint.
+        +Error messages are terse and name no fix.
+```
+
+When the note still supports the new wording, re-pin the value:
+
+```console
+$ manni cite update --accept --only terse-messages records/personas/theo.md
+records/personas/theo.md: terse-messages claim at #/pains/1 re-pinned (changed; now "Error messages are terse and name no fix.")
+1 citation rewritten in 1 file, 0 skipped
+```
+
+A blanket `--accept` skips a value that keeps under half of the pinned
+value's words. Naming the id with `--only` is the judgement that accepts it.
+
+### A deleted pain
+
+The first pain was cut. The second shifted up into its index, so
+`#/pains/0` now holds a value another entry pins. That reads `missing`, not
+`changed`:
+
+```console
+$ manni cite check records/personas/theo.md
+⚠ records/personas/theo.md   records/personas/theo.citations.yaml
+    ℹ terse-messages   #/pains/1 moved -> #/pains/0   research:notes/2026-09-12-contributor.md:3 current
+      Run manni cite update.
+    ↕ unknown-schema   #/pains/0 missing              research:notes/2026-09-12-contributor.md:4 current
+      Run manni cite remove --only unknown-schema. If the claim still stands, cite add it at its pointer now.
+```
+
+`update` rewrites the moved pointer, and skips the missing one with its
+remedy. Then remove the entry:
+
+```console
+$ manni cite remove --only unknown-schema records/personas/theo.md
+records/personas/theo.md: removed unknown-schema from records/personas/theo.citations.yaml:13
+1 citation removed from 1 file
+```
+
+## Private evidence in CI
+
+Encrypted evidence takes two jobs, as encrypted code does. Add each pin with
+`--encrypt`, and the sidecar carries a ciphertext and a keyed pin:
+
+```console
+$ MANNI_ENCRYPTION_KEY=… manni cite add records/personas/theo.md#/pains/0 research:notes/2026-09-12-contributor.md:3 --id terse-messages --encrypt
+records/personas/theo.md: added terse-messages to records/personas/theo.citations.yaml:3 (claim at /pains/0, sha256-c1ac46fc…; source research:~AdNk…:3, hmac-sha256-86a75eb9…, 9b50d4c)
+```
+
+The claim's pin stays plain, because the record is public. The **private
+job** has the key and the research checkout, and checks both ends:
+
+```console
+$ MANNI_ENCRYPTION_KEY=… manni cite check --collection strategy
+✓ records/audiences/contributors.md
+✓ records/personas/theo.md   records/personas/theo.citations.yaml
+    ✓ terse-messages   #/pains/0 current   research:~AdNk…:3 current
+```
+
+The **public job** has neither, so it checks the claim end alone:
+
+```console
+$ manni cite check --collection strategy --no-check-sources
+✓ records/audiences/contributors.md
+✓ records/personas/theo.md   records/personas/theo.citations.yaml
+    ✓ terse-messages   #/pains/0 current   research:~AdNk…:3 skipped
+
+2 files checked, 2 passed, 0 failed, 0 findings
+```
+
+A reordered, reworded or deleted pain still shows in the public job.
+[Public docs, private code](/manni/cite/set-up/public-docs-private-code/#the-two-jobs-in-github-actions)
+has both jobs as a GitHub Actions workflow.
+
+## Find records with no live evidence
+
+The JSON report carries each entry's source status. This prints every record
+with no pin whose evidence is current:
+
+```sh
+manni cite check --collection strategy -f json | jq -r '.pages[] | select([.citations[] | select(.source.status == "current")] | length == 0) | .file'
+```
+
+## Known limits
+
+- **Private evidence needs the key and the checkout.** A declared checkout
+  that is absent stops a bare `cite check` with exit `2`. A missing key makes
+  every encrypted pin `source-missing`. `manni check` runs cite bare, so it
+  fails the same way. The public job runs `--no-check-sources`.
+- **A pointer reads the page's own metadata.** A value a `{page}.meta.yaml`
+  manifest keeps is out of reach. Moving `pains:` into one reads `missing`.
+- **A record's `type` must be on the page.** A `type` that only a manifest
+  holds does not make a record.
+- **An encrypted value is refused.** A claim's pin is public. A value
+  encrypted after it was pinned reads `changed`.
+- **Without git, `--accept` has no baseline.** It re-pins whatever the
+  pointer holds. The `missing` rule still catches a deleted item.
+- **Page grain.** One pin satisfies `required: [citations]`, and a pain that
+  was never pinned is not reported.
+- **No age check.** cite judges drift, not age, so an old interview that
+  still says the same thing passes.
+- **Pointers on records only.** A site page cannot pin its own metadata. cite
+  validates a site page's entries against 1.2.0, so a pointer entry there is
+  `entry-invalid`.
+- **No stdin form.** A record is cited by its path. `-#/pains/0` is not read
+  as a page.
+
+<LinkCard
+  title="Fix a failing check"
+  href="/manni/cite/fix/"
+  description="Every cite rule, what it means for a body line and for a pointer, and the command that clears it."
+/>

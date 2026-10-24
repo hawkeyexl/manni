@@ -857,12 +857,13 @@ describe("the repository's own manni.config.yaml", () => {
         url: "http://127.0.0.1:4321/manni/",
       },
       // The content strategy's records (0102), which `manni strategy` holds
-      // the site's pages to. They are not published, so no url and no manifest.
+      // the site's pages to. They are not published, so no url. Each record's
+      // evidence pins live beside it (0108).
       {
         name: "strategy",
         paths: ["docs/content-strategy/{audiences,personas,journeys}/*.md"],
         exclude: [],
-        externalMetadata: [],
+        externalMetadata: [{ file: "{page}.citations.yaml", keys: ["citations"] }],
       },
     ]);
 
@@ -951,6 +952,12 @@ describe("the repository's own manni.config.yaml", () => {
     // A strategy record takes its record type's schema and none of the
     // defaults. A journey also takes the lifecycle vocabulary, so a draft
     // journey's `lifecycle:` is checked against its enum.
+    // An audience and a persona also take citations 1.3.0, whose claim may be
+    // a pointer to a goal or a pain (0108).
+    for (const type of ["audience", "persona"]) {
+      const own = `./docs/content-strategy/schemas/${type}.schema.json`;
+      expect(records.find((ov) => ov.schemas.includes(own))?.schemas).toEqual([own, "manni:citations:1.3.0"]);
+    }
     const journeySchemas = ["./docs/content-strategy/schemas/journey.schema.json", "manni:lifecycle:1.0.0"];
     expect(records.find((ov) => ov.schemas.includes(journeySchemas[0] ?? "<missing>"))?.schemas).toEqual(journeySchemas);
     expect(

@@ -1,0 +1,11 @@
+docs/content-strategy/audiences/contributors.md:
+  citations:
+    - id: decode-one-error
+      claim:
+        lines: 2
+        integrity: sha256-ec1853fea4fd3d86db273816c85a86c49f210860529040939f281a1598c41efd
+      source:
+        file: docs/proposals/0089-findings-say-what-to-do.md
+        lines: 34
+        integrity: sha256-c8e7c844986aa4a256e6a0bdc76a0c686d180fd6f75fc8d8d303e3c202ec8d76
+        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb

@@ -1,0 +1,12 @@
+[1mdiff --git a/docs/one-reader.md b/docs/one-reader.md[m
+[1mindex 464e1f2..c9defc3 100644[m
+[1m--- a/docs/one-reader.md[m
+[1m+++ b/docs/one-reader.md[m
+[36m@@ -15,4 +15,6 @@[m [mevals:[m
+ [m
+ # One reader[m
+ [m
+[31m-Fix the field, then run `manni meta validate`.[m
+[32m+[m[32mEach error names its schema, then the field and what it needs:[m
+[32m+[m[32m`/title is required (schema: house)`. Add that field to the[m
+[32m+[m[32mpage's frontmatter, then run `manni meta validate`.[m

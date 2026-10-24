@@ -1,0 +1,11 @@
+An LLM judge reads every page the same way. Your readers don't.
+
+New in manni docevals, an ai eval can ask the judge to read a page as its personas. Add `readers: personas` to the eval's options. The judge then reads the page as each persona the page names, with their goals and pains. The eval holds only when it holds for every one.
+
+Here the page names Theo, who doesn't know which schema fired. Read as Theo, the eval fails, and the output says `(read as theo)`. The eval that didn't opt in runs as it always did. Exit 1.
+
+Name the schema on the page, run it again, and it passes. Exit 0.
+
+Real verdicts from a local 3B model, about 8 seconds a run. Only the input is staged.
+
+npm i -g @hawkeyexl/manni · manni docevals run --ai-only

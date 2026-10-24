@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/persona.schema.json",
+  "title": "A persona record that must rest on evidence",
+  "type": "object",
+  "required": ["type", "audience", "citations"],
+  "properties": {
+    "type": { "const": "persona" },
+    "audience": { "type": "string" },
+    "pains": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "description": "What gets in the persona's way, one claim per item."
+    },
+    "citations": {
+      "description": "The evidence the record's claims rest on."
+    }
+  },
+  "additionalProperties": true
+}

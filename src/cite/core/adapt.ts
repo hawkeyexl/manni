@@ -27,9 +27,10 @@ import type {
   SourceEnd,
   SourceStatus,
 } from "../types.js";
-import { claimLine } from "./claims.js";
+import { claimLine, claimLineNow } from "./claims.js";
+import { spellPointer } from "./pointer.js";
 import { parseSrc } from "./range.js";
-import { RULE_ID_PREFIX, ruleId } from "./severity.js";
+import { RULE_ID_PREFIX, guidanceFor, ruleId } from "./severity.js";
 import { listOf, shortSrc } from "./spell.js";
 
 /** The seven characters a person reads a commit by. */
@@ -134,11 +135,31 @@ function at(spec: string): string {
   return spec.includes("-") ? `lines ${spec}` : `line ${spec}`;
 }
 
+/** A pointer claim's message, per status (proposal 0108). */
+function pointerMessageFor(id: string | undefined, claim: ClaimEnd & { pointer: string }): string {
+  const at = spellPointer(claim.pointer);
+  switch (claim.status) {
+    case "moved":
+      return named(id, `the claim moved from ${at} to ${spellPointer(claim.newPointer ?? "?")}.`);
+    case "moved-ambiguous":
+      return named(id, `the claim at ${at} now appears at ${listOf((claim.candidates ?? []).map(spellPointer))}.`);
+    case "changed":
+      return named(id, `the claim at ${at} has ${claimChange(claim)}`);
+    case "missing":
+      return named(id, `the value pinned at ${at} is gone.`);
+    case "current":
+    case "reanchored":
+    case "skipped":
+      return "";
+  }
+}
+
 /** The one place a claim end's message is composed, per status. */
 export function claimMessageFor(result: CitationResult): string {
   const claim = result.claim;
   const id = result.citation.id;
   if (claim === null) return "";
+  if (claim.pointer !== undefined) return pointerMessageFor(id, { ...claim, pointer: claim.pointer });
   // A marker-anchored claim has no lines of its own; it is judged where the
   // marker's text sits, and that is what the message names.
   const where =
@@ -176,6 +197,8 @@ export function claimMessageFor(result: CitationResult): string {
       return named(id, `the claim at ${at(where)} has ${claimChange(claim)}`);
     case "current":
     case "skipped":
+    // Only a pointer claim reads `missing`, and it is composed above.
+    case "missing":
       return "";
   }
 }
@@ -251,6 +274,7 @@ export function findingsFor(
     message: string,
     site: Pick<CitationFinding, "line" | "file">,
     extra?: Pick<CitationFinding, "newSrc">,
+    pointer = false,
   ): void => {
     const level = severity[rule];
     if (level === "off") return;
@@ -266,6 +290,8 @@ export function findingsFor(
     if (site.file !== undefined) finding.file = site.file;
     if (result.citation.id !== undefined) finding.id = result.citation.id;
     if (extra?.newSrc !== undefined) finding.newSrc = extra.newSrc;
+    // A pointer claim's rule means something of its own for a metadata value.
+    if (pointer) finding.guidance = guidanceFor(rule, true);
     out.push(finding);
   };
 
@@ -273,8 +299,13 @@ export function findingsFor(
     const claim = result.claim;
     if (claim !== null) {
       const rule = claimRuleOf(claim);
-      // A claim pin that anchors nothing has no page line to sit on.
-      if (rule !== undefined) {
+      // A pointer claim's finding sits where the value is now (0108).
+      if (rule !== undefined && claim.pointer !== undefined) {
+        const now = claimLineNow(claim);
+        const site = now === undefined ? entrySite(result) : { line: now };
+        push(result, rule, withRemedy(claimMessageFor(result), remedyFor(rule, result)), site, undefined, true);
+      } else if (rule !== undefined) {
+        // A claim pin that anchors nothing has no page line to sit on.
         const site =
           claimLine(claim) === undefined && result.markerLine === undefined
             ? entrySite(result)
@@ -408,6 +439,17 @@ export function remedyFor(rule: CiteRule, result: CitationResult | undefined): s
   if (result === undefined) return undefined;
   const id = result.citation.id;
   const accept = `manni cite update --accept${id === undefined ? "" : ` --only ${id}`}`;
+  // A pointer claim's own remedies (0108): `remove --only` takes an id or the
+  // entry's place in the list.
+  const only = id ?? `/citations/${String(result.origin.index)}`;
+  if (result.claim?.pointer !== undefined) {
+    if (rule === "claim-moved-ambiguous") {
+      return `Run manni cite remove --only ${only}, then cite add the pointer you mean.`;
+    }
+    if (rule === "claim-missing") {
+      return `Run manni cite remove --only ${only}. If the claim still stands, cite add it at its pointer now.`;
+    }
+  }
   switch (rule) {
     case "source-moved":
     case "claim-moved":

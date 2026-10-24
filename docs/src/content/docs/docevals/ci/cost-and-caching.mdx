@@ -6,7 +6,7 @@ audiences:
   - ci-engineers
   - docs-engineers
   - schema-authors
-last-updated: 2026-10-23
+last-updated: 2026-10-24
 ---
 
 Model calls are per-invocation, so the risk is not one large bill. The risk is an *unpredictable* amount
@@ -91,10 +91,13 @@ among other things:
 - a hash of the **page body**
 - a hash of the eval fingerprint (assertion, evidence, examples, type)
 - the provider and model
+- the readers section, for an eval with `readers: personas` on a page naming a persona
 
 So the cache invalidates exactly when a verdict could legitimately differ, and not otherwise. Edit
 prose and that page re-judges; edit an assertion and every page using it re-judges; pin a new model
-and everything re-judges.
+and everything re-judges. Edit a persona record and the opted-in evals on the pages naming it
+re-judge, and no other eval does. See
+[Judge a page as its readers](/manni/docevals/judge/#judge-a-page-as-its-readers).
 
 `fill` caches raw proposals **before** the confidence gate, keyed with `FILL_PROMPT_VERSION`. That
 is why re-running at a different `--confidence` spends no turns.

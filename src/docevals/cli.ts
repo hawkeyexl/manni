@@ -249,12 +249,14 @@ export function buildProgram(): Command {
     .option("--suite <name>", "Run only evals in this suite")
     .option(
       "--since <ref>",
-      "Evaluate only pages whose file or eval manifest changed between this git ref and HEAD",
+      "Evaluate only pages whose file or eval manifest changed between this git ref and HEAD, " +
+        "or whose persona record did when an eval reads the page as its personas",
     )
     .option(
       "--newer-than <duration>",
       "Evaluate only pages whose file or eval manifest changed within this window, " +
-        "such as 30m, 24h, 7d or 2w; in CI, prefer --since",
+        "such as 30m, 24h, 7d or 2w, or whose persona record did when an eval reads the page " +
+        "as its personas; in CI, prefer --since",
     )
     .option(
       "--max-turns <n>",

@@ -19,7 +19,7 @@ sample-questions:
 graph:
   label: "manni citations vocabulary"
   type: reference
-last-updated: 2026-10-22
+last-updated: 2026-10-23
 resource: https://hawkeyexl.github.io/manni/schemas/citations/1.2.0.json
 tags:
   - citations
@@ -384,6 +384,59 @@ $ manni meta validate limits.md --no-config -s manni:core:1.0.0 -s manni:citatio
 The exit code is 1. The open vocabulary accepts both values, so the overlay
 alone fails the page, while `manni cite check` reports the mismatched prefix
 as `entry-invalid` either way.
+
+## Version 1.3.0
+
+**Built-in id:** `manni:citations:1.3.0`
+
+**Strict overlay id:** `manni:citations-strict:1.3.0`
+
+Published at `https://hawkeyexl.github.io/manni/schemas/citations/1.3.0.json`
+and `https://hawkeyexl.github.io/manni/schemas/citations-strict/1.3.0.json`.
+Version 1.3.0 is the newest. It has every field above, and adds
+`claim.pointer`, for a claim that is a metadata value rather than body text.
+
+| Entry field | Type | Required | Notes |
+|---|---|---|---|
+| `claim.pointer` | a JSON Pointer (RFC 6901), such as `/pains/0` | no | One value in the page's own metadata. Write `~` as `~0` and `/` as `~1`. Array indexes count from 0. It never names the whole block, and never anything under `citations` |
+
+A claim takes `lines` or `pointer`, never both, and the schema rejects an
+entry with the two. `claim.lines` is required unless a marker names the entry
+or `pointer` is set. Over a pointer's value, `claim.integrity` is the SHA-256
+of the value's canonical JSON under RFC 8785, as UTF-8. A string is hashed
+with its quotes.
+
+```yaml
+citations:
+  - id: terse-messages
+    claim:
+      pointer: /pains/0
+      integrity: sha256-c1ac46fcd895d6fb26f1364c6ab3930ce3662689758855f7f66ffb89e5f09e73
+    source:
+      file: research/notes/2026-09-12-contributor.md
+      lines: 3
+      integrity: sha256-13745edd5eea6e243c6d3682ebd5460c0377c323ea6bda3502b500e7364b5b1b
+```
+
+1.3.0 is opt-in. Version 1.2.0 stays in the default set, and an override
+names 1.3.0 where pointer claims belong. `manni cite` reads pointer claims on
+strategy records only, the pages that declare `type: audience`,
+`type: persona` or `type: journey`. It checks a record's entries against
+1.3.0 and every other page's against 1.2.0. So name 1.3.0 on the records'
+override, beside the record schema:
+
+```yaml
+meta:
+  overrides:
+    - files: "docs/content-strategy/personas/*.md"
+      schemas:
+        - ./docs/content-strategy/schemas/persona.schema.json
+        - manni:citations:1.3.0
+```
+
+The strict overlay narrows nothing new. A finding under 1.3.0 fingerprints as
+one under 1.0.0, so a recorded baseline carries across. [Rest each persona on
+evidence](/manni/strategy/evidence/) uses 1.3.0 end to end.
 
 ## Version 1.1.0
 

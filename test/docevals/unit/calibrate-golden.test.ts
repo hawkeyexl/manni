@@ -306,6 +306,39 @@ describe("runCalibrate: unreviewed and stale cases", () => {
   });
 });
 
+describe("runCalibrate: readers (proposal 0111)", () => {
+  it("judges a golden case on an opted-in eval with its readers, and one on another eval without", async () => {
+    const fixture = join(import.meta.dirname, "../fixtures/personas");
+    const golden = mkdtempSync(join(tmpdir(), "manni-docevals-golden-readers-"));
+    writeFileSync(
+      join(golden, "cases.yaml"),
+      [
+        "- file: docs/one-reader.md",
+        "  eval: finish-task",
+        "  expected: pass",
+        "  reviewed: true",
+        "- file: docs/one-reader.md",
+        "  eval: plain-judge",
+        "  expected: pass",
+        "  reviewed: true",
+        "",
+      ].join("\n"),
+    );
+    const seen: { name: string; personas: string[] | undefined }[] = [];
+    const judge = vi.fn((targets: Parameters<typeof alwaysPass>[0]) => {
+      for (const t of targets as { eval: { name: string; readers?: { personas: string[] } } }[]) {
+        seen.push({ name: t.eval.name, personas: t.eval.readers?.personas });
+      }
+      return alwaysPass(targets);
+    });
+    await runCalibrate({ cwd: fixture, golden, judge });
+    expect(seen).toEqual([
+      { name: "finish-task", personas: ["theo"] },
+      { name: "plain-judge", personas: undefined },
+    ]);
+  });
+});
+
 describe("calibrate --seed: the confirmed bit across a re-review", () => {
   it("keeps a confirmed bit when the verdict is unchanged", () => {
     const root = scaffold();

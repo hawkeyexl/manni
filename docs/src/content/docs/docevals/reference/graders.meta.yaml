@@ -49,8 +49,11 @@ docs/src/content/docs/docevals/reference/graders.mdx:
       lines: 87
       integrity: sha256-f1b901847390b0ed7e374e7c1e464ec17b46a427c487a5ad6cbd2906405083d5
     - generated-by: Claude Fable 5.1
-      lines: 103-112
-      integrity: sha256-1ef0785c49078f79ef70e6bbec194adb1a8213499a900a5f83b29f9aafe8b54f
+      lines: 103-107
+      integrity: sha256-29b009869b02c099a63eeb70ddfde481546c74f69efdaa1416d5516343254ece
+    - generated-by: Claude Fable 5.1
+      lines: 117-120
+      integrity: sha256-8cbbb6110dd9c20563e0ed409f08baf510ab2050718768c150f4445b8c52aa02
   owner:
     - "@hawkeyexl"
   created: 2026-09-06

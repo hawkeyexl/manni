@@ -76,6 +76,12 @@ export interface StrategyRecord {
   idAt?: At;
   /** The values of `audience:` on a persona or `personas:` on a journey, each where it is declared. Empty on an audience. */
   parents: (At & { value: string })[];
+  /**
+   * The record's metadata, its sidecars merged in. The docevals judge reads
+   * a persona's descriptive fields from it (proposal 0111). No strategy
+   * output prints it.
+   */
+  data: Record<string, unknown>;
   /** A journey's `steps:`, when it carries at least one mapping. Never set on an audience or a persona. */
   steps?: StrategyStep[];
 }

@@ -70,9 +70,6 @@ docs/src/content/docs/docevals/reference/cli.mdx:
     - generated-by: Claude Opus 5
       lines: 111
       integrity: sha256-8d4f883f537bf1c219acf1851fd6da02fa6ea27b47a7b8b88ef328a29c4ff6ac
-    - generated-by: Claude Opus 5.5
-      lines: 113
-      integrity: sha256-ef3c3013b8c1a0e197adb72224d4b5383aefb00f15dedea4da92044d33384b36
     - generated-by: Claude Opus 5
       lines: 114
       integrity: sha256-f5d4ddf33c4b79c218908edaa95bbd8ff13e781b5146641494124928ca509c83

@@ -206,6 +206,7 @@ export function entryObject(citation: Citation): Record<string, unknown> {
   if (citation.claim !== undefined) {
     const claim: Record<string, unknown> = {};
     if (citation.claim.lines !== undefined) claim.lines = citation.claim.lines;
+    if (citation.claim.pointer !== undefined) claim.pointer = citation.claim.pointer;
     claim.integrity = citation.claim.integrity;
     entry.claim = claim;
   }
@@ -271,7 +272,7 @@ function splitScalarLine(
 /** One scalar of an entry a repair may rewrite: a file, an end's lines, its pin, or the commit. */
 export type EntryPath = readonly [
   end: "claim" | "source",
-  field: "file" | "lines" | "integrity" | "commit-sha",
+  field: "file" | "lines" | "pointer" | "integrity" | "commit-sha",
 ];
 
 /** Replace the scalar on one line of entry N, e.g. `source.lines` after a move. */
