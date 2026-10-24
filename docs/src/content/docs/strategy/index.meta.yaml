@@ -22,8 +22,8 @@ docs/src/content/docs/strategy/index.mdx:
       grader: ai
   provenance:
     - generated-by: Claude Opus 5.5
-      lines: 2-250
-      integrity: sha256-b8c9f9e6e8855c7b07a7deb619e08134cb6ad56ed493b79dae3e9b358f6a5646
+      lines: 2-258
+      integrity: sha256-06cb6d408556e17e3e445d4cdcbe6831234fec383ecf7b857e96492244a5287e
   owner:
     - "@hawkeyexl"
   created: 2026-10-22
