@@ -11,7 +11,7 @@ action: remember
 concepts:
   - search index
   - vector sidecar
-last-updated: 2026-10-23
+last-updated: 2026-10-24
 ---
 
 manni graph is a CLI first, and everything it does is reachable as a library. The
@@ -197,6 +197,11 @@ returns the first same-titled heading's body.
 `createRetriever` serves the [chunk artifact](/manni/graph/reference/cli/#chunks)
 to a script, with each passage's proof. It returns data and calls no model
 besides the query embedder.
+
+The [in-docs playground](/manni/graph/retrieve-from-a-script/#try-it-on-this-site)
+runs `lookup`, `retrieve`, `traverse` and `impact` against this site's artifact.
+It shows the call and its returned values, with an optional WebLLM model to
+answer questions about the result in the browser.
 
 ```js
 import { createRetriever } from "@hawkeyexl/manni/graph/runtime";

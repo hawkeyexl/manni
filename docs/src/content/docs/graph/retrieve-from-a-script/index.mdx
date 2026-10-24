@@ -1,5 +1,5 @@
 ---
-title: Retrieve from a script
+title: Retrieve in a browser or from a script
 description: Call createRetriever from a worker or a page, so a site's Ask AI answers from passages that carry their pins, dates and eval verdicts.
 type: how-to
 id: graph-retrieve-from-a-script
@@ -8,19 +8,20 @@ audiences:
   - docs-engineers
 lifecycle: published
 action: develop
-last-updated: 2026-10-21
+last-updated: 2026-10-24
 ---
 
 import RetrievePrototype from "../../../../components/RetrievePrototype.astro";
 
-An "Ask AI" box on a docs site needs passages to answer from. A vendor that
-crawls the pages chunks them its own way, and knows nothing the docs repo
-proves. `createRetriever` serves the passages manni published instead, each
-with its proof. It returns data and calls no model, so the answer stays with
-the model you choose.
+Run a graph function against these docs. Inspect its results, or enable a local
+model to answer questions about them.
 
-This is Maya's page. The outcome: her site's Ask AI quotes current
-sentences, flags drifted ones, and cites the page each came from.
+## Try it on this site
+
+<RetrievePrototype />
+
+Answers are experimental and unchecked. Larger models can give better answers.
+This playground is provided as an example.
 
 ## Before you start
 
@@ -252,12 +253,3 @@ A refusal comes back in the result. Two errors throw instead:
   than `chunks.json` names. Publish again.
 - **`ModelMismatchError`**: the embedder you passed is not the model the
   queried language was embedded with.
-
-## Try it on this site
-
-The box below is a prototype on this site, built from
-`createRetriever().lookup()` in lexical mode. It is not part of manni, and the
-package does not export it. The first search downloads this site's artifact,
-several megabytes, so it takes a moment.
-
-<RetrievePrototype />

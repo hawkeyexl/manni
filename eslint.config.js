@@ -204,7 +204,7 @@ export default tseslint.config(
     // Plain JavaScript, and *not* in tsconfig's `include` (`["src", "test"]`),
     // so type-aware linting cannot cover it — `disableTypeChecked` turns those
     // rules off rather than letting them fail on a file with no program.
-    files: ["scripts/*.mjs"],
+    files: ["scripts/**/*.mjs"],
     extends: [js.configs.recommended, tseslint.configs.disableTypeChecked],
     languageOptions: {
       globals: globals.node,
