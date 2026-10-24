@@ -92,6 +92,9 @@ export async function resolveReaders(
   for (const plan of plans) {
     const opted = plan.evals.filter((ev) => isJudgedOptIn(plan, ev));
     if (opted.length === 0) continue;
+    // The value is checked before the record-page skip below, on purpose: the
+    // plan makes a bad `readers` value an error wherever persona records
+    // exist, on a record page too.
     for (const ev of opted) {
       const invalid = optionalEnum(ev.options, "readers", READERS_VALUES);
       if (invalid !== undefined) {
