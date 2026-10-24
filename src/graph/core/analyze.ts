@@ -226,7 +226,7 @@ function slugNorm(path: string): string {
  * Ambiguous fallback matches (two files normalizing identically) stay
  * unresolved rather than guessing.
  */
-class PathIndex {
+export class PathIndex {
   private readonly lower = new Map<string, string | null>();
   private readonly slugged = new Map<string, string | null>();
 
@@ -317,9 +317,10 @@ export function routeLanguageFor(
  * Resolve a root-absolute route (`/docs/actions/find`) to a source file via
  * the configured mappings. Returns the repo path, "broken" when a mapping's
  * basePath matched but no candidate file exists, or null when no mapping
- * covers the route.
+ * covers the route. `manni strategy` resolves a journey step's `doc` with it,
+ * so a step and a link name a page the same way.
  */
-function resolveRoute(
+export function resolveRoute(
   pathPart: string,
   routes: RouteMapping[],
   index: PathIndex,

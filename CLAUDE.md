@@ -146,9 +146,12 @@ Key layers:
 - `src/strategy/`: the content-strategy domain, `manni strategy list`, `get`
   and `check` (proposal 0102). A record is a page declaring `type: audience`,
   `type: persona` or `type: journey`, and `check` holds each page's
-  `audiences:`, `personas:` and `journeys:` to the records.
+  `audiences:`, `personas:` and `journeys:` to the records. It also holds
+  each journey's `steps:` to the pages they name (proposal 0106).
   - `src/strategy/core/`: the `strategy:` config loader, the set loader, which
-    reads sidecars through meta's page view, the rules, and severity.
+    reads sidecars through meta's page view, the rules, and severity. The
+    step resolver, `steps.ts`, maps a `/` route through graph's
+    `resolveRoute`.
   - `src/strategy/commands/`: the command cores and the findings adapter,
     free of CLI/IO plumbing.
   - `src/strategy/reporters/`: output formatting (pretty / json / github /

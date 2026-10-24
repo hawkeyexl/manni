@@ -4,8 +4,11 @@
  * by its tests; the CLI reads stdin once and hands it in.
  */
 import { isAbsolute, relative, resolve } from "node:path";
+import { loadConfig } from "../../graph/core/config.js";
+import { routesFrom } from "../../graph/core/discover.js";
 import { resolveStrategyRun } from "../core/config.js";
 import { loadStrategySet } from "../core/load-set.js";
+import { resolveSteps, stepsNeedRoutes, type StepMap } from "../core/steps.js";
 import { StrategyError } from "../errors.js";
 import type { StrategyRun, StrategySet } from "../types.js";
 
@@ -38,6 +41,8 @@ export interface LoadedStrategy {
   cwd: string;
   run: StrategyRun;
   set: StrategySet;
+  /** Each journey's steps, resolved against the run's pages. */
+  steps: StepMap;
 }
 
 export async function loadStrategy(opts: StrategyCommandOptions): Promise<LoadedStrategy> {
@@ -63,7 +68,10 @@ export async function loadStrategy(opts: StrategyCommandOptions): Promise<Loaded
     ...(opts.as === undefined ? {} : { as: opts.as }),
     ...(opts.onNotice === undefined ? {} : { onNotice: opts.onNotice }),
   });
-  return { cwd, run, set };
+  // `graph:` is read only when a step names a `/` route, and through graph's own loader.
+  const routes = stepsNeedRoutes(set) && run.configPath !== undefined ? routesFrom(loadConfig(run.configPath, cwd), run.base) : [];
+  const steps = resolveSteps(set, { routes, from: run.configDir ?? cwd, base: run.base });
+  return { cwd, run, set, steps };
 }
 
 /** `value` when it is one of `allowed`, else the family's unknown-format refusal. */

@@ -1,6 +1,6 @@
 ---
 title: Check rules
-description: "The six rules manni strategy check applies to a docset's audiences, personas and journeys, with each one's default severity, the message it prints, where it is reported, and what fixes it."
+description: "The ten rules manni strategy check applies to a docset's audiences, personas, journeys and journey steps, with each one's default severity, the message it prints, where it is reported, and what fixes it."
 sidebar:
   order: 2
 type: reference
@@ -11,6 +11,8 @@ keywords:
   - undefined-reference
   - missing-parent
   - unserved-journey
+  - broken-step
+  - missing-journey
 language: en
 audiences:
   - schema-authors
@@ -41,7 +43,7 @@ related-pages:
   - /manni/strategy/reference/cli/
 concepts:
   - validation
-last-updated: 2026-10-23
+last-updated: 2026-10-24
 ---
 
 {/* cite rule-id-prefix */}
@@ -61,6 +63,10 @@ shows.
 | `orphan-record` | warning | A persona names no audience, or a journey names no persona, while the set holds records of the parent type. |
 | `unserved-journey` | warning | No page names the journey in `journeys:`. Records do not count, and a draft or archived journey is exempt. |
 | `unused-record` | notice | No page and no record names an audience or a persona. |
+| `broken-step` | error | A step's `doc` names no page, or a step says `exists: true` or `partial` and has no `doc`. A step with `exists: false` is exempt. |
+| `stale-step` | warning | A step says `exists: false`, and its `doc` names a page. |
+| `missing-journey` | warning | A step's page does not name the journey in `journeys:`. |
+| `unwritten-step` | notice | A step says `exists: false`, or has no `doc`. |
 
 ## Records and references
 
@@ -78,6 +84,47 @@ finding about it sits at the sidecar's line.
 Every id compares ignoring case. A field is checked only when the set holds a
 record of that field's type. A docset with persona records and no audience
 records keeps a free-form `audiences:`, and no rule reads it.
+
+## Steps
+
+A journey can carry `steps:`, its stages in order, each with the page that
+carries it. Each item is a mapping of `stage`, `doc`, `exists` and `note`.
+A field of another type reads as absent, and `manni meta validate` checks
+the shape. Steps count from 1, in the order written.
+
+A step's `doc` names a page in one of two forms:
+
+- A repo path, such as `docs/guide.md`. It resolves from the config file's
+  directory, or from the working directory when no config file governs the
+  run. It names the file exactly.
+- A site route, a path that starts with `/`, such as `/manni/meta/ci/`. It
+  resolves through `graph.routes`, as a link does for `manni graph`.
+  `manni strategy` reads `graph:` only when a step names a route.
+
+Anything after `#` or `?` is dropped first, so an anchor is not checked. A
+URL with a scheme, such as `https://`, is not checked. Neither is a route
+that no `graph.routes` entry covers. A record is never a step's page.
+
+Each step gets one state. The tool detects what it can, and reads `exists`
+only for what it cannot detect:
+
+| `doc` | `exists` | State |
+|---|---|---|
+| names a page that names the journey in `journeys:` | absent, `true` or `false` | `served` |
+| names a page that does not | absent, `true` or `false` | `unclaimed` |
+| names a page | `partial` | `partial` |
+| names no page | `false` | `unwritten` |
+| absent | absent or `false` | `unwritten` |
+| names no page | absent, `true` or `partial` | `broken` |
+| absent | `true` or `partial` | `broken` |
+| a scheme URL or an unmapped route | absent, `true` or `partial` | `unchecked` |
+| a scheme URL or an unmapped route | `false` | `unwritten` |
+
+A step that names a page claims it exists, unless it says `exists: false`.
+That tells a planned page from a typo. Coverage is the served steps over all
+steps, so `partial`, `unclaimed` and `unchecked` steps do not count. A step
+of a `draft` or `archived` journey draws no finding, and `get` and `list`
+still show its state.
 
 ## Every rule in one run
 
@@ -123,6 +170,40 @@ strategy/personas/devin.md:1
                                               Guide: https://hawkeyexl.github.io/manni/strategy/reference/rules/#orphan-record
 
 3 errors, 3 warnings, 1 notice in 7 records
+```
+
+The step rules need a journey with steps. This journey's nine steps break
+each of them. A finding about a `doc` sits on the `doc:` line, one about
+`exists` on the `exists:` line, and an `unwritten-step` on the step's first
+line:
+
+```console
+$ manni strategy check
+strategy/journeys/m1.md:16
+  warning manni:strategy/missing-journey      step 4: docs/reference.md does not name "m1" in journeys:.
+                                              Add it to that page's journeys:, or point the step at a page that does.
+                                              manni:strategy missing-journey: A step's page does not name the journey in journeys:.
+                                              Guide: https://hawkeyexl.github.io/manni/strategy/reference/rules/#missing-journey
+strategy/journeys/m1.md:18
+  error   manni:strategy/broken-step          step 5: doc "docs/gide.md" names no page.
+                                              Correct doc, or set exists: false if the page does not exist.
+                                              manni:strategy broken-step: A step's doc names no page, or a step says exists: true or partial and has no doc. A step with exists: false is exempt.
+                                              Guide: https://hawkeyexl.github.io/manni/strategy/reference/rules/#broken-step
+strategy/journeys/m1.md:21
+  warning manni:strategy/stale-step           step 6: exists: false, but doc "docs/ci/index.md" names a page.
+                                              Set exists: true or partial, or drop exists:.
+                                              manni:strategy stale-step: A step says exists: false, and its doc names a page.
+                                              Guide: https://hawkeyexl.github.io/manni/strategy/reference/rules/#stale-step
+strategy/journeys/m1.md:22
+  notice  manni:strategy/unwritten-step       step 7: doc "/site/tutorial/" names a page that does not exist.
+                                              manni:strategy unwritten-step: A step says exists: false, or has no doc.
+                                              Guide: https://hawkeyexl.github.io/manni/strategy/reference/rules/#unwritten-step
+strategy/journeys/m1.md:25
+  notice  manni:strategy/unwritten-step       step 8: no page carries this stage.
+                                              manni:strategy unwritten-step: A step says exists: false, or has no doc.
+                                              Guide: https://hawkeyexl.github.io/manni/strategy/reference/rules/#unwritten-step
+
+1 error, 2 warnings, 2 notices in 4 records
 ```
 
 ## What each rule means
@@ -220,3 +301,58 @@ lands with a page that serves it, or as a draft.
 No page names the audience or persona, and no record names it as its parent.
 It is a notice, so it never fails a run. A journey has `unserved-journey`
 instead.
+
+### `broken-step`
+
+A step's `doc` names no page of the run, or a step claims a page with
+`exists: true` or `partial` and names none. Both leave a dangling path in the
+journey, so the rule is an error. The finding sits on the `doc:` line, or on
+the `exists:` line when there is no `doc`:
+
+```
+step 5: doc "docs/gide.md" names no page. Correct doc, or set exists: false if the page does not exist.
+step 3: exists: true, but the step has no doc. Name its page in doc:, or set exists: false.
+```
+
+Correct the path or the route. When the page is still to be written, say so
+with `exists: false`, and the step becomes an `unwritten-step` notice. A run
+given paths reads only those pages, so a step whose page is outside them is
+broken there.
+
+### `stale-step`
+
+A step says `exists: false`, and its `doc` names a page that is there. The
+page was written after the step. The finding sits on the `exists:` line:
+
+```
+step 6: exists: false, but doc "docs/ci/index.md" names a page. Set exists: true or partial, or drop exists:.
+```
+
+### `missing-journey`
+
+A step's page does not name the journey in its own `journeys:`. Other tools
+read the page's `journeys:`, so the step alone does not make the claim. The
+finding names the page by its path from the working directory, and sits on
+the `doc:` line:
+
+```
+step 4: docs/reference.md does not name "m1" in journeys:. Add it to that page's journeys:, or point the step at a page that does.
+```
+
+Add the journey to the page's `journeys:`, or point the step at the page that
+carries the stage. A journey whose steps' pages all leave it out also draws
+`unserved-journey`, and each names its own fix.
+
+### `unwritten-step`
+
+A step says `exists: false`, or has no `doc` at all. It gives a planned page
+a file and a line. It is a notice, so it never fails a run. The finding sits
+on the step's first line:
+
+```
+step 7: doc "/site/tutorial/" names a page that does not exist.
+step 8: no page carries this stage.
+```
+
+Write the page and drop `exists: false`, or turn the rule `off` under
+`strategy.severity`.
