@@ -22,11 +22,10 @@
 // Plain ESM with no dependencies: the plugin ships as files, not a package.
 import { spawn, spawnSync } from "node:child_process";
 import { existsSync, readFileSync, realpathSync } from "node:fs";
-import { dirname, join, resolve } from "node:path";
+import { dirname, join, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const PACKAGE = "@hawkeyexl/manni";
-export const project = resolve(process.env.CLAUDE_PROJECT_DIR ?? process.cwd());
 const windows = process.platform === "win32";
 
 function readJson(file) {
@@ -36,6 +35,34 @@ function readJson(file) {
     return undefined;
   }
 }
+
+/**
+ * CLAUDE_PROJECT_DIR, unless the working directory is in a git worktree of
+ * that project's repository: a worktree session names the main checkout
+ * there, and the worktree is the checkout being worked on. Git writes a
+ * worktree's `.git` as a file pointing into the main `.git/worktrees/`.
+ */
+function projectDir() {
+  const cwd = resolve(process.cwd());
+  if (!process.env.CLAUDE_PROJECT_DIR) return cwd;
+  const declared = resolve(process.env.CLAUDE_PROJECT_DIR);
+  for (const d of upward(cwd)) {
+    if (!existsSync(join(d, ".git"))) continue;
+    let gitdir;
+    try {
+      gitdir = /^gitdir:\s*(.+?)\s*$/m.exec(readFileSync(join(d, ".git"), "utf8"))?.[1];
+    } catch {
+      // A `.git` directory: a repository of its own, not a worktree.
+    }
+    if (gitdir === undefined) return declared;
+    const fold = (p) => (windows ? p.toLowerCase() : p);
+    const inWorktrees = fold(resolve(d, gitdir)).startsWith(fold(join(declared, ".git", "worktrees") + sep));
+    return inWorktrees ? d : declared;
+  }
+  return declared;
+}
+
+export const project = projectDir();
 
 /** The `manni` bin a package.json names, when that file exists. */
 function binOf(manifest) {

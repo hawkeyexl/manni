@@ -1,0 +1,5 @@
+[{"page":"/manni/","views":100,"exits":60},
+ {"page":"/manni/guide/","views":40,"exits":10},
+ {"page":"/manni/ci/?ref=nav","views":20,"exits":12},
+ {"page":"/manni/ci/","views":10,"exits":6},
+ {"page":"/manni/gone/","views":5,"exits":5}]

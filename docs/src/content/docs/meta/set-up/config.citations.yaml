@@ -130,7 +130,7 @@ docs/src/content/docs/meta/set-up/config.mdx:
         file: src/meta/core/validator.ts
         lines: 951-962
         integrity: sha256-5df291a46b86659b90de1a063b96f3fe5ec57fc2989611328d6041f2ddb1cf7d
-        commit-sha: 13e1b66ba66ec8dcaad71604abc443248a7e1b5a
+        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
     - id: config-exclude-does-not-filter-typed-paths
       claim:
         lines: 116
@@ -155,9 +155,9 @@ docs/src/content/docs/meta/set-up/config.mdx:
         integrity: sha256-6db4d5d084e63d6301555a29399627c768a89ea90219446ce59f29e70f534908
       source:
         file: CHANGELOG.md
-        lines: 1176-1179
+        lines: 1183-1186
         integrity: sha256-45e8f8c4528f6e8164bb9f060cb05f911f235aec5b19ef2d7c4001423d3c47e5
-        commit-sha: 544bb2afeed952d29440ecbcf3628ee4d33eee54
+        commit-sha: 1e20b79fa48d2d3952008fbb2f7cfc44d6e6f9d9
     - id: collection-flag-refuses-positional-paths
       claim:
         integrity: sha256-733c0b2524ed1903bd3560cdcfd64a88195eabb411d4f725708cc91cfbf30146
