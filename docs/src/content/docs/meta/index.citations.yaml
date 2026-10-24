@@ -26,7 +26,7 @@ docs/src/content/docs/meta/index.mdx:
         file: src/meta/core/validator.ts
         lines: 952-953
         integrity: sha256-b41d2247f4df563b4638532286fcaf90f3105ab234b56e24619fd7f598d68e59
-        commit-sha: 13e1b66ba66ec8dcaad71604abc443248a7e1b5a
+        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
     - id: forty-five-built-in-schemas
       claim:
         integrity: sha256-9e4919db3f2c7b8d5b8d495e05695a990ee087c81083038868822067556ceb18

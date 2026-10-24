@@ -102,4 +102,4 @@ docs/src/content/docs/meta/ci/index.mdx:
         file: action.yml
         lines: 93-95
         integrity: sha256-0591f85099b377b05eac2a9adf687d88199b07560b9b26cc1ad8c704294af850
-        commit-sha: 13e1b66ba66ec8dcaad71604abc443248a7e1b5a
+        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
