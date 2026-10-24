@@ -91,6 +91,22 @@ describe("resolveReaders over the persona fixture", () => {
     expect(evalOf(plans, "docs/bad-value.md", "finish-task").readers).toBeUndefined();
   });
 
+  it("refuses readers: persona on a record page too, and still gives it no readers", async () => {
+    const { config, plans } = await plansOf(PERSONAS);
+    // The fixture's journey record opts in correctly; give it the bad value here.
+    const ev = evalOf(plans, "strategy/t1.md", "journey-outcome");
+    ev.options = { ...ev.options, readers: "persona" };
+    const problems = await resolveReaders(plans, config, PERSONAS);
+    expect(problems.filter((p) => p.file === "strategy/t1.md")).toEqual([
+      {
+        file: "strategy/t1.md",
+        level: "error",
+        message: 'Eval "journey-outcome": ai options.readers must be one of: personas',
+      },
+    ]);
+    expect(ev.readers).toBeUndefined();
+  });
+
   it("ignores reader: personas", async () => {
     const { config, plans } = await plansOf(PERSONAS);
     const problems = await resolveReaders(plans, config, PERSONAS);
