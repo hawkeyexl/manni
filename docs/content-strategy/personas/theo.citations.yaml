@@ -12,7 +12,7 @@ docs/content-strategy/personas/theo.md:
     - id: unknown-schema
       claim:
         pointer: /pains/1
-        integrity: sha256-2cb414142f059fd87c40107c52155c6c27196539e6ff4892f709dd571ed48c53
+        integrity: sha256-80465ee5908321f5b3a3fc72242123989538da62e9e1f08f320195bc20908fdc
       source:
         file: docs/proposals/0089-findings-say-what-to-do.md
         lines: 34

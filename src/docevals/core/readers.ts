@@ -14,7 +14,7 @@
  * `options.readers` key, and reading them prints nothing.
  */
 import { resolve } from "node:path";
-import { RECORD_TYPES, loadStrategySet, resolveStrategyRun } from "../../strategy/index.js";
+import { loadStrategySet, resolveStrategyRun } from "../../strategy/index.js";
 import { optionalEnum } from "../graders/options.js";
 import { renderReaders, type ReaderRecord } from "../judge/prompt.js";
 import type { DocevalsConfig } from "./config.js";
@@ -61,10 +61,6 @@ function personaIds(value: unknown): string[] {
   return value.filter((v): v is string => typeof v === "string" && v.trim() !== "");
 }
 
-function isRecordPage(data: Record<string, unknown>): boolean {
-  return (RECORD_TYPES as readonly unknown[]).includes(data["type"]);
-}
-
 /**
  * Give each opted-in eval its readers, in place, and return the one problem
  * this can raise: a `readers` value other than `personas`, where persona
@@ -93,9 +89,6 @@ export async function resolveReaders(
   for (const plan of plans) {
     const opted = plan.evals.filter((ev) => isJudgedOptIn(plan, ev));
     if (opted.length === 0) continue;
-    // The value is checked before the record-page skip below, on purpose: the
-    // plan makes a bad `readers` value an error wherever persona records
-    // exist, on a record page too.
     for (const ev of opted) {
       const invalid = optionalEnum(ev.options, "readers", READERS_VALUES);
       if (invalid !== undefined) {
@@ -104,7 +97,6 @@ export async function resolveReaders(
     }
 
     const data = plan.page.frontmatter.data;
-    if (isRecordPage(data)) continue;
     const readers = [
       ...new Set(
         personaIds(data["personas"]).flatMap((id) => {

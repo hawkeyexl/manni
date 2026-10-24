@@ -127,7 +127,6 @@ describe("under the rule", () => {
       ["docs/no-reader.md", "finish-task"],
       ["docs/bad-key.md", "finish-task"],
       ["docs/bad-value.md", "finish-task"],
-      ["strategy/t1.md", "journey-outcome"],
     ] as const) {
       expect(byFile(report, file, name), `${file} ${name}`).not.toHaveProperty("personas");
     }
@@ -259,15 +258,15 @@ describe("--since counts a persona record for an opted-in page", () => {
     const full = (await judged(PERSONAS)).report;
     const scoped = (await judged(PERSONAS, { since: "main", exec: git(PERSONAS, ["strategy/maya.md"]) })).report;
     expect(graded(scoped)).toEqual(reading(full, "maya"));
-    // The record itself is a page of the strategy collection, so it counts too.
-    expect(scoped.since?.pagesSelected).toBe(reading(full, "maya").size + 1);
+    // A record is not a docevals page (0104), so it selects nothing itself.
+    expect(scoped.since?.pagesSelected).toBe(reading(full, "maya").size);
   });
 
-  it("selects only the record itself under --deterministic-only", async () => {
+  it("selects no page under --deterministic-only", async () => {
     const scoped = (
       await judged(PERSONAS, { since: "main", deterministicOnly: true, exec: git(PERSONAS, ["strategy/maya.md"]) })
     ).report;
-    expect(scoped.since?.pagesSelected).toBe(1);
+    expect(scoped.since?.pagesSelected).toBe(0);
   });
 });
 
@@ -285,6 +284,6 @@ describe("--newer-than counts a persona record's age for an opted-in page", () =
     const full = (await judged(PERSONAS)).report;
     const scoped = (await judged(dir, { newerThan: "1h", exec: noGit })).report;
     expect(graded(scoped)).toEqual(reading(full, "maya"));
-    expect(scoped.newerThan?.pagesSelected).toBe(reading(full, "maya").size + 1);
+    expect(scoped.newerThan?.pagesSelected).toBe(reading(full, "maya").size);
   });
 });
