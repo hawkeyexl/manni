@@ -4,6 +4,14 @@
 4.13.1. Entries below that version are docmeta releases; the repository
 history is the same one.
 
+# [4.23.0](https://github.com/hawkeyexl/manni/compare/v4.22.0...v4.23.0) (2026-10-24)
+
+
+### Features
+
+* **cite:** a citation finding names the readers of its page (0105) ([#240](https://github.com/hawkeyexl/manni/issues/240)) ([9bae0b6](https://github.com/hawkeyexl/manni/commit/9bae0b61238cacda61d680ec39caf453fc235e1e)), closes [#243](https://github.com/hawkeyexl/manni/issues/243)
+* **family:** manni check ranks findings by the readers they reach (0109) ([#243](https://github.com/hawkeyexl/manni/issues/243)) ([1edcb14](https://github.com/hawkeyexl/manni/commit/1edcb14c93a0d0f8db5863c67e686c32735d80d9))
+
 # [4.22.0](https://github.com/hawkeyexl/manni/compare/v4.21.0...v4.22.0) (2026-10-24)
 
 

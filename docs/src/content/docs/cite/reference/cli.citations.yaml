@@ -213,7 +213,7 @@ docs/src/content/docs/cite/reference/cli.mdx:
         file: src/cite/reporters/github.ts
         lines: 55-73
         integrity: sha256-83936929c6c1d5df2f179df137b9c7265f6f6cce4112bbd9281f838fa546f26e
-        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
+        commit-sha: 9bae0b61238cacda61d680ec39caf453fc235e1e
     - id: github-sample-source-changed
       claim:
         lines: 388
