@@ -8,6 +8,7 @@
  */
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
+import { readRecord } from "../../shared/reference-fields.js";
 import { loadSiteConfig } from "../../site/core/config.js";
 import { detectFramework } from "../../site/core/detect.js";
 import { analyzeDoc } from "../core/analyze.js";
@@ -91,6 +92,8 @@ export interface LlmsOptions {
   source: MetaViewSource;
   graphPath: string;
   outPath: string;
+  /** `false` leaves strategy records out (proposal 0110), as a `--no-authoring` build does. */
+  authoring?: boolean;
 }
 
 /** Writes `llms.txt`. Returns the pages it lists and its warnings. */
@@ -132,6 +135,7 @@ export async function exportLlms(opts: LlmsOptions): Promise<{ pages: number; wa
   for (const [n, page] of pages.entries()) {
     const route = routeOf(page.path, routes, style);
     const model = models[n];
+    if (model !== undefined && opts.authoring === false && readRecord(model.frontmatter, page.path) !== undefined) continue;
     if (route === undefined || model === undefined) {
       unrouted += 1;
       continue;

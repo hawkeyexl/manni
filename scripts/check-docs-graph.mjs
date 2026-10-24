@@ -13,6 +13,10 @@
  * A run that silently stopped reading manifests would still build and check
  * green; this is the assertion that catches it.
  *
+ * Then the other direction (proposal 0110). `created` is a field its schema
+ * prefers in a sidecar, so a `--no-authoring` build of the same section must
+ * hold none of those manifest-only dates.
+ *
  * Usage: npm run docs:check-graph   (needs `npm run build` first)
  */
 import { execFile } from "node:child_process";
@@ -58,21 +62,26 @@ const check = await cli(["check"]);
 process.stdout.write(check.stdout);
 process.stderr.write(check.stderr);
 
-const query = await cli(["query", "--predicate", "dcterms:created", "-f", "json"]);
-const { matches } = JSON.parse(query.stdout);
-
-let fromManifest = 0;
-for (const { s, o } of matches) {
-  if (!s.startsWith(DOC_PREFIX)) continue;
-  const page = s.slice(DOC_PREFIX.length);
-  const manifest = page.replace(/\.mdx?$/, ".meta.yaml");
-  const onPage = /^created:/m.test(frontmatterOf(await readFile(page, "utf8")));
-  const inManifest = await readFile(manifest, "utf8").then(
-    (text) => new RegExp(`^  created: ${o.value}\r?$`, "m").test(text),
-    () => false,
-  );
-  if (!onPage && inManifest) fromManifest++;
+/** How many pages of the graph at `graphArgs` carry a `created` only their manifest holds. */
+async function manifestOnlyCreated(graphArgs) {
+  const query = await cli(["query", ...graphArgs, "--predicate", "dcterms:created", "-f", "json"]);
+  const { matches } = JSON.parse(query.stdout);
+  let count = 0;
+  for (const { s, o } of matches) {
+    if (!s.startsWith(DOC_PREFIX)) continue;
+    const page = s.slice(DOC_PREFIX.length);
+    const manifest = page.replace(/\.mdx?$/, ".meta.yaml");
+    const onPage = /^created:/m.test(frontmatterOf(await readFile(page, "utf8")));
+    const inManifest = await readFile(manifest, "utf8").then(
+      (text) => new RegExp(`^  created: ${o.value}\r?$`, "m").test(text),
+      () => false,
+    );
+    if (!onPage && inManifest) count++;
+  }
+  return count;
 }
+
+const fromManifest = await manifestOnlyCreated([]);
 
 if (fromManifest === 0) {
   console.error(
@@ -82,3 +91,17 @@ if (fromManifest === 0) {
   process.exit(1);
 }
 console.log(`${fromManifest} pages carry a created date only their manifest holds`);
+
+const USER_FACING = ".manni/graph/no-authoring/graph.ttl";
+const userFacing = await cli(["build", SECTION, "--no-authoring", "-o", USER_FACING]);
+process.stdout.write(userFacing.stdout);
+process.stderr.write(userFacing.stderr);
+const leaked = await manifestOnlyCreated(["-g", USER_FACING]);
+if (leaked > 0) {
+  console.error(
+    `docs:check-graph: a --no-authoring build still carries ${leaked} created dates only a manifest holds. ` +
+      "Values a schema prefers in a sidecar are reaching a graph built without author-facing content.",
+  );
+  process.exit(1);
+}
+console.log("the --no-authoring build carries no created date a manifest holds");

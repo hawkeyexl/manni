@@ -1,0 +1,11 @@
+A docs page can say whom it serves, as in personas: [devin, maya]. To an agent editing that page, those are two bare ids. It has no idea that devin runs CI.
+
+Now, in the manni plugin for Claude Code, a page read names the records behind those ids. The agent gets the page's key fields first, then one short line per record with the file to read. It gets a pointer, never a copy, so editing a record re-sends nothing.
+
+The same lookup is plain manni meta get. Ask for personas and it prints a record line for each one. No new flag.
+
+Huge pages stay usable too. Our cite CLI reference stores over 59,000 characters of metadata. The reply the agent gets is 3,311 characters, under Claude Code's limit of 10,000. Its last line names the two fields it left out and the command that prints them.
+
+Real output, from the manni repository's own docs.
+
+npm i -D @hawkeyexl/manni · manni meta get personas docs/guide.md

@@ -1,0 +1,11 @@
+# meta get names the records a page names, and the plugin's Read hook passes
+# them on as references. `pages` keeps personas: and journeys: in a sidecar.
+# `strategy` holds one record of each type.
+collections:
+  - name: pages
+    paths: ["docs/**/*.md"]
+    externalMetadata:
+      - file: "{page}.meta.yaml"
+        keys: [personas, journeys]
+  - name: strategy
+    paths: ["strategy/**/*.md"]

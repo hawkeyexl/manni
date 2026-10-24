@@ -1,0 +1,6 @@
+842	manni: publishing the graph before serving it: ../../../../../../../HAWKEY~1/AppData/Local/Temp/manni/graph/1b1e36253fe824df/chunks.json does not exist.
+9526	manni: no docevals report is configured, so records carry no eval verdicts.
+9546	manni: no vector sidecar, so chunks carry no vectors and retrieval is lexical only; configure graph.embed to add them.
+11713	manni: 82 pages are under no route, so llms.txt leaves them out.
+11828	manni: published the graph in 11.0s.
+11853	manni: serving lookup, retrieve, traverse and impact over stdio from ../../../../../../../HAWKEY~1/AppData/Local/Temp/manni/graph/1b1e36253fe824df/chunks.json.
