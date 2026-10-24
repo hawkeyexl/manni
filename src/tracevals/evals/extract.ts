@@ -263,7 +263,8 @@ function normalizeBlock(raw: unknown): EvalEntry[] {
   return raw.map((entry, index) => normalizeEntry(entry, index));
 }
 
-function normalizeEntry(raw: unknown, index: number): EvalEntry {
+/** One `evals` entry as validated by the schema, with its defaults filled. `manni test tasks` reads a journey's `evals:` through it. */
+export function normalizeEntry(raw: unknown, index: number): EvalEntry {
   // The string shorthand is the legitimately id-less form, so its identity is
   // positional. Object entries carry a required `id` precisely because a
   // position-derived name breaks the history join whenever entries move.

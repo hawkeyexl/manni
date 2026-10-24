@@ -1,0 +1,13 @@
+Your fix page explains the error. Can a reader actually fix it from that page?
+
+`manni test tasks` finds out. A synthetic user, Claude Code playing one of your persona records, gets a task in plain text and a fresh copy of a repo. It starts from one docs page. When it is done, it writes an account of where it got stuck.
+
+Here Theo, a contributor with a red docs check, fixed his file. His account then flagged a real bug in our fix page. His error said "(line 1)", but the page said a missing field has no line number. We fixed the page.
+
+Run the same task again and manni judges it on completion and adherence. Did Theo do the task? Did he follow the docs, and his own constraints? All four checks pass.
+
+Keep the task as a journey with evals, and it reruns as a golden test. Seven evals pass, exit 0.
+
+The runs take minutes, mostly judging. The video shortens those waits, and the real times are on screen where they were recorded.
+
+npm i -g @hawkeyexl/manni · manni test tasks --journey t1

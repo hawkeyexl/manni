@@ -1,0 +1,54 @@
+task · The docs check on my pull request fails with: docs/install.m… · as theo
+  start     docs/src/content/docs/meta/fix/index.mdx
+  docs      meta/fix/index.mdx
+  changed   docs/install.md
+  7 turns · 0m 37s
+  PASS completed             docs/src/content/docs/meta/fix/index.mdx:1
+  PASS followed-the-docs     docs/src/content/docs/meta/fix/index.mdx:1
+  PASS constraint            docs/content-strategy/personas/theo.md:12
+  PASS constraint            docs/content-strategy/personas/theo.md:13
+  Account
+    It passes now. I added one line to the frontmatter of `docs/install.md`:
+
+    ```yaml
+    description: Explains how to install the widget by running its installer.
+    ```
+
+    I ran the check with `npx` (nothing installed globally) before and after
+    the fix:
+    - **Before:** I got the same error CI showed, `(root) must have required
+    property 'description' (line 1) [manni:core:1.0.0]`, with exit code 1.
+    - **After:** `✓ docs/install.md`, "1 file checked, 1 passed, 0 failed, 0
+    errors", exit code 0. I ran it on the single file and again with no path
+    from the repo root, which the docs say checks the same files CI does. Both
+    passed.
+
+    **What helped:**
+    - The "Decode the error line" table. It told me `(root)` plus `(line 1)`
+    means a field is missing entirely, not set wrong, so I didn't go hunting
+    for a bad value.
+    - The "Missing a required field" section had the exact fix, and the
+    "Reproduce and confirm locally" steps gave me a local check that needed no
+    install.
+    - The hint printed under the error ("One full non-empty sentence saying
+    what the page is for") told me what to write. I didn't have to open the
+    schema's reference page.
+
+    **What confused me:**
+    - I still don't know why `manni:core:1.0.0` ran. Our `manni.config.yaml`
+    only lists a collection of paths and doesn't name a schema, so I'm
+    guessing it's a default. The fix page never says what applies when the
+    config names no schema. It sends that question to the "how schema
+    resolution works" page, and I didn't open it because the fix didn't need
+    it.
+    - The page's main example uses `google:okf:0.1` and `type`, not the schema
+    that actually fired for me. I only found `manni:core` asking for
+    `description` in the "No frontmatter at all" example.
+    - The `fill` section seemed like more than I needed. It sends your page to
+    an AI model or downloads a local one, which is a lot for adding one line
+    to someone else's repo, so I skipped it.
+
+    All done. Moving on.
+  trace     .manni/test/tasks/20261024T012259Z-task-theo/trace.jsonl
+
+1 run: 1 passed

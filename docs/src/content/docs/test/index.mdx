@@ -1,32 +1,36 @@
 ---
 title: manni test
-description: "Run the Doc Detective tests embedded in your docs, and gate on them with exit codes 0, 1 and 2 and an annotation on each failing step."
+description: "Run the Doc Detective tests embedded in your docs, have a synthetic user attempt a task from them, and gate on both with exit codes 0, 1 and 2."
 tableOfContents: false
 hero:
-  tagline: Run the procedure tests in your docs, and gate on them like every other check.
+  tagline: Prove the procedures in your docs work, and that a reader can finish a task with them.
   actions:
     - text: CLI reference
       link: /manni/test/reference/cli/
       icon: right-arrow
       variant: primary
+    - text: Attempt a task
+      link: /manni/test/attempt-a-task/
+      icon: rocket
+      variant: secondary
     - text: Run it in CI
       link: /manni/test/#run-it-in-ci
       icon: setting
       variant: minimal
 id: "test"
 type: "overview"
-keywords: ["test run", "Doc Detective", "docs as tests", "procedure tests", "inline tests"]
+keywords: ["test procedures", "test tasks", "Doc Detective", "docs as tests", "procedure tests", "inline tests", "synthetic user"]
 language: en
-audiences: ["ci-engineers", "docs-engineers"]
-intent: "Understand what manni test run tests, which inputs it reads, and how to gate CI on its exit code."
+audiences: ["ci-engineers", "docs-engineers", "schema-authors"]
+intent: "Understand what manni test procedures and manni test tasks each test, which inputs they read, and how to gate CI on their exit codes."
 lifecycle: published
 applies-to: ["domain:test"]
-next-steps: ["test-reference-cli"]
+next-steps: ["test-attempt-a-task", "test-reference-cli"]
 related-pages: ["meta-reference-configuration"]
 risks: ["open-world"]
-sample-questions: ["How do I run the Doc Detective tests in my docs with manni?", "Which files does manni test run test when I give it no paths?", "What does each exit code of manni test run mean?"]
+sample-questions: ["How do I run the Doc Detective tests in my docs with manni?", "Which files does manni test procedures test when I give it no paths?", "What does each exit code of manni test procedures mean?", "How do I find out whether a reader can finish a task with my docs?"]
 graph: { label: "manni test", type: concept }
-last-updated: 2026-10-20
+last-updated: 2026-10-24
 tags:
   - testing
   - doc-detective
@@ -46,20 +50,28 @@ import { Aside, CardGrid, LinkCard } from '@astrojs/starlight/components';
 any release, without notice.
 </Aside>
 
+A page in the docs makes two claims. Its procedures work, and a reader can
+finish a job with it. `manni test` checks each claim with a verb of its own.
+
+| Command | Checks | Tool |
+| --- | --- | --- |
+| `manni test procedures` | The procedure tests embedded in the pages pass. | Doc Detective |
+| `manni test tasks` | A synthetic user, playing a persona, finishes a task from the pages. | Claude Code |
+
+The verb names the job, and config names the tool that answers it. Both verbs
+report the way every other manni gate does. CI calls each one it wants.
+
 A procedure in the docs is a claim that following it works. Doc Detective
 checks that claim. It reads tests embedded in a page as comments, runs each
-step, and records whether it passed. `manni test run` starts Doc Detective,
-reads the results it writes, and reports them the way every other manni gate
-does.
-
-The job is *test*, and Doc Detective is the tool that answers it. The verb
-names the job, so the command a person types stays the same whichever tool
-runs the tests.
+step, and records whether it passed. `manni test procedures` starts Doc
+Detective, reads the results it writes, and reports them. The sections below
+cover procedures, and [the last one](#attempt-a-task-as-a-persona) covers
+tasks.
 
 ## What it adds to Doc Detective
 
 - **An exit code that is a verdict.** Doc Detective exits `0` when a test
-  fails. `manni test run` exits `1` when anything failed, and `2` when the run
+  fails. `manni test procedures` exits `1` when anything failed, and `2` when the run
   itself went wrong.
 - **The page and line that broke.** Each failing step is listed under its page
   with its line, or written as a GitHub annotation with `-f github`.
@@ -82,10 +94,10 @@ step runs `echo hello`. In `fail.md`, it runs `exit 1`, on line 4.
 Run the failing page. The step's line is in the report, and the run exits `1`:
 
 {/* test {"testId":"test-overview-proof","description":"The overview's proof: fail.md exits 1 with its line, pass.md exits 0, and a missing path exits 2."} */}
-{/* step {"description":"A failing step exits 1 and names its line.","runShell":{"command":"npx @hawkeyexl/manni test run test/test/fixtures/fail.md --no-progress","exitCodes":[1],"stdio":"FAIL"}} */}
+{/* step {"description":"A failing step exits 1 and names its line.","runShell":{"command":"npx @hawkeyexl/manni test procedures test/test/fixtures/fail.md --no-progress","exitCodes":[1],"stdio":"FAIL"}} */}
 
 ```console
-$ manni test run test/test/fixtures/fail.md
+$ manni test procedures test/test/fixtures/fail.md
 test/test/fixtures/fail.md
   4  FAIL     Returned exit code 1. Expected one of [0]. Fix the step, fix the procedure it documents, or report a product regression.
               Doc Detective runShell
@@ -96,21 +108,21 @@ test/test/fixtures/fail.md
 
 Run the passing page. A clean run prints the summary alone, and exits `0`:
 
-{/* step {"description":"A passing page exits 0.","runShell":{"command":"npx @hawkeyexl/manni test run test/test/fixtures/pass.md --no-progress","exitCodes":[0],"stdio":"1 passed"}} */}
+{/* step {"description":"A passing page exits 0.","runShell":{"command":"npx @hawkeyexl/manni test procedures test/test/fixtures/pass.md --no-progress","exitCodes":[0],"stdio":"1 passed"}} */}
 
 ```console
-$ manni test run test/test/fixtures/pass.md
+$ manni test procedures test/test/fixtures/pass.md
 1 test: 1 passed, 0 failed, 0 warnings, 0 skipped
 ```
 
 Name a page that is not there. Doc Detective alone would skip it and pass.
 manni stops with exit `2`:
 
-{/* step {"description":"A path that does not exist exits 2.","runShell":{"command":"npx @hawkeyexl/manni test run test/test/fixtures/missing.md --no-progress","exitCodes":[2],"stdio":"File not found"}} */}
+{/* step {"description":"A path that does not exist exits 2.","runShell":{"command":"npx @hawkeyexl/manni test procedures test/test/fixtures/missing.md --no-progress","exitCodes":[2],"stdio":"File not found"}} */}
 {/* test end */}
 
 ```console
-$ manni test run test/test/fixtures/missing.md
+$ manni test procedures test/test/fixtures/missing.md
 manni: File not found: "test/test/fixtures/missing.md". Check the path. Named paths resolve from the working directory.
 ```
 
@@ -127,7 +139,7 @@ A run tests the first of these that is present:
 3. **Doc Detective's own `input`.** From its config file, which it finds as
    `.doc-detective.json`, `.yaml` or `.yml` in the working directory.
 
-A bare `manni test run` reads no collection, unlike `manni meta validate` and
+A bare `manni test procedures` reads no collection, unlike `manni meta validate` and
 `manni lint check`. A repository that tests its docs already has a Doc
 Detective config, and that config already says what to test. Reading
 collections too would give one question two answers.
@@ -156,7 +168,7 @@ Install Doc Detective, then run manni with the GitHub format:
 ```yaml title=".github/workflows/docs-as-tests.yml"
 - run: npm install -g doc-detective
 - name: Run the docs' tests
-  run: manni test run -f github --progress
+  run: manni test procedures -f github --progress
 ```
 
 `-f github` writes one annotation per failing step, on its page and line.
@@ -180,15 +192,42 @@ not need.
 For a dashboard, `-f json` prints Doc Detective's own results object,
 unchanged. A script written against Doc Detective's report reads it as it is.
 
+## Attempt a task as a persona
+
+A procedure test proves the steps work in the author's order. It does not
+prove a reader finds them. `manni test tasks` hands a task in plain text to a
+synthetic user, which is Claude Code run headless in a temporary directory. It
+can play one of your persona records, constraints included:
+
+```sh
+manni test tasks docs/src/content/docs/meta/fix/index.mdx --persona theo   --workspace test/test/fixtures/tasks/red-pr   --task "The docs check on my pull request fails. Make it pass."
+```
+
+The synthetic user starts from a copy of the docs, never your checkout.
+A judge then reads its trace and its workspace. It decides whether the reader
+completed the task and followed the docs, and whether it kept each persona
+constraint. The report ends with the reader's own account of where it got
+stuck. A run that fails exits `1`.
+
+A journey that declares `evals:` is a golden task. Its evals say what done
+means beyond the task's own words. `manni test tasks --journey
+t1` runs one, and a bare `manni test tasks` runs them all. [Attempt a task as
+a persona](/manni/test/attempt-a-task/) walks through both.
+
 <CardGrid>
+  <LinkCard
+    title="Attempt a task as a persona"
+    href="/manni/test/attempt-a-task/"
+    description="Ask whether a persona can finish a task from a page, read its account, fix the page, and keep the task as a golden journey."
+  />
   <LinkCard
     title="CLI reference"
     href="/manni/test/reference/cli/"
-    description="Every argument and flag of test run, the three output formats, the exit codes, and every message."
+    description="Every argument and flag of test procedures and test tasks, the output formats, the exit codes, and every message."
   />
   <LinkCard
     title="tools: configuration"
     href="/manni/meta/reference/configuration/#tools"
-    description="The tools.doc-detective.config key, beside the settings of every other outside tool manni runs."
+    description="The tools.doc-detective and tools.claude-cli keys, beside the settings of every other outside tool manni runs."
   />
 </CardGrid>

@@ -77,4 +77,15 @@ describe("discoverPages", () => {
       DocevalsError,
     );
   });
+
+  // A strategy record's `evals:` belong to `manni test tasks`, in tracevals'
+  // vocabulary, so docevals reading one as page evals would refuse its graders.
+  it("skips audience, persona and journey records, which are not pages", () => {
+    const pages = discoverPages(
+      config,
+      { paths: ["test/docevals/fixtures/strategy-records/*.md"] },
+      ROOT,
+    );
+    expect(pages.map((p) => p.file)).toEqual(["test/docevals/fixtures/strategy-records/page.md"]);
+  });
 });

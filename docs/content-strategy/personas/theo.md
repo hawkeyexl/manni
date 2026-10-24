@@ -4,6 +4,13 @@ id: theo
 title: Theo, Doc Contributor
 description: Theo is a developer or technical writer who opened a PR.
 audience: contributors
+goals:
+  - Find the field his check named, fix it, confirm locally, and move on.
+pains:
+  - He doesn't know which schema fired or why the rule exists.
+constraints:
+  - Reads only the pages the fix needs, never the rest of the documentation.
+  - Won't install anything globally to fix someone else's check.
 ---
 
 Theo is a developer or technical writer who opened a PR. The manni meta check is red. He has low context on the tool and is not interested in learning it. He wants to fix the one thing blocking his PR.

@@ -34,7 +34,7 @@ sample-questions:
 graph:
   label: Record when a page was last verified
   type: task
-last-updated: 2026-10-21
+last-updated: 2026-10-23
 tags:
   - testing
   - doc-detective
@@ -51,7 +51,7 @@ verified-by:
     check: test-record-last-verified
 ---
 
-`manni test run` proves that a page's procedure works, and the proof ends
+`manni test procedures` proves that a page's procedure works, and the proof ends
 with the job. A reader sees `last-updated`, which says when the text changed.
 It does not say whether the text still works. Two stewardship fields carry
 that second date, and the tool that runs the test writes them.
@@ -86,7 +86,7 @@ A page with several tests lists one entry per test. Two entries may share a
 
 ## Let the passing run write the date
 
-CI runs the tests with `manni test run`, as the
+CI runs the tests with `manni test procedures`, as the
 [overview](/manni/test/#run-it-in-ci) sets up. When the test passes, Doc
 Detective finds the entry that names it. It fills in `passed` and its own
 `version`, and sets `last-verified`, since every listed check has now passed:
