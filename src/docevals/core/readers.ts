@@ -78,6 +78,7 @@ export async function resolveReaders(
 ): Promise<RunProblem[]> {
   if (!plans.some((plan) => plan.evals.some((ev) => isJudgedOptIn(plan, ev)))) return [];
   const records = await load(config, cwd);
+  // With no persona records, a bad `readers` value goes unreported, by design.
   if (records.length === 0) return [];
 
   // Ids match ignoring case. A duplicate id resolves to the record read first;
