@@ -146,8 +146,14 @@ docs/src/content/docs/graph/publish/index.mdx:
       lines: 215-223
       integrity: sha256-492df60f79fe846097d000694ab1d23f51b07b2afe9b5f889c356869fabafd60
     - generated-by: Claude Opus 5.5
-      lines: 224-230
-      integrity: sha256-707c9b667174977abe23429110267e65c5333a1e2aaa7b4569b66afdb0cda67c
+      lines: 224-226
+      integrity: sha256-3f61b517409571ea67086895d1bd6834d384a0f8a50fab50b57cf4d8926c9fb5
+    - generated-by: GPT-6
+      lines: 227
+      integrity: sha256-13f2f44556b7adbba02dcb5e56a21c66007c8610a90e4d4891a39ada9d1ec2be
+    - generated-by: Claude Opus 5.5
+      lines: 228-230
+      integrity: sha256-d40eda88d117aaeb548dfdd33f839f7ffc58f69702ab65a30708026d06826604
     - generated-by: Claude Opus 5
       lines: 249-257
       integrity: sha256-d71a4e1e8af90778071d8968a7b34844e1171d081770f44419469fe5e4ca15b5
