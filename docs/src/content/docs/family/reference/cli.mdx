@@ -190,6 +190,54 @@ check, then the first line of its message. The summary counts every check, the
 failed ones, the skipped ones, and, only when there are any, the ones that could
 not run: `4 checks over 1 file: 0 failed, 2 skipped, 1 could not run`.
 
+### Who the findings reach
+
+A run by hand or in CI also rolls every check's findings up by the readers
+their pages serve. The roll-up appears when a check reports a finding on a page
+that names a persona or journey record. In `pretty` it is one block, after the
+lines for checks that did not run and before the summary.
+
+```console
+$ manni check
+…
+skipped  graph check   no graph: section
+
+The pages with findings serve 2 personas and 3 journeys.
+  devin   Devin                  3 errors and 1 warning on 2 pages
+  maya    Maya                   2 errors on 1 page
+  m2      Tighten the site       2 errors and 1 warning on 2 pages
+  m1      Set up the site        2 errors on 1 page
+  d1      Add the gate (draft)   3 errors on 1 page
+
+7 checks over 10 files: 2 failed, 4 skipped
+# exit 1
+```
+
+{/* cite family-impact-counts */}
+A finding counts once under every persona and journey its page names, whichever
+check reported it. So the rows add up to more than the run's findings. A
+finding in a page's `{page}` manifest, such as `index.meta.yaml`, counts on the
+page. A finding on a file that is no page, such as a record or a source, counts
+nowhere. A baselined finding is not reported, so it counts nowhere either.
+
+What a page names is its `personas:` and `journeys:`, read through meta's merged
+view. Only values with a record count, and only for a type that has records.
+The records come from every collection, whatever paths the run names.
+
+- **Order.** Personas come first, then journeys. A journey whose `lifecycle` is
+  `draft` or `archived` comes after every live one, and its title gains
+  ` (draft)` or ` (archived)`. Then rows run by errors, warnings and notices,
+  most first, then by id in numeric order.
+- **Counts.** A row names each nonzero severity, then the pages: `16 errors on
+  5 pages`, or `1 error and 2 warnings on 1 page`.
+- **Color.** The heading is bold on a TTY. Nothing else is colored.
+- **Absence.** No block prints when no reported finding sits on a page that
+  names a record. A hook's reply never carries one.
+
+The roll-up never changes a finding, a severity or the exit code. When the
+strategy set cannot be read, the report prints without it, and stderr says so
+once. [Messages](#messages) has the line.
+
 ### `github`
 
 The `github` output of each check that ran, concatenated: one `::error` or
@@ -200,6 +248,18 @@ run print nothing to stdout.
 $ manni check -f github
 ::error file=docs/limits.md,line=1::[./schemas/page.schema.json] (root) must have required property 'description'
 # exit 1
+```
+
+{/* cite family-impact-notice-first */}
+When the [roll-up](#who-the-findings-reach) is not empty, one `::notice` comes
+first, before every check's own lines. GitHub shows ten annotations of each
+level per step, so a notice printed later could be hidden. Its title is the
+roll-up's heading. Each line of its message is `<id> <title>: <counts>`, in the
+roll-up's order.
+
+```console
+$ manni check -f github | head -1
+::notice title=The pages with findings serve 2 personas and 3 journeys.::devin Devin: 3 errors and 1 warning on 2 pages%0Amaya Maya: 2 errors on 1 page%0Am2 Tighten the site: 2 errors and 1 warning on 2 pages%0Am1 Set up the site: 2 errors on 1 page%0Ad1 Add the gate (draft): 3 errors on 1 page
 ```
 
 ### `json`
@@ -225,6 +285,23 @@ One object. Each `report` is that domain's own `-f json` output, unchanged.
 | `checks[].status` | `pass`, `fail`, `error` or `skipped` | `error` means the check could not run, or its own JSON report did not parse. The other checks' reports are still there. |
 | `checks[].report` | object | On `pass` and `fail`. The domain's own JSON report. |
 | `checks[].message` | string | On `error` and `skipped`. Why the check did not run. |
+| `impact` | object[] | The [roll-up](#who-the-findings-reach), after `checks`, in its order. Absent when empty. |
+| `impact[].type` | `persona` or `journey` | Which page field named the record. |
+| `impact[].id` | string | The record's id. |
+| `impact[].title` | string | The record's `title`. Absent when the record has none. |
+| `impact[].lifecycle` | string | A journey record's `lifecycle`. Absent when the record has none. |
+| `impact[].findings` | integer | The reported findings, from every check, on the pages that name the record. |
+| `impact[].errors`, `.warnings`, `.notices` | integer | The same findings by severity. They sum to `findings`. |
+| `impact[].pages` | string[] | Those pages, relative to the working directory as `files` spells them, sorted. |
+
+Each `checks[].report` is unchanged, so cite's own report still carries its own
+`impact` for its own findings.
+
+```console
+$ manni check -f json | jq -r '.impact[] | select(.id == "m2") | .pages[]'
+docs/sidecar.md
+docs/two-journeys.md
+```
 
 ### `sarif`
 
@@ -236,8 +313,11 @@ unchanged except for two keys:
   the category is what tells them apart.
 - A run with no `invocations` gains `[{ "executionSuccessful": true }]`.
 
+{/* cite family-impact-sarif */}
 A last run, driver `manni-check` and category `manni/check/`, holds no results.
-Its invocation carries one notification for each check that did not run.
+Its invocation carries one notification for each check that did not run. When
+the [roll-up](#who-the-findings-reach) is not empty, this run also carries it as
+`properties.impact`, the same array `json` prints.
 
 | Situation | Level | Text |
 |---|---|---|
@@ -329,7 +409,8 @@ checked beyond the scope. Positional paths win over an envelope's own scope.
 The protocol exists because exit `2` means "block" to a hook. An operational
 error must never use it, so under an envelope `check` exits `0` for every case
 except errors found after an edit. `-f` and `--no-color` are not read, and
-notices from the domains are dropped.
+notices from the domains are dropped. The reply carries no
+[roll-up](#who-the-findings-reach) of its own.
 
 ### `check`
 
@@ -458,6 +539,7 @@ Each line goes to stderr and starts with `manni: ` unless it is a usage error.
 | `No manni.config.yaml found from <cwd> up to the repository root. Create one there with a collections: entry for your docs.` | `2` |
 | `Nothing is set up to check in manni.config.yaml. Run manni status to see what each domain needs.` Printed when no collection is declared, and when a bare run finds every check skipped. | `2` |
 | `manni <check> could not run: <its error>`. That check prints as `error`, and the other checks still run. | `2` |
+| `personas and journeys left out of the report. <strategy's error>`, when the strategy set cannot be read for the [roll-up](#who-the-findings-reach). Said once per run, though cite's own report meets the same error. | unchanged |
 | `Config file not found: "<path>".` for a `-c` path that does not exist. | `2` |
 | `MANNI_TRACEVALS_HOOKS is "<value>"; only 1 turns the tracevals hooks on.`, once per process, for any value but `1` or empty. The run continues with the tracevals hooks off. | unchanged |
 | `File not found: "<path>". Check the path. Named paths resolve from the working directory.` for a named path that does not exist. | `2` |

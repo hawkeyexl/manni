@@ -1,0 +1,11 @@
+[1mdiff --git a/src/meta/core/resolve-schema.ts b/src/meta/core/resolve-schema.ts[m
+[1mindex 0a1dc05cd..e7d952861 100644[m
+[1m--- a/src/meta/core/resolve-schema.ts[m
+[1m+++ b/src/meta/core/resolve-schema.ts[m
+[36m@@ -1,5 +1,5 @@[m
+ /**[m
+[31m- * Resolve the schema *set* for a single file by precedence:[m
+[32m+[m[32m * Resolve the schema *set* for one file, in precedence order:[m
+  *   1. CLI --schema overrides (apply to all files)[m
+  *   2. $schema in the file's metadata (string or list)[m
+  *   3. first matching config override (by glob or collection), which replaces[m

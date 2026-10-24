@@ -51,12 +51,13 @@ export interface SarifLog {
  */
 export function withFindingMessages(
   run: CheckRun,
-  compose: (finding: CitationFinding) => string = findingMessage,
+  compose: (finding: CitationFinding, serves?: string) => string = findingMessage,
   paired?: (error: FieldError, finding: CitationFinding) => void,
 ): ValidationResult[] {
   return run.results.map((result) => {
     const page = run.pages.find((p) => p.file === result.file);
     if (page === undefined) return result;
+    const serves = run.impact?.serves.get(page.file);
     const errors = result.errors.map((error) => {
       const finding = page.findings.find(
         (f) =>
@@ -66,7 +67,7 @@ export function withFindingMessages(
           (errorSite(f).line ?? null) === (error.line ?? null),
       );
       if (finding === undefined) return error;
-      const rewritten = { ...error, message: compose(finding) };
+      const rewritten = { ...error, message: compose(finding, serves) };
       paired?.(rewritten, finding);
       return rewritten;
     });
@@ -92,7 +93,7 @@ export function renderCheckSarif(run: CheckRun, opts: { onNotice?: (message: str
   const origin = new Map<FieldError, CitationFinding>();
   const results = withFindingMessages(
     run,
-    (finding) => [findingMessage(finding), ...guidanceLines(finding.guidance)].join("\n"),
+    (finding, serves) => [findingMessage(finding, serves), ...guidanceLines(finding.guidance)].join("\n"),
     (error, finding) => origin.set(error, finding),
   );
   const log = JSON.parse(

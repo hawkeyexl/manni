@@ -28,6 +28,8 @@ import { beats as pluginMetadataBeats, totalFrames as pluginMetadataTotalFrames,
 import { beats as tasksBeats, totalFrames as tasksTotalFrames, TYPING_MS as tasksTypingMs } from "./tasks/beats";
 import { beats as strategyStepsBeats, totalFrames as strategyStepsTotalFrames, TYPING_MS as strategyStepsTypingMs } from "./strategy-steps/beats";
 import { beats as strategyBeats, totalFrames as strategyTotalFrames, TYPING_MS as strategyTypingMs } from "./strategy/beats";
+import { beats as citeImpactBeats, totalFrames as citeImpactTotalFrames, TYPING_MS as citeImpactTypingMs } from "./cite-impact/beats";
+import { beats as checkImpactBeats, totalFrames as checkImpactTotalFrames, TYPING_MS as checkImpactTypingMs } from "./check-impact/beats";
 import { beats as pluginRecordsBeats, totalFrames as pluginRecordsTotalFrames, TYPING_MS as pluginRecordsTypingMs } from "./plugin-records/beats";
 import { beats as graphAuthoringBeats, totalFrames as graphAuthoringTotalFrames, TYPING_MS as graphAuthoringTypingMs } from "./graph-authoring/beats";
 import { beats as strategySharedBeats, totalFrames as strategySharedTotalFrames, TYPING_MS as strategySharedTypingMs } from "./strategy-shared/beats";
@@ -148,6 +150,20 @@ const DemoStrategy: React.FC = () => (
 );
 
 /**
+ * cite-impact-1x1: every beat carries its own size, derived in media/cite-impact/cite-impact-1x1.script.md
+ * (media/cite-impact/cols.mjs): 32 px for beats 1 and 2, 22 px / 78 columns for the github
+ * annotation and the pretty roll-up. Ligatures off: git diff's `---` header would draw as one rule.
+ */
+const DemoCiteImpact: React.FC = () => (
+  <DemoView beats={citeImpactBeats} fontPx={22} linePx={31} cols={78} typingMs={citeImpactTypingMs} ligatures={false} />
+);
+
+/** check-impact-1x1: 28 px / 61 columns per beat, derived by media/check-impact/cols.mjs. */
+const DemoCheckImpact: React.FC = () => (
+  <DemoView beats={checkImpactBeats} fontPx={28} linePx={39} cols={61} typingMs={checkImpactTypingMs} ligatures={false} />
+);
+
+/**
  * test-tasks-1x1: 21 px / 82 columns, derived in media/test-tasks-1x1.script.md
  * (media/capture-tasks/cols.mjs). The account is wrapped at 78 by the report, so it
  * never re-wraps, and every progress line breaks before its temp path, not after it. Ligatures off: the account's `---` and
@@ -195,6 +211,22 @@ const DemoStrategyShared: React.FC = () => (
 
 export const Root: React.FC = () => (
   <>
+    <Composition
+      id="CheckImpactDemo"
+      component={DemoCheckImpact}
+      width={1080}
+      height={1080}
+      fps={FPS}
+      durationInFrames={checkImpactTotalFrames}
+    />
+    <Composition
+      id="CiteImpactDemo"
+      component={DemoCiteImpact}
+      width={1080}
+      height={1080}
+      fps={FPS}
+      durationInFrames={citeImpactTotalFrames}
+    />
     <Composition
       id="SidecarDemo"
       component={Demo}

@@ -554,6 +554,17 @@ export interface CheckRun {
   pages: PageCitationReport[];
   warnings: number;
   notices: number;
+  /**
+   * The personas and journeys the reported findings' pages serve (proposal
+   * 0105). Absent when no reported finding's page names a record.
+   */
+  impact?: CheckImpact;
+}
+
+/** The roll-up, and the sentence each page's findings carry, by page label. */
+export interface CheckImpact {
+  entries: import("../strategy/index.js").ImpactEntry[];
+  serves: Map<string, string>;
 }
 
 /** `manni cite history` (proposal 0092): `check`'s input surface, and the walk's bound. */

@@ -1,0 +1,10 @@
+Using manni.config.yaml (.)
+[32m✓[39m pages/config.md
+    [32m✓[39m [36mtimeout[39m   :15 current   src/value.ts:1 current
+[32m✓[39m pages/guide.md
+    [32m✓[39m [36mtimeout[39m   :15 current   src/value.ts:1 current
+[32m✓[39m strategy/m5.md
+[32m✓[39m strategy/m6.md
+[32m✓[39m strategy/maya.md
+
+[32m5 files checked, 5 passed, 0 failed, 0 findings[39m

@@ -60,9 +60,9 @@ docs/src/content/docs/cite/set-up/index.mdx:
         integrity: sha256-4ec87c8ea55fa4ce990393f81dd8477fed6b871248a097882ab85f71f3c281b9
       source:
         file: src/cite/commands/check.ts
-        lines: 196-206
+        lines: 200-210
         integrity: sha256-473fa9dbc7c8c57a21c0c516bd0ec06830610bd48cfe73fd0da009d5208702ca
-        commit-sha: ddba7252337859626421b6060ae8952f93f61653
+        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
     - id: bare-check-covers-collections
       claim:
         lines: 38
@@ -222,17 +222,17 @@ docs/src/content/docs/cite/set-up/index.mdx:
         integrity: sha256-26f78a8f47b6cbad6e76e2315cefda95c14d521ec755498142d30c735bf032ab
       source:
         file: src/cite/reporters/pretty.ts
-        lines: 139-147
+        lines: 140-148
         integrity: sha256-8ee12eb911451e8793e2683893d0d0c2050060832ac0abbc467634bd14290479
-        commit-sha: b9712a2920c49c2b7e247108d80b629a4dc6ef9b
+        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
     - id: no-inputs-is-an-error
       claim:
         integrity: sha256-622dccd00088a07c45e856fc590b1d9b59c7df0e85b90e35f06dcc305d171bf2
       source:
         file: src/cite/commands/check.ts
-        lines: 173-177
+        lines: 177-181
         integrity: sha256-dd1fd746781a236fa50aca4af4a370c3d18e06a6eb84ceda7b7eb3eb133f10cb
-        commit-sha: ddba7252337859626421b6060ae8952f93f61653
+        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
     - id: no-inputs-exits-2
       claim:
         integrity: sha256-622dccd00088a07c45e856fc590b1d9b59c7df0e85b90e35f06dcc305d171bf2
@@ -281,6 +281,6 @@ docs/src/content/docs/cite/set-up/index.mdx:
         integrity: sha256-2f0a6aaec0a05f4e02f67ea6506ac359a444b04e94d94fc48d13d77e5c8f5255
       source:
         file: src/cite/reporters/pretty.ts
-        lines: 334-336
+        lines: 335-337
         integrity: sha256-429405b163b60574ddbbf8a502bcfd693b74d01b0f7ef9efabfb681c417403b5
-        commit-sha: b9712a2920c49c2b7e247108d80b629a4dc6ef9b
+        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb

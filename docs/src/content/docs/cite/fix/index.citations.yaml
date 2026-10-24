@@ -6,36 +6,36 @@ docs/src/content/docs/cite/fix/index.mdx:
         integrity: sha256-f77c106fa0a38af626f2d55e2619b2cf606eb0a112a62088af18f719f468756d
       source:
         file: src/cite/reporters/pretty.ts
-        lines: 47-57
+        lines: 48-58
         integrity: sha256-4b3e319b0382b747ad84dcf56977324657662ad8b86fe9e1498103a82d7d2b1c
-        commit-sha: b9712a2920c49c2b7e247108d80b629a4dc6ef9b
+        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
     - id: row-mark-current-skipped
       claim:
         lines: 38
         integrity: sha256-f77c106fa0a38af626f2d55e2619b2cf606eb0a112a62088af18f719f468756d
       source:
         file: src/cite/reporters/pretty.ts
-        lines: 356-363
+        lines: 357-364
         integrity: sha256-262e6afb0d4c5ba60d3304d8b39325522959012c6666ee4c80561afe41f248a1
-        commit-sha: b9712a2920c49c2b7e247108d80b629a4dc6ef9b
+        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
     - id: row-id-column
       claim:
         lines: 39
         integrity: sha256-d569ac1e5e61d36dca0f9b8a3955a171f57f5d704666873412c0397054b3249b
       source:
         file: src/cite/reporters/pretty.ts
-        lines: 118-121
+        lines: 119-122
         integrity: sha256-51623c250a5398ebf404117076899a6c335f69b8d9c353707df424ce0cb953b2
-        commit-sha: b9712a2920c49c2b7e247108d80b629a4dc6ef9b
+        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
     - id: row-source-end-column
       claim:
         lines: 41
         integrity: sha256-fa9aebd47410e8bf11896a072775c83cf146b981392df2fb6ea6a94e197a274d
       source:
         file: src/cite/reporters/pretty.ts
-        lines: 193-205
+        lines: 194-206
         integrity: sha256-d1bd58db4f4a8cc14fe3fbd5d5dc6bcec0ccbd91a04b8f3bf241a692e56fb7b1
-        commit-sha: b9712a2920c49c2b7e247108d80b629a4dc6ef9b
+        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
     - id: annotation-site
       claim:
         integrity: sha256-0cbd79b051a706653783876b6a24efab6757ee0d76b95072a9a6c23de58705b2
@@ -124,9 +124,9 @@ docs/src/content/docs/cite/fix/index.mdx:
         integrity: sha256-1e298a911010cd04ebfa316672c1efd1cc9a52a133518ab22c8a65e0ad635d5e
       source:
         file: src/cite/reporters/pretty.ts
-        lines: 566-570
+        lines: 574-578
         integrity: sha256-98e4127cdc82c79e281606b40834f9fad1f63923bf1adad5ec0e0566946b0acc
-        commit-sha: b9712a2920c49c2b7e247108d80b629a4dc6ef9b
+        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
     - id: source-moved-ambiguous-sample
       claim:
         lines: 128
@@ -165,9 +165,9 @@ docs/src/content/docs/cite/fix/index.mdx:
         integrity: sha256-89b79d4330b36cd3b9e077cd50667fc63792d49958b67811eecbd5d8f3cc4fd3
       source:
         file: src/cite/reporters/pretty.ts
-        lines: 389-390
+        lines: 390-391
         integrity: sha256-b7ca8ac5c37861d315a231ba256e97bafb0250e0387b683660f6794a9c5ed107
-        commit-sha: b9712a2920c49c2b7e247108d80b629a4dc6ef9b
+        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
     - id: source-changed-variants
       claim:
         integrity: sha256-b6e7ff4dba00dba01188f6ce08f99375dab728afb5bab6278c86d7bd8cb482ff
@@ -208,18 +208,18 @@ docs/src/content/docs/cite/fix/index.mdx:
         integrity: sha256-bea8e9a4bea23bcd13de264113ea75e9b8e52aa6ecbcc99a199372ba43c53492
       source:
         file: src/cite/reporters/pretty.ts
-        lines: 477-487
+        lines: 485-495
         integrity: sha256-4b2b7e820314046089f83d228698aff01a8e842de3faa82f7e9b88e9b2c90092
-        commit-sha: b9712a2920c49c2b7e247108d80b629a4dc6ef9b
+        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
     - id: accept-output-summary
       claim:
         lines: 191-193
         integrity: sha256-bea8e9a4bea23bcd13de264113ea75e9b8e52aa6ecbcc99a199372ba43c53492
       source:
         file: src/cite/reporters/pretty.ts
-        lines: 636-637
+        lines: 644-645
         integrity: sha256-5e5b31dce028d0cb7ddde3b39916bc9d759962a29d269a7fc937bff8f84f21b3
-        commit-sha: b9712a2920c49c2b7e247108d80b629a4dc6ef9b
+        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
     - id: accept-settles-both-ends
       claim:
         integrity: sha256-d172827f97e515d276671e435243a10d8e6c11e116fee5faae5268d46457e265
@@ -266,9 +266,9 @@ docs/src/content/docs/cite/fix/index.mdx:
         integrity: sha256-92208f459b65ae2d293800b1dcf7920e5e845ddee0a8b3538e469b266160a600
       source:
         file: src/cite/reporters/pretty.ts
-        lines: 584-585
+        lines: 592-593
         integrity: sha256-654f8798385ec20cb4f07521aa3a1870d0908ba15e6a7d5cbe4a75a2b7bd9a64
-        commit-sha: b9712a2920c49c2b7e247108d80b629a4dc6ef9b
+        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
     - id: source-missing-sample
       claim:
         lines: 229
@@ -325,9 +325,9 @@ docs/src/content/docs/cite/fix/index.mdx:
         integrity: sha256-e425dfc6cea9b04e988ad899c68b5df7988323d3b70514f72db986630185eea0
       source:
         file: src/cite/reporters/pretty.ts
-        lines: 151-153
+        lines: 152-154
         integrity: sha256-73daaef04d9e27f00e584d26c3b076374e5d134652896df338c97175ec763398
-        commit-sha: b9712a2920c49c2b7e247108d80b629a4dc6ef9b
+        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
     - id: claim-moved-found-verbatim
       claim:
         integrity: sha256-e2bb59078cc2e5d783584d2ab45a5fa3e6fb7d8c1056f36f1622953b61902bb5
@@ -358,9 +358,9 @@ docs/src/content/docs/cite/fix/index.mdx:
         integrity: sha256-146dfd7ff91e43867492b1fddbbf78d4f725db9f58e7c4f91aec46c7132f2911
       source:
         file: src/cite/reporters/pretty.ts
-        lines: 452-456
+        lines: 460-464
         integrity: sha256-e64cf3dad3cac96697514477d88f2380b8f2f37083715c10fcd8afc1de5cde55
-        commit-sha: b9712a2920c49c2b7e247108d80b629a4dc6ef9b
+        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
     - id: marker-claim-never-moves
       claim:
         integrity: sha256-15651ab18ce524a8524cffd751e6ec4f5cc9783ed4157e88153061adcd100e4f
@@ -375,9 +375,9 @@ docs/src/content/docs/cite/fix/index.mdx:
         integrity: sha256-655df3c002a391262f0b8ba071bc25377cb9f43e032ccbe798907a806309730d
       source:
         file: src/cite/reporters/pretty.ts
-        lines: 159-163
+        lines: 160-164
         integrity: sha256-d4eae59db61a72fd08582ea9c94fca45c905dd7f2c466e13434059aed9d82c42
-        commit-sha: b9712a2920c49c2b7e247108d80b629a4dc6ef9b
+        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
     - id: update-skips-ambiguous-claim
       claim:
         integrity: sha256-b32d784d53f230bb5ab605a6ac272c58d0466befb83b7fdf472911c8c1c06077
@@ -400,9 +400,9 @@ docs/src/content/docs/cite/fix/index.mdx:
         integrity: sha256-6e09eb184af8ce9b48994490d1365512fd8150c86dab754400810c15d215c594
       source:
         file: src/cite/reporters/pretty.ts
-        lines: 173-176
+        lines: 174-177
         integrity: sha256-14eb18f771ad80b6c184396adf19a1e6c74f1abde05b0392077787744a7b17d6
-        commit-sha: b9712a2920c49c2b7e247108d80b629a4dc6ef9b
+        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
     - id: claim-changed-warning
       claim:
         integrity: sha256-33d1a0c37f8ccd29d7dc672fd41eccfe392287c7838de26dd88cc687f8411e85
@@ -417,9 +417,9 @@ docs/src/content/docs/cite/fix/index.mdx:
         integrity: sha256-a6a66f29ba98eed69b26277f674ea76328ab0ad1b16519683818b143c50204fe
       source:
         file: src/cite/reporters/pretty.ts
-        lines: 477-485
+        lines: 485-493
         integrity: sha256-06d7e286b9372a66ba923e6a32638947641977848331f2ef4eb8f6ce22895141
-        commit-sha: b9712a2920c49c2b7e247108d80b629a4dc6ef9b
+        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
     - id: accept-repins-unit-at-first-line
       claim:
         integrity: sha256-d0c7fece8e9bbb60ac0a2725b600ae2b391c245d8110716f87e0ea61c541008f
@@ -638,9 +638,9 @@ docs/src/content/docs/cite/fix/index.mdx:
         integrity: sha256-4ec91219ae44be4535a62ec66f665090ff6047bb0f895a3f11e756ed74cb9e06
       source:
         file: src/cite/reporters/pretty.ts
-        lines: 439-450
+        lines: 447-458
         integrity: sha256-bdae7999c082105a413ea57899be7ba8fc1c76d0b0d3d6dea9878bfc28c44061
-        commit-sha: b9712a2920c49c2b7e247108d80b629a4dc6ef9b
+        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
     - id: bare-check-uses-collections
       claim:
         lines: 601-604
@@ -674,9 +674,9 @@ docs/src/content/docs/cite/fix/index.mdx:
         integrity: sha256-045efe64a562de93f7bf62d08ababbce49159b7992227362e697e0941bed547f
       source:
         file: src/cite/commands/check.ts
-        lines: 407-409
+        lines: 411-413
         integrity: sha256-d51b978f9fa088753d24578d22c1dbbd55f75f157ec76b756d82b78ad164740e
-        commit-sha: ddba7252337859626421b6060ae8952f93f61653
+        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
     - id: exit-table-one-update
       claim:
         lines: 612
@@ -701,9 +701,9 @@ docs/src/content/docs/cite/fix/index.mdx:
         integrity: sha256-9376722537811cfca897d9bc690d4e54c97fc8378300ab84f3f9eb78c51f4b16
       source:
         file: src/cite/commands/check.ts
-        lines: 173-177
+        lines: 177-181
         integrity: sha256-dd1fd746781a236fa50aca4af4a370c3d18e06a6eb84ceda7b7eb3eb133f10cb
-        commit-sha: ddba7252337859626421b6060ae8952f93f61653
+        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
     - id: exit-table-two-unknown-format
       claim:
         lines: 613
@@ -753,27 +753,27 @@ docs/src/content/docs/cite/fix/index.mdx:
         integrity: sha256-b33d05735ab2fbd2fdadd3e226ea7899e0d2ab8f27bcbfa366ec063ed8b16204
       source:
         file: src/cite/reporters/pretty.ts
-        lines: 401-404
+        lines: 402-405
         integrity: sha256-be4f3b638888dabcbbd4bc74e30b118dbd22e55f905de5ce1294adc81ea3bfe8
-        commit-sha: b9712a2920c49c2b7e247108d80b629a4dc6ef9b
+        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
     - id: page-line-manifest
       claim:
         lines: 27-28
         integrity: sha256-0f51ff76a3b41007c7ad11042aa4fc3b439fc60accd3ba942ad04817219d655b
       source:
         file: src/cite/reporters/pretty.ts
-        lines: 329-332
+        lines: 330-333
         integrity: sha256-3e038ad23a4ceb1ef5bf2e72f7bf2d32eba551128c0c9a7350e4efea907d5d4f
-        commit-sha: b9712a2920c49c2b7e247108d80b629a4dc6ef9b
+        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
     - id: row-claim-end-column
       claim:
         lines: 40-42
         integrity: sha256-f958917acb37d16bff92714e1e65b2907a03571395ce859033b267385f382668
       source:
         file: src/cite/reporters/pretty.ts
-        lines: 139-163
+        lines: 140-164
         integrity: sha256-80d2bb244b619be174cd8d4d366511b09ce9ee9c1227d21af6fd3bc9806b5fb2
-        commit-sha: b9712a2920c49c2b7e247108d80b629a4dc6ef9b
+        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
     - id: encrypted-missing-reasons
       claim:
         lines: 262-271

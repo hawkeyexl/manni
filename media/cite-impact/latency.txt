@@ -1,0 +1,4 @@
+check-before exit 0 503 ms
+diff exit 0 82 ms
+github exit 1 657 ms
+pretty exit 1 700 ms

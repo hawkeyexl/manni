@@ -33,7 +33,7 @@ sample-questions:
 graph:
   label: CLI reference
   type: reference
-last-updated: 2026-10-22
+last-updated: 2026-10-23
 tags:
   - cli
   - reference
@@ -258,6 +258,15 @@ manni: the page history ends before the pin held; use fetch-depth: 0 to tell rea
 manni: the source history ends before the pin held; use fetch-depth: 0 to tell never-true from changed
 ```
 
+{/* cite impact-strategy-notice */}
+When a finding is reported and the `strategy:` section cannot be read, one
+more notice says the report leaves out whom the pages serve. Strategy's own
+message follows it. The exit code is the check's own:
+
+```
+manni: personas and journeys left out of the report. manni.config.yaml: strategy does not carry "paths". Name a collection under collections:.
+```
+
 Under `--show-diff`, a changed or reanchored claim row gains the subjects of
 the commits that touched the page since the baseline. A unified diff of the
 claim's own lines follows them. The labels name the page at the baseline and
@@ -292,14 +301,59 @@ is a bare pin: no id and no claim end, so both columns are empty. A file is
 warning, and `ℹ` when it holds notices only. The summary counts notices apart
 from warnings, as in `3 findings (1 warning) (1 notice)`.
 
+{/* cite pretty-impact-block */}
+When a collection holds `type: persona` or `type: journey` records, a block
+comes before the summary line. It names the records that the pages with
+findings name in `personas:` and `journeys:`:
+
+```
+The pages with findings serve 2 personas and 2 journeys.
+  devin   Devin, Platform / CI Engineer                    3 errors on 2 pages
+  maya    Maya, Documentation Engineer                     2 errors and 1 warning on 2 pages
+  d5      Gate citations in CI without blocking on prose   3 errors on 2 pages
+  m2      Tighten the standard (draft)                     1 warning on 1 page
+```
+
+{/* cite impact-order */}
+The heading names only the types present, as in `serve 2 journeys.` Personas
+come first, then journeys. Within each, rows run by errors, then warnings, then
+notices, then findings, all descending, then by id. A journey whose `lifecycle`
+is `draft` or `archived` comes after every live one, and says so after its
+title. Columns pad to the widest id and title, and a record with no title
+leaves its cell blank. The block has no colour, and prints under `-q` too. A
+baselined finding counts in no row, and a run with none left prints no block.
+
 {/* cite json-envelope */}
 {/* cite json-summary-shape */}
 {/* cite json-page-fields */}
-`json` prints `{ summary, pages }`. `summary` has the metadata tool's shape
+`json` prints `{ summary, impact, pages }`. `summary` has the metadata tool's shape
 (`files`, `passed`, `failed`, `errors`, and `warnings`, `notices`, `gitignoreSkipped`,
-`baseline` when non-zero). Each page carries its `file`, its `format`, its
-`citations`, its `findings` and its `notices`, the run notices it raised. A
-citation looks like this:
+`baseline` when non-zero). `impact` is the pretty block's roll-up, in the same
+order, and is omitted when it is empty. Each page carries its `file`, its `format`, its
+`citations`, its `findings` and its `notices`, the run notices it raised. An
+`impact` entry looks like this:
+
+```json
+{
+  "type": "persona",
+  "id": "devin",
+  "title": "Devin, Platform / CI Engineer",
+  "findings": 3, "errors": 3, "warnings": 0, "notices": 0,
+  "pages": ["docs/src/content/docs/cite/ci/index.mdx", "docs/src/content/docs/cite/reference/cli.mdx"]
+}
+```
+
+| Field | Type | Meaning |
+|---|---|---|
+| `type` | `"persona"` or `"journey"` | Which page field named it. |
+| `id` | string | The record's id, as the record spells it. |
+| `title` | string, optional | The record's `title`. Absent when the record has none. |
+| `lifecycle` | string, optional | A journey record's `lifecycle`, when it has one. |
+| `findings` | integer | Reported findings on the pages that name it. |
+| `errors`, `warnings`, `notices` | integer | `findings`, split by severity. |
+| `pages` | string list | Those pages, spelled as `pages[].file` spells them, so the two join. |
+
+A citation looks like this:
 
 ```json
 {
@@ -382,6 +436,18 @@ the link to the rule's section of the [fix page](/manni/cite/fix/):
 The message ends with what to do. The rule line and the Guide link follow it
 after `%0A`, GitHub's escaped line break.
 
+{/* cite github-serves-sentence */}
+On a page that names persona or journey records, the message gains one more
+sentence before `%0A`. Each value prints as `id (title)`, or as the bare id
+when the record has no title:
+
+```
+::error file=docs/src/content/docs/cite/ci/index.mdx,line=87,title=manni%3Acite/source-changed::summary-counts-apart (src/cite/reporters/pretty.ts:439-448): changed since b9712a2, 1 commit. Check the sentence against the source, then run manni cite update --accept --only summary-counts-apart. Serves devin (Devin, Platform / CI Engineer) and d5 (Gate citations in CI without blocking on prose).%0Amanni:cite source-changed: The cited lines are not what they were.%0AGuide: https://hawkeyexl.github.io/manni/cite/fix/#source-changed
+```
+
+A value that names no record is left out. With no record, the message is
+unchanged.
+
 {/* cite sarif-note-level */}
 `sarif` builds on the metadata tool's renderer, so the envelope, the rule id
 `manni:cite/<rule>` and the `partialFingerprints` the baseline matches are
@@ -389,8 +455,9 @@ the same. Each rule is described in plain words, in `shortDescription` and
 `fullDescription`, and its `helpUri` links the rule's section of the
 [fix page](/manni/cite/fix/). A result's message is the one the `github`
 annotation carries, with the guidance lines joined by a line break. The same
-guidance is in `properties.guidance`. A warning is level `warning` and a
-notice is level `note`. An excerpt of the rules and one result:
+guidance is in `properties.guidance`. So a result on a page that names records
+carries the `Serves` sentence too, before the guidance lines. A warning is level
+`warning` and a notice is level `note`. An excerpt of the rules and one result:
 
 ```json
 "informationUri": "https://hawkeyexl.github.io/manni/cite/",
@@ -452,7 +519,13 @@ names that file instead. Warnings and notices are never failures:
 </testsuites>
 ```
 
-The failure's message leaves out the annotation's guidance lines.
+{/* cite junit-carries-serves */}
+The failure's message leaves out the annotation's guidance lines. It keeps the
+`Serves` sentence, before the line:
+
+```xml
+<failure type="manni:cite/source-changed" message="fetch-timeout (lib/limits.ts:2): changed since 3f9c2a1, 1 commit. Check the sentence against the source, then run manni cite update --accept --only fetch-timeout. Serves maya (Maya, Documentation Engineer) and m5 (Pin a claim and catch it going stale). (line 9)"/>
+```
 
 ### Exit codes
 

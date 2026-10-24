@@ -1,0 +1,13 @@
+# cite check names the readers of a page with a finding (proposal 0105).
+# The pages collection keeps personas: and journeys: in each page's
+# {page}.meta.yaml, and the strategy collection holds their records.
+collections:
+  - name: pages
+    paths: ["pages/*.md"]
+    externalMetadata:
+      - file: "{page}.meta.yaml"
+        keys: [personas, journeys]
+  - name: strategy
+    paths: ["strategy/*.md"]
+cite:
+  root: .

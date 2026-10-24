@@ -1,0 +1,4 @@
+check-red exit 1 42461 ms
+jq exit 1 0 26751 ms
+accept exit 0 7023 ms
+check-green exit 0 21212 ms

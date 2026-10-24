@@ -30,3 +30,17 @@ docs/src/content/docs/strategy/index.mdx:
         file: src/strategy/commands/run.ts
         lines: 92-93
         integrity: sha256-7718d492485400e57a7879a797f83db5cddcfffd10a2da4a05bed759d8556b96
+    - id: cite-names-readers
+      claim:
+        integrity: sha256-620dc944212cb73948ae38bdb22011f52f352712e136b12a00e62d875c493dea
+      source:
+        file: src/cite/commands/check.ts
+        lines: 454-460
+        integrity: sha256-aa886938c13f06f3d6a513065fedf18ca9c86c1577b09d7270f25f82593f5ec3
+    - id: family-check-rolls-up
+      claim:
+        integrity: sha256-8902aadc873af64ad01f30817352d28fb0e1ed7a04a714551b07a10e318fdcd2
+      source:
+        file: src/family/commands/check.ts
+        lines: 438
+        integrity: sha256-8c37f7fe71c2be90004a43b55cdc69c5474b1a563965067b3363e775f488ce1a

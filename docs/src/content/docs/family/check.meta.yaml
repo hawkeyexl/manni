@@ -1,6 +1,6 @@
 docs/src/content/docs/family/check.mdx:
-  personas: ["devin"]
-  journeys: ["d16"]
+  personas: ["devin", "maya"]
+  journeys: ["d16", "m33"]
   visibility: public
   review-interval: P180D
   source-of-truth:
@@ -98,19 +98,19 @@ docs/src/content/docs/family/check.mdx:
       lines: 219-221
       integrity: sha256-531e51133261540f89f643bcdcf81d4fbf7fe167d91f107789324f22f0a82114
     - generated-by: Claude Opus 5.5
-      lines: 228-230
-      integrity: sha256-9e253b0d05efe11f77926e6495f825bcadd89958bdc427f8c21238b30f975f93
+      lines: 228-285
+      integrity: sha256-4dada64290185df01e85ba58ebdae83dbe87f7a0c8a27cde088620278f09fd0f
     - generated-by: Claude Sonnet 5.5
-      lines: 232-253
+      lines: 287-308
       integrity: sha256-29867978854d5ea4918cd7febc7c49b9e295a9b14ec02b8de679e0a445471430
     - generated-by: Claude Sonnet 5.5
-      lines: 259-270
+      lines: 314-325
       integrity: sha256-4af35e73d4035d91ee25b60960e5cba1e60d14e874b1b2b08a81bf91600baf6a
     - generated-by: Claude Opus 5.5
-      lines: 271-276
+      lines: 326-331
       integrity: sha256-bb8f7a6406de70398d252a02935c26f09739b853213b07e5e4e5af7e0189158c
     - generated-by: Claude Sonnet 5.5
-      lines: 278-294
+      lines: 333-349
       integrity: sha256-f14b8533b400cc54c454f8348c1096d3d39b693b0fcf61e9e4a24c59a1543e9c
   owner:
     - "@hawkeyexl"
