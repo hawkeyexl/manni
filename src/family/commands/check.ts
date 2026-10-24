@@ -43,6 +43,7 @@ import {
   loadFamily,
   nothingSetUpError,
   plural,
+  tracevalsHooks,
   type Domain,
   type Family,
 } from "../core/in-play.js";
@@ -659,7 +660,8 @@ export type TurnSeams = Partial<Pick<TurnCheckInput, "judge" | "extractor" | "lo
 
 /**
  * Judge the turn a Stop or SubagentStop ended, with every gate of proposal
- * 0079. Silent (`undefined`) when tracevals is not in play, the turn is clean
+ * 0079. Silent (`undefined`) when the hooks are off (`MANNI_TRACEVALS_HOOKS`
+ * is not 1) or tracevals is not in play, the turn is clean
  * or only needs review, a skip was already said this session, or the run
  * could not happen: an operational failure is not the agent's to fix.
  */
@@ -668,6 +670,8 @@ export async function runTurnCheck(
   cwd: string,
   seams: TurnSeams = {},
 ): Promise<TurnVerdict | undefined> {
+  // Off unless this user turned it on: nothing loads and no transcript is read.
+  if (!tracevalsHooks(seams.env)) return undefined;
   const subagent = envelope.event === "SubagentStop";
   const judged = subagent ? envelope.agentTranscriptPath : envelope.transcriptPath;
   if (judged === undefined) return undefined;

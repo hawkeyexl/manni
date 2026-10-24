@@ -156,7 +156,8 @@ export interface TracevalsConfig {
   /**
    * Runtime evals, each turn checked against its rule sources (proposals 0079
    * and 0083). `null` when the section is absent, which keeps tracevals out of
-   * every hook; `{}` puts it in play with these defaults.
+   * every hook; `{}` puts it in play with these defaults, under the hooks only
+   * where `MANNI_TRACEVALS_HOOKS` is 1.
    */
   runtime: RuntimeConfig | null;
 }

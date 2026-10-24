@@ -1,7 +1,7 @@
 import { mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   agentLines,
   exportGeneratedBy,
@@ -12,6 +12,7 @@ import {
 } from "../../src/family/commands/status.js";
 import { parseEnvelope, type Envelope } from "../../src/family/core/envelope.js";
 import pkg from "../../package.json" with { type: "json" };
+import { resetWarnings } from "../../src/shared/warn.js";
 import { gitAvailable, removeTempRepo } from "../helpers/temp-repo.js";
 import { envelope, fixtureRepo } from "./helpers.js";
 
@@ -20,6 +21,16 @@ afterEach(() => {
   removeTempRepo(dir);
   dir = undefined;
 });
+
+/** The hooks turned on, as the plugin sets them. */
+const ON = { MANNI_TRACEVALS_HOOKS: "1" };
+
+const TURNED_OFF: DomainRow = {
+  name: "tracevals",
+  status: "not-checked",
+  reason: "runtime evals are set up, and turned off here",
+  next: "Turn on the manni plugin's tracevals option, or set MANNI_TRACEVALS_HOOKS=1.",
+};
 
 function statusOf(report: StatusReport, name: string): string | undefined {
   return report.domains.find((d) => d.name === name)?.status;
@@ -158,7 +169,7 @@ describe.skipIf(!gitAvailable())("runStatus", () => {
       config,
       `${readFileSync(config, "utf8")}\ntracevals:\n  provider: mock\n  runtime:\n    hook: { model: hook-model }\n`,
     );
-    const report = await runStatus({ cwd: dir, hostStatus: () => Promise.resolve(null) });
+    const report = await runStatus({ cwd: dir, env: ON, hostStatus: () => Promise.resolve(null) });
     expect(report.domains.find((d) => d.name === "tracevals")).toEqual({
       name: "tracevals",
       status: "in-play",
@@ -173,7 +184,7 @@ describe.skipIf(!gitAvailable())("runStatus", () => {
     dir = bare;
     writeFileSync(join(bare, "manni.config.yaml"), "tracevals:\n  provider: mock\n  runtime: {}\n");
     const host = { pid: 1, models: [{ model: "qwen3.5-4b", sessions: 2, idleMs: 180_000, queued: 0 }] };
-    const report = await runStatus({ cwd: bare, hostStatus: () => Promise.resolve(host) });
+    const report = await runStatus({ cwd: bare, env: ON, hostStatus: () => Promise.resolve(host) });
     const row = report.domains.find((d) => d.name === "tracevals");
     expect(row?.status).toBe("in-play");
     expect(row?.host).toEqual(host.models);
@@ -187,11 +198,50 @@ tracevals:
   provider: mock
   conformance: {}
 `);
-    const report = await runStatus({ cwd: dir, hostStatus: () => Promise.resolve(null) });
+    const report = await runStatus({ cwd: dir, env: ON, hostStatus: () => Promise.resolve(null) });
     const row = report.domains.find((d) => d.name === "tracevals");
     expect(row?.status).toBe("unknown");
     expect(row?.reason).toMatch(/^manni tracevals check could not run: .*unknown key "conformance"; it is now "runtime"$/);
     expect(row?.next).toBe("Fix what the reason names, then run manni status again.");
+  });
+
+  it("leaves tracevals turned off when tracevals.runtime exists and the hooks are off", async () => {
+    dir = fixtureRepo("only-graph");
+    const config = join(dir, "manni.config.yaml");
+    writeFileSync(config, `${readFileSync(config, "utf8")}
+tracevals:
+  provider: mock
+  runtime: {}
+`);
+    const report = await runStatus({ cwd: dir, env: {}, hostStatus: () => Promise.resolve(null) });
+    expect(report.domains.at(-1)).toEqual(TURNED_OFF);
+  });
+
+  it("warns once on a value other than 1, and keeps the hooks off", async () => {
+    dir = fixtureRepo("only-graph");
+    const config = join(dir, "manni.config.yaml");
+    writeFileSync(config, `${readFileSync(config, "utf8")}
+tracevals:
+  provider: mock
+  runtime: {}
+`);
+    resetWarnings();
+    const stderr: string[] = [];
+    const spy = vi.spyOn(process.stderr, "write").mockImplementation((chunk) => {
+      stderr.push(String(chunk));
+      return true;
+    });
+    try {
+      const env = { MANNI_TRACEVALS_HOOKS: "true" };
+      const report = await runStatus({ cwd: dir, env, hostStatus: () => Promise.resolve(null) });
+      await runStatus({ cwd: dir, env, hostStatus: () => Promise.resolve(null) });
+      expect(report.domains.at(-1)).toEqual(TURNED_OFF);
+    } finally {
+      spy.mockRestore();
+    }
+    expect(stderr.filter((line) => line.includes("MANNI_TRACEVALS_HOOKS"))).toEqual([
+      'manni: MANNI_TRACEVALS_HOOKS is "true"; only 1 turns the tracevals hooks on.\n',
+    ]);
   });
 
   it("leaves tracevals not checked without tracevals.runtime", async () => {

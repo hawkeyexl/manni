@@ -119,7 +119,7 @@ describe("runTurnCheck", () => {
     project = join(dir, "project");
     await cp(join(RUNTIME, "project"), project, { recursive: true });
     const home = join(dir, "home");
-    homeEnv = { CLAUDE_CONFIG_DIR: join(home, ".claude"), HOME: home, USERPROFILE: home };
+    homeEnv = { CLAUDE_CONFIG_DIR: join(home, ".claude"), HOME: home, USERPROFILE: home, MANNI_TRACEVALS_HOOKS: "1" };
   });
   afterEach(async () => {
     await rm(dir, { recursive: true, force: true });
@@ -146,6 +146,24 @@ describe("runTurnCheck", () => {
   it("a turn that touched nothing, or followed the rules: nothing", async () => {
     expect(await runTurnCheck(stop("untouched"), project, { env: homeEnv })).toBeUndefined();
     expect(await runTurnCheck(stop("empty-turn"), project, { env: homeEnv })).toBeUndefined();
+  });
+
+  it("the hooks turned off: nothing, and no judge is asked", async () => {
+    let asked = 0;
+    const judge = llama();
+    const counting: InferenceProvider = {
+      provider: () => judge.provider(),
+      modelName: () => judge.modelName(),
+      completeJSON: (req) => {
+        asked++;
+        return judge.completeJSON(req);
+      },
+    };
+    for (const off of [undefined, "", "0"]) {
+      const seams = { env: { ...homeEnv, MANNI_TRACEVALS_HOOKS: off }, judge: counting };
+      expect(await runTurnCheck(stop("breaks"), project, seams)).toBeUndefined();
+    }
+    expect(asked).toBe(0);
   });
 
   it("no runtime evals: nothing", async () => {

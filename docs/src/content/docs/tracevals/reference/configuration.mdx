@@ -13,7 +13,7 @@ lifecycle: published
 applies-to: ["domain:tracevals"]
 sample-questions: ["What does execution.allow do?", "Where do relocated evals live?"]
 graph: { label: "Configuration reference", type: reference }
-last-updated: 2026-10-11
+last-updated: 2026-10-24
 ---
 
 import { Aside } from '@astrojs/starlight/components';
@@ -230,7 +230,7 @@ tracevals:
   plugins: []                    # grader modules to import before evals are planned
   reportUnusedArtifacts: false
   # runtime has no default and is absent unless you write it. Present, even as {},
-  # it puts tracevals in play under hooks.
+  # it puts tracevals in play under hooks where MANNI_TRACEVALS_HOOKS is 1.
   runtime:
     hook:
       provider: anthropic        # default: provider
@@ -383,8 +383,12 @@ what a judged run sends, redacted or not.
 ## `runtime`
 
 Runtime evals check each turn against the rules the files that govern the agent declare. The
-section is optional, and its presence is the switch. Present, even as `{}`, it puts tracevals in
-play under the Claude Code hooks. Absent, tracevals stays out of them. The journey is in
+section is optional. Present, even as `{}`, it puts tracevals in play under the Claude Code hooks
+for each user who turned tracevals on, where `MANNI_TRACEVALS_HOOKS` is `1`. The `manni` plugin's
+tracevals option sets that variable. Absent, no hook judges a turn. A committed section alone
+judges nothing on a contributor's machine, as
+[Turn on tracevals for your sessions](/manni/family/claude-code/#turn-on-tracevals-for-your-sessions)
+explains. The journey is in
 [Check each turn](/manni/tracevals/runtime/).
 
 A `conformance:` section is an unknown key, and the message names this one, with **exit 2**:
