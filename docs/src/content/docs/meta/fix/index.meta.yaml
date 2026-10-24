@@ -11,14 +11,20 @@ docs/src/content/docs/meta/fix/index.mdx:
       assertion: A reader can map an error line to its field, source line and schema.
       type: capability
       grader: ai
+      options:
+        readers: personas
     - id: fix-and-rerun
       assertion: A reader can fix a failing field and confirm the check passes locally.
       type: capability
       grader: ai
+      options:
+        readers: personas
     - id: exit-code-meaning
       assertion: A reader can tell a document problem from a setup problem by exit code.
       type: capability
       grader: ai
+      options:
+        readers: personas
   provenance:
     - generated-by: Claude Opus 4.8
       lines: 2

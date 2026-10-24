@@ -5,7 +5,7 @@ type: reference
 audiences:
   - docs-engineers
   - schema-authors
-last-updated: 2026-10-20
+last-updated: 2026-10-23
 ---
 
 A grader decides pass or fail for one eval on one page. Verified against `src/docevals/graders/registry.ts`
@@ -114,6 +114,14 @@ for the eval's own bug is how a corpus learns to ignore its findings.
 The judge. Needs `assertion`, and works far better with `evidence` and `examples`. See
 [Write good assertions](/manni/docevals/evals/write-good-assertions/). Outcome is `pass`, `fail`, or
 `needs-review`; the mechanics are in [How judging works](/manni/docevals/judge/).
+
+| Option | Default | Notes |
+|---|---|---|
+| `readers` | absent: no readers | `personas` is the one value. Where the page's `personas:` names a persona record, the judge reads the page as those readers. See [Judge a page as its readers](/manni/docevals/judge/#judge-a-page-as-its-readers). |
+
+Where persona records exist, any other `readers` value is an error, exit `1`:
+`Eval "fix-and-rerun": ai options.readers must be one of: personas`. Where none exist, the option
+does nothing. No other key under an `ai` eval's `options` is read, and none is checked.
 
 ## `human`
 

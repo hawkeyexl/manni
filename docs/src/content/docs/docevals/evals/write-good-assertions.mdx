@@ -5,7 +5,7 @@ type: how-to
 audiences:
   - schema-authors
   - docs-engineers
-last-updated: 2026-10-21
+last-updated: 2026-10-23
 ---
 
 If an eval keeps flipping between pass and fail, or fails pages your team considers fine, the grader
@@ -55,6 +55,14 @@ accuracy improvement available.
 **`examples.pass` / `examples.fail`** pin the boundary. This is where a borderline case gets decided
 **once, in writing**, instead of differently on every run. They matter far more than they look:
 an inline ai eval without them raises a notice for exactly this reason.
+
+## Say "a reader", and let the page say who
+
+An assertion about what someone can do says "a reader", not a persona's name. The page already
+names its readers in `personas:`. To hand them to the judge, add `readers: personas` to the eval's
+`options`. The judge then reads the page as each of those readers, and the assertion holds only
+when it holds for every one. See
+[Judge a page as its readers](/manni/docevals/judge/#judge-a-page-as-its-readers).
 
 ## Write the failing example first
 

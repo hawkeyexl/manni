@@ -47,6 +47,8 @@ pains:
 | `personas` | a journey | The ids of the personas the journey serves, as a list. A journey can serve more than one. |
 | `lifecycle` | a journey, optional | `draft` while its pages are still to be written, or `archived` once it is retired. `manni strategy check` expects no page to name either. |
 
+A persona's descriptive fields are its `title`, `description`, `goals` and `pains`, and the schema's optional `name`, `role`, `team-context`, `proficiency`, `prerequisites` and `content-types`. The docevals judge reads them for an eval with `readers: personas` on a page that names the persona. It never reads the body.
+
 Pages name the records they serve in their own `audiences:`, `personas:` and `journeys:` fields. A page can hold them in its front matter or in its `{page}.meta.yaml` sidecar.
 
 Three commands read the records.

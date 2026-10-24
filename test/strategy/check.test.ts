@@ -16,6 +16,7 @@ function rec(type: RecordType, id: string, parents: string | string[] = [], extr
     line: 1,
     idAt: { file, line: 3 },
     parents: [parents].flat().map((value, i) => ({ value, file, line: 4 + i })),
+    data: {},
     ...extra,
   };
 }

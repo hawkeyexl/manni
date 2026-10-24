@@ -22,6 +22,7 @@ import { join } from "node:path";
 import { extractFrontmatter } from "../../../src/meta/index.js";
 import { makeJudge } from "../../../src/docevals/judge/judge.js";
 import { cacheKey, judgeCacheBody } from "../../../src/docevals/judge/cache.js";
+import { renderReaders } from "../../../src/docevals/judge/prompt.js";
 import { readTarget } from "../../../src/docevals/core/target.js";
 import { resolveProviderIdentity } from "../../../src/docevals/judge/provider.js";
 import { parseDocevalsConfig } from "../helpers/config.js";
@@ -111,5 +112,42 @@ describe("the judge and an outside caller agree on the cache key", () => {
     const results = await judge([t], config, {});
     expect(results[0]?.outcome).toBe("pass");
     expect(results[0]?.consensus?.runs.every((r) => r.cached)).toBe(true);
+  });
+
+  it("hits an entry for a reader-bearing eval, keyed with its readers section (proposal 0111)", async () => {
+    const root = mkdtempSync(join(tmpdir(), "manni-docevals-agree-"));
+    const { t, config } = target("Body under test.");
+    const section = renderReaders([{ id: "theo", data: { title: "Theo", goals: ["Fix it."] } }]);
+    t.eval.readers = { personas: ["theo"], section, files: ["/fake/theo.md"] };
+
+    const identity = await resolveProviderIdentity(config, {}, t.eval);
+    const selected = readTarget(t.eval.target, t.plan);
+    const key = cacheKey(
+      identity.provider,
+      identity.model,
+      t.eval.runs ?? config.judge.ensembleRuns,
+      config.judge.temperature,
+      judgeCacheBody(config.judge.chunkChars, selected.ok ? selected.text : ""),
+      t.eval,
+      section,
+    );
+    const dir = join(root, config.judge.cacheDir);
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(
+      join(dir, `${key}.json`),
+      JSON.stringify(
+        Array.from({ length: config.judge.ensembleRuns }, () => ({
+          verdict: { claim: "c", observed: "o", match: "pass", confidence: 0.95, reasoning: "r" },
+          provider: identity.provider,
+          model: identity.model,
+          cached: false,
+          durationMs: 1,
+        })),
+      ),
+    );
+
+    const results = await makeJudge({ provider: neverCalled(), root })([t], config, {});
+    expect(results[0]?.consensus?.runs.every((r) => r.cached)).toBe(true);
+    expect(results[0]?.personas).toEqual(["theo"]);
   });
 });

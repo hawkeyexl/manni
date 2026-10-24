@@ -2,7 +2,7 @@
 title: CLI reference
 description: Every manni docevals command, argument, and flag, with the exit code each produces.
 type: reference
-last-updated: 2026-10-20
+last-updated: 2026-10-23
 ---
 
 {/* The command, argument, and option tables on this page are drift-checked
@@ -115,8 +115,8 @@ manni docevals run [paths...] [options]
 | `--chunk-chars` | `<n>` | config `judge.chunkChars` | Characters of page per judge call. A longer page is read in parts and judged once against the collected evidence. The config default is 12000. |
 | `--eval` | `<name>` | n/a | Run only this eval. Repeat the flag for more than one (`--eval a --eval b`). Names are **not** space-separated, because a variadic flag would swallow the following glob. **Suite targets are not evaluated while a filter is active**; see below. A name that matches nothing is a usage error: **exit 2**. |
 | `--suite` | `<name>` | n/a | Run only the evals that report under the named suite. Same suspension of suite targets. A suite the config does not define is **exit 2**, with the defined names in the message. |
-| `--since` | `<ref>` | n/a | Evaluate only pages whose file or eval manifest changed between this git ref and `HEAD`. Suite targets are suspended **when the scope leaves pages out**. Nothing changed is **exit 0**, not an error; see below. |
-| `--newer-than` | `<duration>` | n/a | Evaluate only pages whose file or eval manifest changed within this window: a count, then `m`, `h`, `d` or `w`, such as `30m`, `24h`, `7d` or `2w`. With `--since`, a page must satisfy both. Any other value is a usage error (exit 2). See below. |
+| `--since` | `<ref>` | n/a | Evaluate only pages whose file or eval manifest changed between this git ref and `HEAD`. A page also counts when its persona record changed and an eval reads the page as its personas. A persona record counts only for an eval with `readers: personas` whose page names one, and only when the run judges. Suite targets are suspended **when the scope leaves pages out**. Nothing changed is **exit 0**, not an error; see below. |
+| `--newer-than` | `<duration>` | n/a | Evaluate only pages whose file or eval manifest changed within this window: a count, then `m`, `h`, `d` or `w`, such as `30m`, `24h`, `7d` or `2w`. A page also counts when its persona record changed in the window and an eval reads the page as its personas. A persona record counts only for an eval with `readers: personas` whose page names one, and only when the run judges. With `--since`, a page must satisfy both. Any other value is a usage error (exit 2). See below. |
 | `--max-turns` | `<n>` | config `judge.maxTurns` | Stop judging after this many uncached **ensemble runs**. One ai eval spends `judge.ensembleRuns` turns; a cached ensemble spends none. A run may make a second provider call when the first response fails schema validation. This is therefore a floor on API calls rather than an exact count. Unbounded by default. |
 | `--baseline` | `[path]` | n/a | Fail only on findings a recorded baseline does not already hold. With no path, the configured `baseline:`, then `.manni-docevals-baseline.json`. |
 | `--no-baseline` | n/a | off | Ignore the configured `baseline:` for this run, so the full backlog reports again. |

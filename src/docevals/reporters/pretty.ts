@@ -44,10 +44,12 @@ export function renderPretty(
     lines.push(pc.bold(file));
     for (const r of results) {
       const zone = r.consensus ? pc.dim(` [${r.consensus.zone}]`) : "";
+      // Who the judge read the page as (proposal 0111). No tag means it read none.
+      const readAs = r.personas ? pc.dim(` (read as ${r.personas.join(", ")})`) : "";
       const via = r.via ? pc.dim(" (human-reviewed)") : "";
       const gen = r.generated ? pc.cyan(" (generated)") : "";
       const entry = pc.dim(locationLabel(declaringEntry(r)));
-      lines.push(`  ${outcomeTag(r, pc)} ${r.evalName}${zone}${via}${gen}  ${entry}`);
+      lines.push(`  ${outcomeTag(r, pc)} ${r.evalName}${zone}${readAs}${via}${gen}  ${entry}`);
       if (r.skipReason && r.outcome !== "pass") {
         lines.push(pc.dim(`       ${r.skipReason}`));
       }

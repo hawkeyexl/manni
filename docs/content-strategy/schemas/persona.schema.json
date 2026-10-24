@@ -23,17 +23,17 @@
     "title": {
       "type": "string",
       "minLength": 1,
-      "description": "The record's name, as `manni strategy list` and `get` show it."
+      "description": "The record's name, as `manni strategy list` and `get` show it. The docevals judge reads it for an eval with `readers: personas`."
     },
     "description": {
       "type": "string",
       "minLength": 1,
-      "description": "One sentence that says who or what the record is."
+      "description": "One sentence that says who or what the record is. The docevals judge reads it for an eval with `readers: personas`."
     },
     "name": {
       "type": "string",
       "minLength": 1,
-      "description": "The persona's name and role, as a reader would say it."
+      "description": "The persona's name and role, as a reader would say it. The docevals judge reads it for an eval with `readers: personas`."
     },
     "audience": {
       "type": "string",
@@ -43,12 +43,12 @@
     "role": {
       "type": "string",
       "minLength": 1,
-      "description": "The persona's job."
+      "description": "The persona's job. The docevals judge reads it for an eval with `readers: personas`."
     },
     "team-context": {
       "type": "string",
       "minLength": 1,
-      "description": "The team and product the persona works in."
+      "description": "The team and product the persona works in. The docevals judge reads it for an eval with `readers: personas`."
     },
     "proficiency": {
       "type": "array",
@@ -56,7 +56,7 @@
         "type": "string",
         "minLength": 1
       },
-      "description": "What the persona is already good at."
+      "description": "What the persona is already good at. The docevals judge reads it for an eval with `readers: personas`."
     },
     "prerequisites": {
       "type": "array",
@@ -64,7 +64,7 @@
         "type": "string",
         "minLength": 1
       },
-      "description": "What the persona needs to know before the docs can help."
+      "description": "What the persona needs to know before the docs can help. The docevals judge reads it for an eval with `readers: personas`."
     },
     "goals": {
       "type": "array",
@@ -72,7 +72,7 @@
         "type": "string",
         "minLength": 1
       },
-      "description": "What the persona is trying to achieve, one claim per item. A citation pins an item as `/goals/<n>`."
+      "description": "What the persona is trying to achieve, one claim per item. A citation pins an item as `/goals/<n>`. The docevals judge reads it for an eval with `readers: personas`."
     },
     "pains": {
       "type": "array",
@@ -80,7 +80,7 @@
         "type": "string",
         "minLength": 1
       },
-      "description": "What gets in the persona's way, one claim per item. A citation pins an item as `/pains/<n>`."
+      "description": "What gets in the persona's way, one claim per item. A citation pins an item as `/pains/<n>`. The docevals judge reads it for an eval with `readers: personas`."
     },
     "content-types": {
       "type": "array",
@@ -88,7 +88,7 @@
         "type": "string",
         "minLength": 1
       },
-      "description": "The kinds of content the persona needs."
+      "description": "The kinds of content the persona needs. The docevals judge reads it for an eval with `readers: personas`."
     },
     "journeys": {
       "type": "array",

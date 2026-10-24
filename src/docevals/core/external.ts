@@ -59,8 +59,9 @@ export const EVAL_KEYS = ["evals", "eval-suite", "eval-skip"] as const;
 
 /**
  * Every key docevals reads that a manifest may own, and so the only manifests
- * this tool loads: the evals vocabulary's three and ai-context's machine
- * attribution (proposal 0046).
+ * this tool loads: the evals vocabulary's three, ai-context's machine
+ * attribution (proposal 0046), and audience's `personas`, which an opted-in
+ * eval's judge reads (proposal 0111).
  *
  * A manifest owning none of them is a sibling tool's business. Loading it
  * anyway would make a corpus fail on a manifest docevals has no use for, and
@@ -71,6 +72,7 @@ export const EXTERNAL_KEYS: readonly string[] = [
   ...EVAL_KEYS,
   "provenance",
   "meta-provenance",
+  "personas",
 ];
 
 /** Where a value a manifest supplied lives, and what the page duplicates. */

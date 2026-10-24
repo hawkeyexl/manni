@@ -1,0 +1,12 @@
+# A repository with no persona records (proposal 0111). Its page names a
+# persona and opts an eval in, and a second eval carries a value the judge
+# does not read. With no record to read, both are judged as they are today.
+collections:
+  - name: pages
+    paths:
+      - "docs/*.md"
+
+docevals:
+  judge:
+    ensembleRuns: 1
+    cacheDir: .manni/docevals/cache

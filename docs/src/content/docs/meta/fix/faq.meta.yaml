@@ -11,14 +11,20 @@ docs/src/content/docs/meta/fix/faq.mdx:
       assertion: A reader can say why a file with no frontmatter still fails a schema that requires a field.
       type: capability
       grader: ai
+      options:
+        readers: personas
     - id: validate-stdin
       assertion: A reader can validate content from stdin with - and --as.
       type: capability
       grader: ai
+      options:
+        readers: personas
     - id: exclude-drafts
       assertion: A reader can exclude drafts from a run with --exclude or a collection exclude.
       type: capability
       grader: ai
+      options:
+        readers: personas
   provenance:
     - generated-by: Claude Opus 4.8
       lines: 2
