@@ -4,6 +4,8 @@ docs/src/content/docs/meta/index.mdx:
     - devin
     - sara
     - theo
+  journeys:
+    - m1
   visibility: public
   review-interval: P180D
   eval-suite: meta

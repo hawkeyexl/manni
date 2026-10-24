@@ -7,6 +7,9 @@
  * holds a record of that field's type, so a repo that keeps no audience
  * records keeps free-form `audiences:`. `missing-parent` and the use counts
  * read pages that are not records: a record's own `journeys:` serves nobody.
+ *
+ * The four step rules (proposal 0106) read each live journey's resolved
+ * `steps:`. A draft or archived journey's steps draw nothing.
  */
 import { closestName } from "../../shared/closest-name.js";
 import { RECORD_FIELDS } from "../../shared/reference-fields.js";
@@ -17,6 +20,7 @@ import {
   type ChildType,
   type RecordType,
   type ReferenceField,
+  type ResolvedStep,
   type StrategyFinding,
   type StrategyRecord,
   type StrategyRule,
@@ -24,6 +28,7 @@ import {
   type StrategySeverity,
 } from "../types.js";
 import { guidanceFor, resolveSeverity, ruleId } from "./severity.js";
+import { resolveSteps, type StepMap } from "./steps.js";
 
 const fold = (value: string): string => value.toLowerCase();
 
@@ -98,7 +103,7 @@ interface Draft {
   file: string;
   line?: number;
   id?: string;
-  field?: ReferenceField;
+  field?: ReferenceField | "steps";
 }
 
 /** `a journey`, `an audience`. */
@@ -124,12 +129,85 @@ function ancestorOf(index: StrategyIndex, record: StrategyRecord, type: RecordTy
 
 export interface CheckStrategySetOptions {
   severity?: Partial<Record<StrategyRule, StrategySeverity>>;
+  /** The journeys' steps, resolved. Default: resolved with no routes, each repo path read as a label. */
+  steps?: StepMap;
+  /** A step's page as a message names it. Default: its label. */
+  pagePath?: (page: string) => string;
+}
+
+/** The step rules' drafts for one live journey. `naming` holds the pages that name it, posix. */
+function stepDrafts(
+  record: StrategyRecord,
+  steps: readonly ResolvedStep[],
+  naming: ReadonlySet<string>,
+  pagePath: (page: string) => string,
+): Draft[] {
+  const drafts: Draft[] = [];
+  for (const step of steps) {
+    const on = (at: At | undefined): At => located(at ?? { file: step.file, ...(step.line === undefined ? {} : { line: step.line }) });
+    const about = { ...on(undefined), id: record.id, field: "steps" as const };
+    const n = `step ${String(step.n)}`;
+    if (step.state === "broken") {
+      drafts.push(
+        step.doc === undefined
+          ? {
+              rule: "broken-step",
+              message: `${n}: exists: ${String(step.exists)}, but the step has no doc.`,
+              fix: "Name its page in doc:, or set exists: false.",
+              ...about,
+              ...on(step.existsAt),
+            }
+          : {
+              rule: "broken-step",
+              message: `${n}: doc "${step.doc}" names no page.`,
+              fix: "Correct doc, or set exists: false if the page does not exist.",
+              ...about,
+              ...on(step.docAt),
+            },
+      );
+    }
+    if (step.state === "unwritten") {
+      drafts.push({
+        rule: "unwritten-step",
+        message: step.doc === undefined ? `${n}: no page carries this stage.` : `${n}: doc "${step.doc}" names a page that does not exist.`,
+        ...about,
+      });
+    }
+    if (step.page === undefined) continue;
+    if (step.exists === false && step.doc !== undefined) {
+      drafts.push({
+        rule: "stale-step",
+        message: `${n}: exists: false, but doc "${step.doc}" names a page.`,
+        fix: "Set exists: true or partial, or drop exists:.",
+        ...about,
+        ...on(step.existsAt),
+      });
+    }
+    if (!naming.has(step.page)) {
+      drafts.push({
+        rule: "missing-journey",
+        message: `${n}: ${pagePath(step.page)} does not name "${record.id}" in journeys:.`,
+        fix: "Add it to that page's journeys:, or point the step at a page that does.",
+        ...about,
+        ...on(step.docAt),
+      });
+    }
+  }
+  return drafts;
 }
 
 export function checkStrategySet(set: StrategySet, opts: CheckStrategySetOptions = {}): StrategyFinding[] {
   const levels = resolveSeverity(opts.severity);
   const index = indexSet(set);
   const drafts: Draft[] = [];
+
+  // The step rules, on each live journey's steps.
+  const steps = opts.steps ?? resolveSteps(set, {}, index);
+  for (const [record, resolved] of steps) {
+    if (record.lifecycle === "draft" || record.lifecycle === "archived") continue;
+    const naming = new Set(index.pagesNaming(record).map((page) => page.replaceAll("\\", "/")));
+    drafts.push(...stepDrafts(record, resolved, naming, opts.pagePath ?? ((page) => page)));
+  }
 
   /** The finding for a value that names no record of `type`, or the wrong type of record. */
   const unresolved = (field: ReferenceField, value: string, onRecordField: boolean): Pick<Draft, "message" | "fix"> => {

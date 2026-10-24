@@ -546,13 +546,13 @@ Reference pages must never contradict the source code. Before writing any Refere
 
 - **Phase 1, Launch (★):** home + on-ramp, M1 anchor guide + config page, M3 overrides page. Then the D1 CI recipes + exit codes page, and the S1 + S2 schemas pages. Then the T1 fix-it page, and the full Reference shelf (7 pages).
 - **Phase 2, Depth:** M2, M-cross retrofit, M4 egress page, D2, D3, S3, OKF explained, FAQ, Glossary.
-- **Phase 3, Polish:** CONTRIBUTING, case studies, cross-persona refinements.
+- **Phase 3, Polish:** CONTRIBUTING, case studies, cross-persona refinements. A planned page can also be a journey step with `exists: false`, which `manni strategy check` reports as an `unwritten-step` notice. M1's step 2 is the case studies page.
 
 ---
 
 ## Journey walk-through test
 
-Before declaring any ★ journey complete, run `manni strategy get <id>`, follow the pages it lists from start to finish, and confirm:
+Before declaring any ★ journey complete, run `manni strategy get <id>`. Follow its `steps` row in order, from step 1 to the last step, and confirm:
 1. A user reaches the stated outcome without leaving the track (except deliberate Reference lookups).
 2. Every code example uses a `test/fixtures/` file that CI actually runs.
 3. Every page has `title` and `description` frontmatter.

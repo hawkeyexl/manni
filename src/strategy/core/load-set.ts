@@ -35,6 +35,7 @@ import {
   type StrategyReference,
   type StrategyRun,
   type StrategySet,
+  type StrategyStep,
 } from "../types.js";
 
 export interface LoadStrategySetOptions {
@@ -141,6 +142,37 @@ function valuesOf(data: Record<string, unknown>, field: string): { value: string
   );
 }
 
+/**
+ * A journey's `steps:`, each mapping item with the fields of their type and
+ * the lines they sit on. A step is numbered by its position in the list.
+ */
+function stepsOf(data: Record<string, unknown>, at: (pointer: string) => At): StrategyStep[] {
+  const raw = data["steps"];
+  if (!Array.isArray(raw)) return [];
+  return raw.flatMap((item: unknown, i): StrategyStep[] => {
+    if (typeof item !== "object" || item === null || Array.isArray(item)) return [];
+    const fields = item as Record<string, unknown>;
+    const pointer = `/steps/${String(i)}`;
+    const stage = text(fields["stage"]);
+    const doc = text(fields["doc"]);
+    const note = text(fields["note"]);
+    const exists = fields["exists"];
+    const known = exists === true || exists === false || exists === "partial" ? exists : undefined;
+    return [
+      {
+        n: i + 1,
+        ...(stage === undefined ? {} : { stage }),
+        ...(doc === undefined ? {} : { doc }),
+        ...(known === undefined ? {} : { exists: known }),
+        ...(note === undefined ? {} : { note }),
+        ...at(pointer),
+        ...(doc === undefined ? {} : { docAt: at(`${pointer}/doc`) }),
+        ...(known === undefined ? {} : { existsAt: at(`${pointer}/exists`) }),
+      },
+    ];
+  });
+}
+
 export async function loadStrategySet(opts: LoadStrategySetOptions): Promise<StrategySet> {
   const { run } = opts;
   const allowEmpty = opts.allowEmpty ?? run.config?.allowEmpty === true;
@@ -154,7 +186,8 @@ export async function loadStrategySet(opts: LoadStrategySetOptions): Promise<Str
     pages: inputs.filter((i) => i.label !== STDIN_LABEL).map((i) => resolve(run.base, i.label)),
   });
 
-  const set: StrategySet = { records: [], references: [] };
+  const pages: string[] = [];
+  const set: StrategySet = { records: [], references: [], pages };
   for (const { label, extracted } of inputs) {
     const merged = await view.merge(label, extracted);
     const data = merged.extracted.data;
@@ -168,6 +201,7 @@ export async function loadStrategySet(opts: LoadStrategySetOptions): Promise<Str
       const title = text(data["title"]);
       const description = text(data["description"]);
       const lifecycle = text(data["lifecycle"]);
+      const steps = type === "journey" ? stepsOf(data, at) : [];
       const record: StrategyRecord = {
         id: declares.id,
         type: declares.type,
@@ -181,8 +215,11 @@ export async function loadStrategySet(opts: LoadStrategySetOptions): Promise<Str
           declares.type === "audience"
             ? []
             : valuesOf(data, PARENTS[declares.type]).map(({ value, pointer }) => ({ value, ...at(pointer) })),
+        ...(steps.length === 0 ? {} : { steps }),
       };
       set.records.push(record);
+    } else {
+      pages.push(label);
     }
 
     // A journey's `personas:` is its parent field, read above, so it is not a reference too.

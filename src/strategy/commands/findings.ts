@@ -39,6 +39,8 @@ export interface StrategyReport {
   records: number;
   /** Values of audiences:, personas:, journeys: and audience: the run read. */
   references: number;
+  /** Steps on the set's journeys, each held to the page it names. */
+  steps: number;
   baseline?: BaselineSummary;
   /** Findings before the baseline, for the line a recording run prints. */
   found: number;
