@@ -30,6 +30,7 @@ import { beats as strategyStepsBeats, totalFrames as strategyStepsTotalFrames, T
 import { beats as strategyBeats, totalFrames as strategyTotalFrames, TYPING_MS as strategyTypingMs } from "./strategy/beats";
 import { beats as pluginRecordsBeats, totalFrames as pluginRecordsTotalFrames, TYPING_MS as pluginRecordsTypingMs } from "./plugin-records/beats";
 import { beats as graphAuthoringBeats, totalFrames as graphAuthoringTotalFrames, TYPING_MS as graphAuthoringTypingMs } from "./graph-authoring/beats";
+import { beats as strategySharedBeats, totalFrames as strategySharedTotalFrames, TYPING_MS as strategySharedTypingMs } from "./strategy-shared/beats";
 
 /** sidecar-url-1x1: 23 px / 75 columns, derived in media/sidecar-url-1x1.script.md. */
 const DemoUrl: React.FC = () => <DemoView beats={urlBeats} fontPx={23} linePx={32} cols={75} />;
@@ -180,6 +181,16 @@ const DemoGraphAuthoring: React.FC = () => (
  */
 const DemoStrategySteps: React.FC = () => (
   <DemoView beats={strategyStepsBeats} fontPx={19} linePx={27} cols={91} typingMs={strategyStepsTypingMs} ligatures={false} breakAfter="/" />
+);
+
+/**
+ * strategy-shared-1x1: every beat carries its own size (src/strategy-shared/beats.ts), derived in
+ * media/strategy-shared/strategy-shared-1x1.script.md (media/strategy-shared/capture/cols.mjs).
+ * The video-level size is beat 1's. Breaks after "/" let the borrowed path and the Guide URL
+ * wrap without splitting a token elsewhere. Ligatures off: `&&`, `??=` and `../` are characters in a terminal.
+ */
+const DemoStrategyShared: React.FC = () => (
+  <DemoView beats={strategySharedBeats} fontPx={20} linePx={28} cols={86} typingMs={strategySharedTypingMs} ligatures={false} breakAfter="/" />
 );
 
 export const Root: React.FC = () => (
@@ -415,6 +426,14 @@ export const Root: React.FC = () => (
       height={1080}
       fps={FPS}
       durationInFrames={strategyStepsTotalFrames}
+    />
+    <Composition
+      id="StrategySharedDemo"
+      component={DemoStrategyShared}
+      width={1080}
+      height={1080}
+      fps={FPS}
+      durationInFrames={strategySharedTotalFrames}
     />
   </>
 );

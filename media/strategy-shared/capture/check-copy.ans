@@ -1,0 +1,8 @@
+[1mstrategy/personas/maya.md:3[22m
+  [31merror  [39m manni:strategy/duplicate-id         id: "maya" is also the id of ../manni/docs/content-strategy/personas/maya.md:3.
+                                              That record is borrowed from outside this repository.
+                                              Remove this copy, or give it its own id.
+                                              [2mmanni:strategy duplicate-id: Two records share an id, ignoring case.[22m
+                                              [2mGuide: https://hawkeyexl.github.io/manni/strategy/reference/rules/#duplicate-id[22m
+
+1 error in 87 records (85 borrowed)

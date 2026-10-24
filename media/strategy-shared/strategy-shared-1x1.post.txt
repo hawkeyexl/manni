@@ -1,0 +1,13 @@
+Three docsets write for the same readers. Each keeps its own copy of the personas, and by spring there are three Mayas.
+
+New in manni strategy, a docset can borrow another repository's records. Point the strategy collection at the owner's folders in a checkout beside it. Every page resolves against one Maya.
+
+The check reports only what this repository can fix. A local copy of a borrowed record is the one finding, and its fix says to remove the copy. The owner's own mistakes stay with the owner.
+
+Remove it, and the clean line counts what the run borrowed: 85 of 86 records.
+
+Coverage across products is data too. Each repository lists its records as JSON, and one join gives pages per journey per repository.
+
+Real output, from a copy of the manni repository's own records.
+
+npm i -g @hawkeyexl/manni · manni strategy check

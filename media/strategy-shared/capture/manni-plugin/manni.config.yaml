@@ -1,0 +1,9 @@
+collections:
+  - name: site
+    paths: ["docs/**/*.md"]
+  - name: strategy
+    paths:
+      - ../manni/docs/content-strategy/audiences/
+      - ../manni/docs/content-strategy/personas/
+      - ../manni/docs/content-strategy/journeys/
+      - strategy/
