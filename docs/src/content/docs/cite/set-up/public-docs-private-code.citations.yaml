@@ -169,9 +169,9 @@ docs/src/content/docs/cite/set-up/public-docs-private-code.mdx:
         integrity: sha256-486364a5af89b169895c5be5d370d1c63cd10d3ae281f13f08b102beb887a482
       source:
         file: src/cite/reporters/pretty.ts
-        lines: 209-220
+        lines: 210-221
         integrity: sha256-16a397b19266b59f14b0a5b24aedddd2ae177b948dd4142039774b326f97538c
-        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
+        commit-sha: 288678fa899b944f2633162fe2ab94355c5491a1
     - id: output-rule-test
       claim:
         lines: 156-160
@@ -275,9 +275,9 @@ docs/src/content/docs/cite/set-up/public-docs-private-code.mdx:
         integrity: sha256-911ede81723977ae3f40b8b17985a9407f4ed1e98738b92064200ce15d817dd8
       source:
         file: src/cite/reporters/pretty.ts
-        lines: 209-220
+        lines: 210-221
         integrity: sha256-16a397b19266b59f14b0a5b24aedddd2ae177b948dd4142039774b326f97538c
-        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
+        commit-sha: 288678fa899b944f2633162fe2ab94355c5491a1
     - id: shallow-history-unavailable
       claim:
         integrity: sha256-07b21c8eebcd57bbb20ec490aac38407a11590ea4d2308dcd1eb2f16ef9d4bba
@@ -343,9 +343,9 @@ docs/src/content/docs/cite/set-up/public-docs-private-code.mdx:
         integrity: sha256-67d452a939980549a1c22e37457215ae7429de652262e830f489278cd0c48775
       source:
         file: src/cite/reporters/pretty.ts
-        lines: 372-379
+        lines: 373-380
         integrity: sha256-262e6afb0d4c5ba60d3304d8b39325522959012c6666ee4c80561afe41f248a1
-        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
+        commit-sha: 288678fa899b944f2633162fe2ab94355c5491a1
     - id: no-key-reports-missing
       claim:
         lines: 268-269

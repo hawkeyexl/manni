@@ -22,7 +22,7 @@ import {
 const FIXTURE = resolve(import.meta.dirname, "..", "fixtures", "cite", "impact");
 
 function record(type: StrategyRecord["type"], id: string, extra: Partial<StrategyRecord> = {}): StrategyRecord {
-  return { id, type, file: `strategy/${id}.md`, line: 1, parents: [], ...extra };
+  return { id, type, file: `strategy/${id}.md`, line: 1, parents: [], data: {}, ...extra };
 }
 
 const ids = (records: readonly StrategyRecord[] | undefined): string[] => (records ?? []).map((r) => r.id);
