@@ -5,7 +5,7 @@ sidebar:
   order: 1
 id: "tracevals-runtime"
 type: "how-to"
-keywords: ["runtime evals", "hook", "Stop", "SubagentStop", "rules", "CLAUDE.md", "AGENTS.md", "check", "prompts", "plan", "specs", "procedure", "system prompt", "output style"]
+keywords: ["runtime evals", "hook", "MANNI_TRACEVALS_HOOKS", "Stop", "SubagentStop", "rules", "CLAUDE.md", "AGENTS.md", "check", "prompts", "plan", "specs", "procedure", "system prompt", "output style"]
 language: en
 audiences: ["docs-engineers"]
 intent: "Set up tracevals so an agent hears about a broken rule at the end of the turn that broke it."
@@ -13,7 +13,7 @@ lifecycle: published
 applies-to: ["domain:tracevals"]
 sample-questions: ["How do I make an agent follow my CLAUDE.md?", "Which files does tracevals check an agent against?", "What does the agent see when it breaks a rule?", "Does tracevals check that the agent built what I asked for?", "Are the steps of a skill checked in order?", "Does tracevals check the system prompt?"]
 graph: { label: "Catch a broken rule before the agent hands back", type: task }
-last-updated: 2026-10-11
+last-updated: 2026-10-24
 verified-by:
   - tool: doc-detective
     check: runtime-system-prompt
@@ -62,7 +62,8 @@ no work behind it, and a skill's step run out of order.
 1. Install the [`manni` plugin](/manni/family/claude-code/). It carries the hooks that run the check.
    To run the check by hand, skip this step.
 
-2. Add one section to `manni.config.yaml`. An empty one is enough, and its presence is the switch.
+2. Add one section to `manni.config.yaml`. An empty one is enough. It says turns can be judged in
+   this repository, for everyone who opens it.
 
    ```yaml title="manni.config.yaml"
    tracevals:
@@ -71,13 +72,28 @@ no work behind it, and a skill's step run out of order.
 
 3. Choose the models. Two roles do different work, so each gets a model of its own.
 
-4. Run `manni tracevals prepare` once. The first turn then finds its rules cached and its local model
+4. Turn on the plugin's tracevals option for yourself. Open `/plugin`, then **Installed**, **manni**
+   and **Configure options**, check **Judge each turn with tracevals**, and restart Claude Code.
+   [Turn on tracevals for your sessions](/manni/family/claude-code/#turn-on-tracevals-for-your-sessions)
+   covers the other ways to set it.
+
+5. Run `manni tracevals prepare` once. The first turn then finds its rules cached and its local model
    on disk.
 
 </Steps>
 
-Without a `runtime` section, tracevals stays out of every hook and `manni status` shows it as not
-checked. To turn the check off, delete the section.
+A committed `runtime` section alone runs nothing on a contributor's machine. Each person whose turns
+should be judged turns the option on, and Claude Code keeps that answer in their own settings. A
+contributor who never turns it on gets no manifest, no model download and no judgement.
+
+| Setup | The tracevals row in the session briefing |
+|---|---|
+| No `runtime` section | `not checked   judges recorded sessions with a model` |
+| The section, and the option off | `not checked   runtime evals are set up, and turned off here` |
+| The section, and the option on | `judges each turn`, with both models |
+
+To turn the check off for yourself, turn the option off. To turn it off for everyone, delete the
+section.
 
 ### Choose the models
 
@@ -471,6 +487,9 @@ agent's own definition counts as a rule source for that run. Parallel subagents 
 A Stop runs a short list of cheap checks in order, and the first one that finds nothing to do ends
 the run. Most of them are silent.
 
+- Turned off for this user means tracevals never runs. The Stop runs the file checks alone and never
+  reads the transcript. Only `MANNI_TRACEVALS_HOOKS=1` turns it on, and the plugin sets that when its
+  option is on.
 - No `runtime` section means tracevals never runs.
 - A judge's own session never judges itself. tracevals sets `MANNI_TRACEVALS_JUDGE` on every process
   it spawns, so a `claude-cli` judge cannot set off the hook again.
@@ -486,8 +505,8 @@ all three.
 ## Prepare, release and the model host
 
 `manni tracevals prepare` fetches a local model that is not on disk and extracts the rules of every
-file that applies to every session. The plugin runs it in the background at session start, so it
-never holds the session up. The first turn then finds both ready. Prompts, plans and specs are not
+file that applies to every session. For a user who turned tracevals on, the plugin runs it in the
+background at session start, so it never holds the session up. The first turn then finds both ready. Prompts, plans and specs are not
 known at session start, so the turn that first has them extracts them.
 
 A local model loads once and stays loaded in a **model host**. That is one background process per
@@ -495,7 +514,7 @@ machine and user. Every hook is its client, and requests queue in the order they
 host, each Stop would pay a model load, and parallel subagents would each load their own copy.
 
 A session takes a lease on the host when it starts, and `manni tracevals release` returns it at
-session end. A model stays loaded while a lease is held and used within `providers.llama-cpp.keepAlive`,
+session end. The plugin runs neither for a user who left tracevals off. A model stays loaded while a lease is held and used within `providers.llama-cpp.keepAlive`,
 which defaults to `10m`. A crashed session's lease lapses when it goes idle. With no lease left, the
 model unloads, and the host exits when nothing is loaded.
 

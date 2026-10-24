@@ -14,7 +14,7 @@
  * | term | the collections hold a term |
  * | strategy | the collections hold a record of type audience, persona or journey |
  * | graph | `graph:` exists |
- * | tracevals | `tracevals.runtime` exists; it judges the turn a Stop or SubagentStop hook ends |
+ * | tracevals | `tracevals.runtime` exists and `MANNI_TRACEVALS_HOOKS` is 1; it judges the turn a Stop or SubagentStop hook ends |
  * | a11y | never run by `check`: it needs a running site |
  * | test | never run by `check`: Doc Detective runs the pages' shell steps |
  *
@@ -30,6 +30,7 @@ import {
   type ConfigFile,
 } from "../../shared/config-file.js";
 import { ToolError } from "../../shared/errors.js";
+import { warn } from "../../shared/warn.js";
 import { memberOf, retainMembers } from "../../meta/core/collections.js";
 import { resolveTargetSet } from "../../meta/internal.js";
 
@@ -108,7 +109,8 @@ export const META_DEFAULTS_ONLY = "only the built-in default schemas cover these
 
 /**
  * The domains `check` does not run here: why, and what to run instead.
- * tracevals leaves this list when `tracevals.runtime` exists (`Family.runtime`).
+ * tracevals leaves this list when `tracevals.runtime` exists (`Family.runtime`)
+ * and `MANNI_TRACEVALS_HOOKS` is 1 (`tracevalsHooks`).
  */
 export const NOT_CHECKED: ReadonlyArray<readonly [name: string, reason: string, next: string]> = [
   ["a11y", "needs a running site and a browser", "Run manni site preview, then manni a11y check."],
@@ -120,6 +122,21 @@ export const NOT_CHECKED: ReadonlyArray<readonly [name: string, reason: string, 
     "Run manni tracevals run over sessions, or add tracevals.runtime to judge each turn.",
   ],
 ];
+
+/** The variable that turns the tracevals hooks on for one user. */
+const TRACEVALS_HOOKS_ENV = "MANNI_TRACEVALS_HOOKS";
+
+/**
+ * Whether tracevals acts under Claude Code hooks here: exactly `1`. Unset or
+ * empty is off. Any other value is off too, and warns once, so a `true`
+ * typed by hand does not pass for on.
+ */
+export function tracevalsHooks(env: Record<string, string | undefined> = process.env): boolean {
+  const value = env[TRACEVALS_HOOKS_ENV] ?? "";
+  if (value === "1") return true;
+  if (value !== "") warn(`${TRACEVALS_HOOKS_ENV} is "${value}"; only 1 turns the tracevals hooks on.`);
+  return false;
+}
 
 /** `1 page`, `2 pages`. */
 export function plural(n: number, one: string, many = `${one}s`): string {
@@ -136,7 +153,10 @@ export interface Family {
   configPath: string;
   /** The top-level keys of the file: `meta`, `lint`, `graph`, … */
   sections: ReadonlySet<string>;
-  /** `tracevals.runtime` exists: tracevals judges each turn under the hooks. */
+  /**
+   * `tracevals.runtime` exists: tracevals judges each turn under the hooks,
+   * where `tracevalsHooks` also holds.
+   */
   runtime: boolean;
   collections: readonly CollectionConfig[];
 }
@@ -157,8 +177,9 @@ export async function loadFamily(cwd: string, configPath?: string): Promise<Fami
   const sections = new Set(top === undefined ? [] : Object.keys(top));
   const tracevals = record(top?.tracevals);
   // The old `conformance` key counts too. tracevals' loader refuses it and
-  // names `runtime`, and only a tracevals in play loads that config, so a
-  // config not yet migrated reaches `status` as an error, not as a silent skip.
+  // names `runtime`, and only a tracevals in play loads that config, so with
+  // the hooks on a config not yet migrated reaches `status` as an error, not
+  // as a silent skip. With them off nothing runs, so the old key costs nothing.
   const runtime = tracevals?.runtime !== undefined || tracevals?.conformance !== undefined;
   return { file, configPath: configPath ?? file.source, sections, runtime, collections: file.collections };
 }
