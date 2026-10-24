@@ -28,5 +28,5 @@ docs/src/content/docs/strategy/index.mdx:
         integrity: sha256-d60688d28969be44440ad3cb4241f3bacc86564cfd411c893e033ec275299cee
       source:
         file: src/strategy/commands/run.ts
-        lines: 92
-        integrity: sha256-10b934d53c9e2258e64900034bc18119fc7b171f283a0ef94f3d5ea2228bb415
+        lines: 92-93
+        integrity: sha256-7718d492485400e57a7879a797f83db5cddcfffd10a2da4a05bed759d8556b96

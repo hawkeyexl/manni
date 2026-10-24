@@ -89,8 +89,9 @@ export async function loadStrategy(opts: StrategyCommandOptions): Promise<Loaded
   const routes = stepsNeedRoutes(set) && run.configPath !== undefined ? routesFrom(loadConfig(run.configPath, cwd), run.base) : [];
   // A path the operator typed resolves from the working directory, so a typed
   // run owns that directory too, as it did when `-c` names a config elsewhere.
-  const owns = ownedIn(run.fromCollections ? [run.configDir ?? cwd] : [run.configDir ?? cwd, cwd], run.base);
-  const steps = resolveSteps(set, { routes, from: run.configDir ?? cwd, base: run.base, owns });
+  const dir = run.configDir ?? cwd;
+  const owns = ownedIn(run.fromCollections ? [dir] : [dir, cwd], run.base);
+  const steps = resolveSteps(set, { routes, from: dir, base: run.base, owns });
   return { cwd, run, set, steps, owns };
 }
 

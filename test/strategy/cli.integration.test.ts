@@ -435,12 +435,15 @@ describe("manni strategy (borrowed records, proposal 0112)", () => {
     expect(json.findings.every((f) => !f.file.startsWith("../owner"))).toBe(true);
   });
 
-  it("check -f junit has no testcase, and -f github no annotation, for a borrowed file", () => {
+  it("check -f junit has no testcase, -f github no annotation and -f sarif no result, for a borrowed file", () => {
     edit(owner("journeys", "j2.md"), "personas: [maya]", "personas: [nobody]");
     const junit = strategy(["check", "-f", "junit"], { cwd: consumer() });
     expect(junit.stdout).toContain("<testcase");
     expect(junit.stdout).not.toContain("../owner");
     expect(strategy(["check", "-f", "github"], { cwd: consumer() })).toMatchObject({ status: 0, stdout: "" });
+    const sarif = strategy(["check", "-f", "sarif"], { cwd: consumer() });
+    expect(sarif.status).toBe(0);
+    expect(sarif.stdout).not.toContain("../owner");
   });
 
   it("a kept copy of a borrowed record gets the borrowed duplicate-id fix, exit 1", () => {
