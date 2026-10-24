@@ -1,6 +1,9 @@
 import { configDefaults, defineConfig } from "vitest/config";
 
 export default defineConfig({
+  // Root tests import pure docs helpers without installing the Astro site.
+  // Keep their transforms on the root config instead of discovering docs/tsconfig.json.
+  tsconfig: "./tsconfig.json",
   test: {
     include: ["test/**/*.test.ts"],
     // The graph tool's real-model tests need network and model weights, which
