@@ -5,7 +5,7 @@ sidebar:
   order: 1
 id: "family-reference-cli"
 type: "reference"
-keywords: ["manni check", "manni status", "hook protocol", "exit codes", "scope", "in play"]
+keywords: ["manni check", "manni status", "hook protocol", "exit codes", "scope", "in play", "MANNI_TRACEVALS_HOOKS"]
 language: en
 audiences: ["ci-engineers", "docs-engineers"]
 intent: "Look up every argument, option, output shape, exit code and message of manni check and manni status."
@@ -14,7 +14,7 @@ applies-to: ["domain:family"]
 next-steps: ["family-check", "family-claude-code"]
 sample-questions: ["What does manni check run when I name files?", "What exit code does manni check use under a Claude Code hook?", "What does the manni check JSON report look like?"]
 graph: { label: "CLI reference", type: reference }
-last-updated: 2026-10-23
+last-updated: 2026-10-24
 tags:
   - cli
   - exit-codes
@@ -122,7 +122,7 @@ in play. `status` prints the next step under the reason.
 | `graph` | `graph:` exists. | `graph build` in memory, writing no file, then `graph check` | `no graph: section` | `Run manni graph init to add a starter graph: section.` |
 | `a11y` | Never. `check` does not run it, since it needs a built site and a browser. | none | `needs a running site and a browser` | `Run manni site preview, then manni a11y check.` |
 | `test` | Never. `check` does not run it, since Doc Detective runs the shell steps the pages carry. | none | `runs the shell steps the pages carry` | `Run manni test run with Doc Detective installed.` |
-| `tracevals` | Only under a Claude Code hook, and only when `tracevals:` holds a `runtime:` section. A bare `check` never runs it, since it needs recorded sessions and a model. | none on the command line | `judges recorded sessions with a model` | `Run manni tracevals run over sessions, or add tracevals.runtime to judge each turn.` |
+| `tracevals` | Only under a Claude Code hook, only when `tracevals:` holds a `runtime:` section, and only when [`MANNI_TRACEVALS_HOOKS`](#manni_tracevals_hooks) is `1`. A bare `check` never runs it, since it needs recorded sessions and a model. | none on the command line | `judges recorded sessions with a model`. With `runtime:` present and the variable not `1`: `runtime evals are set up, and turned off here`. | `Run manni tracevals run over sessions, or add tracevals.runtime to judge each turn.` With `runtime:` present and the variable not `1`: `Turn on the manni plugin's tracevals option, or set MANNI_TRACEVALS_HOOKS=1.` |
 
 `check` reads only the files that belong to a collection declared under
 `collections:`. A file outside every collection passes silently, with one notice
@@ -350,20 +350,38 @@ The `Stop` run needs git. Outside a repository it prints nothing and exits `0`.
 
 ### `tracevals` under hooks
 
-When `tracevals.runtime` exists in `manni.config.yaml`, `manni check` also runs tracevals under a
-hook envelope. The plugin's hooks are these. Each runs the first manni the plugin's launcher
-finds, as [Claude Code](/manni/family/claude-code/) describes.
+When `tracevals.runtime` exists in `manni.config.yaml` and `MANNI_TRACEVALS_HOOKS` is `1`,
+`manni check` also runs tracevals under a hook envelope. The plugin's hooks are these. Each runs the
+first manni the plugin's launcher finds, as [Claude Code](/manni/family/claude-code/) describes.
 
-| Event | Matcher | Command | Timeout (s) |
-|---|---|---|---|
-| `SessionStart` | `startup\|resume` | `manni tracevals prepare`, async | not enforced |
-| `Stop` | all | `manni check` | 600 |
-| `SubagentStop` | all | `manni check` | 600 |
-| `SessionEnd` | all | `manni tracevals release` | 10 |
+| Event | Matcher | Command | Timeout (s) | Runs for |
+|---|---|---|---|---|
+| `SessionStart` | `startup` | `manni tracevals capture` | 60 | a user who turned tracevals on |
+| `SessionStart` | `startup\|resume` | `manni tracevals prepare`, async | not enforced | a user who turned tracevals on |
+| `Stop` | all | `manni check` | 600 | everyone, for the file checks |
+| `SubagentStop` | all | `manni check` | 600 | a user who turned tracevals on |
+| `SessionEnd` | all | `manni tracevals release` | 10 | a user who turned tracevals on |
 
-An async hook never blocks the session, and Claude Code does not enforce its timeout.
+An async hook never blocks the session, and Claude Code does not enforce its timeout. For a user who
+left the plugin's tracevals option off, the plugin starts no manni for the four tracevals hooks. Its
+`Stop` then runs the file checks alone and never reads the transcript.
 
-| Envelope | What runs when `runtime` exists |
+#### `MANNI_TRACEVALS_HOOKS`
+
+manni reads this variable to decide whether the tracevals hooks are on. The plugin sets it to `1` for
+every manni it starts when its `tracevals` option is on. Without the plugin, set it yourself, for
+example in the `env` block of your own `~/.claude/settings.json`.
+
+| Value | Effect |
+|---|---|
+| `1` | On. `check` under a `Stop` or `SubagentStop` judges the turn where `tracevals.runtime` exists, and `status` reports tracevals in play. |
+| unset or empty | Off. |
+| anything else | Off, and one warning on stderr: `manni: MANNI_TRACEVALS_HOOKS is "<value>"; only 1 turns the tracevals hooks on.` |
+
+`status` reads the environment of the shell that runs it. In your own terminal it shows tracevals as
+turned off here unless you export the variable there. The session briefing reads the plugin's option.
+
+| Envelope | What runs when `runtime` exists and the variable is `1` |
 |---|---|
 | `SessionStart` | `tracevals prepare`, in the background. |
 | `Stop` | The file checks above, then a judgement of `transcript_path` with the hook model. |
@@ -371,8 +389,8 @@ An async hook never blocks the session, and Claude Code does not enforce its tim
 | `SessionEnd` | `tracevals release` for the session. |
 | none | `manni check` does not run tracevals, because there is no session to judge. |
 
-Without a `runtime` section the judgement never runs, and the `tracevals` row of `status` stays
-`not checked`. Every reply below exits `0` and writes JSON to stdout.
+Without a `runtime` section, or with the variable not `1`, the judgement never runs, and the
+`tracevals` row of `status` stays `not checked`. Every reply below exits `0` and writes JSON to stdout.
 
 | Situation | Reply |
 |---|---|
@@ -393,8 +411,8 @@ both sentences. A skip message is said once per session, and a block carries it 
 beside the `reason`. A tracevals judgement needs no collection, because it judges a turn rather than
 files.
 
-In `status`, a `tracevals` row replaces `not checked` when the section exists. It names both models,
-and the model host when one runs.
+In `status`, a `tracevals` row replaces `not checked` when the section exists and the variable is
+`1`. It names both models, and the model host when one runs.
 
 ```text
 tracevals  judges each turn   hook: llama-cpp qwen3.5-4b · extraction: anthropic claude-sonnet-5-5
@@ -441,6 +459,7 @@ Each line goes to stderr and starts with `manni: ` unless it is a usage error.
 | `Nothing is set up to check in manni.config.yaml. Run manni status to see what each domain needs.` Printed when no collection is declared, and when a bare run finds every check skipped. | `2` |
 | `manni <check> could not run: <its error>`. That check prints as `error`, and the other checks still run. | `2` |
 | `Config file not found: "<path>".` for a `-c` path that does not exist. | `2` |
+| `MANNI_TRACEVALS_HOOKS is "<value>"; only 1 turns the tracevals hooks on.`, once per process, for any value but `1` or empty. The run continues with the tracevals hooks off. | unchanged |
 | `File not found: "<path>". Check the path. Named paths resolve from the working directory.` for a named path that does not exist. | `2` |
 | `error: option '-f, --format <format>' argument 'sarf' is invalid. Allowed choices are pretty, json, github, sarif.` Unlike the lines above, it has no `manni: ` prefix, and `(add --help for usage)` follows. `status` lists `pretty, json`. | `2` |
 

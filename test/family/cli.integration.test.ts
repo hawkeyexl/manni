@@ -32,7 +32,15 @@ function run(args: string[], cwd: string, input = "", env: NodeJS.ProcessEnv = {
     cwd,
     input,
     encoding: "utf8",
-    env: { ...process.env, NO_COLOR: "1", MANNI_GENERATED_BY: undefined, CLAUDE_ENV_FILE: undefined, ...env },
+    // The tracevals hooks are off unless a test turns them on, whatever the shell says.
+    env: {
+      ...process.env,
+      NO_COLOR: "1",
+      MANNI_GENERATED_BY: undefined,
+      CLAUDE_ENV_FILE: undefined,
+      MANNI_TRACEVALS_HOOKS: "",
+      ...env,
+    },
   });
   return { stdout: r.stdout, stderr: r.stderr, status: r.status };
 }
@@ -326,7 +334,10 @@ describe("manni check, judging the turn", () => {
     const cwd = join(tmp, "project");
     cpSync(join(runtime, "project"), cwd, { recursive: true });
     const home = join(tmp, "home");
-    return { cwd, env: { CLAUDE_CONFIG_DIR: join(home, ".claude"), HOME: home, USERPROFILE: home } };
+    return {
+      cwd,
+      env: { CLAUDE_CONFIG_DIR: join(home, ".claude"), HOME: home, USERPROFILE: home, MANNI_TRACEVALS_HOOKS: "1" },
+    };
   }
 
   it("Stop on a turn that broke a rule: one block naming the file and the rule, even with no collections", () => {
@@ -366,6 +377,15 @@ describe("manni check, judging the turn", () => {
     expect(run(["check"], cwd, input, env)).toEqual({ stdout: "", stderr: "", status: 0 });
   });
 
+  it("with the hooks off: 0078's reply alone, from a Stop or a SubagentStop", () => {
+    const { cwd, env } = project();
+    const off = { ...env, MANNI_TRACEVALS_HOOKS: "" };
+    const stop = envelope("stop-transcript", cwd, { transcript_path: trace("breaks") });
+    expect(run(["check"], cwd, stop, off)).toEqual({ stdout: "", stderr: "", status: 0 });
+    const sub = envelope("subagent-stop", cwd, { transcript_path: trace("follows"), agent_transcript_path: trace("breaks") });
+    expect(run(["check"], cwd, sub, off)).toEqual({ stdout: "", stderr: "", status: 0 });
+  });
+
   it("SubagentStop judges the agent's own transcript, and runs no file check", () => {
     const { cwd, env } = project();
     const input = envelope("subagent-stop", cwd, {
@@ -380,7 +400,7 @@ describe("manni check, judging the turn", () => {
   it.skipIf(!gitAvailable())("Stop with file errors and a broken rule: 0078's paragraph first, in one block", () => {
     dir = fixtureRepo("only-docevals");
     const home = join(dir, ".home");
-    const env = { CLAUDE_CONFIG_DIR: join(home, ".claude"), HOME: home, USERPROFILE: home };
+    const env = { CLAUDE_CONFIG_DIR: join(home, ".claude"), HOME: home, USERPROFILE: home, MANNI_TRACEVALS_HOOKS: "1" };
     edit(dir, "docs/page.md", addTodo);
     edit(dir, "manni.config.yaml", (t) => `${t}\ntracevals:\n  provider: mock\n  runtime: {}\n`);
     cpSync(join(runtime, "project", "CLAUDE.md"), join(dir, "CLAUDE.md"));
@@ -389,6 +409,22 @@ describe("manni check, judging the turn", () => {
     const { reason } = JSON.parse(r.stdout) as { reason: string };
     expect(reason.startsWith(STOP_BLOCK)).toBe(true);
     expect(reason).toMatch(new RegExp(`\\n\\n${BROKE.source}`));
+  });
+
+  it.skipIf(!gitAvailable())("Stop with file errors and the hooks off: 0078's block, with no tracevals part", () => {
+    dir = fixtureRepo("only-docevals");
+    const home = join(dir, ".home");
+    const env = { CLAUDE_CONFIG_DIR: join(home, ".claude"), HOME: home, USERPROFILE: home };
+    edit(dir, "docs/page.md", addTodo);
+    edit(dir, "manni.config.yaml", (t) => `${t}\ntracevals:\n  provider: mock\n  runtime: {}\n`);
+    cpSync(join(runtime, "project", "CLAUDE.md"), join(dir, "CLAUDE.md"));
+    const r = run(["check"], dir, envelope("stop-transcript", dir, { transcript_path: trace("breaks") }), env);
+    expect(r.status).toBe(0);
+    expect(r.stderr).toBe("");
+    const doc = JSON.parse(r.stdout) as Record<string, unknown>;
+    expect(Object.keys(doc).sort()).toEqual(["decision", "reason"]);
+    expect(String(doc.reason).startsWith(STOP_BLOCK)).toBe(true);
+    expect(String(doc.reason)).not.toMatch(BROKE);
   });
 });
 

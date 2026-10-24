@@ -13,7 +13,7 @@ lifecycle: published
 applies-to: ["domain:tracevals"]
 sample-questions: ["What does an unresolved coverage row mean?", "How are skills resolved from a trace?"]
 graph: { label: "Account for every artifact", type: concept }
-last-updated: 2026-10-05
+last-updated: 2026-10-24
 verified-by:
   - tool: doc-detective
     check: coverage-states
@@ -299,7 +299,9 @@ its `tried` list but no note. The common case is a built-in, which is not a gap 
 
 Everything above is a guess, and the section below is how you stop guessing.
 
-The [`manni` Claude Code plugin](/manni/family/claude-code/) runs [`manni tracevals capture`](/manni/tracevals/reference/cli/#tracevals-capture) at the start of every session.
+The [`manni` Claude Code plugin](/manni/family/claude-code/) runs [`manni tracevals capture`](/manni/tracevals/reference/cli/#tracevals-capture) at the start of every session,
+for a user who [turned tracevals on](/manni/family/claude-code/#turn-on-tracevals-for-your-sessions).
+A user who left it off records no manifest. Their sessions keep the mtime guess above, and each row reads `skipped`.
 Without the plugin, [wire it as a `SessionStart` hook](/manni/tracevals/reference/cli/#wire-it-up) yourself.
 Before the session does any work it records the **sha256 of every instruction artifact in the
 project**, plus the **git SHA** it ran against. `run` finds that manifest and compares. The
@@ -353,7 +355,7 @@ In the second case the run warns and names the file it ignored; pass
 [`--manifest`](/manni/tracevals/reference/cli/#tracevals-run) to assert that it does belong.
 </Aside>
 
-A manifest only helps sessions recorded **after** you install the hook. Everything already on disk
+A manifest only helps sessions recorded **after** you install the hook, or turn tracevals on. Everything already on disk
 keeps the mtime heuristic, which is why that heuristic exists and stays.
 
 It also describes one moment, the session's **start**. The hook fires on `startup`, not `resume`.
