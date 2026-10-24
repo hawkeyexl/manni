@@ -1,0 +1,42 @@
+task · Install manni and check which version you have · as newcomer
+  start     http://127.0.0.1:4321/manni/meta/get-started/
+  5 turns · 0m 39s
+  PASS completed             (no location)
+  PASS followed-the-docs     (no location)
+  Account
+    I got it done. manni is installed and reports version **4.20.0**.
+
+    **What I did**
+    1. The Get started page says manni meta needs Node.js 24 or newer. I ran
+    `node --version` and got v24.11.0, so I was fine.
+    2. The page offers two options: npx with no install, or a global install.
+    The task said "install," so I picked the global one: `npm install -g
+    @hawkeyexl/manni`. It added 321 packages in about 15 seconds. npm printed
+    some deprecation warnings (inflight, glob@8, rdf-dataset-ext), but nothing
+    failed.
+    3. I ran `manni --version`, as the page says to, and it printed `4.20.0`.
+
+    **What helped**
+    - The "Before you start" check: I knew my Node version would work before
+    installing anything.
+    - The tabs explain when to pick each option ("for a quick try" vs.
+    "day-to-day local use"), which made the choice easy.
+    - The page shows the exact command to confirm it worked, for both the
+    global and the npx route.
+
+    **What confused me a little**
+    - The page is titled "Get started," but it's under `meta/` and talks about
+    "manni meta." The sidebar lists lots of tools (a11y, cite, docevals,
+    graph, lint, and more). I wasn't sure whether I was installing "manni" or
+    just "manni meta." It turned out one package (`@hawkeyexl/manni`) covers
+    all of them, but the page never says that.
+    - The version check comes after the install step but before "Validate a
+    file," mixed into the validation steps. A short "Check your version"
+    heading would have helped me find it faster.
+    - The page doesn't say what the version output looks like. I had to trust
+    that a bare `4.20.0` meant it worked.
+    - The deprecation warnings during install made me nervous for a second. A
+    note that they're expected would help.
+  trace     .manni/test/tasks/20261024T022407Z-task-newcomer/trace.jsonl
+
+1 run: 1 passed

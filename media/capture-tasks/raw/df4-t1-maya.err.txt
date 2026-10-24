@@ -1,0 +1,7 @@
+t1 as maya: starting in a fresh copy of test/test/fixtures/tasks/red-pr
+  maya › Read ../docs/meta/fix/index.mdx
+  maya › Bash find . -not -path './node_modules*' | head -50
+  maya › Bash cat -A docs/install.md | head -40; echo ----; cat manni.config.yaml; echo ----; 
+  maya › Edit docs/install.md
+  maya › Bash npx @hawkeyexl/manni meta validate; echo "exit $?"; cat docs/install.md
+inference: provider "auto" — auto-selected "claude-cli". Pass an explicit `provider` to pin it.

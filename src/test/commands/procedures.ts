@@ -1,5 +1,5 @@
 /**
- * `manni test run`: run Doc Detective and read its verdict from its results.
+ * `manni test procedures`: run Doc Detective and read its verdict from its results.
  *
  * Input precedence is positional paths, then `--collection`, then Doc
  * Detective's own config `input`. Without `--collection`, manni's collections
@@ -33,7 +33,7 @@ import {
 } from "../core/results.js";
 import { TestError } from "../errors.js";
 
-export interface RunTestOptions {
+export interface RunProceduresOptions {
   /** Positional files, directories and globs. */
   paths?: string[];
   /** `--collection <name>`, repeatable. */
@@ -49,7 +49,7 @@ export interface RunTestOptions {
   spawn?: DocDetectiveSpawn;
 }
 
-export interface TestRunResult {
+export interface ProceduresResult {
   /** Doc Detective's results object as it wrote it; `null` when it found no tests. */
   results: DocDetectiveResults | null;
   /** Every FAIL and WARNING step. */
@@ -66,7 +66,7 @@ const DOC_DETECTIVE_CONFIG_NAMES = [".doc-detective.json", ".doc-detective.yaml"
 const NO_RESULTS = "Doc Detective wrote no results to read. Run doc-detective directly to see why.";
 
 /** A run with nothing to report; a fresh object each time, so no caller shares one. */
-function empty(results: DocDetectiveResults | null = null): TestRunResult {
+function empty(results: DocDetectiveResults | null = null): ProceduresResult {
   return { results, findings: [], tests: { pass: 0, fail: 0, warning: 0, skipped: 0 }, exitCode: 0 };
 }
 
@@ -90,7 +90,7 @@ async function loadConfig(cwd: string, configPath: string | undefined): Promise<
   // would otherwise read as configured and do nothing.
   if (file !== null && file.wrapped && file.value !== null) {
     throw new TestError(
-      `${file.source}: test has no keys. Doc Detective's settings live under tools.doc-detective.`,
+      `${file.source}: test has no keys. Doc Detective's settings live under tools.doc-detective, and Claude Code's under tools.claude-cli.`,
     );
   }
   return file;
@@ -148,14 +148,14 @@ async function readResults(outDir: string): Promise<DocDetectiveResults | null> 
   return results;
 }
 
-export async function runTest(opts: RunTestOptions = {}): Promise<TestRunResult> {
+export async function runProcedures(opts: RunProceduresOptions = {}): Promise<ProceduresResult> {
   const cwd = resolve(opts.cwd ?? process.cwd());
   const paths = opts.paths ?? [];
   const wanted = opts.collection ?? [];
   const allowEmpty = opts.allowEmpty ?? false;
 
   if (paths.includes(STDIN_TOKEN)) {
-    throw new TestError("test run reads files; Doc Detective has no stdin. Pass a path.");
+    throw new TestError("test procedures reads files; Doc Detective has no stdin. Pass a path.");
   }
   // lint's two sentences: a collection is a set the operator did not type, so
   // it composes with no typed path, and only a config can define one.
@@ -201,7 +201,7 @@ export async function runTest(opts: RunTestOptions = {}): Promise<TestRunResult>
     !DOC_DETECTIVE_CONFIG_NAMES.some((name) => existsSync(join(cwd, name)))
   ) {
     throw new TestError(
-      "test run needs paths or a Doc Detective config. Pass paths, or add .doc-detective.json.",
+      "test procedures needs paths or a Doc Detective config. Pass paths, or add .doc-detective.json.",
     );
   }
 

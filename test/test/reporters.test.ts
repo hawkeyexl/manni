@@ -1,12 +1,12 @@
 /**
- * The three formats of `manni test run`. Shapes, not totals: each test builds
+ * The three formats of `manni test procedures`. Shapes, not totals: each test builds
  * its result from the findings it asserts on.
  */
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import type { TestRunResult } from "../../src/test/commands/run.js";
+import type { ProceduresResult } from "../../src/test/commands/procedures.js";
 import { renderGithub } from "../../src/test/reporters/github.js";
 import { renderJson } from "../../src/test/reporters/json.js";
 import { renderPretty } from "../../src/test/reporters/pretty.js";
@@ -30,7 +30,7 @@ function results(fixture: string) {
   return parsed;
 }
 
-const failing: TestRunResult = {
+const failing: ProceduresResult = {
   results: { summary: {}, specs: [] },
   findings: [
     {
@@ -54,7 +54,7 @@ const failing: TestRunResult = {
   exitCode: 1,
 };
 
-const passing: TestRunResult = {
+const passing: ProceduresResult = {
   results: { summary: {}, specs: [] },
   findings: [],
   tests: { pass: 14, fail: 0, warning: 0, skipped: 0 },
@@ -79,7 +79,7 @@ describe("renderPretty", () => {
   });
 
   it("prints the plan's layout for fail.md", () => {
-    const run: TestRunResult = {
+    const run: ProceduresResult = {
       ...failing,
       findings: collectFindings(results("results-fail.json"), CWD),
       tests: { pass: 1, fail: 1, warning: 0, skipped: 0 },
@@ -93,7 +93,7 @@ describe("renderPretty", () => {
   });
 
   it("heads the guidance with the step's own description when it has one", () => {
-    const run: TestRunResult = {
+    const run: ProceduresResult = {
       ...failing,
       findings: collectFindings(results("results-fail-described.json"), CWD),
     };
@@ -113,7 +113,7 @@ describe("renderPretty", () => {
     if (parsed === undefined || parsed === null) throw new Error("not a results object");
     const findings = collectFindings(parsed, CWD);
     expect(findings[0]?.guidance?.description).toBeNull();
-    const run: TestRunResult = { ...failing, findings };
+    const run: ProceduresResult = { ...failing, findings };
     expect(renderPretty(run, { color: false }).split("\n")[2]).toBe("              Doc Detective click");
   });
 
@@ -135,7 +135,7 @@ describe("renderPretty", () => {
   });
 
   it("puts a blank line between files", () => {
-    const two: TestRunResult = {
+    const two: ProceduresResult = {
       ...failing,
       findings: [
         { file: "a.md", line: 1, result: "FAIL", description: "x" },
@@ -148,7 +148,7 @@ describe("renderPretty", () => {
   });
 
   it("leaves the line column blank for a step with no location", () => {
-    const noLine: TestRunResult = {
+    const noLine: ProceduresResult = {
       ...failing,
       findings: [{ file: "a.md", result: "FAIL", description: "x" }],
     };
@@ -161,7 +161,7 @@ describe("renderPretty", () => {
   });
 
   it("says test and warning in the singular for one", () => {
-    const one: TestRunResult = {
+    const one: ProceduresResult = {
       ...passing,
       tests: { pass: 0, fail: 0, warning: 1, skipped: 0 },
     };
@@ -171,7 +171,7 @@ describe("renderPretty", () => {
   });
 
   it("counts zero tests for a run that found none", () => {
-    const empty: TestRunResult = {
+    const empty: ProceduresResult = {
       results: null,
       findings: [],
       tests: { pass: 0, fail: 0, warning: 0, skipped: 0 },
@@ -197,7 +197,7 @@ describe("renderGithub", () => {
   });
 
   it("prints the plan's annotation for fail.md", () => {
-    const run: TestRunResult = {
+    const run: ProceduresResult = {
       ...failing,
       findings: collectFindings(results("results-fail.json"), CWD),
     };
@@ -208,7 +208,7 @@ describe("renderGithub", () => {
   });
 
   it("leaves file= off a step whose page Doc Detective did not name", () => {
-    const unknown: TestRunResult = {
+    const unknown: ProceduresResult = {
       ...failing,
       findings: [{ file: "", line: 3, result: "FAIL", description: "broke" }],
     };
@@ -218,7 +218,7 @@ describe("renderGithub", () => {
   });
 
   it("escapes the file property and the message", () => {
-    const odd: TestRunResult = {
+    const odd: ProceduresResult = {
       ...failing,
       findings: [{ file: "docs/a,b.md", line: 1, result: "FAIL", description: "100%\nbroken" }],
     };
@@ -228,7 +228,7 @@ describe("renderGithub", () => {
   });
 
   it("omits line= for a step with no location", () => {
-    const noLine: TestRunResult = {
+    const noLine: ProceduresResult = {
       ...failing,
       findings: [{ file: "a.md", result: "FAIL", description: "x" }],
     };
@@ -238,7 +238,7 @@ describe("renderGithub", () => {
   });
 
   it("keeps a warning's text as Doc Detective wrote it, with no advice", () => {
-    const run: TestRunResult = {
+    const run: ProceduresResult = {
       ...failing,
       findings: collectFindings(results("results-warning.json"), CWD),
     };

@@ -10,6 +10,7 @@ import fg from "fast-glob";
 import { extractFrontmatter, type ExtractedMetadata } from "../../meta/index.js";
 import { selectCollections } from "../../shared/collections.js";
 import { errorMessage } from "../../shared/errors.js";
+import { RECORD_TYPES } from "../../strategy/types.js";
 import { DocevalsError } from "../types.js";
 import type { PageExternal } from "./external.js";
 import {
@@ -280,10 +281,22 @@ export function discoverPages(
   const files = [
     ...new Set(entries.filter((p) => SUPPORTED_EXTENSIONS.has(extname(p).toLowerCase()))),
   ];
-  if (files.length === 0) {
+  // A strategy record (0102) is not a page. Its `evals:` are a journey's
+  // golden evals for `manni test tasks` (0104), in tracevals' vocabulary.
+  const pages = files
+    .sort()
+    .map((p) => readPage(resolve(p), root))
+    .filter((page) => !isStrategyRecord(page));
+  if (pages.length === 0) {
     throw new DocevalsError(
       `No documentation pages found (patterns: ${patterns.join(", ")})`,
     );
   }
-  return files.sort().map((p) => readPage(resolve(p), root));
+  return pages;
+}
+
+const RECORD_TYPE_SET: ReadonlySet<unknown> = new Set(RECORD_TYPES);
+
+function isStrategyRecord(page: PageFile): boolean {
+  return RECORD_TYPE_SET.has(page.frontmatter.data["type"]);
 }

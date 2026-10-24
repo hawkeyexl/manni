@@ -4,6 +4,15 @@
 4.13.1. Entries below that version are docmeta releases; the repository
 history is the same one.
 
+# [4.22.0](https://github.com/hawkeyexl/manni/compare/v4.21.0...v4.22.0) (2026-10-24)
+
+
+### Features
+
+* **graph:** author-facing content in the graph, on by default (0110) ([#247](https://github.com/hawkeyexl/manni/issues/247)) ([c28c88d](https://github.com/hawkeyexl/manni/commit/c28c88d7663fbe618df0168d88e43b8812c20bab))
+* **plugin:** a page read names the records the page names (0107) ([#241](https://github.com/hawkeyexl/manni/issues/241)) ([d514081](https://github.com/hawkeyexl/manni/commit/d51408180e3a84fe04f2ce51a202377b0a0b70fd)), closes [#247](https://github.com/hawkeyexl/manni/issues/247)
+* **test:** synthetic users attempt tasks in the docs (0104) ([#246](https://github.com/hawkeyexl/manni/issues/246)) ([73f8f17](https://github.com/hawkeyexl/manni/commit/73f8f170de06d857ce0f2ca48780cb48bbc841a1)), closes [#238](https://github.com/hawkeyexl/manni/issues/238)
+
 # [4.21.0](https://github.com/hawkeyexl/manni/compare/v4.20.1...v4.21.0) (2026-10-24)
 
 

@@ -290,7 +290,7 @@ docs/src/content/docs/meta/reference/api.mdx:
       integrity: sha256-52b106cd6bd95fa8c9bfe79c0f52a1c2efced785484dc36bda868926b96f4d42
     - generated-by: Claude Opus 5.5
       lines: 454
-      integrity: sha256-7ba52628a338bc18e5a8645da9ca5dad827b1cf428deeab1103449d7046476f0
+      integrity: sha256-c7daaaaae76bb7800d5dc9f633a34ad35d30700d54eb40eda01254014ee1f3c8
   owner:
     - "@hawkeyexl"
   created: 2026-08-23

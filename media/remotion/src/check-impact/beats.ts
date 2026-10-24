@@ -36,7 +36,7 @@ export const beats: Beat[] = [
   {
     title: "One red run",
     type,
-    scroll: true,
+    follow: true,
     caption: "manni check runs every check. 2,696 lines go by.",
     highlight: ["checks over 345 files"],
     commands: [
@@ -54,7 +54,7 @@ export const beats: Beat[] = [
     title: "Who the red run hurts",
     type,
     continues: true,
-    scroll: HEAD,
+    follow: HEAD,
     caption: "Readers ranked worst first. M1 tops the journeys.",
     highlight: [HEAD, "Stand up metadata validation for my repo"],
     commands: [],
@@ -71,7 +71,7 @@ export const beats: Beat[] = [
   {
     title: "Re-mint, then rerun",
     type,
-    scroll: HEAD,
+    follow: HEAD,
     caption: "Re-mint the six pins. 0 failed, and M1 leaves the top.",
     highlight: ["checks over 345 files", HEAD],
     commands: [

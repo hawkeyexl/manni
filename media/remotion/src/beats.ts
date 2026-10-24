@@ -36,7 +36,15 @@ export interface Command {
   note?: string;
   /** Output lands over this many frames, line by line, as a long dump scrolls a terminal. */
   revealFrames?: number;
+  /**
+   * The command lands whole, as a paste does, instead of being typed. For a
+   * command too long to type inside the video's length. Default off.
+   */
+  paste?: boolean;
 }
+
+/** Frames a pasted command takes to land. */
+export const PASTE_FRAMES = 3;
 
 export interface Beat {
   title: string;
@@ -58,11 +66,18 @@ export interface Beat {
    */
   type?: { fontPx: number; linePx: number; cols: number };
   /**
-   * The terminal scrolls: rows past the window push the top ones off, as in a
-   * real terminal. A string also scrolls back, after the last command, until
+   * The terminal follows its output: rows past the window push the top ones off,
+   * as in a real terminal. A string also scrolls back, after the last command, until
    * the last line containing it is the top row (SCROLL_FRAMES long).
    */
-  scroll?: true | string;
+  follow?: true | string;
+  /**
+   * Scrollback: at frame `at` of the beat, the view scrolls so the first row
+   * containing `toRow` sits at the top of the terminal, or with `bottom`, the
+   * last row of the first logical line containing it sits at the bottom. For
+   * output taller than the frame. Chrome only: the bytes are untouched.
+   */
+  scroll?: { at: number; toRow: string; bottom?: boolean }[];
   /**
    * Wrapped rows continue at this column when it is deeper than the line's own
    * indent: the gutter a CLI prints its own continuation lines under.
@@ -141,7 +156,7 @@ export function timeline(
   let t = beat.continues ? 4 : IDLE_START_FRAMES;
   const commands: CommandTimeline[] = beat.commands.map((c) => {
     const typeStart = t;
-    const enterAt = typeStart + typingFrames(c.typed, typingMs) + ENTER_PAUSE_FRAMES;
+    const enterAt = typeStart + (c.paste ? PASTE_FRAMES : typingFrames(c.typed, typingMs)) + ENTER_PAUSE_FRAMES;
     const outputAt = enterAt + c.latencyFrames;
     const later = (c.more ?? []).reduce((a, m) => a + m.afterFrames, 0);
     const end = outputAt + (c.revealFrames ?? 0) + later + c.holdFrames;
@@ -149,7 +164,7 @@ export function timeline(
     return { ...c, typeStart, enterAt, outputAt, end };
   });
   const scrollAt = t;
-  if (typeof beat.scroll === "string") t += SCROLL_FRAMES;
+  if (typeof beat.follow === "string") t += SCROLL_FRAMES;
   t += beat.pauseFrames ?? 0;
   return { commands, duration: Math.round(t), scrollAt };
 }

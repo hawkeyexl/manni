@@ -1,0 +1,11 @@
+Using manni.config.yaml (.)
+[31m✗[39m docs/install.md
+    [36m(root)[39m  must have required property 'description'[2m  (line 1)[22m  [2m[manni:core:1.0.0][22m
+      [2mmanni:core:1.0.0 description: One full non-empty sentence saying what the page is for.[22m
+      [2mGuide: https://hawkeyexl.github.io/manni/meta/reference/schemas/manni-core/[22m
+
+[31m1 file checked, 0 passed, 1 failed, 1 error[39m
+
+real	0m0.909s
+user	0m0.031s
+sys	0m0.030s

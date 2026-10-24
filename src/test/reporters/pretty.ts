@@ -1,6 +1,6 @@
 import { palette } from "../../shared/color.js";
 import { guidanceLines } from "../../shared/guidance.js";
-import type { TestRunResult } from "../commands/run.js";
+import type { ProceduresResult } from "../commands/procedures.js";
 import type { TestFinding } from "../core/results.js";
 import { findingMessage } from "./finding.js";
 import { summaryLine } from "./summary.js";
@@ -10,7 +10,7 @@ import { summaryLine } from "./summary.js";
  * test-level summary. The step's action and its guide follow, dim, under the
  * message. A run with neither prints the summary alone.
  */
-export function renderPretty(result: TestRunResult, opts: { color: boolean }): string {
+export function renderPretty(result: ProceduresResult, opts: { color: boolean }): string {
   const c = palette(opts.color);
   const byFile = new Map<string, TestFinding[]>();
   for (const finding of result.findings) {
