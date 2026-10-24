@@ -115,6 +115,7 @@ export async function resolveReaders(
     if (readers.length === 0) continue;
     const section = renderReaders(readers);
     for (const ev of opted) {
+      // A bad value was reported above; only `personas` gets readers.
       if (ev.options["readers"] !== "personas") continue;
       ev.readers = { personas: readers.map((r) => r.id), section, files: readers.map((r) => r.path) };
     }

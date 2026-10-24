@@ -540,8 +540,10 @@ export function applySinceScope(
 
 /**
  * The files whose change counts as the page's: its own, then every manifest
- * that supplied one of its eval keys. `external` is absent when the run loaded
- * no manifest at all (`withExternalMetadata` returns such pages untouched).
+ * that supplied one of its eval keys, and, in a judged run, the persona
+ * records an opted-in eval reads the page as (proposal 0111). `external` is
+ * absent when the run loaded no manifest at all (`withExternalMetadata`
+ * returns such pages untouched).
  */
 function scopeManifests(plan: ResolvedPagePlan): readonly string[] {
   const manifests = plan.page.external?.evalManifests ?? [];

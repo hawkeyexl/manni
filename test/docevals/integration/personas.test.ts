@@ -50,7 +50,17 @@ function stripped(fixture: string): string {
   let edited = 0;
   for (const file of files(dir)) {
     const text = readFileSync(file, "utf8");
-    const out = text.replace(/^( *)options:\n\1 {2}readers: ([^\n]*)\n/gm, "$1# options:\n$1#   readers: $2\n");
+    const out = text.replace(
+      /^( *)options:\n\1 {2}readers: ([^\n]*)\n/gm,
+      (match: string, indent: string, value: string, offset: number) => {
+        // A block holding another key would leave it a stray line under the comment.
+        const next = text.slice(offset + match.length).split("\n", 1)[0] ?? "";
+        if (next.startsWith(`${indent}  `) && next.trim() !== "") {
+          throw new Error(`${file}: an options block holds more than readers, so stripping it would strand a key`);
+        }
+        return `${indent}# options:\n${indent}#   readers: ${value}\n`;
+      },
+    );
     if (out === text) continue;
     writeFileSync(file, out);
     edited += 1;
