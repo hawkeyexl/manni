@@ -10,7 +10,7 @@ docs/src/content/docs/tracevals/runtime/index.mdx:
   eval-suite: tracevals
   evals:
     - id: set-up-runtime-evals
-      assertion: "A reader can add tracevals.runtime, choose models for the two roles, and say which files count as rule sources."
+      assertion: "A reader can add tracevals.runtime, turn on the plugin's tracevals option, choose models for the two roles, and say which files count as rule sources."
       type: capability
       grader: ai
     - id: read-a-block
@@ -22,5 +22,5 @@ docs/src/content/docs/tracevals/runtime/index.mdx:
   created: 2026-10-07
   provenance:
     - generated-by: Claude Opus 5.5
-      lines: 2-498
-      integrity: sha256-33777f06d373cbf7511ffe85460f5d9e44bbbfbff299d244e5b70c87c0302bc3
+      lines: 2-517
+      integrity: sha256-fbac39d043d56e832ac63ac6bbc3aef110477f5cd5c459c5606a0ec968d1c419
