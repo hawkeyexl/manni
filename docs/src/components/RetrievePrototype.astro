@@ -70,7 +70,7 @@ const manifest = `${import.meta.env.BASE_URL.replace(/\/$/, "")}/graph/chunks.js
   <form class="answer-form">
     <fieldset>
       <legend>2. Ask about the returned values (optional)</legend>
-      <p>WebLLM runs Llama 3.2 1B on your device in a worker. Enabling it downloads several hundred MB of model assets, which your browser may cache. It needs WebGPU and HTTPS or localhost. Questions and passages stay in your browser.</p>
+      <p>WebLLM runs Qwen3 1.7B on your device in a worker, with thinking disabled. Enabling it downloads about 1 GB of model assets, which your browser may cache. Its configured GPU memory estimate is about 2.6 GB. It needs WebGPU and HTTPS or localhost. Questions and passages stay in your browser.</p>
       <div class="row">
         <button type="button" class="enable">Enable local answers</button>
         <button type="button" class="unload" disabled>Unload model</button>
@@ -98,6 +98,7 @@ const manifest = `${import.meta.env.BASE_URL.replace(/\/$/, "")}/graph/chunks.js
   import { createRetriever } from "../../../dist/graph/runtime.js";
   import type { Retriever, WithholdReason, WhereCondition } from "../../../dist/graph/runtime.js";
   import { buildAnswerInput, resultPassages } from "./retrieve-prototype-data";
+  import { playgroundSourceUrl } from "./retrieve-prototype-links";
   import type { Operation, Result } from "./retrieve-prototype-data";
   import type { loadLocalModel } from "./retrieve-prototype-model";
 
@@ -118,13 +119,11 @@ const manifest = `${import.meta.env.BASE_URL.replace(/\/$/, "")}/graph/chunks.js
 
   // Both model output and artifact values are plain text. A source is clickable
   // only when it resolves to HTTP(S), never a script URL from a returned value.
-  function sourceLink(title: string, sourceUrl: string) {
+  function sourceLink(title: string, sourceUrl: string, iri = sourceUrl) {
+    const href = playgroundSourceUrl(sourceUrl, iri, import.meta.env.BASE_URL, window.location.href);
+    if (!href) return textElement("span", title);
     const element = document.createElement("a");
-    try {
-      const url = new URL(sourceUrl, window.location.href);
-      if (url.protocol !== "http:" && url.protocol !== "https:") return textElement("span", title);
-      element.href = url.href;
-    } catch { return textElement("span", title); }
+    element.href = href;
     element.textContent = title;
     return element;
   }
@@ -237,7 +236,7 @@ const manifest = `${import.meta.env.BASE_URL.replace(/\/$/, "")}/graph/chunks.js
         const citation = result.citations.find((c) => c.iri === passage.iri);
         const heading = textElement("p", "", "passage-title");
         heading.append(textElement("span", passage.role, "badge"), " ",
-          sourceLink(passage.title, citation?.sourceUrl ?? passage.iri));
+          sourceLink(passage.title, citation?.sourceUrl ?? passage.iri, passage.iri));
         const { total, current, error } = passage.provenance.pins;
         li.append(heading,
           textElement("p", `${passage.page}, lines ${passage.lines}. Pins: ${current}/${total} current; ${error} errors.`, "muted"),
@@ -266,7 +265,7 @@ const manifest = `${import.meta.env.BASE_URL.replace(/\/$/, "")}/graph/chunks.js
       citations.replaceChildren();
       for (const citation of result.citations) {
         const li = document.createElement("li");
-        li.append(sourceLink(citation.title ?? citation.iri, citation.sourceUrl));
+        li.append(sourceLink(citation.title ?? citation.iri, citation.sourceUrl, citation.iri));
         citations.append(li);
       }
       get<HTMLElement>(".trace").textContent = JSON.stringify(result.trace, null, 2);
@@ -343,7 +342,7 @@ const manifest = `${import.meta.env.BASE_URL.replace(/\/$/, "")}/graph/chunks.js
           const loaded = await loadLocalModel((text) => { modelStatus.textContent = text; }, controller.signal);
           if (disposed) { loaded.dispose(); return; }
           model = loaded;
-          modelStatus.textContent = "Llama 3.2 1B is ready on your device. Ask about the returned values.";
+          modelStatus.textContent = "Qwen3 1.7B is ready on your device. Ask about the returned values.";
         } catch (error) {
           modelStatus.textContent = error instanceof DOMException && error.name === "AbortError" ? "Model download cancelled. Graph functions still work." : `Could not load the model: ${error instanceof Error ? error.message : String(error)}. You can retry; graph functions still work.`;
         } finally { loading = false; loadController = undefined; updateActions(); }
@@ -380,7 +379,7 @@ const manifest = `${import.meta.env.BASE_URL.replace(/\/$/, "")}/graph/chunks.js
       get<HTMLElement>(".answer-output").hidden = false;
       for (const source of evidence.sources) {
         const li = document.createElement("li");
-        li.append(sourceLink(`[${source.id}] ${source.title}`, source.sourceUrl));
+        li.append(sourceLink(`[${source.id}] ${source.title}`, source.sourceUrl, source.iri));
         get<HTMLOListElement>(".answer-sources").append(li);
       }
       modelStatus.textContent = "Answering from the displayed result…";

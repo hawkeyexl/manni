@@ -8,10 +8,10 @@ docs/src/content/docs/graph/retrieve-from-a-script/index.mdx:
       lines: 2-244
       integrity: sha256-ace182dcec962417237dc04f3838bdadb4f90bfe862f03f644435335cb69105b
     - generated-by: GPT-6
-      lines: 246-289
-      integrity: sha256-3497df3379ccd7db576b1f850aa8cc6b6783662ac70572568d5d53f7fc6d6d26
+      lines: 246-292
+      integrity: sha256-ef1b5f9371f4d93ae7d8750185999335e6db416f317558e097e6520895c43a6c
     - generated-by: Claude Opus 5.5
-      lines: 291
+      lines: 294
       integrity: sha256-94df24df1645209a48b8bc64dcad6d9872252401128fa9132143ea98d3936c68
   owner:
     - "@hawkeyexl"
