@@ -1,0 +1,24 @@
+WEBVTT
+
+NOTE Captions are burned into cite-impact-1x1.mp4 (LinkedIn autoplays muted). This sidecar carries the same text for players and for hosts that accept a caption track. Silent video: there is no narration and no sound, and the terminal text is in the transcript.
+
+1
+00:00:00.000 --> 00:00:08.467
+The page names its readers
+The guide's sidecar names persona maya and journey m5.
+
+2
+00:00:08.467 --> 00:00:13.567
+One source line changes
+Both pages pin this line, so both pins go stale.
+
+3
+00:00:13.567 --> 00:00:25.400
+manni cite check -f github
+The annotation now names maya and m5. Exit 1.
+
+4
+00:00:25.400 --> 00:00:33.633
+Who the findings reach
+Findings rolled up by persona and journey.
+

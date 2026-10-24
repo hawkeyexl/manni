@@ -1,0 +1,13 @@
+# A strategy: section strategy refuses, so cite reports without the readers.
+collections:
+  - name: pages
+    paths: ["pages/*.md"]
+    externalMetadata:
+      - file: "{page}.meta.yaml"
+        keys: [personas, journeys]
+  - name: strategy
+    paths: ["strategy/*.md"]
+cite:
+  root: .
+strategy:
+  paths: [x]

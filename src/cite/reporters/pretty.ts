@@ -15,6 +15,7 @@ import { guidanceLines } from "../../shared/guidance.js";
 import { errorSite, messageFor, remedyFor } from "../core/adapt.js";
 import { parseSrc } from "../core/range.js";
 import { shortCommit, shortPin, shortSrc, spellAt } from "../core/spell.js";
+import { impactLines } from "../../strategy/index.js";
 import type {
   CheckRun,
   CitationFinding,
@@ -451,6 +452,13 @@ export function renderCheckPretty(run: CheckRun, opts: PrettyOptions): string {
       lines.push(...guidance(finding, 6));
     }
   });
+
+  // Whom the pages with findings serve (proposal 0105): uncoloured, and under -q too.
+  const impact = impactLines(run.impact?.entries ?? []);
+  if (impact.length > 0) {
+    if (lines.length > 0) lines.push("");
+    lines.push(...impact);
+  }
 
   const { summary } = run;
   const warnings = summary.warnings ?? 0;

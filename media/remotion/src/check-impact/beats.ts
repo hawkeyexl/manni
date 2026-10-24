@@ -1,0 +1,99 @@
+import captures from "./captures.json";
+import { FPS, timeline, type Beat } from "../beats";
+
+export { FPS };
+
+// Typing speed for this video (design.md: 35-70 ms). 40 ms keeps the jq line
+// under 3 s.
+export const TYPING_MS = 40;
+
+// Measured wall-clock latency, from media/check-impact/latency.txt:
+//   check-red    42461 ms
+//   jq           26751 ms (manni check -f json | jq, one pipe)
+//   accept        7023 ms
+//   check-green  21212 ms
+// Every one is a static wait: manni check prints its whole report at the end.
+// design.md caps a speed-up at 1.3x and says to cut dead air above it, so each
+// wait is cut, and only the wait. A chrome note under the command states the
+// real time while the cut wait is on screen. Typing is at 1x.
+const s = (sec: number) => Math.round(sec * FPS);
+const sec = (key: keyof typeof captures.ms) => (captures.ms[key] / 1000).toFixed(1);
+const note = (key: keyof typeof captures.ms, shown: number) => `[${sec(key)} s run; the wait is cut to ${shown} s]`;
+
+// manni check writes ~2,700 lines at once. A terminal scrolls them past in
+// a moment; the replay lands them over 0.8 s so the scroll reads as one.
+const DUMP = s(0.8);
+
+// Type size, derived by media/check-impact/cols.mjs over the windows on
+// screen: 28 px / 61 columns is the largest size at which every window wraps
+// at spaces, splits no token and leaves no one-word last row.
+const type = { fontPx: 28, linePx: 39, cols: 61 };
+
+const HEAD = "The pages with findings serve";
+const jq = `manni check -f json | jq -r '.impact[] | select(.id == "m1") | .pages[]'`;
+
+export const beats: Beat[] = [
+  {
+    title: "One red run",
+    type,
+    follow: true,
+    caption: "manni check runs every check. 2,696 lines go by.",
+    highlight: ["checks over 345 files"],
+    commands: [
+      {
+        typed: "manni check",
+        note: note("check-red", 1.5),
+        output: captures.checkRed,
+        latencyFrames: s(1.5),
+        revealFrames: DUMP,
+        holdFrames: s(2.2),
+      },
+    ],
+  },
+  {
+    title: "Who the red run hurts",
+    type,
+    continues: true,
+    follow: HEAD,
+    caption: "Readers ranked worst first. M1 tops the journeys.",
+    highlight: [HEAD, "Stand up metadata validation for my repo"],
+    commands: [],
+    pauseFrames: s(5.4),
+  },
+  {
+    title: "M1's pages, for a script",
+    type,
+    caption: "The same roll-up in JSON. jq lists M1's six pages.",
+    commands: [
+      { typed: jq, note: note("jq", 1.5), output: captures.jq, latencyFrames: s(1.5), holdFrames: s(4.6) },
+    ],
+  },
+  {
+    title: "Re-mint, then rerun",
+    type,
+    follow: HEAD,
+    caption: "Re-mint the six pins. 0 failed, and M1 leaves the top.",
+    highlight: ["checks over 345 files", HEAD],
+    commands: [
+      {
+        typed: "manni cite update --accept | tail -n 1",
+        note: note("accept", 1),
+        output: captures.accept,
+        latencyFrames: s(1),
+        holdFrames: s(1.4),
+      },
+      {
+        typed: "manni check",
+        note: note("check-green", 1.5),
+        output: captures.checkGreen,
+        latencyFrames: s(1.5),
+        revealFrames: DUMP,
+        holdFrames: s(1.8),
+      },
+    ],
+    pauseFrames: s(4.4),
+  },
+];
+
+export const beatDurations = beats.map((b) => timeline(b, TYPING_MS).duration);
+export const totalFrames = beatDurations.reduce((a, b) => a + b, 0);

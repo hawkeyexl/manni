@@ -1,0 +1,33 @@
+# manni check rolls every check's findings up by the personas and journeys
+# their pages serve (proposal 0109). Each page keeps its audiences:,
+# personas: and journeys: in its {page}.meta.yaml, and the strategy
+# collection holds the records. meta and docevals both report on
+# docs/two-journeys.md, so one page carries two checks' findings.
+collections:
+  - name: site
+    paths: ["docs/*.md"]
+    externalMetadata:
+      - file: "{page}.meta.yaml"
+        keys: [audiences, personas, journeys]
+  - name: strategy
+    paths: ["strategy/*.md"]
+
+meta:
+  overrides:
+    - files: "docs/*.md"
+      schemas:
+        - manni:core:1.0.0
+
+docevals:
+  defaults:
+    suite: site
+  evals:
+    no-todo-markers:
+      assertion: The page carries no TODO, TBD or FIXME markers.
+      grader: tool:regex
+      options:
+        pattern: '\b(TODO|TBD|FIXME)\b'
+        match: not-contains
+      severity: error
+  suites:
+    site: { target-pass-rate: 1.0, evals: [no-todo-markers] }

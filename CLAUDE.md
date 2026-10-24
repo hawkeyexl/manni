@@ -161,7 +161,9 @@ Key layers:
 - `src/family/`: the two family verbs, `manni check` and `manni status`
   (proposal 0078). It owns in-play detection, Claude Code hook-envelope
   detection and the orchestration of the domains' command cores. It owns no
-  checks of its own, and `src/cli.ts` mounts its two commands.
+  checks of its own, and `src/cli.ts` mounts its two commands. By hand and in
+  CI, `check` also rolls every check's findings up by the personas and
+  journeys their pages serve (0109). The roll-up is the strategy domain's.
 - `plugin/manni/`: the Claude Code plugin. SessionStart runs
   `manni tracevals capture` and `manni status`, and PostToolUse and Stop run
   `manni check`. A PostToolUse hook on `Read` runs `hooks/page-metadata.mjs`,

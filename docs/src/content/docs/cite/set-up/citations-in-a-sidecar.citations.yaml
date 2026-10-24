@@ -58,9 +58,9 @@ docs/src/content/docs/cite/set-up/citations-in-a-sidecar.mdx:
         integrity: sha256-61a11c5018754b3f2d307d40b3fba67bf1fed5a1f69d6504c519485ee212ff81
       source:
         file: src/cite/reporters/github.ts
-        lines: 57-59
+        lines: 64-66
         integrity: sha256-ea941f345c72a9485287485a907048571967b5b19659fdfed3c0c3604726aeed
-        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
+        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
     - id: manifest-outside-repo-on-page
       claim:
         integrity: sha256-3b3c3c3d3cf616d332e2e2b1bd97e774320547d6f877706190813c91f3712b39
@@ -147,9 +147,9 @@ docs/src/content/docs/cite/set-up/citations-in-a-sidecar.mdx:
         integrity: sha256-290e56f298c2b37338c9d647aca729b9426de925a8ba57540f9c7c9d6cee4f5e
       source:
         file: src/cite/commands/check.ts
-        lines: 121-127
+        lines: 125-131
         integrity: sha256-506b89248ce5b18857a526760333cd21d7b58af58e2a191e623d565270d0b9d1
-        commit-sha: ddba7252337859626421b6060ae8952f93f61653
+        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
     - id: refusal-url-manifest
       claim:
         lines: 380
@@ -183,9 +183,9 @@ docs/src/content/docs/cite/set-up/citations-in-a-sidecar.mdx:
         integrity: sha256-de47c7eb5dfaf02a97d0eac017bf7fb8b20125ee7215597cae3644bab817370e
       source:
         file: src/cite/commands/check.ts
-        lines: 320-324
+        lines: 324-328
         integrity: sha256-4e6250b5a5a8d5c1a9ddd794eb44e4b3998ac34979dee798af600c75cb781cab
-        commit-sha: ddba7252337859626421b6060ae8952f93f61653
+        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
     - id: page-placeholder-refuses-join
       claim:
         integrity: sha256-428b360d38cb84522d7c52b017e3972dfcb3700495b2de0e01091387bd2b6644

@@ -6,9 +6,9 @@ docs/src/content/docs/cite/fix/index.mdx:
         integrity: sha256-f77c106fa0a38af626f2d55e2619b2cf606eb0a112a62088af18f719f468756d
       source:
         file: src/cite/reporters/pretty.ts
-        lines: 47-57
+        lines: 48-58
         integrity: sha256-4b3e319b0382b747ad84dcf56977324657662ad8b86fe9e1498103a82d7d2b1c
-        commit-sha: b9712a2920c49c2b7e247108d80b629a4dc6ef9b
+        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
     - id: row-mark-current-skipped
       claim:
         lines: 38
@@ -24,9 +24,9 @@ docs/src/content/docs/cite/fix/index.mdx:
         integrity: sha256-d569ac1e5e61d36dca0f9b8a3955a171f57f5d704666873412c0397054b3249b
       source:
         file: src/cite/reporters/pretty.ts
-        lines: 118-121
+        lines: 119-122
         integrity: sha256-51623c250a5398ebf404117076899a6c335f69b8d9c353707df424ce0cb953b2
-        commit-sha: b9712a2920c49c2b7e247108d80b629a4dc6ef9b
+        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
     - id: row-source-end-column
       claim:
         lines: 41
@@ -674,9 +674,9 @@ docs/src/content/docs/cite/fix/index.mdx:
         integrity: sha256-045efe64a562de93f7bf62d08ababbce49159b7992227362e697e0941bed547f
       source:
         file: src/cite/commands/check.ts
-        lines: 407-409
+        lines: 411-413
         integrity: sha256-d51b978f9fa088753d24578d22c1dbbd55f75f157ec76b756d82b78ad164740e
-        commit-sha: ddba7252337859626421b6060ae8952f93f61653
+        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
     - id: exit-table-one-update
       claim:
         lines: 723
@@ -701,9 +701,9 @@ docs/src/content/docs/cite/fix/index.mdx:
         integrity: sha256-9376722537811cfca897d9bc690d4e54c97fc8378300ab84f3f9eb78c51f4b16
       source:
         file: src/cite/commands/check.ts
-        lines: 173-177
+        lines: 177-181
         integrity: sha256-dd1fd746781a236fa50aca4af4a370c3d18e06a6eb84ceda7b7eb3eb133f10cb
-        commit-sha: ddba7252337859626421b6060ae8952f93f61653
+        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
     - id: exit-table-two-unknown-format
       claim:
         lines: 724

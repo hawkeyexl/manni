@@ -904,6 +904,44 @@ describe.skipIf(!gitAvailable())("manni cite check --show-diff", () => {
   }, 60000);
 });
 
+describe.skipIf(!gitAvailable())("manni cite check names the readers of a finding's page (0105)", () => {
+  let repo: string | undefined;
+  afterEach(() => {
+    removeTempRepo(repo);
+    repo = undefined;
+  });
+  const copy = (): string => {
+    const dir = realpathSync(mkdtempSync(join(tmpdir(), "manni-cite-impact-cli-")));
+    cpSync(join(FIXTURES, "impact"), dir, { recursive: true });
+    execSync("git init -q", { cwd: dir, stdio: "ignore" });
+    commitAll(dir, "fixture");
+    return dir;
+  };
+
+  it("github ends a stale page's annotation with Serves, pretty rolls it up, and the exit code is cite's", () => {
+    repo = copy();
+    const github = run(["cite", "check", "-f", "github"], { cwd: repo });
+    expect(github.status).toBe(1);
+    expect(github.stdout).toContain(
+      "Serves maya (Maya, Documentation Engineer) and m5 (Pin a claim and catch it going stale).%0Amanni:cite source-never-true",
+    );
+    const pretty = run(["cite", "check", "-q"], { cwd: repo });
+    expect(pretty.status).toBe(1);
+    expect(pretty.stdout).toMatch(/\nThe pages with findings serve 1 persona and 1 journey\.\n {2}maya {3}.*\n {2}m5 .*\n\n.*files checked/);
+  }, 60000);
+
+  it("a broken strategy section prints one notice on stderr and keeps cite's exit code", () => {
+    repo = copy();
+    const r = run(["cite", "check", "-c", "manni.bad-strategy.yaml", "-f", "json"], { cwd: repo });
+    expect(r.status).toBe(1);
+    const lines = r.stderr.split("\n").filter((line) => line.includes("personas and journeys"));
+    expect(lines).toEqual([
+      'manni: personas and journeys left out of the report. manni.bad-strategy.yaml: strategy does not carry "paths". Name a collection under collections:.',
+    ]);
+    expect(JSON.parse(r.stdout)).not.toHaveProperty("impact");
+  }, 60000);
+});
+
 describe.skipIf(!gitAvailable())("manni cite check across checkouts (0100)", () => {
   let dir: string | undefined;
   afterEach(() => {

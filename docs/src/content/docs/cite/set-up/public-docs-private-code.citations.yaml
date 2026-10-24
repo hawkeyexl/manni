@@ -370,9 +370,9 @@ docs/src/content/docs/cite/set-up/public-docs-private-code.mdx:
         integrity: sha256-cc726f2799ec65b1b55d5667a42946f097107a27b89040bf5628ea573d75c0c4
       source:
         file: src/cite/commands/check.ts
-        lines: 169
+        lines: 173
         integrity: sha256-967888f703b7f5b60bd0f842e101bb63b94d885534dcf2c70481f47e9d95c274
-        commit-sha: ddba7252337859626421b6060ae8952f93f61653
+        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
     - id: output-rule-findings-test
       claim:
         lines: 158-159

@@ -1,0 +1,4 @@
+docs/draft.md:
+  audiences: [docs-engineers]
+  personas: [devin]
+  journeys: [d1]
