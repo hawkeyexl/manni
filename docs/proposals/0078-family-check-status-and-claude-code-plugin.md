@@ -1,6 +1,6 @@
 # 0078: Two family verbs, `check` and `status`, and a Claude Code plugin
 
-- **Status:** Superseded in part by [0079](0079-tracevals-checks-each-turn-against-the-rules-it-read.md); superseded in part by [0089](0089-findings-say-what-to-do.md); superseded in part by [0103](0103-the-plugin-serves-the-graph-and-keeps-page-metadata-current.md); superseded in part by [0109](0109-manni-check-ranks-findings-by-the-readers-they-reach.md); superseded in part by [0113](0113-the-plugins-tracevals-hooks-are-each-users-to-turn-on.md)
+- **Status:** Superseded in part by [0079](0079-tracevals-checks-each-turn-against-the-rules-it-read.md), [0089](0089-findings-say-what-to-do.md), [0103](0103-the-plugin-serves-the-graph-and-keeps-page-metadata-current.md), [0109](0109-manni-check-ranks-findings-by-the-readers-they-reach.md) and [0113](0113-the-plugins-tracevals-hooks-are-each-users-to-turn-on.md)
 - **Serves:** Devin · D16, "Gate every check a repo has set up, with one
   command". Maya · M24, "Let an agent keep the docs green while it writes
   them", which cross-references D14, M17 and M23.
