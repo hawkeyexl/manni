@@ -4,6 +4,13 @@
 4.13.1. Entries below that version are docmeta releases; the repository
 history is the same one.
 
+# [4.25.0](https://github.com/hawkeyexl/manni/compare/v4.24.0...v4.25.0) (2026-10-24)
+
+
+### Features
+
+* **strategy:** borrowed records resolve references and report nothing (0112) ([#249](https://github.com/hawkeyexl/manni/issues/249)) ([f3aa0c5](https://github.com/hawkeyexl/manni/commit/f3aa0c54045b9eacfc21af097f4c6aafc95f23eb)), closes [#242](https://github.com/hawkeyexl/manni/issues/242)
+
 # [4.24.0](https://github.com/hawkeyexl/manni/compare/v4.23.0...v4.24.0) (2026-10-24)
 
 
