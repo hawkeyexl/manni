@@ -9,7 +9,7 @@ import { GraphError } from "../types.js";
 import { analyzeDoc } from "../core/analyze.js";
 import { ANALYZE_CACHE_DIR, AnalyzeCache } from "../core/analyze-cache.js";
 import { loadRunConfig } from "../core/config.js";
-import { deriveGraph, termConceptCount } from "../core/derive.js";
+import { deriveGraph, strategyRecords, termConceptCount } from "../core/derive.js";
 import {
   assertInputFormat,
   documentBase,
@@ -24,7 +24,7 @@ import { STDIN_PATH } from "../core/iri.js";
 import { emitTurtle } from "../core/emit.js";
 import { harvestWarnings } from "../core/harvest.js";
 import { collectGitHistory } from "../core/git.js";
-import { suppressGraphOutput } from "../core/graph-output.js";
+import { suppressGraphOutput, userFacing } from "../core/graph-output.js";
 import { openMetaView, withExternalMetadata } from "../core/external.js";
 import { errorMessage } from "../../shared/errors.js";
 import { termLabelSource, type TermLabel } from "../../shared/term-labels.js";
@@ -43,6 +43,13 @@ export interface BuildOptions extends DocumentInputOptions {
   stdinContent?: string;
   /** `--allow-empty`: zero matched files writes an empty graph, not an error. */
   allowEmpty?: boolean;
+  /**
+   * `--no-authoring` passes `false` (proposal 0110). Overrides
+   * `graph.authoring`. `false` leaves the strategy records out of the
+   * document set, and every value a page's schemas mark
+   * `x-manni-location: external` out of every page.
+   */
+  authoring?: boolean;
 }
 
 /**
@@ -73,6 +80,8 @@ export interface BuildResult {
    * is off or no termbase is set up.
    */
   concepts: { total: number; fromTermbase: number };
+  /** The strategy records the graph types (proposal 0110). `0` when none is in the build. */
+  strategyRecords: number;
   /**
    * Non-fatal diagnostics: the build succeeded, but something it would have
    * done by default could not run (see ADR 01010). Rendered to stderr by the
@@ -125,6 +134,7 @@ export async function buildGraph(opts: BuildOptions = {}): Promise<BuiltGraph> {
         docs: 0,
         quads: 0,
         concepts: { total: 0, fromTermbase: 0 },
+        strategyRecords: 0,
         warnings: [],
         turtle: emitTurtle([]),
       };
@@ -135,24 +145,32 @@ export async function buildGraph(opts: BuildOptions = {}): Promise<BuiltGraph> {
     throw new GraphError("graph build was given `-` but no stdin content.");
   }
 
-  const allPaths = new Set(usingStdin ? [...files, STDIN_PATH] : files);
   // Each page's body parse is cached across runs (`analyze-cache.ts`). Link
-  // resolution against `allPaths` and `routes` still runs on every build.
+  // resolution against the document set and `routes` still runs on every build.
   const cache = new AnalyzeCache(resolve(cwd, ANALYZE_CACHE_DIR));
   const analyzeOptions = {
     routes: routesFrom(config, base),
     ...(format === undefined ? {} : { format }),
     parse: cache.parse,
   };
-  // `async`, so a read that throws rejects inside `Promise.all` rather than
-  // escaping `map` and leaving earlier pages' rejections unhandled.
-  const pending = files.map(async (path) =>
-    analyzeDoc(readFileSync(resolve(base, path), "utf8"), path, allPaths, analyzeOptions),
-  );
-  if (usingStdin && opts.stdinContent !== undefined) {
-    pending.push(analyzeDoc(opts.stdinContent, STDIN_PATH, allPaths, analyzeOptions));
-  }
-  const read = await Promise.all(pending);
+  /** Every page of `set`, its links resolved against `set`. `<stdin>` is the page `-` read. */
+  const analyzeAll = (set: readonly string[]) => {
+    const allPaths = new Set(set);
+    // `async`, so a read that throws rejects inside `Promise.all` rather than
+    // escaping `map` and leaving earlier pages' rejections unhandled.
+    return Promise.all(
+      set.map(async (path) =>
+        analyzeDoc(
+          path === STDIN_PATH ? (opts.stdinContent ?? "") : readFileSync(resolve(base, path), "utf8"),
+          path,
+          allPaths,
+          analyzeOptions,
+        ),
+      ),
+    );
+  };
+  const documentSet = usingStdin ? [...files, STDIN_PATH] : files;
+  const read = await analyzeAll(documentSet);
 
   // A page's metadata is what `manni meta validate` reads: its frontmatter
   // plus every key a manifest of its collections owns (proposal 0047), merged
@@ -167,7 +185,20 @@ export async function buildGraph(opts: BuildOptions = {}): Promise<BuiltGraph> {
     files,
     base,
   );
-  const merged = await withExternalMetadata(read, view);
+  let merged = await withExternalMetadata(read, view);
+
+  // Author-facing content (proposal 0110) is on unless `--no-authoring` or
+  // `graph.authoring: false` says otherwise. Off, a strategy record leaves
+  // the document set, so the pages are read again without it and a link to
+  // one resolves as a link outside the build. Then every value a page's
+  // schemas prefer in a sidecar leaves the page, at any depth.
+  if (!(opts.authoring ?? config.authoring)) {
+    const records = new Set(strategyRecords(merged, config.baseIri).map((r) => r.path));
+    if (records.size > 0) {
+      merged = await withExternalMetadata(await analyzeAll(documentSet.filter((p) => !records.has(p))), view);
+    }
+    merged = await userFacing(merged, view);
+  }
 
   // What the graph carries is the schema's call (proposal 0051 §5): a top-level
   // field marked `x-manni-graph-output: false` is dropped here, before derivation,
@@ -236,5 +267,13 @@ export async function buildGraph(opts: BuildOptions = {}): Promise<BuiltGraph> {
   const turtle = emitTurtle(quads);
   await cache.flush();
 
-  return { outPath, docs: docs.length, quads: quads.length, concepts, warnings, turtle };
+  return {
+    outPath,
+    docs: docs.length,
+    quads: quads.length,
+    concepts,
+    strategyRecords: strategyRecords(docs, config.baseIri).length,
+    warnings,
+    turtle,
+  };
 }

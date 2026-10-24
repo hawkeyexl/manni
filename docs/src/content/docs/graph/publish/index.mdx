@@ -15,7 +15,7 @@ concepts:
   - vector sidecar
   - localization manifest
   - x-manni-graph-output
-last-updated: 2026-10-21
+last-updated: 2026-10-23
 ---
 
 The graph is worth more outside CI than inside it. Linked data for an
@@ -310,6 +310,63 @@ The `jsonld`, `iirds` and `search` targets keep the first mark alone,
 because they are linked data rather than agent context. Delivery tools
 outside manni can read the same two marks. They are plain schema
 annotations.
+
+## A graph for readers
+
+A build carries author-facing content by default. That is the
+[strategy records](/manni/strategy/#the-strategy-in-the-graph), typed, and
+every value a page's schemas mark `x-manni-location: external`, at any depth.
+Those are the fields that prefer a sidecar, such as `created`, `citations` and
+`evals`. A maintainer's graph wants them. A graph for readers, or for a
+retrieval service outside the team, leaves them out.
+
+`--no-authoring` builds a graph of what the pages themselves carry:
+
+```console
+$ manni graph publish --collection site --no-authoring -o .manni/graph/readers
+build     graph.ttl: 262 pages, 20997 triples
+export    search.en.json, localizations.json: 3023 entries
+skipped   embed: no graph.embed section
+export    graph.jsonld: 3107 nodes
+export    chunks.json, chunks.en.jsonl: 2458 chunks, 0 withheld
+export    llms.txt: 262 pages
+skipped   iirds: no graph.export.iirds section
+Published 7 files to .manni/graph/readers/.
+
+$ manni graph query -g .manni/graph/readers/graph.ttl --predicate dcterms:created
+No matches.
+```
+
+Every strategy record leaves the build, as if no collection held it. A link
+to one is a broken link, as a link to any file outside the build is. Each
+value marked `external` leaves too, before derivation, so nothing derived
+from it reaches any artifact:
+
+| Field | What a `--no-authoring` build leaves out |
+|---|---|
+| `created` | `dcterms:created`. With the `provenance` derive source, git's first commit fills it in. |
+| `supersedes` | The `prov:wasRevisionOf` it falls back to. |
+| `provenance`, `meta-provenance` | Their PROV triples. |
+| `authors` | The credits the frontmatter gives. |
+| `citations` | The pins on each passage. |
+| `evals` | The eval verdicts on each passage. |
+
+The chunk rows keep their shape. Each passage's `pins` has a `total` of `0`
+and no items, and its `evals` is `null`. Its derived `created` day is `null`
+where only the field gave it. `x-manni-graph-output: false` keeps a field out
+of both graphs. `audiences` is a page field, so it stays.
+
+A repository that publishes only to readers sets the default once:
+
+```yaml
+graph:
+  authoring: false
+```
+
+Eval verdicts are author-facing, so a run without authoring refuses `--evals`
+with exit `2`. A configured `graph.export.chunks.evals` warns once instead.
+The [CLI reference](/manni/graph/reference/cli/#graph-publish) has both
+messages.
 
 ## Publish what passed
 

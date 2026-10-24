@@ -31,8 +31,11 @@ docs/src/content/docs/strategy/index.mdx:
       lines: 268-290
       integrity: sha256-b96d050d60169007ac20fb421f3ec2f41e00777def242f0b5b79411183a17a6b
     - generated-by: Claude Opus 5.5
-      lines: 293-314
-      integrity: sha256-7465bee40009b8540121e78c7674065d1b1bd4bb804ba106424718c0c9a77e81
+      lines: 293-299
+      integrity: sha256-7689a5527f6cac4ec90729897a10545c8f91f5e2e3479422dd6f27ec8f799199
+    - generated-by: Claude Opus 5.5
+      lines: 331-344
+      integrity: sha256-3668de4b4ec198facd93148ea240e720bbd8045b3ee81847df22f67c1900e1fb
   owner:
     - "@hawkeyexl"
   created: 2026-10-22

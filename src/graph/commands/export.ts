@@ -10,6 +10,7 @@ import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { GraphError } from "../types.js";
 import { loadRunConfig } from "../core/config.js";
+import { EVALS_ARE_AUTHOR_FACING, NO_AUTHORING_EXPORT } from "../core/graph-output.js";
 import { documentBase } from "../core/discover.js";
 import { emitJsonLd } from "../core/emit-jsonld.js";
 import { emitRdfXml } from "../core/emit-rdfxml.js";
@@ -56,6 +57,12 @@ export interface ExportOptions {
   out?: string;
   /** `--evals`: a docevals JSON report for `chunks`, overriding `graph.export.chunks.evals`. */
   evals?: string;
+  /**
+   * `--no-authoring` passes `false` (proposal 0110). Overrides
+   * `graph.authoring`. `false` leaves strategy records, external values,
+   * pins and eval verdicts out of what `chunks` and `llms` read from pages.
+   */
+  authoring?: boolean;
   cwd?: string;
 }
 
@@ -271,6 +278,10 @@ export async function runExport(opts: ExportOptions): Promise<ExportResult> {
   if (opts.evals !== undefined && opts.format !== "chunks") {
     throw new GraphError("--evals applies only to graph export chunks.");
   }
+  // Only chunks and llms read the pages, so only they can leave author-facing content out.
+  if (opts.authoring === false && opts.format !== "chunks" && opts.format !== "llms") {
+    throw new GraphError(NO_AUTHORING_EXPORT);
+  }
 
   const config = loadRunConfig(
     {
@@ -279,6 +290,8 @@ export async function runExport(opts: ExportOptions): Promise<ExportResult> {
     },
     cwd,
   );
+  const authoring = opts.authoring ?? config.authoring;
+  if (!authoring && opts.evals !== undefined) throw new GraphError(EVALS_ARE_AUTHOR_FACING);
   const graphPath = resolve(cwd, opts.graph ?? config.out);
   // A page's `graph:path` is read from where a bare `build` labels it from:
   // the config's directory when it declares collections, else the working one.
@@ -304,6 +317,7 @@ export async function runExport(opts: ExportOptions): Promise<ExportResult> {
       // `--out` names the directory, as for `search`: there is more than one file.
       outDir: opts.out ? resolve(cwd, opts.out) : dirname(graphPath),
       ...(evals === undefined ? {} : { evals }),
+      authoring,
     });
     return {
       outPath: result.manifestPath,
@@ -326,6 +340,7 @@ export async function runExport(opts: ExportOptions): Promise<ExportResult> {
       },
       graphPath,
       outPath,
+      authoring,
     });
     return { outPath, format: "llms", nodes: pages, warnings, files: [outPath] };
   }

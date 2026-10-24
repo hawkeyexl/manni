@@ -33,6 +33,20 @@ One graph, built from documents, with a deterministic IRI for every node.
 - `src/graph/core/derive.ts` is the vocabulary mapping: the rules that turn
   `DocModel[]` into `Quad[]`. This is where a new predicate is decided, and the
   file to read before adding one.
+- **Strategy records are typed nodes** (proposal 0110). A page declaring
+  `type: audience`, `persona` or `journey`, read by `readRecord` from
+  `src/shared/reference-fields.ts`, mints `{baseIri}strategy/{type}/{id}` as a
+  `schema:Audience`, `schema:PeopleAudience` or `graph:Journey`. A reference
+  derives an edge only to a record in the build: `schema:audience` and
+  `dcterms:isPartOf`, page level only, pointing away from pages.
+- **Author-facing content is on by default.** `graph.authoring: false`, or
+  `--no-authoring` on `build`, `export`, `publish` and `serve`, drops every
+  record from the document set before analysis. It then removes every value a
+  page's schemas mark `x-manni-location: external`, through `userFacing`. That
+  applies `deliveredFields`, the chunk metadata rule, so the graph and the
+  chunks leave out the same values. A build with no record and no external
+  value is byte-identical both ways. `export` takes the flag only for `chunks`
+  and `llms`, which read the pages, and refuses it elsewhere with exit 2.
 - `src/graph/core/emit.ts`, `emit-jsonld.ts` and `emit-rdfxml.ts` serialize those
   quads. `src/graph/core/search-index.ts` and `vector-index.ts` build the search
   artifacts; `iirds-package.ts` and `zip.ts` build the iiRDS container.

@@ -238,6 +238,18 @@ const whereOption = (raw: string, prev: WhereCondition[]): WhereCondition[] => {
   return [...prev, { field, value }];
 };
 
+/** `--no-authoring` (proposal 0110), worded once for the four verbs that build from pages. */
+const NO_AUTHORING_HELP =
+  "Leave out author-facing content: strategy records, and every field its schemas prefer in a sidecar (default: config authoring)";
+
+/**
+ * `--no-authoring` as a core takes it. Commander supplies `true` when the
+ * flag is absent, so only an explicit `false` overrides `graph.authoring`.
+ */
+function authoringOption(value: boolean | undefined): { authoring?: false } {
+  return value === false ? { authoring: false } : {};
+}
+
 /** The plumbing a served verb takes, and nothing else: where the artifact is. */
 function artifactInputs(command: Command): Command {
   return command
@@ -381,11 +393,13 @@ documentInputs(
   "build",
 )
   .option("-o, --out <path>", "Output .ttl path (default: config out)")
+  .option("--no-authoring", NO_AUTHORING_HELP)
   .action(async (paths: string[], opts: InputFlags & {
     config?: string | boolean;
     collection?: string[];
     exclude?: string[];
     out?: string;
+    authoring?: boolean;
   }) => {
     try {
       const result = await runBuild({
@@ -393,14 +407,17 @@ documentInputs(
         ...documentOptions(opts),
         ...(await inputOptions(paths, opts)),
         out: opts.out,
+        ...authoringOption(opts.authoring),
       });
       // Warnings go to stderr so stdout stays the machine-readable summary;
       // a degraded build is still a successful one, so the exit code is 0.
       for (const warning of result.warnings) warn(warning);
       const { total, fromTermbase } = result.concepts;
       const termbase = fromTermbase > 0 ? ` (${fromTermbase} from the termbase)` : "";
+      const records = result.strategyRecords;
+      const strategy = records > 0 ? `, ${records} strategy record${records === 1 ? "" : "s"}` : "";
       console.log(
-        `Wrote ${result.outPath} (${result.docs} docs, ${result.quads} triples, ${total} concepts${termbase})`,
+        `Wrote ${result.outPath} (${result.docs} docs, ${result.quads} triples, ${total} concepts${termbase}${strategy})`,
       );
     } catch (e) {
       fail(e);
@@ -1019,6 +1036,7 @@ program
     "--publish",
     "Publish the graph first when its artifact is missing or older than the checkout, and again after the checkout changes",
   )
+  .option("--no-authoring", NO_AUTHORING_HELP)
   .action(
     async (opts: {
       config?: string | boolean;
@@ -1026,9 +1044,11 @@ program
       index?: string;
       withhold?: WithholdReason[];
       publish?: boolean;
+      authoring?: boolean;
     }) => {
       try {
-        process.exitCode = await runServe({ ...rest(opts), ...documentOptions(opts) });
+        const { authoring, ...others } = rest(opts);
+        process.exitCode = await runServe({ ...others, ...documentOptions(opts), ...authoringOption(authoring) });
       } catch (e) {
         fail(e);
       }
@@ -1106,10 +1126,11 @@ program
     "Output path (default: the graph path with the target's extension); a directory for search and chunks",
   )
   .option("--evals <path>", "A docevals JSON report for chunks (default: config export.chunks.evals)")
+  .option("--no-authoring", NO_AUTHORING_HELP)
   .action(
     async (
       target: string,
-      opts: { config?: string | boolean; graph?: string; out?: string; evals?: string },
+      opts: { config?: string | boolean; graph?: string; out?: string; evals?: string; authoring?: boolean },
     ) => {
       try {
         if (!(EXPORT_TARGETS as readonly string[]).includes(target)) {
@@ -1123,6 +1144,7 @@ program
           format: target as ExportFormat,
           out: opts.out,
           ...(opts.evals === undefined ? {} : { evals: opts.evals }),
+          ...authoringOption(opts.authoring),
         });
         for (const warning of result.warnings) warn(warning);
         for (const said of result.notices ?? []) noticeOnce(said);
@@ -1153,6 +1175,7 @@ program
   .option("-o, --out <dir>", "Directory for every artifact (default: the directory of config out)")
   .option("--evals <path>", "A docevals JSON report for the chunks (default: config export.chunks.evals)")
   .option("--collection <name>", "Configured collection to read (repeatable)", collect, [])
+  .option("--no-authoring", NO_AUTHORING_HELP)
   .option(
     "-f, --format <format>",
     `Output: ${GRAPH_FORMAT_LIST}`,
@@ -1160,12 +1183,20 @@ program
     "pretty",
   )
   .action(
-    async (opts: { config?: string | boolean; out?: string; evals?: string; collection: string[]; format: GraphFormat }) => {
+    async (opts: {
+      config?: string | boolean;
+      out?: string;
+      evals?: string;
+      collection: string[];
+      authoring?: boolean;
+      format: GraphFormat;
+    }) => {
       try {
         const report = await runPublish({
           ...documentOptions(opts),
           ...(opts.out === undefined ? {} : { out: opts.out }),
           ...(opts.evals === undefined ? {} : { evals: opts.evals }),
+          ...authoringOption(opts.authoring),
           say: (kind, message) => {
             if (kind === "notice") noticeOnce(message);
             else warn(message);

@@ -6,6 +6,7 @@
 import type { DocModel } from "../types.js";
 import type { TermLabel } from "../../shared/term-labels.js";
 import { spellLines } from "../../shared/pin.js";
+import { readRecord, sameRecordId, type RecordType } from "../../shared/reference-fields.js";
 import { canonicalLanguage, termIndex } from "./concepts.js";
 import type { DeriveSource } from "./config.js";
 import type { GitHistory } from "./git.js";
@@ -22,6 +23,7 @@ import {
   mintProductIri,
   mintSchemeIri,
   mintSectionIri,
+  mintStrategyIri,
   mintTermConceptIri,
   normalizeDocPath,
 } from "./iri.js";
@@ -104,6 +106,30 @@ const INVERSE = {
   narrower: "broader",
   related: "related",
 } as const;
+
+/** Each strategy record type's class (proposal 0110). */
+const RECORD_CLASS: Record<RecordType, string> = {
+  audience: `${NS.schema}Audience`,
+  persona: `${NS.schema}PeopleAudience`,
+  journey: `${NS.graph}Journey`,
+};
+
+/**
+ * The strategy records among `docs` (proposal 0110), each with its node's
+ * IRI. A record is a page whose metadata declares `type: audience`,
+ * `persona` or `journey`, read by the family's one rule.
+ */
+export function strategyRecords(
+  docs: readonly DocModel[],
+  baseIri: string,
+): { path: string; type: RecordType; id: string; iri: string }[] {
+  return docs.flatMap((doc) => {
+    const record = readRecord(doc.frontmatter, doc.path);
+    return record === undefined
+      ? []
+      : [{ path: doc.path, ...record, iri: mintStrategyIri(baseIri, record.type, record.id) }];
+  });
+}
 
 /** The one concept scheme's title (proposal 0086). */
 export const CONCEPT_SCHEME_TITLE = "manni graph concepts";
@@ -398,6 +424,20 @@ export function deriveGraph(docs: DocModel[], options: DeriveOptions): Quad[] {
 
   const docByPath = new Map(docs.map((d) => [normalizeDocPath(d.path), d]));
   const prov = sources.has("provenance");
+
+  // The strategy records in the build (proposal 0110). A reference derives an
+  // edge only to one of them, so an id no record declares derives nothing.
+  const records = strategyRecords(docs, baseIri);
+  const recordByPath = new Map(records.map((r) => [r.path, r]));
+  const recordIri = (type: RecordType, id: string): string | undefined =>
+    records.find((r) => r.type === type && sameRecordId(r.id, id))?.iri;
+  /** `subject predicate <record>` for each value of `fm[key]` that names a record of `type`. */
+  const recordEdges = (subject: string, predicate: string, fm: Record<string, unknown>, key: string, type: RecordType) => {
+    for (const value of asStringArray(fm[key])) {
+      const target = recordIri(type, value);
+      if (target !== undefined) add(subject, predicate, iri(target));
+    }
+  };
 
   /**
    * Agent node; dedupe converges repeats of the same name AND kind. The IRI
@@ -759,6 +799,25 @@ export function deriveGraph(docs: DocModel[], options: DeriveOptions): Quad[] {
     add(docIri, `${NS.graph}contentHash`, lit(doc.contentHash));
 
     const dated = deriveFields(docIri, doc, fm, "document", pageLanguage, pageLanguage);
+
+    // The content strategy (proposal 0110), page level only, every edge
+    // pointing away from the page. A record's file is about its record,
+    // unless its `graph` block names a topic of its own.
+    if (sources.has("frontmatter")) {
+      const record = recordByPath.get(doc.path);
+      if (record !== undefined) {
+        add(record.iri, RDF_TYPE, iri(RECORD_CLASS[record.type]));
+        const title = asString(fm["title"]);
+        if (title) add(record.iri, `${NS.dcterms}title`, lit(title));
+        if (!(block && asString(block["label"]))) add(docIri, `${NS.foaf}primaryTopic`, iri(record.iri));
+        if (record.type === "persona") recordEdges(record.iri, `${NS.dcterms}isPartOf`, fm, "audience", "audience");
+        if (record.type === "journey") recordEdges(record.iri, `${NS.schema}audience`, fm, "personas", "persona");
+      } else {
+        recordEdges(docIri, `${NS.schema}audience`, fm, "audiences", "audience");
+        recordEdges(docIri, `${NS.schema}audience`, fm, "personas", "persona");
+        recordEdges(docIri, `${NS.dcterms}isPartOf`, fm, "journeys", "journey");
+      }
+    }
 
     if (sources.has("sections")) {
       // graph.sections: slug-keyed iiRDS typing attached to section nodes
