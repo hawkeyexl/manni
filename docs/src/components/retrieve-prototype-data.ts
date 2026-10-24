@@ -3,7 +3,7 @@ import type {
   LookupResult,
   PassageBundle,
   ProvenanceRecord,
-} from "../../../dist/graph/runtime.js";
+} from "../../../src/graph/runtime/index.js";
 
 export type Result = LookupResult | PassageBundle;
 export type Operation = "lookup" | "retrieve" | "traverse" | "impact";

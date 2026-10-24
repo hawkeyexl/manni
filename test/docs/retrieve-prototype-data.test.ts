@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import type { LookupResult, PassageBundle, ProvenanceRecord } from "../../dist/graph/runtime.js";
+import type { LookupResult, PassageBundle, ProvenanceRecord } from "../../src/graph/runtime/index.js";
 import fixture from "../fixtures/retrieve-prototype/passages.json" with { type: "json" };
 import { buildAnswerInput, resultPassages } from "../../docs/src/components/retrieve-prototype-data.js";
 
