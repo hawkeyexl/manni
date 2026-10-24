@@ -357,7 +357,7 @@ The section has no glossary page of its own. `manni term` owns the glossary (pro
 
 | Page | ★ | Notes |
 |---|---|---|
-| Overview (`graph/index.mdx`) | ★ | A hero with two actions, mirroring the sibling overviews. What is already a graph in a docset. A 60-second proof from a real `build` / `stats` / `check` run. A goal router into the eight sections. Carries the load-bearing claim that nothing is inferred from prose. Serves every journey. |
+| Overview (`graph/index.mdx`) | ★ | A hero with three actions, including a direct link to the graph playground. What is already a graph in a docset. A 60-second proof from a real `build` / `stats` / `check` run. A goal router into the eight sections. Carries the load-bearing claim that nothing is inferred from prose. Serves every journey. |
 | Get started (`graph/get-started/index.mdx`) | ★ | Build, read `stats`, ask one `query`, run `check`, write the config with `graph init`. Minimum vocabulary: the reader reaches an orphan and a concept collision without meeting "SHACL". Source of truth: `src/graph/commands/{build,stats,query,check,init}.ts`. |
 | How manni graph works (`graph/get-started/how-graph-works.mdx`) | ★ | What becomes a node and an edge, and the fifteen `graph:` keys. The harvest rule (deeper wins, per fact), near-miss warnings, determinism, and git as a detected fact. Sits after the quickstart on purpose. Source of truth: `src/graph/core/{analyze,derive,harvest}.ts`, `src/graph/schema.ts`. |
 | Explore the graph (`graph/explore/index.mdx`) | ★ | `stats` read in order, `query`'s three patterns, and `search`. The questions prose cannot answer. Source of truth: `src/graph/commands/{stats,query,search}.ts`. |
