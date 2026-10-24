@@ -158,7 +158,7 @@ docs/src/content/docs/meta/fix/faq.mdx:
         file: src/meta/commands/get.ts
         lines: 363-365
         integrity: sha256-fa43521ca7e2c4816e77be4f03f1738b57e93e3f99d24676580d5fa9d81272f1
-        commit-sha: 6ab3d7233ff7a288e00908515f24c9773703787f
+        commit-sha: e9388316c721185044c2c16f35a31b957c3e1d41
     - id: validate-checks-whole-schemas
       claim:
         integrity: sha256-c8465740603ef96129e4b7d4cdabc6a5e3da1d642132008bac8eff3dcbaaa4fd

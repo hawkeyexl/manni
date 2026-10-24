@@ -77,7 +77,7 @@ docs/src/content/docs/cite/set-up/citations-in-a-sidecar.mdx:
         file: src/cite/reporters/pretty.ts
         lines: 378-387
         integrity: sha256-8843326726d40fe6b5ae4860e2fdd5c8968aa3e30dda0ca809a8397aee77d131
-        commit-sha: 288678fa899b944f2633162fe2ab94355c5491a1
+        commit-sha: e9388316c721185044c2c16f35a31b957c3e1d41
     - id: half-moved-entry-invalid
       claim:
         integrity: sha256-f90d3f4101561cdf11c4eb17ff96aaf0cb3acb931128d11021db5346d491d9a0
@@ -117,7 +117,7 @@ docs/src/content/docs/cite/set-up/citations-in-a-sidecar.mdx:
         file: src/cite/commands/add.ts
         lines: 626-631
         integrity: sha256-ff987f589d06254e69ecf44d2527ba5f2109ff3b61a441a615850c2294db1bdc
-        commit-sha: 34611bc58c4898d3b0694d1e29e054e8ac96b327
+        commit-sha: e9388316c721185044c2c16f35a31b957c3e1d41
     - id: add-manifest-page-untouched
       claim:
         integrity: sha256-2977cf6675401bbcfea1fabe5d3ad2010064dfa709ec9b1639c746b214bcc7ff
@@ -125,7 +125,7 @@ docs/src/content/docs/cite/set-up/citations-in-a-sidecar.mdx:
         file: src/cite/commands/add.ts
         lines: 656-661
         integrity: sha256-a9f66060a0b6e07b3220f2b2e49f7c7140e3a1aa79c7962efb05b08c4808904e
-        commit-sha: 34611bc58c4898d3b0694d1e29e054e8ac96b327
+        commit-sha: e9388316c721185044c2c16f35a31b957c3e1d41
     - id: update-writes-manifest-once
       claim:
         integrity: sha256-7d71b96f86296b130361168ab9c1b767db29471688a6687c270e431713685c18
@@ -176,7 +176,7 @@ docs/src/content/docs/cite/set-up/citations-in-a-sidecar.mdx:
         file: src/cite/commands/add.ts
         lines: 315-320
         integrity: sha256-4adf11aca6f35daa21236bc43dec45cfc6ad4652ffeca3ef815a6293c6942ad4
-        commit-sha: 34611bc58c4898d3b0694d1e29e054e8ac96b327
+        commit-sha: e9388316c721185044c2c16f35a31b957c3e1d41
     - id: orphan-whole-collection
       claim:
         lines: 396-397
@@ -226,7 +226,7 @@ docs/src/content/docs/cite/set-up/citations-in-a-sidecar.mdx:
         file: src/cite/reporters/pretty.ts
         lines: 346-349
         integrity: sha256-3e038ad23a4ceb1ef5bf2e72f7bf2d32eba551128c0c9a7350e4efea907d5d4f
-        commit-sha: 288678fa899b944f2633162fe2ab94355c5491a1
+        commit-sha: e9388316c721185044c2c16f35a31b957c3e1d41
     - id: manifest-column-empty-for-frontmatter
       claim:
         lines: 189-192
@@ -235,4 +235,4 @@ docs/src/content/docs/cite/set-up/citations-in-a-sidecar.mdx:
         file: src/cite/reporters/pretty.ts
         lines: 418-421
         integrity: sha256-be4f3b638888dabcbbd4bc74e30b118dbd22e55f905de5ce1294adc81ea3bfe8
-        commit-sha: 288678fa899b944f2633162fe2ab94355c5491a1
+        commit-sha: e9388316c721185044c2c16f35a31b957c3e1d41
