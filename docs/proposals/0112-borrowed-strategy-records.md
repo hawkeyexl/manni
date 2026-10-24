@@ -1,7 +1,7 @@
 # 0112: Borrowed strategy records
 
 - **Status:** Proposed
-- **Serves:** Sara · S20, "Share one strategy across docs sets". Several
+- **Serves:** Sara · S21, "Share one strategy across docs sets". Several
   repositories read one set of records, and each check reports only what its
   own repository can fix.
 - **Depends on:** Four earlier proposals.
