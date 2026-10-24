@@ -98,7 +98,11 @@ export interface RanCheck {
   command: string;
   status: "pass" | "fail";
   render: (format: CheckFormat, color: boolean) => string;
-  /** The findings its report holds, each placed on its file (proposal 0109). */
+  /**
+   * The findings its report holds, each placed on its file (proposal 0109).
+   * Always set when the check ran. Unset only on a hand-built `RanCheck`, as
+   * unit tests make.
+   */
   findings?: PlacedFinding[];
 }
 

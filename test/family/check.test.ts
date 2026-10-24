@@ -675,6 +675,21 @@ describe.skipIf(!gitAvailable())("the roll-up by persona and journey (0109)", ()
     }
   }, 60000);
 
+  it("lists a record's pages sorted, whatever order the checks reported them in", async () => {
+    dir = fixtureRepo("impact");
+    const run = await runFamilyCheck({ cwd: dir, scope: { kind: "all" }, impact: true });
+    // m2 is named by two-journeys.md and sidecar.md. meta runs before strategy, so
+    // two-journeys.md's finding arrives before the one in sidecar.meta.yaml.
+    const b = join(dir, "docs", "two-journeys.md");
+    const a = [join(dir, "docs", "sidecar.md"), join(dir, "docs", "sidecar.meta.yaml")];
+    const arrival = run.checks
+      .flatMap((c) => ("render" in c ? (c.findings ?? []) : []))
+      .map((f) => f.file)
+      .filter((f) => f === b || a.includes(f));
+    expect(arrival[0]).toBe(b);
+    expect(entry(run, "m2").pages).toEqual(["docs/sidecar.md", "docs/two-journeys.md"]);
+  }, 60000);
+
   it("is never built unless asked, as under a hook, and a hook's reply is the same either way", async () => {
     dir = fixtureRepo("impact");
     const scope = { kind: "paths", paths: ["docs/two-journeys.md"] } as const;
