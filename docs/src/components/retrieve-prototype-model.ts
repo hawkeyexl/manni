@@ -2,7 +2,9 @@ import { CreateWebWorkerMLCEngine } from "@mlc-ai/web-llm";
 import { hasModelReasoning, modelAnswerText } from "./retrieve-prototype-answer";
 import type { buildAnswerInput } from "./retrieve-prototype-data";
 
-export const MODEL_ID = "Qwen3-1.7B-q4f32_1-MLC";
+import { MODEL_ID, MODEL_LOAD_OPTIONS, MODEL_REQUEST_OPTIONS } from "./retrieve-prototype-settings";
+
+export { MODEL_ID } from "./retrieve-prototype-settings";
 
 export async function loadLocalModel(progress: (text: string) => void, signal: AbortSignal) {
   signal.throwIfAborted();
@@ -19,7 +21,7 @@ export async function loadLocalModel(progress: (text: string) => void, signal: A
     const engine = await Promise.race([
       CreateWebWorkerMLCEngine(worker, MODEL_ID, {
         initProgressCallback: (report) => progress(report.text),
-      }, { context_window_size: 4096 }),
+      }, MODEL_LOAD_OPTIONS),
       cancelled,
     ]);
     let stopRequested = false;
@@ -30,11 +32,8 @@ export async function loadLocalModel(progress: (text: string) => void, signal: A
         await engine.resetChat(false);
         if (stopRequested) return "";
         const stream = await engine.chat.completions.create({
-          messages: input.messages, stream: true,
-          temperature: 0.7, top_p: 0.8, seed: 42,
-          presence_penalty: 0, frequency_penalty: 0, repetition_penalty: 1,
-          extra_body: { enable_thinking: false },
-          max_tokens: 384,
+          messages: input.messages,
+          ...MODEL_REQUEST_OPTIONS,
         });
         let text = "";
         for await (const chunk of stream) {
