@@ -27,7 +27,9 @@ import { fileURLToPath } from "node:url";
 
 // The plugin's `tracevals` option reaches hooks under Claude Code's name,
 // and manni reads its own, which a user without the plugin can set
-// themselves. Set here, every manni this process starts inherits it.
+// themselves. Set here, every manni this process starts inherits it. It is
+// set at load on purpose: tracevals.mjs imports this module, then reads it
+// through tracevalsOn().
 if (process.env.CLAUDE_PLUGIN_OPTION_TRACEVALS === "true") process.env.MANNI_TRACEVALS_HOOKS = "1";
 
 /** Whether this user turned the tracevals hooks on. */
