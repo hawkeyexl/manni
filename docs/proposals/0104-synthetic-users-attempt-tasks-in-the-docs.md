@@ -2,7 +2,7 @@
 
 - **Status:** Proposed
 - **Serves:** Two people.
-  - Sara · S18, "Watch a persona attempt a task before a reader does", a new
+  - Sara · S19, "Watch a persona attempt a task before a reader does", a new
     journey. She keeps the personas and journeys, and nothing shows that a
     persona can finish one with the pages.
   - Maya, who asks the same question of one page before she merges it.
@@ -284,4 +284,4 @@ fields under other names.
 - Bad, because every run costs model time and money, and a verdict is one
   sample.
 - Bad, because `manni test run` is gone, and scripts that called it break.
-- CUJ S18 joins Sara's journeys, and the `test/` section gains a journey page.
+- CUJ S19 joins Sara's journeys, and the `test/` section gains a journey page.

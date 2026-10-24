@@ -3,7 +3,7 @@ docs/src/content/docs/test/attempt-a-task.mdx:
     - sara
     - maya
   journeys:
-    - s18
+    - s19
   visibility: public
   review-interval: P180D
   source-of-truth:
