@@ -297,6 +297,19 @@ describe("runTasks: messages", () => {
     await refuses({ journeys: ["t3"] }, 'strategy/journeys/t3.md:6: workspace "test/x" does not exist.');
   });
 
+  // A seed that moved is recovered by naming the new one, not by editing the record first.
+  it("lets --workspace stand in for a journey workspace that does not exist", async () => {
+    journey("entry-point: docs/fix/index.md\nworkspace: test/x\n");
+    const report = await run({ journeys: ["t3"], workspace: "seed" });
+    expect(report.runs[0]?.workspace).toBe("seed");
+  });
+
+  it("lets a page target stand in for a journey entry-point that does not exist", async () => {
+    journey("entry-point: docs/gone.md\n");
+    const report = await run({ targets: ["docs/fix/index.md"], journeys: ["t3"] });
+    expect(report.runs[0]?.start).toBe("docs/fix/index.md");
+  });
+
   it.each<[string, string, string]>([
     [
       "a grader that cannot grade a task",
@@ -488,6 +501,15 @@ describe("runTasks: the report", () => {
   it("says nothing on stderr without --progress", async () => {
     await run({ journeys: ["t1"] });
     expect(stderr).toEqual([]);
+  });
+
+  // Two processes started in the same second must never share a run directory,
+  // or their streams interleave in one trace.jsonl.
+  it("gives runs started in the same second their own directories, even at once", async () => {
+    const [a, b] = await Promise.all([run({ journeys: ["t1"] }), run({ journeys: ["t1"] })]);
+    const ids = [a.runs[0]?.id, b.runs[0]?.id];
+    expect(new Set(ids).size).toBe(2);
+    expect(ids.sort()).toEqual(["20261023T140211Z-t1-theo", "20261023T140211Z-t1-theo-2"]);
   });
 
   // The Doc Detective stress test lost a whole report this way: a browser the

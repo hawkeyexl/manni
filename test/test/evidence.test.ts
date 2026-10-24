@@ -153,6 +153,24 @@ describe("renderEvidence: limits", () => {
     expect(workspace).toContain(`### f5.txt\n[left out: the workspace's ${String(MAX_WORKSPACE_CHARS)}-character limit is reached]`);
   });
 
+  // A redacted secret leaves room for more: the budget counts what the judge is sent.
+  it("charges the workspace budget for the redacted text, not the raw file", () => {
+    const key = `-----BEGIN PRIVATE KEY-----\n${"k".repeat(3900)}\n-----END PRIVATE KEY-----`;
+    const files: Record<string, string> = { "a-key.txt": key };
+    for (let i = 0; i < 4; i++) files[`b${String(i)}.txt`] = String(i).repeat(MAX_FILE_CHARS);
+    files["c.txt"] = "c".repeat(100);
+    run = taskRun({
+      startPage: "start.md",
+      docs: { "start.md": "start" },
+      workspace: files,
+      changes: { added: Object.keys(files) },
+      trace: (long) => [stream.init(join(long, "workspace"))],
+    });
+    const workspace = section(renderEvidence(run.evidence).text, "The workspace");
+    expect(workspace).toContain("### a-key.txt\n[redacted:private-key]");
+    expect(workspace).toContain(`### c.txt\n${"c".repeat(100)}`);
+  });
+
   it("cuts the docs to 40,000 characters, start page first", () => {
     run = taskRun({
       startPage: "start.md",

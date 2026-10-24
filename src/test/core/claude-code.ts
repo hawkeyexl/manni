@@ -53,6 +53,9 @@ export interface ClaudeCodeArgs {
 }
 
 export function claudeCodeArgs(opts: ClaudeCodeArgs): string[] {
+  // On purpose, the two lists differ. `--tools` picks from Claude Code's
+  // built-in tools only; MCP tools arrive through `--mcp-config` and need
+  // naming in `--allowedTools` alone to run without a prompt.
   const tools = TASK_TOOLS.join(",");
   const allowed = [...TASK_TOOLS, ...opts.mcpServers.map((name) => `mcp__${name}`)].join(",");
   return [

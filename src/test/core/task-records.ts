@@ -7,7 +7,6 @@
  * fields strategy does not keep, with the line each sits on. A persona's body
  * is never read into anything.
  */
-import { existsSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { extname, relative, resolve, sep } from "node:path";
 import { extractorForExtension } from "../../meta/internal.js";
@@ -189,11 +188,8 @@ function journeyOf(id: string, rf: RecordFile): TaskJourney {
   const success = text(data["success-criteria"]);
   const entryPoint = text(data["entry-point"]);
   const workspace = text(data["workspace"]);
-  // A path the record names that is not there is a broken record, whatever a flag overrides.
-  for (const [key, value] of [["entry-point", entryPoint], ["workspace", workspace]] as const) {
-    if (value === undefined || /^https?:\/\//i.test(value) || existsSync(resolve(rf.dir, value))) continue;
-    throw new TestError(`${rf.file}:${String(rf.lineFor(`/${key}`) ?? 1)}: ${key} "${value}" does not exist.`);
-  }
+  // Whether these exist is checked where they are used: a target or
+  // `--workspace` that replaces one makes a missing path irrelevant.
   return {
     id,
     file: rf.file,
@@ -201,8 +197,8 @@ function journeyOf(id: string, rf: RecordFile): TaskJourney {
     titleLocation: title === undefined ? { file: rf.file, line: 1 } : at(rf, "/title"),
     ...(trigger === undefined ? {} : { trigger }),
     ...(success === undefined ? {} : { successCriteria: { text: success, location: at(rf, "/success-criteria") } }),
-    ...(entryPoint === undefined ? {} : { entryPoint }),
-    ...(workspace === undefined ? {} : { workspace }),
+    ...(entryPoint === undefined ? {} : { entryPoint: { value: entryPoint, location: at(rf, "/entry-point") } }),
+    ...(workspace === undefined ? {} : { workspace: { value: workspace, location: at(rf, "/workspace") } }),
     personas: list(data["personas"]),
     evals: journeyEvals(rf),
   };

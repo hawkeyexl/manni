@@ -34,6 +34,7 @@ import { rolePrompt, taskBriefFor } from "../core/prompts.js";
 import { loadTaskRecords } from "../core/task-records.js";
 import type {
   JudgeRun,
+  SourceLocation,
   TaskEval,
   TaskJourney,
   TaskPersona,
@@ -250,15 +251,15 @@ export async function runTasks(opts: RunTasksOptions = {}): Promise<TasksReport>
           `journey "${journey.id}" has no entry-point:. Add one to ${journey.file}, or pass the page to start from.`,
         );
       }
-      if (isUrl(entry)) {
-        starts = [{ kind: "url", url: entry }];
+      if (isUrl(entry.value)) {
+        starts = [{ kind: "url", url: entry.value }];
       } else {
-        starts = [pathStart(resolve(configDir, entry))];
+        starts = [pathStart(recordedPath("entry-point", entry, configDir))];
       }
     }
     let seed = workspaceOverride ?? null;
     if (seed === null && journey.workspace !== undefined) {
-      const abs = resolve(configDir, journey.workspace);
+      const abs = recordedPath("workspace", journey.workspace, configDir);
       seed = { abs, display: toPosix(relative(cwd, abs)) || "." };
     }
     let personas: (TaskPersona | null)[] = explicitPersonas;
@@ -321,10 +322,35 @@ interface RunContext {
 }
 
 /** A run id not yet used under `dir`: two runs in one second get `-2`, `-3`. */
-function freshId(dir: string, base: string): string {
-  let id = base;
-  for (let n = 2; existsSync(join(dir, id)); n++) id = `${base}-${String(n)}`;
-  return id;
+/** A path a journey names, resolved; one that is not there is a broken record. */
+function recordedPath(
+  key: string,
+  path: { value: string; location: SourceLocation },
+  configDir: string,
+): string {
+  const abs = resolve(configDir, path.value);
+  if (!existsSync(abs)) {
+    throw new TestError(`${path.location.file}:${String(path.location.line)}: ${key} "${path.value}" does not exist.`);
+  }
+  return abs;
+}
+
+/**
+ * Claim a run directory and return its id. Creating a directory either
+ * succeeds or fails with `EEXIST`, so two runs started in the same second, in
+ * this process or another, never share one; the later takes `-2`, `-3`, ….
+ */
+async function claimRunDir(dir: string, base: string): Promise<string> {
+  await mkdir(dir, { recursive: true });
+  for (let n = 1; ; n++) {
+    const id = n === 1 ? base : `${base}-${String(n)}`;
+    try {
+      await mkdir(join(dir, id));
+      return id;
+    } catch (err) {
+      if (!(err instanceof Error && "code" in err && err.code === "EEXIST")) throw err;
+    }
+  }
 }
 
 async function runOne(spec: TaskSpec, ctx: RunContext): Promise<TaskRun> {
@@ -332,9 +358,8 @@ async function runOne(spec: TaskSpec, ctx: RunContext): Promise<TaskRun> {
   const label = labelOf(spec);
   const who = spec.persona?.id ?? "newcomer";
   const tasksDir = join(ctx.configDir, ".manni", "test", "tasks");
-  const id = freshId(tasksDir, `${stamp((opts.now ?? (() => new Date()))())}-${spec.journey?.id ?? "task"}-${who}`);
+  const id = await claimRunDir(tasksDir, `${stamp((opts.now ?? (() => new Date()))())}-${spec.journey?.id ?? "task"}-${who}`);
   const runDir = join(tasksDir, id);
-  await mkdir(runDir, { recursive: true });
   const tracePath = join(runDir, "trace.jsonl");
   await writeFile(tracePath, "");
 

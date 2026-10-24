@@ -47,10 +47,14 @@ export interface TaskJourney {
   titleLocation: SourceLocation;
   trigger?: string;
   successCriteria?: { text: string; location: SourceLocation };
-  /** As written; the run resolves it against the config file's directory. */
-  entryPoint?: string;
-  /** As written; the run resolves it against the config file's directory. */
-  workspace?: string;
+  /**
+   * As written, with the line it sits on. The run resolves it against the
+   * config file's directory, and checks it exists only when no target
+   * replaces it.
+   */
+  entryPoint?: { value: string; location: SourceLocation };
+  /** As written, with its line; checked only when no `--workspace` replaces it. */
+  workspace?: { value: string; location: SourceLocation };
   personas: string[];
   /** The golden evals, validated, each with the line its entry starts on. */
   evals: { entry: EvalEntry; location: SourceLocation }[];

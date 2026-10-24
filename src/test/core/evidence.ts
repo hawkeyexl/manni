@@ -25,9 +25,20 @@ const scrub = makeRedactor();
  * skimmed, and failed a constraint over it.
  */
 function clip(text: string, max: number): string {
+  return budgeted(text, max).body;
+}
+
+/**
+ * `clip`, plus how much of a shared budget the result uses: the redacted
+ * text the judge is sent, never the raw length a redaction shortened.
+ */
+function budgeted(text: string, max: number): { body: string; used: number } {
   const safe = scrub(text);
-  if (safe.length <= max) return safe;
-  return `${safe.slice(0, max)} [manni shortened this for the judge; the reader received ${String(safe.length - max)} more characters]`;
+  if (safe.length <= max) return { body: safe, used: safe.length };
+  return {
+    body: `${safe.slice(0, max)} [manni shortened this for the judge; the reader received ${String(safe.length - max)} more characters]`,
+    used: max,
+  };
 }
 
 /** A page the reader had: its name in the `docs` list and its text. */
@@ -183,8 +194,8 @@ function renderWorkspace(evidence: RunEvidence): string {
       lines.push(`\n### ${file}\n[left out: the workspace's ${String(MAX_WORKSPACE_CHARS)}-character limit is reached]`);
       continue;
     }
-    const body = clip(content, Math.min(MAX_FILE_CHARS, room));
-    room -= Math.min(content.length, MAX_FILE_CHARS, room);
+    const { body, used } = budgeted(content, Math.min(MAX_FILE_CHARS, room));
+    room -= used;
     lines.push(`\n### ${file}\n${body}`);
   }
   return lines.join("\n");
@@ -251,8 +262,9 @@ function renderDocs(
   let room = MAX_DOCS_CHARS;
   for (const page of pages) {
     if (room <= 0) break;
-    blocks.push(`### ${page.name}\n${clip(page.text, room)}`);
-    room -= page.text.length;
+    const { body, used } = budgeted(page.text, room);
+    blocks.push(`### ${page.name}\n${body}`);
+    room -= used;
     docs.push(page.name);
   }
   return {
