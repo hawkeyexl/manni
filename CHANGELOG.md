@@ -4,6 +4,14 @@
 4.13.1. Entries below that version are docmeta releases; the repository
 history is the same one.
 
+# [4.21.0](https://github.com/hawkeyexl/manni/compare/v4.20.1...v4.21.0) (2026-10-24)
+
+
+### Features
+
+* **plugin:** the tracevals hooks run only for a user who turns them on (0113) ([#248](https://github.com/hawkeyexl/manni/issues/248)) ([048725a](https://github.com/hawkeyexl/manni/commit/048725a4e2244369ae829951826000453ec65311))
+* **strategy:** a journey's steps name the pages that carry it (0106) ([#239](https://github.com/hawkeyexl/manni/issues/239)) ([909b6f4](https://github.com/hawkeyexl/manni/commit/909b6f4a1ce153d0eb9e407f27dec0b535f798f3))
+
 ## [4.20.1](https://github.com/hawkeyexl/manni/compare/v4.20.0...v4.20.1) (2026-10-24)
 
 
