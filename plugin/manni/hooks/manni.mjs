@@ -15,15 +15,25 @@
 // `npx --no` would ask the registry on every hook in every repository
 // without manni. Running node on a found bin also skips npx's start-up.
 //
-// The plugin's other scripts import `project`, `configFile`, `launch` and
-// `pluginVersion` from here. Run as a script, it launches manni with its own
-// arguments.
+// The plugin's other scripts import `project`, `configFile`, `launch`,
+// `pluginVersion`, `isMain`, `run` and `tracevalsOn` from here. Run as a
+// script, it launches manni with its own arguments.
 //
 // Plain ESM with no dependencies: the plugin ships as files, not a package.
 import { spawn, spawnSync } from "node:child_process";
 import { existsSync, readFileSync, realpathSync } from "node:fs";
 import { dirname, join, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
+
+// The plugin's `tracevals` option reaches hooks under Claude Code's name,
+// and manni reads its own, which a user without the plugin can set
+// themselves. Set here, every manni this process starts inherits it.
+if (process.env.CLAUDE_PLUGIN_OPTION_TRACEVALS === "true") process.env.MANNI_TRACEVALS_HOOKS = "1";
+
+/** Whether this user turned the tracevals hooks on. */
+export function tracevalsOn() {
+  return process.env.MANNI_TRACEVALS_HOOKS === "1";
+}
 
 const PACKAGE = "@hawkeyexl/manni";
 const windows = process.platform === "win32";
@@ -198,8 +208,9 @@ export function isMain(url) {
   }
 }
 
-if (isMain(import.meta.url)) {
-  const child = launch(process.argv.slice(2));
+/** Runs manni with `args` for a hook, its exit code becoming this process's. */
+export function run(args) {
+  const child = launch(args);
   if (child === undefined) process.exit(0);
   child.on("error", () => {
     process.exitCode = 1;
@@ -208,3 +219,5 @@ if (isMain(import.meta.url)) {
     process.exitCode = code ?? 1;
   });
 }
+
+if (isMain(import.meta.url)) run(process.argv.slice(2));

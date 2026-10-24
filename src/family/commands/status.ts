@@ -26,6 +26,7 @@ import {
   listMembers,
   loadFamily,
   plural,
+  tracevalsHooks,
   type Domain,
   type Family,
 } from "../core/in-play.js";
@@ -66,10 +67,20 @@ export interface StatusOptions {
   configPath?: string;
   /** Test seam: the running model host. Default: ask the inference library. */
   hostStatus?: () => Promise<HostStatus | null>;
+  /** Test seam: the environment `MANNI_TRACEVALS_HOOKS` is read from. Default: `process.env`. */
+  env?: Record<string, string | undefined>;
 }
 
+/** tracevals' row when `tracevals.runtime` exists and the hooks are off. */
+const TURNED_OFF: DomainRow = {
+  name: "tracevals",
+  status: "not-checked",
+  reason: "runtime evals are set up, and turned off here",
+  next: "Turn on the manni plugin's tracevals option, or set MANNI_TRACEVALS_HOOKS=1.",
+};
+
 /**
- * tracevals' row when `tracevals.runtime` exists: both models, resolved
+ * tracevals' row when `tracevals.runtime` exists and the hooks are on: both models, resolved
  * the way `check` and `prepare` resolve them, and the host when one runs.
  */
 async function tracevalsRow(cwd: string, opts: StatusOptions): Promise<DomainRow> {
@@ -226,11 +237,11 @@ async function statusUnshared(opts: StatusOptions): Promise<StatusReport> {
     }
   }
   for (const [name, reason, next] of NOT_CHECKED) {
-    domains.push(
-      name === "tracevals" && family.runtime
-        ? await tracevalsRow(cwd, opts)
-        : { name, status: "not-checked", reason, next },
-    );
+    if (name === "tracevals" && family.runtime) {
+      domains.push(tracevalsHooks(opts.env) ? await tracevalsRow(cwd, opts) : { ...TURNED_OFF });
+      continue;
+    }
+    domains.push({ name, status: "not-checked", reason, next });
   }
   return {
     version: pkg.version,

@@ -10,6 +10,7 @@ import { supportedExtensions } from "../src/meta/extractors/index.js";
 
 const ROOT = resolve(import.meta.dirname, "..");
 const LAUNCHER = "${CLAUDE_PLUGIN_ROOT}/hooks/manni.mjs";
+const TRACEVALS = "${CLAUDE_PLUGIN_ROOT}/hooks/tracevals.mjs";
 const PAGE_METADATA = "${CLAUDE_PLUGIN_ROOT}/hooks/page-metadata.mjs";
 
 function readJson(path: string): unknown {
@@ -87,24 +88,47 @@ describe("manni plugin", () => {
     const [prepare, ...more] = hooksFor(hooks, "SessionStart", "tracevals prepare");
     expect(more).toEqual([]);
     expect(prepare).toMatchObject({ type: "command", matcher: "startup|resume", async: true });
-    // 0078's session-start hooks run first, in their order.
-    const commands = groupsRunning(hooks, "SessionStart", LAUNCHER).flatMap((g) => g.hooks.map(manniArgs));
-    expect(commands).toEqual([
-      "tracevals capture",
-      "status",
-      "tracevals prepare",
+    // 0078's session-start hooks run first, in their order. Capture and
+    // prepare exist only for tracevals, so they run behind its gate.
+    const commands = (file: HookFile) =>
+      (file.hooks.SessionStart ?? []).flatMap((g) =>
+        g.hooks.filter((h) => h.args?.[0] !== PAGE_METADATA).map((h) => `${h.args?.[0] ?? ""} ${manniArgs(h)}`),
+      );
+    expect(commands(hooks)).toEqual([
+      `${TRACEVALS} tracevals capture`,
+      `${LAUNCHER} status`,
+      `${TRACEVALS} tracevals prepare`,
     ]);
   });
 
+  // Proposal 0113: the hooks that exist only for tracevals run behind the
+  // gate, and Stop keeps the launcher, since its file checks are for everyone.
   it("checks each subagent's run, and releases the model host at session end", () => {
     const hooks = JSON.parse(readFileSync(join(pluginDir, "hooks/hooks.json"), "utf8")) as HookFile;
     const [subagent] = hooksFor(hooks, "SubagentStop", "check");
     expect(subagent).toMatchObject({ timeout: 600 });
+    expect(subagent?.args?.[0]).toBe(TRACEVALS);
     expect(subagent?.matcher).toBeUndefined();
     const [release] = hooksFor(hooks, "SessionEnd", "tracevals release");
     expect(release).toMatchObject({ timeout: 10 });
+    expect(release?.args?.[0]).toBe(TRACEVALS);
     expect(release?.matcher).toBeUndefined();
-    expect(hooksFor(hooks, "Stop", "check")).toHaveLength(1);
+    const stop = hooksFor(hooks, "Stop", "check");
+    expect(stop).toHaveLength(1);
+    expect(stop[0]?.args?.[0]).toBe(LAUNCHER);
+  });
+
+  // Claude Code stores the answer in user settings only, so a repository
+  // cannot turn tracevals on for someone who opens it.
+  it("declares the tracevals option, a boolean that is off by default", () => {
+    const plugin = JSON.parse(readFileSync(join(pluginDir, ".claude-plugin/plugin.json"), "utf8")) as {
+      userConfig?: Record<string, { type: string; default: unknown; title: unknown; description: unknown }>;
+    };
+    const option = plugin.userConfig?.tracevals;
+    expect(option).toMatchObject({ type: "boolean", default: false });
+    expect(option?.title).toEqual(expect.any(String));
+    expect(option?.description).toEqual(expect.any(String));
+    expect(existsSync(join(pluginDir, "hooks/tracevals.mjs"))).toBe(true);
   });
 
   it("the marketplace entry points at a plugin directory with a manifest", () => {
@@ -121,7 +145,7 @@ describe("manni plugin", () => {
   });
 
   // Exec form, so no shell parses the command on any platform, through the
-  // launcher that finds the project's own manni.
+  // launcher that finds the project's own manni, or through its tracevals gate.
   it("every hook runs the launcher on a command the manni umbrella mounts, or the Read hook", async () => {
     const { hooks } = readJson(
       `${entry?.source.replace(/^\.\//, "") ?? ""}/hooks/hooks.json`,
@@ -137,7 +161,7 @@ describe("manni plugin", () => {
         expect(args).toEqual([]);
         continue;
       }
-      expect(script).toBe(LAUNCHER);
+      expect([LAUNCHER, TRACEVALS]).toContain(script);
       expect(await resolves(args), args.join(" ")).toBe(true);
     }
   });

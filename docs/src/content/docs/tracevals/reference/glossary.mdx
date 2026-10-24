@@ -13,7 +13,7 @@ lifecycle: published
 applies-to: ["domain:tracevals"]
 sample-questions: ["What is a trace?", "What is the difference between an outcome and a finding?"]
 graph: { label: "Glossary", type: reference }
-last-updated: 2026-10-11
+last-updated: 2026-10-24
 ---
 
 **Scope:** one authority for the vocabulary every other page assumes. Terms are grouped by where
@@ -231,7 +231,8 @@ Reading a file never makes it one. See
 
 **Runtime evals**
 : Each turn judged against its rule sources inside a Claude Code hook. The `tracevals.runtime`
-config section turns them on. Present, it puts tracevals in play under the hooks.
+config section allows them in a repository. Each user turns them on with the `manni` plugin's
+tracevals option, which sets `MANNI_TRACEVALS_HOOKS` to `1`.
 
 **Hook model**
 : The model that judges a turn inside a Stop or SubagentStop hook. It is set apart from the

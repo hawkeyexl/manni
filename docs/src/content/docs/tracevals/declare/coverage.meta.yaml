@@ -16,12 +16,21 @@ docs/src/content/docs/tracevals/declare/coverage.mdx:
     - generated-by: Claude Opus 5
       lines: 2-276
       integrity: sha256-0b4ca87c13e4f4adb67409b76e4bc236355893db2d30bd5610ff7508734c3406
+    - generated-by: Claude Opus 5.5
+      lines: 278-280
+      integrity: sha256-c372baf322b077bc4fda0777c47a9b05c65374210ac45eb1e724b7baad5d3dc6
     - generated-by: Claude Sonnet 5.5
-      lines: 278-279
-      integrity: sha256-730d9fbf0a4c10c6711be438545bd81fdcc5af3861bdbf461b7b828dbeab65d8
+      lines: 281
+      integrity: sha256-57fb3b66a8f449a74b6081ff1d5fa1f56e68cf70b92af3f728d9cb87a8722edf
     - generated-by: Claude Opus 5
-      lines: 280-398
-      integrity: sha256-887591bb4d9a1fc0a5e36a6299a3cdca01b45e1b203584b9275a042614c89e59
+      lines: 282-332
+      integrity: sha256-a870d3acfb222c5ddf092a18e77fc560c341cef8b0f8f7c63504e73d822e1b5d
+    - generated-by: Claude Opus 5.5
+      lines: 334
+      integrity: sha256-061e4fc863bced9c2968c70cbb401875d7f87555cd895239a0eb0c03fbe29640
+    - generated-by: Claude Opus 5
+      lines: 335-400
+      integrity: sha256-d3e846345d42ac101cfeb14e41b8e9d76c4d0467d9ddc5599ae4337d75ef0a60
   owner:
     - "@hawkeyexl"
   created: 2026-09-16
