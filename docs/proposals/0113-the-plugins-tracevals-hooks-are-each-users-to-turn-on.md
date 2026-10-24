@@ -1,6 +1,6 @@
 # 0113: The plugin's tracevals hooks are each user's to turn on
 
-- **Status:** Proposed
+- **Status:** Implemented (#248)
 - **Serves:**
   - Maya · M25, "Catch a broken rule before the agent hands back". Her turns
     are judged because she chose it, and turning it off for herself leaves
