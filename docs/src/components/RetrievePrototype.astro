@@ -10,16 +10,16 @@ const manifest = `${import.meta.env.BASE_URL.replace(/\/$/, "")}/graph/chunks.js
 <section class="retrieve-prototype not-content" data-retrieve-prototype data-manifest={manifest} aria-labelledby="retrieve-prototype-label">
   <h3 id="retrieve-prototype-label">Graph playground <span class="badge">Proof of concept</span></h3>
   <p>Run a browser graph function on this site's docs. Inspect what came back, then optionally ask a local model about it.</p>
-  <noscript>This playground needs JavaScript. The examples above work in your own script.</noscript>
+  <noscript>This playground needs JavaScript. Use the examples in your own script.</noscript>
   <form class="query-form">
     <fieldset class="query-fields">
       <legend>1. Run a graph function</legend>
       <label for="graph-operation">Function</label>
       <select id="graph-operation" name="operation">
-        <option value="lookup">lookup — matches, context and dependents</option>
-        <option value="retrieve">retrieve — build a passage bundle</option>
-        <option value="traverse">traverse — follow a node's links</option>
-        <option value="impact">impact — find a node's dependents</option>
+        <option value="lookup">lookup: matches, context and dependents</option>
+        <option value="retrieve">retrieve: build a passage bundle</option>
+        <option value="traverse">traverse: follow a node's links</option>
+        <option value="impact">impact: find a node's dependents</option>
       </select>
       <div class="question-field">
         <label for="graph-question">Question</label>
@@ -85,7 +85,7 @@ const manifest = `${import.meta.env.BASE_URL.replace(/\/$/, "")}/graph/chunks.js
       <p class="evidence-status muted">Run a function first. Only a bounded selection of its returned values is sent to the small model.</p>
       <details class="prompt-panel" hidden><summary>Exact model input</summary><pre tabindex="0" class="prompt"></pre></details>
       <div class="answer-output" hidden>
-        <p><strong>Experimental model answer — check it against the passages.</strong></p>
+        <p><strong>Experimental model answer. Check it against the passages.</strong></p>
         <div class="answer" tabindex="0"></div>
         <p class="muted">Sources supplied to the model:</p>
         <ol class="answer-sources"></ol>
@@ -410,10 +410,10 @@ const manifest = `${import.meta.env.BASE_URL.replace(/\/$/, "")}/graph/chunks.js
     --play-bg: #171717;
     --play-text: #ffffff;
     --play-muted: #d5dbe3;
-    border: 1px solid var(--sl-color-gray-5);
+    border: 2px solid var(--play-accent);
     border-radius: 0.5rem;
     padding: 1rem;
-    margin-top: 1.5rem;
+    margin-top: 0.75rem;
     color: var(--play-text);
     background: var(--play-bg);
     font-family: "JetBrains Mono", var(--sl-font-system-mono, monospace);
@@ -425,7 +425,7 @@ const manifest = `${import.meta.env.BASE_URL.replace(/\/$/, "")}/graph/chunks.js
     --play-text: #1f2328;
     --play-muted: #59636e;
   }
-  h3 { font-size: 1.15rem; margin: 0; }
+  h3 { font-size: 1.3rem; color: var(--play-accent); margin: 0; }
   p { margin: 0.75rem 0; }
   fieldset { min-width: 0; margin: 1rem 0 0; padding: 0.75rem; border: 1px solid var(--sl-color-gray-5); }
   legend { padding: 0 0.35rem; font-weight: 600; }
