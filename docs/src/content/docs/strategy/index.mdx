@@ -407,6 +407,21 @@ shows the strategy row, with a count of each type. `manni check` runs
 the [family CLI reference](/manni/family/reference/cli/) has the in-play
 rule for each domain.
 
+{/* cite cite-names-readers */}
+`manni cite check` reads the same records. A citation finding on a page that
+names a persona or journey record says whom the page serves. Its `pretty`
+report ends with a roll-up of those records, worst first, and its `json`
+carries them as `impact`. A value with no record is left out, since
+`manni strategy check` already reports it.
+[Who a finding affects](/manni/cite/ci/#who-a-finding-affects) shows the
+output.
+
+{/* cite family-check-rolls-up */}
+`manni check` prints the same roll-up over every check's findings, so a run
+that fails several domains is ranked by the readers it reaches.
+[Fix first what your readers hit](/manni/family/check/#fix-first-what-your-readers-hit)
+walks through it.
+
 `manni meta get` names the records a page names, one
 [`record` line](/manni/meta/reference/cli/#output) each, with the record's type, id
 and file. The Claude Code plugin hands an agent the same references when it

@@ -1,0 +1,2 @@
+Using manni.config.yaml (.)
+::error file=pages/guide.md,line=15,title=manni%3Acite/source-changed::timeout (src/value.ts:1): changed since b61a6c5, 0 commits. Check the sentence against the source, then run manni cite update --accept --only timeout. Serves maya (Maya, Documentation Engineer) and m5 (Pin a claim and catch it going stale).%0Amanni:cite source-changed: The cited lines are not what they were.%0AGuide: https://hawkeyexl.github.io/manni/cite/fix/#source-changed

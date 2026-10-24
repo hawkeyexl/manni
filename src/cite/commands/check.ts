@@ -17,6 +17,7 @@ import {
   type FingerprintContext,
   type MetadataExtractor,
   type RunSummary,
+  type ValidationResult,
 } from "../../meta/index.js";
 import {
   assertNonEmpty,
@@ -42,8 +43,11 @@ import {
 } from "../core/sidecar.js";
 import { createSourceCache, repoIndexFor, sourceIndexFor } from "../core/sources.js";
 import { warn } from "../../shared/warn.js";
+import { ToolError } from "../../shared/errors.js";
+import { impactOf, loadServing, servesSentence, type ImpactFinding, type ServingSet } from "../../strategy/index.js";
 import { CiteError } from "../errors.js";
 import type {
+  CheckImpact,
   CheckOptions,
   CheckPageOptions,
   CheckRun,
@@ -424,5 +428,48 @@ export async function runCheck(opts: CheckOptions): Promise<CheckRun> {
     ...(baseline ? { baseline } : {}),
   };
 
-  return { results: reported, summary, frame, pages, warnings, notices };
+  const impact = await impactFor(prepared, reported, opts.onNotice);
+  return { results: reported, summary, frame, pages, warnings, notices, ...(impact === undefined ? {} : { impact }) };
+}
+
+/**
+ * Whom the reported findings' pages serve (proposal 0105). Read only when a
+ * finding is reported and the config declares collections, from every one of
+ * them, whatever this run's inputs. Strategy's own error is said once and
+ * leaves the report as it is.
+ */
+async function impactFor(
+  prepared: PreparedRun,
+  reported: readonly ValidationResult[],
+  onNotice: CheckOptions["onNotice"],
+): Promise<CheckImpact | undefined> {
+  const { run, cwd } = prepared;
+  const findings: ImpactFinding[] = reported.flatMap((result) =>
+    result.errors.map((error) => ({
+      page: resolve(run.base, result.file),
+      file: result.file,
+      severity: error.severity ?? "error",
+    })),
+  );
+  if (findings.length === 0 || run.configFile === undefined || run.configFile.collections.length === 0) {
+    return undefined;
+  }
+  let serving: ServingSet | undefined;
+  try {
+    // The spelling the run named its config by, so strategy's message names it the same way.
+    serving = await loadServing({ cwd, configPath: run.configSource ?? run.configFile.path });
+  } catch (error) {
+    if (!(error instanceof ToolError)) throw error;
+    onNotice?.(`personas and journeys left out of the report. ${error.message}`);
+    return undefined;
+  }
+  if (serving === undefined) return undefined;
+  const entries = impactOf(serving, findings);
+  if (entries.length === 0) return undefined;
+  const serves = new Map<string, string>();
+  for (const { page, file } of findings) {
+    const sentence = servesSentence(serving.pages.get(page) ?? []);
+    if (sentence !== undefined) serves.set(file, sentence);
+  }
+  return { entries, serves };
 }

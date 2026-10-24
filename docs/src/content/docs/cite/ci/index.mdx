@@ -120,13 +120,66 @@ A claim, marker or anchor finding is already a sentence about the entry, so it
 is annotated as it stands. A finding about an entry a sidecar owns is
 annotated on the manifest.
 
+## Who a finding affects
+
+A finding says which sentence went stale. Where the repository keeps a
+[content strategy](/manni/strategy/), it also says whom the stale page serves.
+
+{/* cite impact-detected */}
+The check looks for `type: persona` and `type: journey` records in every
+collection. Where it finds them, a finding names the records its page names in
+`personas:` and `journeys:`, sidecars included. A value with no record is left
+out. With no records, the output is what it always was. There is no flag and
+no config key.
+
+{/* cite impact-serves-sentence */}
+In `-f github`, `-f sarif` and `-f junit`, the message gains one sentence. It
+follows the finding's own text and comes before the guidance lines:
+
+```
+::error file=docs/src/content/docs/cite/ci/index.mdx,line=87,title=manni%3Acite/source-changed::summary-counts-apart (src/cite/reporters/pretty.ts:439-448): changed since b9712a2, 1 commit. Check the sentence against the source, then run manni cite update --accept --only summary-counts-apart. Serves devin (Devin, Platform / CI Engineer) and d5 (Gate citations in CI without blocking on prose).%0Amanni:cite source-changed: The cited lines are not what they were.%0AGuide: https://hawkeyexl.github.io/manni/cite/fix/#source-changed
+```
+
+{/* cite impact-pretty-rollup */}
+In `pretty`, a roll-up follows the last page and comes before the summary
+line. It has one row per persona, then one per journey, worst first:
+
+```
+The pages with findings serve 1 persona and 1 journey.
+  devin   Devin, Platform / CI Engineer                    1 error on 1 page
+  d5      Gate citations in CI without blocking on prose   1 error on 1 page
+
+2 files checked, 1 passed, 1 failed, 1 finding
+```
+
+{/* cite impact-json-key */}
+`json` carries the same roll-up as a top-level `impact` list. The
+[CLI reference](/manni/cite/reference/cli/#output) has its fields.
+
+{/* cite impact-never-moves-verdict */}
+The readers never move a verdict. Severities, the exit code and the baseline
+stay as they were. A baselined finding names nobody, and a run whose findings
+are all baselined reads no record. When the `strategy:` section is broken, one
+notice goes to stderr and the report leaves the readers out:
+
+```
+manni: personas and journeys left out of the report. manni.config.yaml: strategy does not carry "paths". Name a collection under collections:.
+```
+
+<Aside type="caution" title="Record titles reach the CI log">
+  Each persona's and journey's title is printed in the log and in the SARIF
+  upload. The titles come from the same repository as the pages. Where the
+  records are private and the logs are public, run the job with a config whose
+  collections hold no record.
+</Aside>
+
 ## Output formats
 
 | Format | Use it for | Shape |
 | --- | --- | --- |
-| `pretty` | People, and local runs. The default. | One line per citation under its page; a summary line. `-q` hides current citations and clean pages. |
-| `github` | GitHub Actions annotations. | `::error` / `::warning` / `::notice` workflow commands, one per finding, `title=manni:cite/<rule>`. |
-| `json` | Scripts and dashboards. | `summary` plus `pages[]`, each with every citation's `claim` and `source` ends, its `origin` and `anchor`, its `marker` where one anchors it, and every finding's `rule`, `ruleId`, `severity`, `message`, `line` and `guidance`. Under `--no-check-sources`, source statuses are `skipped` and appear here only. |
+| `pretty` | People, and local runs. The default. | One line per citation under its page; the roll-up of [who a finding affects](#who-a-finding-affects); a summary line. `-q` hides current citations and clean pages. |
+| `github` | GitHub Actions annotations. | `::error` / `::warning` / `::notice` workflow commands, one per finding, `title=manni:cite/<rule>`. A finding on a page that names a persona or journey record says whom the page serves. |
+| `json` | Scripts and dashboards. | `summary`, `impact` when a finding's page names a record, and `pages[]`. Each page holds every citation's `claim` and `source` ends, its `origin` and `anchor`, its `marker` where one anchors it, and every finding's `rule`, `ruleId`, `severity`, `message`, `line` and `guidance`. Under `--no-check-sources`, source statuses are `skipped` and appear here only. |
 | `sarif` | GitHub code scanning and any SARIF consumer. | One result per finding with `ruleId: manni:cite/<rule>`, `level`, the annotation's message, the page as `artifactLocation.uri`, `region.startLine`, and a fingerprint stable across a move. Each rule has a plain description and a `helpUri` to its section of the [fix page](/manni/cite/fix/), and each result carries the guidance lines and `properties.guidance`. Code scanning drops a location outside the repository, so a manifest that sits outside it is reported on the page. |
 | `junit` | The CI "Tests" tab. | One `testcase` per page, classname `manni.cite`, a `failure` per error with `type` set to the rule id and the annotation's message. |
 
@@ -454,5 +507,6 @@ flag for the readable report.
 {/* step {"description":"A source pin that never held exits 1 and emits an ::error workflow command titled with the rule id, pinned to the sentence line.","runShell":{"command":"npx @hawkeyexl/manni cite check --no-config --root test/fixtures/cite test/fixtures/cite/pages/source-changed.md -f github","exitCodes":[1],"stdio":"/::error file=.*line=15,title=manni%3Acite\\/source-never-true::/"}} */}
 {/* step {"description":"A moved source is a ::warning and exits 0: warnings never fail the job.","runShell":{"command":"npx @hawkeyexl/manni cite check --no-config --root test/fixtures/cite test/fixtures/cite/pages/moved.md -f github","exitCodes":[0],"stdio":"/::warning file=.*title=manni%3Acite\\/source-moved::/"}} */}
 {/* step {"description":"A moved claim is a ::notice and exits 0: a notice never fails the job either.","runShell":{"command":"npx @hawkeyexl/manni cite check --no-config --root test/fixtures/cite test/fixtures/cite/pages/claim-moved.md -f github","exitCodes":[0],"stdio":"/::notice file=.*title=manni%3Acite\\/claim-moved::/"}} */}
+{/* step {"description":"A finding on a page that names a persona and a journey record says whom the page serves, and still exits 1.","runShell":{"command":"npx @hawkeyexl/manni cite check -c test/fixtures/cite/impact/manni.config.yaml -f github","exitCodes":[1],"stdio":"/Serves maya/"}} */}
 {/* step {"description":"An operational error (no inputs, no config) exits 2, distinct from a finding.","runShell":{"command":"npx @hawkeyexl/manni cite check --no-config","exitCodes":[2],"stdio":"No files to check"}} */}
 {/* test end */}

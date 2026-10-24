@@ -1,0 +1,11 @@
+# The strategy collection holds only the persona, so journeys: stays free-form.
+collections:
+  - name: pages
+    paths: ["pages/*.md"]
+    externalMetadata:
+      - file: "{page}.meta.yaml"
+        keys: [personas, journeys]
+  - name: strategy
+    paths: ["strategy/maya.md"]
+cite:
+  root: .

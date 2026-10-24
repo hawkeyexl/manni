@@ -30,6 +30,13 @@ export interface Command {
   /** The command is still running when the beat ends (a server): no prompt follows. */
   running?: boolean;
   /**
+   * A chrome line under the typed command, from Enter on: the disclosure for a
+   * compressed wait. Drawn as an edit's marker (accent, italic), never as output.
+   */
+  note?: string;
+  /** Output lands over this many frames, line by line, as a long dump scrolls a terminal. */
+  revealFrames?: number;
+  /**
    * The command lands whole, as a paste does, instead of being typed. For a
    * command too long to type inside the video's length. Default off.
    */
@@ -59,6 +66,12 @@ export interface Beat {
    */
   type?: { fontPx: number; linePx: number; cols: number };
   /**
+   * The terminal follows its output: rows past the window push the top ones off,
+   * as in a real terminal. A string also scrolls back, after the last command, until
+   * the last line containing it is the top row (SCROLL_FRAMES long).
+   */
+  follow?: true | string;
+  /**
    * Scrollback: at frame `at` of the beat, the view scrolls so the first row
    * containing `toRow` sits at the top of the terminal, or with `bottom`, the
    * last row of the first logical line containing it sits at the bottom. For
@@ -71,6 +84,9 @@ export interface Beat {
    */
   hang?: number;
 }
+
+/** A scroll-back's length: ~0.6 s. */
+export const SCROLL_FRAMES = 18;
 
 const q = `manni meta query "UPDATE docs SET jira = 'PLAT-1' WHERE _path = 'docs/auth.md'"`;
 
@@ -133,19 +149,24 @@ export interface CommandTimeline extends Command {
   end: number;
 }
 
-export function timeline(beat: Beat, typingMs = TYPING_MS): { commands: CommandTimeline[]; duration: number } {
+export function timeline(
+  beat: Beat,
+  typingMs = TYPING_MS,
+): { commands: CommandTimeline[]; duration: number; scrollAt: number } {
   let t = beat.continues ? 4 : IDLE_START_FRAMES;
   const commands: CommandTimeline[] = beat.commands.map((c) => {
     const typeStart = t;
     const enterAt = typeStart + (c.paste ? PASTE_FRAMES : typingFrames(c.typed, typingMs)) + ENTER_PAUSE_FRAMES;
     const outputAt = enterAt + c.latencyFrames;
     const later = (c.more ?? []).reduce((a, m) => a + m.afterFrames, 0);
-    const end = outputAt + later + c.holdFrames;
+    const end = outputAt + (c.revealFrames ?? 0) + later + c.holdFrames;
     t = end;
     return { ...c, typeStart, enterAt, outputAt, end };
   });
+  const scrollAt = t;
+  if (typeof beat.follow === "string") t += SCROLL_FRAMES;
   t += beat.pauseFrames ?? 0;
-  return { commands, duration: Math.round(t) };
+  return { commands, duration: Math.round(t), scrollAt };
 }
 
 export const beatDurations = beats.map((b) => timeline(b).duration);
