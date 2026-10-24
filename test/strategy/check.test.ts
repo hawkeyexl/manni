@@ -4,7 +4,14 @@
  */
 import { describe, expect, it } from "vitest";
 import { checkStrategySet, indexSet } from "../../src/strategy/core/check.js";
-import type { PageField, RecordType, StrategyRecord, StrategyReference, StrategySet } from "../../src/strategy/types.js";
+import type {
+  PageField,
+  RecordType,
+  StrategyRecord,
+  StrategyReference,
+  StrategySet,
+  StrategyStep,
+} from "../../src/strategy/types.js";
 
 /** A record whose parents sit on line 4, one value per line after it. */
 function rec(type: RecordType, id: string, parents: string | string[] = [], extra: Partial<StrategyRecord> = {}): StrategyRecord {
@@ -290,6 +297,135 @@ describe("checkStrategySet", () => {
     set.records.push(rec("journey", "m2", "maya"));
     expect(checkStrategySet(set, { severity: { "unserved-journey": "error" } })[0]?.severity).toBe("error");
     expect(checkStrategySet(set, { severity: { "unserved-journey": "off" } })).toEqual([]);
+  });
+
+  describe("the step rules", () => {
+    const FILE = "strategy/journeys/m1.md";
+
+    /** Step `n` starting on line 10n, its doc on the next line and its exists on the one after. */
+    function step(n: number, fields: Partial<StrategyStep>): StrategyStep {
+      const line = 10 * n;
+      return {
+        n,
+        file: FILE,
+        line,
+        ...fields,
+        ...(fields.doc === undefined ? {} : { docAt: { file: FILE, line: line + 1 } }),
+        ...(fields.exists === undefined ? {} : { existsAt: { file: FILE, line: line + 2 } }),
+      };
+    }
+
+    /** The joined set, with m1 carrying `steps` and `docs/reference.md` naming nothing. */
+    function stepped(steps: StrategyStep[], lifecycle?: string): StrategySet {
+      const set = joined();
+      const [, , m1] = set.records;
+      if (m1 === undefined) throw new Error("fixture");
+      m1.steps = steps;
+      if (lifecycle !== undefined) m1.lifecycle = lifecycle;
+      set.pages = ["docs/page.md", "docs/reference.md"];
+      return set;
+    }
+
+    const stepFindings = (set: StrategySet, opts: Parameters<typeof checkStrategySet>[1] = {}) =>
+      checkStrategySet(set, opts).filter((f) => f.field === "steps");
+
+    it("reports nothing for a step whose page names the journey", () => {
+      expect(stepFindings(stepped([step(1, { doc: "docs/page.md" })]))).toEqual([]);
+    });
+
+    it("broken-step: a doc naming no page, on the doc: line, an error", () => {
+      expect(stepFindings(stepped([step(5, { doc: "docs/gide.md" })]))).toEqual([
+        expect.objectContaining({
+          rule: "broken-step",
+          ruleId: "manni:strategy/broken-step",
+          severity: "error",
+          message: 'step 5: doc "docs/gide.md" names no page. Correct doc, or set exists: false if the page does not exist.',
+          key: 'step 5: doc "docs/gide.md" names no page.',
+          file: FILE,
+          line: 51,
+          id: "m1",
+          field: "steps",
+        }),
+      ]);
+    });
+
+    it("broken-step: exists: true or partial with no doc, on the exists: line", () => {
+      const found = stepFindings(stepped([step(3, { exists: true }), step(4, { exists: "partial" })]));
+      expect(found.map((f) => [f.rule, f.line, f.message])).toEqual([
+        ["broken-step", 32, "step 3: exists: true, but the step has no doc. Name its page in doc:, or set exists: false."],
+        ["broken-step", 42, "step 4: exists: partial, but the step has no doc. Name its page in doc:, or set exists: false."],
+      ]);
+    });
+
+    it("stale-step: exists: false on a page that exists, on the exists: line, a warning", () => {
+      expect(stepFindings(stepped([step(6, { doc: "docs/page.md", exists: false })]))).toEqual([
+        expect.objectContaining({
+          rule: "stale-step",
+          severity: "warning",
+          message: 'step 6: exists: false, but doc "docs/page.md" names a page. Set exists: true or partial, or drop exists:.',
+          key: 'step 6: exists: false, but doc "docs/page.md" names a page.',
+          line: 62,
+        }),
+      ]);
+    });
+
+    it("missing-journey: a step's page that does not name the journey, on the doc: line, a warning", () => {
+      expect(stepFindings(stepped([step(4, { doc: "docs/reference.md" })]))).toEqual([
+        expect.objectContaining({
+          rule: "missing-journey",
+          severity: "warning",
+          message:
+            "step 4: docs/reference.md does not name \"m1\" in journeys:. Add it to that page's journeys:, or point the step at a page that does.",
+          key: 'step 4: docs/reference.md does not name "m1" in journeys:.',
+          line: 41,
+        }),
+      ]);
+    });
+
+    it("missing-journey names the page by the path it is given, and fires on a partial page too", () => {
+      const set = stepped([step(2, { doc: "docs/reference.md#x", exists: "partial" })]);
+      const [finding] = stepFindings(set, { pagePath: (page) => `./${page}` });
+      expect(finding?.message).toBe(
+        "step 2: ./docs/reference.md does not name \"m1\" in journeys:. Add it to that page's journeys:, or point the step at a page that does.",
+      );
+    });
+
+    it("unwritten-step: exists: false or no doc, on the step's first line, a notice with no advice", () => {
+      const found = stepFindings(stepped([step(7, { doc: "/site/tutorial/", exists: false }), step(8, { stage: "Write it" })]));
+      expect(found.map((f) => [f.rule, f.severity, f.line, f.message, f.key])).toEqual([
+        ["unwritten-step", "notice", 70, 'step 7: doc "/site/tutorial/" names a page that does not exist.', undefined],
+        ["unwritten-step", "notice", 80, "step 8: no page carries this stage.", undefined],
+      ]);
+    });
+
+    it("leaves an unchecked step alone", () => {
+      expect(stepFindings(stepped([step(9, { doc: "https://example.com/blog/" })]))).toEqual([]);
+    });
+
+    it.each(["draft", "archived"])("exempts every step of a %s journey", (lifecycle) => {
+      const set = stepped([step(1, { doc: "docs/gide.md" }), step(2, { doc: "docs/reference.md" }), step(3, {})], lifecycle);
+      expect(stepFindings(set)).toEqual([]);
+    });
+
+    it("honours a severity override on each step rule, and off drops it", () => {
+      const set = stepped([
+        step(1, { doc: "docs/gide.md" }),
+        step(2, { doc: "docs/page.md", exists: false }),
+        step(3, { doc: "docs/reference.md" }),
+        step(4, {}),
+      ]);
+      const severity = {
+        "broken-step": "warning",
+        "stale-step": "error",
+        "missing-journey": "error",
+        "unwritten-step": "off",
+      } as const;
+      expect(stepFindings(set, { severity }).map((f) => [f.rule, f.severity])).toEqual([
+        ["broken-step", "warning"],
+        ["stale-step", "error"],
+        ["missing-journey", "error"],
+      ]);
+    });
   });
 });
 

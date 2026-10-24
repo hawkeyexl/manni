@@ -1,0 +1,11 @@
+A journey says who reads what, in order. Then the pages it points at change, and nobody tells the journey.
+
+New in manni strategy, a journey record can list its steps. Each step is a stage and the page that carries it, as a repo path or a site route.
+
+`manni strategy check` holds each step to its page. Here step 3's page never names the journey back, a warning. Step 4's page is planned and not written yet, a notice. Neither fails CI: exit 0.
+
+Add the journey to the page, and `manni strategy get m1` shows coverage in the journey's order: 3 of 4 served, 1 unwritten.
+
+Real output from a real test fixture. Only the input is staged.
+
+npm i -g @hawkeyexl/manni · manni strategy get <journey>

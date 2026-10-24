@@ -25,6 +25,7 @@ import { beats as graphFormatsBeats, totalFrames as graphFormatsTotalFrames, TYP
 import { beats as findingsBeats, totalFrames as findingsTotalFrames, TYPING_MS as findingsTypingMs } from "./findings/beats";
 import { beats as citeReposBeats, totalFrames as citeReposTotalFrames, TYPING_MS as citeReposTypingMs } from "./cite-repos/beats";
 import { beats as pluginMetadataBeats, totalFrames as pluginMetadataTotalFrames, TYPING_MS as pluginMetadataTypingMs } from "./plugin-metadata/beats";
+import { beats as strategyStepsBeats, totalFrames as strategyStepsTotalFrames, TYPING_MS as strategyStepsTypingMs } from "./strategy-steps/beats";
 import { beats as strategyBeats, totalFrames as strategyTotalFrames, TYPING_MS as strategyTypingMs } from "./strategy/beats";
 import { beats as evidencePinsBeats, totalFrames as evidencePinsTotalFrames, TYPING_MS as evidencePinsTypingMs } from "./evidence-pins/beats";
 import { beats as personasBeats, totalFrames as personasTotalFrames, TYPING_MS as personasTypingMs } from "./personas/beats";
@@ -162,6 +163,16 @@ const DemoEvidencePins: React.FC = () => (
  */
 const DemoPersonas: React.FC = () => (
   <DemoView beats={personasBeats} fontPx={21} linePx={29} cols={82} typingMs={personasTypingMs} ligatures={false} />
+);
+
+/**
+ * strategy-steps-1x1: 19 px / 91 columns for beat 2, derived in media/strategy-steps-1x1.script.md
+ * (media/capture-strategy-steps/cols.mjs). Beat 2 wraps under strategy check's 46-column gutter
+ * (hang), and its Guide URLs break after a "/". Beats 1, 3 and 4 carry their own sizes
+ * (src/strategy-steps/beats.ts). Ligatures off: the record's `---` fences would draw as one rule.
+ */
+const DemoStrategySteps: React.FC = () => (
+  <DemoView beats={strategyStepsBeats} fontPx={19} linePx={27} cols={91} typingMs={strategyStepsTypingMs} ligatures={false} breakAfter="/" />
 );
 
 export const Root: React.FC = () => (
@@ -381,6 +392,14 @@ export const Root: React.FC = () => (
       height={1080}
       fps={FPS}
       durationInFrames={personasTotalFrames}
+    />
+    <Composition
+      id="StrategyStepsDemo"
+      component={DemoStrategySteps}
+      width={1080}
+      height={1080}
+      fps={FPS}
+      durationInFrames={strategyStepsTotalFrames}
     />
   </>
 );

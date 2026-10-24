@@ -274,10 +274,13 @@ docevals:
 
 # The strategy tool reads the `strategy` collection's records and every
 # page's references into them, so it needs no paths. Every journey here has a
-# page, and this keeps it so: a journey cannot land without one.
+# page, and this keeps it so: a journey cannot land without one. A journey's
+# steps resolve their `/manni/...` routes through `graph.routes` below, and
+# every step's page names its journey, which `missing-journey` keeps so.
 strategy:
   severity:
     unserved-journey: error
+    missing-journey: error
 
 # The graph tool over this site. Its own key, its own settings; the metadata
 # tool above never reads them. It declares no document set of its own: the

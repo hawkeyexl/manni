@@ -11,6 +11,10 @@ export const DEFAULT_SEVERITY: Readonly<Record<StrategyRule, StrategySeverity>> 
   "orphan-record": "warning",
   "unserved-journey": "warning",
   "unused-record": "notice",
+  "broken-step": "error",
+  "stale-step": "warning",
+  "missing-journey": "warning",
+  "unwritten-step": "notice",
 };
 
 /** The rules reference, whose sections are anchored by rule name. */
@@ -31,6 +35,11 @@ export const RULE_DESCRIPTIONS: Readonly<Record<StrategyRule, string>> = {
   "unserved-journey":
     "No page names the journey in journeys:. Records do not count, and a draft or archived journey is exempt.",
   "unused-record": "No page and no record names an audience or a persona.",
+  "broken-step":
+    "A step's doc names no page, or a step says exists: true or partial and has no doc. A step with exists: false is exempt.",
+  "stale-step": "A step says exists: false, and its doc names a page.",
+  "missing-journey": "A step's page does not name the journey in journeys:.",
+  "unwritten-step": "A step says exists: false, or has no doc.",
 };
 
 export function guidanceFor(rule: StrategyRule): Guidance {
