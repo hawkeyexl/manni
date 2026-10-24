@@ -2,8 +2,9 @@
 //
 // Where the project sets up `collections:`, it runs `manni graph serve
 // --publish` with stdio passed straight through, so manni speaks MCP to the
-// client. With `graph:` set too, manni publishes into the project's own graph
-// output. Without it, into a directory of the plugin's data kept per project.
+// client. It publishes into a directory of the plugin's data kept per
+// project, never beside `graph.out`, so a session's graph stays out of the
+// folder a site deploys (proposal 0110).
 //
 // Elsewhere there is no graph to serve, and it answers MCP itself with no
 // tools, so the client sees a server that is up and empty, not one that
@@ -27,7 +28,6 @@ export function serverPlan(config, projectDir, env) {
   // reads as unset. Parse the YAML if one ever turns up.
   if (config === undefined || !/^collections\s*:/m.test(config)) return { kind: "none" };
   const args = ["graph", "serve", "--publish"];
-  if (/^graph\s*:/m.test(config)) return { kind: "serve", args };
   const hash = createHash("sha256").update(projectDir).digest("hex").slice(0, 16);
   const base = env.CLAUDE_PLUGIN_DATA ? env.CLAUDE_PLUGIN_DATA : join(tmpdir(), "manni");
   return { kind: "serve", args: [...args, "-i", join(base, "graph", hash)] };

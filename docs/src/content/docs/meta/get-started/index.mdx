@@ -30,7 +30,7 @@ sample-questions:
 graph:
   label: Get started
   type: learning
-last-updated: 2026-10-20
+last-updated: 2026-10-23
 tags:
   - quickstart
   - installation
@@ -84,6 +84,14 @@ If that prints `v24` or higher, you're ready.
        ```
      </TabItem>
    </Tabs>
+
+   To confirm it worked, print the version. A global install answers to
+   `manni`, and `npx` runs the same check without one.
+
+   ```sh
+   manni --version
+   npx @hawkeyexl/manni --version
+   ```
 
    <Aside type="tip">
      The rest of this page writes commands as `manni meta …`. If you didn't install
@@ -226,6 +234,7 @@ whole repo, add a config file and a schema, then wire it into CI.
     Run with `npx doc-detective`. Config: .doc-detective.json. */}
 {/* test {"testId":"get-started","description":"Install/validate flow and result reading, run against the local CLI build and committed fixtures."} */}
 {/* step {"description":"Node.js prerequisite: `node --version` reports a version (page requires Node 24+).","runShell":{"command":"node --version","exitCodes":[0],"stdio":"/v\\d+\\./"}} */}
+{/* step {"description":"Confirm the install: `--version` prints a version number.","runShell":{"command":"npx @hawkeyexl/manni --version","exitCodes":[0],"stdio":"/\\d+\\.\\d+\\.\\d+/"}} */}
 {/* step {"description":"Validate a passing file: a fixture satisfying OKF exits 0 with a green summary.","runShell":{"command":"npx @hawkeyexl/manni meta validate test/fixtures/valid.md","exitCodes":[0],"stdio":"1 passed"}} */}
 {/* step {"description":"Read a passing result: the summary line format the page documents.","runShell":{"command":"npx @hawkeyexl/manni meta validate test/fixtures/valid.md","exitCodes":[0],"stdio":"1 file checked, 1 passed, 0 failed, 0 errors"}} */}
 {/* step {"description":"Read a failing result: a file missing `type` exits 1 and names the missing property.","runShell":{"command":"npx @hawkeyexl/manni meta validate test/fixtures/missing-type.md","exitCodes":[1],"stdio":"must have required property 'type'"}} */}

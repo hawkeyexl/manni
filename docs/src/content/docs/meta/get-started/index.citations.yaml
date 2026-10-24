@@ -26,7 +26,7 @@ docs/src/content/docs/meta/get-started/index.mdx:
         commit-sha: 1f2128e838c0dbefac9878def5e544ab59058e13
     - id: summary-errors-total
       claim:
-        lines: 140
+        lines: 148
         integrity: sha256-d22c8a9368acdffcc63703e0573c7237392ee0273cc962117fabcaa15a284299
       source:
         file: src/meta/commands/validate.ts
@@ -35,7 +35,7 @@ docs/src/content/docs/meta/get-started/index.mdx:
         commit-sha: cb74827009894c38f8646504ae9eb4a2745761a9
     - id: summary-failed-is-files-with-errors
       claim:
-        lines: 139
+        lines: 147
         integrity: sha256-f8625c6402b96c857a37ca80f2e9dfd31049c6f8a6a793979758002996df5682
       source:
         file: src/meta/commands/validate.ts
@@ -44,7 +44,7 @@ docs/src/content/docs/meta/get-started/index.mdx:
         commit-sha: cb74827009894c38f8646504ae9eb4a2745761a9
     - id: summary-files-is-resolved-count
       claim:
-        lines: 137
+        lines: 145
         integrity: sha256-f49b1c3b26c1892324eb807d699467ba2b1932227ef03d4df53fac6d84ef6eca
       source:
         file: src/meta/commands/validate.ts
@@ -61,7 +61,7 @@ docs/src/content/docs/meta/get-started/index.mdx:
         commit-sha: cb74827009894c38f8646504ae9eb4a2745761a9
     - id: body-never-inspected
       claim:
-        lines: 122-123
+        lines: 130-131
         integrity: sha256-f9de5160c76d144d93d5da1c20da3da277410b9bb67c7f765c09247bc5eaa112
       source:
         file: src/meta/commands/validate.ts
@@ -86,7 +86,7 @@ docs/src/content/docs/meta/get-started/index.mdx:
         commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
     - id: okf-requires-type-field
       claim:
-        lines: 54
+        lines: 62
         integrity: sha256-7f840b6b8b1fb1966635550577c3b0b38295a429e6e6c35b3d7f7c9755a5f1da
       source:
         file: src/meta/schemas/okf/0.1.json

@@ -1,6 +1,6 @@
 # 0085: The `test` domain runs Doc Detective
 
-- **Status:** Proposed
+- **Status:** Implemented (#160); superseded in part by 0104
 - **Serves:** Two people.
   - Devin · D17, "Gate the docs' procedure tests with the same contract". He
     wires Doc Detective into CI today as a step that follows none of the

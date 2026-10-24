@@ -23,6 +23,15 @@ docs/src/content/docs/test/record-last-verified.mdx:
     - "@hawkeyexl"
   created: 2026-10-21
   provenance:
+    - generated-by: Claude Sonnet 5.5
+      lines: 2
+      integrity: sha256-2ad4d7575edc701ab45e372371e21a35426e7d9662e8f50ecfbce66e5c2297ea
     - generated-by: Claude Opus 5.5
-      lines: 2-99
-      integrity: sha256-4c5e2d77bd8838eebd44c334e31df8c9aeaeddf0b9a36a077643f5aeb9f69a52
+      lines: 3-35
+      integrity: sha256-450efac14435a65ce5f22b349bb1f4f6dec0f85b04b4962a3142aa5270f5d5ad
+    - generated-by: Claude Sonnet 5.5
+      lines: 37
+      integrity: sha256-db575923cad527361decc718e608cce0933f97f2492726424e873fc3fef22e5c
+    - generated-by: Claude Opus 5.5
+      lines: 38-99
+      integrity: sha256-0d1dcf2bb7d17a9381a54669d051a05683813f43c64dd0189ba0b7dccd41b99c

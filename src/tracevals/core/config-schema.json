@@ -146,7 +146,7 @@
     "runtime": {
       "type": "object",
       "additionalProperties": false,
-      "description": "Runtime evals: each turn checked against the rules the files that govern the agent declare. Present, even as {}, it puts tracevals in play under Claude Code hooks; absent, tracevals stays out of them.",
+      "description": "Runtime evals: each turn checked against the rules the files that govern the agent declare. Present, even as {}, it puts tracevals in play under Claude Code hooks where MANNI_TRACEVALS_HOOKS is 1. Without it, tracevals stays out of them.",
       "properties": {
         "hook": {
           "type": "object",

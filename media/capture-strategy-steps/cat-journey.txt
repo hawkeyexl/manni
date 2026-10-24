@@ -1,0 +1,16 @@
+---
+type: journey
+id: m1
+title: Stand up metadata validation for my repo
+personas: [maya]
+steps:
+  - stage: Read the guide
+    doc: docs/guide.md
+  - stage: Add the CI step
+    doc: /site/ci/
+  - stage: Look up a flag
+    doc: docs/reference.md
+  - stage: Work through the tutorial
+    doc: /site/tutorial/
+    exists: false
+---

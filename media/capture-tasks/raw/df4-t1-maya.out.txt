@@ -1,0 +1,45 @@
+t1 · Fix a failing metadata check fast · as maya
+  start     docs/src/content/docs/meta/fix/index.mdx
+  docs      meta/fix/index.mdx
+  changed   docs/install.md
+  6 turns · 0m 28s
+  PASS success               docs/content-strategy/journeys/t1.md:9
+  PASS check-passes          docs/content-strategy/journeys/t1.md:12
+  PASS description-added     docs/content-strategy/journeys/t1.md:17
+  PASS confirmed-locally     docs/content-strategy/journeys/t1.md:22
+  PASS followed-the-docs     docs/content-strategy/journeys/t1.md:4
+  Account
+    Done. The check passes, and the only change is the missing field.
+
+    **What I did:**
+    - Ran `npx @hawkeyexl/manni meta validate docs/install.md` and got the
+    same error as CI (exit 1).
+    - Added one line to the frontmatter in `docs/install.md`: `description:
+    Install the widget by running its installer.`
+    - Ran `npx @hawkeyexl/manni meta validate` with no path from the repo
+    root, the "run what CI runs" form. Result: `1 file checked, 1 passed, 0
+    failed, 0 errors`, exit 0.
+
+    **What helped:** The "fastest path" tip at the top was right. My error
+    matched "Missing a required field" word for word, and the diff example
+    showed exactly where the line goes. "Decode the error line" explained why
+    it said `(root)` and `(line 1)`, so I didn't hunt for a line that doesn't
+    exist. The schema hint in the error ("One full non-empty sentence saying
+    what the page is for") told me what kind of value to write.
+
+    **What slowed me down a little:**
+    - The example in the "Missing a required field" section is about `type`
+    and the OKF schema, but my error was about `description` under
+    `manni:core:1.0.0`. It still worked, but it took a second to be sure. The
+    "No frontmatter at all" example does show the exact `description` error,
+    so linking to it would help.
+    - The "Let manni meta draft the fix" section is tempting, but it sends the
+    page off the machine and adds a `meta-provenance` entry. That would have
+    broken "only change the missing field." For one field it's quicker to
+    write it by hand, and the page could say so.
+    - Small thing: the `fill` section says malformed values and missing
+    schemas "are the setup problems in the next section," but the next section
+    is about exit codes.
+  trace     .manni/test/tasks/20261023T151620Z-t1-maya/trace.jsonl
+
+1 run: 1 passed

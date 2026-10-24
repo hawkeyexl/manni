@@ -1,0 +1,57 @@
+A page read names the records the page names, demo video transcript (silent video; text describes what is on screen)
+
+Frame: 1080x1080, 30 fps, 43.3 s. Every terminal line is real output, run at the root of the
+manni repository against its own docs pages and strategy records, by
+media/plugin-records/capture/capture.sh. `manni` is this branch's built CLI. `read-page` builds
+the PostToolUse envelope Claude Code sends after a Read and pipes it into the plugin's real hook,
+plugin/manni/hooks/page-metadata.mjs, then prints the context the hook returns.
+
+[0:00-0:07] Title: Ids, and nothing more (1 / 4)
+$ head -4 docs/src/content/docs/cite/ci/stale-windows.meta.yaml
+docs/src/content/docs/cite/ci/stale-windows.mdx:
+  personas:
+    - devin
+    - maya
+Highlighted rows: lines containing "personas:", "- devin", "- maya"
+Caption: The page's sidecar names its personas by id. Nothing in it says who devin or maya is.
+
+[0:07-0:17] Title: manni meta get personas (2 / 4)
+$ manni meta get personas docs/src/content/docs/cite/ci/stale-windows.mdx
+Using manni.config.yaml (.)
+docs/src/content/docs/cite/ci/stale-windows.mdx: personas=["devin","maya"] (asserted)
+docs/src/content/docs/cite/ci/stale-windows.mdx: record persona devin docs/content-strategy/personas/devin.md
+docs/src/content/docs/cite/ci/stale-windows.mdx: record persona maya docs/content-strategy/personas/maya.md
+Highlighted rows: lines containing "record persona"
+Caption: meta get now prints a record line for each persona, with the file to read. No new flag.
+
+[0:17-0:28] Title: What a Read hands the agent (3 / 4)
+$ read-page docs/src/content/docs/cite/ci/stale-windows.mdx | cut -c -500
+Metadata for docs/src/content/docs/cite/ci/stale-windows.mdx, from the page and its sidecars:
+{"title":"Measure how long pins stood stale","description":"Run manni cite history from a scheduled job to measure how long each citation stood stale, which releases shipped it, and the total as one number for a dashboard.","type":"how-to","id":"cite-ci-stale-windows","keywords":["cite history","stale window","releases","scheduled job","full history"],"language":"en","audiences":["ci-engineers","docs-engineers"],"lifecycle":"published","personas":["devin","maya"],"journeys":["d18","m5"],"intent"
+The page names these records. Read a record's file for its details, or run manni strategy get <id>, which also lists the pages that name it:
+audience ci-engineers docs/content-strategy/audiences/ci-engineers.md
+audience docs-engineers docs/content-strategy/audiences/docs-engineers.md
+persona devin docs/content-strategy/personas/devin.md
+persona maya docs/content-strategy/personas/maya.md
+journey d18 docs/content-strategy/journeys/d18.md
+journey m5 docs/content-strategy/journeys/m5.md
+Highlighted rows: lines containing "docs/content-strategy/"
+Caption: Key fields first, then one short line per record. The agent gets references, not the records.
+
+[0:28-0:43] Title: A huge page fits the limit (4 / 4)
+$ read-page docs/src/content/docs/cite/reference/cli.mdx > /tmp/reply.txt
+$ wc -c /tmp/reply.txt
+3311 /tmp/reply.txt
+$ tail -1 /tmp/reply.txt
+This leaves out citations and provenance to stay under Claude Code's limit of 10,000 characters. manni meta get citations,provenance --no-derived docs/src/content/docs/cite/reference/cli.mdx prints them.
+Highlighted rows: lines containing "3311", "This leaves out"
+Caption: The reply, 3,311 characters, stays under Claude Code's limit of 10,000 and names what it left out.
+
+Beat 3: `cut -c -500` keeps each line of the reply to 500 characters, so the page JSON stops
+after its key fields. The whole reply, as read-page prints it, is 2,543 characters (media/plugin-records/capture/read-whole.txt).
+
+Beat 4: the cite CLI reference stores 59,338 characters of metadata as JSON
+(media/plugin-records/capture/big-values-length.txt). The reply holds every key field and 14
+references, and leaves out citations and provenance.
+
+Colour: the only colour in the terminal is the dim file prefix and "(asserted)" in beat 2's output.

@@ -1,0 +1,1250 @@
+# manni graph shapes 1.3.0, the published SHACL contract for graphs emitted
+# by `manni graph build`. Consumed by `manni graph check` (and the `manni graph fill`
+# guardrail).
+#
+# 1.3.0 admits the content strategy's records (proposal 0110). It is MINOR,
+# because a graph that used to fail may now pass, and none that passed fails:
+#
+#   - schema:Audience, schema:PeopleAudience and graph:Journey are new classes,
+#     one node per audience, persona and journey record. Each carries an
+#     optional dcterms:title. A persona may name its audience with
+#     dcterms:isPartOf, and a journey its personas with schema:audience.
+#   - Document learns schema:audience, an audience or a persona the page
+#     serves, and dcterms:isPartOf, a journey the page serves.
+#   - foaf:primaryTopic may point at an audience, a persona or a journey as
+#     well as a concept, because a record's Document is about its record.
+#   - The shapes namespace moves with the version: dsh: is now
+#     https://hawkeyexl.github.io/manni/graph/shapes/1.3.0#.
+#
+# 1.2.0 admits inline `meta` statements and verification (proposal 0099). It
+# is MINOR, because a graph that used to fail may now pass, and none that
+# passed fails:
+#
+#   - graph:Block is a new class, one per block statement. It carries
+#     graph:lines (`N` or `N-M`), an optional graph:pin (`sha256-` and 64
+#     lowercase hex characters) and graph:pinStatus (current, changed or
+#     unpinned), plus every field a statement derives.
+#   - A Section and a Block admit the Document's front-matter predicates, from
+#     dcterms:description to prov:wasGeneratedBy, because a statement's fields
+#     derive through the same mapping as front matter. A Block also admits
+#     dcterms:title. schema:workTranslation may point at a Section or a Block.
+#   - graph:Verification is a new class, one per `verified-by` entry. It needs
+#     a graph:tool, and may carry graph:check, graph:version and graph:passed,
+#     a date or a dateTime.
+#   - Document, Section and Block learn graph:lastVerified, a date or a
+#     dateTime, and graph:verifiedBy.
+#   - dcterms:hasPart on a Document or a Section may point at a Block as well
+#     as a Section.
+#   - The shapes namespace moves with the version: dsh: is now
+#     https://hawkeyexl.github.io/manni/graph/shapes/1.2.0#.
+#
+# 1.1.1 lets the shapes speak to the page's author (proposal 0089). It is a
+# PATCH, because no constraint changes and every graph validates as it did
+# under 1.1.0:
+#
+#   - An owl:Ontology header names the file. Its dcterms:identifier,
+#     manni:graph-shapes:1.1.1, is the id a finding's guidance carries, and its
+#     rdfs:seeAlso is the guide that guidance links.
+#   - Every named shape carries sh:description, written for the person who
+#     edits the page.
+#   - Each shape an author can trip carries sh:message, which names the
+#     frontmatter key and says what to change. The closed node shapes carry a
+#     message that sends the finding to whoever maintains the shapes.
+#   - Each property shape an author feeds carries sh:name, the frontmatter key
+#     behind it. `manni graph shapes show` prints it and builds a skeleton from it.
+#   - The prefLabel collision's message changes with the rest. The check core
+#     reports the untagged case in its own words.
+#   - The shapes namespace moves with the version: dsh: is now
+#     https://hawkeyexl.github.io/manni/graph/shapes/1.1.1#.
+#
+# 1.1.0 admits one concept scheme fed by the termbase (proposal 0086 §1). It is
+# MINOR, because a graph that used to fail may now pass, and none that passed
+# fails:
+#
+#   - Concept learns skos:hiddenLabel, skos:definition, skos:scopeNote and
+#     skos:topConceptOf. A term's concept carries the first three, and every
+#     concept with no broader concept is a top concept of the scheme.
+#   - ConceptScheme learns skos:hasTopConcept, the other direction.
+#   - Concept learns skos:notation and the five mapping properties,
+#     skos:exactMatch, closeMatch, broadMatch, narrowMatch and relatedMatch,
+#     each an IRI. They come from a term's notation and match keys. A mapping
+#     into the scheme itself is a check-core finding, because SHACL Core cannot
+#     tell a concept of this scheme from one elsewhere without naming the
+#     scheme.
+#   - A term in several languages carries one prefLabel per language, so the
+#     prefLabel collision is sh:uniqueLang now rather than sh:maxCount 1. Two
+#     untagged prefLabels on one concept (one slug, two spellings) are still a
+#     warning, with the same message. SHACL Core cannot say "at most one
+#     untagged value", so graph's check core reports that one.
+#   - The shapes namespace moves with the version: dsh: is now
+#     https://hawkeyexl.github.io/manni/graph/shapes/1.1.0#.
+#   - Document learns graph:sampleQuestion (proposal 0086 §7), a page's
+#     `sample-questions`, each a string or a language-tagged string.
+#
+# 1.0.0 was the first file the three-segment convention in CLAUDE.md bound. It
+# was MAJOR, because a graph that used to validate could fail on the language
+# pattern.
+#
+# 1.0.0 makes language a scope dimension and gives translations a relation
+# (ADR 01037):
+#
+#   - dcterms:language gains a BCP-47 sh:pattern. `lang: English` validated
+#     under 0.7 and does not here. The value is a partition key — scope
+#     filtering, per-language coverage, and the per-locale retrieval artifacts
+#     all group on it — so "a string" is not the contract, any more than it was
+#     for graph:contentHash. A free-text label silently partitions a corpus into
+#     buckets of one.
+#   - Document learns schema:translationOfWork and schema:workTranslation, the
+#     two directions manni graph materializes from one authored `translation-of` key.
+#     Without them the closed shape rejects every translated corpus, which is
+#     the mechanism working, not a bug to route around.
+#
+# There is deliberately no negative-language predicate, and so no sh:disjoint
+# pair as there is for variants and subjects (ADR 01014). A document has one
+# language, which sh:maxCount 1 already says; "not in German" is not a claim an
+# author makes.
+#
+# 0.7 required graph:contentHash on every Document: a lowercase sha256 hex
+# digest of the source file's content (ADR 01036). Required rather than
+# optional because the predicate is unconditional — it is intrinsic like
+# graph:path, not gated behind a derive source — so optional would let a
+# regression that stops emitting it pass `check` in silence. A graph built
+# before 0.7 therefore fails it until rebuilt. There is no older file to pin
+# check.shapes to any more: 0.1 through 0.7 were dockg's published history,
+# which nothing read and which went with that identity (proposal 0051 §7).
+#
+# 0.6 changed no constraint. It existed because the graph: namespace moved to a
+# location that resolves — https://hawkeyexl.github.io/manni/graph/ns# — alongside the
+# vocabulary document that defines every term (ADR 01030). Published shapes
+# are immutable, so a namespace change is a new file rather than an edit. The
+# shapes namespace moves with each version: dsh: is now
+# https://hawkeyexl.github.io/manni/graph/shapes/1.0.0#.
+#
+# 0.5 reified fill provenance (ADR 01015): the graph-fill activity now links to one
+# entry node per filled field via graph:filledFieldEntry, and each entry carries
+# graph:filledField + an optional graph:confidence decimal (replacing the bare
+# graph:filledField literal on the activity). 0.4 added negative scope (ADR
+# 01014); 0.3 added section-level iiRDS typing (ADR 01013); 0.2 added iiRDS
+# Core/Software typing on Documents (ADR 01012).
+#
+# This file is immutable once published: evolve by adding a new version file
+# (shapes-1.3.1.ttl, shapes-1.4.0.ttl), never by editing this one. Every shape has a named IRI — the
+# only anonymous nodes are the sh:ignoredProperties and sh:in lists the SHACL
+# vocabulary requires — so the file diffs cleanly.
+#
+# Severity contract: these three levels map onto the family scale every manni
+# tool speaks (proposal 0051 §2). sh:Violation → error, and errors exit 1;
+# sh:Warning → warning and sh:Info → notice, both reported at exit 0. Each
+# finding also keeps SHACL's own word, as `shaclSeverity`. Cycle detection
+# (skos:broader loops) and broaderTransitive/related disjointness cannot be
+# expressed in core SHACL and are enforced by graph's check core alongside these
+# shapes.
+
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix graph: <https://hawkeyexl.github.io/manni/graph/ns#> .
+@prefix dsh: <https://hawkeyexl.github.io/manni/graph/shapes/1.3.0#> .
+@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+@prefix iirds: <http://iirds.tekom.de/iirds#> .
+@prefix iirdsSft: <http://iirds.tekom.de/iirds/domain/software#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix schema: <https://schema.org/> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+# --- The file ----------------------------------------------------------------
+# What a finding's guidance names: this identifier, and the guide below.
+
+<https://hawkeyexl.github.io/manni/graph/shapes/1.3.0>
+  a owl:Ontology ;
+  dcterms:identifier "manni:graph-shapes:1.3.0" ;
+  dcterms:title "manni graph shapes" ;
+  owl:versionInfo "1.3.0" ;
+  owl:priorVersion <https://hawkeyexl.github.io/manni/graph/shapes/1.2.0> ;
+  rdfs:seeAlso <https://hawkeyexl.github.io/manni/graph/fix/> .
+
+# --- Documents ---------------------------------------------------------------
+# Closed over the full derived predicate set: an unexpected predicate from a
+# new derive source fails loudly (same stance as additionalProperties: false).
+
+dsh:DocumentShape
+  a sh:NodeShape ;
+  sh:description "A page of the docset, as its frontmatter, links, headings and history describe it." ;
+  sh:message "manni wrote a property this shape does not list. The page is not at fault. Report it to whoever maintains the shapes." ;
+  sh:targetClass graph:Document ;
+  sh:closed true ;
+  sh:ignoredProperties ( rdf:type ) ;
+  sh:property
+    dsh:Document-path ,
+    dsh:Document-contentHash ,
+    dsh:Document-title ,
+    dsh:Document-description ,
+    dsh:Document-creator ,
+    dsh:Document-created ,
+    dsh:Document-modified ,
+    dsh:Document-language ,
+    dsh:Document-primaryTopic ,
+    dsh:Document-subject ,
+    dsh:Document-hasPart ,
+    dsh:Document-references ,
+    dsh:Document-brokenLink ,
+    dsh:Document-brokenSectionRef ,
+    dsh:Document-image ,
+    dsh:Document-codeLanguage ,
+    dsh:Document-sampleQuestion ,
+    dsh:Document-topicType ,
+    dsh:Document-appliesToVariant ,
+    dsh:Document-softwareLifecyclePhase ,
+    dsh:Document-softwareSubject ,
+    dsh:Document-notApplicableToVariant ,
+    dsh:Document-notSoftwareSubject ,
+    dsh:Document-translationOfWork ,
+    dsh:Document-workTranslation ,
+    dsh:Document-wasAttributedTo ,
+    dsh:Document-qualifiedAttribution ,
+    dsh:Document-generatedAtTime ,
+    dsh:Document-wasDerivedFrom ,
+    dsh:Document-wasRevisionOf ,
+    dsh:Document-wasGeneratedBy ,
+    dsh:Document-lastVerified ,
+    dsh:Document-verifiedBy ,
+    dsh:Document-audience ,
+    dsh:Document-isPartOf .
+
+dsh:Document-path
+  a sh:PropertyShape ;
+  sh:description "Where the page lives, relative to the docs root. manni writes it." ;
+  sh:path graph:path ;
+  sh:datatype xsd:string ;
+  sh:minCount 1 ;
+  sh:maxCount 1 .
+
+# Pattern-checked, not merely typed: the value is a join key other systems index
+# on, so "a string" is not the contract — 64 lowercase hex characters is.
+dsh:Document-contentHash
+  a sh:PropertyShape ;
+  sh:description "A sha256 digest of the page's source. manni writes it, and other systems join on it." ;
+  sh:path graph:contentHash ;
+  sh:datatype xsd:string ;
+  sh:pattern "^[0-9a-f]{64}$" ;
+  sh:minCount 1 ;
+  sh:maxCount 1 .
+
+dsh:Document-title
+  a sh:PropertyShape ;
+  sh:name "title" ;
+  sh:description "The page's title, from its title key or its first heading." ;
+  sh:path dcterms:title ;
+  sh:maxCount 1 .
+
+dsh:Document-description
+  a sh:PropertyShape ;
+  sh:name "description" ;
+  sh:description "A one-sentence summary of the page. Search results show it under the title." ;
+  sh:path dcterms:description ;
+  sh:maxCount 1 .
+
+# Literal when the provenance derive source is off, agent IRI when it is on —
+# both are valid output, so no nodeKind constraint.
+dsh:Document-creator
+  a sh:PropertyShape ;
+  sh:name "authors" ;
+  sh:description "Who wrote the page, from its authors and its git history." ;
+  sh:path dcterms:creator .
+
+dsh:Document-created
+  a sh:PropertyShape ;
+  sh:name "created" ;
+  sh:description "When the page was first published." ;
+  sh:path dcterms:created ;
+  sh:maxCount 1 .
+
+dsh:Document-modified
+  a sh:PropertyShape ;
+  sh:name "last-updated" ;
+  sh:description "When the page last changed in a way a reader would notice." ;
+  sh:path dcterms:modified ;
+  sh:maxCount 1 .
+
+# Pattern-checked for the same reason graph:contentHash is: the value is a
+# partition key, not prose. The grammar is BCP-47's common shape —
+# language(2-3) + optional script(4) + optional region(2 alpha or 3 digit) +
+# variants — which accepts de, de-DE, zh-Hans, zh-Hans-CN, pt-BR, und, and
+# rejects English and de_DE.
+dsh:Document-language
+  a sh:PropertyShape ;
+  sh:name "lang" ;
+  sh:description "The language the page is written in. Search, filters and per-language indexes group pages by it." ;
+  sh:message "Set `lang` to a language tag such as `de` or `pt-BR`, not a language name." ;
+  sh:path dcterms:language ;
+  sh:datatype xsd:string ;
+  sh:pattern "^[A-Za-z]{2,3}(-[A-Za-z]{4})?(-([A-Za-z]{2}|[0-9]{3}))?(-([A-Za-z0-9]{5,8}|[0-9][A-Za-z0-9]{3}))*$" ;
+  sh:maxCount 1 .
+
+# The two directions of one authored `translation-of` (ADR 01037). No
+# sh:maxCount: a source document has as many translations as the corpus
+# carries, and a translation may itself be the source of another.
+# schema:translationOfWork accepts any IRI because a target outside the corpus
+# is a URL manni graph resolves but does not analyze; schema:workTranslation is only
+# ever minted at a corpus document, so it carries the class constraint.
+dsh:Document-translationOfWork
+  a sh:PropertyShape ;
+  sh:name "translation-of" ;
+  sh:description "The page this one translates. Readers switch between translations through it." ;
+  sh:path schema:translationOfWork ;
+  sh:nodeKind sh:IRI .
+
+dsh:Document-workTranslation
+  a sh:PropertyShape ;
+  sh:description "A page, section or block that translates this one. manni writes it from the other node's translation-of." ;
+  sh:path schema:workTranslation ;
+  sh:nodeKind sh:IRI ;
+  sh:or ( [ sh:class graph:Document ] [ sh:class graph:Section ] [ sh:class graph:Block ] ) .
+
+# A record's Document is about its record (proposal 0110), so the topic may
+# be an audience, a persona or a journey as well as a concept.
+dsh:Document-primaryTopic
+  a sh:PropertyShape ;
+  sh:name "graph.label" ;
+  sh:description "The one concept the page is about, from its graph label or its term, or the strategy record the file holds." ;
+  sh:path foaf:primaryTopic ;
+  sh:nodeKind sh:IRI ;
+  sh:or ( [ sh:class skos:Concept ] [ sh:class schema:Audience ] [ sh:class schema:PeopleAudience ] [ sh:class graph:Journey ] ) ;
+  sh:maxCount 1 .
+
+# The content strategy (proposal 0110). manni writes an edge only to a record
+# in the build, so an id no record declares derives nothing.
+dsh:Document-audience
+  a sh:PropertyShape ;
+  sh:description "An audience or persona the page serves, from its audiences and personas." ;
+  sh:path schema:audience ;
+  sh:nodeKind sh:IRI ;
+  sh:or ( [ sh:class schema:Audience ] [ sh:class schema:PeopleAudience ] ) .
+
+dsh:Document-isPartOf
+  a sh:PropertyShape ;
+  sh:description "A journey the page serves, from its journeys." ;
+  sh:path dcterms:isPartOf ;
+  sh:nodeKind sh:IRI ;
+  sh:class graph:Journey .
+
+# Warning, not Violation: a dcterms:subject pointing at an untyped node is a
+# half-built concept — worth surfacing, but merged external data may
+# legitimately use other subject vocabularies.
+dsh:Document-subject
+  a sh:PropertyShape ;
+  sh:name "concepts" ;
+  sh:description "The concepts the page mentions, from its tags and concepts." ;
+  sh:path dcterms:subject ;
+  sh:nodeKind sh:IRI ;
+  sh:class skos:Concept ;
+  sh:severity sh:Warning .
+
+dsh:Document-hasPart
+  a sh:PropertyShape ;
+  sh:description "The page's sections, from its headings, and the blocks its statements describe before the first heading. manni writes it." ;
+  sh:path dcterms:hasPart ;
+  sh:nodeKind sh:IRI ;
+  sh:or ( [ sh:class graph:Section ] [ sh:class graph:Block ] ) .
+
+# Verification (proposal 0098), on the page from its front matter.
+dsh:Document-lastVerified
+  a sh:PropertyShape ;
+  sh:name "last-verified" ;
+  sh:description "When a check last proved the page." ;
+  sh:message "Set `last-verified` to a date such as 2026-10-21, or a date and time." ;
+  sh:path graph:lastVerified ;
+  sh:maxCount 1 ;
+  sh:or ( [ sh:datatype xsd:date ] [ sh:datatype xsd:dateTime ] ) .
+
+dsh:Document-verifiedBy
+  a sh:PropertyShape ;
+  sh:name "verified-by" ;
+  sh:description "The checks that prove the page, one per verified-by entry." ;
+  sh:path graph:verifiedBy ;
+  sh:nodeKind sh:IRI ;
+  sh:class graph:Verification .
+
+dsh:Document-references
+  a sh:PropertyShape ;
+  sh:description "The pages and URLs the page links to. manni writes it from the body." ;
+  sh:path dcterms:references ;
+  sh:nodeKind sh:IRI .
+
+dsh:Document-brokenLink
+  a sh:PropertyShape ;
+  sh:description "A link in the page that resolves to nothing. manni writes it, and graph stats reports it." ;
+  sh:path graph:brokenLink ;
+  sh:datatype xsd:string .
+
+# A graph.sections key that named no heading (surfaced by stats, gated by --check).
+dsh:Document-brokenSectionRef
+  a sh:PropertyShape ;
+  sh:description "A graph.sections key that names no heading of the page. manni writes it, and graph stats reports it." ;
+  sh:path graph:brokenSectionRef ;
+  sh:datatype xsd:string .
+
+dsh:Document-image
+  a sh:PropertyShape ;
+  sh:description "An image the page shows. manni writes it from the body." ;
+  sh:path schema:image ;
+  sh:nodeKind sh:IRI .
+
+dsh:Document-codeLanguage
+  a sh:PropertyShape ;
+  sh:description "A language the page's code blocks use. manni writes it from the body." ;
+  sh:path graph:codeLanguage ;
+  sh:datatype xsd:string .
+
+# Tagged with the page's language when it declares one, so either datatype.
+dsh:Document-sampleQuestion
+  a sh:PropertyShape ;
+  sh:name "sample-questions" ;
+  sh:description "A question the page should be found for. graph check asks it of the search index." ;
+  sh:path graph:sampleQuestion ;
+  sh:or ( [ sh:datatype xsd:string ] [ sh:datatype rdf:langString ] ) .
+
+# iiRDS Core topic type: exactly the six published Generic* instances.
+dsh:Document-topicType
+  a sh:PropertyShape ;
+  sh:name "graph.type" ;
+  sh:description "The kind of page this is, one of the six iiRDS topic types." ;
+  sh:path iirds:has-topic-type ;
+  sh:nodeKind sh:IRI ;
+  sh:maxCount 1 ;
+  sh:in (
+    iirds:GenericTask
+    iirds:GenericConcept
+    iirds:GenericReference
+    iirds:GenericLearning
+    iirds:GenericTroubleshooting
+    iirds:GenericForm
+  ) .
+
+# iiRDS product/variant applicability: minted iirds:ProductVariant nodes.
+dsh:Document-appliesToVariant
+  a sh:PropertyShape ;
+  sh:name "graph.applies-to" ;
+  sh:description "The product variants the page applies to." ;
+  sh:path iirds:relates-to-product-variant ;
+  sh:nodeKind sh:IRI ;
+  sh:class iirds:ProductVariant .
+
+# iiRDS Software domain — product lifecycle phases (the six published instances).
+dsh:Document-softwareLifecyclePhase
+  a sh:PropertyShape ;
+  sh:name "graph.about-product-lifecycle" ;
+  sh:description "The stages of the product's life the page is about, such as deployment or update." ;
+  sh:path iirds:relates-to-product-lifecycle-phase ;
+  sh:nodeKind sh:IRI ;
+  sh:in (
+    iirdsSft:Administration
+    iirdsSft:Customization
+    iirdsSft:Update
+    iirdsSft:Deployment
+    iirdsSft:Integration
+    iirdsSft:Deinstallation
+  ) .
+
+# iiRDS Software domain — information subjects (the three published instances).
+dsh:Document-softwareSubject
+  a sh:PropertyShape ;
+  sh:name "graph.about-product-aspect" ;
+  sh:description "The aspects of the product the page is about, such as its interface or architecture." ;
+  sh:path iirds:has-subject ;
+  sh:nodeKind sh:IRI ;
+  sh:in (
+    iirdsSft:Architecture
+    iirdsSft:Interface
+    iirdsSft:SystemRequirement
+  ) .
+
+# Negative scope (ADR 01014): disjoint from the positive relation, so a variant
+# or subject asserted as both applicable and not-applicable on one node fails.
+dsh:Document-notApplicableToVariant
+  a sh:PropertyShape ;
+  sh:name "graph.not-applicable-to" ;
+  sh:description "The product variants the page does not apply to. A variant cannot be in both lists." ;
+  sh:message "The page lists a variant in both `applies-to` and `not-applicable-to`. Keep it only in the one that is true." ;
+  sh:path graph:notApplicableToVariant ;
+  sh:nodeKind sh:IRI ;
+  sh:class iirds:ProductVariant ;
+  sh:disjoint iirds:relates-to-product-variant .
+
+dsh:Document-notSoftwareSubject
+  a sh:PropertyShape ;
+  sh:name "graph.not-about-product-aspect" ;
+  sh:description "The product aspects the page is not about. An aspect cannot be in both lists." ;
+  sh:message "The page lists an aspect in both `about-product-aspect` and `not-about-product-aspect`. Keep it only in the one that is true." ;
+  sh:path graph:notSoftwareSubject ;
+  sh:nodeKind sh:IRI ;
+  sh:disjoint iirds:has-subject ;
+  sh:in (
+    iirdsSft:Architecture
+    iirdsSft:Interface
+    iirdsSft:SystemRequirement
+  ) .
+
+dsh:Document-wasAttributedTo
+  a sh:PropertyShape ;
+  sh:description "The people and tools credited with the page. manni writes it from its authors and git history." ;
+  sh:path prov:wasAttributedTo ;
+  sh:nodeKind sh:IRI .
+
+dsh:Document-qualifiedAttribution
+  a sh:PropertyShape ;
+  sh:description "The role each credited author played. manni writes it." ;
+  sh:path prov:qualifiedAttribution ;
+  sh:nodeKind sh:IRI ;
+  sh:class prov:Attribution .
+
+dsh:Document-generatedAtTime
+  a sh:PropertyShape ;
+  sh:description "When the page was first written. manni writes it from created or git history." ;
+  sh:path prov:generatedAtTime ;
+  sh:maxCount 1 .
+
+dsh:Document-wasDerivedFrom
+  a sh:PropertyShape ;
+  sh:name "graph.derived-from" ;
+  sh:description "The pages or sources this page is derived from. A person writes it, never a model." ;
+  sh:path prov:wasDerivedFrom ;
+  sh:nodeKind sh:IRI .
+
+dsh:Document-wasRevisionOf
+  a sh:PropertyShape ;
+  sh:name "graph.revision-of" ;
+  sh:description "The page this one replaces, from graph.revision-of, supersedes or a git rename." ;
+  sh:path prov:wasRevisionOf ;
+  sh:nodeKind sh:IRI .
+
+dsh:Document-wasGeneratedBy
+  a sh:PropertyShape ;
+  sh:description "The models that wrote part of the page. manni writes it from the page's provenance entries." ;
+  sh:path prov:wasGeneratedBy ;
+  sh:nodeKind sh:IRI ;
+  sh:class prov:Activity .
+
+# --- Product variants --------------------------------------------------------
+# Minted from graph.applies-to. manni graph references iiRDS ProductVariant as a class
+# but only labels the node — the iiRDS vocabulary itself is never re-emitted.
+
+dsh:ProductVariantShape
+  a sh:NodeShape ;
+  sh:description "A product variant that pages name in applies-to or not-applicable-to." ;
+  sh:message "manni wrote a property this shape does not list. The page is not at fault. Report it to whoever maintains the shapes." ;
+  sh:targetClass iirds:ProductVariant ;
+  sh:closed true ;
+  sh:ignoredProperties ( rdf:type ) ;
+  sh:property dsh:ProductVariant-title .
+
+dsh:ProductVariant-title
+  a sh:PropertyShape ;
+  sh:name "graph.applies-to" ;
+  sh:description "The variant's name, as pages spell it in applies-to and not-applicable-to." ;
+  sh:message "Pages spell this variant two ways in `applies-to` or `not-applicable-to`. Use one spelling on every page." ;
+  sh:path dcterms:title ;
+  sh:minCount 1 ;
+  sh:maxCount 1 .
+
+# --- Sections ----------------------------------------------------------------
+
+dsh:SectionShape
+  a sh:NodeShape ;
+  sh:description "A heading of a page, typed through graph.sections or a meta statement on the heading." ;
+  sh:message "manni wrote a property this shape does not list. The page is not at fault. Report it to whoever maintains the shapes." ;
+  sh:targetClass graph:Section ;
+  sh:closed true ;
+  sh:ignoredProperties ( rdf:type ) ;
+  sh:property
+    dsh:Section-title ,
+    dsh:Section-level ,
+    dsh:Section-order ,
+    dsh:Section-hasPart ,
+    dsh:Section-subject ,
+    dsh:Section-topicType ,
+    dsh:Section-appliesToVariant ,
+    dsh:Section-softwareLifecyclePhase ,
+    dsh:Section-softwareSubject ,
+    dsh:Section-notApplicableToVariant ,
+    dsh:Section-notSoftwareSubject ,
+    dsh:Section-lastVerified ,
+    dsh:Section-verifiedBy ,
+    dsh:Document-description ,
+    dsh:Document-creator ,
+    dsh:Document-created ,
+    dsh:Document-modified ,
+    dsh:Document-language ,
+    dsh:Document-primaryTopic ,
+    dsh:Document-sampleQuestion ,
+    dsh:Document-translationOfWork ,
+    dsh:Document-wasAttributedTo ,
+    dsh:Document-qualifiedAttribution ,
+    dsh:Document-generatedAtTime ,
+    dsh:Document-wasDerivedFrom ,
+    dsh:Document-wasRevisionOf ,
+    dsh:Document-wasGeneratedBy .
+
+dsh:Section-title
+  a sh:PropertyShape ;
+  sh:description "The section's heading text. manni writes it." ;
+  sh:path dcterms:title ;
+  sh:minCount 1 ;
+  sh:maxCount 1 .
+
+dsh:Section-level
+  a sh:PropertyShape ;
+  sh:description "The heading level, 1 to 6. manni writes it." ;
+  sh:path graph:level ;
+  sh:datatype xsd:integer ;
+  sh:minCount 1 ;
+  sh:maxCount 1 .
+
+dsh:Section-order
+  a sh:PropertyShape ;
+  sh:description "Where the section sits in the page. manni writes it." ;
+  sh:path graph:order ;
+  sh:datatype xsd:integer ;
+  sh:minCount 1 ;
+  sh:maxCount 1 .
+
+dsh:Section-hasPart
+  a sh:PropertyShape ;
+  sh:description "The sections nested under this one, and the blocks its statements describe. manni writes it." ;
+  sh:path dcterms:hasPart ;
+  sh:nodeKind sh:IRI ;
+  sh:or ( [ sh:class graph:Section ] [ sh:class graph:Block ] ) .
+
+# Verification (proposal 0098), on a section from its heading statement.
+dsh:Section-lastVerified
+  a sh:PropertyShape ;
+  sh:name "last-verified" ;
+  sh:description "When a check last proved the section." ;
+  sh:message "Set `last-verified` in the heading's meta statement to a date such as 2026-10-21, or a date and time." ;
+  sh:path graph:lastVerified ;
+  sh:maxCount 1 ;
+  sh:or ( [ sh:datatype xsd:date ] [ sh:datatype xsd:dateTime ] ) .
+
+dsh:Section-verifiedBy
+  a sh:PropertyShape ;
+  sh:name "verified-by" ;
+  sh:description "The checks that prove the section, one per verified-by entry." ;
+  sh:path graph:verifiedBy ;
+  sh:nodeKind sh:IRI ;
+  sh:class graph:Verification .
+
+# Section-level iiRDS typing (ADR 01013) — the same constraints the Document
+# shape carries for these predicates.
+
+# Warning, not Violation, exactly as Document-subject: a subject pointing at an
+# untyped node is a half-built concept, and merged data may use other schemes.
+dsh:Section-subject
+  a sh:PropertyShape ;
+  sh:name "graph.sections.<heading-slug>.concepts" ;
+  sh:description "The concepts the section mentions." ;
+  sh:path dcterms:subject ;
+  sh:nodeKind sh:IRI ;
+  sh:class skos:Concept ;
+  sh:severity sh:Warning .
+
+dsh:Section-topicType
+  a sh:PropertyShape ;
+  sh:name "graph.sections.<heading-slug>.type" ;
+  sh:description "The kind of section this is, one of the six iiRDS topic types." ;
+  sh:path iirds:has-topic-type ;
+  sh:nodeKind sh:IRI ;
+  sh:maxCount 1 ;
+  sh:in (
+    iirds:GenericTask
+    iirds:GenericConcept
+    iirds:GenericReference
+    iirds:GenericLearning
+    iirds:GenericTroubleshooting
+    iirds:GenericForm
+  ) .
+
+dsh:Section-appliesToVariant
+  a sh:PropertyShape ;
+  sh:name "graph.sections.<heading-slug>.applies-to" ;
+  sh:description "The product variants the section applies to." ;
+  sh:path iirds:relates-to-product-variant ;
+  sh:nodeKind sh:IRI ;
+  sh:class iirds:ProductVariant .
+
+dsh:Section-softwareLifecyclePhase
+  a sh:PropertyShape ;
+  sh:name "graph.sections.<heading-slug>.about-product-lifecycle" ;
+  sh:description "The stages of the product's life the section is about." ;
+  sh:path iirds:relates-to-product-lifecycle-phase ;
+  sh:nodeKind sh:IRI ;
+  sh:in (
+    iirdsSft:Administration
+    iirdsSft:Customization
+    iirdsSft:Update
+    iirdsSft:Deployment
+    iirdsSft:Integration
+    iirdsSft:Deinstallation
+  ) .
+
+dsh:Section-softwareSubject
+  a sh:PropertyShape ;
+  sh:name "graph.sections.<heading-slug>.about-product-aspect" ;
+  sh:description "The aspects of the product the section is about." ;
+  sh:path iirds:has-subject ;
+  sh:nodeKind sh:IRI ;
+  sh:in (
+    iirdsSft:Architecture
+    iirdsSft:Interface
+    iirdsSft:SystemRequirement
+  ) .
+
+# Section-level negative scope (ADR 01014), disjoint from the positive relation.
+dsh:Section-notApplicableToVariant
+  a sh:PropertyShape ;
+  sh:name "graph.sections.<heading-slug>.not-applicable-to" ;
+  sh:description "The product variants the section does not apply to. A variant cannot be in both lists." ;
+  sh:message "A section in `graph.sections` lists a variant in both `applies-to` and `not-applicable-to`. Keep it only in the one that is true." ;
+  sh:path graph:notApplicableToVariant ;
+  sh:nodeKind sh:IRI ;
+  sh:class iirds:ProductVariant ;
+  sh:disjoint iirds:relates-to-product-variant .
+
+dsh:Section-notSoftwareSubject
+  a sh:PropertyShape ;
+  sh:name "graph.sections.<heading-slug>.not-about-product-aspect" ;
+  sh:description "The product aspects the section is not about. An aspect cannot be in both lists." ;
+  sh:message "A section in `graph.sections` lists an aspect in both `about-product-aspect` and `not-about-product-aspect`. Keep it only in the one that is true." ;
+  sh:path graph:notSoftwareSubject ;
+  sh:nodeKind sh:IRI ;
+  sh:disjoint iirds:has-subject ;
+  sh:in (
+    iirdsSft:Architecture
+    iirdsSft:Interface
+    iirdsSft:SystemRequirement
+  ) .
+
+# --- Blocks ------------------------------------------------------------------
+# One per inline `meta` statement that does not sit on a heading (proposal
+# 0099). Its fields derive through the same mapping as the page's front
+# matter, so the Document's property shapes serve.
+
+dsh:BlockShape
+  a sh:NodeShape ;
+  sh:description "A paragraph, list or element that an inline meta statement describes." ;
+  sh:message "manni wrote a property this shape does not list. The page is not at fault. Report it to whoever maintains the shapes." ;
+  sh:targetClass graph:Block ;
+  sh:closed true ;
+  sh:ignoredProperties ( rdf:type ) ;
+  sh:property
+    dsh:Block-lines ,
+    dsh:Block-pin ,
+    dsh:Block-pinStatus ,
+    dsh:Block-lastVerified ,
+    dsh:Block-verifiedBy ,
+    dsh:Document-title ,
+    dsh:Document-subject ,
+    dsh:Document-topicType ,
+    dsh:Document-appliesToVariant ,
+    dsh:Document-softwareLifecyclePhase ,
+    dsh:Document-softwareSubject ,
+    dsh:Document-notApplicableToVariant ,
+    dsh:Document-notSoftwareSubject ,
+    dsh:Document-description ,
+    dsh:Document-creator ,
+    dsh:Document-created ,
+    dsh:Document-modified ,
+    dsh:Document-language ,
+    dsh:Document-primaryTopic ,
+    dsh:Document-sampleQuestion ,
+    dsh:Document-translationOfWork ,
+    dsh:Document-wasAttributedTo ,
+    dsh:Document-qualifiedAttribution ,
+    dsh:Document-generatedAtTime ,
+    dsh:Document-wasDerivedFrom ,
+    dsh:Document-wasRevisionOf ,
+    dsh:Document-wasGeneratedBy .
+
+dsh:Block-lines
+  a sh:PropertyShape ;
+  sh:description "The file lines the statement anchors, such as 53-54. manni writes it." ;
+  sh:path graph:lines ;
+  sh:datatype xsd:string ;
+  sh:pattern "^[1-9][0-9]*(-[1-9][0-9]*)?$" ;
+  sh:minCount 1 ;
+  sh:maxCount 1 .
+
+dsh:Block-pin
+  a sh:PropertyShape ;
+  sh:description "The statement's pin, a sha256 digest of the lines it anchors." ;
+  sh:message "Remove the statement's pin and run manni meta derive to pin it again." ;
+  sh:path graph:pin ;
+  sh:datatype xsd:string ;
+  sh:pattern "^sha256-[0-9a-f]{64}$" ;
+  sh:maxCount 1 .
+
+dsh:Block-pinStatus
+  a sh:PropertyShape ;
+  sh:description "Whether the pin still matches its lines: current, changed or unpinned. manni writes it." ;
+  sh:path graph:pinStatus ;
+  sh:datatype xsd:string ;
+  sh:in ( "current" "changed" "unpinned" ) ;
+  sh:minCount 1 ;
+  sh:maxCount 1 .
+
+dsh:Block-lastVerified
+  a sh:PropertyShape ;
+  sh:name "last-verified" ;
+  sh:description "When a check last proved the block." ;
+  sh:message "Set `last-verified` in the block's meta statement to a date such as 2026-10-21, or a date and time." ;
+  sh:path graph:lastVerified ;
+  sh:maxCount 1 ;
+  sh:or ( [ sh:datatype xsd:date ] [ sh:datatype xsd:dateTime ] ) .
+
+dsh:Block-verifiedBy
+  a sh:PropertyShape ;
+  sh:name "verified-by" ;
+  sh:description "The checks that prove the block, one per verified-by entry." ;
+  sh:path graph:verifiedBy ;
+  sh:nodeKind sh:IRI ;
+  sh:class graph:Verification .
+
+# --- Verifications -----------------------------------------------------------
+# One per `verified-by` entry, on a Document, a Section or a Block.
+
+dsh:VerificationShape
+  a sh:NodeShape ;
+  sh:description "One verified-by entry: a tool, and the check it runs." ;
+  sh:message "manni wrote a property this shape does not list. The page is not at fault. Report it to whoever maintains the shapes." ;
+  sh:targetClass graph:Verification ;
+  sh:closed true ;
+  sh:ignoredProperties ( rdf:type ) ;
+  sh:property
+    dsh:Verification-tool ,
+    dsh:Verification-check ,
+    dsh:Verification-version ,
+    dsh:Verification-passed .
+
+dsh:Verification-tool
+  a sh:PropertyShape ;
+  sh:description "The tool that runs the check." ;
+  sh:message "Give every `verified-by` entry a `tool`." ;
+  sh:path graph:tool ;
+  sh:datatype xsd:string ;
+  sh:minCount 1 ;
+  sh:maxCount 1 .
+
+dsh:Verification-check
+  a sh:PropertyShape ;
+  sh:description "The tool's own id for the check." ;
+  sh:path graph:check ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 .
+
+dsh:Verification-version
+  a sh:PropertyShape ;
+  sh:description "The tool's version when the check last passed." ;
+  sh:path graph:version ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 .
+
+dsh:Verification-passed
+  a sh:PropertyShape ;
+  sh:description "When the check last passed." ;
+  sh:message "Set `passed` to a date such as 2026-10-21, or a date and time." ;
+  sh:path graph:passed ;
+  sh:maxCount 1 ;
+  sh:or ( [ sh:datatype xsd:date ] [ sh:datatype xsd:dateTime ] ) .
+
+# --- Concepts ----------------------------------------------------------------
+
+dsh:ConceptShape
+  a sh:NodeShape ;
+  sh:description "A concept of the glossary, named by a term page, a graph label, a tag or a concepts entry." ;
+  sh:message "manni wrote a property this shape does not list. The page is not at fault. Report it to whoever maintains the shapes." ;
+  sh:targetClass skos:Concept ;
+  sh:closed true ;
+  sh:ignoredProperties ( rdf:type ) ;
+  sh:property
+    dsh:Concept-prefLabel ,
+    dsh:Concept-prefLabel-collision ,
+    dsh:Concept-inScheme ,
+    dsh:Concept-altLabel ,
+    dsh:Concept-hiddenLabel ,
+    dsh:Concept-definition ,
+    dsh:Concept-scopeNote ,
+    dsh:Concept-topConceptOf ,
+    dsh:Concept-broader ,
+    dsh:Concept-narrower ,
+    dsh:Concept-related ,
+    dsh:Concept-notation ,
+    dsh:Concept-exactMatch ,
+    dsh:Concept-closeMatch ,
+    dsh:Concept-broadMatch ,
+    dsh:Concept-narrowMatch ,
+    dsh:Concept-relatedMatch .
+
+dsh:Concept-prefLabel
+  a sh:PropertyShape ;
+  sh:name "graph.label" ;
+  sh:description "The concept's name. Every concept has one." ;
+  sh:path skos:prefLabel ;
+  sh:minCount 1 .
+
+# Warning, not Violation. A term in several languages carries one prefLabel
+# per language, and SKOS wants at most one per language, which sh:uniqueLang
+# says. Concept IRIs also converge on slugified labels, so "Configuration" and
+# "configuration" merge into one concept carrying two untagged spellings.
+# sh:uniqueLang ignores untagged values, so graph's check core reports that
+# case, at the same severity.
+dsh:Concept-prefLabel-collision
+  a sh:PropertyShape ;
+  sh:description "One name per language, so search and the glossary agree on a spelling." ;
+  sh:message "This concept has two labels in one language. Give each term page one `label` per language." ;
+  sh:path skos:prefLabel ;
+  sh:uniqueLang true ;
+  sh:severity sh:Warning .
+
+dsh:Concept-inScheme
+  a sh:PropertyShape ;
+  sh:description "The glossary the concept belongs to. manni writes it." ;
+  sh:path skos:inScheme ;
+  sh:nodeKind sh:IRI ;
+  sh:minCount 1 .
+
+dsh:Concept-altLabel
+  a sh:PropertyShape ;
+  sh:name "graph.alt-labels" ;
+  sh:description "Other names readers use for the concept. Search matches them too." ;
+  sh:path skos:altLabel .
+
+dsh:Concept-hiddenLabel
+  a sh:PropertyShape ;
+  sh:description "Misspellings and old names that search matches but never shows, from the term page." ;
+  sh:path skos:hiddenLabel .
+
+dsh:Concept-definition
+  a sh:PropertyShape ;
+  sh:description "What the concept means, from its term page." ;
+  sh:path skos:definition .
+
+dsh:Concept-scopeNote
+  a sh:PropertyShape ;
+  sh:description "When to use the concept, and when not to, from its term page." ;
+  sh:path skos:scopeNote .
+
+dsh:Concept-topConceptOf
+  a sh:PropertyShape ;
+  sh:description "Marks a concept with no broader concept. manni writes it." ;
+  sh:path skos:topConceptOf ;
+  sh:nodeKind sh:IRI ;
+  sh:class skos:ConceptScheme .
+
+dsh:Concept-broader
+  a sh:PropertyShape ;
+  sh:name "graph.broader" ;
+  sh:description "A more general concept. A concept is never its own ancestor." ;
+  sh:path skos:broader ;
+  sh:nodeKind sh:IRI ;
+  sh:class skos:Concept .
+
+dsh:Concept-narrower
+  a sh:PropertyShape ;
+  sh:name "graph.narrower" ;
+  sh:description "A more specific concept. manni also writes it as the inverse of broader." ;
+  sh:path skos:narrower ;
+  sh:nodeKind sh:IRI ;
+  sh:class skos:Concept .
+
+# One-hop related/broader disjointness; the transitive form lives in the
+# check core's TypeScript walk.
+dsh:Concept-related
+  a sh:PropertyShape ;
+  sh:name "graph.related-concepts" ;
+  sh:description "A concept on the same level as this one. It is never also an ancestor or a descendant." ;
+  sh:message "A concept is related to a concept that is also broader than it. Remove one link: from `related-concepts` or `related-terms`, or from `broader` or `narrower`." ;
+  sh:path skos:related ;
+  sh:nodeKind sh:IRI ;
+  sh:class skos:Concept ;
+  sh:disjoint skos:broader .
+
+dsh:Concept-notation
+  a sh:PropertyShape ;
+  sh:description "A code that names the concept, from its term page." ;
+  sh:path skos:notation ;
+  sh:nodeKind sh:Literal .
+
+dsh:Concept-exactMatch
+  a sh:PropertyShape ;
+  sh:description "The same concept in another vocabulary, from the term page. It never points into this glossary." ;
+  sh:path skos:exactMatch ;
+  sh:nodeKind sh:IRI .
+
+dsh:Concept-closeMatch
+  a sh:PropertyShape ;
+  sh:description "A near-equivalent concept in another vocabulary, from the term page. It never points into this glossary." ;
+  sh:path skos:closeMatch ;
+  sh:nodeKind sh:IRI .
+
+dsh:Concept-broadMatch
+  a sh:PropertyShape ;
+  sh:description "A broader concept in another vocabulary, from the term page. It never points into this glossary." ;
+  sh:path skos:broadMatch ;
+  sh:nodeKind sh:IRI .
+
+dsh:Concept-narrowMatch
+  a sh:PropertyShape ;
+  sh:description "A narrower concept in another vocabulary, from the term page. It never points into this glossary." ;
+  sh:path skos:narrowMatch ;
+  sh:nodeKind sh:IRI .
+
+dsh:Concept-relatedMatch
+  a sh:PropertyShape ;
+  sh:description "A related concept in another vocabulary, from the term page. It never points into this glossary." ;
+  sh:path skos:relatedMatch ;
+  sh:nodeKind sh:IRI .
+
+dsh:SchemeShape
+  a sh:NodeShape ;
+  sh:description "The glossary that holds every concept of the docset. manni writes it." ;
+  sh:message "manni wrote a property this shape does not list. The page is not at fault. Report it to whoever maintains the shapes." ;
+  sh:targetClass skos:ConceptScheme ;
+  sh:closed true ;
+  sh:ignoredProperties ( rdf:type ) ;
+  sh:property
+    dsh:Scheme-title ,
+    dsh:Scheme-hasTopConcept .
+
+dsh:Scheme-title
+  a sh:PropertyShape ;
+  sh:description "The glossary's name. manni writes it." ;
+  sh:path dcterms:title ;
+  sh:maxCount 1 .
+
+dsh:Scheme-hasTopConcept
+  a sh:PropertyShape ;
+  sh:description "The concepts with no broader concept. manni writes it." ;
+  sh:path skos:hasTopConcept ;
+  sh:nodeKind sh:IRI ;
+  sh:class skos:Concept .
+
+# --- Strategy records --------------------------------------------------------
+# One node per audience, persona and journey record (proposal 0110), at
+# {base}strategy/{type}/{id}. Closed, as every node shape here is.
+
+dsh:AudienceShape
+  a sh:NodeShape ;
+  sh:description "An audience from the content strategy, one per audience record." ;
+  sh:message "manni wrote a property this shape does not list. The record is not at fault. Report it to whoever maintains the shapes." ;
+  sh:targetClass schema:Audience ;
+  sh:closed true ;
+  sh:ignoredProperties ( rdf:type ) ;
+  sh:property dsh:Strategy-title .
+
+dsh:PersonaShape
+  a sh:NodeShape ;
+  sh:description "A persona from the content strategy, one per persona record." ;
+  sh:message "manni wrote a property this shape does not list. The record is not at fault. Report it to whoever maintains the shapes." ;
+  sh:targetClass schema:PeopleAudience ;
+  sh:closed true ;
+  sh:ignoredProperties ( rdf:type ) ;
+  sh:property
+    dsh:Strategy-title ,
+    dsh:Persona-audience .
+
+dsh:JourneyShape
+  a sh:NodeShape ;
+  sh:description "A journey from the content strategy, one per journey record." ;
+  sh:message "manni wrote a property this shape does not list. The record is not at fault. Report it to whoever maintains the shapes." ;
+  sh:targetClass graph:Journey ;
+  sh:closed true ;
+  sh:ignoredProperties ( rdf:type ) ;
+  sh:property
+    dsh:Strategy-title ,
+    dsh:Journey-personas .
+
+dsh:Strategy-title
+  a sh:PropertyShape ;
+  sh:description "The record's name, from its title." ;
+  sh:path dcterms:title ;
+  sh:maxCount 1 .
+
+dsh:Persona-audience
+  a sh:PropertyShape ;
+  sh:description "The audience the persona belongs to, from its audience." ;
+  sh:path dcterms:isPartOf ;
+  sh:nodeKind sh:IRI ;
+  sh:class schema:Audience .
+
+dsh:Journey-personas
+  a sh:PropertyShape ;
+  sh:description "A persona the journey serves, from its personas." ;
+  sh:path schema:audience ;
+  sh:nodeKind sh:IRI ;
+  sh:class schema:PeopleAudience .
+
+# --- Provenance --------------------------------------------------------------
+
+dsh:PersonShape
+  a sh:NodeShape ;
+  sh:description "A person credited as an author of a page." ;
+  sh:message "manni wrote a property this shape does not list. The page is not at fault. Report it to whoever maintains the shapes." ;
+  sh:targetClass prov:Person ;
+  sh:closed true ;
+  sh:ignoredProperties ( rdf:type ) ;
+  sh:property dsh:Agent-name .
+
+dsh:OrganizationShape
+  a sh:NodeShape ;
+  sh:description "An organization credited on a page." ;
+  sh:message "manni wrote a property this shape does not list. The page is not at fault. Report it to whoever maintains the shapes." ;
+  sh:targetClass prov:Organization ;
+  sh:closed true ;
+  sh:ignoredProperties ( rdf:type ) ;
+  sh:property dsh:Agent-name .
+
+dsh:SoftwareAgentShape
+  a sh:NodeShape ;
+  sh:description "A model or tool that wrote or filled part of a page, or built the graph." ;
+  sh:message "manni wrote a property this shape does not list. The page is not at fault. Report it to whoever maintains the shapes." ;
+  sh:targetClass prov:SoftwareAgent ;
+  sh:closed true ;
+  sh:ignoredProperties ( rdf:type ) ;
+  sh:property
+    dsh:Agent-name ,
+    dsh:SoftwareAgent-version .
+
+dsh:Agent-name
+  a sh:PropertyShape ;
+  sh:description "The agent's name, as the page or git spells it." ;
+  sh:path foaf:name ;
+  sh:minCount 1 .
+
+dsh:SoftwareAgent-version
+  a sh:PropertyShape ;
+  sh:description "The tool's version. manni writes it." ;
+  sh:path graph:version ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 .
+
+dsh:ActivityShape
+  a sh:NodeShape ;
+  sh:description "A generation, fill or build run that manni records. manni writes it." ;
+  sh:message "manni wrote a property this shape does not list. The page is not at fault. Report it to whoever maintains the shapes." ;
+  sh:targetClass prov:Activity ;
+  sh:closed true ;
+  sh:ignoredProperties ( rdf:type ) ;
+  sh:property
+    dsh:Activity-wasAssociatedWith ,
+    dsh:Activity-qualifiedAssociation ,
+    dsh:Activity-filledFieldEntry ,
+    dsh:Activity-generated ,
+    dsh:Activity-used ,
+    dsh:Activity-endedAtTime .
+
+dsh:Activity-wasAssociatedWith
+  a sh:PropertyShape ;
+  sh:description "The agent that ran the activity. manni writes it." ;
+  sh:path prov:wasAssociatedWith ;
+  sh:nodeKind sh:IRI .
+
+dsh:Activity-qualifiedAssociation
+  a sh:PropertyShape ;
+  sh:description "The role that agent played. manni writes it." ;
+  sh:path prov:qualifiedAssociation ;
+  sh:nodeKind sh:IRI ;
+  sh:class prov:Association .
+
+# The fill activity links to one entry node per filled field (ADR 01015).
+dsh:Activity-filledFieldEntry
+  a sh:PropertyShape ;
+  sh:description "The fields a graph fill run filled. manni writes it from meta-provenance." ;
+  sh:path graph:filledFieldEntry ;
+  sh:nodeKind sh:IRI .
+
+# Each filled-field entry carries the field name and (when fill recorded one)
+# the model's confidence. Targeted by object position — the entry nodes are not
+# separately typed, keeping the node vocabulary at two classes.
+dsh:FilledFieldEntryShape
+  a sh:NodeShape ;
+  sh:description "One field a graph fill run filled, with the model's confidence. manni writes it from meta-provenance." ;
+  sh:message "manni wrote a property this shape does not list. The page is not at fault. Report it to whoever maintains the shapes." ;
+  sh:targetObjectsOf graph:filledFieldEntry ;
+  sh:closed true ;
+  sh:ignoredProperties ( rdf:type ) ;
+  sh:property
+    dsh:FilledFieldEntry-name ,
+    dsh:FilledFieldEntry-confidence .
+
+dsh:FilledFieldEntry-name
+  a sh:PropertyShape ;
+  sh:description "The field a model filled. A model never fills sections, revision-of or derived-from." ;
+  sh:path graph:filledField ;
+  sh:datatype xsd:string ;
+  sh:minCount 1 ;
+  sh:maxCount 1 .
+
+dsh:FilledFieldEntry-confidence
+  a sh:PropertyShape ;
+  sh:description "How confident the model was in the value it filled." ;
+  sh:path graph:confidence ;
+  sh:datatype xsd:decimal ;
+  sh:maxCount 1 .
+
+dsh:Activity-generated
+  a sh:PropertyShape ;
+  sh:description "The concept a graph fill run named. manni writes it." ;
+  sh:path prov:generated ;
+  sh:nodeKind sh:IRI .
+
+dsh:Activity-used
+  a sh:PropertyShape ;
+  sh:description "The pages a build read. manni writes it." ;
+  sh:path prov:used ;
+  sh:nodeKind sh:IRI .
+
+dsh:Activity-endedAtTime
+  a sh:PropertyShape ;
+  sh:description "When the build's commit was made. manni writes it." ;
+  sh:path prov:endedAtTime ;
+  sh:datatype xsd:dateTime ;
+  sh:maxCount 1 .
+
+dsh:AttributionShape
+  a sh:NodeShape ;
+  sh:description "The role an author played on a page. manni writes it." ;
+  sh:message "manni wrote a property this shape does not list. The page is not at fault. Report it to whoever maintains the shapes." ;
+  sh:targetClass prov:Attribution ;
+  sh:closed true ;
+  sh:ignoredProperties ( rdf:type ) ;
+  sh:property
+    dsh:Qualification-agent ,
+    dsh:Qualification-hadRole .
+
+dsh:AssociationShape
+  a sh:NodeShape ;
+  sh:description "The role an agent played in an activity. manni writes it." ;
+  sh:message "manni wrote a property this shape does not list. The page is not at fault. Report it to whoever maintains the shapes." ;
+  sh:targetClass prov:Association ;
+  sh:closed true ;
+  sh:ignoredProperties ( rdf:type ) ;
+  sh:property
+    dsh:Qualification-agent ,
+    dsh:Qualification-hadRole .
+
+dsh:Qualification-agent
+  a sh:PropertyShape ;
+  sh:description "The agent the role belongs to. manni writes it." ;
+  sh:path prov:agent ;
+  sh:nodeKind sh:IRI ;
+  sh:minCount 1 ;
+  sh:maxCount 1 .
+
+dsh:Qualification-hadRole
+  a sh:PropertyShape ;
+  sh:description "The role the agent played. manni writes it." ;
+  sh:path prov:hadRole ;
+  sh:nodeKind sh:IRI ;
+  sh:maxCount 1 .

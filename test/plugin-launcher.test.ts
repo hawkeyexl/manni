@@ -2,7 +2,9 @@
  * The plugin's hook launcher, `plugin/manni/hooks/manni.mjs`: which manni a
  * hook runs. The project's own build when the project is manni, then the copy
  * the project installed, then npx as before. Stdin and the exit code pass
- * through, since the hook envelope and exit 2 are the protocol.
+ * through, since the hook envelope and exit 2 are the protocol. And its gate,
+ * `plugin/manni/hooks/tracevals.mjs`, which runs manni the same way for a
+ * user who turned tracevals on, and nothing otherwise.
  */
 import { spawnSync } from "node:child_process";
 import { mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
@@ -14,6 +16,9 @@ import pkg from "../package.json" with { type: "json" };
 
 const ROOT = resolve(import.meta.dirname, "..");
 const LAUNCHER = join(ROOT, "plugin/manni/hooks/manni.mjs");
+const TRACEVALS = join(ROOT, "plugin/manni/hooks/tracevals.mjs");
+// A developer's shell may set either, so every case below says which it means.
+const TRACEVALS_VARS = ["manni_tracevals_hooks", "claude_plugin_option_tracevals"];
 const PLUGIN_SPEC = `@hawkeyexl/manni@${
   (JSON.parse(readFileSync(join(ROOT, "plugin/manni/.claude-plugin/plugin.json"), "utf8")) as { version: string }).version
 }`;
@@ -30,15 +35,15 @@ function tempDir(): string {
   return d;
 }
 
-function launch(projectDir: string, args: string[], input = "", env: NodeJS.ProcessEnv = {}) {
+function launch(projectDir: string, args: string[], input = "", env: NodeJS.ProcessEnv = {}, script = LAUNCHER) {
   // Windows names are case-insensitive, and npm run exports NPM_CONFIG_*
   // in capitals, so an override must replace the inherited name, not sit
   // beside it.
-  const overridden = new Set(Object.keys(env).map((k) => k.toLowerCase()));
+  const overridden = new Set([...Object.keys(env).map((k) => k.toLowerCase()), ...TRACEVALS_VARS]);
   const inherited = Object.fromEntries(
     Object.entries(process.env).filter(([k]) => !overridden.has(k.toLowerCase())),
   );
-  return spawnSync(process.execPath, [LAUNCHER, ...args], {
+  return spawnSync(process.execPath, [script, ...args], {
     cwd: projectDir,
     input,
     encoding: "utf8",
@@ -46,7 +51,24 @@ function launch(projectDir: string, args: string[], input = "", env: NodeJS.Proc
   });
 }
 
-/** A project that installed a stub manni which echoes what it was given. */
+/**
+ * Imports `module` in a fresh node with tracevals on, and prints `print`
+ * about its exports `m`. A launch would print to stdout too.
+ */
+function importIn(dir: string, module: string, print: string) {
+  const script = `const m = await import(${JSON.stringify(pathToFileURL(module).href)}); console.log(${print});`;
+  return spawnSync(process.execPath, ["--input-type=module", "-e", script], {
+    cwd: dir,
+    input: "",
+    encoding: "utf8",
+    env: { ...process.env, CLAUDE_PROJECT_DIR: dir, CLAUDE_PLUGIN_OPTION_TRACEVALS: "true" },
+  });
+}
+
+/**
+ * A project that installed a stub manni which echoes what it was given,
+ * with `MANNI_TRACEVALS_HOOKS` as `hooks` where it is set.
+ */
 function projectWithStub(): string {
   const dir = tempDir();
   writeFileSync(join(dir, "package.json"), JSON.stringify({ name: "docs-site", private: true }));
@@ -59,7 +81,7 @@ function projectWithStub(): string {
       "let input = '';",
       "process.stdin.on('data', (c) => { input += c; });",
       "process.stdin.on('end', () => {",
-      "  process.stdout.write(JSON.stringify({ args: process.argv.slice(2), input }));",
+      "  process.stdout.write(JSON.stringify({ args: process.argv.slice(2), input, hooks: process.env.MANNI_TRACEVALS_HOOKS }));",
       "  process.exitCode = 2;",
       "});",
     ].join("\n"),
@@ -144,15 +166,83 @@ describe("plugin hook launcher", () => {
 
   // The graph server imports the launcher for its functions, not its run.
   it("launches nothing when imported", () => {
+    const r = importIn(projectWithStub(), LAUNCHER, "typeof m.launch, typeof m.configFile, typeof m.run");
+    expect(r).toMatchObject({ status: 0, stdout: "function function function\n", stderr: "" });
+  });
+
+  it("launches nothing when the tracevals gate is imported, even with tracevals on", () => {
+    const r = importIn(projectWithStub(), TRACEVALS, "Object.keys(m).length");
+    expect(r).toMatchObject({ status: 0, stdout: "0\n", stderr: "" });
+  });
+
+  it("hands manni MANNI_TRACEVALS_HOOKS=1 where the plugin's tracevals option is on", () => {
     const dir = projectWithStub();
-    const script = `const m = await import(${JSON.stringify(pathToFileURL(LAUNCHER).href)}); console.log(typeof m.launch, typeof m.configFile);`;
-    const r = spawnSync(process.execPath, ["--input-type=module", "-e", script], {
-      cwd: dir,
-      input: "",
-      encoding: "utf8",
-      env: { ...process.env, CLAUDE_PROJECT_DIR: dir },
+    const on = launch(dir, ["check"], "", { CLAUDE_PLUGIN_OPTION_TRACEVALS: "true" });
+    expect(JSON.parse(on.stdout)).toMatchObject({ args: ["check"], hooks: "1" });
+    const off = launch(dir, ["check"], "", { CLAUDE_PLUGIN_OPTION_TRACEVALS: "false" });
+    expect(JSON.parse(off.stdout)).not.toHaveProperty("hooks");
+  });
+
+  describe("the tracevals gate", () => {
+    const gate = (dir: string, env: NodeJS.ProcessEnv) =>
+      launch(dir, ["tracevals", "capture"], '{"hook_event_name":"SessionStart"}', env, TRACEVALS);
+
+    it("starts no manni and exits quietly where tracevals is off", () => {
+      expect(gate(projectWithStub(), {})).toMatchObject({ status: 0, stdout: "", stderr: "" });
     });
-    expect(r).toMatchObject({ status: 0, stdout: "function function\n", stderr: "" });
+
+    it("starts no manni where the plugin's option is false", () => {
+      const r = gate(projectWithStub(), { CLAUDE_PLUGIN_OPTION_TRACEVALS: "false" });
+      expect(r).toMatchObject({ status: 0, stdout: "", stderr: "" });
+    });
+
+    it("runs manni with its arguments, stdin and exit code where the plugin's option is on", () => {
+      const r = gate(projectWithStub(), { CLAUDE_PLUGIN_OPTION_TRACEVALS: "true" });
+      expect(r.status).toBe(2);
+      expect(JSON.parse(r.stdout)).toEqual({
+        args: ["tracevals", "capture"],
+        input: '{"hook_event_name":"SessionStart"}',
+        hooks: "1",
+      });
+    });
+
+    it("runs manni where MANNI_TRACEVALS_HOOKS=1 alone turns it on", () => {
+      const r = gate(projectWithStub(), { MANNI_TRACEVALS_HOOKS: "1" });
+      expect(r.status).toBe(2);
+      expect(JSON.parse(r.stdout)).toMatchObject({ args: ["tracevals", "capture"], hooks: "1" });
+    });
+  });
+
+  /** A checkout of manni at `dir` whose built bin prints `name`. */
+  function builtManni(dir: string, name: string): void {
+    mkdirSync(join(dir, "dist"), { recursive: true });
+    writeFileSync(join(dir, "package.json"), JSON.stringify({ name: "@hawkeyexl/manni", bin: { manni: "dist/cli.js" } }));
+    writeFileSync(join(dir, "dist/cli.js"), `process.stdout.write(${JSON.stringify(name)});`);
+  }
+
+  // A worktree session gets CLAUDE_PROJECT_DIR naming the main checkout and a
+  // working directory in the worktree. Git writes the worktree's `.git` as a
+  // file pointing into the main repository's `.git/worktrees/`.
+  it("runs a worktree's own build, not the main checkout's", () => {
+    const main = tempDir();
+    builtManni(main, "main");
+    mkdirSync(join(main, ".git/worktrees/wt"), { recursive: true });
+    const worktree = join(main, ".claude/worktrees/wt");
+    builtManni(worktree, "worktree");
+    writeFileSync(join(worktree, ".git"), `gitdir: ${join(main, ".git/worktrees/wt").replaceAll("\\", "/")}\n`);
+    const r = launch(worktree, ["--version"], "", { CLAUDE_PROJECT_DIR: main });
+    expect(r).toMatchObject({ status: 0, stdout: "worktree" });
+  });
+
+  it("keeps the project's build when the working directory is a repository of its own inside it", () => {
+    const main = tempDir();
+    builtManni(main, "main");
+    mkdirSync(join(main, ".git"));
+    const nested = join(main, "media/scratch-demo");
+    builtManni(nested, "nested");
+    mkdirSync(join(nested, ".git"));
+    const r = launch(nested, ["--version"], "", { CLAUDE_PROJECT_DIR: main });
+    expect(r).toMatchObject({ status: 0, stdout: "main" });
   });
 
   it("runs nothing in manni's own repository before it is built", () => {

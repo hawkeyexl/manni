@@ -115,7 +115,7 @@ const DOMAINS: readonly Domain[] = [
       (await import("./test/cli.js"))
         .buildProgram()
         .name("test")
-        .description("Run the docs' procedure tests with Doc Detective and report in the family contract"),
+        .description("Run the docs' procedure tests, and have synthetic users attempt tasks in them"),
     ],
   },
   {

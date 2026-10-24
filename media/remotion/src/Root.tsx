@@ -25,7 +25,11 @@ import { beats as graphFormatsBeats, totalFrames as graphFormatsTotalFrames, TYP
 import { beats as findingsBeats, totalFrames as findingsTotalFrames, TYPING_MS as findingsTypingMs } from "./findings/beats";
 import { beats as citeReposBeats, totalFrames as citeReposTotalFrames, TYPING_MS as citeReposTypingMs } from "./cite-repos/beats";
 import { beats as pluginMetadataBeats, totalFrames as pluginMetadataTotalFrames, TYPING_MS as pluginMetadataTypingMs } from "./plugin-metadata/beats";
+import { beats as tasksBeats, totalFrames as tasksTotalFrames, TYPING_MS as tasksTypingMs } from "./tasks/beats";
+import { beats as strategyStepsBeats, totalFrames as strategyStepsTotalFrames, TYPING_MS as strategyStepsTypingMs } from "./strategy-steps/beats";
 import { beats as strategyBeats, totalFrames as strategyTotalFrames, TYPING_MS as strategyTypingMs } from "./strategy/beats";
+import { beats as pluginRecordsBeats, totalFrames as pluginRecordsTotalFrames, TYPING_MS as pluginRecordsTypingMs } from "./plugin-records/beats";
+import { beats as graphAuthoringBeats, totalFrames as graphAuthoringTotalFrames, TYPING_MS as graphAuthoringTypingMs } from "./graph-authoring/beats";
 
 /** sidecar-url-1x1: 23 px / 75 columns, derived in media/sidecar-url-1x1.script.md. */
 const DemoUrl: React.FC = () => <DemoView beats={urlBeats} fontPx={23} linePx={32} cols={75} />;
@@ -140,6 +144,42 @@ const DemoPluginMetadata: React.FC = () => <DemoView beats={pluginMetadataBeats}
  */
 const DemoStrategy: React.FC = () => (
   <DemoView beats={strategyBeats} fontPx={19} linePx={27} cols={91} typingMs={strategyTypingMs} ligatures={false} breakAfter="/" />
+);
+
+/**
+ * test-tasks-1x1: 21 px / 82 columns, derived in media/test-tasks-1x1.script.md
+ * (media/capture-tasks/cols.mjs). The account is wrapped at 78 by the report, so it
+ * never re-wraps, and every progress line breaks before its temp path, not after it. Ligatures off: the account's `---` and
+ * the progress lines' `&&` and `-->` are characters in a terminal.
+ */
+const DemoTasks: React.FC = () => <DemoView beats={tasksBeats} fontPx={21} linePx={30} cols={82} typingMs={tasksTypingMs} ligatures={false} />;
+/**
+ * plugin-records-1x1: every beat carries its own size (src/plugin-records/beats.ts), derived in
+ * media/plugin-records/plugin-records-1x1.script.md (media/plugin-records/capture/cols.mjs).
+ * The video-level size is beat 3's. Breaks after "," let the page JSON wrap without
+ * splitting a token. Ligatures off: `--no-derived` and `--` would draw as glyphs.
+ */
+const DemoPluginRecords: React.FC = () => (
+  <DemoView beats={pluginRecordsBeats} fontPx={23} linePx={32} cols={75} typingMs={pluginRecordsTypingMs} ligatures={false} breakAfter="," />
+);
+/**
+ * graph-authoring-1x1: every beat carries its own size (src/graph-authoring/beats.ts), derived in
+ * media/graph-authoring-1x1.script.md (media/capture-graph-authoring/cols.mjs).
+ * The video-level size is beat 3's. Breaks after "/" let IRIs and paths wrap without
+ * splitting a token. Ligatures off: `--no-authoring` and `--` would draw as glyphs.
+ */
+const DemoGraphAuthoring: React.FC = () => (
+  <DemoView beats={graphAuthoringBeats} fontPx={23} linePx={32} cols={75} typingMs={graphAuthoringTypingMs} ligatures={false} breakAfter="/" />
+);
+
+/**
+ * strategy-steps-1x1: 19 px / 91 columns for beat 2, derived in media/strategy-steps-1x1.script.md
+ * (media/capture-strategy-steps/cols.mjs). Beat 2 wraps under strategy check's 46-column gutter
+ * (hang), and its Guide URLs break after a "/". Beats 1, 3 and 4 carry their own sizes
+ * (src/strategy-steps/beats.ts). Ligatures off: the record's `---` fences would draw as one rule.
+ */
+const DemoStrategySteps: React.FC = () => (
+  <DemoView beats={strategyStepsBeats} fontPx={19} linePx={27} cols={91} typingMs={strategyStepsTypingMs} ligatures={false} breakAfter="/" />
 );
 
 export const Root: React.FC = () => (
@@ -343,6 +383,38 @@ export const Root: React.FC = () => (
       height={1080}
       fps={FPS}
       durationInFrames={strategyTotalFrames}
+    />
+    <Composition
+      id="TestTasksDemo"
+      component={DemoTasks}
+      width={1080}
+      height={1080}
+      fps={FPS}
+      durationInFrames={tasksTotalFrames}
+    />
+    <Composition
+      id="PluginRecordsDemo"
+      component={DemoPluginRecords}
+      width={1080}
+      height={1080}
+      fps={FPS}
+      durationInFrames={pluginRecordsTotalFrames}
+    />
+    <Composition
+      id="GraphAuthoringDemo"
+      component={DemoGraphAuthoring}
+      width={1080}
+      height={1080}
+      fps={FPS}
+      durationInFrames={graphAuthoringTotalFrames}
+    />
+    <Composition
+      id="StrategyStepsDemo"
+      component={DemoStrategySteps}
+      width={1080}
+      height={1080}
+      fps={FPS}
+      durationInFrames={strategyStepsTotalFrames}
     />
   </>
 );

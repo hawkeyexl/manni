@@ -5,7 +5,7 @@ type: reference
 audiences:
   - docs-engineers
   - ci-engineers
-last-updated: 2026-10-04
+last-updated: 2026-10-23
 ---
 
 Every key, verified against `src/docevals/core/config-schema.json` and the defaults applied in
@@ -72,6 +72,9 @@ docevals:
   from the config file's directory, so a run from a subdirectory reads the same pages.
 - Positional paths replace the collections for that run and resolve from the working directory.
 - `node_modules` and `.git` are never read, whichever of the two supplied the pages.
+- A file whose `type:` is `audience`, `persona` or `journey` is a
+  [strategy record](/manni/strategy/), not a page, and is never read. A journey's own `evals:` are
+  the golden evals [`manni test tasks`](/manni/test/attempt-a-task/) runs.
 - No paths and no collections is **exit 2**. There is no default set, so a run never evaluates
   everything beneath the working directory by accident.
 

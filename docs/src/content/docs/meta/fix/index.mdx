@@ -32,7 +32,7 @@ sample-questions:
 graph:
   label: Fix a failing check
   type: troubleshooting
-last-updated: 2026-10-20
+last-updated: 2026-10-23
 tags:
   - validation
   - error-messages
@@ -72,7 +72,7 @@ A failing file in `pretty` output (the default) looks like this:
 
 ```
 ✗ docs/guide.md
-    (root)  must have required property 'type'  [google:okf:0.1]
+    (root)  must have required property 'type'  (line 1)  [google:okf:0.1]
       google:okf:0.1 type: A short string identifying the kind of concept.
       Guide: https://hawkeyexl.github.io/manni/meta/reference/schemas/google-okf/
 ```
@@ -91,7 +91,7 @@ problem, in this shape:
 | `<field>` | Which field is wrong. It's a [JSON Pointer](https://datatracker.ietf.org/doc/html/rfc6901) such as `/timestamp`, or a bare key name. `(root)` means the document as a whole, most often a *required field is missing entirely*. |
 | `<severity>` | `warning ` or `notice ` when the finding is one of those. An error carries no word, so the message follows the field directly. |
 | `<message>` | What's wrong, e.g. `must have required property 'type'` or `must match format "date-time"`. |
-| `(line N)` | The source line of the offending field, when manni meta can locate it. A missing required field has no line, so this part is absent. A value an [external-metadata manifest](/manni/meta/set-up/external-metadata/) supplied reads `(file:line)` instead, naming the manifest. |
+| `(line N)` | The source line of the offending field, when manni meta can locate it. A missing required field shows the line where the frontmatter starts. A file with no frontmatter shows no line. A value an [external-metadata manifest](/manni/meta/set-up/external-metadata/) supplied reads `(file:line)` instead, naming the manifest. |
 | `[schema-id]` | The schema that flagged it, e.g. `google:okf:0.1`. Useful when more than one schema applies. |
 | `<property>: <what…>` | The property the schema judged, and the first sentence of the schema's own description of it. Read it before you edit. A finding with no property names the schema alone. |
 | `Guide: <url>` | The schema's reference page, for a built-in schema. A house schema has none. |
@@ -122,16 +122,17 @@ a fix.
 
 ```
 ✗ docs/guide.md
-    (root)  must have required property 'type'  [google:okf:0.1]
+    (root)  must have required property 'type'  (line 1)  [google:okf:0.1]
       google:okf:0.1 type: A short string identifying the kind of concept.
       Guide: https://hawkeyexl.github.io/manni/meta/reference/schemas/google-okf/
 ```
 
 {/* cite absent-field-reported-at-root */}
-{/* cite absent-field-has-no-line */}
+{/* cite absent-field-at-frontmatter-line */}
 The schema requires a field your frontmatter doesn't have. The field name is in
-the message: here, `type`. The location is `(root)` because the field is absent,
-so there's no line to point at.
+the message: here, `type`. The location is `(root)` because the field is absent.
+The line is `(line 1)`, where the frontmatter starts, since there's no field line
+to point at.
 
 **Fix.** Add the field to your frontmatter.
 

@@ -12,6 +12,7 @@ These files live inside `docs/` but outside `docs/src/content/docs/**`, so they 
 | `personas/` | One record per persona, the full profiles for Maya, Devin, Sara, and Theo. |
 | `journeys/` | One record per Critical User Journey, the end-to-end outcomes the docs must support. Each sits under the personas it serves. |
 | `information-architecture.md` | The journey-based IA and nav tree, plus the full content-set map (the pages, with ★ launch markers). |
+| `traffic.sql` | The query that joins a page-views export to the records, for traffic per journey and per persona. `strategy/traffic.mdx` shows how to run it. |
 | `design.md` | The visual rules the docs site and the demo videos both follow: palette, type, capture geometry, composition, and the measurements behind them. |
 | `OWNERS` | Who owns each published docs page, in CODEOWNERS format. `manni meta derive` reads it for the `owner` field. |
 

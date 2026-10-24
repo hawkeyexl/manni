@@ -14,7 +14,7 @@ concepts:
   - concept
   - closed shape
   - near miss
-last-updated: 2026-10-21
+last-updated: 2026-10-23
 ---
 
 Your pull request is red on `manni graph check` and you did not write the rule.
@@ -26,7 +26,7 @@ will not have to open a Turtle file.
 ```console
 warning: docs/configuration.md, docs/getting-started.md: Pages spell this concept two ways: "Installation" and "installation". Use one spelling on every page that names it.
   at https://example.com/dd/concept/installation skos:prefLabel
-  manni:graph-shapes:1.2.0 Concept-prefLabel-collision: One name per language, so search and the glossary agree on a spelling.
+  manni:graph-shapes:1.3.0 Concept-prefLabel-collision: One name per language, so search and the glossary agree on a spelling.
   Guide: https://hawkeyexl.github.io/manni/graph/fix/
 ```
 
@@ -43,7 +43,7 @@ The lines under it are for when the message is not enough:
 | Line | What it is |
 |---|---|
 | `at https://example.com/dd/concept/installation skos:prefLabel` | The **focus node**, the graph's name for the thing that failed, and the property the rule is about. |
-| `manni:graph-shapes:1.2.0 Concept-prefLabel-collision: …` | The shapes file, the rule that judged it, and what the rule is for. |
+| `manni:graph-shapes:1.3.0 Concept-prefLabel-collision: …` | The shapes file, the rule that judged it, and what the rule is for. |
 | `Guide:` | This page. |
 
 To see every key a shape asks for, run
@@ -88,7 +88,7 @@ thing.
 ```console
 error: violations/alpha.md, violations/beta.md, violations/gamma.md: "Alpha" and "Beta" form a broader cycle, so each is its own ancestor. Remove one `broader` or `narrower` value on the cycle.
   at https://example.com/dd/concept/alpha skos:broader
-  manni:graph-shapes:1.2.0 Concept-broader: A more general concept. A concept is never its own ancestor.
+  manni:graph-shapes:1.3.0 Concept-broader: A more general concept. A concept is never its own ancestor.
   Guide: https://hawkeyexl.github.io/manni/graph/fix/
 ```
 
@@ -103,7 +103,7 @@ The message names the concepts on the cycle. One of those `broader` or
 ```console
 error: docs/glossary/pal.md, docs/glossary/pluggable-auth-layer.md, docs/guides/login.md: `exact-matches` names "token", a concept in this glossary. Use `broader`, `narrower` or `related-terms` for it instead.
   at https://example.com/graph/concept/pluggable-auth-layer skos:exactMatch
-  manni:graph-shapes:1.2.0 Concept-exactMatch: The same concept in another vocabulary, from the term page. It never points into this glossary.
+  manni:graph-shapes:1.3.0 Concept-exactMatch: The same concept in another vocabulary, from the term page. It never points into this glossary.
   Guide: https://hawkeyexl.github.io/manni/graph/fix/
 ```
 
@@ -117,7 +117,7 @@ field that says how the two concepts relate.
 ```console
 error: violations/alpha.md: The page lists a variant in both `applies-to` and `not-applicable-to`. Keep it only in the one that is true.
   at https://example.com/dd/doc/violations/alpha.md graph:notApplicableToVariant
-  manni:graph-shapes:1.2.0 Document-notApplicableToVariant: The product variants the page does not apply to. A variant cannot be in both lists.
+  manni:graph-shapes:1.3.0 Document-notApplicableToVariant: The product variants the page does not apply to. A variant cannot be in both lists.
   Guide: https://hawkeyexl.github.io/manni/graph/fix/
 ```
 
@@ -133,7 +133,7 @@ key instead.
 ```console
 error: docs/variant-lower.md, docs/variant-upper.md: Pages spell this variant two ways in `applies-to` or `not-applicable-to`. Use one spelling on every page.
   at https://example.com/graph/product/sp-x100 dcterms:title
-  manni:graph-shapes:1.2.0 ProductVariant-title: The variant's name, as pages spell it in applies-to and not-applicable-to.
+  manni:graph-shapes:1.3.0 ProductVariant-title: The variant's name, as pages spell it in applies-to and not-applicable-to.
   Guide: https://hawkeyexl.github.io/manni/graph/fix/
 ```
 
@@ -146,7 +146,7 @@ page the finding names.
 ```console
 error: l10n-invalid/install.md: Set `lang` to a language tag such as `de` or `pt-BR`, not a language name.
   at https://example.com/dd/doc/l10n-invalid/install.md dcterms:language
-  manni:graph-shapes:1.2.0 Document-language: The language the page is written in. Search, filters and per-language indexes group pages by it.
+  manni:graph-shapes:1.3.0 Document-language: The language the page is written in. Search, filters and per-language indexes group pages by it.
   Guide: https://hawkeyexl.github.io/manni/graph/fix/
 
 1 error, 0 warnings, 0 notices

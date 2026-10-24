@@ -28,10 +28,12 @@ const PUBLISHED: Record<string, string> = {
   "ns-1.1.0.ttl": "9aba9267bbb06c4dafba26b945d11f3885d64212b28b44c117fea2214f4ddfab",
   "ns-1.2.0.ttl": "be5ba44c4ed46c2ea05b1724625a7e0945365c80c14d4d992a4ad25b7d60bfad",
   "ns-1.3.0.ttl": "3d3726fc74bfb3ac903d4815b9c11c2b426ea1aa5cd423f750dbc6823ec493dc",
+  "ns-1.4.0.ttl": "0416071b91fcabd3ebe366b7a2cf28a287f51e59e3522e25224b49f65ea53ef1",
   "shapes-1.0.0.ttl": "680649bcc1085c8c7c6b83d532af39e1b0339aaa40c2cd2cd08ff6d4c78286e4",
   "shapes-1.1.0.ttl": "fb7b51f8b77f6b943b8596cfa13c8362e773ff754818850bae8340bcffdaf165",
   "shapes-1.1.1.ttl": "be13d05903490899c74b0581019a89daf1061a36b5b98b26246a690546f4079f",
   "shapes-1.2.0.ttl": "628006b1f85a94faaa80437422aa49dc946736e2e98017f8b7bd3cdcafbf96bc",
+  "shapes-1.3.0.ttl": "c9a4d6c4bd7f60b3abf27d215c42a2856d381a9b1926f5af2a071e931f90b306",
 };
 
 describe("published vocabulary and shapes files", () => {
@@ -46,13 +48,13 @@ describe("published vocabulary and shapes files", () => {
     expect(onDisk.sort()).toEqual(Object.keys(PUBLISHED).sort());
   });
 
-  it("bundles shapes 1.2.0 for graph check", () => {
-    expect(SHAPES[0]).toBe(join(root, "shapes", "graph", "shapes-1.2.0.ttl"));
+  it("bundles shapes 1.3.0 for graph check", () => {
+    expect(SHAPES[0]).toBe(join(root, "shapes", "graph", "shapes-1.3.0.ttl"));
   });
 
-  it("serves vocabulary 1.3.0 at the namespace IRI", () => {
+  it("serves vocabulary 1.4.0 at the namespace IRI", () => {
     expect(readFileSync(join(root, "docs", "public", "graph", "ns.ttl"), "utf8")).toBe(
-      readFileSync(join(root, "ns", "graph", "ns-1.3.0.ttl"), "utf8"),
+      readFileSync(join(root, "ns", "graph", "ns-1.4.0.ttl"), "utf8"),
     );
   });
 });
@@ -74,7 +76,7 @@ describe("shapes 1.2.0 is a MINOR of 1.1.1", () => {
     "judges %s exactly as 1.1.1 does",
     async (corpus) => {
       const { turtle } = await buildGraph({ cwd: join(root, "test", "graph", "fixtures", corpus) });
-      expect(await judged(turtle, SHAPES[0] ?? "")).toEqual(await judged(turtle, prior));
+      expect(await judged(turtle, join(root, "shapes", "graph", "shapes-1.2.0.ttl"))).toEqual(await judged(turtle, prior));
     },
   );
 });

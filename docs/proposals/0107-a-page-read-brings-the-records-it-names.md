@@ -1,6 +1,6 @@
 # 0107: A page read brings the records it names
 
-- **Status:** Proposed; superseded in part by [0112](0112-borrowed-strategy-records.md)
+- **Status:** Implemented (#241); superseded in part by [0112](0112-borrowed-strategy-records.md)
 - **Serves:** Maya · M24, "Let an agent keep the docs green while it writes
   them". The agent learns whom a page serves before it edits the page.
 - **Depends on:** Two earlier proposals.

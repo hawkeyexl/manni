@@ -80,7 +80,7 @@ describe("graph build over a termbase", () => {
     const check = run(["check"], into);
     expect(check.status).toBe(1);
     expect(check.stdout).toContain(
-      'error: docs/glossary/pal.md, docs/glossary/pluggable-auth-layer.md, docs/guides/login.md: `exact-matches` names "Access token", a concept in this glossary. Use `broader`, `narrower` or `related-terms` for it instead.\n  at https://example.com/graph/concept/pluggable-auth-layer skos:exactMatch\n  manni:graph-shapes:1.2.0 Concept-exactMatch: ',
+      'error: docs/glossary/pal.md, docs/glossary/pluggable-auth-layer.md, docs/guides/login.md: `exact-matches` names "Access token", a concept in this glossary. Use `broader`, `narrower` or `related-terms` for it instead.\n  at https://example.com/graph/concept/pluggable-auth-layer skos:exactMatch\n  manni:graph-shapes:1.3.0 Concept-exactMatch: ',
     );
   });
 

@@ -64,6 +64,7 @@ import {
   RECORD_FIELDS,
   sameRecordId,
   type RecordField,
+  type RecordType,
 } from "../../shared/reference-fields.js";
 import { readMembers } from "./fill-hints.js";
 
@@ -208,7 +209,7 @@ export interface GetFileResult {
    * entry's own `file` is. Absent when nothing is named, and on a file that
    * did not parse.
    */
-  records?: { type: string; id: string; file: string }[];
+  records?: { type: RecordType; id: string; file: string }[];
 }
 
 /** A reference to one strategy record: what it is and where it lives, none of its content. */
@@ -510,15 +511,13 @@ async function attachRecords(
   }
 
   for (const [r, values] of named) {
-    const found: RecordReference[] = [];
+    const found = new Set<RecordReference>();
     for (const { field, value } of values) {
       for (const record of records) {
-        if (record.type === RECORD_FIELDS[field] && sameRecordId(record.id, value) && !found.includes(record)) {
-          found.push(record);
-        }
+        if (record.type === RECORD_FIELDS[field] && sameRecordId(record.id, value)) found.add(record);
       }
     }
-    if (found.length > 0) r.records = found.map((record) => ({ ...record }));
+    if (found.size > 0) r.records = [...found].map((record) => ({ ...record }));
   }
 }
 

@@ -450,6 +450,7 @@ export default defineConfig({
           badge: BETA,
           items: [
             { label: "Overview", link: "/strategy/" },
+            { label: "Measure against traffic", link: "/strategy/traffic/" },
             {
               label: "Reference",
               collapsed: true,
@@ -541,14 +542,16 @@ export default defineConfig({
           ],
         },
         // `test` runs the docs' procedure tests with Doc Detective (proposal
-        // 0085). One verb, so an overview, one journey page (proposal 0098)
-        // and a reference shelf of one.
+        // 0085), and has synthetic users attempt tasks with Claude Code. Two
+        // verbs, so an overview, two journey pages and a reference shelf of
+        // one.
         {
           label: "test",
           collapsed: true,
           badge: BETA,
           items: [
             { label: "Overview", link: "/test/" },
+            { label: "Attempt a task as a persona", link: "/test/attempt-a-task/" },
             { label: "Record when a page was last verified", link: "/test/record-last-verified/" },
             {
               label: "Reference",

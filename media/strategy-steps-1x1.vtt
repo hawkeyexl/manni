@@ -1,0 +1,24 @@
+WEBVTT
+
+NOTE Captions are burned into strategy-steps-1x1.mp4 (LinkedIn autoplays muted). This sidecar carries the same text for players and for hosts that accept a caption track. Silent video: there is no narration and no sound, and the terminal text is in the transcript.
+
+1
+00:00:00.000 --> 00:00:07.167
+A journey lists its steps
+A journey lists the pages it walks through, in order.
+
+2
+00:00:07.167 --> 00:00:19.167
+manni strategy check
+Step 3's page skips m1. Step 4 is unwritten. Exit 0.
+
+3
+00:00:19.167 --> 00:00:25.533
+The page joins the journey
+The reference page names m1, its persona and audience.
+
+4
+00:00:25.533 --> 00:00:34.367
+manni strategy get m1
+Coverage, in order: 3 of 4 served, 1 unwritten.
+

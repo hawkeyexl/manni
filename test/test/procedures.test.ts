@@ -1,5 +1,5 @@
 /**
- * The `manni test run` command core, with Doc Detective replaced by an
+ * The `manni test procedures` command core, with Doc Detective replaced by an
  * injected spawn. The results the fake writes are the fixtures under
  * `fixtures/`, which are a real Doc Detective 4.26 run over `pass.md` and
  * `fail.md` with the absolute paths rewritten to `__CWD__`. Each test
@@ -13,7 +13,7 @@ import { fileURLToPath } from "node:url";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { ExecResult } from "@hawkeyexl/inference";
 import { TestError } from "../../src/test/errors.js";
-import { runTest } from "../../src/test/commands/run.js";
+import { runProcedures } from "../../src/test/commands/procedures.js";
 import type { DocDetectiveSpawn } from "../../src/test/core/doc-detective.js";
 
 const FIXTURES = resolve(dirname(fileURLToPath(import.meta.url)), "fixtures");
@@ -48,7 +48,7 @@ let cwd: string;
 let calls: Call[];
 
 beforeEach(() => {
-  cwd = realpathSync(mkdtempSync(join(tmpdir(), "manni-test-run-")));
+  cwd = realpathSync(mkdtempSync(join(tmpdir(), "manni-test-procedures-")));
   mkdirSync(join(cwd, "docs"));
   writeFileSync(join(cwd, "docs", "pass.md"), "# Pass\n");
   writeFileSync(join(cwd, "docs", "fail.md"), "# Fail\n");
@@ -64,9 +64,9 @@ function write(rel: string, text: string): void {
   writeFileSync(join(cwd, rel), text);
 }
 
-describe("runTest: what Doc Detective is given", () => {
+describe("runProcedures: what Doc Detective is given", () => {
   it("passes the inputs as one comma-joined -i, a json reporter and a temp output", async () => {
-    await runTest({ paths: ["docs/pass.md", "docs"], cwd, spawn: fakeSpawn("results-pass.json", calls) });
+    await runProcedures({ paths: ["docs/pass.md", "docs"], cwd, spawn: fakeSpawn("results-pass.json", calls) });
     const [call] = calls;
     expect(call?.args.slice(0, 2)).toEqual(["-i", "docs/pass.md,docs"]);
     expect(call?.args).toContain("-r");
@@ -78,7 +78,7 @@ describe("runTest: what Doc Detective is given", () => {
   });
 
   it("removes its output directory afterwards, whatever the verdict", async () => {
-    await runTest({ paths: ["docs/fail.md"], cwd, spawn: fakeSpawn("results-fail.json", calls) });
+    await runProcedures({ paths: ["docs/fail.md"], cwd, spawn: fakeSpawn("results-fail.json", calls) });
     const out = calls[0]?.args[calls[0].args.indexOf("-o") + 1];
     expect(out).toBeDefined();
     expect(existsSync(out ?? "")).toBe(false);
@@ -86,28 +86,28 @@ describe("runTest: what Doc Detective is given", () => {
 
   it("removes it when the run fails too", async () => {
     await expect(
-      runTest({ paths: ["docs/fail.md"], cwd, spawn: fakeSpawn(null, calls, { code: 3 }) }),
+      runProcedures({ paths: ["docs/fail.md"], cwd, spawn: fakeSpawn(null, calls, { code: 3 }) }),
     ).rejects.toThrow(TestError);
     const out = calls[0]?.args[calls[0].args.indexOf("-o") + 1];
     expect(existsSync(out ?? "")).toBe(false);
   });
 
   it("expands a glob itself and passes plain paths as typed", async () => {
-    await runTest({ paths: ["docs/*.md"], cwd, spawn: fakeSpawn("results-pass.json", calls) });
+    await runProcedures({ paths: ["docs/*.md"], cwd, spawn: fakeSpawn("results-pass.json", calls) });
     const inputs = calls[0]?.args[1]?.split(",") ?? [];
     expect(inputs.sort()).toEqual(["docs/fail.md", "docs/pass.md"]);
   });
 
   it("passes no -i when there are no paths, so Doc Detective reads its config's input", async () => {
     write(".doc-detective.json", "{}");
-    await runTest({ cwd, spawn: fakeSpawn("results-pass.json", calls) });
+    await runProcedures({ cwd, spawn: fakeSpawn("results-pass.json", calls) });
     expect(calls[0]?.args).not.toContain("-i");
   });
 
   it("passes tools.doc-detective.config as -c, resolved against the manni config", async () => {
     write("ci/manni.config.yaml", "tools:\n  doc-detective:\n    config: dd.json\n");
     write("ci/dd.json", "{}");
-    await runTest({
+    await runProcedures({
       configPath: "ci/manni.config.yaml",
       cwd,
       spawn: fakeSpawn("results-pass.json", calls),
@@ -117,12 +117,12 @@ describe("runTest: what Doc Detective is given", () => {
   });
 
   it("forwards the progress choice to the spawn", async () => {
-    await runTest({ paths: ["docs"], cwd, progress: true, spawn: fakeSpawn("results-pass.json", calls) });
+    await runProcedures({ paths: ["docs"], cwd, progress: true, spawn: fakeSpawn("results-pass.json", calls) });
     expect(calls[0]?.progress).toBe(true);
   });
 });
 
-describe("runTest: --collection", () => {
+describe("runProcedures: --collection", () => {
   beforeEach(() => {
     write(
       "manni.config.yaml",
@@ -139,7 +139,7 @@ describe("runTest: --collection", () => {
   });
 
   it("expands the collection's paths minus its exclude", async () => {
-    await runTest({ collection: ["site"], cwd, spawn: fakeSpawn("results-pass.json", calls) });
+    await runProcedures({ collection: ["site"], cwd, spawn: fakeSpawn("results-pass.json", calls) });
     expect(calls[0]?.args.slice(0, 2)).toEqual(["-i", "docs/pass.md"]);
   });
 
@@ -147,13 +147,13 @@ describe("runTest: --collection", () => {
     // Discovery walks up only inside a repository.
     mkdirSync(join(cwd, ".git"));
     const sub = join(cwd, "docs");
-    await runTest({ collection: ["site"], cwd: sub, spawn: fakeSpawn("results-pass.json", calls) });
+    await runProcedures({ collection: ["site"], cwd: sub, spawn: fakeSpawn("results-pass.json", calls) });
     expect(calls[0]?.args.slice(0, 2)).toEqual(["-i", "pass.md"]);
   });
 
   it("refuses a collection that matches no files", async () => {
     await expect(
-      runTest({ collection: ["empty"], cwd, spawn: fakeSpawn("results-pass.json", calls) }),
+      runProcedures({ collection: ["empty"], cwd, spawn: fakeSpawn("results-pass.json", calls) }),
     ).rejects.toThrow(
       new TestError("--collection matched no files. Pass --allow-empty if that is expected."),
     );
@@ -161,7 +161,7 @@ describe("runTest: --collection", () => {
   });
 
   it("passes with --allow-empty and starts no Doc Detective", async () => {
-    const result = await runTest({
+    const result = await runProcedures({
       collection: ["empty"],
       allowEmpty: true,
       cwd,
@@ -174,17 +174,17 @@ describe("runTest: --collection", () => {
 
   it("gives each empty run its own result, so one caller's edit reaches no other", async () => {
     const opts = { collection: ["empty"], allowEmpty: true, cwd, spawn: fakeSpawn(null, calls) };
-    const first = await runTest(opts);
+    const first = await runProcedures(opts);
     first.findings.push({ file: "x.md", result: "FAIL", description: "x" });
     first.tests.fail += 1;
-    const second = await runTest(opts);
+    const second = await runProcedures(opts);
     expect(second.findings).toEqual([]);
     expect(second.tests.fail).toBe(0);
   });
 
   it("refuses an unknown name with the shared message", async () => {
     await expect(
-      runTest({ collection: ["Site"], cwd, spawn: fakeSpawn(null, calls) }),
+      runProcedures({ collection: ["Site"], cwd, spawn: fakeSpawn(null, calls) }),
     ).rejects.toThrow(
       'no collection named "Site" in manni.config.yaml. Configured: site, empty. Names are case-sensitive; did you mean "site"?',
     );
@@ -192,7 +192,7 @@ describe("runTest: --collection", () => {
 
   it("refuses to combine with paths", async () => {
     await expect(
-      runTest({ collection: ["site"], paths: ["docs"], cwd, spawn: fakeSpawn(null, calls) }),
+      runProcedures({ collection: ["site"], paths: ["docs"], cwd, spawn: fakeSpawn(null, calls) }),
     ).rejects.toThrow(
       "--collection selects a configured collection; it cannot be combined with paths.",
     );
@@ -200,14 +200,14 @@ describe("runTest: --collection", () => {
 
   it("does not read collections without --collection", async () => {
     write(".doc-detective.json", "{}");
-    await runTest({ cwd, spawn: fakeSpawn("results-pass.json", calls) });
+    await runProcedures({ cwd, spawn: fakeSpawn("results-pass.json", calls) });
     expect(calls[0]?.args).not.toContain("-i");
   });
 });
 
-describe("runTest: the verdict", () => {
+describe("runProcedures: the verdict", () => {
   it("is 1 when a step failed, with the failing step's file and line", async () => {
-    const result = await runTest({ paths: ["docs"], cwd, spawn: fakeSpawn("results-fail.json", calls) });
+    const result = await runProcedures({ paths: ["docs"], cwd, spawn: fakeSpawn("results-fail.json", calls) });
     expect(result.exitCode).toBe(1);
     expect(result.findings).toContainEqual(
       expect.objectContaining({ file: "docs/fail.md", line: 4, result: "FAIL" }),
@@ -217,14 +217,14 @@ describe("runTest: the verdict", () => {
   });
 
   it("is 0 when everything passed, with no findings", async () => {
-    const result = await runTest({ paths: ["docs"], cwd, spawn: fakeSpawn("results-pass.json", calls) });
+    const result = await runProcedures({ paths: ["docs"], cwd, spawn: fakeSpawn("results-pass.json", calls) });
     expect(result.exitCode).toBe(0);
     expect(result.findings).toEqual([]);
     expect(result.tests.pass).toBeGreaterThan(0);
   });
 
   it("is 0 for a warning, which is listed", async () => {
-    const result = await runTest({ paths: ["docs"], cwd, spawn: fakeSpawn("results-warning.json", calls) });
+    const result = await runProcedures({ paths: ["docs"], cwd, spawn: fakeSpawn("results-warning.json", calls) });
     expect(result.exitCode).toBe(0);
     expect(result.findings).toContainEqual(
       expect.objectContaining({ file: "docs/warn.md", result: "WARNING" }),
@@ -232,20 +232,20 @@ describe("runTest: the verdict", () => {
   });
 
   it("keeps Doc Detective's results object as it wrote it", async () => {
-    const result = await runTest({ paths: ["docs"], cwd, spawn: fakeSpawn("results-fail.json", calls) });
+    const result = await runProcedures({ paths: ["docs"], cwd, spawn: fakeSpawn("results-fail.json", calls) });
     expect(result.results).toHaveProperty("runId");
     expect(result.results).toHaveProperty("specs");
   });
 });
 
-describe("runTest: refusals", () => {
+describe("runProcedures: refusals", () => {
   const spawn = (): DocDetectiveSpawn => fakeSpawn("results-pass.json", calls);
 
   it.each([
     [
       "stdin",
       { paths: ["-"] },
-      "test run reads files; Doc Detective has no stdin. Pass a path.",
+      "test procedures reads files; Doc Detective has no stdin. Pass a path.",
     ],
     [
       "a missing path, in meta's words",
@@ -260,7 +260,7 @@ describe("runTest: refusals", () => {
     [
       "no paths and no Doc Detective config",
       {},
-      "test run needs paths or a Doc Detective config. Pass paths, or add .doc-detective.json.",
+      "test procedures needs paths or a Doc Detective config. Pass paths, or add .doc-detective.json.",
     ],
     [
       "--collection with no manni config",
@@ -268,34 +268,34 @@ describe("runTest: refusals", () => {
       "--collection needs a config file to select from.",
     ],
   ])("refuses %s", async (_label, opts, message) => {
-    await expect(runTest({ ...opts, cwd, spawn: spawn() })).rejects.toThrow(new TestError(message));
+    await expect(runProcedures({ ...opts, cwd, spawn: spawn() })).rejects.toThrow(new TestError(message));
     expect(calls).toHaveLength(0);
   });
 
   it("refuses a configured Doc Detective config that does not exist", async () => {
     write("manni.config.yaml", "tools:\n  doc-detective:\n    config: nowhere.json\n");
-    await expect(runTest({ paths: ["docs"], cwd, spawn: spawn() })).rejects.toThrow(
+    await expect(runProcedures({ paths: ["docs"], cwd, spawn: spawn() })).rejects.toThrow(
       new TestError('manni.config.yaml: tools.doc-detective.config "nowhere.json" does not exist.'),
     );
   });
 
   it("refuses a test: section, which carries no keys", async () => {
     write("manni.config.yaml", "test:\n  config: .doc-detective.json\n");
-    await expect(runTest({ paths: ["docs"], cwd, spawn: spawn() })).rejects.toThrow(
+    await expect(runProcedures({ paths: ["docs"], cwd, spawn: spawn() })).rejects.toThrow(
       new TestError(
-        "manni.config.yaml: test has no keys. Doc Detective's settings live under tools.doc-detective.",
+        "manni.config.yaml: test has no keys. Doc Detective's settings live under tools.doc-detective, and Claude Code's under tools.claude-cli.",
       ),
     );
   });
 
   it("accepts a Doc Detective config in YAML", async () => {
     write(".doc-detective.yaml", "input: docs\n");
-    await expect(runTest({ cwd, spawn: spawn() })).resolves.toHaveProperty("exitCode", 0);
+    await expect(runProcedures({ cwd, spawn: spawn() })).resolves.toHaveProperty("exitCode", 0);
   });
 
   it("says Doc Detective is not on PATH", async () => {
     await expect(
-      runTest({
+      runProcedures({
         paths: ["docs"],
         cwd,
         spawn: fakeSpawn(null, calls, { code: null, spawnError: "spawn doc-detective ENOENT" }),
@@ -308,7 +308,7 @@ describe("runTest: refusals", () => {
   });
 
   it("reports a non-zero exit with the tail of its output", async () => {
-    const err = await runTest({
+    const err = await runProcedures({
       paths: ["docs"],
       cwd,
       spawn: fakeSpawn(null, calls, { code: 3, stderr: "Invalid config: input is required" }),
@@ -328,21 +328,21 @@ describe("runTest: refusals", () => {
       if (text !== null && out !== undefined) writeFileSync(join(out, "testResults-1.json"), text);
       return fakeSpawn(null, calls)(args, opts);
     };
-    await expect(runTest({ paths: ["docs"], cwd, spawn: writeGarbage })).rejects.toThrow(
+    await expect(runProcedures({ paths: ["docs"], cwd, spawn: writeGarbage })).rejects.toThrow(
       new TestError("Doc Detective wrote no results to read. Run doc-detective directly to see why."),
     );
   });
 
   it("refuses finding no tests", async () => {
     await expect(
-      runTest({ paths: ["docs"], cwd, spawn: fakeSpawn("results-empty.json", calls) }),
+      runProcedures({ paths: ["docs"], cwd, spawn: fakeSpawn("results-empty.json", calls) }),
     ).rejects.toThrow(
       new TestError("Doc Detective found no tests in the inputs. Pass --allow-empty if that is expected."),
     );
   });
 
   it("passes finding no tests with --allow-empty, counting zero", async () => {
-    const result = await runTest({
+    const result = await runProcedures({
       paths: ["docs"],
       allowEmpty: true,
       cwd,

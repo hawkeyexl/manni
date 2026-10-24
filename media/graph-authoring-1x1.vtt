@@ -1,0 +1,24 @@
+WEBVTT
+
+NOTE Captions are burned into graph-authoring-1x1.mp4 (LinkedIn autoplays muted). This sidecar carries the same text for players and for hosts that accept a caption track. Silent video: there is no narration and no sound, and the terminal text is in the transcript.
+
+1
+00:00:00.000 --> 00:00:08.533
+Records in the graph
+The default build types this repository's 82 strategy records as audiences, personas and journeys.
+
+2
+00:00:08.533 --> 00:00:19.733
+Which pages serve D11?
+Walk back from journey D11 along dcterms:isPartOf. Its four pages are the ones strategy get lists.
+
+3
+00:00:19.733 --> 00:00:34.300
+A graph for readers
+--no-authoring leaves out the records and the author-facing fields. Not one created date is left.
+
+4
+00:00:34.300 --> 00:00:44.767
+The plugin's own directory
+The plugin's server publishes into its own data directory, outside the repository.
+

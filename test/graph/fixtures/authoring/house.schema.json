@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/authoring/house.json",
+  "title": "A house schema for the authoring tests",
+  "description": "`review.notes` is external below the top level, so a run without author-facing content drops it and keeps `review.status`. `internal` is marked x-manni-graph-output: false, which keeps it out with or without author-facing content.",
+  "type": "object",
+  "additionalProperties": true,
+  "properties": {
+    "review": {
+      "type": "object",
+      "properties": {
+        "status": { "type": "string", "x-manni-location": "page" },
+        "notes": { "type": "string", "x-manni-location": "external" }
+      }
+    },
+    "internal": {
+      "type": "string",
+      "x-manni-graph-output": false
+    }
+  }
+}

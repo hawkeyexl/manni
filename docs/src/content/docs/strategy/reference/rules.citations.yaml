@@ -15,7 +15,7 @@ docs/src/content/docs/strategy/reference/rules.mdx:
         file: src/strategy/core/severity.ts
         lines: 14-17
         integrity: sha256-5564e5e2d07c87f0fa002767d802671dbce1c5f6e0c8e2262c26e891560d83bb
-        commit-sha: a2b0e4fa291d50b9c349f76719f188ab5d38bdfc
+        commit-sha: 909b6f4a1ce153d0eb9e407f27dec0b535f798f3
     - claim:
         lines: 76
         integrity: sha256-7a32eacf6090e89801e71499754c752324572e9985a7da4f22af97e93d160416
@@ -23,7 +23,7 @@ docs/src/content/docs/strategy/reference/rules.mdx:
         file: src/strategy/commands/run.ts
         lines: 88-89
         integrity: sha256-43aecd1316b7d1867fd732a104fc11b1044eefa749ebc5fd8b75def0d38df51e
-        commit-sha: 2f5737beb7c945beb91d8276ee15adba7c3bd5f9
+        commit-sha: 909b6f4a1ce153d0eb9e407f27dec0b535f798f3
     - id: duplicate-borrowed-fix
       claim:
         integrity: sha256-cbe6b15c04dfd5a4d44335da83fcbb8bb413582de91cb4b2c7bfae9d6eafea30

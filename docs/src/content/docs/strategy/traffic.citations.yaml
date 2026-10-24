@@ -1,0 +1,19 @@
+docs/src/content/docs/strategy/traffic.mdx:
+  citations:
+    - id: route-from-graph-routes
+      claim:
+        integrity: sha256-12638732c5d97df83a1112acd5d44170423d421c67662a990866e48d1ddc61b1
+      source:
+        file: manni.config.yaml
+        lines: 303-305
+        integrity: sha256-9b62e293d17aaa09d4aea6de8e20daeeb3c221799755a9a74a12efcf8e58cb8f
+        commit-sha: bf2787b81f8ce148ebdb0698e620e7bd74e7f12c
+    - id: traffic-sql
+      claim:
+        lines: 41-83
+        integrity: sha256-c0a8d1b39f6202c5b8bbd1426bf7c51f54e1f457d2fc0a41fb477985799d5d52
+      source:
+        file: docs/content-strategy/traffic.sql
+        lines: 1-41
+        integrity: sha256-fcb559cc0ed23315b4882617c4ffcb0d47795add032207fde63066242c7d1544
+      quote: true

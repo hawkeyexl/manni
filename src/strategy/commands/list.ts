@@ -48,6 +48,7 @@ export function entriesOf(
   cwd: string,
   base: string,
   index: StrategyIndex = indexSet(set),
+  // `runList` always passes steps resolved with the run's routes. This default has none, so every route step is `unchecked`.
   stepMap: StepMap = resolveSteps(set, {}, index),
   owns: (file: string) => boolean = () => true,
 ): RecordEntry[] {
