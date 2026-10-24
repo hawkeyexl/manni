@@ -450,6 +450,7 @@ export default defineConfig({
           badge: BETA,
           items: [
             { label: "Overview", link: "/strategy/" },
+            { label: "Measure against traffic", link: "/strategy/traffic/" },
             {
               label: "Reference",
               collapsed: true,
