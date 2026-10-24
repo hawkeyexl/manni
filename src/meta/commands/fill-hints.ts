@@ -249,25 +249,49 @@ async function readIds(
   collection: CollectionConfig,
   opts: PageIdReaderOptions,
 ): Promise<ReadonlyMap<string, string>> {
+  const ids = new Map<string, string>();
+  for (const { path, id } of await readMembers(collection, opts)) {
+    if (typeof id === "string" && id.trim() !== "") ids.set(path, id);
+  }
+  return ids;
+}
+
+/** A collection member: its absolute path, and the `id` and `type` its own data declares. */
+export interface CollectionMember {
+  path: string;
+  id: unknown;
+  type: unknown;
+}
+
+/**
+ * Every member of `collection` that its extractor reads, in walk order. Each
+ * is read from its own file only, with no sidecar merged. A member that
+ * cannot be read or parsed is left out. `meta fill` offers the ids, and
+ * `meta get` finds the strategy records by `type`.
+ */
+export async function readMembers(
+  collection: CollectionConfig,
+  opts: PageIdReaderOptions,
+): Promise<CollectionMember[]> {
   const { files } = await resolveTargetSet({
     inputs: collection.paths,
     cwd: opts.configDir,
     allowEmpty: true,
     respectGitignore: opts.respectGitignore ?? true,
   });
-  const ids = new Map<string, string>();
+  const members: CollectionMember[] = [];
   for (const file of files) {
     if (!isMember(collection, file)) continue;
     const extractor = extractorForExtension(extname(file));
     if (extractor === undefined) continue;
     const path = resolve(opts.configDir, file);
-    let id: unknown;
+    let data: Record<string, unknown>;
     try {
-      id = extractor.extract(await readFile(path, "utf8"), file).data.id;
+      data = extractor.extract(await readFile(path, "utf8"), file).data;
     } catch {
       continue;
     }
-    if (typeof id === "string" && id.trim() !== "") ids.set(path, id);
+    members.push({ path, id: data.id, type: data.type });
   }
-  return ids;
+  return members;
 }

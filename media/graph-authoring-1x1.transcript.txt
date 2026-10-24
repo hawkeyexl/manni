@@ -1,0 +1,83 @@
+Author-facing content in the graph, demo video transcript (silent video; text describes what is on screen)
+
+Frame: 1080x1080, 30 fps, 44.8 s. Every terminal line is real output, run at the root of the
+manni repository against its own docs, collections and 82 strategy records, by
+media/capture-graph-authoring/capture.sh. `manni` is this branch's built CLI. The last beat runs
+the plugin's own MCP server script, plugin/manni/hooks/graph-server.mjs, with stdin closed, so the
+stdio server ends once it is up.
+
+[0:00-0:09] Title: Records in the graph (1 / 4)
+$ time manni graph publish -o .manni/graph/internal
+manni: no docevals report is configured, so records carry no eval verdicts.
+manni: no vector sidecar, so chunks carry no vectors and retrieval is lexical only; configure graph.embed to add them.
+manni: 82 pages are under no route, so llms.txt leaves them out.
+build     graph.ttl: 344 pages, 23413 triples, 82 strategy records
+export    search.und.json, search.en.json, localizations.json: 3108 entries
+skipped   embed: no graph.embed section
+export    graph.jsonld: 3274 nodes
+export    chunks.json, chunks.und.jsonl, chunks.en.jsonl: 2543 chunks, 0 withheld
+export    llms.txt: 262 pages
+skipped   iirds: no graph.export.iirds section
+Published 9 files to .manni/graph/internal/.
+
+real	0m11.687s
+user	0m0.015s
+sys	0m0.000s
+Highlighted rows: lines containing "82 strategy records"
+Caption: The default build types this repository's 82 strategy records as audiences, personas and journeys.
+
+[0:09-0:20] Title: Which pages serve D11? (2 / 4)
+$ manni graph traverse -g .manni/graph/internal/graph.ttl https://hawkeyexl.github.io/manni/id/strategy/journey/d11 --reverse --predicates dcterms:isPartOf
+https://hawkeyexl.github.io/manni/id/strategy/journey/d11 — Bound what the eval gate can spend and what it can execute
+  https://hawkeyexl.github.io/manni/id/doc/docs/src/content/docs/docevals/ci/cost-and-caching.mdx — Caching and turn budgets
+  https://hawkeyexl.github.io/manni/id/doc/docs/src/content/docs/docevals/ci/local-models.mdx — Local models and CI
+  https://hawkeyexl.github.io/manni/id/doc/docs/src/content/docs/docevals/ci/untrusted-pull-requests.mdx — Untrusted pull requests
+  https://hawkeyexl.github.io/manni/id/doc/docs/src/content/docs/docevals/reference/configuration.mdx — Configuration reference
+
+5 nodes, 4 hops, 0 excluded
+Highlighted rows: lines containing "/id/doc/docs/"
+Caption: Walk back from journey D11 along dcterms:isPartOf. Its four pages are the ones strategy get lists.
+
+[0:20-0:34] Title: A graph for readers (3 / 4)
+$ time manni graph publish --collection site --no-authoring -o .manni/graph/readers
+manni: no docevals report is configured, so records carry no eval verdicts.
+manni: no vector sidecar, so chunks carry no vectors and retrieval is lexical only; configure graph.embed to add them.
+build     graph.ttl: 262 pages, 21021 triples
+export    search.en.json, localizations.json: 3026 entries
+skipped   embed: no graph.embed section
+export    graph.jsonld: 3110 nodes
+export    chunks.json, chunks.en.jsonl: 2461 chunks, 0 withheld
+export    llms.txt: 262 pages
+skipped   iirds: no graph.export.iirds section
+Published 7 files to .manni/graph/readers/.
+
+real	0m9.111s
+user	0m0.000s
+sys	0m0.015s
+$ manni graph query -g .manni/graph/readers/graph.ttl --predicate dcterms:created
+No matches.
+Highlighted rows: lines containing "262 pages, 21021 triples", "No matches."
+Caption: --no-authoring leaves out the records and the author-facing fields. Not one created date is left.
+
+[0:34-0:45] Title: The plugin's own directory (4 / 4)
+$ node plugin/manni/hooks/graph-server.mjs < /dev/null
+manni: publishing the graph before serving it: ../../../../../../../HAWKEY~1/AppData/Local/Temp/manni/graph/1b1e36253fe824df/chunks.json does not exist.
+manni: no docevals report is configured, so records carry no eval verdicts.
+manni: no vector sidecar, so chunks carry no vectors and retrieval is lexical only; configure graph.embed to add them.
+manni: 82 pages are under no route, so llms.txt leaves them out.
+manni: published the graph in 11.0s.
+manni: serving lookup, retrieve, traverse and impact over stdio from ../../../../../../../HAWKEY~1/AppData/Local/Temp/manni/graph/1b1e36253fe824df/chunks.json.
+Highlighted rows: lines containing "Temp/manni/graph/"
+Caption: The plugin's server publishes into its own data directory, outside the repository.
+
+Timing: the waits over a second are replayed at 1/5. The real times are on screen: bash's time
+output after each publish (11.687 s and 9.111 s), and the server's own "published the graph in 11.0s".
+
+Beat 2: the four pages are the ones manni strategy get d11 lists
+(media/capture-graph-authoring/strategy-get-d11.txt).
+
+Beat 3: the default graph from beat 1 answers the same query with 262 matches
+(media/capture-graph-authoring/internal-created.txt).
+
+Beat 4: with CLAUDE_PLUGIN_DATA unset, as here, the server's data directory is <tmpdir>/manni/graph/<hash>.
+Under Claude Code it is inside the plugin's data directory. Either way it is outside the repository.

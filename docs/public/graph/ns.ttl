@@ -28,9 +28,9 @@ claimed to type — which is the inference manni graph's negative-scope decision
 to refuse.""" ;
     dcterms:license <https://spdx.org/licenses/MIT.html> ;
     dcterms:creator "hawkeyexl" ;
-    owl:versionInfo "1.3.0" ;
-    owl:versionIRI <https://hawkeyexl.github.io/manni/graph/ns/1.3.0> ;
-    owl:priorVersion <https://hawkeyexl.github.io/manni/graph/ns/1.2.0> ;
+    owl:versionInfo "1.4.0" ;
+    owl:versionIRI <https://hawkeyexl.github.io/manni/graph/ns/1.4.0> ;
+    owl:priorVersion <https://hawkeyexl.github.io/manni/graph/ns/1.3.0> ;
     vann:preferredNamespacePrefix "graph" ;
     vann:preferredNamespaceUri "https://hawkeyexl.github.io/manni/graph/ns#" ;
     rdfs:seeAlso <https://hawkeyexl.github.io/manni/graph/reference/vocabulary/> .
@@ -69,6 +69,21 @@ it with dcterms:hasPart.
 
 A Block is graph data, not a retrieval passage. Traversal does not step into
 one, and search indexes whole sections.""" ;
+    rdfs:isDefinedBy <https://hawkeyexl.github.io/manni/graph/ns> .
+
+graph:Journey
+    a rdfs:Class ;
+    rdfs:label "Journey" ;
+    rdfs:comment """A critical user journey from the content strategy: one
+outcome a persona comes to the docs to reach. Its IRI is
+`{base}strategy/journey/{id}`, from the record's id. The record's Document
+names it with foaf:primaryTopic. The journey names its personas with
+schema:audience, and each page that serves it points to it with
+dcterms:isPartOf.
+
+Audiences and personas take schema.org's classes, schema:Audience and
+schema:PeopleAudience. A journey has no counterpart there, so it is named
+here.""" ;
     rdfs:isDefinedBy <https://hawkeyexl.github.io/manni/graph/ns> .
 
 graph:Verification

@@ -1,0 +1,15 @@
+manni: no docevals report is configured, so records carry no eval verdicts.
+manni: no vector sidecar, so chunks carry no vectors and retrieval is lexical only; configure graph.embed to add them.
+manni: 82 pages are under no route, so llms.txt leaves them out.
+build     graph.ttl: 344 pages, 23413 triples, 82 strategy records
+export    search.und.json, search.en.json, localizations.json: 3108 entries
+skipped   embed: no graph.embed section
+export    graph.jsonld: 3274 nodes
+export    chunks.json, chunks.und.jsonl, chunks.en.jsonl: 2543 chunks, 0 withheld
+export    llms.txt: 262 pages
+skipped   iirds: no graph.export.iirds section
+Published 9 files to .manni/graph/internal/.
+
+real	0m11.687s
+user	0m0.015s
+sys	0m0.000s

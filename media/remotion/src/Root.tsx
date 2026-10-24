@@ -29,6 +29,8 @@ import { beats as strategyStepsBeats, totalFrames as strategyStepsTotalFrames, T
 import { beats as strategyBeats, totalFrames as strategyTotalFrames, TYPING_MS as strategyTypingMs } from "./strategy/beats";
 import { beats as citeImpactBeats, totalFrames as citeImpactTotalFrames, TYPING_MS as citeImpactTypingMs } from "./cite-impact/beats";
 import { beats as checkImpactBeats, totalFrames as checkImpactTotalFrames, TYPING_MS as checkImpactTypingMs } from "./check-impact/beats";
+import { beats as pluginRecordsBeats, totalFrames as pluginRecordsTotalFrames, TYPING_MS as pluginRecordsTypingMs } from "./plugin-records/beats";
+import { beats as graphAuthoringBeats, totalFrames as graphAuthoringTotalFrames, TYPING_MS as graphAuthoringTypingMs } from "./graph-authoring/beats";
 
 /** sidecar-url-1x1: 23 px / 75 columns, derived in media/sidecar-url-1x1.script.md. */
 const DemoUrl: React.FC = () => <DemoView beats={urlBeats} fontPx={23} linePx={32} cols={75} />;
@@ -157,6 +159,25 @@ const DemoCiteImpact: React.FC = () => (
 /** check-impact-1x1: 28 px / 61 columns per beat, derived by media/check-impact/cols.mjs. */
 const DemoCheckImpact: React.FC = () => (
   <DemoView beats={checkImpactBeats} fontPx={28} linePx={39} cols={61} typingMs={checkImpactTypingMs} ligatures={false} />
+);
+
+/**
+ * plugin-records-1x1: every beat carries its own size (src/plugin-records/beats.ts), derived in
+ * media/plugin-records/plugin-records-1x1.script.md (media/plugin-records/capture/cols.mjs).
+ * The video-level size is beat 3's. Breaks after "," let the page JSON wrap without
+ * splitting a token. Ligatures off: `--no-derived` and `--` would draw as glyphs.
+ */
+const DemoPluginRecords: React.FC = () => (
+  <DemoView beats={pluginRecordsBeats} fontPx={23} linePx={32} cols={75} typingMs={pluginRecordsTypingMs} ligatures={false} breakAfter="," />
+);
+/**
+ * graph-authoring-1x1: every beat carries its own size (src/graph-authoring/beats.ts), derived in
+ * media/graph-authoring-1x1.script.md (media/capture-graph-authoring/cols.mjs).
+ * The video-level size is beat 3's. Breaks after "/" let IRIs and paths wrap without
+ * splitting a token. Ligatures off: `--no-authoring` and `--` would draw as glyphs.
+ */
+const DemoGraphAuthoring: React.FC = () => (
+  <DemoView beats={graphAuthoringBeats} fontPx={23} linePx={32} cols={75} typingMs={graphAuthoringTypingMs} ligatures={false} breakAfter="/" />
 );
 
 /**
@@ -386,6 +407,22 @@ export const Root: React.FC = () => (
       height={1080}
       fps={FPS}
       durationInFrames={strategyTotalFrames}
+    />
+    <Composition
+      id="PluginRecordsDemo"
+      component={DemoPluginRecords}
+      width={1080}
+      height={1080}
+      fps={FPS}
+      durationInFrames={pluginRecordsTotalFrames}
+    />
+    <Composition
+      id="GraphAuthoringDemo"
+      component={DemoGraphAuthoring}
+      width={1080}
+      height={1080}
+      fps={FPS}
+      durationInFrames={graphAuthoringTotalFrames}
     />
     <Composition
       id="StrategyStepsDemo"

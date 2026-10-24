@@ -168,10 +168,13 @@ Key layers:
   `manni tracevals capture` and `manni status`, and PostToolUse and Stop run
   `manni check`. A PostToolUse hook on `Read` runs `hooks/page-metadata.mjs`,
   which hands the agent a collection page's `meta get --all-fields` values
-  on its first read and again when they change. Its MCP server, `graph` in
+  on its first read and again when they change. For a page that names
+  strategy records, it also names each record by type, id and file. That
+  reply stays under Claude Code's limit. Its MCP server, `graph` in
   `.mcp.json`, is `hooks/graph-server.mjs`. Where collections exist, it runs
-  `manni graph serve --publish`, and elsewhere it offers no tools (proposal
-  0103). Its skills are `setup`, `check`, `fix` and `evals`. The
+  `manni graph serve --publish -i <plugin data>/graph/<hash>`, so a session
+  never writes beside `graph.out`, and elsewhere it offers no tools
+  (proposals 0103 and 0110). Its skills are `setup`, `check`, `fix` and `evals`. The
   marketplace is `.claude-plugin/marketplace.json`. Hooks and skills go
   through `hooks/manni.mjs`, which runs this checkout's own `dist/cli.js`
   here, so this repo enables the plugin in `.claude/settings.json`. Run

@@ -11,7 +11,7 @@ action: remember
 concepts:
   - search index
   - vector sidecar
-last-updated: 2026-10-21
+last-updated: 2026-10-23
 ---
 
 manni graph is a CLI first, and everything it does is reachable as a library. The
@@ -57,6 +57,19 @@ directly.
 | `runTraverse` | Walk the graph from a node, with `renderTraverse` for the report. |
 | `runEmbed` | Compute vector sidecars, with `renderEmbed` and the lower-level `embedText`. |
 | `runExport` | Reserialize into `jsonld`, `iirds`, or `search`. |
+
+`runBuild` takes a `BuildOptions` and returns a `BuildResult`. Two of their
+fields carry the [content strategy](/manni/strategy/#the-strategy-in-the-graph):
+
+| Field | Type | Purpose |
+|---|---|---|
+| `BuildOptions.authoring` | `boolean`, optional | Overrides [`graph.authoring`](/manni/graph/reference/configuration/). `false` leaves author-facing content out, as `--no-authoring` does. |
+| `BuildResult.strategyRecords` | `number` | How many strategy records the build typed. `0` when none is in the build. |
+
+```ts
+const readers = await graph.runBuild({ collection: ["site"], authoring: false });
+console.log(readers.strategyRecords); // 0
+```
 
 `GraphError` is the operational failure the CLI maps to exit `2`. Catch it to tell
 "manni graph could not run" from "the graph did not pass".

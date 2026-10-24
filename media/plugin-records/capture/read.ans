@@ -1,0 +1,9 @@
+Metadata for docs/src/content/docs/cite/ci/stale-windows.mdx, from the page and its sidecars:
+{"title":"Measure how long pins stood stale","description":"Run manni cite history from a scheduled job to measure how long each citation stood stale, which releases shipped it, and the total as one number for a dashboard.","type":"how-to","id":"cite-ci-stale-windows","keywords":["cite history","stale window","releases","scheduled job","full history"],"language":"en","audiences":["ci-engineers","docs-engineers"],"lifecycle":"published","personas":["devin","maya"],"journeys":["d18","m5"],"intent"
+The page names these records. Read a record's file for its details, or run manni strategy get <id>, which also lists the pages that name it:
+audience ci-engineers docs/content-strategy/audiences/ci-engineers.md
+audience docs-engineers docs/content-strategy/audiences/docs-engineers.md
+persona devin docs/content-strategy/personas/devin.md
+persona maya docs/content-strategy/personas/maya.md
+journey d18 docs/content-strategy/journeys/d18.md
+journey m5 docs/content-strategy/journeys/m5.md

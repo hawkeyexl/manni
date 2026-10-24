@@ -107,6 +107,16 @@ export function mintAgentIri(
   return `${base}agent/${kind}/${encodeSegment(conceptSlug(name))}`;
 }
 
+/**
+ * `{base}strategy/{type}/{id}`: an audience, persona or journey record
+ * (proposal 0110). The id is the record's own, as it declares it or as its
+ * file name gives it, encoded as one segment. Ids are per repository, so
+ * the IRI is too.
+ */
+export function mintStrategyIri(base: string, type: string, id: string): string {
+  return `${base}strategy/${encodeSegment(type)}/${encodeSegment(id)}`;
+}
+
 /** The graph itself as a prov:Entity. */
 export function mintGraphIri(base: string): string {
   return `${base}graph`;
