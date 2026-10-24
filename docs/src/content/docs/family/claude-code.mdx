@@ -5,7 +5,7 @@ sidebar:
   order: 2
 id: "family-claude-code"
 type: "how-to"
-keywords: ["Claude Code", "plugin", "hooks", "marketplace", "MANNI_GENERATED_BY", "skills", "MCP", "graph serve"]
+keywords: ["Claude Code", "plugin", "hooks", "marketplace", "MANNI_GENERATED_BY", "MANNI_TRACEVALS_HOOKS", "skills", "MCP", "graph serve"]
 language: en
 audiences: ["docs-engineers"]
 intent: "Install the manni Claude Code plugin and know what it checks at session start, after each edit and before the agent stops."
@@ -13,9 +13,9 @@ lifecycle: published
 applies-to: ["domain:family"]
 prerequisites: ["family-check"]
 next-steps: ["family-check", "family-reference-cli", "meta-set-up-machine-authorship"]
-sample-questions: ["How do I install the manni plugin for Claude Code?", "What happens when an agent edits a page and the check fails?", "How do I turn the manni plugin off?", "What does the agent see when it reads a page?"]
+sample-questions: ["How do I install the manni plugin for Claude Code?", "What happens when an agent edits a page and the check fails?", "How do I turn the manni plugin off?", "What does the agent see when it reads a page?", "How do I turn on tracevals for my own sessions?"]
 graph: { label: "Keep an agent's docs green", type: task }
-last-updated: 2026-10-23
+last-updated: 2026-10-24
 tags:
   - claude-code
   - agents
@@ -93,7 +93,9 @@ the agent.
 
 ## What happens at session start
 
-Three hooks run when a session starts.
+Three hooks run when a session starts. The two tracevals hooks run only for a
+user who [turned tracevals on](#turn-on-tracevals-for-your-sessions). For
+everyone else they start no manni at all.
 
 `manni tracevals capture` records a manifest of the session under
 `.manni/tracevals/sessions/`. It stores the hash of every instruction artifact
@@ -257,9 +259,10 @@ the agent changed or removed one, and skipped when it changed only code. The
 graph is never checked here. It is the slowest whole-set check, and its
 findings span pages, so CI checks it with a bare `manni check`.
 
-When `tracevals.runtime` exists, it also judges the turn that just ended
-against the rules your repository declares for agents, with the fast in-loop
-model.
+When `tracevals.runtime` exists and you turned tracevals on, it also judges the
+turn that just ended. The fast in-loop model holds it to the rules your
+repository declares for agents. Otherwise the Stop runs the file checks alone and never
+reads the transcript.
 
 With a clean working tree, no file check runs.
 
@@ -286,14 +289,63 @@ covers what counts as a rule and how the model is chosen.
 
 ## What happens when a subagent stops
 
-A subagent that finishes runs the same check over its own transcript alone. Parallel subagents each
-get a judgement of their own run, and an agent definition's rules apply to it. The repair pass works
-as it does for the main session.
+For a user who turned tracevals on, a subagent that finishes runs the same check over its own
+transcript alone. Parallel subagents each get a judgement of their own run, and an agent definition's
+rules apply to it. The repair pass works as it does for the main session. With tracevals off, no hook
+runs when a subagent stops.
 
 ## What happens when the session ends
 
-A last hook runs `manni tracevals release`. It hands back the session's hold on the local model, so
-the model unloads once no session needs it.
+For a user who turned tracevals on, a last hook runs `manni tracevals release`. It hands back the
+session's hold on the local model, so the model unloads once no session needs it. With tracevals
+off, nothing runs at session end.
+
+## Turn on tracevals for your sessions
+
+The plugin's tracevals hooks are off until you turn them on. Off, the plugin
+records no manifest, fetches no model and judges no turn. A committed
+`tracevals.runtime` section says turns can be judged in this repository. Whether
+yours are is your own choice.
+
+To turn the option on, open `/plugin`, then **Installed**, **manni** and
+**Configure options**. Check **Judge each turn with tracevals**. In a session,
+`/plugin configure manni@manni` opens the same option. From a shell, set it as
+you install the plugin.
+
+```sh
+claude plugin install manni@manni --config tracevals=true
+```
+
+Claude Code then says to restart, and your next session runs the hooks. It keeps
+the answer in your user settings.
+
+```json title="~/.claude/settings.json"
+{ "pluginConfigs": { "manni@manni": { "options": { "tracevals": true } } } }
+```
+
+Claude Code ignores this option in project and local settings. Setting it in a
+committed settings file therefore never turns it on for anyone else.
+
+With the option on, the plugin sets `MANNI_TRACEVALS_HOOKS=1` for every manni it
+starts. If you run manni from hooks of your own, without the plugin, set that
+variable yourself. The `env` block of your own `~/.claude/settings.json` is one
+place for it. Only `1` turns the hooks on. Any other value leaves them off, and
+manni warns once.
+
+```text
+manni: MANNI_TRACEVALS_HOOKS is "true"; only 1 turns the tracevals hooks on.
+```
+
+The session briefing reads the plugin's option. A `manni status` in your own
+terminal reads that shell's environment instead. Unless you export the variable
+there, it shows tracevals as turned off here, with the next step under it.
+
+```text
+tracevals  not checked   runtime evals are set up, and turned off here
+                         Turn on the manni plugin's tracevals option, or set MANNI_TRACEVALS_HOOKS=1.
+```
+
+`MANNI_TRACEVALS_HOOKS=1 manni status` shows the row your sessions see.
 
 ## The four skills
 
@@ -321,6 +373,10 @@ claude plugin disable manni@manni
 
 To keep the hooks but stop the graph server, turn `plugin:manni:graph` off in
 `/mcp`. Claude Code remembers that choice for the project.
+
+To stop the tracevals hooks for yourself alone, turn the plugin's tracevals
+option off and restart Claude Code. The rest of the plugin keeps running, and so
+does tracevals for anyone else who turned it on.
 
 To keep the plugin but stop one domain from blocking, remove that domain's
 section from `manni.config.yaml`. A domain counts as set up only when its config
