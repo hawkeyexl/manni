@@ -1,6 +1,6 @@
 # 0110: Author-facing content in the graph, on by default
 
-- **Status:** Proposed
+- **Status:** Implemented (#247)
 - **Serves:**
   - Sara · S17, "Hold the pages to the strategy they were written for". The
     graph says whom each page serves, and which pages serve a journey.
