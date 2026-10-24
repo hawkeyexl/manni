@@ -1,0 +1,4 @@
+check-before exit 0 611 ms
+diff exit 0 98 ms
+get exit 0 597 ms
+check-after exit 0 656 ms

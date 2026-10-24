@@ -19,10 +19,10 @@ export interface GetOptions extends StrategyCommandOptions {
 }
 
 export async function runGet(opts: GetOptions): Promise<RecordEntry> {
-  const { cwd, run, set } = await loadStrategy(opts);
+  const { cwd, run, set, steps } = await loadStrategy(opts);
   const index = indexSet(set);
   const found = index.anyWithId(opts.id);
-  const entry = found === undefined ? undefined : entriesOf(set, cwd, run.base, index).find((e) => e.record === found);
+  const entry = found === undefined ? undefined : entriesOf(set, cwd, run.base, index, steps).find((e) => e.record === found);
   if (entry !== undefined) return entry;
   throw new StrategyError(unknownRecordMessage(opts.id, set.records));
 }

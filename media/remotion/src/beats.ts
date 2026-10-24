@@ -65,6 +65,11 @@ export interface Beat {
    * output taller than the frame. Chrome only: the bytes are untouched.
    */
   scroll?: { at: number; toRow: string; bottom?: boolean }[];
+  /**
+   * Wrapped rows continue at this column when it is deeper than the line's own
+   * indent: the gutter a CLI prints its own continuation lines under.
+   */
+  hang?: number;
 }
 
 const q = `manni meta query "UPDATE docs SET jira = 'PLAT-1' WHERE _path = 'docs/auth.md'"`;

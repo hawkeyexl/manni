@@ -126,11 +126,16 @@ function merge(chars: Span[]): Span[] {
   return out;
 }
 
-/** Wrap one logical line into display rows. Bytes are untouched: only row breaks are added. */
-function wrapLine(line: Line, cols: number, breakAfter = ""): Line[] {
+/**
+ * Wrap one logical line into display rows. Bytes are untouched: only row breaks are added.
+ * Continuation rows carry the line's own indent, or `hang` columns when that is deeper:
+ * a gutter the CLI prints its own continuation lines under.
+ */
+function wrapLine(line: Line, cols: number, breakAfter = "", hang = 0): Line[] {
   const text = line.spans.map((s) => s.text).join("");
   if (!Number.isFinite(cols) || text.length <= cols) return [line];
-  const indent = (/^ */.exec(text) ?? [""])[0];
+  const own = (/^ */.exec(text) ?? [""])[0];
+  const indent = own.length >= hang ? own : " ".repeat(hang);
   const chars: Span[] = [];
   for (const s of line.spans) for (const ch of s.text) chars.push({ ...s, text: ch });
   const rows: Line[] = [];
@@ -163,8 +168,8 @@ function wrapLine(line: Line, cols: number, breakAfter = ""): Line[] {
   return rows;
 }
 
-const wrapScreen = (lines: Line[], cols: number, breakAfter?: string): Line[] =>
-  lines.flatMap((l) => wrapLine(l, cols, breakAfter));
+const wrapScreen = (lines: Line[], cols: number, breakAfter?: string, hang?: number): Line[] =>
+  lines.flatMap((l) => wrapLine(l, cols, breakAfter, hang));
 
 /** Mark the logical lines a beat's caption is about. Chrome only: spans are untouched. */
 function markLines(lines: Line[], highlight: string[] | undefined): Line[] {
@@ -229,13 +234,14 @@ const BeatView: React.FC<BeatViewProps> = (props) => {
     markLines(screenAt(beat, frame, index > 0 ? finals[index - 1] : [], typingMs), beat.highlight),
     cols,
     breakAfter,
+    beat.hang,
   );
 
   // A continuing beat must not move the text block, so a chain shares one layout
   // row count: the final row count of the last beat in the chain, plus the prompt.
   let j = index;
   while (j + 1 < beats.length && beats[j + 1].continues) j++;
-  const rows = wrapScreen(finals[j], cols, breakAfter).length + 1;
+  const rows = wrapScreen(finals[j], cols, breakAfter, beats[j].hang).length + 1;
   let top = Math.max(TERMINAL_INSET, Math.round((TERMINAL_HEIGHT - rows * linePx) / 2));
 
   // Scrollback (Beat.scroll): top-aligned, then each entry eases the view down
@@ -251,7 +257,7 @@ const BeatView: React.FC<BeatViewProps> = (props) => {
       if (s.bottom && row >= 0) {
         // The line's last display row: continuation rows carry its indent, not the match.
         const logical = screenAt(beat, frame, index > 0 ? finals[index - 1] : [], typingMs).find((l) => text(l).includes(s.toRow));
-        const extra = logical ? wrapLine(logical, cols, breakAfter).length - 1 : 0;
+        const extra = logical ? wrapLine(logical, cols, breakAfter, beat.hang).length - 1 : 0;
         row = row + extra - (whole - 1);
       }
       const target = Math.min(maxOffset, Math.max(0, row));

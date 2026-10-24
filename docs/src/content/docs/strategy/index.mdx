@@ -267,6 +267,61 @@ That set breaks every rule once, so the run goes on to five findings about
 the records. It ends `3 errors, 3 warnings, 1 notice in 7 records`, and it
 exits `1` because of the errors. Warnings and notices never fail a run.
 
+## Map a journey's steps to its pages
+
+A journey's `steps:` lists its stages in order, each with the page that
+carries it. A step's `doc` is a repo path, or a site route that
+`graph.routes` maps to a file. A page still to be written says
+`exists: false`:
+
+```markdown title="strategy/journeys/m1.md"
+---
+type: journey
+id: m1
+title: Stand up metadata validation for my repo
+personas: [maya]
+steps:
+  - stage: Read the guide
+    doc: docs/guide.md
+  - stage: Add the CI step
+    doc: /site/ci/
+  - stage: Look up a flag
+    doc: docs/reference.md
+  - stage: Work through the tutorial
+    doc: /site/tutorial/
+    exists: false
+---
+```
+
+`get` then shows the path in order, with each step's state and page:
+
+```console
+$ manni strategy get m1
+Stand up metadata validation for my repo      strategy/journeys/m1.md:1
+  type          journey
+  id            m1
+  personas      maya  Maya, Documentation Engineer
+  steps         2 of 4 served
+                1  served     Read the guide
+                              docs/guide.md
+                2  served     Add the CI step
+                              docs/ci/index.md
+                3  unclaimed  Look up a flag
+                              docs/reference.md
+                4  unwritten  Work through the tutorial
+                              /site/tutorial/
+  pages         docs/ci/index.md
+                docs/guide.md
+```
+
+The reference page carries stage 3, but its own `journeys:` leaves out `m1`.
+`check` names that as a `missing-journey` warning on the step's `doc:` line.
+It names the unwritten tutorial as an `unwritten-step` notice. A `doc` that
+names no page at all is a `broken-step` error. `list` adds a `steps` column
+with each journey's served steps over its steps. The
+[steps section](/manni/strategy/reference/rules/#steps) of the rules
+reference has every state.
+
 ## Measure it against readers
 
 The check says the pages agree with the records. It cannot say whether
@@ -279,7 +334,7 @@ persona.
 
 Each finding names its rule, and its `Guide:` line links to that rule's
 section of the [rules reference](/manni/strategy/reference/rules/). That page
-gives each of the six rules its default severity, its exact message, and the
+gives each of the ten rules its default severity, its exact message, and the
 edit that clears it. It also has the full run of the set above.
 
 <CardGrid>
@@ -303,7 +358,8 @@ edit that clears it. It also has the full run of the set above.
     of its type. That a record's `audience:` or `personas:` names one too.
     That no two records share an id, ignoring case. That a page naming a
     journey also names one of its personas, and a persona its audience. That
-    some page names every journey that is not a draft or archived.
+    some page names every journey that is not a draft or archived. That each
+    journey step names a page, and that the page names the journey.
   </Card>
   <Card title="It doesn't" icon="close">
     Read the prose of a record or a page. It doesn't require a page to carry

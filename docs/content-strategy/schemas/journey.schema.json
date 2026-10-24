@@ -156,7 +156,7 @@
           "doc": {
             "type": "string",
             "minLength": 1,
-            "description": "The page that carries the stage, as a path or URL."
+            "description": "The page that carries the stage. A repo path resolves from the config file's directory. A path that starts with `/` is a site route, which resolves through `graph.routes`. `manni strategy` does not check a URL with a scheme."
           },
           "exists": {
             "enum": [
@@ -164,7 +164,7 @@
               false,
               "partial"
             ],
-            "description": "Whether that page exists: `true`, `false` or `partial`."
+            "description": "`false` marks a page not written yet, and `partial` a page that covers the stage in part. `manni strategy` detects whether `doc` names a page, so `true` says what an absent value says."
           },
           "note": {
             "type": "string",

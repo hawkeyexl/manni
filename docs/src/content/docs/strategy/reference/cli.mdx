@@ -148,6 +148,19 @@ docs-engineers        2  Docs-as-code teams
 1 audience, 1 persona, 2 journeys
 ```
 
+When some journey in the set has [steps](/manni/strategy/reference/rules/#steps),
+a `steps` column sits between `pages` and `title`. It holds served steps over
+steps on each journey that has them, and is blank on every other row:
+
+```
+record            pages  steps  title
+docs-engineers        2         Docs-as-code teams
+  maya                2         Maya, Documentation Engineer
+    m1                2    3/9  Stand up metadata validation for my repo
+    m2                0    0/1  Tighten the standard without breaking the build
+1 audience, 1 persona, 2 journeys
+```
+
 `json` prints `{ "records": [...] }`, in the tree's order, each record once.
 Each record is the object `get -f json` prints.
 
@@ -220,6 +233,35 @@ Gate a new page on its journey                strategy/journeys/m3.md:1
   pages         none
 ```
 
+A journey with steps shows a `steps` row after `personas` and before `pages`.
+Its first line is the coverage, served steps over steps. Each step follows:
+its number, its state, and its stage. Under it, dim, is the page its `doc`
+names, else the `doc` as written, then its `note`. A step with neither has
+no second line. The states are on the
+[rules reference](/manni/strategy/reference/rules/#steps):
+
+```
+  steps         3 of 9 served
+                1  served     Read the guide
+                              docs/guide.md
+                2  served     Add the CI step
+                              docs/ci/index.md
+                3  partial    Go deeper in the guide
+                              docs/guide.md
+                              Covers the config half only.
+                4  unclaimed  Look up a flag
+                              docs/reference.md
+                5  broken     Follow the walkthrough
+                              docs/gide.md
+                6  served     Keep the gate green
+                              docs/ci/index.md
+                7  unwritten  Work through the tutorial
+                              /site/tutorial/
+                8  unwritten  Write a tutorial
+                9  unchecked  Read how a team adopted it
+                              https://example.com/blog/adopting
+```
+
 `json` prints the record. `title` is always there: a record with no title
 gets its id, so `title` equal to `id` means none was written. `description`
 and `lifecycle` are there only when the record has them. A persona carries
@@ -241,6 +283,34 @@ and `lifecycle` are there only when the record has them. A persona carries
 }
 ```
 
+A journey with at least one step also carries `steps` and `coverage`, after
+`personas` and before `namedBy`. A step carries `stage`, and `doc`, `exists`
+and `note` as written when written. `line` is the step's first line, and
+`state` is one of `served`, `unclaimed`, `partial`, `unwritten`, `broken` or
+`unchecked`. `page` is the page `doc` names, when it names one:
+
+```json
+{
+  "steps": [
+    {
+      "stage": "Read the guide",
+      "doc": "docs/guide.md",
+      "line": 7,
+      "state": "served",
+      "page": "docs/guide.md"
+    },
+    {
+      "stage": "Work through the tutorial",
+      "doc": "/site/tutorial/",
+      "exists": false,
+      "line": 22,
+      "state": "unwritten"
+    }
+  ],
+  "coverage": { "served": 3, "steps": 9 }
+}
+```
+
 ### Exit codes
 
 | Code | Meaning |
@@ -250,8 +320,9 @@ and `lifecycle` are there only when the record has them. A persona carries
 
 ## `strategy check`
 
-Check the pages against the records, and the records against each other. The
-six rules, their default severities and their messages are on the
+Check the pages against the records, the records against each other, and each
+journey's steps against the pages they name. The ten rules, their default
+severities and their messages are on the
 [rules reference](/manni/strategy/reference/rules/).
 
 ```sh
@@ -297,13 +368,22 @@ prints the same line with zero counts:
 ✓ 4 records, 10 references, no findings
 ```
 
+When the set's journeys carry steps, the line also counts the steps it held to
+their pages:
+
+```
+✓ 4 records, 9 references, 10 steps, no findings
+```
+
 `json` prints `{ findings, summary }`. Each finding carries `rule`, `ruleId`,
 `severity`, `message`, `guidance`, `file` and `line`. It adds the record's
 `id` when the finding is about one, and the `field` that breaks the rule when
-one does. `summary` holds `records`, `references`, `errors`, `warnings` and
-`notices`, and `baseline` when one was read or written. `references` counts
-every value of `audiences:`, `personas:`, `journeys:` and `audience:` the run
-read. A journey's own `personas:` counts once:
+one does. A step rule's `field` is `steps`. `summary` holds `records`,
+`references`, `errors`, `warnings` and `notices`, and `baseline` when one was
+read or written. It holds `steps`, after `references`, when the set's
+journeys carry any. `references` counts every value of `audiences:`,
+`personas:`, `journeys:` and `audience:` the run read. A journey's own
+`personas:` counts once:
 
 ```json
 {
@@ -389,7 +469,17 @@ default, and the records and pages come from the family `collections:`.
 strategy:
   severity:
     unserved-journey: error
+    missing-journey: error
 ```
+
+`strategy.severity` takes the ten rule names: `undefined-reference`,
+`duplicate-id`, `missing-parent`, `orphan-record`, `unserved-journey`,
+`unused-record`, `broken-step`, `stale-step`, `missing-journey` and
+`unwritten-step`.
+
+A step whose `doc` is a `/` route resolves through the family's
+`graph.routes`, read by `manni graph`'s own loader. With no entry, every
+route is `unchecked`. A run whose steps name no route never reads `graph:`.
 
 ## Usage errors
 
@@ -414,7 +504,8 @@ written.
 | `strategy: { exclude: [x] }` in config | `manni: manni.config.yaml: strategy does not carry "exclude". Name a collection under collections:.` |
 | `strategy: [1]` in config | `manni: strategy: in manni.config.yaml must be a mapping.` |
 | An unknown key under `strategy:` | `manni: Unknown key "rules" under strategy: in manni.config.yaml. Supported keys: severity, baseline, allowEmpty, respectGitignore.` |
-| An unknown rule under `strategy.severity` | `manni: Unknown key "unserved" under strategy.severity: in manni.config.yaml. Supported keys: undefined-reference, duplicate-id, missing-parent, orphan-record, unserved-journey, unused-record.` |
+| An unknown rule under `strategy.severity` | `manni: Unknown key "unserved" under strategy.severity: in manni.config.yaml. Supported keys: undefined-reference, duplicate-id, missing-parent, orphan-record, unserved-journey, unused-record, broken-step, stale-step, missing-journey, unwritten-step.` |
+| A step names a `/` route, and a `graph.routes` entry has no `root` | `manni: Invalid config in <config path>:` then `manni:   /graph/routes/0: must have required property 'root'`, graph's own message |
 | `strategy: { allowEmpty: "yes" }` | `manni: strategy.allowEmpty in manni.config.yaml must be a boolean.` |
 | A severity that is not a level | `manni: manni.config.yaml: strategy.severity.unserved-journey "fatal" is not a level. Expected notice \| warning \| error \| off.` |
 | The configured baseline file is missing | ``manni: Baseline ".manni-strategy-baseline.json" not found. Record one with `manni strategy check --baseline`.`` |

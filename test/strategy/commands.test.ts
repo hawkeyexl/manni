@@ -4,7 +4,7 @@
  */
 import { execSync, spawnSync } from "node:child_process";
 import { existsSync } from "node:fs";
-import { mkdir, mkdtemp, readFile, realpath, rm, writeFile } from "node:fs/promises";
+import { cp, mkdir, mkdtemp, readFile, realpath, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
@@ -301,6 +301,156 @@ describe("check", () => {
     expect(JSON.parse(await readFile(join(cwd, ".manni-strategy-baseline.json"), "utf8"))).toBeTypeOf("object");
   });
 });
+
+describe("steps", () => {
+  const STEPS = join(FIXTURES, "steps");
+
+  it("get shows a steps row after personas and before pages: coverage, then each step with its page and note", async () => {
+    const entry = await runGet({ cwd: STEPS, inputs: [], id: "m1" });
+    expect(entry.coverage).toEqual({ served: 3, steps: 9 });
+    const lines = renderGetPretty(entry, { color: false }).split("\n");
+    const start = lines.indexOf("  steps         3 of 9 served");
+    expect(lines[start - 1]).toMatch(/^ {2}personas {6}maya/);
+    expect(lines.slice(start, start + 20)).toEqual([
+      "  steps         3 of 9 served",
+      "                1  served     Read the guide",
+      "                              docs/guide.md",
+      "                2  served     Add the CI step",
+      "                              docs/ci/index.md",
+      "                3  partial    Go deeper in the guide",
+      "                              docs/guide.md",
+      "                              Covers the config half only.",
+      "                4  unclaimed  Look up a flag",
+      "                              docs/reference.md",
+      "                5  broken     Follow the walkthrough",
+      "                              docs/gide.md",
+      "                6  served     Keep the gate green",
+      "                              docs/ci/index.md",
+      "                7  unwritten  Work through the tutorial",
+      "                              /site/tutorial/",
+      "                8  unwritten  Write a tutorial",
+      "                9  unchecked  Read how a team adopted it",
+      "                              https://example.com/blog/adopting",
+      "  pages         docs/ci/index.md",
+    ]);
+  });
+
+  it("get dims the page and note lines in colour", async () => {
+    const entry = await runGet({ cwd: STEPS, inputs: [], id: "m1" });
+    expect(renderGetPretty(entry, { color: true })).toContain("\u001b[2mdocs/gide.md\u001b[22m");
+  });
+
+  it("json carries steps and coverage after personas and before namedBy", async () => {
+    const entry = await runGet({ cwd: STEPS, inputs: [], id: "m1" });
+    const json = JSON.parse(renderGetJson(entry)) as Record<string, unknown>;
+    expect(Object.keys(json)).toEqual(["id", "type", "title", "file", "line", "personas", "steps", "coverage", "namedBy"]);
+    const steps = json["steps"] as Record<string, unknown>[];
+    expect(steps[0]).toEqual({ stage: "Read the guide", doc: "docs/guide.md", line: 7, state: "served", page: "docs/guide.md" });
+    expect(steps[2]).toEqual({
+      stage: "Go deeper in the guide",
+      doc: "docs/guide.md#config",
+      exists: "partial",
+      note: "Covers the config half only.",
+      line: 11,
+      state: "partial",
+      page: "docs/guide.md",
+    });
+    expect(steps[6]).toEqual({ stage: "Work through the tutorial", doc: "/site/tutorial/", exists: false, line: 22, state: "unwritten" });
+    expect(steps[7]).toEqual({ stage: "Write a tutorial", line: 25, state: "unwritten" });
+    expect(json["coverage"]).toEqual({ served: 3, steps: 9 });
+  });
+
+  it("gives step pages relative to where it was run", async () => {
+    const entry = await runGet({ cwd: join(STEPS, "docs"), inputs: [], id: "m1" });
+    expect(entry.steps?.[1]?.page).toBe("ci/index.md");
+  });
+
+  it("list gains a steps column only when some journey has steps", async () => {
+    const { entries } = await runList({ cwd: STEPS, inputs: [] });
+    expect(renderListPretty(entries).split("\n").slice(0, 5)).toEqual([
+      "record            pages  steps  title",
+      "docs-engineers        2         Docs-as-code teams",
+      "  maya                2         Maya, Documentation Engineer",
+      "    m1                2    3/9  Stand up metadata validation for my repo",
+      "    m2                0    0/1  Tighten the standard without breaking the build",
+    ]);
+    const json = JSON.parse(renderListJson(entries)) as { records: Record<string, unknown>[] };
+    expect(json.records.find((r) => r["id"] === "m1")?.["coverage"]).toEqual({ served: 3, steps: 9 });
+    expect(json.records.find((r) => r["id"] === "maya")).not.toHaveProperty("steps");
+    expect(json.records.find((r) => r["id"] === "maya")).not.toHaveProperty("coverage");
+  });
+
+  it("reads steps: [] and items that are not mappings as no steps, and numbers steps by position", async () => {
+    const cwd = await docset({
+      "strategy/journeys/m2.md": "---\ntype: journey\nid: m2\ntitle: Tighten the standard\npersonas: [maya]\nsteps: []\n---\n",
+      "strategy/journeys/m10.md":
+        "---\ntype: journey\nid: m10\ntitle: Keep the gate green\npersonas: [maya]\nsteps:\n  - just a string\n  - stage: 3\n    doc: docs/guide.md\n    exists: maybe\n---\n",
+    });
+    const m2 = await runGet({ cwd, inputs: [], id: "m2" });
+    expect(m2.steps).toBeUndefined();
+    expect(JSON.parse(renderGetJson(m2))).not.toHaveProperty("steps");
+    const m10entry = await runGet({ cwd, inputs: [], id: "m10" });
+    expect(m10entry.steps?.map((s) => s.n)).toEqual([2]);
+    const m10 = JSON.parse(renderGetJson(m10entry)) as { steps: unknown[] };
+    expect(m10.steps).toEqual([{ doc: "docs/guide.md", line: 8, state: "served", page: "docs/guide.md" }]);
+    const report = await runCheck({ cwd, inputs: [] });
+    expect(report.findings).toEqual([]);
+  });
+
+  it("check counts the steps in its summary and its clean line, and files each finding at its line", async () => {
+    const report = await runCheck({ cwd: STEPS, inputs: [] });
+    expect(report.steps).toBe(10);
+    expect(report.findings.map((f) => [f.rule, f.severity, f.line])).toEqual([
+      ["missing-journey", "warning", 16],
+      ["broken-step", "error", 18],
+      ["stale-step", "warning", 21],
+      ["unwritten-step", "notice", 22],
+      ["unwritten-step", "notice", 25],
+    ]);
+    const json = JSON.parse(renderFindingsJson(report)) as { summary: Record<string, unknown> };
+    expect(Object.keys(json.summary)).toEqual(["records", "references", "steps", "errors", "warnings", "notices"]);
+    expect(json.summary["steps"]).toBe(10);
+
+    const quiet = await stepsCopy(
+      "strategy:\n  severity:\n    broken-step: off\n    stale-step: off\n    missing-journey: off\n    unwritten-step: off\n",
+    );
+    const clean = await runCheck({ cwd: quiet, inputs: [] });
+    expect(renderFindingsPretty(clean, { color: false })).toMatch(/^✓ 4 records, \d+ references, 10 steps, no findings$/);
+  });
+
+  it("keeps a set without steps to today's summary keys", async () => {
+    const report = await runCheck({ cwd: await docset(), inputs: [] });
+    const json = JSON.parse(renderFindingsJson(report)) as { summary: Record<string, unknown> };
+    expect(json.summary).not.toHaveProperty("steps");
+  });
+
+  it("never reads graph: when no step names a / route", async () => {
+    const cwd = await docset({
+      "manni.config.yaml": `${CONFIG}graph:\n  routes:\n    - basePath: /site\n`,
+      "strategy/journeys/m2.md":
+        "---\ntype: journey\nid: m2\ntitle: Tighten the standard\npersonas: [maya]\nsteps:\n  - stage: Read it\n    doc: docs/guide.md\n---\n",
+    });
+    expect((await runCheck({ cwd, inputs: [] })).findings).toEqual([]);
+  });
+
+  it("refuses an invalid graph: section with graph's own message once a step names a / route", async () => {
+    const cwd = await docset({
+      "manni.config.yaml": `${CONFIG}graph:\n  routes:\n    - basePath: /site\n`,
+      "strategy/journeys/m2.md":
+        "---\ntype: journey\nid: m2\ntitle: Tighten the standard\npersonas: [maya]\nsteps:\n  - stage: Read it\n    doc: /site/guide/\n---\n",
+    });
+    await expect(runCheck({ cwd, inputs: [] })).rejects.toThrow(/Invalid config in .*manni\.config\.yaml:\n {2}\/graph\/routes\/0: must have required property 'root'/);
+  });
+});
+
+/** A copy of the steps fixture in the temp tree, its config with more appended. */
+async function stepsCopy(extra: string): Promise<string> {
+  const dir = await tree({});
+  await cp(join(FIXTURES, "steps"), dir, { recursive: true });
+  const path = join(dir, "manni.config.yaml");
+  await writeFile(path, `${await readFile(path, "utf8")}${extra}`);
+  return dir;
+}
 
 describe("check reporters", () => {
   async function failing() {
