@@ -26,6 +26,7 @@ import { beats as findingsBeats, totalFrames as findingsTotalFrames, TYPING_MS a
 import { beats as citeReposBeats, totalFrames as citeReposTotalFrames, TYPING_MS as citeReposTypingMs } from "./cite-repos/beats";
 import { beats as pluginMetadataBeats, totalFrames as pluginMetadataTotalFrames, TYPING_MS as pluginMetadataTypingMs } from "./plugin-metadata/beats";
 import { beats as strategyBeats, totalFrames as strategyTotalFrames, TYPING_MS as strategyTypingMs } from "./strategy/beats";
+import { beats as pluginRecordsBeats, totalFrames as pluginRecordsTotalFrames, TYPING_MS as pluginRecordsTypingMs } from "./plugin-records/beats";
 
 /** sidecar-url-1x1: 23 px / 75 columns, derived in media/sidecar-url-1x1.script.md. */
 const DemoUrl: React.FC = () => <DemoView beats={urlBeats} fontPx={23} linePx={32} cols={75} />;
@@ -140,6 +141,16 @@ const DemoPluginMetadata: React.FC = () => <DemoView beats={pluginMetadataBeats}
  */
 const DemoStrategy: React.FC = () => (
   <DemoView beats={strategyBeats} fontPx={19} linePx={27} cols={91} typingMs={strategyTypingMs} ligatures={false} breakAfter="/" />
+);
+
+/**
+ * plugin-records-1x1: every beat carries its own size (src/plugin-records/beats.ts), derived in
+ * media/plugin-records/plugin-records-1x1.script.md (media/plugin-records/capture/cols.mjs).
+ * The video-level size is beat 3's. Breaks after "," let the page JSON wrap without
+ * splitting a token. Ligatures off: `--no-derived` and `--` would draw as glyphs.
+ */
+const DemoPluginRecords: React.FC = () => (
+  <DemoView beats={pluginRecordsBeats} fontPx={23} linePx={32} cols={75} typingMs={pluginRecordsTypingMs} ligatures={false} breakAfter="," />
 );
 
 export const Root: React.FC = () => (
@@ -343,6 +354,14 @@ export const Root: React.FC = () => (
       height={1080}
       fps={FPS}
       durationInFrames={strategyTotalFrames}
+    />
+    <Composition
+      id="PluginRecordsDemo"
+      component={DemoPluginRecords}
+      width={1080}
+      height={1080}
+      fps={FPS}
+      durationInFrames={pluginRecordsTotalFrames}
     />
   </>
 );

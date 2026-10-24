@@ -1,6 +1,6 @@
 # 0107: A page read brings the records it names
 
-- **Status:** Proposed
+- **Status:** Implemented (#241)
 - **Serves:** Maya · M24, "Let an agent keep the docs green while it writes
   them". The agent learns whom a page serves before it edits the page.
 - **Depends on:** Two earlier proposals.

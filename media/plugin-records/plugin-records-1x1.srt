@@ -1,0 +1,20 @@
+1
+00:00:00,000 --> 00:00:07,067
+Ids, and nothing more
+The page's sidecar names its personas by id. Nothing in it says who devin or maya is.
+
+2
+00:00:07,067 --> 00:00:16,633
+manni meta get personas
+meta get now prints a record line for each persona, with the file to read. No new flag.
+
+3
+00:00:16,633 --> 00:00:27,500
+What a Read hands the agent
+Key fields first, then one short line per record. The agent gets references, not the records.
+
+4
+00:00:27,500 --> 00:00:43,300
+A huge page fits the limit
+The reply, 3,311 characters, stays under Claude Code's limit of 10,000 and names what it left out.
+
