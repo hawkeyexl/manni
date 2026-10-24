@@ -14,7 +14,7 @@ import { join, relative, resolve, sep } from "node:path";
 import type { InferenceProvider } from "@hawkeyexl/inference";
 import { findConfigFile, readConfigFile, type ConfigFile } from "../../shared/config-file.js";
 import { errorMessage, ToolError } from "../../shared/errors.js";
-import { claudeCodeMcpConfigPath, DEFAULT_CLAUDE_CODE_MAX_TURNS } from "../../shared/tools.js";
+import { claudeCliMcpConfigPath, DEFAULT_CLAUDE_CLI_MAX_TURNS } from "../../shared/tools.js";
 import { notice, warn } from "../../shared/warn.js";
 import { notFoundMessage, STDIN_TOKEN } from "../../meta/internal.js";
 import { parseTraceFile } from "../../tracevals/trace/claude.js";
@@ -141,7 +141,7 @@ async function loadConfig(cwd: string, configPath: string | undefined): Promise<
     configPath === undefined ? await findConfigFile(cwd, opts) : await readConfigFile(configPath, cwd, opts);
   if (file !== null && file.wrapped && file.value !== null) {
     throw new TestError(
-      `${file.source}: test has no keys. Doc Detective's settings live under tools.doc-detective, and Claude Code's under tools.claude-code.`,
+      `${file.source}: test has no keys. Doc Detective's settings live under tools.doc-detective, and Claude Code's under tools.claude-cli.`,
     );
   }
   return file;
@@ -194,15 +194,15 @@ export async function runTasks(opts: RunTasksOptions = {}): Promise<TasksReport>
 
   const file = await loadConfig(cwd, opts.configPath);
   const configDir = file?.dir ?? cwd;
-  const claude = file?.tools["claude-code"] ?? {};
-  const mcpConfig = file === null ? undefined : claudeCodeMcpConfigPath(file.tools, file.dir);
+  const claude = file?.tools["claude-cli"] ?? {};
+  const mcpConfig = file === null ? undefined : claudeCliMcpConfigPath(file.tools, file.dir);
   let mcpServers: string[] = [];
   if (file !== null && mcpConfig !== undefined) {
-    const label = `${file.source}: tools.claude-code.mcpConfig "${claude.mcpConfig ?? ""}"`;
+    const label = `${file.source}: tools.claude-cli.mcpConfig "${claude.mcpConfig ?? ""}"`;
     if (!existsSync(mcpConfig)) throw new TestError(`${label} does not exist.`);
     mcpServers = mcpServerNames(mcpConfig, label);
   }
-  const maxTurns = claude.maxTurns ?? DEFAULT_CLAUDE_CODE_MAX_TURNS;
+  const maxTurns = claude.maxTurns ?? DEFAULT_CLAUDE_CLI_MAX_TURNS;
 
   const records = loadTaskRecords(file, cwd);
   const pathStart = (abs: string): TaskStart => ({ kind: "path", display: toPosix(relative(cwd, abs)) || ".", abs });

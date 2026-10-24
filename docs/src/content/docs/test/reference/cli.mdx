@@ -12,7 +12,7 @@ applies-to: ["domain:test"]
 risks: ["open-world"]
 sample-questions: ["What flags does manni test procedures accept?", "Which inputs does manni test procedures test when I give it no paths?", "Why did manni test procedures exit 2?", "What does manni test tasks pass Claude Code?", "Which evals does a manni test tasks run get?"]
 graph: { label: "CLI reference", type: reference }
-last-updated: 2026-10-23
+last-updated: 2026-10-24
 tags:
   - cli
   - testing
@@ -271,7 +271,7 @@ Every message below exits `2` and is printed on stderr, prefixed `manni: `.
 | An unknown collection | `no collection named "<name>" in manni.config.yaml. Configured: site.`, with a `did you mean` hint for a name that differs only in case |
 | The collections match no files | `--collection matched no files. Pass --allow-empty if that is expected.` |
 | `tools.doc-detective.config` names a missing file | `manni.config.yaml: tools.doc-detective.config "<path>" does not exist.` |
-| The config has a `test:` section | `manni.config.yaml: test has no keys. Doc Detective's settings live under tools.doc-detective, and Claude Code's under tools.claude-code.` |
+| The config has a `test:` section | `manni.config.yaml: test has no keys. Doc Detective's settings live under tools.doc-detective, and Claude Code's under tools.claude-cli.` |
 | Doc Detective exits non-zero | `Doc Detective failed (exit <n>):`, then the tail of its output. `killed before exiting` replaces `exit <n>` when it had no exit code. |
 | No results file, or one that does not parse | `Doc Detective wrote no results to read. Run doc-detective directly to see why.` |
 | No tests in the inputs | `Doc Detective found no tests in the inputs. Pass --allow-empty if that is expected.` |
@@ -374,10 +374,10 @@ A run needs Claude Code on `PATH`, signed in, and a judge provider. The
 | `--journey` | `<id>` | the golden set | A journey record to run as the task. Repeatable, one id per occurrence, and one run per journey. With neither `--task` nor `--journey`, every journey that declares `evals:` runs. |
 | `--persona` | `<id>` | the journey's `personas` | A persona record for the synthetic user to play. Repeatable, one id per occurrence, and one run per persona. A `--task` with no `--persona` runs as a newcomer. |
 | `--workspace` | `<dir>` | the journey's `workspace:`, else empty | The directory the synthetic user starts in. It is copied fresh into a temporary directory for each run, and the original is never touched. |
-| `-c, --config` | `<path>` | the nearest `manni.config.yaml` | The manni config file to read. It supplies the collections that hold the records and the docs, `tools.claude-code` and `providers:`. |
+| `-c, --config` | `<path>` | the nearest `manni.config.yaml` | The manni config file to read. It supplies the collections that hold the records and the docs, `tools.claude-cli` and `providers:`. |
 | `-f, --format` | `<format>` | `pretty` | Output format: `pretty`, `json` or `github`. See [output formats](#output-formats-1). |
 | `--provider` | `<name>` | the family's precedence | The judge's provider, as in docevals and tracevals. It overrides [`providers:`](/manni/meta/reference/configuration/#providers). |
-| `--model` | `<id>` | the provider's | The judge's model. The synthetic user's model is `tools.claude-code.model`. |
+| `--model` | `<id>` | the provider's | The judge's model. The synthetic user's model is `tools.claude-cli.model`. |
 | `--keep` | n/a | off | Keep each run's temporary directory, and print its workspace path to stderr. |
 | `--allow-empty` | n/a | off | Treat an empty golden set as success, exit `0`. |
 | `--progress` | n/a | on a terminal | Stream each action the synthetic user takes to stderr. |
@@ -505,9 +505,9 @@ claude -p
   --tools Read,Write,Edit,Glob,Grep,Bash,WebFetch
   --allowedTools Read,Write,Edit,Glob,Grep,Bash,WebFetch[,mcp__<each server in mcpConfig>]
   --permission-mode dontAsk
-  --strict-mcp-config [--mcp-config <tools.claude-code.mcpConfig>]
-  --max-turns <tools.claude-code.maxTurns>
-  [--model <tools.claude-code.model>]
+  --strict-mcp-config [--mcp-config <tools.claude-cli.mcpConfig>]
+  --max-turns <tools.claude-cli.maxTurns>
+  [--model <tools.claude-cli.model>]
   [--add-dir <tmp>/docs]
 cwd:   <tmp>/workspace
 stdin: the task brief below
@@ -518,7 +518,7 @@ env:   NPM_CONFIG_PREFIX=<tmp>/global, with its bin directory first on PATH
   Code settings. So none of your plugins, hooks or MCP servers reach the
   synthetic user. It does use your Claude Code sign-in.
 - **Seven tools.** The synthetic user has Read, Write, Edit, Glob, Grep, Bash
-  and WebFetch, plus the servers `tools.claude-code.mcpConfig` names.
+  and WebFetch, plus the servers `tools.claude-cli.mcpConfig` names.
   `--tools` hides every other tool, web search included, because the test is
   whether these docs are enough. Bash is the one terminal on every platform,
   so a journey's `tool-order` eval can name it.
@@ -742,7 +742,7 @@ task's first 60 characters, and the persona or `newcomer`.
   eval prints `WARN`, and a failing `notice` eval `NOTE`. Anything but `PASS`
   adds its assertion and the judge's verdict or the grader's message.
 - `stopped at the <n>-turn limit` appears when the run reached
-  `tools.claude-code.maxTurns`.
+  `tools.claude-cli.maxTurns`.
 - `Account` is the synthetic user's last message.
 - `kept` names the workspace path under `--keep`.
 
@@ -895,14 +895,14 @@ Every message below exits `2` and is printed on stderr, prefixed `manni: `.
 | An eval entry the vocabulary refuses | The first schema error, after `<file>:<line>: evals[<n>]`, such as `evals[0].severity must be equal to one of the allowed values.` |
 | A workspace that does not exist | `docs/content-strategy/journeys/t1.md:10: workspace "test/x" does not exist.`, or `--workspace "test/x" does not exist.` |
 | An entry point that does not exist | `docs/content-strategy/journeys/t1.md:8: entry-point "docs/x.mdx" does not exist.` |
-| `tools.claude-code.mcpConfig` is not JSON | `manni.config.yaml: tools.claude-code.mcpConfig "<path>" is not a JSON file Claude Code can read.` |
+| `tools.claude-cli.mcpConfig` is not JSON | `manni.config.yaml: tools.claude-cli.mcpConfig "<path>" is not a JSON file Claude Code can read.` |
 | `claude` is not on `PATH` | `Claude Code is not on PATH. Install it with npm install -g @anthropic-ai/claude-code, sign in, and run again.` |
 | Claude Code exits without a result | `Claude Code stopped without a result for t1 as theo:`, then what Claude Code said, such as `Not logged in · Please run /login`, or else the last lines of its stderr. |
-| `tools.claude-code.model` is not a string | `manni.config.yaml: tools.claude-code.model must be a non-empty string.` |
-| `tools.claude-code.maxTurns` is not a positive integer | `manni.config.yaml: tools.claude-code.maxTurns must be a positive integer.` |
-| `tools.claude-code.mcpConfig` names a missing file | `manni.config.yaml: tools.claude-code.mcpConfig "<path>" does not exist.` |
-| An unknown key under `tools.claude-code` | `manni.config.yaml: tools.claude-code has unknown key "<key>". Supported keys: model, maxTurns, mcpConfig.` |
-| The config has a `test:` section | `manni.config.yaml: test has no keys. Doc Detective's settings live under tools.doc-detective, and Claude Code's under tools.claude-code.` |
+| `tools.claude-cli.model` is not a string | `manni.config.yaml: tools.claude-cli.model must be a non-empty string.` |
+| `tools.claude-cli.maxTurns` is not a positive integer | `manni.config.yaml: tools.claude-cli.maxTurns must be a positive integer.` |
+| `tools.claude-cli.mcpConfig` names a missing file | `manni.config.yaml: tools.claude-cli.mcpConfig "<path>" does not exist.` |
+| An unknown key under `tools.claude-cli` | `manni.config.yaml: tools.claude-cli has unknown key "<key>". Supported keys: model, maxTurns, mcpConfig.` |
+| The config has a `test:` section | `manni.config.yaml: test has no keys. Doc Detective's settings live under tools.doc-detective, and Claude Code's under tools.claude-cli.` |
 | An unknown `--format` | `Unknown --format "<format>". Use pretty \| json \| github.` |
 
 No judge provider at all prints the family's provider message,
@@ -926,7 +926,7 @@ manni: could not remove <temp dir> after t1 as theo: EBUSY: resource busy or loc
 - **No `--as`, `--ext` or `--exclude`.** A target is where a reader starts,
   not a set of files to read.
 - **`--provider` and `--model` mean the judge**, as in every domain with one.
-  The synthetic user's model is set only in `tools.claude-code.model`.
+  The synthetic user's model is set only in `tools.claude-cli.model`.
 
 ### Examples
 

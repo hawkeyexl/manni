@@ -26,4 +26,4 @@ docs/src/content/docs/test/attempt-a-task.mdx:
   provenance:
     - generated-by: Claude Opus 5.5
       lines: 2-476
-      integrity: sha256-7f1098dbd4ae4252bc14b279ef095caf7fae2d156db2f33333790d9ab81e1b46
+      integrity: sha256-de03744be6565508fb343a46fe27efab698a7046569e0b5f3d039d102a2ae38b

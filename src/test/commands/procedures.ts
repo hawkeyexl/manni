@@ -90,7 +90,7 @@ async function loadConfig(cwd: string, configPath: string | undefined): Promise<
   // would otherwise read as configured and do nothing.
   if (file !== null && file.wrapped && file.value !== null) {
     throw new TestError(
-      `${file.source}: test has no keys. Doc Detective's settings live under tools.doc-detective, and Claude Code's under tools.claude-code.`,
+      `${file.source}: test has no keys. Doc Detective's settings live under tools.doc-detective, and Claude Code's under tools.claude-cli.`,
     );
   }
   return file;

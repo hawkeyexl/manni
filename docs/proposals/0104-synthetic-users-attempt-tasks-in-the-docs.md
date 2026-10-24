@@ -24,7 +24,7 @@
     Journeys become the golden set of reader tasks.
 - **Supersedes:** [0085](0085-test-domain-runs-doc-detective.md) in part. Its
   verb `run` becomes `procedures`, and its refusal of a `test:` section names
-  `tools.claude-code` as well.
+  `tools.claude-cli` as well.
 - **Touches:** `src/test/**`, `src/shared/tools.ts`, `src/cli.ts`,
   `src/family/core/in-play.ts`, `src/strategy/commands/get.ts`,
   `src/tracevals/evals/extract.ts`, `src/docevals/core/discover.ts`,
@@ -171,11 +171,11 @@ contents. It also reads the pages the reader opened.
 Claude Code runs headless with `--setting-sources ""`, so none of the person's
 own settings, plugins, hooks or MCP servers reach the synthetic user. It gets
 Read, Write, Edit, Glob, Grep, Bash and WebFetch, plus the MCP servers
-`tools.claude-code.mcpConfig` names. Web search is hidden, because the test is
+`tools.claude-cli.mcpConfig` names. Web search is hidden, because the test is
 whether these docs are enough. Bash is the one terminal on every platform, so a
 `tool-order` eval can name it.
 
-Its settings live under `tools.claude-code`, as 0050 has outside tools do:
+Its settings live under `tools.claude-cli`, as 0050 has outside tools do:
 `model`, `maxTurns` and `mcpConfig`. A global npm install lands in the run's
 temp directory, because manni sets `NPM_CONFIG_PREFIX` there.
 
@@ -193,7 +193,7 @@ checked against the commander program. The surface in one place:
 
 ```yaml
 tools:
-  claude-code:
+  claude-cli:
     model: sonnet              # the synthetic user's model; default Claude Code's own
     maxTurns: 50               # its turn limit; default 50
     mcpConfig: .mcp.tasks.json # MCP servers it gets, such as a browser

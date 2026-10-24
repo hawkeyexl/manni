@@ -351,12 +351,12 @@ describe("runTasks: messages", () => {
     writeFileSync(join(cwd, "manni.config.yaml"), "test:\n  x: 1\n");
     await refuses(
       { journeys: ["t1"] },
-      "manni.config.yaml: test has no keys. Doc Detective's settings live under tools.doc-detective, and Claude Code's under tools.claude-code.",
+      "manni.config.yaml: test has no keys. Doc Detective's settings live under tools.doc-detective, and Claude Code's under tools.claude-cli.",
     );
-    writeFileSync(join(cwd, "manni.config.yaml"), "tools:\n  claude-code:\n    mcpConfig: .mcp.tasks.json\n");
+    writeFileSync(join(cwd, "manni.config.yaml"), "tools:\n  claude-cli:\n    mcpConfig: .mcp.tasks.json\n");
     await refuses(
       { targets: ["docs/fix/index.md"], task: TASK },
-      'manni.config.yaml: tools.claude-code.mcpConfig ".mcp.tasks.json" does not exist.',
+      'manni.config.yaml: tools.claude-cli.mcpConfig ".mcp.tasks.json" does not exist.',
     );
   });
 
@@ -373,10 +373,10 @@ describe("runTasks: messages", () => {
 });
 
 describe("runTasks: config", () => {
-  it("passes tools.claude-code's model, turn limit and MCP servers", async () => {
+  it("passes tools.claude-cli's model, turn limit and MCP servers", async () => {
     writeFileSync(
       join(cwd, "manni.config.yaml"),
-      "tools:\n  claude-code:\n    model: sonnet\n    maxTurns: 7\n    mcpConfig: .mcp.tasks.json\n",
+      "tools:\n  claude-cli:\n    model: sonnet\n    maxTurns: 7\n    mcpConfig: .mcp.tasks.json\n",
     );
     writeFileSync(join(cwd, ".mcp.tasks.json"), JSON.stringify({ mcpServers: { playwright: { command: "npx" } } }));
     await run({ targets: ["docs/fix/index.md"], task: TASK });

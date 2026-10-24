@@ -1178,7 +1178,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
     - id: term-starts-vale-with-the-configured-file
       claim:
         lines: 1420-1433
-        integrity: sha256-b3acc700fc3e250ff313f8bde3a6ca1a17b7e81e06be5772636120b5d17837e7
+        integrity: sha256-13ed2c01eaa00cc1957de7e14917501eefdb554f6b28ada9352d1d9de2315f33
       source:
         file: src/term/commands/run.ts
         lines: 112-120

@@ -283,7 +283,7 @@ describe("runProcedures: refusals", () => {
     write("manni.config.yaml", "test:\n  config: .doc-detective.json\n");
     await expect(runProcedures({ paths: ["docs"], cwd, spawn: spawn() })).rejects.toThrow(
       new TestError(
-        "manni.config.yaml: test has no keys. Doc Detective's settings live under tools.doc-detective, and Claude Code's under tools.claude-code.",
+        "manni.config.yaml: test has no keys. Doc Detective's settings live under tools.doc-detective, and Claude Code's under tools.claude-cli.",
       ),
     );
   });

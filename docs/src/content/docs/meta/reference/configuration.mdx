@@ -27,7 +27,7 @@ sample-questions:
 graph:
   label: Configuration reference
   type: reference
-last-updated: 2026-10-23
+last-updated: 2026-10-24
 tags:
   - configuration
   - yaml
@@ -1455,7 +1455,7 @@ tools:
     home: tools/dita-ot
   doc-detective:
     config: .doc-detective.json
-  claude-code:
+  claude-cli:
     model: sonnet
     maxTurns: 50
     mcpConfig: .mcp.tasks.json
@@ -1466,9 +1466,9 @@ tools:
 | `tools.vale.config` | `string` | no | none | Vale's config file, relative to `manni.config.yaml`, or absolute. Passed to every Vale run as `--config`. Absent, Vale finds its own config, as it does when a person runs it. |
 | `tools.dita-ot.home` | `string` | no | none | DITA Open Toolkit's installation directory, relative to `manni.config.yaml`, or absolute. Absent, the `dita` on your `PATH` runs. |
 | `tools.doc-detective.config` | `string` | no | none | Doc Detective's config file, relative to `manni.config.yaml`, or absolute. Passed to `manni test procedures` as Doc Detective's `--config`. Absent, Doc Detective finds its own config in the working directory. |
-| `tools.claude-code.model` | `string` | no | Claude Code's default model | The model the synthetic user of `manni test tasks` runs on, passed to Claude Code as `--model`. The judge's model is separate, and comes from `--model` or [`providers:`](#providers). |
-| `tools.claude-code.maxTurns` | `integer` | no | `50` | The synthetic user's turn limit, passed as `--max-turns`. A run that reaches it is judged like any other, and its report says where it stopped. A positive integer. |
-| `tools.claude-code.mcpConfig` | `string` | no | none | An MCP config file, relative to `manni.config.yaml`, or absolute. Passed as `--mcp-config`, and its servers are the only ones the synthetic user gets. A Playwright MCP server here gives it a browser. Absent, it gets no MCP servers. |
+| `tools.claude-cli.model` | `string` | no | Claude Code's default model | The model the synthetic user of `manni test tasks` runs on, passed to Claude Code as `--model`. The judge's model is separate, and comes from `--model` or [`providers:`](#providers). |
+| `tools.claude-cli.maxTurns` | `integer` | no | `50` | The synthetic user's turn limit, passed as `--max-turns`. A run that reaches it is judged like any other, and its report says where it stopped. A positive integer. |
+| `tools.claude-cli.mcpConfig` | `string` | no | none | An MCP config file, relative to `manni.config.yaml`, or absolute. Passed as `--mcp-config`, and its servers are the only ones the synthetic user gets. A Playwright MCP server here gives it a browser. Absent, it gets no MCP servers. |
 
 - **Who reads it.** [`manni term lint`](/manni/term/reference/cli/#term-lint)
   and [`manni term write -f vale`](/manni/term/set-up/) start Vale with
@@ -1476,7 +1476,7 @@ tools:
   starts DITA-OT from `tools.dita-ot.home`.
   [`manni test procedures`](/manni/test/reference/cli/) starts Doc Detective with
   `tools.doc-detective.config`. [`manni test tasks`](/manni/test/reference/cli/#test-tasks)
-  starts Claude Code with `tools.claude-code`. `manni meta` starts no outside
+  starts Claude Code with `tools.claude-cli`. `manni meta` starts no outside
   tool, and never uses a value.
 - **The key counts for discovery.** A `manni.config.yaml` carrying `tools:` and
   no `meta:` section is still this tool's config, and stops the
@@ -1486,11 +1486,11 @@ tools:
   nothing:
 
 ```
-manni: manni.config.yaml: tools has unknown key "prettier". Supported keys: vale, dita-ot, doc-detective, claude-code.
+manni: manni.config.yaml: tools has unknown key "prettier". Supported keys: vale, dita-ot, doc-detective, claude-cli.
 manni: manni.config.yaml: tools.vale has unknown key "ini". Supported keys: config.
 manni: manni.config.yaml: tools.vale.config must be a non-empty string.
-manni: manni.config.yaml: tools.claude-code has unknown key "turns". Supported keys: model, maxTurns, mcpConfig.
-manni: manni.config.yaml: tools.claude-code.maxTurns must be a positive integer.
+manni: manni.config.yaml: tools.claude-cli has unknown key "turns". Supported keys: model, maxTurns, mcpConfig.
+manni: manni.config.yaml: tools.claude-cli.maxTurns must be a positive integer.
 ```
 
 - **A config file must exist when its tool runs.** A path to a missing file is
@@ -1499,7 +1499,7 @@ manni: manni.config.yaml: tools.claude-code.maxTurns must be a positive integer.
 ```
 manni: manni.config.yaml: tools.vale.config "nowhere.ini" does not exist.
 manni: manni.config.yaml: tools.doc-detective.config "nowhere.json" does not exist.
-manni: manni.config.yaml: tools.claude-code.mcpConfig "nowhere.json" does not exist.
+manni: manni.config.yaml: tools.claude-cli.mcpConfig "nowhere.json" does not exist.
 ```
 
 ## Keys
@@ -2829,7 +2829,7 @@ not the directory you happened to run from. That applies to:
 - `collections[].externalMetadata[].file`, and every document path inside the
   manifest it names;
 - `tools.vale.config`, `tools.dita-ot.home`, `tools.doc-detective.config` and
-  `tools.claude-code.mcpConfig`;
+  `tools.claude-cli.mcpConfig`;
 - `overrides[].files`;
 - `baseline`, and any local `.json` schema file named in `schemas` or
   `overrides`.

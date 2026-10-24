@@ -7,7 +7,7 @@
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
-  claudeCodeMcpConfigPath,
+  claudeCliMcpConfigPath,
   ditaOtHome,
   docDetectiveConfigPath,
   parseTools,
@@ -46,7 +46,7 @@ describe("parseTools", () => {
 
   it("refuses a tool it does not know, naming the ones it does", () => {
     expect(() => parse({ prettier: {} })).toThrow(
-      `${SOURCE}: tools has unknown key "prettier". Supported keys: vale, dita-ot, doc-detective, claude-code.`,
+      `${SOURCE}: tools has unknown key "prettier". Supported keys: vale, dita-ot, doc-detective, claude-cli.`,
     );
   });
 
@@ -212,59 +212,59 @@ describe("docDetectiveConfigPath", () => {
 describe("parseTools: Claude Code", () => {
   it("reads model, maxTurns and mcpConfig", () => {
     expect(
-      parse({ "claude-code": { model: "sonnet", maxTurns: 10, mcpConfig: ".mcp.tasks.json" } }),
-    ).toEqual({ "claude-code": { model: "sonnet", maxTurns: 10, mcpConfig: ".mcp.tasks.json" } });
+      parse({ "claude-cli": { model: "sonnet", maxTurns: 10, mcpConfig: ".mcp.tasks.json" } }),
+    ).toEqual({ "claude-cli": { model: "sonnet", maxTurns: 10, mcpConfig: ".mcp.tasks.json" } });
   });
 
   it("accepts the namespace with no keys", () => {
-    expect(parse({ "claude-code": {} })).toEqual({ "claude-code": {} });
+    expect(parse({ "claude-cli": {} })).toEqual({ "claude-cli": {} });
   });
 
   it("refuses a key it never reads, naming the three it does", () => {
-    expect(() => parse({ "claude-code": { command: "claude" } })).toThrow(
-      `${SOURCE}: tools.claude-code has unknown key "command". Supported keys: model, maxTurns, mcpConfig.`,
+    expect(() => parse({ "claude-cli": { command: "claude" } })).toThrow(
+      `${SOURCE}: tools.claude-cli has unknown key "command". Supported keys: model, maxTurns, mcpConfig.`,
     );
   });
 
   it("refuses a model that is not a usable string", () => {
     for (const model of ["", "   ", 7, null]) {
-      expect(() => parse({ "claude-code": { model } })).toThrow(
-        `${SOURCE}: tools.claude-code.model must be a non-empty string.`,
+      expect(() => parse({ "claude-cli": { model } })).toThrow(
+        `${SOURCE}: tools.claude-cli.model must be a non-empty string.`,
       );
     }
   });
 
   it("refuses a maxTurns that is not a positive integer", () => {
     for (const maxTurns of [0, -1, 2.5, "50", null]) {
-      expect(() => parse({ "claude-code": { maxTurns } })).toThrow(
-        `${SOURCE}: tools.claude-code.maxTurns must be a positive integer.`,
+      expect(() => parse({ "claude-cli": { maxTurns } })).toThrow(
+        `${SOURCE}: tools.claude-cli.maxTurns must be a positive integer.`,
       );
     }
   });
 
   it("refuses an mcpConfig that is not a usable string", () => {
-    expect(() => parse({ "claude-code": { mcpConfig: "" } })).toThrow(
-      `${SOURCE}: tools.claude-code.mcpConfig must be a non-empty string.`,
+    expect(() => parse({ "claude-cli": { mcpConfig: "" } })).toThrow(
+      `${SOURCE}: tools.claude-cli.mcpConfig must be a non-empty string.`,
     );
   });
 
   it("refuses a namespace that is not a mapping", () => {
-    expect(() => parse({ "claude-code": "sonnet" })).toThrow(
-      `${SOURCE}: tools.claude-code must be a mapping.`,
+    expect(() => parse({ "claude-cli": "sonnet" })).toThrow(
+      `${SOURCE}: tools.claude-cli must be a mapping.`,
     );
   });
 });
 
-describe("claudeCodeMcpConfigPath", () => {
+describe("claudeCliMcpConfigPath", () => {
   const dir = join(process.cwd(), "repo", "root");
 
   it("resolves a relative path against the config file's directory", () => {
-    expect(claudeCodeMcpConfigPath({ "claude-code": { mcpConfig: ".mcp.tasks.json" } }, dir)).toBe(
+    expect(claudeCliMcpConfigPath({ "claude-cli": { mcpConfig: ".mcp.tasks.json" } }, dir)).toBe(
       join(dir, ".mcp.tasks.json"),
     );
   });
 
   it("is undefined when none is set", () => {
-    expect(claudeCodeMcpConfigPath({}, dir)).toBeUndefined();
+    expect(claudeCliMcpConfigPath({}, dir)).toBeUndefined();
   });
 });

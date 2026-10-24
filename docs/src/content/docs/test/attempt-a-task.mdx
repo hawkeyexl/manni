@@ -34,7 +34,7 @@ sample-questions:
 graph:
   label: Attempt a task as a persona
   type: task
-last-updated: 2026-10-23
+last-updated: 2026-10-24
 tags:
   - testing
   - synthetic-users
@@ -327,12 +327,12 @@ as a warning. It keeps every tool, so a docs set with no web path pushes it
 into the terminal. The warning says so.
 
 To give it a browser for the web path, name an MCP config in
-`tools.claude-code.mcpConfig`. Its servers are the only ones the synthetic
+`tools.claude-cli.mcpConfig`. Its servers are the only ones the synthetic
 user gets:
 
 ```yaml title="manni.config.yaml"
 tools:
-  claude-code:
+  claude-cli:
     mcpConfig: .mcp.tasks.json
 ```
 
@@ -467,10 +467,10 @@ Every run is a Claude Code session, plus the judge calls for its evals. Runs
 go one after another, so a golden set of ten journeys with two personas each
 is twenty sessions.
 
-- **Turns.** `tools.claude-code.maxTurns` caps each session, `50` by
+- **Turns.** `tools.claude-cli.maxTurns` caps each session, `50` by
   default. A run that reaches it is judged like any other, and its block
   says `stopped at the 50-turn limit`.
-- **Model.** `tools.claude-code.model` picks the synthetic user's model.
+- **Model.** `tools.claude-cli.model` picks the synthetic user's model.
   `--model` picks the judge's.
 - **Spend.** `-f json` reports each run's tokens in `usage`, and its cost when
   Claude Code reports one. This is T1's run as Theo, from a bare
@@ -489,7 +489,7 @@ is twenty sessions.
 
 ```yaml title="manni.config.yaml"
 tools:
-  claude-code:
+  claude-cli:
     model: sonnet
     maxTurns: 30
 ```
@@ -521,6 +521,6 @@ runs only when someone asks for it.
   <LinkCard
     title="tools: configuration"
     href="/manni/meta/reference/configuration/#tools"
-    description="The tools.claude-code keys: the synthetic user's model, its turn limit and its MCP servers."
+    description="The tools.claude-cli keys: the synthetic user's model, its turn limit and its MCP servers."
   />
 </CardGrid>

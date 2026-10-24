@@ -25,7 +25,7 @@ docs/src/content/docs/test/index.mdx:
   provenance:
     - generated-by: Claude Opus 5.5
       lines: 2-189
-      integrity: sha256-5675bb464582ab85903852dde13830f0150e6598d038bb598a0eeec02737f161
+      integrity: sha256-490d04e008aa7fa09b42c6f2ffa560ae788f55de6f9d441571ebfa5cf7af15af
   owner:
     - "@hawkeyexl"
   created: 2026-10-05
