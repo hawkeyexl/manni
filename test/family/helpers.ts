@@ -16,7 +16,7 @@ import { commitAll } from "../helpers/temp-repo.js";
 const here = dirname(fileURLToPath(import.meta.url));
 export const FIXTURES = resolve(here, "fixtures");
 
-export type FixtureRepo = "only-docevals" | "only-citations" | "only-graph" | "everything" | "meta-and-lint";
+export type FixtureRepo = "only-docevals" | "only-citations" | "only-graph" | "everything" | "meta-and-lint" | "impact";
 
 /** Copy `name` to a temp directory, `git init` it and commit everything. */
 export function fixtureRepo(name: FixtureRepo): string {
@@ -25,6 +25,21 @@ export function fixtureRepo(name: FixtureRepo): string {
   execFileSync("git", ["init", "-q"], { cwd: dir, stdio: "ignore" });
   commitAll(dir, "fixture");
   return dir;
+}
+
+/**
+ * `name` copied one directory below a temp repository's root, which is
+ * committed. Returns the repository's root, for cleanup, and the copy, where
+ * the run stands: a report that assumes its labels start at the git root
+ * places nothing there.
+ */
+export function nestedFixtureRepo(name: FixtureRepo): { root: string; dir: string } {
+  const root = realpathSync(mkdtempSync(join(tmpdir(), `manni-family-nested-${name}-`)));
+  const dir = join(root, "nested");
+  cpSync(join(FIXTURES, name), dir, { recursive: true });
+  execFileSync("git", ["init", "-q"], { cwd: root, stdio: "ignore" });
+  commitAll(root, "fixture");
+  return { root, dir };
 }
 
 /** An envelope fixture's text, with `cwd` set when given, and any `extra` fields over it. */

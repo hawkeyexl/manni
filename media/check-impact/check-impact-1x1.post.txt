@@ -1,0 +1,17 @@
+A red docs build says which checks failed. It never said which readers that hurts.
+
+New in manni, manni check ranks every finding by the readers it reaches.
+
+Your pages already name their personas and journeys. After the per-check report, manni check rolls every check's findings up by those records, worst first.
+
+Here one comment in the source changes. Six pinned sentences go stale. The roll-up puts the journey "Stand up metadata validation for my repo" at the top, with 3 errors on 6 pages.
+
+The JSON report carries the same ranking, so jq lists that journey's pages for a script or a dashboard.
+
+Re-mint the pins and run it again. The errors leave the roll-up, and the journey drops off the top.
+
+No flag and no config. A repository with no persona or journey records prints what it always did.
+
+Real output over a clone of the manni repository. The long waits are cut, and the video states each one.
+
+npm i -g @hawkeyexl/manni · manni check

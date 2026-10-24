@@ -1,0 +1,6 @@
+docs/src/content/docs/meta/get-started/index.mdx
+docs/src/content/docs/meta/reference/configuration.mdx
+docs/src/content/docs/meta/reference/schemas/index.mdx
+docs/src/content/docs/meta/set-up/config.mdx
+docs/src/content/docs/meta/set-up/external-metadata.mdx
+docs/src/content/docs/meta/set-up/index.mdx

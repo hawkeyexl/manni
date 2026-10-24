@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { AbsoluteFill, Sequence, continueRender, delayRender, staticFile, useCurrentFrame } from "remotion";
+import { AbsoluteFill, Easing, Sequence, continueRender, delayRender, interpolate, staticFile, useCurrentFrame } from "remotion";
 import { parseAnsi, type Span } from "./ansi";
-import { FPS, TYPING_MS, beats as sidecarBeats, timeline, type Beat } from "./beats";
+import { FPS, SCROLL_FRAMES, TYPING_MS, beats as sidecarBeats, timeline, type Beat } from "./beats";
 
 // docs/content-strategy/design.md, "Palette" (dark) and "Composition".
 export const tokens = {
@@ -61,10 +61,14 @@ interface Line {
 
 const promptSpan: Span = { text: "$ ", fg: tokens.dim };
 
+/** Beat.Command.note: chrome, drawn as an edit's marker is (src/ansi.ts, CUT). */
+const noteLine = (text: string): Line => ({ spans: [{ text, fg: tokens.accent, chrome: true }] });
+
 function finalScreen(beat: Beat, prev: Line[]): Line[] {
   const lines: Line[] = beat.continues ? [...prev] : [];
   for (const c of beat.commands) {
     lines.push({ spans: [promptSpan, { text: c.typed }] });
+    if (c.note !== undefined) lines.push(noteLine(c.note));
     if (c.output !== "") for (const spans of parseAnsi(c.output)) lines.push({ spans });
     for (const m of c.more ?? []) for (const spans of parseAnsi(m.output)) lines.push({ spans });
   }
@@ -88,12 +92,20 @@ function screenAt(beat: Beat, frame: number, prev: Line[], typingMs: number): Li
       return lines;
     }
     lines.push({ spans: [promptSpan, { text: typed }] });
+    if (c.note !== undefined) lines.push(noteLine(c.note));
     if (frame < c.outputAt) {
       lines.push({ spans: [], cursor: true });
       return lines;
     }
-    if (c.output !== "") for (const spans of parseAnsi(c.output)) lines.push({ spans });
-    let at = c.outputAt;
+    const out = c.output === "" ? [] : parseAnsi(c.output);
+    const reveal = c.revealFrames ?? 0;
+    if (frame < c.outputAt + reveal) {
+      const shown = Math.ceil((out.length * (frame - c.outputAt + 1)) / reveal);
+      for (const spans of out.slice(0, shown)) lines.push({ spans });
+      return lines;
+    }
+    for (const spans of out) lines.push({ spans });
+    let at = c.outputAt + reveal;
     for (const m of c.more ?? []) {
       at += m.afterFrames;
       if (frame < at) {
@@ -223,18 +235,45 @@ const BeatView: React.FC<BeatViewProps> = (props) => {
   const frame = useCurrentFrame();
   const beat = beats[index];
   const { fontPx, linePx, cols } = beat.type ?? props;
-  const lines = wrapScreen(
-    markLines(screenAt(beat, frame, index > 0 ? finals[index - 1] : [], typingMs), beat.highlight),
-    cols,
-    breakAfter,
-  );
+  const logical = markLines(screenAt(beat, frame, index > 0 ? finals[index - 1] : [], typingMs), beat.highlight);
+  let lines = wrapScreen(logical, cols, breakAfter);
 
   // A continuing beat must not move the text block, so a chain shares one layout
   // row count: the final row count of the last beat in the chain, plus the prompt.
   let j = index;
   while (j + 1 < beats.length && beats[j + 1].continues) j++;
   const rows = wrapScreen(finals[j], cols, breakAfter).length + 1;
-  const top = Math.max(TERMINAL_INSET, Math.round((TERMINAL_HEIGHT - rows * linePx) / 2));
+  let top = Math.max(TERMINAL_INSET, Math.round((TERMINAL_HEIGHT - rows * linePx) / 2));
+
+  // Beat.scroll: the window holds the last `capacity` rows, as a terminal does,
+  // and a scroll-back eases up to the last line holding the anchor text.
+  let clip: number | undefined; // a scrolling window's height: rows outside it are not drawn
+  if (beat.scroll !== undefined) {
+    const capacity = Math.floor((TERMINAL_HEIGHT - 2 * TERMINAL_INSET) / linePx);
+    const bottom = Math.max(0, lines.length - capacity);
+    let offset = bottom;
+    const anchor = beat.scroll;
+    if (typeof anchor === "string") {
+      let at = -1;
+      let row = 0;
+      for (const l of logical) {
+        if (l.spans.map((s) => s.text).join("").includes(anchor)) at = row;
+        row += wrapLine(l, cols, breakAfter).length;
+      }
+      const { scrollAt } = timeline(beat, typingMs);
+      if (at >= 0) {
+        offset = interpolate(frame, [scrollAt, scrollAt + SCROLL_FRAMES], [bottom, Math.min(at, bottom)], {
+          extrapolateLeft: "clamp",
+          extrapolateRight: "clamp",
+          easing: Easing.inOut(Easing.cubic),
+        });
+      }
+    }
+    const first = Math.floor(offset);
+    lines = lines.slice(first, first + capacity + 1);
+    top = -Math.round((offset - first) * linePx);
+    clip = capacity * linePx;
+  }
 
   return (
     <AbsoluteFill style={{ background: tokens.bg, fontFamily: mono, fontVariantLigatures: ligatures ? "normal" : "none" }}>
@@ -274,11 +313,21 @@ const BeatView: React.FC<BeatViewProps> = (props) => {
           overflow: "hidden",
         }}
       >
-        <div style={{ position: "absolute", top, left: TERMINAL_INSET, fontSize: fontPx }}>
-          {lines.map((l, i) => (
-            <TerminalLine key={i} line={l} fontPx={fontPx} linePx={linePx} />
-          ))}
-        </div>
+        {clip === undefined ? (
+          <div style={{ position: "absolute", top, left: TERMINAL_INSET, fontSize: fontPx }}>
+            {lines.map((l, i) => (
+              <TerminalLine key={i} line={l} fontPx={fontPx} linePx={linePx} />
+            ))}
+          </div>
+        ) : (
+          <div style={{ position: "absolute", top: TERMINAL_INSET, left: 0, width: FRAME, height: clip, overflow: "hidden" }}>
+            <div style={{ position: "absolute", top, left: TERMINAL_INSET, fontSize: fontPx }}>
+              {lines.map((l, i) => (
+                <TerminalLine key={i} line={l} fontPx={fontPx} linePx={linePx} />
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Caption band */}

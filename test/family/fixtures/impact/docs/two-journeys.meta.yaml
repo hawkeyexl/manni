@@ -1,0 +1,4 @@
+docs/two-journeys.md:
+  audiences: [docs-engineers]
+  personas: [maya]
+  journeys: [m1, m2]

@@ -23,3 +23,10 @@ docs/src/content/docs/strategy/index.mdx:
         file: src/cite/commands/check.ts
         lines: 454-460
         integrity: sha256-aa886938c13f06f3d6a513065fedf18ca9c86c1577b09d7270f25f82593f5ec3
+    - id: family-check-rolls-up
+      claim:
+        integrity: sha256-8902aadc873af64ad01f30817352d28fb0e1ed7a04a714551b07a10e318fdcd2
+      source:
+        file: src/family/commands/check.ts
+        lines: 437
+        integrity: sha256-8c37f7fe71c2be90004a43b55cdc69c5474b1a563965067b3363e775f488ce1a
