@@ -15,7 +15,7 @@ concepts:
   - severity
   - curated pointer
   - x-manni-graph-output
-last-updated: 2026-10-23
+last-updated: 2026-10-25
 ---
 
 Your standard about structure probably lives in review comments. A concept
@@ -42,7 +42,7 @@ and why it runs over the built graph rather than over the sources.
 
 ## The bundled shapes are the floor
 
-`manni graph check` ships with a shapes file, `shapes/graph/shapes-1.3.0.ttl`, which
+`manni graph check` ships with a shapes file, `shapes/graph/shapes-1.4.0.ttl`, which
 is what it uses when you name none. It declares a node shape per class the
 emitter mints: `graph:Document`, `graph:Section`, `graph:Block`,
 `graph:Verification`, `skos:Concept`, `skos:ConceptScheme`,
@@ -72,7 +72,7 @@ Write a shapes file and point `graph.check.shapes` at it:
 graph:
   check:
     shapes:
-      - node_modules/@hawkeyexl/manni/shapes/graph/shapes-1.3.0.ttl
+      - node_modules/@hawkeyexl/manni/shapes/graph/shapes-1.4.0.ttl
       - shapes/house-rules.ttl
 ```
 

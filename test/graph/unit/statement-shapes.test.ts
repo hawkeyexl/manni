@@ -24,6 +24,7 @@ const SHAPES = [bundledShapesPath(import.meta.url)];
  * beside it, and a new file joins this table once.
  */
 const PUBLISHED: Record<string, string> = {
+  "shapes-1.4.0.ttl": "f982a43d6a2266ed5ff00640f1b230b99078a17ac77d7d62cd966750a084d377",
   "ns-1.0.0.ttl": "a94a752e715ce18667a82fad1b8a565cdaf93cf2d09d72fa145c823ca2861c44",
   "ns-1.1.0.ttl": "9aba9267bbb06c4dafba26b945d11f3885d64212b28b44c117fea2214f4ddfab",
   "ns-1.2.0.ttl": "be5ba44c4ed46c2ea05b1724625a7e0945365c80c14d4d992a4ad25b7d60bfad",
@@ -48,8 +49,8 @@ describe("published vocabulary and shapes files", () => {
     expect(onDisk.sort()).toEqual(Object.keys(PUBLISHED).sort());
   });
 
-  it("bundles shapes 1.3.0 for graph check", () => {
-    expect(SHAPES[0]).toBe(join(root, "shapes", "graph", "shapes-1.3.0.ttl"));
+  it("bundles shapes 1.4.0 for graph check", () => {
+    expect(SHAPES[0]).toBe(join(root, "shapes", "graph", "shapes-1.4.0.ttl"));
   });
 
   it("serves vocabulary 1.4.0 at the namespace IRI", () => {

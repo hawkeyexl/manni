@@ -23,6 +23,31 @@ const fixture = JSON.parse(
 ) as object;
 
 describe("graph explorer", () => {
+  it("keeps a specialty node linked to its document when it is an additional topic", () => {
+    const model = explorerModel({
+      "@context": {
+        graph: "https://hawkeyexl.github.io/manni/graph/ns#",
+        foaf: "http://xmlns.com/foaf/0.1/",
+        schema: "https://schema.org/",
+        dcterms: "http://purl.org/dc/terms/",
+      },
+      "@graph": [
+        {
+          "@id": "urn:doc:persona",
+          "@type": "graph:Document",
+          "graph:path": "strategy/persona.md",
+          "dcterms:description": "The persona's source.",
+          "foaf:topic": { "@id": "urn:persona:reader" },
+        },
+        { "@id": "urn:persona:reader", "@type": "schema:PeopleAudience", "dcterms:title": "Reader" },
+      ],
+    });
+    expect(model.edges).toContainEqual({ source: "urn:doc:persona", target: "urn:persona:reader", predicate: "foaf:topic" });
+    expect(model.nodes.find((node) => node.id === "urn:persona:reader")).toMatchObject({
+      path: "strategy/persona.md",
+      description: "The persona's source.",
+    });
+  });
   it("opens the full graph with no selection, scope or filters when no URL state is supplied", () => {
     expect(readState("")).toEqual({
       node: "",

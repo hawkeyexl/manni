@@ -13,6 +13,9 @@ docs/src/content/docs/graph/govern/index.mdx:
     - generated-by: Claude Opus 5
       lines: 5-24
       integrity: sha256-68f0a3de2ce532b3618d3e2238dcdf53a34a1a3b8c6f1811ee5843107ea92967
+    - generated-by: GPT-6
+      lines: 26
+      integrity: sha256-67eadce88d916fd8a8577e89b3f4451e5eb757cb1aa95a0a8d0dd1a76c77cde1
     - generated-by: Claude Opus 5
       lines: 27
       integrity: sha256-0173914a32f51aa351a719c35c8be4c587b6cfbd5e409f204d15aecf0de469ad
@@ -34,6 +37,9 @@ docs/src/content/docs/graph/govern/index.mdx:
     - generated-by: Claude Opus 5
       lines: 54-55
       integrity: sha256-23f61c1a1c4c76df935199f7de0cddce1eca0031f9362b065a8336df6cba67b8
+    - generated-by: GPT-6
+      lines: 56
+      integrity: sha256-0af7f6410eb804d71dfa1edb8f67b3203f53b9b4e1f6eb96868871dd8b7e33ab
     - generated-by: Claude Opus 5
       lines: 57-90
       integrity: sha256-178be4dfc27c477171d0baea5696096e591cdc532b35511a339f76393986ece0

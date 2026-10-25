@@ -24,7 +24,7 @@ const judged = async (turtle: string, shapes: string): Promise<string[]> =>
     ),
   ].sort();
 
-describe("shapes 1.3.0 and the strategy records", () => {
+describe("bundled shapes and the strategy records", () => {
   it("passes a graph with every kind of record and edge in it", async () => {
     const { turtle, strategyRecords } = await buildGraph({ cwd: join(fixtures, "strategy") });
     expect(strategyRecords).toBeGreaterThan(0);
@@ -34,6 +34,19 @@ describe("shapes 1.3.0 and the strategy records", () => {
   it("fails the same graph under 1.2.0, whose shapes are closed to it", async () => {
     const { turtle } = await buildGraph({ cwd: join(fixtures, "strategy") });
     expect((await judged(turtle, PRIOR)).length).toBeGreaterThan(0);
+  });
+
+  it("admits the additional topic that 1.3.0 rejected", async () => {
+    const { turtle } = await buildGraph({ cwd: join(fixtures, "strategy") });
+    const prior = join(root, "shapes", "graph", "shapes-1.3.0.ttl");
+    expect(await judged(turtle, SHAPES)).toEqual([]);
+    expect((await judged(turtle, prior)).length).toBeGreaterThan(0);
+  });
+
+  it.each(['"not an IRI"', '<urn:untyped>'])("rejects an invalid additional topic: %s", async (target) => {
+    const { turtle } = await buildGraph({ cwd: join(fixtures, "strategy") });
+    const invalid = `${turtle}\n<https://example.com/graph/doc/strategy/journeys/labelled.md> <http://xmlns.com/foaf/0.1/topic> ${target} .`;
+    expect((await judged(invalid, SHAPES)).length).toBeGreaterThan(0);
   });
 
   it.each(["corpus", "check-violations", "check-guidance", "curated-fields", "statements"])(

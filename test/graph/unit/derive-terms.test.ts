@@ -191,6 +191,14 @@ describe("one node per concept, however a page spells it", () => {
       has(quads, DOC("glossary/pal.md"), `${NS.foaf}primaryTopic`, iri(C("pluggable-auth-layer"))),
     ).toBe(true);
   });
+
+  it("links a term document to its term alongside an explicit primary topic", async () => {
+    const quads = await build({
+      "token.md": "---\ntype: term\nid: token-x\nlabel: Access token\ngraph:\n  label: Credentials\n---\n# Token\n",
+    });
+    expect(objects(quads, DOC("token.md"), `${NS.foaf}primaryTopic`)).toEqual([iri(C("credentials"))]);
+    expect(objects(quads, DOC("token.md"), `${NS.foaf}topic`)).toEqual([iri(C("token-x"))]);
+  });
 });
 
 describe("top concepts", () => {
