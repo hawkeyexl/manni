@@ -9,6 +9,7 @@ import {
   nearestEdge,
   hoverNeighborhood,
   highlightSeed,
+  randomNode,
   readState,
   writeState,
   sourceLinks,
@@ -22,6 +23,37 @@ const fixture = JSON.parse(
 ) as object;
 
 describe("graph explorer", () => {
+  it("opens the full graph with no selection, scope or filters when no URL state is supplied", () => {
+    expect(readState("")).toEqual({
+      node: "",
+      highlight: "",
+      focus: "",
+      q: "",
+      types: [],
+      relation: "",
+      depth: 1,
+      view: "graph",
+      contentType: "",
+      metadata: [],
+    });
+  });
+  it("picks within the supplied results, avoids the current node when possible and handles empty or single results", () => {
+    const nodes = filterNodes(
+      explorerModel(fixture).nodes,
+      "",
+      ["Document"],
+      "",
+    );
+    const selected = nodes[0]?.id ?? "";
+    const first = randomNode(nodes, selected, () => 0);
+    const last = randomNode(nodes, selected, () => 0.999999);
+    expect(nodes.map((node) => node.id)).toContain(first);
+    expect(nodes.map((node) => node.id)).toContain(last);
+    expect(first).not.toBe(selected);
+    expect(last).not.toBe(selected);
+    expect(randomNode([], selected)).toBeUndefined();
+    expect(randomNode(nodes.slice(0, 1), selected)).toBe(selected);
+  });
   it("keeps a clicked highlight ahead of pointer hover and falls back when it is cleared or filtered out", () => {
     const nodes = explorerModel(fixture).nodes;
     expect(highlightSeed(nodes, "urn:doc:ci", "urn:persona:devin")).toBe(

@@ -30,6 +30,16 @@ export interface ExplorerModel {
   nodes: ExplorerNode[];
   edges: ExplorerEdge[];
 }
+/** Choose within the current results, changing nodes whenever alternatives exist. */
+export function randomNode(
+  nodes: ExplorerNode[],
+  selected: string,
+  random: () => number = Math.random,
+): string | undefined {
+  const alternatives = nodes.filter((node) => node.id !== selected);
+  const candidates = alternatives.length ? alternatives : nodes;
+  return candidates[Math.floor(random() * candidates.length)]?.id;
+}
 /** A visible clicked node keeps priority over transient pointer or keyboard hover. */
 export function highlightSeed(
   nodes: ExplorerNode[],

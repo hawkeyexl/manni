@@ -27,6 +27,7 @@ import {
   sameConnection,
   hoverNeighborhood,
   highlightSeed,
+  randomNode,
   readState,
   relationLabel,
   sourceLinks,
@@ -943,6 +944,8 @@ export function startExplorer(root: HTMLElement): void {
       state.metadata,
     );
     visible = matches;
+    get<HTMLButtonElement>('[data-action="random"]').disabled =
+      !loaded || !matches.length;
     get("[data-empty]").hidden = matches.length > 0 || !loaded;
     canvas.hidden = matches.length === 0;
     status.textContent = !loaded
@@ -1026,19 +1029,6 @@ export function startExplorer(root: HTMLElement): void {
       );
       get("[data-total]").textContent =
         `${model.nodes.length.toLocaleString()} nodes · ${model.edges.length.toLocaleString()} connections · ${records.length} strategy records`;
-      // Begin at the worked example, keeping an explicit shared URL authoritative.
-      if (!location.hash) {
-        const sara = model.nodes.find(
-          (n) => n.kind === "Persona" && n.id.endsWith("/sara"),
-        );
-        if (sara) {
-          state.focus = sara.id;
-          state.node = sara.id;
-          state.depth = 1;
-          state.types = ["Audience", "Persona", "Journey"];
-          save(true);
-        }
-      }
       render();
     } catch {
       if (version !== loadVersion) return;
@@ -1190,6 +1180,11 @@ export function startExplorer(root: HTMLElement): void {
           save();
           render();
           break;
+        case "random": {
+          const id = randomNode(matches, state.node);
+          if (id) choose(id);
+          break;
+        }
         case "add-filter":
           state.metadata.push({ field: "", operator: "is", value: "" });
           changeMetadata();

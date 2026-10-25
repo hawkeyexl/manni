@@ -111,6 +111,11 @@
   border-bottom: 1px solid var(--gx-line);
   flex-wrap: wrap;
 }
+.graph-explorer [data-action="random"] {
+  min-width: 44px;
+  font-size: 20px;
+  line-height: 1;
+}
 .gx-search {
   flex: 1;
   min-width: 220px;

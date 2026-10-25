@@ -32,6 +32,41 @@ for (const [name, engine, options] of [
       .locator("[data-total]")
       .filter({ hasText: "strategy records" })
       .waitFor();
+    assert.equal(await root.locator("[data-scope]").innerText(), "Whole graph");
+    const landingTotal = Number(
+      (await root.locator("[data-total]").innerText())
+        .split(" ")[0]
+        .replaceAll(",", ""),
+    );
+    await root
+      .locator(`[data-drawing][data-node-count="${landingTotal}"]`)
+      .waitFor({ state: "visible" });
+    assert.equal(await root.locator("[data-kind]:checked").count(), 0);
+    assert.equal(await root.locator("[data-inspector]").isVisible(), false);
+    await page.screenshot({
+      path: `${directory}/${name}-landing-whole-graph.png`,
+    });
+    const randomButton = root.getByRole("button", {
+      name: "Random node",
+      exact: true,
+    });
+    assert((await randomButton.innerText()).includes("🎲"));
+    await randomButton.click();
+    const randomState = new URLSearchParams(new URL(page.url()).hash.slice(1));
+    assert(randomState.get("node"));
+    assert.equal(randomState.get("focus"), randomState.get("node"));
+    assert.equal(randomState.get("highlight"), randomState.get("node"));
+    await root.locator("[data-inspector]").waitFor({ state: "visible" });
+    const saraId = "https://hawkeyexl.github.io/manni/id/strategy/persona/sara";
+    const exampleState = new URLSearchParams({
+      node: saraId,
+      focus: saraId,
+      depth: "1",
+      view: "graph",
+    });
+    for (const kind of ["Audience", "Persona", "Journey"])
+      exampleState.append("type", kind);
+    await page.goto(`${url.split("#")[0]}#${exampleState}`);
     await root.locator(".gx-node").first().waitFor();
     assert((await root.locator(".gx-node").count()) > 0);
     const typeFills = await root
@@ -286,6 +321,22 @@ for (const [name, engine, options] of [
     );
     assert.equal(page.url(), metadataUrl);
     await root.screenshot({ path: `${directory}/${name}-how-to.png` });
+    await root
+      .locator("[data-status]")
+      .filter({ hasText: "Showing all" })
+      .waitFor();
+    const filteredRandomIds = await root
+      .locator(".gx-node")
+      .evaluateAll((nodes) =>
+        nodes.map((node) => node.getAttribute("data-node-id")),
+      );
+    await randomButton.click();
+    const filteredRandomState = new URLSearchParams(
+      new URL(page.url()).hash.slice(1),
+    );
+    assert(filteredRandomIds.includes(filteredRandomState.get("node")));
+    assert.equal(filteredRandomState.get("contentType"), "how-to");
+    assert.equal(filteredRandomState.getAll("meta").length, 1);
     await root
       .getByRole("button", { name: "Remove metadata filter 1", exact: true })
       .click();
@@ -601,6 +652,7 @@ for (const [name, engine, options] of [
       .getByRole("searchbox", { name: "Search nodes" })
       .fill("nothing-matches-this-string-48293");
     await root.locator("[data-empty]").waitFor();
+    assert(await randomButton.isDisabled());
     assert.match(
       await root.locator("[data-empty]").innerText(),
       /No matching nodes/,
@@ -680,6 +732,21 @@ for (const [name, engine, options] of [
         );
         const fullCanvas = await root.locator("[data-canvas]").boundingBox();
         assert(fullCanvas && fullCanvas.height > 200);
+        await randomButton.tap();
+        const mobileRandomState = new URLSearchParams(
+          new URL(page.url()).hash.slice(1),
+        );
+        assert(mobileRandomState.get("node"));
+        assert.equal(
+          mobileRandomState.get("focus"),
+          mobileRandomState.get("node"),
+        );
+        await root
+          .getByRole("button", { name: "Show everything", exact: true })
+          .click();
+        await root
+          .locator(`[data-drawing][data-node-count="${expectedNodes}"]`)
+          .waitFor({ state: "visible" });
         await root.screenshot({
           path: `${directory}/${name}-fullscreen-mobile.png`,
         });

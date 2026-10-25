@@ -36,8 +36,8 @@ caption. Use a separate native-width cut for embedding in the docs.
 | Time | Action | Caption |
 | --- | --- | --- |
 | 0–5s | Terminal: run the authoring graph publish command; show its page and strategy-record counts. | Your docs already connect to people and journeys. |
-| 5–10s | Browser: the explorer starts around Sara; enable Document. | See the pages serving a persona. |
-| 10–17s | Show whole graph, search Devin, select the Persona result, Focus here. | Follow the reader's journey. |
+| 5–10s | Browser: the explorer opens on the whole graph; choose 🎲 Random node. | Start anywhere and follow a connection. |
+| 10–17s | Show whole graph, search Devin, select the Persona result. | Follow the reader's journey. |
 | 17–23s | Set depth to 2; select a journey and open Connections. | Follow incoming and outgoing relationships. |
 | 23–28s | Open Metadata on a page: show its personas, journeys and a citation entry. | Keep the authoring context in view. |
 | 28–35s | Phone portrait: List, select a result, show the bottom sheet. | The same graph, usable on your phone. |

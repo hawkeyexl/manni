@@ -139,6 +139,7 @@ These came out of a review of the shipped product against the intent recorded in
 | [0120](0120-pinned-node-highlighting.md) | Keep a clicked node and its direct connections highlighted while exploring | Maya · M18 / Sara · S17 | Implemented (worktree) |
 | [0121](0121-click-background-to-release-highlight.md) | Release a pinned highlight by clicking outside nodes in the graph | Maya · M18 / Sara · S17 | Implemented (worktree) |
 | [0122](0122-node-selection-shifts-focus.md) | Focus the explorer's neighborhood on the selected node automatically | Maya · M18 / Sara · S17 | Implemented (worktree) |
+| [0123](0123-whole-graph-start-and-random-node.md) | Open the whole graph by default and discover nodes with a dice button | Maya · M18 / Sara · S17 | Implemented (worktree) |
 
 0014 was not in the original review. It surfaced while stress-testing 0004, and is the most severe item in the set. **docmeta currently exits `0` when it validates nothing at all**, including when an explicitly named file does not exist.
 
