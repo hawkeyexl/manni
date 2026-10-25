@@ -1,0 +1,9 @@
+collections:
+  - name: site
+    paths: [docs/page.md]
+    externalMetadata:
+      - file: "{page}.meta.yaml"
+  - name: strategy
+    paths: [strategy/*.md]
+meta:
+  schemas: [./house.schema.json]

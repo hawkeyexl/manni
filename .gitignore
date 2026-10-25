@@ -60,3 +60,4 @@ media/scratch-*/
 docs/public/graph/*
 !docs/public/graph/ns.ttl
 docs/public/llms.txt
+docs/public/explorer-data/

@@ -1,0 +1,47 @@
+{
+  "@context": {
+    "graph": "https://hawkeyexl.github.io/manni/graph/ns#",
+    "schema": "https://schema.org/",
+    "dcterms": "http://purl.org/dc/terms/",
+    "foaf": "http://xmlns.com/foaf/0.1/"
+  },
+  "@graph": [
+    {
+      "@id": "urn:persona:devin",
+      "@type": "schema:PeopleAudience",
+      "dcterms:title": "Devin"
+    },
+    {
+      "@id": "urn:journey:d11",
+      "@type": "graph:Journey",
+      "dcterms:title": "Ship in CI",
+      "schema:audience": { "@id": "urn:persona:devin" }
+    },
+    {
+      "@id": "urn:doc:ci",
+      "@type": "graph:Document",
+      "dcterms:title": "CI setup",
+      "graph:path": "docs/src/content/docs/meta/ci/index.mdx",
+      "dcterms:isPartOf": { "@id": "urn:journey:d11" },
+      "graph:linksTo": { "@id": "urn:doc:config" }
+    },
+    {
+      "@id": "urn:doc:config",
+      "@type": "graph:Document",
+      "dcterms:title": "Configuration",
+      "graph:path": "docs/src/content/docs/meta/config.mdx"
+    },
+    {
+      "@id": "urn:record:devin",
+      "@type": "graph:Document",
+      "dcterms:title": "Devin record",
+      "graph:path": "docs/content-strategy/personas/devin.md",
+      "foaf:primaryTopic": { "@id": "urn:persona:devin" }
+    },
+    {
+      "@id": "urn:doc:ci#setup",
+      "@type": "graph:Section",
+      "dcterms:title": "Set up CI"
+    }
+  ]
+}

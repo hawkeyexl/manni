@@ -1,11 +1,13 @@
 ---
 title: Explore the graph
-description: Ask the docset questions prose cannot answer, such as what nothing links to and which page owns a term.
+description: Explore this site's documentation graph, including its audiences, personas, journeys and author-facing metadata, or query your own graph from the terminal.
+tableOfContents: false
 type: how-to
 id: graph-explore
 language: en
 audiences:
   - docs-engineers
+  - schema-authors
 lifecycle: published
 action: explore
 concepts:
@@ -13,8 +15,69 @@ concepts:
   - hub
   - section
   - concept
-last-updated: 2026-10-18
+last-updated: 2026-10-25
 ---
+
+import GraphExplorer from "../../../../components/GraphExplorer.astro";
+
+<GraphExplorer />
+
+The explorer opens with the whole graph visible. Choose **🎲** (**Random node**)
+to focus on a random node from the whole graph. It respects your search and
+filters, but searches beyond the current neighborhood. It picks a different
+node when more than one matches, and stays available when matches exist elsewhere
+in the graph. Shared URLs still restore their saved view.
+
+Choose **Fullscreen** for more room. **Exit fullscreen** or **Escape** returns to
+the docs page, keeping your view and filters.
+
+To show how-to pages, choose **Show everything**, select **Document** under
+**Node kinds**, then choose **how-to** under **Content type**. Node kinds describe
+the graph's Document, Section, Persona and other nodes; content type is the page's
+metadata field. **Add metadata filter** lets you choose another field, a condition
+and a value. Press **Enter** after entering a value. All conditions must match;
+array fields match individual members, and sections use their page's metadata.
+Filters are kept in the URL. **Clear filters** removes them.
+
+Hover over a connection to see its relationship and direction, or tap the
+connection on a phone. A pair with multiple relationships shows each one.
+Connections in smaller graphs can also be reached with **Tab**. **Escape**
+dismisses the tooltip.
+
+Hover over a node to highlight its immediate incoming and outgoing connections
+and neighboring nodes. The rest of the graph dims, and labels concentrate on
+that neighborhood. Click or tap a node to focus the explorer on its neighborhood
+and keep its highlight while you move, pan or zoom. The search clears to reveal
+neighbors; filters and connection depth stay as chosen. Click another node to
+shift focus again, or click anywhere in the graph outside a node to release its
+highlight. Closing node details keeps the highlight. Without
+a pinned node, moving away restores the full view. Keyboard focus also highlights
+nodes in a smaller graph.
+
+Choose **Show everything** to see every node and connection at once. It clears
+the search, neighborhood focus and type filters. Pan and zoom to explore the
+full graph, then tap a node to focus on its neighborhood and inspect it. There
+is no node-count limit. **Show whole graph** returns to the wider view while
+keeping the selected node and its highlight.
+
+Node colors match the type legend and the colored markers in the filters and
+results. Zoom in to reveal larger labels with readable backgrounds. Labels
+wrap across lines and avoid overlaps; selecting or hovering a node gives its
+label priority. Shapes and written type names also distinguish the categories.
+
+Search for a page, persona, or journey and select it to inspect its metadata.
+Selecting a node also focuses its neighborhood. Choose **Connections** to follow
+incoming and outgoing relationships. **List** offers the same navigation
+on a small screen or with a keyboard. Clear every node-type checkbox to show
+all types. The **Metadata** tab includes strategy references, citation records,
+and other author-facing fields permitted by their schemas.
+
+For example, search **Devin**, select his persona, then choose **2 connections**
+to find his journeys and their pages.
+Search applies to the current neighborhood; choose **Show whole graph** to
+search the entire corpus. **Reset** clears the selection and all filters.
+
+## Explore your graph from the terminal
 
 Once the graph is built, four commands answer questions that used to mean
 reading forty pages. None of them touches a model or the network, and each

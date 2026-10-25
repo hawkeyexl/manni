@@ -130,6 +130,17 @@ These came out of a review of the shipped product against the intent recorded in
 | [0111](0111-an-eval-can-ask-the-judge-to-read-a-page-as-its-personas.md) | An eval can ask the judge to read a page as its personas. An `ai` eval with `options: { readers: personas }` is judged as the persona records its page names, read from their descriptive fields. The cache key covers the rendered readers, and `--since` counts a persona edit. Everywhere else the run is today's, byte for byte | Sara · S8, S9 | Implemented (#244) |
 | [0112](0112-borrowed-strategy-records.md) | Borrowed strategy records. A record or page read from outside the run's directory is borrowed. `strategy check` files no finding in it, counts it as `(N borrowed)` and `summary.borrowed`, and tells a kept copy to go. A borrowed journey's steps are `unchecked`, and `meta get` names borrowed records | Sara · S21 | Implemented (#249) |
 | [0113](0113-the-plugins-tracevals-hooks-are-each-users-to-turn-on.md) | The plugin's tracevals hooks are each user's to turn on. A per-user plugin option, `tracevals`, sets `MANNI_TRACEVALS_HOOKS=1`, and only then do `capture`, `prepare`, SubagentStop, `release` and the turn judgement at Stop run. A committed `tracevals.runtime` section alone judges nothing on a contributor's machine | Maya · M25 / Theo | Implemented (#248) |
+| [0114](0114-browser-graph-explorer.md) | A D3 browser explorer for docs, strategy records and author-facing metadata, with graph/list navigation and mobile controls | Sara · S17 / Maya · M18 | Implemented (worktree) |
+| [0115](0115-show-the-whole-graph.md) | Show every node and connection with one action; use canvas for large graphs instead of limiting the node count | Maya · M18 / Sara · S17 | Implemented (worktree) |
+| [0116](0116-node-colors-and-readable-labels.md) | Consistent type colors and readable, collision-aware labels in both graph renderers | Maya · M18 / Sara · S17 | Implemented (worktree) |
+| [0117](0117-fullscreen-and-page-metadata-filters.md) | Fullscreen exploration and shareable filters over page metadata, including content type | Maya · M18 / Sara · S17 | Implemented (worktree) |
+| [0118](0118-relationship-tooltips.md) | Inspect relationship labels and directions by hovering or tapping graph connections | Maya · M18 / Sara · S17 | Implemented (worktree) |
+| [0119](0119-hover-neighborhood-highlighting.md) | Highlight a hovered node and its direct connections while dimming the rest of the graph | Maya · M18 / Sara · S17 | Implemented (worktree) |
+| [0120](0120-pinned-node-highlighting.md) | Keep a clicked node and its direct connections highlighted while exploring | Maya · M18 / Sara · S17 | Implemented (worktree) |
+| [0121](0121-click-background-to-release-highlight.md) | Release a pinned highlight by clicking outside nodes in the graph | Maya · M18 / Sara · S17 | Implemented (worktree) |
+| [0122](0122-node-selection-shifts-focus.md) | Focus the explorer's neighborhood on the selected node automatically | Maya · M18 / Sara · S17 | Implemented (worktree) |
+| [0123](0123-whole-graph-start-and-random-node.md) | Open the whole graph by default and discover nodes with a dice button | Maya · M18 / Sara · S17 | Implemented (worktree) |
+| [0124](0124-random-node-searches-the-whole-graph.md) | Let random-node discovery jump beyond the current neighborhood | Maya · M18 / Sara · S17 | Implemented (worktree) |
 
 0014 was not in the original review. It surfaced while stress-testing 0004, and is the most severe item in the set. **docmeta currently exits `0` when it validates nothing at all**, including when an explicitly named file does not exist.
 
@@ -138,6 +149,7 @@ These came out of a review of the shipped product against the intent recorded in
 0017 is the first proposal written under `CLAUDE.md § Supersede a proposal, never amend it`. It supersedes 0012 rather than correcting it. 0012's evidence grep searched for `sent to` while the docs said `sends`, so it concluded no page documented `fill`'s egress when one had for two weeks. The gap it was reaching for is real, and narrower. The docs say *that* content is sent, never *what*, *how much*, or *what is kept*. 0017 answers it mostly by changing the behavior rather than describing it.
 
 0011 shipped much smaller than it was written, and the reason is worth recording because it is the same lesson as 0017's. By the time it was implemented, most of what it asked for had already been done *incidentally* by the proposals downstream of it. 0017 added the M4 CUJ and the egress page while implementing itself, and 0001 renumbered the retrofit page's steps underneath it. What was left was the part no other proposal had a reason to touch. That is the retrofit row's missing M4 tag, the dangling `fill` source-of-truth row, and the two persona sentences. The proposal was not amended to match. It was implemented as written, and the items already satisfied were verified page by page rather than assumed. That check is what turned up the last published-page gap, which no proposal had named. The T1 fix-it page recommends `fill` without ever linking to the M4 egress page.
+
 
 ## Sibling tools' logs
 

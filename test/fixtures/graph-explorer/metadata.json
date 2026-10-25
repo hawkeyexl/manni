@@ -1,0 +1,5 @@
+[
+  {"file":"docs/src/content/docs/meta/ci/index.mdx","values":{"type":"how-to","language":"en","lifecycle":"published","tags":["ci","automation"],"graph":{"type":"task"},"reviewed":true}},
+  {"file":"docs/src/content/docs/meta/config.mdx","values":{"type":"reference","language":"en","lifecycle":"draft","tags":["configuration"],"graph":{"type":"concept"}}},
+  {"file":"docs/content-strategy/personas/devin.md","values":{"type":"persona","audience":"ci-engineers"}}
+]

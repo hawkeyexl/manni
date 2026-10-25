@@ -1,0 +1,9 @@
+{
+  "type": "object",
+  "properties": {
+    "title": { "type": "string" },
+    "personas": { "type": "array", "x-manni-location": "external" },
+    "private-note": { "type": "string", "x-manni-graph-output": false },
+    "encrypted": { "type": "string" }
+  }
+}
