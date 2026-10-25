@@ -4,6 +4,13 @@
 4.13.1. Entries below that version are docmeta releases; the repository
 history is the same one.
 
+# [4.26.0](https://github.com/hawkeyexl/manni/compare/v4.25.0...v4.26.0) (2026-10-25)
+
+
+### Features
+
+* **docs:** add mobile-friendly D3 graph explorer ([#252](https://github.com/hawkeyexl/manni/issues/252)) ([d68c336](https://github.com/hawkeyexl/manni/commit/d68c336e517fdecac47385233286fcfe5923016b))
+
 # [4.25.0](https://github.com/hawkeyexl/manni/compare/v4.24.0...v4.25.0) (2026-10-24)
 
 
