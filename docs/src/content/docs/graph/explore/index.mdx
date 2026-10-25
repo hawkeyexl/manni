@@ -15,7 +15,7 @@ concepts:
   - hub
   - section
   - concept
-last-updated: 2026-10-24
+last-updated: 2026-10-25
 ---
 
 import GraphExplorer from "../../../../components/GraphExplorer.astro";
@@ -40,15 +40,19 @@ dismisses the tooltip.
 
 Hover over a node to highlight its immediate incoming and outgoing connections
 and neighboring nodes. The rest of the graph dims, and labels concentrate on
-that neighborhood. Click or tap a node to keep that highlight while you move,
-pan or zoom. Click another node to switch, or click anywhere in the graph
-outside a node to release it. Closing node details keeps the highlight. Without
+that neighborhood. Click or tap a node to focus the explorer on its neighborhood
+and keep its highlight while you move, pan or zoom. The search clears to reveal
+neighbors; filters and connection depth stay as chosen. Click another node to
+shift focus again, or click anywhere in the graph outside a node to release its
+highlight. Closing node details keeps the highlight. Without
 a pinned node, moving away restores the full view. Keyboard focus also highlights
 nodes in a smaller graph.
 
 Choose **Show everything** to see every node and connection at once. It clears
 the search, neighborhood focus and type filters. Pan and zoom to explore the
-full graph, then tap a node to inspect it. There is no node-count limit.
+full graph, then tap a node to focus on its neighborhood and inspect it. There
+is no node-count limit. **Show whole graph** returns to the wider view while
+keeping the selected node and its highlight.
 
 Node colors match the type legend and the colored markers in the filters and
 results. Zoom in to reveal larger labels with readable backgrounds. Labels
@@ -56,15 +60,15 @@ wrap across lines and avoid overlaps; selecting or hovering a node gives its
 label priority. Shapes and written type names also distinguish the categories.
 
 Search for a page, persona, or journey and select it to inspect its metadata.
-Choose **Connections** to follow incoming and outgoing relationships, or
-**Focus here** to explore its neighborhood. **List** offers the same navigation
+Selecting a node also focuses its neighborhood. Choose **Connections** to follow
+incoming and outgoing relationships. **List** offers the same navigation
 on a small screen or with a keyboard. Clear every node-type checkbox to show
 all types. The **Metadata** tab includes strategy references, citation records,
 and other author-facing fields permitted by their schemas.
 
 The explorer starts with strategy records around Sara. Select **Document** to
-include the pages serving her. Choose **Show whole graph**, search **Devin**, select his persona, then
-choose **Focus here** and **2 connections** to find his journeys and their pages.
+include the pages serving her. Choose **Show whole graph**, search **Devin**, select
+his persona, then choose **2 connections** to find his journeys and their pages.
 Search applies to the current neighborhood; choose **Show whole graph** to
 search the entire corpus. **Reset** clears the selection and all filters.
 

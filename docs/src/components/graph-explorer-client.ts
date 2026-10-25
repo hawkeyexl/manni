@@ -516,10 +516,12 @@ export function startExplorer(root: HTMLElement): void {
     selectedButton = document.activeElement;
     state.node = id;
     state.highlight = id;
+    state.focus = id;
+    state.q = "";
+    shown = 30;
+    needsFit = true;
     save();
-    renderInspector();
-    renderResults();
-    paint();
+    render();
     if (moveFocus)
       get<HTMLElement>("[data-node-title]").focus({ preventScroll: true });
   }

@@ -73,14 +73,31 @@ for (const [name, engine, options] of [
     await root.getByRole("searchbox", { name: "Search nodes" }).focus();
     assert.equal(await root.locator(".gx-node.is-muted").count(), 0);
     await hoverNode.click();
+    assert.equal(
+      new URLSearchParams(new URL(page.url()).hash.slice(1)).get("focus"),
+      hoverId,
+    );
+    await root.locator("[data-depth]").selectOption("2");
+    await root
+      .locator("[data-status]")
+      .filter({ hasText: "Showing all" })
+      .waitFor();
     await root.getByRole("searchbox", { name: "Search nodes" }).hover();
     assert.equal(await root.getAttribute("data-highlight-node"), hoverId);
     assert((await root.locator(".gx-node.is-muted").count()) > 0);
     const otherNode = root.locator('.gx-node[data-node-type="Journey"]').nth(1);
     const otherId = await otherNode.getAttribute("data-node-id");
-    await otherNode.hover();
+    await otherNode.hover({ force: true });
     assert.equal(await root.getAttribute("data-highlight-node"), hoverId);
-    await otherNode.click();
+    await otherNode.press("Enter");
+    assert.equal(
+      new URLSearchParams(new URL(page.url()).hash.slice(1)).get("focus"),
+      otherId,
+    );
+    await root
+      .locator("[data-status]")
+      .filter({ hasText: "Showing all" })
+      .waitFor();
     await root.getByRole("searchbox", { name: "Search nodes" }).hover();
     assert.equal(await root.getAttribute("data-highlight-node"), otherId);
     await root.getByRole("button", { name: "Close node details" }).click();
@@ -99,6 +116,18 @@ for (const [name, engine, options] of [
     await root.locator("[data-graph]").click({ position: { x: 8, y: 8 } });
     assert.equal(await root.locator(".gx-node.is-muted").count(), 0);
     assert(!new URL(page.url()).hash.includes("highlight="));
+    await root.locator("[data-depth]").selectOption("1");
+    await root
+      .locator("[data-status]")
+      .filter({ hasText: "Showing all" })
+      .waitFor();
+    await root.locator(".gx-node").first().press("Enter");
+    await root
+      .locator("[data-status]")
+      .filter({ hasText: "Showing all" })
+      .waitFor();
+    await root.getByRole("button", { name: "Close node details" }).click();
+    assert(new URL(page.url()).hash.includes("highlight="));
     const connection = root.locator(".gx-edge-hit").first();
     const connectionPoint = await root
       .locator(".gx-edge-hit")
@@ -133,12 +162,6 @@ for (const [name, engine, options] of [
         return null;
       });
     assert(connectionPoint);
-    await root
-      .locator('.gx-node[data-node-type="Journey"]')
-      .first()
-      .press("Enter");
-    await root.getByRole("button", { name: "Close node details" }).click();
-    assert(new URL(page.url()).hash.includes("highlight="));
     await root.locator("[data-graph]").tap({ position: connectionPoint });
     assert(!new URL(page.url()).hash.includes("highlight="));
     assert.equal(await root.locator(".gx-node.is-muted").count(), 0);
@@ -398,6 +421,25 @@ for (const [name, engine, options] of [
       new URL(page.url()).hash.slice(1),
     ).get("highlight");
     assert(pinnedCanvasId);
+    assert.equal(
+      new URLSearchParams(new URL(page.url()).hash.slice(1)).get("focus"),
+      pinnedCanvasId,
+    );
+    await root
+      .locator("[data-status]")
+      .filter({ hasText: "Showing all" })
+      .waitFor();
+    await page.screenshot({ path: `${directory}/${name}-node-focused.png` });
+    await root
+      .getByRole("button", { name: "Show whole graph", exact: true })
+      .click();
+    await root
+      .locator("[data-status]")
+      .filter({ hasText: "Showing all" })
+      .waitFor();
+    await root
+      .locator(`[data-drawing][data-node-count="${expectedNodes}"]`)
+      .waitFor({ state: "visible" });
     await root.getByRole("searchbox", { name: "Search nodes" }).hover();
     await page.waitForFunction(
       (id) =>
@@ -519,6 +561,11 @@ for (const [name, engine, options] of [
       .filter({ hasText: "Persona · docs/content-strategy/personas/devin.md" });
     await persona.waitFor();
     await persona.click();
+    const selectedState = new URLSearchParams(
+      new URL(page.url()).hash.slice(1),
+    );
+    assert.equal(selectedState.get("focus"), selectedState.get("node"));
+    assert.equal(selectedState.get("q"), null);
     await root.getByRole("tab", { name: "Metadata", exact: true }).click();
     assert.match(
       await root.locator('[data-panel="metadata"]').innerText(),
@@ -657,6 +704,10 @@ for (const [name, engine, options] of [
       await root.getByRole("searchbox", { name: "Search nodes" }).fill("Devin");
       await persona.waitFor();
       await persona.click();
+      const mobileSelection = new URLSearchParams(
+        new URL(page.url()).hash.slice(1),
+      );
+      assert.equal(mobileSelection.get("focus"), mobileSelection.get("node"));
       const bounds = await root.locator("[data-inspector]").boundingBox();
       await root.screenshot({
         path: `${directory}/${name}-${width}x${height}.png`,
