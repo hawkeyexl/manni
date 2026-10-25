@@ -15,7 +15,7 @@ const base = import.meta.env.BASE_URL;
     <label class="gx-search"><span class="gx-sr">Search nodes</span><input type="search" placeholder="Find a page, persona, or journey…" aria-label="Search nodes" autocomplete="off" /></label>
     <div class="gx-views" role="group" aria-label="Explorer view"><button type="button" data-view="graph" aria-pressed="true">Graph</button><button type="button" data-view="list" aria-pressed="false">List</button></div>
     <button type="button" data-action="everything" class="gx-primary">Show everything</button>
-    <button type="button" data-action="random" aria-label="Random node" title="Random node" disabled><span aria-hidden="true">🎲</span></button>
+    <button type="button" data-action="random" aria-label="Random node" title="Random node from the whole graph" disabled><span aria-hidden="true">🎲</span></button>
     <button type="button" data-action="fullscreen" aria-pressed="false">Fullscreen</button>
     <button type="button" data-action="back">Back</button><button type="button" data-action="reset">Reset</button>
   </div>
@@ -25,7 +25,7 @@ const base = import.meta.env.BASE_URL;
         <summary>Filters <span aria-hidden="true">↕</span></summary>
         <fieldset><legend>Node kinds</legend><div data-types class="gx-types"></div></fieldset>
         <div class="gx-metadata">
-          <h4>Page metadata</h4>
+          <h3>Page metadata</h3>
           <label>Content type<select data-content-type><option value="">Any content type</option></select></label>
           <p class="gx-filter-help">For example, how-to or reference. Sections use their page's metadata. Select Document above to show only pages.</p>
           <div data-metadata-rows></div>

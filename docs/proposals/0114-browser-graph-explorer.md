@@ -6,7 +6,7 @@
 
 ## Problem
 
-The repository can derive, validate and traverse its documentation graph, including typed strategy records, but seeing a persona's journeys and the pages serving them requires terminal commands. The existing `/graph/explore/` guide explains those commands. Readers need a browser interface that works on a phone and exposes the authoring context alongside the published pages.
+The repository can derive, validate and traverse its documentation graph, including typed strategy records. Seeing a persona's journeys and the pages serving them requires terminal commands. The existing `/graph/explore/` guide explains those commands. Readers need a browser interface that works on a phone and exposes the authoring context alongside the published pages.
 
 ## Worked example
 
@@ -22,16 +22,22 @@ To explore Devin instead, she chooses Show whole graph, searches Devin, selects 
 4. Reuse `graph.jsonld` and `chunks.json` unchanged. The chunk manifest deliberately excludes external-only fields, so `scripts/export-explorer-metadata.mjs` also writes `authoring.json` as the existing `GetFileResult[]` JSON format, retaining `file`, `present`, `collections` and `values`. It uses `runGet` with derivation off, the normal external-metadata merge, the normal schema resolver and `Validator.graphOutputPreferences`. Top-level fields marked `x-manni-graph-output: false` are omitted. Ciphertext stays opaque; no key or model is needed. This file is served with the explorer and contains author-facing metadata by design.
 5. Search covers the current neighborhood, or the entire corpus when no focus is set. Empty type selection means all types. Neighborhoods follow both directions and respect the relationship filter. One connection is the default, two the maximum. Order focused neighborhoods by distance and then type so the visible limit does not become a collection of disconnected alphabetic results.
 6. Render at most 150 nodes in SVG. Search counts cover every match, and List pages results in groups of 30. The selected match is retained in the graph even beyond the first 150. The initial view selects Sara and shows Audience, Persona and Journey; Document can be checked to add pages. Labels appear for small neighborhoods, selection or zoom. Edges carry arrowheads; the inspector always spells out incoming and outgoing direction.
-7. Use a three-column desktop layout, a stacked inspector at intermediate widths, and a bottom sheet below 768px or on a short landscape viewport up to 1000px wide. Native details provides the filter drawer. The graph handles tap, pan and pinch with explicit zoom buttons. List, keyboard node activation, keyboard tabs, Escape, visible focus, live status and reduced motion provide alternate ways through the same graph.
+7. Use a three-column desktop layout and a stacked inspector at intermediate widths. Use a bottom sheet below 768px or on a short landscape viewport up to 1000px wide. Native details provides the filter drawer. The graph handles tap, pan and pinch with explicit zoom buttons. List, keyboard node activation, keyboard tabs, Escape, visible focus, live status and reduced motion provide alternate ways through the same graph.
 8. Follow the design palette in both themes and self-host JetBrains Mono. Types have distinct shapes and labels. No third-party font request, hosted model, authoring editor or account is involved.
 
 ## Interface
 
 No configuration key or `manni` command, argument, option, exit code or public API changes. `graph.authoring` remains the existing optional boolean, default `true`. The repository's YAML is unchanged.
 
-Controls: Search nodes; Graph; List; Back; Reset; Node types; Relationship; Neighborhood depth (1 or 2); Clear filters; Show whole graph; Show more nodes; Zoom in; Zoom out; Fit graph; Focus here; Close node details; Details; Connections; Metadata; Open page; View source. All controls use the labels the component renders. No editing controls are exposed.
+The interface offers these controls:
 
-URL fragment keys: `node`, `focus`, `q`, `relation` are optional strings (default empty); `type` is repeated once per selected type (empty means all); `depth` is 1 or 2 (default 1); `view` is graph or list (default graph). Unknown types and invalid depth/view values are discarded in favour of defaults. Invalid relationship values are cleared after loading. A non-existent selected node says so in the inspector. The full node IRI is encoded by URLSearchParams.
+- Search nodes; Graph; List; Back; Reset; Node types; Relationship; Neighborhood depth (1 or 2).
+- Clear filters; Show whole graph; Show more nodes; Zoom in; Zoom out; Fit graph.
+- Focus here; Close node details; Details; Connections; Metadata; Open page; View source.
+
+All controls use the labels the component renders. No editing controls are exposed.
+
+URL fragment keys `node`, `focus`, `q` and `relation` are optional strings, empty by default. Repeat `type` once per selected type; empty means all. `depth` is 1 or 2, defaulting to 1. `view` is graph or list, defaulting to graph. Unknown types and invalid depth/view values are discarded in favour of defaults. Invalid relationship values are cleared after loading. A non-existent selected node says so in the inspector. The full node IRI is encoded by URLSearchParams.
 
 Messages include `Loading graph…`, `No matching nodes. Clear filters.`, `Showing 150 of {count} matching nodes. Narrow your filters or use List.`, `Couldn’t load the graph. Retry.`, and `This node isn’t in the current graph.` A successful load reports the corpus's node, connection and strategy-record counts. These are browser states, not new CLI exit contracts.
 
@@ -56,7 +62,7 @@ For browser QA, point `EXPLORER_URL` at that route and run `node scripts/check-e
 
 - A full authoring publish produced 352 documents, 87 strategy records, 3,366 nodes and 9,196 navigable connections. This exposed the need to bound the graph and begin with strategy rather than all section nodes.
 - Incoming edges are necessary: pages point to journeys and journeys point to personas. Both-direction BFS is covered with a dedicated fixture.
-- The chunk manifest was insufficient for sidecar metadata. The dedicated metadata export preserves that information without changing the reader chunk contract; a subprocess test checks that sidecars survive while excluded fields do not, and ciphertext is unchanged.
+- The chunk manifest was insufficient for sidecar metadata. The dedicated metadata export preserves that information without changing the reader chunk contract. A subprocess test checks that sidecars survive while excluded fields do not, and ciphertext is unchanged.
 - WebKit in an 844×390 viewport put the desktop inspector outside the screen. The short-landscape breakpoint selects the bottom sheet; portrait, landscape and 320px layouts are in the browser check.
 - Empty searches, missing artifact/retry, deep-link reload, keyboard tab switching and zoom are covered in both engines. Accessibility is checked with axe in light and dark themes and mobile layouts.
 

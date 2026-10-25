@@ -1,6 +1,6 @@
 # 0123: Start on the whole graph and offer random-node discovery
 
-- **Status:** Implemented (worktree; pending merge)
+- **Status:** Implemented (worktree; pending merge); random scope superseded by 0124
 - **Serves:** Maya · M18 / Sara · S17
 - **Extends:** 0114, 0115, 0122
 

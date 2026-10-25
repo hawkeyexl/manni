@@ -57,6 +57,33 @@ for (const [name, engine, options] of [
     assert.equal(randomState.get("focus"), randomState.get("node"));
     assert.equal(randomState.get("highlight"), randomState.get("node"));
     await root.locator("[data-inspector]").waitFor({ state: "visible" });
+    const headingOrder = await new AxeBuilder({ page })
+      .withRules(["heading-order"])
+      .analyze();
+    assert.deepEqual(
+      headingOrder.violations.map((violation) => violation.id),
+      [],
+    );
+    const outsidePath =
+      "docs/src/content/docs/lint/set-up/write-a-template.mdx";
+    const outsideNode = `https://hawkeyexl.github.io/manni/id/doc/${outsidePath}`;
+    const scopedSearch = new URLSearchParams({
+      focus: "https://hawkeyexl.github.io/manni/id/scheme",
+      q: outsidePath,
+      type: "Document",
+      depth: "1",
+      view: "graph",
+    });
+    await page.goto(`${url.split("#")[0]}#${scopedSearch}`);
+    await root.locator("[data-empty]").waitFor({ state: "visible" });
+    assert.equal(await randomButton.isDisabled(), false);
+    await randomButton.click();
+    const outsideSelection = new URLSearchParams(
+      new URL(page.url()).hash.slice(1),
+    );
+    assert.equal(outsideSelection.get("node"), outsideNode);
+    assert.equal(outsideSelection.get("focus"), outsideNode);
+    assert.equal(outsideSelection.get("type"), "Document");
     const saraId = "https://hawkeyexl.github.io/manni/id/strategy/persona/sara";
     const exampleState = new URLSearchParams({
       node: saraId,

@@ -87,6 +87,7 @@ export function startExplorer(root: HTMLElement): void {
   let positions = new Map<string, Positioned>();
   let visible: ExplorerNode[] = [];
   let matches: ExplorerNode[] = [];
+  let randomCandidates: ExplorerNode[] = [];
   let canvasEdges: ExplorerEdge[] = [];
   let graphEdges: ExplorerEdge[] = [];
   let hoveredEdge: ExplorerEdge | undefined;
@@ -904,6 +905,15 @@ export function startExplorer(root: HTMLElement): void {
     });
   }
 
+  function applyFilters(nodes: ExplorerNode[]): ExplorerNode[] {
+    return filterMetadata(
+      filterNodes(nodes, state.q, state.types, state.relation),
+      authoring,
+      state.contentType,
+      state.metadata,
+    );
+  }
+
   function render(): void {
     setHoveredNode("");
     showEdge(undefined);
@@ -925,10 +935,8 @@ export function startExplorer(root: HTMLElement): void {
       ? `Around ${focused.title}`
       : "Whole graph";
     get<HTMLButtonElement>('[data-action="unfocus"]').hidden = !state.focus;
-    let candidates = state.focus
-      ? neighborhood(model, state.focus, state.depth, state.relation)
-      : model.nodes;
-    if (state.relation && !state.focus) {
+    let candidates = model.nodes;
+    if (state.relation) {
       const connected = new Set(
         model.edges
           .filter((e) => e.predicate === state.relation)
@@ -936,16 +944,15 @@ export function startExplorer(root: HTMLElement): void {
       );
       candidates = candidates.filter((n) => connected.has(n.id));
     }
-    matches = filterNodes(candidates, state.q, state.types, state.relation);
-    matches = filterMetadata(
-      matches,
-      authoring,
-      state.contentType,
-      state.metadata,
-    );
+    randomCandidates = applyFilters(candidates);
+    matches = state.focus
+      ? applyFilters(
+          neighborhood(model, state.focus, state.depth, state.relation),
+        )
+      : randomCandidates;
     visible = matches;
     get<HTMLButtonElement>('[data-action="random"]').disabled =
-      !loaded || !matches.length;
+      !loaded || !randomCandidates.length;
     get("[data-empty]").hidden = matches.length > 0 || !loaded;
     canvas.hidden = matches.length === 0;
     status.textContent = !loaded
@@ -1181,7 +1188,7 @@ export function startExplorer(root: HTMLElement): void {
           render();
           break;
         case "random": {
-          const id = randomNode(matches, state.node);
+          const id = randomNode(randomCandidates, state.node);
           if (id) choose(id);
           break;
         }

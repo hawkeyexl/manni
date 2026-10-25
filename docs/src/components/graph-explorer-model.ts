@@ -30,7 +30,7 @@ export interface ExplorerModel {
   nodes: ExplorerNode[];
   edges: ExplorerEdge[];
 }
-/** Choose within the current results, changing nodes whenever alternatives exist. */
+/** Choose within supplied candidates, changing nodes whenever alternatives exist. */
 export function randomNode(
   nodes: ExplorerNode[],
   selected: string,

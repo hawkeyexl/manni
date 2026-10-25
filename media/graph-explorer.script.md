@@ -1,8 +1,8 @@
-# Graph explorer demo — 35 seconds
+# Graph explorer demo in 35 seconds
 
-Recording handoff: the writing-toolkit video-script-writing, video-recording,
-video-editing and closed-caption-creation skills prescribed by CLAUDE.md are
-not installed in this session. This is the beat sheet and executable preparation
+The recording skills prescribed by CLAUDE.md are not installed in this session.
+They are writing-toolkit video-script-writing, video-recording, video-editing
+and closed-caption-creation. This is the beat sheet and executable preparation
 recipe, not a claim that a video was recorded. Use the approved recording skills
 when available; preserve their capture sources, captions and thumbnail here.
 

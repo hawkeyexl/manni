@@ -23,9 +23,10 @@ import GraphExplorer from "../../../../components/GraphExplorer.astro";
 <GraphExplorer />
 
 The explorer opens with the whole graph visible. Choose **🎲** (**Random node**)
-to focus on a random node from the current results. It respects your search,
-filters and neighborhood scope, and picks a different node when more than one
-matches. Shared URLs still restore their saved view.
+to focus on a random node from the whole graph. It respects your search and
+filters, but searches beyond the current neighborhood. It picks a different
+node when more than one matches, and stays available when matches exist elsewhere
+in the graph. Shared URLs still restore their saved view.
 
 Choose **Fullscreen** for more room. **Exit fullscreen** or **Escape** returns to
 the docs page, keeping your view and filters.

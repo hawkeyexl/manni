@@ -19,7 +19,7 @@ describe the gesture. No dependencies or public API changes are required.
 
 ## Verification
 
-Browser regressions first failed on the remaining button, then passed with
+Browser regressions first failed on the remaining button. They then passed with
 background click clearing in SVG, connection tap clearing, canvas background
 tap clearing and preserving the pin during a drag. Chromium and WebKit run the
 existing mobile, fullscreen and accessibility checks alongside these cases.

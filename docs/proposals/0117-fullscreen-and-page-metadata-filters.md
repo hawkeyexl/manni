@@ -7,7 +7,7 @@
 ## Problem and worked example
 
 The user wants more space for the graph and a way to filter page metadata such
-as `type: how-to`, which differs from the graph's Document or Section kinds.
+as `type: how-to`. This differs from the graph's Document or Section kinds.
 
 Maya chooses Show everything, checks Document under Node kinds, then chooses
 how-to under Content type. She sees the corpus's 75 how-to pages. An additional
@@ -51,9 +51,9 @@ No CLI flags, config keys, dependencies, artifact formats or public API change.
 
 Dedicated fixture tests cover how-to filtering, section inheritance, arrays,
 nested properties, booleans, present/missing fields, AND semantics and shared
-URL restoration. Browser dogfood checks the real 75/56-page counts, row removal,
-clear/reset, native fullscreen and a deliberately forced phone fallback,
-Escape, zoom preservation, focus restoration and the absence of a site-header
-overlay. Existing Chromium/WebKit desktop, phone and accessibility checks remain.
+URL restoration. Browser dogfood checks the real 75/56-page counts, row removal
+and clear/reset. It checks native fullscreen, a deliberately forced phone
+fallback, Escape, zoom preservation, focus restoration and the absence of a
+site-header overlay. Existing Chromium/WebKit desktop, phone and accessibility checks remain.
 Screenshots include `*-fullscreen.png`, `*-fullscreen-mobile.png` and
 `*-how-to.png` under `.manni/explorer-qa/`.

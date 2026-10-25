@@ -186,7 +186,7 @@
   margin-block: 12px;
   border-block: 1px solid var(--gx-line);
 }
-.gx-metadata h4 {
+.gx-metadata h3 {
   font-size: 12px;
   margin: 0 0 10px;
 }

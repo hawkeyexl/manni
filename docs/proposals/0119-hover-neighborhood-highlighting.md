@@ -8,8 +8,8 @@
 
 The user wants to follow a node's connections in a dense graph without losing
 the surrounding graph. Hovering a node now keeps that node and its directly
-connected neighbors at full opacity, emphasizes the incoming and outgoing
-edges incident to it, and dims unrelated nodes and edges. Type colors remain.
+connected neighbors at full opacity. It emphasizes incoming and outgoing edges
+incident to the node and dims unrelated nodes and edges. Type colors remain.
 Labels concentrate on the highlighted neighborhood, with the hovered label
 given priority. The hovered node gains a visible ring.
 
@@ -20,8 +20,8 @@ zooming, filtering or selecting clears it. Selection and shared URL state are
 independent of hover.
 
 SVG graphs update classes and labels; keyboard node focus has the same effect.
-Canvas graphs batch the same bright/dim edges, draw muted nodes first so they
-cannot obscure highlighted neighbors, and keep all nodes available for hit
+Canvas graphs batch the same bright/dim edges and draw muted nodes first so they
+cannot obscure highlighted neighbors. All nodes remain available for hit
 testing. High-zoom hit targets include square/rectangular node corners.
 Clearing hover restores normal rendering. No new controls, flags, config,
 URL parameters, dependencies or artifact formats are introduced.

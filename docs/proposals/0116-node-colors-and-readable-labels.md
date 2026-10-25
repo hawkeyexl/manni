@@ -35,10 +35,10 @@ formats, dependencies or public API changes.
 ## Verification
 
 - Dedicated tests check all seven category colors in both themes for contrast
-  and uniqueness, increasing but bounded label font sizes, wrapping,
+  and uniqueness. They cover increasing but bounded label font sizes, wrapping,
   selected-node priority, collision handling and viewport containment.
-- The browser dogfood checks that SVG node types have distinct computed fills,
-  then opens the full canvas graph and checks that zoom enlarges labels and
+- The browser dogfood checks that SVG node types have distinct computed fills.
+  It opens the full canvas graph and checks that zoom enlarges labels and
   produces visible labels. It saves full-graph and zoomed-label screenshots.
 - Existing search, selection, complete-graph counts, light/dark accessibility,
   mobile portrait/landscape/320px and retry tests continue in Chromium and WebKit.
