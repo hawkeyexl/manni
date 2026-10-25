@@ -4,6 +4,13 @@
 4.13.1. Entries below that version are docmeta releases; the repository
 history is the same one.
 
+## [4.26.1](https://github.com/hawkeyexl/manni/compare/v4.26.0...v4.26.1) (2026-10-25)
+
+
+### Bug Fixes
+
+* **graph:** retain links from documents to specialty nodes ([#253](https://github.com/hawkeyexl/manni/issues/253)) ([aa67c8b](https://github.com/hawkeyexl/manni/commit/aa67c8be0ff02a66ec439279cb4448586bf87be6))
+
 # [4.26.0](https://github.com/hawkeyexl/manni/compare/v4.25.0...v4.26.0) (2026-10-25)
 
 
