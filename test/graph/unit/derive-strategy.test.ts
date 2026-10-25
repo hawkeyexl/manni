@@ -6,6 +6,8 @@
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { buildGraph } from "../../../src/graph/commands/build.js";
+import { analyzeDoc } from "../../../src/graph/core/analyze.js";
+import { deriveGraph } from "../../../src/graph/core/derive.js";
 import { parseGraph, storeToQuads } from "../../../src/graph/core/load.js";
 import { NS, RDF_TYPE } from "../../../src/graph/core/vocab.js";
 import type { Quad } from "../../../src/graph/core/derive.js";
@@ -42,6 +44,15 @@ describe("strategy records in the graph (0110 D3)", () => {
     const quads = await quadsOf();
     expect(objects(quads, doc("strategy/journeys/labelled.md"), TOPIC)).toEqual([`${BASE}concept/releases`]);
     expect(objects(quads, entity("journey", "j2"), RDF_TYPE)).toEqual([`${NS.graph}Journey`]);
+    expect(objects(quads, doc("strategy/journeys/labelled.md"), `${NS.foaf}topic`)).toEqual([entity("journey", "j2")]);
+  });
+
+  it.each(["audience", "persona", "journey"])("links a %s document to its record alongside an explicit topic", async (type) => {
+    const path = "record.md";
+    const model = await analyzeDoc(`---\ntype: ${type}\nid: record\ngraph:\n  label: Releases\n---\n# Record\n`, path, new Set([path]));
+    const quads = deriveGraph([model], { baseIri: BASE, derive: ["frontmatter"] });
+    expect(objects(quads, doc(path), TOPIC)).toEqual([`${BASE}concept/releases`]);
+    expect(objects(quads, doc(path), `${NS.foaf}topic`)).toEqual([entity(type, "record")]);
   });
 
   it("links a persona to its audience and a journey to its personas", async () => {

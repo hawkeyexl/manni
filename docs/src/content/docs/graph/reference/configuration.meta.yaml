@@ -126,6 +126,9 @@ docs/src/content/docs/graph/reference/configuration.mdx:
     - generated-by: Claude Opus 5
       lines: 190-193
       integrity: sha256-ebf680115d2b1aa5b3dee05ff2e8928f81fcfcdf77d8cc2400f4f7c31b789ce2
+    - generated-by: GPT-6
+      lines: 194
+      integrity: sha256-df7806a76497139745f1369f827aecb5f059d01904452a68be90577a09c7687d
     - generated-by: Claude Opus 5
       lines: 219-234
       integrity: sha256-266da427d21261e0b41702d3412498563c0a9b56b8a5529182abb3c7a62c27ce

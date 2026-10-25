@@ -66,7 +66,7 @@ provenance:
 # stewardship people fields (owner, stakeholders, reviewed-by) out.
 
 # SHACL shapes \`manni graph check\` validates the built graph against. Default:
-# the shapes contract bundled with manni (shapes/graph/shapes-1.3.0.ttl).
+# the shapes contract bundled with manni (shapes/graph/shapes-1.4.0.ttl).
 # check:
 #   shapes: ["./my-shapes.ttl"]
 

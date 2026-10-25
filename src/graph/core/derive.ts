@@ -645,17 +645,17 @@ export function deriveGraph(docs: DocModel[], options: DeriveOptions): Quad[] {
         }
       }
 
-      // A term page is about its term (proposal 0086 §1), unless its `graph`
-      // block names a topic of its own. Its id names the term, and its label
-      // does when the id is absent or names no term.
-      if (!blockLabel && asString(fm["type"]) === "term") {
+      // A term page always links to its term. An explicit graph label keeps
+      // primaryTopic; the term remains a topic alongside it. Its id names the
+      // term, and its label does when the id is absent or names no term.
+      if (asString(fm["type"]) === "term") {
         const id = asString(fm["id"]);
         const label = asString(fm["label"]);
         const termId =
           (id !== undefined && terms.groups.has(id) ? id : undefined) ??
           (label === undefined ? undefined : terms.resolve(label, labels));
         if (termId !== undefined) {
-          add(subject, `${NS.foaf}primaryTopic`, iri(mintTermConceptIri(baseIri, termId)));
+          add(subject, `${NS.foaf}${blockLabel ? "topic" : "primaryTopic"}`, iri(mintTermConceptIri(baseIri, termId)));
         }
       }
 
@@ -801,15 +801,15 @@ export function deriveGraph(docs: DocModel[], options: DeriveOptions): Quad[] {
     const dated = deriveFields(docIri, doc, fm, "document", pageLanguage, pageLanguage);
 
     // The content strategy (proposal 0110), page level only, every edge
-    // pointing away from the page. A record's file is about its record,
-    // unless its `graph` block names a topic of its own.
+    // pointing away from the page. A record's file always links to its record,
+    // even when its graph block names a different primary topic.
     if (sources.has("frontmatter")) {
       const record = recordByPath.get(doc.path);
       if (record !== undefined) {
         add(record.iri, RDF_TYPE, iri(RECORD_CLASS[record.type]));
         const title = asString(fm["title"]);
         if (title) add(record.iri, `${NS.dcterms}title`, lit(title));
-        if (!(block && asString(block["label"]))) add(docIri, `${NS.foaf}primaryTopic`, iri(record.iri));
+        add(docIri, `${NS.foaf}${block && asString(block["label"]) ? "topic" : "primaryTopic"}`, iri(record.iri));
         if (record.type === "persona") recordEdges(record.iri, `${NS.dcterms}isPartOf`, fm, "audience", "audience");
         if (record.type === "journey") recordEdges(record.iri, `${NS.schema}audience`, fm, "personas", "persona");
       } else {

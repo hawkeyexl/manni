@@ -242,9 +242,9 @@ export function explorerModel(input: object): ExplorerModel {
     if (node.kind === "Section" && !node.path)
       node.path = documentPaths.get(node.id.split("#")[0] ?? "") ?? "";
   }
-  // A strategy node's source is the record document whose primary topic it is.
+  // Typed nodes keep their source document even beside an explicit primary topic.
   for (const edge of edges) {
-    if (edge.predicate !== "foaf:primaryTopic") continue;
+    if (edge.predicate !== "foaf:primaryTopic" && edge.predicate !== "foaf:topic") continue;
     const source = nodes.find((n) => n.id === edge.source);
     const target = nodes.find((n) => n.id === edge.target);
     if (source && target && !target.path) {
@@ -385,6 +385,7 @@ export const relationLabel = (predicate: string): string =>
     "schema:audience": "serves",
     "dcterms:isPartOf": "belongs to",
     "foaf:primaryTopic": "describes",
+    "foaf:topic": "describes",
     "graph:linksTo": "links to",
     "dcterms:references": "references",
     "skos:broader": "broader concept",

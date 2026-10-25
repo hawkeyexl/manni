@@ -32,7 +32,7 @@ describe("manni graph init", () => {
     );
     // The comment names the shapes file `check` falls back to.
     expect(readFileSync(join(dir, "manni.config.yaml"), "utf8")).toContain(
-      "# the shapes contract bundled with manni (shapes/graph/shapes-1.3.0.ttl).",
+      "# the shapes contract bundled with manni (shapes/graph/shapes-1.4.0.ttl).",
     );
 
     // scaffolded config parses: build against it (with a doc present)

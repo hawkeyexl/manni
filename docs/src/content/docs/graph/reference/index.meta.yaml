@@ -27,6 +27,9 @@ docs/src/content/docs/graph/reference/index.mdx:
     - generated-by: Claude Opus 5
       lines: 21-22
       integrity: sha256-38cdd6db89fde74bec7a1fc423b7309e8b0b6ba8847fd8cdc7c4b77b5e7731fe
+    - generated-by: GPT-6
+      lines: 24
+      integrity: sha256-86fc58b32917d3e18dbc313f5f4dbfad72a7debcb747f2de7173a7c36a434fd3
     - generated-by: Claude Opus 5.5
       lines: 25
       integrity: sha256-e7b422a0e8914aebaad0aebca34af36d952c3eb5f2e1b8f24088fa97354fe44b

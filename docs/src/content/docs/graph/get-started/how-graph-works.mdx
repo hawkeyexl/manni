@@ -20,7 +20,7 @@ concepts:
   - section
   - harvest rule
   - near miss
-last-updated: 2026-10-23
+last-updated: 2026-10-25
 ---
 
 You have built a graph and asked it a question. This page is the model behind
@@ -170,6 +170,8 @@ The hierarchy is the union of every source. Each `broader` edge comes with its
 `narrower`, and each `related` edge runs both ways. A concept with no broader
 concept is a top concept of the scheme, linked in both directions. A term page
 whose `graph:` block names no `label` has its term as its primary topic.
+With an explicit `graph.label`, that label stays the primary topic and
+`foaf:topic` links the document to its term.
 
 [From tags to a knowledge graph](/manni/family/concept-lifecycle/) builds one
 scheme step by step, from freeform tags to term pages and a checked graph.
@@ -180,8 +182,9 @@ A strategy record is a page that declares `type: audience`, `type: persona` or
 `type: journey`. Each one in the build mints a node at
 `{baseIri}strategy/{type}/{id}`, with the id the record declares, or its file
 name. The node's `dcterms:title` is the record's title. The record's own
-document points at it through `foaf:primaryTopic`, unless its `graph:` block
-names a `label`.
+document points at it through `foaf:primaryTopic`. When its `graph:` block
+names a `label`, that label stays the primary topic and `foaf:topic` links
+the document to its record.
 
 | Record | Class |
 |---|---|
