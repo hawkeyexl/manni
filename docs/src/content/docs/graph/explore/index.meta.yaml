@@ -1,8 +1,10 @@
 docs/src/content/docs/graph/explore/index.mdx:
   personas:
     - maya
+    - sara
   journeys:
     - m18
+    - s17
   provenance:
     - generated-by: Claude Opus 5
       lines: 2-6

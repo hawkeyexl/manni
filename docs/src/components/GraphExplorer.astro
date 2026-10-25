@@ -1,0 +1,79 @@
+---
+import "./graph-explorer.css";
+import "@fontsource/jetbrains-mono/400.css";
+import "@fontsource/jetbrains-mono/600.css";
+import { typeStyle } from "./graph-explorer-presentation";
+const base = import.meta.env.BASE_URL;
+---
+<section class="graph-explorer not-content" data-graph-explorer data-base={base} aria-label="Documentation graph explorer">
+  <header class="gx-heading">
+    <div><span class="gx-eyebrow">MANNI / CONNECTED DOCS</span><h2>Follow the connections.</h2><p>Explore the docs, the people they serve, and the journeys between them.</p></div>
+    <span class="gx-tag">DOCS + AUTHORING</span>
+  </header>
+  <noscript>This explorer needs JavaScript. The command-line exploration guide follows below.</noscript>
+  <div class="gx-bar">
+    <label class="gx-search"><span class="gx-sr">Search nodes</span><input type="search" placeholder="Find a page, persona, or journey…" aria-label="Search nodes" autocomplete="off" /></label>
+    <div class="gx-views" role="group" aria-label="Explorer view"><button type="button" data-view="graph" aria-pressed="true">Graph</button><button type="button" data-view="list" aria-pressed="false">List</button></div>
+    <button type="button" data-action="everything" class="gx-primary">Show everything</button>
+    <button type="button" data-action="fullscreen" aria-pressed="false">Fullscreen</button>
+    <button type="button" data-action="back">Back</button><button type="button" data-action="reset">Reset</button>
+  </div>
+  <div class="gx-workspace">
+    <div class="gx-sidebar">
+      <details class="gx-filters" open>
+        <summary>Filters <span aria-hidden="true">↕</span></summary>
+        <fieldset><legend>Node kinds</legend><div data-types class="gx-types"></div></fieldset>
+        <div class="gx-metadata">
+          <h4>Page metadata</h4>
+          <label>Content type<select data-content-type><option value="">Any content type</option></select></label>
+          <p class="gx-filter-help">For example, how-to or reference. Sections use their page's metadata. Select Document above to show only pages.</p>
+          <div data-metadata-rows></div>
+          <button type="button" data-action="add-filter">Add metadata filter</button>
+          <p class="gx-filter-help">All conditions must match.</p>
+        </div>
+        <label>Relationship<select data-relation><option value="">All relationships</option></select></label>
+        <label>Neighborhood depth<select data-depth><option value="1">1 connection</option><option value="2">2 connections</option></select></label>
+        <button type="button" data-action="clear">Clear filters</button>
+      </details>
+      <div class="gx-results-header"><h3>Nodes</h3><span data-result-count></span></div>
+      <ul class="gx-results" data-results aria-label="Matching nodes"></ul>
+      <button type="button" data-action="more" hidden>Show more nodes</button>
+    </div>
+    <div class="gx-main">
+      <div class="gx-context"><span data-scope>Whole graph</span><button type="button" data-action="unfocus" hidden>Show whole graph</button></div>
+      <p class="gx-status" data-status role="status" aria-live="polite">Loading graph…</p>
+      <button type="button" data-action="retry" hidden>Retry</button>
+      <div class="gx-canvas" data-canvas>
+        <canvas data-drawing aria-hidden="true" hidden></canvas>
+        <div class="gx-edge-tooltip" data-edge-tooltip id="gx-edge-tooltip" role="tooltip" hidden>
+          <strong data-edge-name></strong><div data-edge-details></div>
+        </div>
+        <svg data-graph role="group" aria-label="Graph of matching nodes. Tab to a node and press Enter to inspect it."><defs><marker id="gx-arrow" viewBox="0 -4 8 8" refX="21" refY="0" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,-4L8,0L0,4" /></marker></defs><g data-scene></g><g data-labels aria-hidden="true"></g></svg>
+        <div class="gx-zoom" role="group" aria-label="Graph zoom"><button type="button" data-action="zoom-in" aria-label="Zoom in">+</button><button type="button" data-action="zoom-out" aria-label="Zoom out">−</button><button type="button" data-action="fit">Fit graph</button></div>
+        <span class="gx-hint">Tap node to pin · tap background to clear · pinch to zoom · drag to pan</span>
+      </div>
+      <p class="gx-empty" data-empty hidden>No matching nodes. Clear filters.</p>
+      <div class="gx-legend" aria-label="Node type color and shape legend">
+        {[['Document','□'],['Persona','○'],['Journey','◇'],['Audience','⬡'],['Concept','△'],['Section','▭'],['Other','○']].map(([kind, glyph]) => <span data-node-type={kind} style={typeStyle(kind ?? 'Other')}><span class="gx-type-dot" aria-hidden="true">{glyph}</span> {kind}</span>)}
+      </div>
+    </div>
+    <aside class="gx-inspector" data-inspector aria-label="Selected node" hidden>
+      <div class="gx-inspector-top"><span data-node-kind class="gx-eyebrow"></span><button type="button" data-action="close" aria-label="Close node details">×</button></div>
+      <h3 data-node-title tabindex="-1"></h3>
+      <button type="button" data-action="focus" class="gx-primary">Focus here →</button>
+      <div class="gx-tabs" role="tablist" aria-label="Node information">
+        <button type="button" role="tab" id="gx-tab-details" aria-controls="gx-details" aria-selected="true" data-tab="details">Details</button>
+        <button type="button" role="tab" id="gx-tab-connections" aria-controls="gx-connections" aria-selected="false" tabindex="-1" data-tab="connections">Connections</button>
+        <button type="button" role="tab" id="gx-tab-metadata" aria-controls="gx-metadata" aria-selected="false" tabindex="-1" data-tab="metadata">Metadata</button>
+      </div>
+      <div id="gx-details" role="tabpanel" aria-labelledby="gx-tab-details" data-panel="details"></div>
+      <div id="gx-connections" role="tabpanel" aria-labelledby="gx-tab-connections" data-panel="connections" hidden></div>
+      <div id="gx-metadata" role="tabpanel" aria-labelledby="gx-tab-metadata" data-panel="metadata" hidden></div>
+    </aside>
+  </div>
+  <footer class="gx-footer"><span data-total>Loading corpus</span><span>Every edge comes from the docs.</span></footer>
+</section>
+<script>
+  import { startExplorer } from "./graph-explorer-client";
+  document.querySelectorAll<HTMLElement>("[data-graph-explorer]").forEach(startExplorer);
+</script>
