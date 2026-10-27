@@ -123,17 +123,11 @@ docs/src/content/docs/meta/ci/consume-results.mdx:
       lines: 128
       integrity: sha256-a4bbd9bb424ee2927c5856e76ec2926cf12b7f0bbfc92fc80013c5897b773fc3
     - generated-by: Claude Opus 4.8
-      lines: 129-131
-      integrity: sha256-c8b512bdca93276f1c29a56419fe978fda6b5f7745320fa7c514c7875de97016
+      lines: 129
+      integrity: sha256-f1b901847390b0ed7e374e7c1e464ec17b46a427c487a5ad6cbd2906405083d5
     - generated-by: Claude Fable 5.1
       lines: 132
       integrity: sha256-3ba9add19acbdd53a1707f850b9c60d1a0317f6dca2f57cecab8357f6b88976c
-    - generated-by: Claude Opus 5
-      lines: 133-134
-      integrity: sha256-92395d2126cfc7332bf333abb03fdf4a3f1467971678b98bb73846a930199a6f
-    - generated-by: Claude Fable 5.1
-      lines: 135
-      integrity: sha256-54780f5463e4fbd03b9b36f4add73146aea5ee373057deabe8446192564635bf
     - generated-by: Claude Opus 5
       lines: 136
       integrity: sha256-960df09822f36080d25d5b4f5d98c6da138010653038312c9ec287c61074bb45
