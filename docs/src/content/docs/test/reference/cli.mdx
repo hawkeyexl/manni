@@ -748,7 +748,7 @@ task's first 60 characters, and the persona or `newcomer`.
 
 Zero counts in the total are dropped.
 
-**`json`** prints one object. This one is a bare run of the golden set, shortened here to one eval:
+**`json`** prints one object. This one is `manni test tasks --journey t1 -f json`, shortened here to one eval:
 
 ```json
 {
@@ -832,7 +832,7 @@ location, then the total line. An eval with no location gets no `file=`. A
 ::warning file=<file>,line=<line>,title=manni test tasks::<journey id or "task"> as <persona or "newcomer">: <eval id> <what happened>
 ```
 
-A run where every eval passed writes the total line alone, as this bare run of the golden set did:
+A run where every eval passed writes the total line alone, as `manni test tasks --journey t1 -f github` did:
 
 ```text
 1 run: 1 passed

@@ -4,12 +4,17 @@ id: devin
 title: Devin, Platform / CI Engineer
 description: Devin maintains CI/CD infrastructure for dozens of repos on a mix of GitHub Actions, GitLab CI, Jenkins, and pre-commit.
 audience: ci-engineers
+proficiency:
+  - Scripting, and the CI systems his repos run on.
 goals:
   - Drop in a metadata gate that is identical everywhere, cheap to run, and feeds results into existing tooling without custom glue per repo.
 pains:
   - "Per-tool config sprawl: different CI recipe for every linter/checker."
   - Needs stable, documented exit codes and machine-readable output (JSON, annotation format) so results flow into dashboards and PR bots without fragile parsing.
   - Wants one canonical schema shared across repos rather than copies that drift.
+constraints:
+  - Pins a third-party CI action to a version whenever a pipeline uses one.
+  - Pins the provider in config whenever a tool uses one, never leaving it to the environment.
 ---
 
 Devin maintains CI/CD infrastructure for dozens of repos on a mix of GitHub Actions, GitLab CI, Jenkins, and pre-commit. He scripts everything and has high technical proficiency.

@@ -188,16 +188,17 @@ validate-metadata:
   stage: test
   image: node:24
   script:
-    - npx -y @hawkeyexl/manni meta validate "docs/**/*.md" --format json | tee manni-report.json
+    - npx -y @hawkeyexl/manni meta validate "docs/**/*.md" --format json > manni-report.json
   artifacts:
     when: always
     paths:
       - manni-report.json
 ```
 
-`tee` writes the report to a file while passing manni meta's exit code through, so
-the job still fails on validation errors. `when: always` keeps the artifact even
-when the job fails.
+The redirect writes the report to a file and keeps manni meta's exit code, so
+the job still fails on validation errors. Do not pipe it into `tee` instead. A
+pipe reports `tee`'s exit code, so the job passes unless the shell sets
+`pipefail`. `when: always` keeps the artifact even when the job fails.
 
 For the merge request's **Tests** widget rather than a raw artifact, emit JUnit
 XML and hand it to `artifacts:reports:junit`:
@@ -207,7 +208,7 @@ validate-metadata:
   stage: test
   image: node:24
   script:
-    - npx -y @hawkeyexl/manni meta validate "docs/**/*.md" --format junit | tee manni-junit.xml
+    - npx -y @hawkeyexl/manni meta validate "docs/**/*.md" --format junit > manni-junit.xml
   artifacts:
     when: always
     reports:
@@ -217,6 +218,9 @@ validate-metadata:
 {/* cite junit-one-test-per-file */}
 Each file becomes one test, so the widget's count matches manni meta's
 `N files checked, M failed` summary.
+
+Both report jobs name a glob. With `collections:` in `manni.config.yaml`, drop
+it, as the config tab above does, and the report covers the collections.
 
 ## Jenkins
 
@@ -258,13 +262,14 @@ pipeline {
 }
 ```
 
-To archive a machine-readable report, write JSON to a file and archive it. Run
-manni meta in a way that preserves its exit code:
+To archive a machine-readable report, write JSON to a file and archive it.
+Redirect the output, which keeps manni meta's exit code. A `sh` step runs
+without `pipefail`, so a pipe into `tee` would pass the stage on every run:
 
 ```groovy title="Jenkinsfile"
 stage('Validate metadata') {
   steps {
-    sh 'npx -y @hawkeyexl/manni meta validate "docs/**/*.md" --format json | tee manni-report.json'
+    sh 'npx -y @hawkeyexl/manni meta validate "docs/**/*.md" --format json > manni-report.json'
   }
   post {
     always {
@@ -280,7 +285,7 @@ and pass it to the `junit` step:
 ```groovy title="Jenkinsfile"
 stage('Validate metadata') {
   steps {
-    sh 'npx -y @hawkeyexl/manni meta validate "docs/**/*.md" --format junit | tee manni-junit.xml'
+    sh 'npx -y @hawkeyexl/manni meta validate "docs/**/*.md" --format junit > manni-junit.xml'
   }
   post {
     always {

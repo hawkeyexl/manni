@@ -146,8 +146,11 @@ Use `"format": "date-time"` to require an ISO 8601 timestamp. This catches the c
 }
 ```
 
-Passes: `2026-06-25T14:30:00Z`
-Fails: `June 5th`, `2026-13-01`
+Passes: `2026-06-25T14:30:00Z`, `2026-06-25T16:30:00+02:00`
+Fails: `June 5th`, `2026-13-01`, `2026-06-25T14:30:00`
+
+A timestamp needs a zone, either `Z` or an offset. To require UTC, add
+`"pattern": "Z$"` beside the format.
 
 </TabItem>
 <TabItem label="uri">
@@ -406,9 +409,11 @@ beside it.
        - house:page:1.0.0
    ```
 
-   Each page now meets the default set, then `house:page:1.0.0`, then
+   `meta.schemas` adds to the default set rather than replacing it. Each page
+   now meets the default set, then `house:page:1.0.0`, then
    `house:page-strict:1.0.0`. `strict: true` also stacks each `manni:`
-   default's overlay after it.
+   default's overlay after it. Set `defaults: false` to judge pages by your
+   list alone.
 
 3. **Check what registered.**
 

@@ -77,7 +77,9 @@ defaults to inline PR annotations:
 
 `command: meta validate` runs the metadata check alone. Without it the Action
 runs [`manni check`](/manni/family/check/), every check the repository has set
-up. The [Action reference](/manni/family/reference/action/) has every input.
+up. Leave `paths` out to check the collections `manni.config.yaml` declares,
+the same targets a bare local run checks. The
+[Action reference](/manni/family/reference/action/) has every input.
 
 `paths`, `schema` and `args` each accept one item per line as well as a single
 space-separated line. Use lines whenever a value contains a space. Shell quoting

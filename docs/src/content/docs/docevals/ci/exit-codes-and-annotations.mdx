@@ -192,7 +192,11 @@ Full behavior in
 
 ```yaml
       - run: npx @hawkeyexl/manni docevals run --format github | tee "$GITHUB_STEP_SUMMARY"
+        shell: bash
 ```
+
+`shell: bash` adds `pipefail`, so the step keeps the exit codes above rather
+than `tee`'s.
 
 {/* Verified by Doc Detective in docs-as-tests (.github/workflows/docs-as-tests.yml). Config: .doc-detective.json. */}
 

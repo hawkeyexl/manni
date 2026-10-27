@@ -182,11 +182,11 @@ Read just the summary counts:
 npx -y @hawkeyexl/manni meta validate "docs/**/*.md" --format json | jq '.summary'
 ```
 
-<Aside type="tip" title="Preserve the exit code through a pipe">
+<Aside type="tip" title="Keep the exit code when you parse the report">
 Piping into `jq` replaces manni meta's exit code with `jq`'s. You may need both the
-parsed output and the gate to fail on validation errors. Then write the report
-to a file with `tee` first, as
-`manni meta validate ... --format json | tee report.json`. Then run `jq` over
+parsed output and the gate to fail on validation errors. Then redirect the report
+to a file first, as
+`manni meta validate ... --format json > report.json`. Then run `jq` over
 `report.json` in a later step. See the
 [CI recipes](/manni/meta/ci/recipes/) for capturing JSON as a build artifact.
 </Aside>

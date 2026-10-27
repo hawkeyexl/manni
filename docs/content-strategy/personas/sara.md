@@ -4,6 +4,9 @@ id: sara
 title: Sara, Schema Author / Information Architect
 description: Sara defines what the metadata means.
 audience: schema-authors
+proficiency:
+  - Data modeling.
+  - JSON Schema, short of its finer points, which she is still learning.
 goals:
   - Encode the metadata standard as a JSON Schema, wire it to the right documents, and evolve it safely as requirements change.
 pains:
