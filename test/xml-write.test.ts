@@ -323,6 +323,15 @@ describe("applyXml — fidelity", () => {
     expect(read(out).version).toBe("2");
   });
 
+  it("round-trips a string holding a colon, which it writes quoted", () => {
+    const src = '<doc a="1"/>';
+    const prose = "This includes the ability to: change the team name";
+    const out = applyXml(src, { description: prose });
+    expect(out).toContain(`description="&quot;${prose}&quot;"`);
+    expect(read(out).description).toBe(prose);
+    expect(read(applyXml(src, { note: "- a" })).note).toBe("- a");
+  });
+
   it("does not disturb an unresolvable entity elsewhere in the document", () => {
     // Re-serializing would turn &nbsp; into &amp;nbsp;. Splicing cannot.
     const src = '<doc a="1"><p>x&nbsp;y</p></doc>';

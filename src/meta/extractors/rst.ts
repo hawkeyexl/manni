@@ -12,7 +12,6 @@
  *     headings). Field values are parsed as YAML scalars so `2` -> number,
  *     `[a, b]` -> array, etc., consistent with frontmatter typing.
  */
-import { parse as parseYamlScalar } from "yaml";
 import type { ExtractedMetadata, MetadataExtractor } from "../types.js";
 import {
   extractFrontmatter,
@@ -21,21 +20,13 @@ import {
   lineForFactory,
 } from "./frontmatter.js";
 import { applyFencedOnly } from "./frontmatter-write.js";
+import { typeValue } from "./scalar-value.js";
 
 // `:name:` or `:name: value` — a docinfo field (value optional). The name may
 // contain spaces but not a colon; the value (if any) may.
 const FIELD = /^:([^:]+):(?:\s+(.*\S))?\s*$/;
 // A section-title adornment: a line of two or more identical punctuation chars.
 const ADORN = /^([=\-~:.'"*+#_^<>])\1+$/;
-
-/** Parse a raw field value as a YAML scalar, falling back to the string. */
-function typeValue(raw: string): unknown {
-  try {
-    return parseYamlScalar(raw);
-  } catch {
-    return raw;
-  }
-}
 
 /**
  * Detect a leading section title — a text line underlined with punctuation,

@@ -9,8 +9,8 @@
  * `sources` reports the winner so the writer can aim at it.
  */
 import { parse, defaultTreeAdapter, type DefaultTreeAdapterMap } from "parse5";
-import { parse as parseYamlScalar } from "yaml";
 import { escapePointerSegment } from "./pointer.js";
+import { typeValue } from "./scalar-value.js";
 import {
   liftKey,
   pairValues,
@@ -58,26 +58,6 @@ export interface HtmlRead {
 /** `readHtml`'s options: extraction's, and the path a Flare title falls back to. */
 export interface HtmlReadOptions extends ExtractOptions {
   filePath?: string;
-}
-
-/** Parse a raw value as a YAML scalar, falling back to the string. */
-export function typeValue(raw: string): unknown {
-  // Empty meta content (`content=""`) is the empty string, not the YAML `null`
-  // that parsing "" would yield.
-  if (raw === "") return "";
-  let value: unknown;
-  try {
-    value = parseYamlScalar(raw);
-  } catch {
-    return raw;
-  }
-  // A collection is read only in flow style, the one style the writer emits.
-  // Prose such as `Note: this` or `- a` parses as a block mapping or sequence
-  // that nobody wrote, so it stays the string it reads as.
-  if (typeof value === "object" && value !== null && !/^[[{]/.test(raw.trim())) {
-    return raw;
-  }
-  return value;
 }
 
 export function attrValue(el: Element, name: string): string | undefined {

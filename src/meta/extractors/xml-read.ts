@@ -13,8 +13,8 @@
  * read does not look.
  */
 import { DOMParser } from "@xmldom/xmldom";
-import { parse as parseYamlScalar } from "yaml";
 import { escapePointerSegment, positionForFactory } from "./pointer.js";
+import { typeValue } from "./scalar-value.js";
 import {
   childElements,
   ditaShape,
@@ -70,18 +70,6 @@ export interface XmlRead {
   sources: Map<string, XmlSource>;
   /** Set when the document is DITA, describing where its metadata belongs. */
   dita: DitaShape | undefined;
-}
-
-/** Parse a raw attribute value as a YAML scalar, falling back to the string. */
-export function typeValue(raw: string): unknown {
-  // An explicitly empty attribute (`title=""`) is the empty string, not the
-  // YAML `null` that parsing "" would yield.
-  if (raw === "") return "";
-  try {
-    return parseYamlScalar(raw);
-  } catch {
-    return raw;
-  }
 }
 
 /** Whether an attribute carries metadata, as opposed to describing the document. */
