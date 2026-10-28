@@ -246,6 +246,7 @@ A contributor sets the meta tag `Status` to `Reviewd`. The meta tag set lists
 $ manni meta validate
 ✗ Content/Topics/Install.htm
     /Status  must match pattern "^(Draft|Reviewed|Published)(,(Draft|Reviewed|Published))*$"  (line 7)  [./Project/Advanced/Topics.flmeta]
+      ./Project/Advanced/Topics.flmeta Status: Where the topic is in review.
 ```
 
 On her Windows machine, `site` builds the target and serves it, and a11y
@@ -253,9 +254,9 @@ checks the output.
 
 ```console
 $ manni site build
-manni: Running madbuild -project Widget.flprj -target HTML5 in ./
+manni: Flare in ./. Running madbuild -project Widget.flprj -target HTML5
 $ manni site preview
-manni: Serving Output/maya/HTML5 at http://127.0.0.1:4321/
+http://127.0.0.1:4321/
 $ manni a11y check http://127.0.0.1:4321/
 ```
 
@@ -307,10 +308,11 @@ to write a topic.
    extension. A write to `title` fills the `<title>` element.
 
 6. **`.flsnp` is HTML.** meta's HTML extractor and lint's HTML parser claim
-   it, and a directory walk collects it. graph lists it among the extensions
-   that name a document, so a reference to a missing snippet is broken rather
-   than an asset. iiRDS packages it as `text/html`. Template pages (`.flmsp`)
-   are layout, not prose, and stay unread.
+   it, and a directory walk collects it. graph lists it, `.fltoc` and
+   `.flbrs` among the extensions that name a document. So a reference to a
+   missing snippet or TOC is broken rather than an asset. iiRDS packages a
+   snippet as `text/html` and a TOC as `application/xml`. Template pages
+   (`.flmsp`) are layout, not prose, and stay unread.
 
 7. **Cross-references and snippet references are links.** lint's HTML parser
    harvests `href` on `<MadCap:xref>`, and `src` on `<MadCap:snippetBlock>` and
@@ -331,10 +333,14 @@ to write a topic.
 
 10. **The project is found, never named.** A page that declares the MadCap
     namespace belongs to the project in the nearest folder above it holding a
-    `.flprj`. So does a TOC. The project is read once per run. A page with no
-    project above it still reads, with variables and conditions unresolved and
-    one notice. graph takes a topic's language from the project's `xml:lang`
-    where the page sets none, as it does from a route's `language`.
+    `.flprj`. So does a TOC. When that folder holds more than one `.flprj`,
+    the run exits 2. Flare never writes two, so the message is a guard. The
+    project is read once per run. A page with no project above it still
+    reads, with variables and conditions unresolved and one notice.
+
+    graph takes a topic's language from the page's own `lang` first, then a
+    route's `language`, then the project's `xml:lang`. A setting someone
+    wrote wins over one manni detects.
 
 11. **One target per run, named or the only one.** `tools.flare.target` names
     it. A project with one target uses that one. Otherwise the run uses no
@@ -375,6 +381,8 @@ to write a topic.
 
 14. **A resolved block keeps a position in its own file.** A block that came
     from a snippet reports at the line of the snippet reference in the topic.
+    A snippet checked directly reports at its own lines. That is how a fault
+    inside a snippet is found and fixed once, rather than at each includer.
 
 15. **A topic the target excludes is skipped.** A topic's root can carry
     conditions the target excludes. lint then skips it with that reason, and
@@ -432,6 +440,9 @@ to write a topic.
       values joined by commas. Flare writes a multi-value list that way.
     - Nothing is required, because Flare requires nothing.
 
+    manni reads a meta tag set and never writes one. A `meta query` schema
+    change that would write to one exits 2.
+
 21. **docevals reads every format meta reads.** Discovery collects meta's
     extensions, and a page's metadata comes from meta's extractor.
     - On HTML and XML pages, `body` is the source between the page's metadata
@@ -440,18 +451,28 @@ to write a topic.
     - The judge reads an HTML or XML body as text, with tags dropped. A Flare
       topic reads resolved.
     - Markdown and MDX judging is unchanged, prompt and cache keys included.
+    - An HTML or XML page keeps its evals in a manifest. When no manifest of
+      its collection owns an eval key, `docevals fill`, `generate` and
+      `promote --write` refuse with exit 2. They never write a YAML block
+      onto markup.
 
 22. **`site` builds a Flare project.** The framework table gains `flare`,
     detected by a `.flprj` in the site's directory.
     - `build` is `madbuild -project <flprj> -target <target>`, with the target
       decision 11 picks. A project with several targets and none named exits 2.
-    - `out` is the target's output folder, `Output/<user>/<target>` unless the
-      target names another.
-    - `preview` serves `out` with the built-in static server, which learns
-      that `.htm` is `text/html`.
+    - `out` is `Output/<USERNAME>/<target>`. `USERNAME` is the Windows
+      account running manni, which is the account madbuild stamps into the
+      path. When that folder does not exist, `preview` exits 2.
+    - `preview` serves `out` with the built-in static server on port 4321.
+      The server learns that `.htm` is `text/html`, and serves `Default.htm`
+      at a folder with no `index.html`.
     - `start` exits 2, because Flare has no development server.
+    - `site annotate` exits 2, because it does not read Flare output.
     - `madbuild` is found on `PATH`, then under `tools.flare.home`, then in the
       newest MadCap Flare install under `Program Files`.
+
+    `graph export llms` writes `.htm` URLs for a Flare site, as Flare
+    publishes them.
 
 ## Interface
 
@@ -597,9 +618,13 @@ skipped: target <name> excludes the page by its conditions
 # Part 3, exit 2
 Refusing to write "concepts": <file> reads them from its MadCap:glossaryTerm markers. Edit the markers in Flare.
 <path> is not a Flare meta tag set: its root element is <name>.
+<path> is a Flare meta tag set, which manni reads and never writes.
+<file> is HTML, so its evals live in a manifest. Give its collection an externalMetadata entry that owns evals.
 <flprj> has <n> targets. Name the one to build with tools.flare.target.
 madbuild was not found. Install MadCap Flare, or set tools.flare.home to the folder that holds madbuild.exe.
 Flare has no development server. Run manni site build, then manni site preview.
+No Flare output at <out>. Run manni site build first.
+manni site annotate does not read Flare output.
 ```
 
 ### Output shapes
@@ -613,6 +638,7 @@ Flare has no development server. Run manni site build, then manni site preview.
   value.
 - **`graph export chunks`** carries resolved text in a Flare topic's
   passages. The keys are unchanged.
+- **`graph export llms`** writes `.htm` URLs for a Flare site.
 - **graph** derives no new predicate and no new class. Shapes and the
   vocabulary keep their versions.
 
@@ -756,9 +782,20 @@ Five pull requests, stacked.
 | 4 | `claude/docevals-formats` | `feat(docevals): read every format meta reads` | Part 3, decision 21 |
 | 5 | `claude/flare-site` | `feat(site): build and preview a Flare project` | Part 3, decision 22 |
 
-PR 2 builds on PR 1. PRs 3 to 5 build on PR 2 and touch no file in common.
-graph and lint are beta, so no part is breaking. Each pull request is a
-`feat:` and ships its own demo video.
+The five form one linear stack above this proposal's pull request. Each
+targets the branch below it, so PR 1 targets this proposal's branch and PR 5
+targets PR 4's. Nothing targets `main` directly.
+
+- **Merging.** An approved pull request merges into the branch below it, from
+  the tip down, one at a time. A pull request merges only after everything
+  above it has merged into it.
+- **Reaching `main`.** Once the stack is one pull request, holding the
+  proposal and all five parts, it merges into `main`.
+- **PR 4 waits for #255.** That fix changes docevals discovery. It reaches
+  the stack from `main` before PR 4 starts.
+
+graph and lint are beta, so no part is breaking. Each implementation pull
+request is a `feat:` and ships its own demo video.
 
 ## Acceptance checklist
 
@@ -815,11 +852,14 @@ graph and lint are beta, so no part is breaking. Each pull request is a
 - [ ] A snippet cycle and an undefined variable each warn once and exit 0.
 - [ ] A topic the target excludes is skipped by lint with the explain line,
       and has no sections in the graph.
+- [ ] `lint structure x.flsnp` reports findings at lines inside the snippet.
 - [ ] `lint structure --explain` prints the `flare` line in each of its three
       forms.
 - [ ] A Flare topic's chunk text is resolved, and every other format's chunks
       are byte-identical.
-- [ ] graph takes a topic's language from the project's `xml:lang`.
+- [ ] graph takes a topic's language from its own `lang`, then a route's
+      `language`, then the project's `xml:lang`.
+- [ ] A TOC link to a missing `.fltoc` is a broken link.
 - [ ] `meta get keywords` reads the markers, and a `keywords` meta tag wins
       over them. A write to marker keywords exits 2.
 - [ ] A `.fltoc` and a `.flbrs` read as maps, book entries included, and their
@@ -840,6 +880,7 @@ graph and lint are beta, so no part is breaking. Each pull request is a
       `dangling-reference`, and a write to marker concepts exits 2.
 - [ ] A `.flmeta` path in `schemas:` validates `Text` tags and single and
       multiple `Enum` values. A file that is not a meta tag set exits 2.
+- [ ] A `meta query` schema change that would write a `.flmeta` exits 2.
 - [ ] `term/reference/configuration.mdx` and `meta/reference/formats.mdx`
       document the new files.
 - [ ] The guide page has Part 3's term and meta section.
@@ -854,6 +895,8 @@ graph and lint are beta, so no part is breaking. Each pull request is a
 - [ ] The judge reads an HTML body without tags, and a Flare topic resolved.
 - [ ] Markdown and MDX cache keys and prompts are unchanged, and the fixture
       corpus's exit code is unchanged.
+- [ ] `docevals fill` on an HTML page whose collection has no evals manifest
+      exits 2 with its message, and the page is untouched.
 - [ ] `docevals/reference/frontmatter.mdx` documents where an HTML page's
       evals live.
 - [ ] The dogfood output is in the pull request description.
@@ -864,9 +907,12 @@ graph and lint are beta, so no part is breaking. Each pull request is a
 - [ ] `site build` in a Flare project plans
       `madbuild -project <flprj> -target <target>`, and several targets with
       none named exits 2.
-- [ ] `site preview` serves the target's output, with `.htm` as `text/html`.
-- [ ] `site start` exits 2 with its message, and a missing `madbuild` exits 2
-      with its message.
+- [ ] `site preview` serves `Output/<USERNAME>/<target>` on port 4321, with
+      `.htm` as `text/html` and `Default.htm` at `/`. A missing folder exits
+      2 with its message.
+- [ ] `site start` and `site annotate` exit 2 with their messages, and a
+      missing `madbuild` exits 2 with its message.
+- [ ] `graph export llms` writes `.htm` URLs for a Flare site.
 - [ ] `site/reference/cli.mdx` lists the Flare framework.
 - [ ] The guide page has Part 3's site section.
 - [ ] This proposal's Status line names the five pull requests that
