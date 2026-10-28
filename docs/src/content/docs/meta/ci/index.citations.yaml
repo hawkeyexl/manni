@@ -34,7 +34,7 @@ docs/src/content/docs/meta/ci/index.mdx:
         commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
     - id: github-format-one-command-per-error
       claim:
-        lines: 62-64
+        lines: 64-66
         integrity: sha256-80f76a421af32d1af0bb336c11692536b9bbe66569075ac07deb33ffd5d9283f
       source:
         file: src/meta/reporters/index.ts
@@ -43,7 +43,7 @@ docs/src/content/docs/meta/ci/index.mdx:
         commit-sha: cb74827009894c38f8646504ae9eb4a2745761a9
     - id: validate-exits-1-on-failures
       claim:
-        lines: 57-58
+        lines: 59-60
         integrity: sha256-067fc1c4647fac356549702fc0a75310b4a5d318c99c074a51a0203f6c66850f
       source:
         file: src/meta/cli.ts
@@ -52,7 +52,7 @@ docs/src/content/docs/meta/ci/index.mdx:
         commit-sha: 0d3d8a74bd17fce503520bb2313a412ca60aeeca
     - id: operational-error-exits-2
       claim:
-        lines: 58-59
+        lines: 60-61
         integrity: sha256-6ae64be9b1576084dfe89dd105652f549f49efbda0e219c82c48b65e30d34b66
       source:
         file: src/shared/run.ts
@@ -69,7 +69,7 @@ docs/src/content/docs/meta/ci/index.mdx:
         commit-sha: cb74827009894c38f8646504ae9eb4a2745761a9
     - id: action-inputs-lines-or-spaces
       claim:
-        lines: 30-33
+        lines: 32-35
         integrity: sha256-5bc8aaec8752c6de47b641591814302ddd637fb0124b0edba55bbf4b6a9e6ebd
       source:
         file: action.yml
