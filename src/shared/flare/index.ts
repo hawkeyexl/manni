@@ -21,4 +21,5 @@ export {
   readVariableSets,
   resolveText,
   resolveVariable,
+  VARIABLE_REFERENCE,
 } from "./variables.js";
