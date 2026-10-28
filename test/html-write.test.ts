@@ -185,6 +185,17 @@ describe("applyHtml — fidelity", () => {
     expect(read(out).version).toBe("2");
   });
 
+  it("round-trips a string holding a colon, which it writes quoted", () => {
+    // Unquoted, the reader takes such prose as the literal string anyway. The
+    // writer quotes it all the same, so its own output never leans on that.
+    const src = '<html><head><meta name="type" content="a"></head></html>';
+    const prose = "This includes the ability to: change the team name";
+    const out = applyHtml(src, { description: prose });
+    expect(out).toContain(`content="&quot;${prose}&quot;"`);
+    expect(read(out).description).toBe(prose);
+    expect(read(applyHtml(src, { note: "- a" })).note).toBe("- a");
+  });
+
   it("refuses a string that needs more than one line", () => {
     // Flow style puts a collection on one line, but a newline inside a string
     // survives into the output whatever the style. Refusing beats truncating.

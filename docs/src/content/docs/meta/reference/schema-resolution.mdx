@@ -305,11 +305,12 @@ meta reads it into a JSON Schema. It works in `schemas`,
   description, and a finding prints it as guidance.
 - **An `Enum` tag holds its list.** Its value matches one or more of the
   tag's `enum` values, joined by commas, as Flare writes a list of several.
+  An empty value is Flare's "not set", and it passes.
 - **Nothing is required**, because Flare requires nothing.
 
 ```text
 ✗ Content/Topics/Install.htm
-    /Status  must match pattern "^(Draft|Reviewed|Published)(,(Draft|Reviewed|Published))*$"  (line 6)  [./Project/Advanced/Topics.flmeta]
+    /Status  must match pattern "^((Draft|Reviewed|Published)(,(Draft|Reviewed|Published))*)?$"  (line 6)  [./Project/Advanced/Topics.flmeta]
       ./Project/Advanced/Topics.flmeta Status: Where the topic is in review.
 ```
 

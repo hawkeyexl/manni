@@ -520,7 +520,8 @@ meta reads the set into a JSON Schema.
 - **Each `<meta>` is a string property.** Its `desc` is the property's
   description.
 - **An `Enum` tag holds its list.** It matches one or more of its `enum`
-  values, joined by commas, as Flare writes a list of several.
+  values, joined by commas, as Flare writes a list of several. An empty
+  value is Flare's "not set", and it passes.
 - **Nothing is required**, because Flare requires nothing.
 
 A contributor sets `Status` to `Reviewd`, and `meta validate` fails the topic.
@@ -532,7 +533,7 @@ Using manni.config.yaml (.)
 ✗ Content/Topics/Configure.htm
 …
 ✗ Content/Topics/Install.htm
-    /Status  must match pattern "^(Draft|Reviewed|Published)(,(Draft|Reviewed|Published))*$"  (line 6)  [./Project/Advanced/Topics.flmeta]
+    /Status  must match pattern "^((Draft|Reviewed|Published)(,(Draft|Reviewed|Published))*)?$"  (line 6)  [./Project/Advanced/Topics.flmeta]
       ./Project/Advanced/Topics.flmeta Status: Where the topic is in review.
 
 3 files checked, 1 passed, 2 failed, 2 errors

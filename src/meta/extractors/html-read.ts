@@ -65,11 +65,19 @@ export function typeValue(raw: string): unknown {
   // Empty meta content (`content=""`) is the empty string, not the YAML `null`
   // that parsing "" would yield.
   if (raw === "") return "";
+  let value: unknown;
   try {
-    return parseYamlScalar(raw);
+    value = parseYamlScalar(raw);
   } catch {
     return raw;
   }
+  // A collection is read only in flow style, the one style the writer emits.
+  // Prose such as `Note: this` or `- a` parses as a block mapping or sequence
+  // that nobody wrote, so it stays the string it reads as.
+  if (typeof value === "object" && value !== null && !/^[[{]/.test(raw.trim())) {
+    return raw;
+  }
+  return value;
 }
 
 export function attrValue(el: Element, name: string): string | undefined {

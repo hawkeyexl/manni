@@ -246,7 +246,7 @@ A contributor sets the meta tag `Status` to `Reviewd`. The meta tag set lists
 ```console
 $ manni meta validate
 ✗ Content/Topics/Install.htm
-    /Status  must match pattern "^(Draft|Reviewed|Published)(,(Draft|Reviewed|Published))*$"  (line 7)  [./Project/Advanced/Topics.flmeta]
+    /Status  must match pattern "^((Draft|Reviewed|Published)(,(Draft|Reviewed|Published))*)?$"  (line 7)  [./Project/Advanced/Topics.flmeta]
       ./Project/Advanced/Topics.flmeta Status: Where the topic is in review.
 ```
 
@@ -445,6 +445,8 @@ to write a topic.
     - A `Text` tag is a string. So is a tag of any other type.
     - An `Enum` tag, Flare's list type, matches one or more of its `enum`
       values joined by commas. Flare writes a multi-value list that way.
+      An empty value passes too, because Flare writes `content=""` for a
+      tag that is not set.
     - Nothing is required, because Flare requires nothing.
 
     manni reads a meta tag set and never writes one. A `meta query` schema

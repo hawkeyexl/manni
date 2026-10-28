@@ -729,6 +729,37 @@ describe("html extractor", () => {
     expect(r.data.summary).toBe("");
   });
 
+  it("reads a block mapping or sequence in meta content as the literal string", () => {
+    // `content` is read as a YAML scalar, and manni writes a collection only
+    // in flow style. So prose whose YAML reading is a block mapping or a block
+    // sequence is the prose it reads as, not a structure nobody wrote.
+    const r = htmlExtractor.extract(
+      `<meta name="description" content="This includes the ability to: change the team name">
+<meta name="Products" content="Source Control User Guide: Microsoft Team Foundation Server">
+<meta name="note" content="- a">`,
+      "x.html",
+    );
+    expect(r.data.description).toBe("This includes the ability to: change the team name");
+    expect(r.data.Products).toBe("Source Control User Guide: Microsoft Team Foundation Server");
+    expect(r.data.note).toBe("- a");
+  });
+
+  it("still reads flow collections, numbers, booleans and quoted strings as typed", () => {
+    const r = htmlExtractor.extract(
+      `<meta name="list" content="[a, b]">
+<meta name="map" content=" {a: b}">
+<meta name="n" content="2">
+<meta name="flag" content="true">
+<meta name="quoted" content='"a: b"'>`,
+      "x.html",
+    );
+    expect(r.data.list).toEqual(["a", "b"]);
+    expect(r.data.map).toEqual({ a: "b" });
+    expect(r.data.n).toBe(2);
+    expect(r.data.flag).toBe(true);
+    expect(r.data.quoted).toBe("a: b");
+  });
+
   it("reports a document with no title or meta as absent", () => {
     const r = htmlExtractor.extract(`<html><body>Hi</body></html>`, "x.html");
     expect(r.present).toBe(false);

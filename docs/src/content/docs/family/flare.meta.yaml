@@ -56,25 +56,25 @@ docs/src/content/docs/family/flare.mdx:
       lines: 198-219
       integrity: sha256-e2ef5780cd9de8026da4425d7f561644d3aaac440b936f5060a53c824c8cde8b
     - generated-by: Claude Opus 5.5
-      lines: 523-525
+      lines: 524-526
       integrity: sha256-36cd9f6595ee808ad1c128329bb8c37e91a84b1aefb19f784b9dafacc3dfef83
     - generated-by: Claude Opus 5.5
-      lines: 529-535
+      lines: 530-536
       integrity: sha256-b985a1085945115ab349449c1afcf388c49c342909c84e44ac1e2eaae024f423
     - generated-by: Claude Opus 5.5
-      lines: 543-549
+      lines: 544-550
       integrity: sha256-ed7e3f506f3356a8dbc13218419a9adae801f11fe1dd89b8602a969018742a31
     - generated-by: Claude Opus 5.5
-      lines: 552-604
+      lines: 553-605
       integrity: sha256-2bc8ef9555498b022ee73fa12eccffc7bdc2a61efff3647baf9f6f84b6665fb0
     - generated-by: Claude Opus 5.5
-      lines: 606-607
+      lines: 607-608
       integrity: sha256-486837ddb31d740bad25134911a1413eae63836aa495fd39e82366f43f29e8fc
     - generated-by: Claude Opus 5.5
-      lines: 609-610
+      lines: 610-611
       integrity: sha256-ea5c5f175889ab855a848f03da739f39c4df932ebd8f1b9bb85b9697d4416af1
     - generated-by: Claude Opus 5.5
-      lines: 616
+      lines: 617
       integrity: sha256-93705946081ed34d379190b4b2daf68fb1693334ed0e1af78ff3d0d0a7a09a46
   owner:
     - "@hawkeyexl"

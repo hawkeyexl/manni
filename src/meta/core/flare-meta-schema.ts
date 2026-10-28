@@ -4,6 +4,8 @@
  * A `.flmeta` file is accepted wherever a schema ref is. Each `<meta>` is a
  * property, every tag is a string, and an `Enum` tag matches one or more of
  * its values joined by commas, which is how Flare writes a multi-value list.
+ * It also matches the empty string, which is how Flare writes a tag that is
+ * not set (`content=""`).
  * Nothing is required, because Flare requires nothing, and other keys are
  * left to the other schemas of the set.
  */
@@ -52,7 +54,7 @@ export function flareMetaSchema(text: string, ref: string): Record<string, unkno
         .map((v) => v.trim())
         .filter((v) => v !== "");
       const one = `(${values.map(escape).join("|")})`;
-      property.pattern = `^${one}(,${one})*$`;
+      property.pattern = `^(${one}(,${one})*)?$`;
     }
     properties[name] = property;
   }

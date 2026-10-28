@@ -42,20 +42,21 @@ describe("flareMetaSchema", () => {
     expect(props(schema).Status).toEqual({
       type: "string",
       description: "Where the topic is in review.",
-      pattern: "^(Draft|Reviewed|Published)(,(Draft|Reviewed|Published))*$",
+      pattern: "^((Draft|Reviewed|Published)(,(Draft|Reviewed|Published))*)?$",
     });
   });
 
-  it("matches one or more Enum values joined by commas, and nothing else", () => {
+  it("matches one or more Enum values joined by commas, or none, and nothing else", () => {
     const re = new RegExp(props(schema).Status?.pattern as string);
-    for (const ok of ["Draft", "Draft,Reviewed", "Published,Draft,Reviewed"]) expect(re.test(ok), ok).toBe(true);
-    for (const bad of ["Reviewd", "Draft,", "Draft, Reviewed", "", ",Draft"]) expect(re.test(bad), bad).toBe(false);
+    // Flare writes content="" for a tag that is not set.
+    for (const ok of ["", "Draft", "Draft,Reviewed", "Published,Draft,Reviewed"]) expect(re.test(ok), ok).toBe(true);
+    for (const bad of ["Reviewd", "Draft,", "Draft, Reviewed", ",Draft", ","]) expect(re.test(bad), bad).toBe(false);
   });
 
   it("escapes metacharacters, trims values and drops empty ones", () => {
     const pattern = props(schema).Products?.pattern as string;
     expect(pattern).toBe(
-      "^(Widget Pro|C\\+\\+ SDK|A\\.B|\\(beta\\)\\|x)(,(Widget Pro|C\\+\\+ SDK|A\\.B|\\(beta\\)\\|x))*$",
+      "^((Widget Pro|C\\+\\+ SDK|A\\.B|\\(beta\\)\\|x)(,(Widget Pro|C\\+\\+ SDK|A\\.B|\\(beta\\)\\|x))*)?$",
     );
     const re = new RegExp(pattern);
     expect(re.test("C++ SDK,Widget Pro")).toBe(true);
@@ -68,6 +69,7 @@ describe("flareMetaSchema", () => {
     const validate = new Ajv2020({ strict: false }).compile(schema);
     expect(validate({ Status: "Reviewed", Other: 1 })).toBe(true);
     expect(validate({ Status: "Reviewd" })).toBe(false);
+    expect(validate({ Status: "" })).toBe(true);
   });
 
   it("refuses a file whose root is not a meta tag set, with exit 2", () => {
@@ -115,7 +117,7 @@ describe("a .flmeta schema ref", () => {
     expect(summary.failed).toBe(1);
     const out = renderPretty(results, summary);
     expect(out).toContain(
-      '/Status  must match pattern "^(Draft|Reviewed|Published)(,(Draft|Reviewed|Published))*$"',
+      '/Status  must match pattern "^((Draft|Reviewed|Published)(,(Draft|Reviewed|Published))*)?$"',
     );
     expect(out).toContain("[./Topics.flmeta]");
     expect(out).toContain("      ./Topics.flmeta Status: Where the topic is in review.");
