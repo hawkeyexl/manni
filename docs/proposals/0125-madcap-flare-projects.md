@@ -493,7 +493,8 @@ tools:
   flare:
     # The target conditions and variables resolve against.
     target: HTML5
-    # The folder holding madbuild.exe, when it is not on PATH.
+    # The folder holding madbuild.exe, when it is not on PATH. On Windows,
+    # Flare installs it in a folder named Flare.app.
     home: "C:/Program Files/MadCap Software/MadCap Flare 21/Flare.app"
 ```
 
@@ -625,6 +626,10 @@ madbuild was not found. Install MadCap Flare, or set tools.flare.home to the fol
 Flare has no development server. Run manni site build, then manni site preview.
 No Flare output at <out>. Run manni site build first.
 manni site annotate does not read Flare output.
+
+# Part 3, site build progress, exit unchanged
+# site's existing line for every framework, with Flare as the name.
+Flare in <dir>. Running madbuild -project <flprj> -target <target>
 ```
 
 ### Output shapes
