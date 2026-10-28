@@ -78,12 +78,12 @@ describe("discoverPages", () => {
     );
   });
 
-  // `docevals run` over pages it cannot read checks nothing, so it is exit 2
-  // (ADR 01041). The family reads the code as "no page resolves any evals".
-  it("throws a nothing-resolved DocevalsError when every match is a page it does not read", () => {
+  // `docevals run` over files no extractor reads checks nothing, so it is
+  // exit 2 (ADR 01041). The family reads the code as "no page resolves any evals".
+  it("throws a nothing-resolved DocevalsError when every match is a file it does not read", () => {
     let thrown: unknown;
     try {
-      discoverPages(config, { paths: ["test/family/fixtures/only-html/Content"] }, ROOT);
+      discoverPages(config, { paths: ["test/docevals/fixtures/unread"] }, ROOT);
     } catch (err) {
       thrown = err;
     }

@@ -146,6 +146,7 @@ const SKIP_DESCRIPTIONS: Record<SkipReason, string> = {
   "no-template": "File was not linted: no template resolved for it.",
   "unsupported-format": "File was not linted: no parser handles its format.",
   unreadable: "File was not linted: it could not be read.",
+  excluded: "File was not linted: the Flare target excludes it by its conditions.",
 };
 
 /**

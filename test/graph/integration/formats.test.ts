@@ -231,6 +231,20 @@ describe("graph export over every format", () => {
       "The concept section",
     );
   });
+
+  it("slices each passage from the source lines, and matches the chunks golden", () => {
+    // Proposal 0125 gives a Flare topic resolved passage text. Every other
+    // format's passages are pinned here, byte for byte, so that stays true.
+    const r = graph(["export", "chunks", "-g", "graph.ttl", "-o", "chunks"], corpus);
+    expect(r.status, r.stderr).toBe(0);
+    // The graph digest covers the tool version literal, as the golden does not.
+    const digest = (text: string): string => text.replace(/"graph":\s*"sha256-[0-9a-f]+"/g, '"graph":"X"');
+    for (const file of ["chunks.json", "chunks.und.jsonl"]) {
+      expect(digest(readFileSync(join(corpus, "chunks", file), "utf8"))).toBe(
+        digest(readFileSync(join(goldens, "chunks", file), "utf8")),
+      );
+    }
+  });
 });
 
 describe("graph build: a named file no parser claims", () => {

@@ -17,6 +17,7 @@ import {
   parseElementPath,
   type ElementPath,
 } from "./element-key.js";
+import { isFlare, isXhtml, parseXhtml } from "../../shared/xhtml.js";
 import type { ExtractOptions } from "../types.js";
 
 export type Element = DefaultTreeAdapterMap["element"];
@@ -32,7 +33,13 @@ export type HtmlSource =
    */
   | { kind: "element-text"; els: Element[] }
   /** A value read from an element's attribute — `<link href=…>`. */
-  | { kind: "element-attr"; els: Element[]; name: string };
+  | { kind: "element-attr"; els: Element[]; name: string }
+  /**
+   * A value Flare builds from markers in the topic, `MadCap:keyword` and the
+   * rest (proposal 0125, decision 16). A write cannot aim at it: the value is
+   * every marker's terms together, and the markers are Flare's to edit.
+   */
+  | { kind: "marker"; els: Element[] };
 
 export interface HtmlRead {
   data: Record<string, unknown>;
@@ -44,6 +51,13 @@ export interface HtmlRead {
   sources: Map<string, HtmlSource>;
   /** The `<head>` element, or undefined when the document has none. */
   head: Element | undefined;
+  /** The page is XHTML (proposal 0125), so a write must leave it well-formed XML. */
+  xhtml: boolean;
+}
+
+/** `readHtml`'s options: extraction's, and the path a Flare title falls back to. */
+export interface HtmlReadOptions extends ExtractOptions {
+  filePath?: string;
 }
 
 /** Parse a raw value as a YAML scalar, falling back to the string. */
@@ -51,11 +65,19 @@ export function typeValue(raw: string): unknown {
   // Empty meta content (`content=""`) is the empty string, not the YAML `null`
   // that parsing "" would yield.
   if (raw === "") return "";
+  let value: unknown;
   try {
-    return parseYamlScalar(raw);
+    value = parseYamlScalar(raw);
   } catch {
     return raw;
   }
+  // A collection is read only in flow style, the one style the writer emits.
+  // Prose such as `Note: this` or `- a` parses as a block mapping or sequence
+  // that nobody wrote, so it stays the string it reads as.
+  if (typeof value === "object" && value !== null && !/^[[{]/.test(raw.trim())) {
+    return raw;
+  }
+  return value;
 }
 
 export function attrValue(el: Element, name: string): string | undefined {
@@ -131,6 +153,82 @@ function liftableHeadChildren(
   return out;
 }
 
+/** All descendant text, whitespace collapsed and trimmed. */
+function flatText(node: DefaultTreeAdapterMap["parentNode"]): string {
+  let text = "";
+  const walk = (n: DefaultTreeAdapterMap["childNode"]): void => {
+    if (defaultTreeAdapter.isTextNode(n)) text += n.value;
+    else if (defaultTreeAdapter.isElementNode(n)) n.childNodes.forEach(walk);
+  };
+  node.childNodes.forEach(walk);
+  return text.replace(/\s+/g, " ").trim();
+}
+
+/** The first `h1`–`h6` in document order. */
+function firstHeading(node: DefaultTreeAdapterMap["parentNode"]): Element | undefined {
+  for (const child of node.childNodes) {
+    if (!defaultTreeAdapter.isElementNode(child)) continue;
+    if (/^h[1-6]$/.test(child.tagName)) return child;
+    const found = firstHeading(child);
+    if (found) return found;
+  }
+  return undefined;
+}
+
+/**
+ * The title Flare shows for a topic whose `<title>` is empty (proposal 0125,
+ * decision 5): its first heading's text, else the file name without its
+ * extension. Undefined when neither is there.
+ */
+function flareTitle(
+  doc: DefaultTreeAdapterMap["document"],
+  filePath: string | undefined,
+): string | undefined {
+  const heading = firstHeading(doc);
+  const text = heading ? flatText(heading) : "";
+  if (text !== "") return text;
+  // Standard input has no file name: "-" or load-files' `<stdin>` label.
+  if (filePath === "-" || filePath === "<stdin>") return undefined;
+  const stem = filePath?.replace(/^.*[\\/]/, "").replace(/\.[^.]*$/, "");
+  return stem === "" ? undefined : stem;
+}
+
+/** The index markers whose `term` values are a Flare topic's `keywords`. parse5 lowercases names. */
+const KEYWORD_MARKERS = new Set(["madcap:keyword", "madcap:concept"]);
+
+/**
+ * The keywords a run of index markers names (0125, decision 16): each `term`
+ * split on `;`, trimmed, empties dropped, `\:` read as a colon, and the first
+ * of any repeat kept. A subentry `A:B` is one keyword, as written.
+ */
+function markerKeywords(els: Element[]): string[] {
+  const out = new Set<string>();
+  for (const el of els) {
+    for (const piece of (attrValue(el, "term") ?? "").split(";")) {
+      const keyword = piece.trim().replace(/\\:/g, ":");
+      if (keyword !== "") out.add(keyword);
+    }
+  }
+  return [...out];
+}
+
+/** A glossary term reference, whose `glossTerm` id is one of a Flare topic's `concepts`. parse5 lowercases names. */
+const GLOSSARY_MARKER = "madcap:glossaryterm";
+
+/**
+ * The termbase ids a run of glossary term markers names (0125, decision 19):
+ * each `glossTerm` verbatim, empties dropped, the first of any repeat kept.
+ * The text a marker wraps is the page's prose, not a value.
+ */
+function markerConcepts(els: Element[]): string[] {
+  const out = new Set<string>();
+  for (const el of els) {
+    const id = attrValue(el, "glossterm") ?? "";
+    if (id !== "") out.add(id);
+  }
+  return [...out];
+}
+
 /** Every element a config path selects, walked down the child axis. */
 function matchHtmlPath(
   doc: DefaultTreeAdapterMap["document"],
@@ -161,7 +259,7 @@ function matchHtmlPath(
 /** Read metadata, positions, and per-key provenance from HTML source. */
 export function readHtml(
   source: string,
-  options?: ExtractOptions,
+  options?: HtmlReadOptions,
 ): HtmlRead {
   // A BOM is invisible in an editor, so letting the parser count it as a
   // character puts every caret on line 1 one column to the right of what the
@@ -178,13 +276,20 @@ export function readHtml(
   // deletes no line. `body` is returned so a caller that splices — the writer —
   // measures against the same text these positions describe.
   const body = source.charCodeAt(0) === 0xfeff ? source.slice(1) : source;
-  const doc = parse(body, { sourceCodeLocationInfo: true });
+  // An XHTML page is parsed so that a self-closed element holds nothing, as
+  // an XML parser reads it. Every location still indexes into `body`.
+  const xhtml = isXhtml(body);
+  const doc = xhtml
+    ? parseXhtml(body)
+    : parse(body, { sourceCodeLocationInfo: true });
 
   const data: Record<string, unknown> = {};
   const lineMap = new Map<string, number>();
   const colMap = new Map<string, number>();
   const sources = new Map<string, HtmlSource>();
   let head: Element | undefined;
+  const keywordMarkers: Element[] = [];
+  const glossaryMarkers: Element[] = [];
   // The document node has no location; anchor the root pointer at 1:1.
   lineMap.set("", 1);
   colMap.set("", 1);
@@ -237,6 +342,11 @@ export function readHtml(
               : location?.startCol;
           setKey(key, typeValue(value), { kind: "meta", el: node }, line, col);
         }
+      } else if (KEYWORD_MARKERS.has(node.tagName)) {
+        keywordMarkers.push(node);
+      } else if (node.tagName === GLOSSARY_MARKER && (attrValue(node, "glossterm") ?? "") !== "") {
+        // Only a marker naming an id, so the first one is where `concepts` points.
+        glossaryMarkers.push(node);
       }
       // Same guard, same node, nothing between that could change the answer:
       // recursion belongs inside the one check rather than behind a second.
@@ -245,6 +355,37 @@ export function readHtml(
   };
 
   for (const child of doc.childNodes) visit(child);
+
+  // Flare leaves a topic's <title> empty, or out, and shows its first heading
+  // instead. An empty one stays the source, so a write fills it. A missing one
+  // has no source, so a write inserts a <title> into <head>.
+  const titleSource = sources.get("title");
+  const untitled =
+    titleSource === undefined ||
+    (titleSource.kind === "title" &&
+      typeof data.title === "string" &&
+      data.title.trim() === "");
+  const flare = isFlare(body);
+  if (untitled && flare) {
+    const title = flareTitle(doc, options?.filePath);
+    if (title !== undefined) data.title = title;
+  }
+
+  // A Flare topic's index markers are its keywords, unless the page writes a
+  // <meta name="keywords"> of its own (0125, decision 16). Set before config
+  // paths, so one naming `keywords` cannot overwrite them.
+  const keywords = markerKeywords(keywordMarkers);
+  if (data.keywords === undefined && keywords.length > 0 && flare) {
+    const first = keywordMarkers[0]?.sourceCodeLocation;
+    setKey("keywords", keywords, { kind: "marker", els: keywordMarkers }, first?.startLine, first?.startCol);
+  }
+  // Its glossary term markers are its `concepts`, on the same terms (0125,
+  // decision 19).
+  const concepts = markerConcepts(glossaryMarkers);
+  if (data.concepts === undefined && concepts.length > 0 && flare) {
+    const first = glossaryMarkers[0]?.sourceCodeLocation;
+    setKey("concepts", concepts, { kind: "marker", els: glossaryMarkers }, first?.startLine, first?.startCol);
+  }
 
   // Element-derived metadata, lifted from `<head>` only. The body is prose, and
   // an SVG `<title>` down in it labels a graphic rather than the page — which is
@@ -298,5 +439,5 @@ export function readHtml(
     if (location?.startCol != null) colMap.set(pointer, location.startCol);
   }
 
-  return { data, body, lineMap, colMap, sources, head };
+  return { data, body, lineMap, colMap, sources, head, xhtml };
 }

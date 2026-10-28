@@ -1,0 +1,5 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<CatapultMetaTagSet Comment="Meta Tag Set" name="Topics">
+    <meta name="description" content="" type="Text" />
+    <meta name="Status" content="" type="Enum" enum="Draft,Reviewed,Published" desc="Where the topic is in review." />
+</CatapultMetaTagSet>

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CatapultToc Version="1">
+  <TocEntry Title="Getting started">
+    <TocEntry Title="[%=System.LinkedTitle%]" Link="/Content/Topics/Install.htm">
+      <TocEntry Title="Snippets" Link="/Content/Topics/Snippets.htm" />
+    </TocEntry>
+  </TocEntry>
+  <TocEntry Title="Reference" Link="/Content/Topics/Cycle.htm">
+    <TocEntry Title="Nested" Link="/Content/Topics/Install.htm#nested" />
+  </TocEntry>
+  <TocEntry Title="Print guide" Link="/Content/Topics/PrintGuide.htm" conditions="Default.PrintOnly" />
+  <TocEntry Title="More" Link="/Project/TOCs/Other.fltoc" />
+  <TocEntry Title="Website" Link="https://example.com/widget" />
+</CatapultToc>

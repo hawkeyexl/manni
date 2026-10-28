@@ -1,0 +1,7 @@
+lint 0 1251ms
+build 0 2650ms
+export 0 4894ms
+get 0 796ms
+timing1 lint 1338ms build 2168ms export 3223ms get 844ms
+timing2 lint 1322ms build 3024ms export 4077ms get 869ms
+timing3 lint 1280ms build 2300ms export 3849ms get 763ms

@@ -9,9 +9,10 @@ import { createHash } from "node:crypto";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { GraphError } from "../types.js";
-import { loadRunConfig } from "../core/config.js";
+import { type GraphConfig, loadRunConfig } from "../core/config.js";
 import { EVALS_ARE_AUTHOR_FACING, NO_AUTHORING_EXPORT } from "../core/graph-output.js";
-import { documentBase } from "../core/discover.js";
+import { documentBase, parseContexts } from "../core/discover.js";
+import type { ParseContext } from "../../lint/types.js";
 import { emitJsonLd } from "../core/emit-jsonld.js";
 import { emitRdfXml } from "../core/emit-rdfxml.js";
 import { projectPackage } from "../core/iirds-package.js";
@@ -173,7 +174,8 @@ async function runSearchIndex(
   cwd: string,
   sources: string,
   graphPath: string,
-  out?: string,
+  out: string | undefined,
+  context: (label: string) => ParseContext,
 ): Promise<ExportResult> {
   const store = loadGraph(graphPath);
   const graph = GraphIndex.fromQuads(
@@ -181,7 +183,7 @@ async function runSearchIndex(
     Object.fromEntries(PREFIXES),
   );
   const warnings: string[] = [];
-  const index = await buildSearchIndex(graph, sources, { warnings });
+  const index = await buildSearchIndex(graph, sources, { warnings, context });
   const byLanguage = partitionByLanguage(graph, index);
   const docCounts = documentsByLanguage(graph);
 
@@ -242,7 +244,7 @@ async function runQuestions(
   cwd: string,
   sources: string,
   graphPath: string,
-  config: { questionFiles: string[]; configDir: string },
+  config: Pick<GraphConfig, "questionFiles" | "configDir" | "tools">,
   source: { configPath?: string; noConfig?: boolean },
   out?: string,
 ): Promise<ExportResult> {
@@ -252,6 +254,7 @@ async function runQuestions(
     { source, cwd },
     config.questionFiles,
     config.configDir,
+    parseContexts(config, sources),
   );
   const outPath = out ? resolve(cwd, out) : join(dirname(graphPath), "questions.jsonl");
   mkdirSync(dirname(outPath), { recursive: true });
@@ -345,7 +348,7 @@ export async function runExport(opts: ExportOptions): Promise<ExportResult> {
     return { outPath, format: "llms", nodes: pages, warnings, files: [outPath] };
   }
   if (opts.format === "search") {
-    return runSearchIndex(cwd, sources, graphPath, opts.out);
+    return runSearchIndex(cwd, sources, graphPath, opts.out, parseContexts(config, sources));
   }
   if (opts.format === "questions") {
     return runQuestions(

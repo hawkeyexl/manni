@@ -9,7 +9,7 @@ audiences:
   - schema-authors
 lifecycle: published
 action: remember
-last-updated: 2026-10-20
+last-updated: 2026-10-28
 ---
 
 import { Aside } from '@astrojs/starlight/components';
@@ -399,12 +399,12 @@ The file extensions behind those columns:
 |---|---|
 | Markdown | `.md`, `.markdown` |
 | MDX | `.mdx` |
-| HTML | `.html`, `.htm` |
+| HTML | `.html`, `.htm`, `.flsnp` |
 | AsciiDoc | `.adoc`, `.asciidoc` |
 | reStructuredText | `.rst` |
-| XML | `.xml`, `.dita`, `.ditamap` |
+| XML | `.xml`, `.dita`, `.ditamap`, `.fltoc`, `.flbrs` |
 
-A directory walk picks up `.dita` and `.ditamap` but not every `.xml`, because a
+A directory walk picks up `.dita`, `.ditamap`, `.fltoc` and `.flbrs` but not every `.xml`, because a
 docs tree also holds `pom.xml` and `sitemap.xml`. Name such a file directly, or
 pass `--as xml`.
 
@@ -417,6 +417,13 @@ ordinary in a real map. So a template that requires a title on every entry will
 fail maps that are correct.
 
 A `reltable` and a `keydef` are not navigation. Neither appears in the tree.
+
+A MadCap Flare TOC (`.fltoc`) or browse sequence (`.flbrs`) is read the same
+way. A `TocEntry` with a `Title` nests as a heading does, and so does a book
+entry with no `Link`. An entry titled `[%=System.LinkedTitle%]`, or untitled,
+takes the title of the topic it links to in Flare. The tree leaves it out and
+keeps its children. An entry the Flare target excludes leaves the tree, and
+its link stays.
 
 ### A rule that cannot run is a warning
 

@@ -8,6 +8,7 @@ import { resolve as resolvePath } from "node:path";
 import { Buffer } from "node:buffer";
 import { DocmetaError } from "../types.js";
 import { stripBom } from "./json-text.js";
+import { flareMetaSchema, isFlareMetaRef } from "./flare-meta-schema.js";
 import {
   DEFAULT_TTL_HOURS,
   SchemaCache,
@@ -1490,6 +1491,8 @@ export async function loadSchema(
   // After `assertIntegrity`, deliberately: the pin covers the bytes on disk,
   // BOM and all. See `stripBom`.
   const text = stripBom(bytes.toString("utf8"));
+  // A Flare meta tag set is a schema too (proposal 0125, decision 20).
+  if (isFlareMetaRef(ref)) return flareMetaSchema(text, ref);
   try {
     return JSON.parse(text) as Record<string, unknown>;
   } catch (err) {

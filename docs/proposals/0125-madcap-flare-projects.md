@@ -1,6 +1,6 @@
 # 0125: MadCap Flare projects
 
-- **Status:** Proposed
+- **Status:** Implemented (#257, #258, #259, #260, #261)
 - **Serves:** Five journeys, each for a docset kept in MadCap Flare.
   - Maya · M1, "Stand up metadata validation for my repo".
   - Maya · M10, "Hold every page to the shape its doctype promises".
@@ -63,9 +63,10 @@ what breaks.
 - **cite, term and strategy read.** HTML pages carry citations through a
   `{page}.citations.yaml` manifest, and term and strategy records work as
   HTML pages.
-- **Every title is empty.** In MadCap's own help source, 1,336 of 1,337 topics
-  have an empty `<title>`. Flare titles them from their first heading.
-  `manni:core` requires a title, so it fails every one.
+- **Titles are left to the heading.** In MadCap's own help source, 2,179 of
+  3,796 topics have no `<title>`, and the rest mostly leave it empty. Flare
+  titles them from their first heading. `manni:core` requires a title, so it
+  fails each one.
 - **Writes break the topic.** `meta derive`, `meta fill` and `graph fill`
   insert `<meta name="x" content="y">` with no closing slash. Flare's topics
   are XML, and the result no longer parses as XML.
@@ -245,7 +246,7 @@ A contributor sets the meta tag `Status` to `Reviewd`. The meta tag set lists
 ```console
 $ manni meta validate
 ✗ Content/Topics/Install.htm
-    /Status  must match pattern "^(Draft|Reviewed|Published)(,(Draft|Reviewed|Published))*$"  (line 7)  [./Project/Advanced/Topics.flmeta]
+    /Status  must match pattern "^((Draft|Reviewed|Published)(,(Draft|Reviewed|Published))*)?$"  (line 7)  [./Project/Advanced/Topics.flmeta]
       ./Project/Advanced/Topics.flmeta Status: Where the topic is in review.
 ```
 
@@ -293,8 +294,9 @@ to write a topic.
 
 3. **Inserted tags close themselves.** On an XHTML page a write ends each new
    tag with ` />`. A self-closed `<head />` opens into `<head>` and `</head>`
-   around what the write inserts. On any other HTML page a write emits the
-   bytes it emits today.
+   around what the write inserts. A page with no `<head>` at all, as most
+   Flare snippets are, gains one just inside `<html>`. On any other HTML page
+   a write emits the bytes it emits today.
 
 4. **A write never leaves malformed XML.** When an XHTML page parsed as XML
    before a write, the written result must too. Otherwise the write is
@@ -303,9 +305,10 @@ to write a topic.
    `graph fill`, encryption, and `key rotate`.
 
 5. **A Flare topic's title is the one Flare shows.** On a page that declares
-   the MadCap namespace, an empty `<title>` reads as the text of the first
-   `h1` to `h6`. With no heading it reads as the file name, without its
-   extension. A write to `title` fills the `<title>` element.
+   the MadCap namespace, an empty or missing `<title>` reads as the text of
+   the first `h1` to `h6`. With no heading it reads as the file name, without
+   its extension. A write to `title` fills the `<title>` element, or adds one
+   to `<head>`.
 
 6. **`.flsnp` is HTML.** meta's HTML extractor and lint's HTML parser claim
    it, and a directory walk collects it. graph lists it, `.fltoc` and
@@ -318,7 +321,9 @@ to write a topic.
    harvests `href` on `<MadCap:xref>`, and `src` on `<MadCap:snippetBlock>` and
    `<MadCap:snippetText>`. graph turns each into `dcterms:references`, as it
    does an `<a href>`. So an include is an edge, and a broken one is a broken
-   link. `graph traverse --reverse` lists a snippet's includers.
+   link. `graph traverse --reverse` lists a snippet's includers. A target that
+   names a variable, such as `href="[%=Links.Video%]"`, is not a path Part 1
+   can check, so it is left out. Part 2 resolves it.
 
 8. **The XML vocabulary error names no source file.** It reads "manni
    understands DITA, DocBook, DITA map and Flare TOC", and says nothing about
@@ -371,7 +376,9 @@ to write a topic.
       other MadCap element keeps its text.
 
     Links and includes are what each file says, under every condition. A
-    broken cross-reference in print-only content is still broken.
+    broken cross-reference in print-only content is still broken. A link
+    target that names a variable resolves through the variable set, and is
+    checked as the path it resolves to.
 
 13. **Who reads the resolved view.** lint's structure rules, graph's sections
     and its search index read it through lint's tree. A Flare topic's passage
@@ -426,7 +433,7 @@ to write a topic.
 
 19. **A glossary term reference is a `concepts:` reference.** meta's HTML
     reader reads each `<MadCap:glossaryTerm glossTerm>` as an entry of the page
-    field `concepts`. term's `dangling-reference` and graph's `dcterms:subject`
+    field `concepts`. term's `undefined-term` and graph's `dcterms:subject`
     then work as they do for any page. A write to `concepts` read from markers
     is refused with exit 2.
 
@@ -438,6 +445,8 @@ to write a topic.
     - A `Text` tag is a string. So is a tag of any other type.
     - An `Enum` tag, Flare's list type, matches one or more of its `enum`
       values joined by commas. Flare writes a multi-value list that way.
+      An empty value passes too, because Flare writes `content=""` for a
+      tag that is not set.
     - Nothing is required, because Flare requires nothing.
 
     manni reads a meta tag set and never writes one. A `meta query` schema
@@ -599,6 +608,7 @@ Every message goes to stderr.
 ```text
 # Part 1, exit 2
 Refusing to write "<key>": the result would not be well-formed XML (<parser message>). <file> is unchanged.
+<file> has no <head> element; manni meta fill writes metadata into <head>. Add one, or set the field manually.
 
 # Part 2, exit 2
 tools.flare.target "<name>" names no target in <flprj>. Its targets are <list>.
@@ -619,12 +629,16 @@ skipped: target <name> excludes the page by its conditions
 # Part 3, exit 2
 Refusing to write "concepts": <file> reads them from its MadCap:glossaryTerm markers. Edit the markers in Flare.
 <path> is not a Flare meta tag set: its root element is <name>.
+<path>: is not a Flare glossary: its root element is <name>, not <CatapultGlossary>.
+<path>: could not be read as a Flare glossary.
 <path> is a Flare meta tag set, which manni reads and never writes.
 <file> is HTML, so its evals live in a manifest. Give its collection an externalMetadata entry that owns evals.
 <flprj> has <n> targets. Name the one to build with tools.flare.target.
+<flprj> has no targets, so there is nothing to build. Add a target in Flare.
 madbuild was not found. Install MadCap Flare, or set tools.flare.home to the folder that holds madbuild.exe.
 Flare has no development server. Run manni site build, then manni site preview.
 No Flare output at <out>. Run manni site build first.
+manni cannot tell whose Output folder to read, because USERNAME is not set and the system names no user. Set USERNAME to the account that runs madbuild.
 manni site annotate does not read Flare output.
 
 # Part 3, site build progress, exit unchanged
@@ -677,6 +691,11 @@ Flare in <dir>. Running madbuild -project <flprj> -target <target>
   linked topic has no definition, so `missing-definition` reports it.
 - **Tracked changes read as both.** A topic holding unaccepted changes reads
   with the inserted and the deleted text.
+- **Globs skip dot-files.** A collection path such as `Content/**/*.flsnp`
+  leaves out a file whose name starts with a dot. A project with one names it
+  in a path of its own.
+- **A head parse5 cannot place is refused.** A stray tag before `<head>` makes
+  the parser imply one. A write to that page exits 2, naming the file.
 - **Unread files.** Template pages, alias files, index link sets, search filter
   sets, relationship tables, auto-suggestion sets and micro content are not
   read.
@@ -770,8 +789,10 @@ This repository has no Flare project, so the dogfood is two runs.
      `lint structure --explain` and `graph export chunks`. Its passages hold
      no `MadCap:variable` tag.
    - Part 3 runs `term check` on a glossary and `meta validate` against its
-     meta tag sets. `site build` runs on a Windows machine with Flare
-     installed, and `a11y check` runs against `site preview`.
+     meta tag sets. No Flare license is available to this project, so
+     `site build` runs a stand-in madbuild that copies the topics as
+     written. `site preview` serves that output, and `a11y check` runs
+     against it. Neither the stand-in nor its output is Flare's.
 
    The counts each run prints go in the pull request.
 
@@ -817,9 +838,13 @@ request is a `feat:` and ships its own demo video.
 - [ ] A write into a plain HTML5 page is byte-identical to today's.
 - [ ] A write that would leave malformed XML exits 2 with the Part 1 message,
       and the file is untouched.
-- [ ] A Flare topic with an empty `<title>` reads its first heading as
-      `title`, or its file name with no heading. A write to `title` fills the
-      element.
+- [ ] A Flare topic with an empty or missing `<title>` reads its first
+      heading as `title`, or its file name with no heading. A write to `title`
+      fills the element, or adds one.
+- [ ] A write into an XHTML page with no `<head>` adds one inside `<html>`, and
+      the result parses as XML. A head the parser had to imply is refused,
+      naming the file.
+- [ ] A link target holding `[%=…%]` on a Flare page is not reported broken.
 - [ ] `manni meta validate x.flsnp` exits 0 on a valid snippet, and
       `lint tools` lists `.flsnp` under html.
 - [ ] `graph build` derives `dcterms:references` from `MadCap:xref href`,
@@ -881,8 +906,8 @@ request is a `feat:` and ships its own demo video.
       `term.manifests`.
 - [ ] A glossary entry's later terms are `alt-labels`, and its id is its
       `glossTerm` id or, with none, its label's slug.
-- [ ] `MadCap:glossaryTerm` reads as `concepts`, a removed entry is a
-      `dangling-reference`, and a write to marker concepts exits 2.
+- [ ] `MadCap:glossaryTerm` reads as `concepts`, a removed entry is an
+      `undefined-term`, and a write to marker concepts exits 2.
 - [ ] A `.flmeta` path in `schemas:` validates `Text` tags and single and
       multiple `Enum` values. A file that is not a meta tag set exits 2.
 - [ ] A `meta query` schema change that would write a `.flmeta` exits 2.
@@ -922,6 +947,6 @@ request is a `feat:` and ships its own demo video.
 - [ ] The guide page has Part 3's site section.
 - [ ] This proposal's Status line names the five pull requests that
       implemented it.
-- [ ] The dogfood output, from a Windows machine, is in the pull request
+- [ ] The dogfood output, from the stand-in madbuild, is in the pull request
       description.
 - [ ] A demo video and its sources are in `media/`.

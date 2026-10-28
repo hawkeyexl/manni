@@ -2,6 +2,7 @@ import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { htmlParser } from "../../../src/lint/parsers/html.js";
+import { parserForExtension } from "../../../src/lint/parsers/index.js";
 import { loadTemplate } from "../../../src/lint/core/template-registry.js";
 import { validateDocument } from "../../../src/lint/core/validator.js";
 import type {
@@ -53,10 +54,10 @@ const fixture = (name: string) =>
   readFile(fileURLToPath(new URL(`../fixtures/formats/${name}`, import.meta.url)), "utf8");
 
 describe("html parser", () => {
-  it("registers as the format for .html and .htm", () => {
+  it("registers as the format for .html, .htm and Flare's .flsnp", () => {
     expect(htmlParser.name).toBe("html");
     expect(htmlParser.label).toBe("HTML");
-    expect(htmlParser.extensions).toEqual([".html", ".htm"]);
+    expect(htmlParser.extensions).toEqual([".html", ".htm", ".flsnp"]);
     expect(parse(doc("<h1>A</h1>")).format).toBe("html");
   });
 
@@ -528,6 +529,62 @@ describe("html parser", () => {
       const item = at(list.children, 0, "item");
       expect(item.definition.map((n) => n.kind)).toEqual(["paragraph"]);
     });
+  });
+});
+
+/**
+ * A MadCap Flare topic, as Flare writes one: an XML declaration, the MadCap
+ * namespace on `<html>`, and a self-closed `<title />`. HTML5 parsing reads
+ * that `<title />` as an open RCDATA element and swallows the whole body, so
+ * every case here fails unless the page is parsed as XHTML (proposal 0125).
+ */
+const flare = (body: string, head = "<title />") =>
+  `<?xml version="1.0" encoding="utf-8"?>\n` +
+  `<html xmlns:MadCap="http://www.madcapsoftware.com/schemas/madcap.xsd">\n` +
+  `<head>${head}</head>\n<body>\n${body}\n</body>\n</html>\n`;
+
+describe("a MadCap Flare topic", () => {
+  it("keeps a self-closed variable's following text in its paragraph", () => {
+    const tree = parse(flare('<h1>T</h1><p>Version <MadCap:variable name="X" /> needs Node.</p>'));
+    const root = section(tree.sections, "T");
+    expect(root.children.map((n) => [n.kind, n.text])).toEqual([
+      ["paragraph", "Version needs Node."],
+    ]);
+  });
+
+  it("reads a heading after a top-level snippet block as a section at its level", () => {
+    const tree = parse(
+      flare('<h1>Configure</h1><MadCap:snippetBlock src="s.flsnp" /><h2>Steps</h2><p>Do it.</p>'),
+    );
+    const root = section(tree.sections, "Configure");
+    expect(root.sections.map((s) => [s.title, s.level])).toEqual([["Steps", 2]]);
+    expect(section(tree.sections, "Steps").children.map((n) => n.kind)).toEqual(["paragraph"]);
+  });
+
+  // meta reads an empty Flare <title> as the first heading's text, or the
+  // file name. That title is derived, not written, so it stands in for no H1.
+  it.each([
+    ["a self-closed <title />", "<title />"],
+    ["an empty <title></title>", "<title></title>"],
+    ["no <title> at all", ""],
+  ])("synthesizes no H1 from %s", (_, head) => {
+    const tree = parse(flare("<h2>Overview</h2><p>Why.</p>", head));
+    const root = at(tree.sections, 0, "top-level section");
+    expect([root.title, root.level, root.synthetic]).toEqual(["Overview", 2, undefined]);
+  });
+
+  it("still lets a written <title> stand in for a missing H1", () => {
+    const tree = parse(flare("<h2>Overview</h2>", "<title>Configure</title>"));
+    const root = at(tree.sections, 0, "top-level section");
+    expect([root.title, root.level, root.synthetic]).toEqual(["Configure", 1, true]);
+  });
+
+  it("parses a .flsnp snippet through the registry", async () => {
+    const parser = defined(parserForExtension(".flsnp"), "parser for .flsnp");
+    expect(parser.name).toBe("html");
+    const tree = await parser.parse(flare('<p>Shared <MadCap:variable name="X" /> text.</p>', ""), "s.flsnp");
+    const lead = at(tree.sections, 0, "lead section");
+    expect(lead.children.map((n) => [n.kind, n.text])).toEqual([["paragraph", "Shared text."]]);
   });
 });
 

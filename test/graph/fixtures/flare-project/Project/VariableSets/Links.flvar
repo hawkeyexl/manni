@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CatapultVariableSet>
+  <Variable Name="Product" EvaluatedDefinition="Widget">Widget</Variable>
+  <Variable Name="Setup" EvaluatedDefinition="Old.htm">Old.htm</Variable>
+  <Variable Name="Gone" EvaluatedDefinition="Gone.htm">Gone.htm</Variable>
+  <Variable Name="Built" Type="DateTime" Format="yyyy" EvaluatedDefinition="2026"></Variable>
+</CatapultVariableSet>

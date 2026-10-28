@@ -131,6 +131,8 @@ export function buildUserContent(
   body: string,
   targetLabel = "body",
   readers?: string,
+  /** False for a body already read as text, which has no MDX to strip. */
+  clean = true,
 ): string {
   const parts: string[] = [
     `# Assertion`,
@@ -163,11 +165,12 @@ export function buildUserContent(
   // the judge would then be asked whether code exports something it can no
   // longer see.
   const isBody = targetLabel === "body";
+  const strip = isBody && clean;
   parts.push(
     "",
     isBody ? "# Page content" : `# Page content (${targetLabel})`,
     "",
-    isBody ? cleanBody(body) : body,
+    strip ? cleanBody(body) : body,
   );
   return parts.join("\n");
 }

@@ -21,6 +21,8 @@ import {
 import { STDIN_REQUIRES_AS } from "../../shared/cli-options.js";
 import { selectCollections } from "../../shared/collections.js";
 import { warn } from "../../shared/warn.js";
+import { flareRun } from "../../shared/flare/index.js";
+import type { ParseContext } from "../../lint/types.js";
 import { GraphError } from "../types.js";
 import { DOC_FORMATS, isDocFormat, type DocFormat } from "./analyze.js";
 import {
@@ -282,6 +284,19 @@ export function documentBase(
 ): string {
   const typed = (options.paths ?? []).length > 0;
   return typed || config.collections.length === 0 ? cwd : config.configDir;
+}
+
+/**
+ * Each page's parse context, by its label: the absolute path `base` makes of
+ * it, and one Flare reader for the run, so a Flare topic resolves against its
+ * project and each project is read once (proposal 0125).
+ */
+export function parseContexts(
+  config: Pick<GraphConfig, "tools">,
+  base: string,
+): (label: string) => ParseContext {
+  const flare = flareRun(config.tools);
+  return (label) => ({ absPath: resolve(base, label), flare });
 }
 
 /**

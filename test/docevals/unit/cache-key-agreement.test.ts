@@ -18,7 +18,7 @@
 import { describe, it, expect } from "vitest";
 import { mkdtempSync, mkdirSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 import { extractFrontmatter } from "../../../src/meta/index.js";
 import { makeJudge } from "../../../src/docevals/judge/judge.js";
 import { cacheKey, judgeCacheBody } from "../../../src/docevals/judge/cache.js";
@@ -27,7 +27,9 @@ import { readTarget } from "../../../src/docevals/core/target.js";
 import { resolveProviderIdentity } from "../../../src/docevals/judge/provider.js";
 import { parseDocevalsConfig } from "../helpers/config.js";
 import { resolvePage } from "../../../src/docevals/core/resolve.js";
-import { stripFrontmatterBlock, type PageFile } from "../../../src/docevals/core/discover.js";
+import { readPage, stripFrontmatterBlock, type PageFile } from "../../../src/docevals/core/discover.js";
+import { pageText } from "../../../src/docevals/judge/page-text.js";
+import { flareRun } from "../../../src/shared/flare/index.js";
 import { DEFAULT_MODELS, type InferenceProvider } from "@hawkeyexl/inference";
 import type { GraderTarget } from "../../../src/docevals/graders/types.js";
 
@@ -149,5 +151,56 @@ describe("the judge and an outside caller agree on the cache key", () => {
     const results = await makeJudge({ provider: neverCalled(), root })([t], config, {});
     expect(results[0]?.consensus?.runs.every((r) => r.cached)).toBe(true);
     expect(results[0]?.personas).toEqual(["theo"]);
+  });
+
+  // Proposal 0125, decision 21. An HTML page's key is built from the text the
+  // judge reads, through the same export. A Markdown page's is still built
+  // from its body as read, which the first case above pins.
+  it("hits an entry for an HTML page, keyed on its text", async () => {
+    const root = mkdtempSync(join(tmpdir(), "manni-docevals-agree-"));
+    const formats = resolve(import.meta.dirname, "../fixtures/formats");
+    const page = readPage(join(formats, "Content/topic.htm"), formats);
+    const config = parseDocevalsConfig("provider: anthropic", join(formats, "manni.config.yaml"));
+    const plan = resolvePage(
+      {
+        ...page,
+        frontmatter: {
+          ...page.frontmatter,
+          data: { ...page.frontmatter.data, evals: [{ id: "claim", assertion: "The page names the product." }] },
+        },
+      },
+      config,
+    );
+    const ev = plan.evals[0];
+    if (ev === undefined) throw new Error("fixture resolved no evals");
+
+    const identity = await resolveProviderIdentity(config, {}, ev);
+    const text = await pageText(page, flareRun(config.tools));
+    expect(text).not.toMatch(/[<>]/);
+    const key = cacheKey(
+      identity.provider,
+      identity.model,
+      ev.runs ?? config.judge.ensembleRuns,
+      config.judge.temperature,
+      judgeCacheBody(config.judge.chunkChars, text),
+      ev,
+    );
+    const dir = join(root, config.judge.cacheDir);
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(
+      join(dir, `${key}.json`),
+      JSON.stringify(
+        Array.from({ length: config.judge.ensembleRuns }, () => ({
+          verdict: { claim: "c", observed: "o", match: "pass", confidence: 0.95, reasoning: "r" },
+          provider: identity.provider,
+          model: identity.model,
+          cached: false,
+          durationMs: 1,
+        })),
+      ),
+    );
+
+    const results = await makeJudge({ provider: neverCalled(), root })([{ plan, eval: ev }], config, {});
+    expect(results[0]?.consensus?.runs.every((r) => r.cached)).toBe(true);
   });
 });

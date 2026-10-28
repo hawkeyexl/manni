@@ -1,0 +1,3 @@
+        <p>Version <MadCap:variable name="General.ProductVersion" /> needs Node 20.</p>
+        <MadCap:snippetBlock src="../Resources/Snippets/BeforeYouStart.flsnp" />
+        <p MadCap:conditions="Default.PrintOnly">This paragraph prints only.</p>

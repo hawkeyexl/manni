@@ -62,6 +62,7 @@ describe("readers are registered", () => {
         "html-dl",
         "html-dfn",
         "tbx-entry",
+        "flare-glossary",
       ] as const
     ).map((construct) => reader(construct).label);
     expect(labels).toEqual([
@@ -73,8 +74,10 @@ describe("readers are registered", () => {
       "dl",
       "dfn",
       "TBX entry",
+      "Flare glossary",
     ]);
     expect(reader("tbx-entry").formats).toEqual(["tbx"]);
+    expect(reader("flare-glossary").formats).toEqual(["flare-glossary"]);
     expect(reader("page").formats).toEqual(["markdown", "mdx", "asciidoc", "rst", "html", "xml"]);
     expect(reader("manifest").formats).toEqual([MANIFEST_FORMAT]);
     expect(reader("html-dl").formats).toEqual(["html"]);
@@ -398,6 +401,16 @@ describe("HTML dl", () => {
       ],
       notices: ["html/dl.html:16: skipped a dl entry with no term."],
     });
+  });
+
+  it("reads an XHTML page whose self-closed <script /> would swallow the body as HTML", () => {
+    // Proposal 0125: HTML5 parsing reads `<script />` as an open script and
+    // the rest of the file as its text. Parsed as XHTML, it holds nothing.
+    const read = reader("html-dl").read(inputFor("html/xhtml.html", "html"));
+    expect(read.terms.map((t) => [t.id, t.record])).toEqual([
+      ["pal", { label: "progressive lens", definition: "Corrective lenses whose power increases." }],
+    ]);
+    expect(read.notices).toEqual([]);
   });
 
   it("reads nothing from a page that does not declare type: term-set", () => {

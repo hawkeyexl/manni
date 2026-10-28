@@ -51,6 +51,7 @@ import { errorMessage } from "../../shared/errors.js";
 import { DocevalsError } from "../types.js";
 import { frontmatterSchema } from "../schema.js";
 import type { DocevalsConfig } from "./config.js";
+import { markupFormat, type PageFile } from "./discover.js";
 import { urlManifestRefusal } from "./external.js";
 
 /** The page key holding the eval list, the one docevals appends to and edits. */
@@ -109,6 +110,20 @@ export function noEntryMessage(
   key: string,
 ): string {
   return `${label} carries no ${join}, which ${file} joins on, so its ${key} has no entry there.`;
+}
+
+/**
+ * The refusal for an eval write that would land on an HTML or XML page itself
+ * (proposal 0125, decision 21). Its metadata is markup, so a YAML block above
+ * it would corrupt it; the evals belong in a manifest. `undefined` for a page
+ * in any other format, which keeps the key.
+ */
+export function markupRefusal(page: Pick<PageFile, "file" | "absPath">): DocevalsError | undefined {
+  const format = markupFormat(page.absPath);
+  if (format === undefined) return undefined;
+  return new DocevalsError(
+    `${page.file} is ${format}, so its evals live in a manifest. Give its collection an externalMetadata entry that owns evals.`,
+  );
 }
 
 /** What `offer` reports back while it asks. */

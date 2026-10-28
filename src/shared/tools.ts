@@ -56,6 +56,20 @@ export interface ClaudeCliToolConfig {
   mcpConfig?: string;
 }
 
+/** MadCap Flare's settings under `tools.flare` (proposal 0125). */
+export interface FlareToolConfig {
+  /**
+   * The target whose conditions and variable overrides apply, in every
+   * domain. Unset means the project's only target, else none.
+   */
+  target?: string;
+  /**
+   * The folder holding `madbuild.exe`, as written, relative to
+   * `manni.config.yaml`. Unset means the `madbuild` on PATH.
+   */
+  home?: string;
+}
+
 /** The synthetic user's turn limit when `tools.claude-cli.maxTurns` is unset. */
 export const DEFAULT_CLAUDE_CLI_MAX_TURNS = 50;
 
@@ -65,10 +79,12 @@ export interface ToolsConfig {
   "dita-ot"?: DitaOtToolConfig;
   "doc-detective"?: DocDetectiveToolConfig;
   "claude-cli"?: ClaudeCliToolConfig;
+  flare?: FlareToolConfig;
 }
 
-const TOOL_KEYS = ["vale", "dita-ot", "doc-detective", "claude-cli"] as const;
+const TOOL_KEYS = ["vale", "dita-ot", "doc-detective", "claude-cli", "flare"] as const;
 const CLAUDE_CODE_KEYS = ["model", "maxTurns", "mcpConfig"] as const;
+const FLARE_KEYS = ["target", "home"] as const;
 
 function isMapping(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -125,10 +141,35 @@ export function parseTools(
   if (Object.hasOwn(raw, "claude-cli")) {
     tools["claude-cli"] = parseClaudeCode(raw["claude-cli"], source, toError);
   }
+  if (Object.hasOwn(raw, "flare")) {
+    tools.flare = parseFlare(raw["flare"], source, toError);
+  }
   return tools;
 }
 
-/** `tools.claude-cli`, the one namespace with more than one key. */
+/** `tools.flare`, two string keys. */
+function parseFlare(
+  raw: unknown,
+  source: string,
+  toError: (message: string) => Error,
+): FlareToolConfig {
+  if (!isMapping(raw)) {
+    throw toError(`${source}: tools.flare must be a mapping.`);
+  }
+  rejectUnknownKeys(raw, FLARE_KEYS, "tools.flare", source, toError);
+  const out: FlareToolConfig = {};
+  for (const key of FLARE_KEYS) {
+    if (!Object.hasOwn(raw, key)) continue;
+    const value = raw[key];
+    if (typeof value !== "string" || value.trim() === "") {
+      throw toError(`${source}: tools.flare.${key} must be a non-empty string.`);
+    }
+    out[key] = value;
+  }
+  return out;
+}
+
+/** `tools.claude-cli`, a namespace with keys of more than one type. */
 function parseClaudeCode(
   raw: unknown,
   source: string,
@@ -235,4 +276,15 @@ export function claudeCliMcpConfigPath(tools: ToolsConfig, configDir: string): s
   const config = tools["claude-cli"]?.mcpConfig;
   if (config === undefined) return undefined;
   return fromConfigDir(config, configDir);
+}
+
+/**
+ * The absolute path of the folder holding `madbuild.exe`, resolved against the
+ * directory of the config file that declared it. `undefined` when none is set,
+ * which means the `madbuild` on PATH.
+ */
+export function flareHome(tools: ToolsConfig, configDir: string): string | undefined {
+  const home = tools.flare?.home;
+  if (home === undefined) return undefined;
+  return fromConfigDir(home, configDir);
 }

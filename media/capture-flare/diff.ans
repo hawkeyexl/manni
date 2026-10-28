@@ -1,0 +1,8 @@
+[1mdiff --git a/Content/Topics/Configure.htm b/Content/Topics/Configure.htm[m
+[1mindex e45a073..ce3d324 100644[m
+[1m--- a/Content/Topics/Configure.htm[m
+[1m+++ b/Content/Topics/Configure.htm[m
+[36m@@ -3,2 +3,3 @@[m
+     <head>[m
+[32m+[m[32m        <meta name="description" content="How to set the widget's options." />[m
+         <title></title>[m

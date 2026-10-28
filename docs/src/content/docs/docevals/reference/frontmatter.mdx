@@ -5,7 +5,7 @@ type: reference
 audiences:
   - docs-engineers
   - schema-authors
-last-updated: 2026-10-23
+last-updated: 2026-10-28
 ---
 
 Eval declarations live in page frontmatter under three keys, validated against
@@ -100,6 +100,36 @@ Writers follow the same rule. `fill`, `generate` and `promote --write` put each 
 location says, so the page and the manifest never both hold it. See
 [Move an annotated corpus into a manifest](/manni/docevals/adopt/move-evals-to-a-manifest/).
 
+### HTML and XML pages
+
+docevals reads a page in every format [manni meta reads](/manni/meta/reference/formats/#formats).
+An HTML page's metadata is its `<head>`, and a DITA topic's is its `<prolog>`. A YAML block above
+either would break the markup, so an HTML or XML page keeps its evals in a manifest. A manifest
+beside each page is the simplest home:
+
+```yaml title="manni.config.yaml"
+collections:
+  - name: formats
+    paths:
+      - "Content/**/*.{htm,adoc,rst,dita}"
+    externalMetadata:
+      - file: "{page}.meta.yaml"
+        keys: [evals, eval-suite, eval-skip, meta-provenance]
+```
+
+```yaml title="Content/topic.meta.yaml"
+Content/topic.htm:
+  evals:
+    - id: no-markers
+      assertion: The page carries no draft markers.
+      grader: tool:regex
+      options: { pattern: "DRAFT", match: not-contains }
+```
+
+`fill`, `generate` and `promote --write` write into that manifest. With no manifest that owns
+`evals`, they refuse rather than write a YAML block onto markup. A `<meta name="evals">` tag
+written by hand is read like any other meta tag.
+
 ### The refusals
 
 | When | Reported as | Exit |
@@ -107,6 +137,7 @@ location says, so the page and the manifest never both hold it. See
 | A page carries a key its manifest owns | page error | `1` |
 | A URL manifest owns `evals`, `eval-suite` or `eval-skip` | operational error | `2` |
 | Two of a page's collections both keep one of those keys in a manifest | operational error | `2` |
+| `fill`, `generate` or `promote --write` would write evals onto an HTML or XML page | operational error | `2` |
 
 Two declarations of what to check have no tiebreak, so the first is an error rather than a
 preference:
@@ -115,7 +146,7 @@ preference:
 error docs/install.md:4 "evals" is owned by manifest site.metadata.yaml (collection site); remove it from the document
 ```
 
-The other two stop the run before any page is graded. docevals writes eval keys where manni meta
+The next two stop the run before any page is graded. docevals writes eval keys where manni meta
 only reads them, so a home it cannot write to is refused rather than worked around:
 
 ```console
@@ -128,6 +159,16 @@ $ echo $?
 ```console
 $ manni docevals run
 manni: docs/install.md is in collections site and guides, and both keep evals in a manifest.
+$ echo $?
+2
+```
+
+The last one names the page's format, `HTML` or `XML`. `fill` refuses before it asks a model, so
+every file stays as it was:
+
+```console
+$ manni docevals fill Content/topic.htm
+manni: Content/topic.htm is HTML, so its evals live in a manifest. Give its collection an externalMetadata entry that owns evals.
 $ echo $?
 2
 ```
@@ -180,7 +221,7 @@ focus, it has a target.
 
 | Value | What the grader receives |
 |---|---|
-| `body` (default) | The page after its frontmatter block, byte for byte. MDX imports and components stay in. |
+| `body` (default) | The page after its metadata, byte for byte. Each format ends its metadata in its own place, listed below. |
 | `raw` | The file verbatim, frontmatter included. |
 | `frontmatter` | The page's metadata alone, written back out as YAML. That is the frontmatter block plus every key a manifest supplies. The fences and any comments are not included, so use `raw` for the literal text. |
 | `{source: file, path: <rel>}` | A companion file, resolved against the page's directory. |
@@ -197,6 +238,42 @@ evals:
 The two differ on a corpus that keeps its evals in a manifest. `frontmatter` is what the tool read,
 manifest values included, so a grader sees the same metadata wherever it lives. `raw` is the bytes on
 disk, so a key the manifest owns is absent from it.
+
+| Format | `body` starts after |
+|---|---|
+| Markdown, MDX | The frontmatter block. MDX imports and components stay in. |
+| AsciiDoc, reStructuredText | The fenced frontmatter block, when the page has one. A native header stays in. |
+| HTML | `</head>`. |
+| XML | `</prolog>` in a DITA topic, `</topicmeta>` in a DITA map, and otherwise the root start tag. |
+
+On HTML and XML, `body` is cut from the file, so a deterministic grader reports the file's own line
+numbers. In the fixture `test/docevals/fixtures/formats/`, each page's marker sits on the line the
+finding names:
+
+```console
+$ manni docevals run --deterministic-only
+Content/concept.dita
+  FAIL no-todo  Content/concept.meta.yaml:3
+       error:8 [regex/found] …
+Content/guide.adoc
+  FAIL no-todo  Content/guide.meta.yaml:3
+       error:6 [regex/found] …
+Content/notes.rst
+  FAIL no-todo  Content/notes.meta.yaml:3
+       error:8 [regex/found] …
+Content/topic.htm
+  FAIL no-todo  Content/topic.meta.yaml:3
+       error:10 [regex/found] …
+
+Suites
+  default: 0/4 passed — 0% vs target 100% below target
+$ echo $?
+1
+```
+
+The judge reads an HTML or XML `body` as text. It drops the tags and keeps the section titles and
+their content in order. A Flare topic reads as its target builds it, as
+[the Flare guide](/manni/family/flare/#grade-the-topics-with-docevals) shows.
 
 A target that cannot be read is an **error**, not a quiet fall back to the page body. A verdict
 about the wrong bytes is worse than no verdict. A companion path may not be absolute and may not
@@ -334,3 +411,11 @@ import { docevals } from "@hawkeyexl/manni";
 const { frontmatterSchema, FRONTMATTER_SCHEMA_ID } = docevals;
 // FRONTMATTER_SCHEMA_ID is "manni:evals:1.0.0"
 ```
+
+{/* Verified by Doc Detective in docs-as-tests (.github/workflows/docs-as-tests.yml). Config: .doc-detective.json. */}
+
+{/* step {"description":"docevals finds the HTML, DITA, AsciiDoc and reStructuredText pages, each with its evals in a manifest.","runShell":{"command":"manni docevals run --deterministic-only","workingDirectory":"test/docevals/fixtures/formats","exitCodes":[1],"stdio":"default: 0/4 passed"}} */}
+
+{/* step {"description":"A deterministic finding on an HTML page names the file's own line.","runShell":{"command":"manni docevals run Content/topic.htm --deterministic-only","workingDirectory":"test/docevals/fixtures/formats","exitCodes":[1],"stdio":"error:10 [regex/found]"}} */}
+
+{/* step {"description":"fill refuses to write evals onto an HTML page with no manifest to hold them.","runShell":{"command":"manni docevals fill Content/topic.htm --no-config","workingDirectory":"test/docevals/fixtures/formats","exitCodes":[2],"stdio":"is HTML, so its evals live in a manifest"}} */}

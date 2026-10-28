@@ -19,6 +19,7 @@ import {
   EVALS_KEY,
   EvalWriter,
   manifestEvalList,
+  markupRefusal,
   updateManifestEval,
   type WriteHome,
 } from "../core/write-location.js";
@@ -177,6 +178,9 @@ export function makeGenerateScripts(deps: ScriptgenDeps): GenerateFn {
           refusals.push({ file: page.file, evalName: ev.name, message: home.message });
           continue;
         }
+        // The command reference cannot go onto markup (proposal 0125).
+        const markup = home.kind === "page" ? markupRefusal(page) : undefined;
+        if (markup !== undefined) throw markup;
       }
 
       if (provider === undefined) {

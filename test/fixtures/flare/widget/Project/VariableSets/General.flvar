@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CatapultVariableSet>
+  <Variable Name="ProductVersion" Comment="" EvaluatedDefinition="4.2">4.2</Variable>
+</CatapultVariableSet>

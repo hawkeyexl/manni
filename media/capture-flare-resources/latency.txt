@@ -1,0 +1,7 @@
+term 0 449ms
+get 0 314ms
+undefined 1 434ms
+validate 1 382ms
+timing1 term 408ms get 304ms undefined 431ms validate 347ms
+timing2 term 416ms get 302ms undefined 449ms validate 340ms
+timing3 term 436ms get 292ms undefined 405ms validate 325ms

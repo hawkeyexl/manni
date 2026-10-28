@@ -22,6 +22,7 @@ import {
   documentBase,
   documentSetPatterns,
   noInputMessage,
+  parseContexts,
   resolveDocumentSet,
   routesFrom,
   STDIN,
@@ -311,6 +312,7 @@ export async function runFill(opts: FillOptions = {}): Promise<FillReport> {
   const analyzeOptions = {
     routes: routesFrom(config, base),
     ...(format === undefined ? {} : { format }),
+    context: parseContexts(config, base),
   };
 
   // Identity (for cache keys) is resolvable without constructing the provider;
@@ -501,6 +503,7 @@ export async function runFill(opts: FillOptions = {}): Promise<FillReport> {
             inline,
             ...(format === undefined ? {} : { format }),
             inputs: new Set([...files, STDIN_PATH]),
+            context: analyzeOptions.context,
           },
         )
       : undefined;

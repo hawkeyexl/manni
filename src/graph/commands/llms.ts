@@ -13,7 +13,7 @@ import { loadSiteConfig } from "../../site/core/config.js";
 import { detectFramework } from "../../site/core/detect.js";
 import { analyzeDoc } from "../core/analyze.js";
 import type { GraphConfig, RouteMapping } from "../core/config.js";
-import { documentBase, routesFrom } from "../core/discover.js";
+import { documentBase, parseContexts, routesFrom } from "../core/discover.js";
 import { openMetaView, withExternalMetadata, type MetaViewSource } from "../core/external.js";
 import { deliveredFields } from "../core/graph-output.js";
 import { STDIN_PATH } from "../core/iri.js";
@@ -27,8 +27,8 @@ import { GraphError } from "../types.js";
 /** The file's name, beside the graph or in `graph publish --out`. */
 export const LLMS_FILENAME = "llms.txt";
 
-/** How a framework spells a page's URL: `/a/b/`, `/a/b`, or `/a/b.html`. */
-export type UrlStyle = "slash" | "bare" | "html";
+/** How a framework spells a page's URL: `/a/b/`, `/a/b`, `/a/b.html`, or Flare's `/a/b.htm`. */
+export type UrlStyle = "slash" | "bare" | "html" | "htm";
 
 const BARE = new Set(["Docusaurus", "Nextra", "Fumadocs", "Mintlify", "Fern"]);
 const HTML = new Set(["VitePress", "Rspress", "Sphinx", "Jekyll"]);
@@ -37,6 +37,7 @@ const HTML = new Set(["VitePress", "Rspress", "Sphinx", "Jekyll"]);
 export function urlStyle(framework: string | null): UrlStyle {
   if (framework !== null && BARE.has(framework)) return "bare";
   if (framework !== null && HTML.has(framework)) return "html";
+  if (framework === "Flare") return "htm";
   return "slash";
 }
 
@@ -57,7 +58,7 @@ export function routeOf(path: string, routes: readonly RouteMapping[], style: Ur
   const joined = `/${parts.join("/")}`;
   if (index || parts.length === 0) return style === "bare" ? joined : `${joined === "/" ? "" : joined}/`;
   if (style === "slash") return `${joined}/`;
-  return style === "html" ? `${joined}.html` : joined;
+  return style === "bare" ? joined : `${joined}.${style}`;
 }
 
 /** One line of the file. */
@@ -126,7 +127,7 @@ export async function exportLlms(opts: LlmsOptions): Promise<{ pages: number; wa
   const paths = pages.map((p) => p.path);
   const view = await openMetaView(opts.source, cwd, paths, sources);
   const models = await withExternalMetadata(
-    await Promise.all(pages.map((p) => analyzeDoc(p.content, p.path, new Set(paths), { routes }))),
+    await Promise.all(pages.map((p) => analyzeDoc(p.content, p.path, new Set(paths), { routes, context: parseContexts(config, sources) }))),
     view,
   );
 

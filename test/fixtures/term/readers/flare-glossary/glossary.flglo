@@ -1,0 +1,58 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<CatapultGlossary>
+  <GlossaryEntry
+    glossTerm="Glossary.Term0"
+    TermClass="Popup"
+    Stem=""
+    IgnoreCase="false">
+    <Terms>
+      <Term>CDC</Term>
+      <Term>Change data capture</Term>
+    </Terms>
+    <Definition
+      Link="">Captures each change made to a database.</Definition>
+  </GlossaryEntry>
+  <GlossaryEntry>
+    <Terms>
+      <Term>Object manager</Term>
+    </Terms>
+    <Definition>A tool that views and edits a database.</Definition>
+  </GlossaryEntry>
+  <!-- A topic definition. The text is left in to prove the link wins over it. -->
+  <GlossaryEntry
+    glossTerm="Glossary.Term2"
+    TermClass="Popup"
+    Stem=""
+    IgnoreCase="false">
+    <Terms>
+      <Term>Replication</Term>
+    </Terms>
+    <Definition
+      Link="/Content/Topics/Replication.htm">Copies data between servers.</Definition>
+  </GlossaryEntry>
+  <GlossaryEntry
+    glossTerm="Glossary.Term3"
+    TermClass="Popup"
+    Stem=""
+    IgnoreCase="false"
+    conditions="Default.PrintOnly">
+    <Terms>
+      <Term>Print margin</Term>
+    </Terms>
+    <Definition
+      Link="">The white space around a printed page.</Definition>
+  </GlossaryEntry>
+  <GlossaryEntry
+    glossTerm="Glossary.Term4"
+    TermClass="Popup"
+    Stem=""
+    IgnoreCase="false">
+    <Terms>
+      <Term>IMDG</Term>
+    </Terms>
+    <Definition
+      Link="">In-Memory Data Grid.
+A distributed    store that keeps
+	data in memory.  </Definition>
+  </GlossaryEntry>
+</CatapultGlossary>

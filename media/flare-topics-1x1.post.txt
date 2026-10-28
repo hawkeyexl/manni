@@ -1,0 +1,11 @@
+Your help is in MadCap Flare. Your docs checks were built for Markdown. Pointing one at the other used to break things.
+
+manni now reads and writes Flare topics safely.
+
+Flare leaves <title> empty and shows the first heading instead. manni reads it the same way, so only the fields that are really missing fail validation.
+
+Writes close their tags. Here manni meta query adds a description, and the new <meta ... /> closes itself, so the topic is still well-formed XML. A write that would break the XML is refused.
+
+MadCap:xref is a link now. manni graph stats --check finds the misspelled Configur.htm and exits 1, so CI catches it before your readers do.
+
+#techcomm #madcapflare #technicalwriting #docsascode

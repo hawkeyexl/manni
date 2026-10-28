@@ -132,9 +132,9 @@ docs/src/content/docs/meta/schemas/field-location.mdx:
         integrity: sha256-cdf9f72d15760ddc8ef42a076541221895484de6bf2e8a029006f04553c66b78
       source:
         file: src/meta/commands/query.ts
-        lines: 3146-3150
+        lines: 3153-3157
         integrity: sha256-498f7cd21ff8c8eaa06a5d124edf0e84232822f01e60078f49037a8a18baf7d3
-        commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
+        commit-sha: 343ef71848c2fa541f41eb5f993e18b5dd9c0c17
     - id: keys-are-per-collection
       claim:
         integrity: sha256-2af7623b88a73d6c3b90872aec898d8f117cdcc3f4b515795866d9a4b5a1425f

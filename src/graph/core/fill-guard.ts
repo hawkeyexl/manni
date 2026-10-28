@@ -18,6 +18,7 @@ import {
 } from "./analyze.js";
 import type { DeriveSource, GraphConfig } from "./config.js";
 import { deriveGraph, type Quad } from "./derive.js";
+import { parseContexts } from "./discover.js";
 import { writeGraphFields } from "./frontmatter-edit.js";
 import { validateGraph, type CheckFinding } from "./shacl.js";
 import { byCodeUnit } from "./sort.js";
@@ -123,10 +124,13 @@ export class FillGuard {
       inline = new Map<string, string>(),
       format,
       inputs = new Set<string>(),
+      context = parseContexts(config, cwd),
     }: {
       inline?: ReadonlyMap<string, string>;
       format?: DocFormat;
       inputs?: ReadonlySet<string>;
+      /** Each page's parse context; the run's own, so Flare says each thing once. */
+      context?: AnalyzeOptions["context"];
     } = {},
   ): Promise<FillGuard> {
     const sources = config.build.derive.filter((s) =>
@@ -137,6 +141,7 @@ export class FillGuard {
       new Set(all),
       {
         routes: config.routes,
+        context,
         ...(format === undefined ? {} : { format }),
       },
       config.baseIri,
@@ -144,7 +149,7 @@ export class FillGuard {
       shapesPaths,
       force,
     );
-    const byExtension: AnalyzeOptions = { routes: config.routes };
+    const byExtension: AnalyzeOptions = { routes: config.routes, context };
     for (const path of all) {
       try {
         guard.models.set(

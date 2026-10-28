@@ -15,15 +15,15 @@
  */
 import { execFile } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { basename, join, resolve } from "node:path";
+import { basename, extname, join, resolve } from "node:path";
 import { promisify } from "node:util";
 import { runCheck } from "../../cite/index.js";
 import type { CitationResult, PageCitationReport } from "../../cite/types.js";
-import { integrityOf, runDerive } from "../../meta/index.js";
+import { integrityOf, runDerive, supportedExtensions } from "../../meta/index.js";
 import { errorMessage } from "../../shared/errors.js";
 import { analyzeDoc, formatOf, isTreeFormat } from "../core/analyze.js";
 import type { GraphConfig } from "../core/config.js";
-import { documentBase, routesFrom } from "../core/discover.js";
+import { documentBase, parseContexts, routesFrom } from "../core/discover.js";
 import { emitJsonLd } from "../core/emit-jsonld.js";
 import { openMetaView, withExternalMetadata, type MetaViewSource } from "../core/external.js";
 import { CONFIGURED_EVALS_LEFT_OUT, deliveredFields, userFacing } from "../core/graph-output.js";
@@ -57,6 +57,7 @@ import { GraphIndex } from "../runtime/graph.js";
 import { withholds } from "../runtime/retrieve.js";
 import { documentSectionOrder, sectionLines, sectionOccurrences } from "../runtime/resolve.js";
 import { GraphError, type DocModel } from "../types.js";
+import type { ParseContext } from "../../lint/types.js";
 import { bodyOf, sectionSpans } from "./questions.js";
 
 const run = promisify(execFile);
@@ -139,9 +140,10 @@ export async function exportChunks(opts: ChunksOptions): Promise<ChunksResult> {
   // What `build` reads: each page's own model, its manifests merged in.
   const allPaths = new Set(pages.map((p) => p.path));
   const routes = routesFrom(config, sources);
+  const context = parseContexts(config, sources);
   const view = await openMetaView(opts.source, cwd, [...allPaths], sources);
   let models = await withExternalMetadata(
-    await Promise.all(pages.map((p) => analyzeDoc(p.content, p.path, allPaths, { routes }))),
+    await Promise.all(pages.map((p) => analyzeDoc(p.content, p.path, allPaths, { routes, context }))),
     view,
   );
   // Without author-facing content (proposal 0110), a strategy record is no
@@ -173,9 +175,13 @@ export async function exportChunks(opts: ChunksOptions): Promise<ChunksResult> {
   const worktree = git.commit === null ? null : git.dirty.size > 0 ? "modified" : "clean";
 
   const metadataByPage = new Map(models.map((m) => [m.path, m.frontmatter]));
+  // cite and derive read a page through meta, so a format meta does not read,
+  // a Flare TOC, carries no pins and no dates (proposal 0125).
+  const metaExtensions = new Set(supportedExtensions());
+  const metaPaths = paths.filter((p) => metaExtensions.has(extname(p).toLowerCase()));
   // Pins and eval verdicts are author-facing: a run without them reads neither.
-  const pins = authoring ? await pinsByPage(opts, sources, paths, metadataByPage) : new Map<string, Pin[]>();
-  const dates = await datesByPage(opts, sources, paths, git.commit !== null, authoring ? undefined : metadataByPage);
+  const pins = authoring ? await pinsByPage(opts, sources, metaPaths, metadataByPage) : new Map<string, Pin[]>();
+  const dates = await datesByPage(opts, sources, metaPaths, git.commit !== null, authoring ? undefined : metadataByPage);
   const evals = authoring ? readEvals(opts, sources, pages, warnings) : undefined;
   if (opts.evals === undefined) warnings.push("no docevals report is configured, so records carry no eval verdicts.");
   else if (!authoring) warnings.push(CONFIGURED_EVALS_LEFT_OUT);
@@ -231,7 +237,7 @@ export async function exportChunks(opts: ChunksOptions): Promise<ChunksResult> {
         .map((b) => ({ lines: `${String(b.start)}-${String(b.end)}`, status: b.status, data: b.data })),
     });
 
-    for (const passage of await passagesOf(graph, page, model, bodyLine, language, metadata, bySection)) {
+    for (const passage of await passagesOf(graph, page, model, bodyLine, language, metadata, bySection, context(page.path))) {
       const vector = vectors?.byId.get(passage.id);
       rows.push({
         id: passage.id,
@@ -313,7 +319,11 @@ function languageOf(graph: GraphIndex, doc: string): string {
   return tag === undefined ? UNDETERMINED : canonicalLanguageTag(tag);
 }
 
-/** A document's passage, then each section's, in document order. */
+/**
+ * A document's passage, then each section's, in document order. A passage's
+ * text is its source lines, except a Flare topic's, which is its resolved
+ * text with the source lines as its span (proposal 0125, decision 13).
+ */
 async function passagesOf(
   graph: GraphIndex,
   page: { doc: string; path: string; content: string },
@@ -322,41 +332,50 @@ async function passagesOf(
   language: string,
   metadata: Record<string, unknown>,
   bySection: ReadonlyMap<string, Record<string, unknown>[]>,
+  context: ParseContext | undefined,
 ): Promise<Passage[]> {
   const out: Passage[] = [];
   const fileLines = page.content.split(/\r?\n/);
   const body = fileLines.slice(bodyLine - 1).join("\n").trimEnd();
-  if (body.trim() !== "") {
+  const sections = documentSectionOrder(graph, page.doc);
+  const format = formatOf(page.path, model.format);
+  const tree = isTreeFormat(format)
+    ? await sectionSpans(graph, page.doc, page.path, page.content, sections, context)
+    : undefined;
+  const text = tree?.text ?? body;
+  if (text.trim() !== "") {
     out.push({
       id: page.doc,
       page: page.path,
       start: 1,
       end: body.split("\n").length,
       title: graph.literal(page.doc, TITLE) ?? page.path,
-      text: body,
+      text,
       language,
       metadata,
     });
   }
 
-  const sections = documentSectionOrder(graph, page.doc);
-  const spans = new Map<string, { start: number; end: number }>();
-  const format = formatOf(page.path, model.format);
-  if (isTreeFormat(format)) {
+  const spans = new Map<string, { start: number; end: number; text?: string }>();
+  if (tree !== undefined) {
     // A tree section's own span, widened over the sections nested in it: the
     // ones after it of a deeper level, up to the next of its own or higher.
-    const own = new Map((await sectionSpans(graph, page.doc, page.path, page.content, sections)).map((s) => [s.iri, s.span]));
+    // A resolved section's text widens with it.
+    const own = new Map(tree.spans.map((s) => [s.iri, s]));
     const levels = sections.map((iri) => Number.parseInt(graph.literal(iri, LEVEL) ?? "", 10));
     for (const [i, iri] of sections.entries()) {
       const span = own.get(iri);
       if (span === undefined) continue;
-      let end = span.end;
+      let end = span.span.end;
+      const texts = span.text === undefined ? undefined : [span.text];
       for (let j = i + 1; j < sections.length; j++) {
         const level = levels[j] ?? Number.NaN;
         if (!(level > (levels[i] ?? Number.NaN))) break;
-        end = Math.max(end, own.get(sections[j] ?? "")?.end ?? end);
+        const nested = own.get(sections[j] ?? "");
+        end = Math.max(end, nested?.span.end ?? end);
+        if (nested?.text !== undefined) texts?.push(nested.text);
       }
-      spans.set(iri, { start: span.start, end });
+      spans.set(iri, { start: span.span.start, end, ...(texts === undefined ? {} : { text: texts.join("\n\n") }) });
     }
   } else {
     const occurrences = sectionOccurrences(graph, page.doc);
@@ -373,7 +392,7 @@ async function passagesOf(
   for (const iri of sections) {
     const span = spans.get(iri);
     if (span === undefined || span.start < bodyLine) continue;
-    const text = fileLines.slice(span.start - 1, span.end).join("\n").trimEnd();
+    const text = span.text ?? fileLines.slice(span.start - 1, span.end).join("\n").trimEnd();
     if (text === "") continue;
     // The page's fields, then each heading statement from the outermost
     // section down to this one: the nearest wins, field by field.
@@ -389,7 +408,7 @@ async function passagesOf(
       id: iri,
       page: page.path,
       start: span.start - bodyLine + 1,
-      end: span.start - bodyLine + text.split("\n").length,
+      end: span.text === undefined ? span.start - bodyLine + text.split("\n").length : span.end - bodyLine + 1,
       title: graph.literal(iri, TITLE) ?? iri,
       text,
       language,

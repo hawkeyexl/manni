@@ -1,0 +1,13 @@
+Using manni.config.yaml (.)
+[36m▸[39m [1mContent/Topics/Install.htm[22m
+    [2m·[22m flare                [2mWidget.flprj, target HTML5 (tools.flare.target)[22m
+    [32m→[39m cli                  [1mtgdp:how-to:1.6[22m  [2m--template[22m
+    [2malignment[22m
+      (page)                 ← "Installing the widget"
+        overview               ← (missing)
+        before-you-start       ← "Before you start"
+        task                   ← "Steps"
+          sub-task               ← (none)
+        see-also               ← (missing)
+
+1 file, 1 routed, 0 unrouted

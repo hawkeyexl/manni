@@ -5,7 +5,7 @@ type: reference
 audiences:
   - docs-engineers
   - ci-engineers
-last-updated: 2026-10-23
+last-updated: 2026-10-28
 ---
 
 Every key, verified against `src/docevals/core/config-schema.json` and the defaults applied in
@@ -71,6 +71,10 @@ docevals:
   collection, or the ones `--collection <name>` names. A collection's `paths` and `exclude` resolve
   from the config file's directory, so a run from a subdirectory reads the same pages.
 - Positional paths replace the collections for that run and resolve from the working directory.
+- A page is a file in any format [manni meta reads](/manni/meta/reference/formats/#formats).
+  That covers Markdown, MDX, HTML, XML, AsciiDoc and reStructuredText. A matched file in any other
+  format is not read. An HTML or XML page keeps its evals in a
+  [manifest](/manni/docevals/reference/frontmatter/#html-and-xml-pages).
 - `node_modules` and `.git` are never read, whichever of the two supplied the pages.
 - A file whose `type:` is `audience`, `persona` or `journey` is a
   [strategy record](/manni/strategy/), not a page, and is never read. A journey's own `evals:` are

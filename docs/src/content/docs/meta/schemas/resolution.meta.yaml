@@ -95,8 +95,11 @@ docs/src/content/docs/meta/schemas/resolution.mdx:
       lines: 128-132
       integrity: sha256-fcc8384241c12333e2cd742e2564330dacc198bec8040196e31de0aa0b5d72a9
     - generated-by: Claude Opus 4.8
-      lines: 135-146
-      integrity: sha256-223dde51d975f2000ae3c87caaecae6a2e92d844781872295df5274a66c6cbec
+      lines: 135-139
+      integrity: sha256-ca08e4d7956d672ec697f88cef3d4ba4d3c12ee25b2870e612cfcd3f1b7e297a
+    - generated-by: Claude Opus 4.8
+      lines: 142-146
+      integrity: sha256-3c0b5f200ea24fab86f49083190d8946e3b14fc4586f7dafb68df69481131b80
     - generated-by: Claude Opus 5
       lines: 148
       integrity: sha256-b5176ce65932843a58cca5516596edc8e9721587ef0111b612569eecedfb7e16

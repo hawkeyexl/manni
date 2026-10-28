@@ -1,6 +1,6 @@
 # 0077: graph reads every format lint parses
 
-- **Status:** Proposed
+- **Status:** Proposed; superseded in part by [0125](0125-madcap-flare-projects.md)
 - **Serves:** Maya · M18, "See the docset as a graph, and find what nothing
   links to". M19, "See what a change to one page affects before making it".
   M20, "Fill the categorization nobody wrote". Each for a docset that is not

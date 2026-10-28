@@ -62,6 +62,33 @@ describe("html links and ids", () => {
     expect(targets(tree)).toEqual([]);
   });
 
+  it("skips a Flare variable reference as a link target, and keeps it on a plain page", () => {
+    const body =
+      `<p><a href="[%=Links.Whats New%]">new</a> <MadCap:xref href="a[%=V.x%].htm">x</MadCap:xref></p>\n` +
+      `<MadCap:snippetBlock src="[%=V.snip%]" /><p><a href="kept.htm">k</a></p>\n`;
+    const flare =
+      `<?xml version="1.0" encoding="utf-8"?>\n` +
+      `<html xmlns:MadCap="http://www.madcapsoftware.com/Schemas/MadCap.xsd"><head /><body>\n${body}</body></html>\n`;
+    expect(targets(htmlParser.parse(flare, "topic.htm"))).toEqual(["kept.htm"]);
+    expect(targets(parse(`<p><a href="[%=Links.Whats New%]">new</a></p>`))).toEqual([
+      "[%=Links.Whats New%]",
+    ]);
+  });
+
+  it("collects MadCap xref hrefs and snippet srcs, in document order, positioned on their elements", () => {
+    const page =
+      `<?xml version="1.0" encoding="utf-8"?>\n` +
+      `<html xmlns:MadCap="http://www.madcapsoftware.com/schemas/madcap.xsd"><head><title /></head><body>\n` +
+      `<h1>T</h1><p>See <MadCap:xref href="b.htm#x">B</MadCap:xref>.</p>\n` +
+      `<MadCap:snippetBlock src="../Snippets/s.flsnp" />\n` +
+      `<p><MadCap:snippetText src="t.flsnp" /> and <a href="c.htm">c</a></p>\n` +
+      `</body></html>\n`;
+    const tree = htmlParser.parse(page, "topic.htm");
+    expect(targets(tree)).toEqual(["b.htm#x", "../Snippets/s.flsnp", "t.flsnp", "c.htm"]);
+    const starts = ["<MadCap:xref", "<MadCap:snippetBlock", "<MadCap:snippetText", '<a href="c.htm"'];
+    expect(tree.links.map((l) => l.position.start.offset)).toEqual(starts.map((t) => page.indexOf(t)));
+  });
+
   it("drops a heading's self-permalink but keeps other links in the heading", () => {
     const tree = parse(
       `<h2 id="install">Install <a href="#install">¶</a> <a href="#other">o</a></h2>`,

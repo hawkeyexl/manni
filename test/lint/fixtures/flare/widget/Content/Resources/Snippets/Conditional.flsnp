@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<html xmlns:MadCap="http://www.madcapsoftware.com/Schemas/MadCap.xsd">
+  <head />
+  <body>
+    <p MadCap:conditions="Default.Beta">Beta only.</p>
+    <p>Version <MadCap:variable name="General.ProductVersion" />.</p>
+  </body>
+</html>

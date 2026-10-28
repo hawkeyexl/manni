@@ -54,12 +54,15 @@ const XSD_STRING = `${NS.xsd}string`;
 const MEDIA_TYPES: Readonly<Record<string, string>> = {
   ".html": "text/html",
   ".htm": "text/html",
+  ".flsnp": "text/html",
   ".adoc": "text/asciidoc",
   ".asciidoc": "text/asciidoc",
   ".rst": "text/x-rst",
   ".dita": "application/dita+xml",
   ".ditamap": "application/dita+xml",
   ".xml": "application/xml",
+  ".fltoc": "application/xml",
+  ".flbrs": "application/xml",
 };
 
 function mediaTypeOf(path: string): string {

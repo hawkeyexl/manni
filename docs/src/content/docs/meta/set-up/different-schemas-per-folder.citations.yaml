@@ -212,9 +212,9 @@ docs/src/content/docs/meta/set-up/different-schemas-per-folder.mdx:
         integrity: sha256-33b7d220fbb317999d1bc6c7e5cae7c21e9697b66f9048d2354997007c74ad80
       source:
         file: src/meta/commands/query.ts
-        lines: 901-908
+        lines: 902-909
         integrity: sha256-90378bbac350e5d84bde1556a1ff841a6bda832f689a1f352d09b1c81940eff6
-        commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
+        commit-sha: 343ef71848c2fa541f41eb5f993e18b5dd9c0c17
     - id: overrides-map-subsets-to-schema-sets
       claim:
         integrity: sha256-c086334f56dd9720988769337b78525574929fb7b4ec1043b13a16b071e08219

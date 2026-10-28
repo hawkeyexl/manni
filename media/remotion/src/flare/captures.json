@@ -1,0 +1,14 @@
+{
+  "grep title": "        <title></title>\n        <h1>Configuring the widget</h1>\n",
+  "grep xref": "            <li>See <MadCap:xref href=\"Configur.htm\">Configuring the widget</MadCap:xref>.</li>\n",
+  "get": "Using manni.config.yaml (.)\n\u001b[2mContent/Topics/Configure.htm:\u001b[22m title=Configuring the widget\u001b[2m (asserted)\u001b[22m\n",
+  "validate": "Using manni.config.yaml (.)\n\u001b[32m✓\u001b[39m Content/Resources/Snippets/BeforeYouStart.flsnp\n\u001b[31m✗\u001b[39m Content/Topics/Configure.htm\n    \u001b[36m(root)\u001b[39m  must have required property 'description'\u001b[2m  (line 1)\u001b[22m  \u001b[2m[manni:core:1.0.0]\u001b[22m\n      \u001b[2mmanni:core:1.0.0 description: One full non-empty sentence saying what the page is for.\u001b[22m\n      \u001b[2mGuide: https://hawkeyexl.github.io/manni/meta/reference/schemas/manni-core/\u001b[22m\n\u001b[32m✓\u001b[39m Content/Topics/Install.htm\n\n\u001b[31m3 files checked, 2 passed, 1 failed, 1 error\u001b[39m\n",
+  "query": "Using manni.config.yaml (.)\n\u001b[2mContent/Topics/Configure.htm:\u001b[22m description: (unset) -> How to set the widget's options.\n\u001b[32m✓ 1 change across 1 file — written\u001b[39m\n",
+  "diff": "\u001b[1mdiff --git a/Content/Topics/Configure.htm b/Content/Topics/Configure.htm\u001b[m\n\u001b[1mindex e45a073..ce3d324 100644\u001b[m\n\u001b[1m--- a/Content/Topics/Configure.htm\u001b[m\n\u001b[1m+++ b/Content/Topics/Configure.htm\u001b[m\n\u001b[36m@@ -3,2 +3,3 @@\u001b[m\n     <head>\u001b[m\n\u001b[32m+\u001b[m\u001b[32m        <meta name=\"description\" content=\"How to set the widget's options.\" />\u001b[m\n         <title></title>\u001b[m\n",
+  "build": "Wrote C:\\flare\\graph\\graph.ttl (3 docs, 88 triples, 0 concepts)\n",
+  "grep stats": "Broken internal links (1):\n  Content/Topics/Install.htm -> Configur.htm\n",
+  "exits": {
+    "validate": "1",
+    "stats": "1"
+  }
+}

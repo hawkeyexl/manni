@@ -6,8 +6,8 @@ docs/src/content/docs/meta/ci/recipes.mdx:
       source:
         file: .pre-commit-hooks.yaml
         lines: 29
-        integrity: sha256-f74d9657e270288b5051d5c5f141abd1bec045b47a14accc36e64e82072dc2c4
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        integrity: sha256-8efd20feacace80578eeb53ee2dbfaa7574bf2559d99656cbd7901fcede356a1
+        commit-sha: d026fc24b63e04e7f747de4ccb3374c5c20557e0
     - id: hook-entry-runs-the-latest-cli
       claim:
         integrity: sha256-0e27eb9c9be3617eb464c72f3ca66164bef43e6766b3881506e99d9333b62cba
@@ -22,8 +22,8 @@ docs/src/content/docs/meta/ci/recipes.mdx:
       source:
         file: .pre-commit-hooks.yaml
         lines: 37-42
-        integrity: sha256-64bb05927342700c14e3ac71b973aebc558a072df28bd97c18d2826b96693cf1
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        integrity: sha256-122465a60934d167a32a1889a9490fa58c19557253e2fe41e5dabc2998adcdcb
+        commit-sha: d026fc24b63e04e7f747de4ccb3374c5c20557e0
     - id: junit-one-test-per-file
       claim:
         integrity: sha256-6f2863da42771090048d19388af3f1634b8f93c1e0250c7ef53a459c511cfffb
@@ -99,5 +99,5 @@ docs/src/content/docs/meta/ci/recipes.mdx:
       source:
         file: .pre-commit-hooks.yaml
         lines: 57-62
-        integrity: sha256-4b50062244217ee8e33835618a67c13fe6c7636841aa1d283edb879bd674f333
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        integrity: sha256-ba081c27ad6233a2be935979ad7e62c373d9262960f6fadf78ec10cba3fba432
+        commit-sha: d026fc24b63e04e7f747de4ccb3374c5c20557e0

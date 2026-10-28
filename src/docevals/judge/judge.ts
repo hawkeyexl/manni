@@ -36,6 +36,9 @@ import {
 import { splitBody } from "../core/split.js";
 import { readTarget } from "../core/target.js";
 import { selfPreferenceOf } from "./self-preference.js";
+import { pageText } from "./page-text.js";
+import { markupFormat } from "../core/discover.js";
+import { flareRun, type FlareRun } from "../../shared/flare/index.js";
 import {
   announceSelection,
   assertProviderSelection,
@@ -139,6 +142,9 @@ export function makeJudge(deps: JudgeStageDeps): JudgeFn {
     const reviews = loadReviews(root);
     const maxTurns = options.maxTurns ?? config.judge.maxTurns;
     let turnsSpent = 0;
+    // One per judged run, so each Flare project is read once. `flareRun`
+    // takes a missing `tools`, which an exported `makeJudge` caller may send.
+    let flare: FlareRun | undefined;
 
     const results: EvalResult[] = [];
     // `makeJudge` is a published export taking a caller-supplied config, so a
@@ -215,6 +221,29 @@ export function makeJudge(deps: JudgeStageDeps): JudgeFn {
         };
       }
 
+      // An HTML or XML body is the page's source, which is what deterministic
+      // graders count lines in. The judge reads its text instead, tags dropped
+      // and a Flare topic resolved, and `cleanBody`, which strips MDX, stays
+      // off it (proposal 0125, decision 21). Every other page is read as it
+      // always was, so its prompt and cache key are unchanged.
+      const asText = selected.label === "body" && markupFormat(plan.page.absPath) !== undefined;
+      let text = selected.text;
+      if (asText) {
+        try {
+          text = await pageText(plan.page, (flare ??= flareRun(config.tools)));
+        } catch (e) {
+          return {
+            evalName: ev.name,
+            type: ev.type,
+            grader: ev.grader,
+            file: plan.page.file,
+            outcome: "error",
+            skipReason: `the page could not be read as text: ${errorMessage(e)}`,
+            durationMs: Date.now() - start,
+          };
+        }
+      }
+
       // A page longer than the chunk budget is read in parts: each part
       // contributes the passages bearing on the assertion, and one judge then
       // answers the original question against the collection. Merging
@@ -222,8 +251,8 @@ export function makeJudge(deps: JudgeStageDeps): JudgeFn {
       //
       // Content that fits skips this entirely and is judged exactly as before,
       // so the common path costs nothing and its cached verdicts stay valid.
-      const chunks = splitBody(selected.text, chunkChars);
-      let judged = selected.text;
+      const chunks = splitBody(text, chunkChars);
+      let judged = text;
       let judgedLabel = selected.label;
 
       // The key is built from what was *selected*, never from the evidence.
@@ -236,7 +265,7 @@ export function makeJudge(deps: JudgeStageDeps): JudgeFn {
         judgeProvider.modelName(),
         runsPerEval,
         temperature,
-        judgeCacheBody(chunkChars, selected.text),
+        judgeCacheBody(chunkChars, text),
         ev,
         ev.readers?.section,
       );
@@ -324,7 +353,7 @@ export function makeJudge(deps: JudgeStageDeps): JudgeFn {
         system: JUDGE_SYSTEM_PROMPT,
         // Readers enter only this final call. Evidence gathering above quotes
         // what bears on the assertion, whoever reads it (proposal 0111).
-        user: buildUserContent(ev, judged, judgedLabel, ev.readers?.section),
+        user: buildUserContent(ev, judged, judgedLabel, ev.readers?.section, !asText),
         runs: runsPerEval,
         temperature,
         schema: verdictSchema,

@@ -1,0 +1,7 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<CatapultMetaTagSet Comment="Meta Tag Set" name="Topics" desc="The meta tags every topic carries.">
+    <meta name="description" content="" type="Text" desc="Description meta tag" />
+    <meta name="Status" content="Draft" type="Enum" enum="Draft,Reviewed,Published" desc="Where the topic is in review." />
+    <meta name="Products" content="" type="Enum" enum="Widget Pro, C++ SDK,A.B,,(beta)|x" />
+    <meta name="Owner" content="" type="Person" />
+</CatapultMetaTagSet>
