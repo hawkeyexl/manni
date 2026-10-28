@@ -10,7 +10,7 @@ language: en
 audiences: ["docs-engineers", "ci-engineers"]
 intent: "Check the topics and snippets of a MadCap Flare project kept in Git, and gate them in CI on a runner with no Flare install."
 lifecycle: published
-applies-to: ["domain:meta", "domain:lint", "domain:graph", "domain:term", "domain:family"]
+applies-to: ["domain:meta", "domain:lint", "domain:graph", "domain:term", "domain:docevals", "domain:family"]
 prerequisites: ["meta-reference-configuration"]
 next-steps: ["family-check", "graph-get-started"]
 sample-questions: ["Can manni validate the metadata in a MadCap Flare project?", "Why does manni read an empty Flare title as the topic's first heading?", "How do I find a broken MadCap cross-reference or snippet include with manni?", "Which Flare target does manni resolve conditions and variables against?", "Can manni check a MadCap Flare glossary as a termbase?"]
@@ -549,6 +549,39 @@ schema change that would write it exits `2` too.
 manni: <ref> is not a Flare meta tag set: its root element is <name>.
 manni: <ref> is a Flare meta tag set, which manni reads and never writes.
 ```
+
+## Grade the topics with docevals
+
+[`manni docevals`](/manni/docevals/) grades a Flare project's topics as it
+grades any page. A topic's metadata is HTML, with no room for a YAML block,
+so its evals live in a manifest. One `{page}.meta.yaml` beside each topic
+holds them.
+
+```yaml title="manni.config.yaml"
+collections:
+  - name: help
+    paths:
+      - "Content/**/*.htm"
+      - "Content/Resources/Snippets/*.flsnp"
+      - "Project/TOCs/*.fltoc"
+      - "Project/Glossaries/*.flglo"
+    externalMetadata:
+      - file: "{page}.meta.yaml"
+        keys: [evals, eval-suite, eval-skip, meta-provenance]
+```
+
+```yaml title="Content/Topics/Install.meta.yaml"
+Content/Topics/Install.htm:
+  evals:
+    - Every step names the command it runs.
+```
+
+A deterministic grader reads the topic's source, so its line numbers are the
+file's. The judge reads the topic as text, with its variables, snippets and
+conditions resolved against [the target](#pick-the-target). `docevals fill`
+writes its proposals into the manifest. The
+[frontmatter reference](/manni/docevals/reference/frontmatter/#html-and-xml-pages)
+has the rules.
 
 ## Run it in CI
 
