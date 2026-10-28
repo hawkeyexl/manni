@@ -99,6 +99,8 @@ export function applyHtml(
         "<meta name=" + DQ + name + DQ + " content=" + DQ +
           escapeAttr(emitScalar(key, value), DQ) + DQ + tagEnd,
       );
+    } else if (source.kind === "marker") {
+      throw new DocmetaError(markerRefusal(key, options.filePath ?? "the page"));
     } else if (source.kind === "meta") {
       edits.push(metaEdit(content, source.el, key, emitScalar(key, value)));
       moved.add(source.el);
@@ -148,6 +150,16 @@ export function applyHtml(
   // none to remove. When there was, it is the single character at `original[0]`,
   // put back in front of the spliced text.
   return content === original ? next : original.slice(0, 1) + next;
+}
+
+/** The Flare markers each marker-read key comes from, as the refusal names them. */
+const MARKERS: Record<string, string> = {
+  keywords: "MadCap:keyword and MadCap:concept",
+};
+
+/** Why a key read from Flare's markers is not written (0125, decision 16). */
+function markerRefusal(key: string, file: string): string {
+  return `Refusing to write "${key}": ${file} reads them from its ${MARKERS[key] ?? "MadCap"} markers. Edit the markers in Flare.`;
 }
 
 /** A `<head` start tag, looked for in the source with its comments removed. */
@@ -465,10 +477,7 @@ function verify(
   const expected: Record<string, unknown> = { ...before.data, ...patch };
   for (const [key, source] of before.sources) {
     if (key in patch) continue;
-    const els =
-      source.kind === "element-text" || source.kind === "element-attr"
-        ? source.els
-        : [source.el];
+    const els = "els" in source ? source.els : [source.el];
     if (els.some((el: Element) => moved.has(el))) expected[key] = actual[key];
   }
   // An empty <title> lifts no `head.title`, so filling it adds that key. It

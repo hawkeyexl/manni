@@ -813,6 +813,61 @@ describe("html extractor: a Flare topic's title (0125)", () => {
   });
 });
 
+describe("html extractor: a Flare topic's index keywords (0125)", () => {
+  const FLARE_NS = "http://www.madcapsoftware.com/Schemas/MadCap.xsd";
+  const topic = (head: string, body: string): string =>
+    `<?xml version="1.0" encoding="utf-8"?>\n<html xmlns:MadCap="${FLARE_NS}">\n<head>${head}</head>\n<body>${body}</body>\n</html>\n`;
+
+  it("reads index keyword and concept markers, in head and body, as keywords", () => {
+    const r = htmlExtractor.extract(
+      topic(
+        '<MadCap:keyword term="install" />',
+        '<h1>T</h1><p>A <MadCap:concept term="setup;  ; Analysis:project" /> b.</p><MadCap:keyword term="install;Time\\:out;setup;Setup" />',
+      ),
+      "a.htm",
+    );
+    // Split on `;`, trimmed, empties dropped; a subentry stays one keyword;
+    // `\:` is a literal colon; deduplicated exactly, first occurrence first.
+    expect(r.data.keywords).toEqual(["install", "setup", "Analysis:project", "Time:out", "Setup"]);
+    expect(r.data.title).toBe("T");
+  });
+
+  it("keeps the text after a self-closed marker in its paragraph", () => {
+    const r = htmlExtractor.extract(
+      topic("", '<p>Before <MadCap:keyword term="a;b" /> after.</p><h2>Next</h2>'),
+      "a.htm",
+    );
+    expect(r.data.keywords).toEqual(["a", "b"]);
+    // The paragraph did not swallow the heading, so it is still the first one.
+    expect(r.data.title).toBe("Next");
+  });
+
+  it("points keywords at the first marker", () => {
+    const r = htmlExtractor.extract(
+      topic("", '\n<p>x</p>\n  <p><MadCap:keyword term="a" /></p>\n<MadCap:keyword term="b" />'),
+      "a.htm",
+    );
+    expect(r.lineFor("/keywords")).toBe(6);
+    expect(r.colFor?.("/keywords")).toBe(6);
+  });
+
+  it("lets a keywords meta tag win over the markers", () => {
+    const r = htmlExtractor.extract(
+      topic('<meta name="keywords" content="written" />', '<MadCap:keyword term="marker" />'),
+      "a.htm",
+    );
+    expect(r.data.keywords).toBe("written");
+  });
+
+  it("reads no keywords from marker-like elements on a page that is not a Flare topic", () => {
+    const r = htmlExtractor.extract(
+      '<?xml version="1.0"?>\n<html xmlns:MadCap="urn:other"><head></head><body><MadCap:keyword term="a" /></body></html>',
+      "a.htm",
+    );
+    expect(r.data.keywords).toBeUndefined();
+  });
+});
+
 describe("extractor registry", () => {
   it("resolves markdown by extension", () => {
     expect(extractorForExtension(".md")?.name).toBe("markdown");

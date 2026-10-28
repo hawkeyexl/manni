@@ -33,7 +33,13 @@ export type HtmlSource =
    */
   | { kind: "element-text"; els: Element[] }
   /** A value read from an element's attribute — `<link href=…>`. */
-  | { kind: "element-attr"; els: Element[]; name: string };
+  | { kind: "element-attr"; els: Element[]; name: string }
+  /**
+   * A value Flare builds from markers in the topic, `MadCap:keyword` and the
+   * rest (proposal 0125, decision 16). A write cannot aim at it: the value is
+   * every marker's terms together, and the markers are Flare's to edit.
+   */
+  | { kind: "marker"; els: Element[] };
 
 export interface HtmlRead {
   data: Record<string, unknown>;
@@ -179,6 +185,25 @@ function flareTitle(
   return stem === "" ? undefined : stem;
 }
 
+/** The index markers whose `term` values are a Flare topic's `keywords`. parse5 lowercases names. */
+const KEYWORD_MARKERS = new Set(["madcap:keyword", "madcap:concept"]);
+
+/**
+ * The keywords a run of index markers names (0125, decision 16): each `term`
+ * split on `;`, trimmed, empties dropped, `\:` read as a colon, and the first
+ * of any repeat kept. A subentry `A:B` is one keyword, as written.
+ */
+function markerKeywords(els: Element[]): string[] {
+  const out = new Set<string>();
+  for (const el of els) {
+    for (const piece of (attrValue(el, "term") ?? "").split(";")) {
+      const keyword = piece.trim().replace(/\\:/g, ":");
+      if (keyword !== "") out.add(keyword);
+    }
+  }
+  return [...out];
+}
+
 /** Every element a config path selects, walked down the child axis. */
 function matchHtmlPath(
   doc: DefaultTreeAdapterMap["document"],
@@ -238,6 +263,7 @@ export function readHtml(
   const colMap = new Map<string, number>();
   const sources = new Map<string, HtmlSource>();
   let head: Element | undefined;
+  const keywordMarkers: Element[] = [];
   // The document node has no location; anchor the root pointer at 1:1.
   lineMap.set("", 1);
   colMap.set("", 1);
@@ -290,6 +316,8 @@ export function readHtml(
               : location?.startCol;
           setKey(key, typeValue(value), { kind: "meta", el: node }, line, col);
         }
+      } else if (KEYWORD_MARKERS.has(node.tagName)) {
+        keywordMarkers.push(node);
       }
       // Same guard, same node, nothing between that could change the answer:
       // recursion belongs inside the one check rather than behind a second.
@@ -311,6 +339,15 @@ export function readHtml(
   if (untitled && isFlare(body)) {
     const title = flareTitle(doc, options?.filePath);
     if (title !== undefined) data.title = title;
+  }
+
+  // A Flare topic's index markers are its keywords, unless the page writes a
+  // <meta name="keywords"> of its own (0125, decision 16). Set before config
+  // paths, so one naming `keywords` cannot overwrite them.
+  const keywords = markerKeywords(keywordMarkers);
+  if (data.keywords === undefined && keywords.length > 0 && isFlare(body)) {
+    const first = keywordMarkers[0]?.sourceCodeLocation;
+    setKey("keywords", keywords, { kind: "marker", els: keywordMarkers }, first?.startLine, first?.startCol);
   }
 
   // Element-derived metadata, lifted from `<head>` only. The body is prose, and

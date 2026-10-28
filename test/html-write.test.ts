@@ -444,6 +444,45 @@ describe("applyHtml — an XHTML page (0125)", () => {
     expect(read(out).type).toBe("concept");
   });
 
+  describe("keywords read from index markers", () => {
+    const page = (head: string): string =>
+      `<?xml version="1.0" encoding="utf-8"?>\n<html xmlns:MadCap="${FLARE_NS}">\n<head>\n<title>T</title>${head}\n</head>\n<body><p>Install <MadCap:keyword term="install;setup" /> it.</p><MadCap:concept term="Setup" /></body>\n</html>\n`;
+
+    it("refuses a write to them, naming the file or the page", () => {
+      const src = page("");
+      expect(read(src).keywords).toEqual(["install", "setup", "Setup"]);
+      for (const [filePath, file] of [
+        ["Content/Topics/Install.htm", "Content/Topics/Install.htm"],
+        [undefined, "the page"],
+      ] as const) {
+        let error: unknown;
+        try {
+          applyHtml(src, { keywords: ["x"] }, filePath === undefined ? {} : { filePath });
+        } catch (e) {
+          error = e;
+        }
+        expect(error).toBeInstanceOf(DocmetaError);
+        expect((error as DocmetaError).message).toBe(
+          `Refusing to write "keywords": ${file} reads them from its MadCap:keyword and MadCap:concept markers. Edit the markers in Flare.`,
+        );
+      }
+    });
+
+    it("writes another key and leaves the markers alone", () => {
+      const src = page("");
+      const out = applyHtml(src, { type: "concept" }, { filePath: "a.htm" });
+      expect(out).toBe(src.replace("<head>", '<head>\n<meta name="type" content="concept" />'));
+      expect(read(out)).toMatchObject({ type: "concept", keywords: ["install", "setup", "Setup"] });
+    });
+
+    it("writes keywords a meta tag holds, as on any page", () => {
+      const src = page('\n<meta name="keywords" content="old" />');
+      const out = applyHtml(src, { keywords: "new" }, { filePath: "a.htm" });
+      expect(out).toBe(src.replace('content="old"', 'content="new"'));
+      expect(read(out).keywords).toBe("new");
+    });
+  });
+
   it("writes a plain HTML page exactly as before", () => {
     const content = fx("head-with-meta.html");
     const out = applyHtml(content, { audience: "developer" });
