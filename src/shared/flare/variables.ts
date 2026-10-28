@@ -20,7 +20,8 @@ export interface FlareVariable {
 /** Set name to variable name to variable. */
 export type VariableSets = Map<string, Map<string, FlareVariable>>;
 
-const REFERENCE = /\[%=([^%\]]+)%\]/g;
+/** A `[%=Set.Name%]` reference, as Flare writes one in text and attributes. */
+export const VARIABLE_REFERENCE = /\[%=([^%\]]+)%\]/g;
 
 export function readVariableSets(projectRoot: string): VariableSets {
   const sets: VariableSets = new Map();
@@ -100,7 +101,7 @@ function substitute(
   overrides: ReadonlyMap<string, string> | undefined,
   seen: ReadonlySet<string>,
 ): string {
-  return text.replace(REFERENCE, (reference, raw: string) => {
+  return text.replace(VARIABLE_REFERENCE, (reference, raw: string) => {
     const name = raw.trim();
     if (seen.has(name)) return reference;
     return resolve(sets, name, overrides, seen) ?? reference;

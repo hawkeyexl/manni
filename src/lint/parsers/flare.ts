@@ -26,6 +26,7 @@ import {
   parseConditionTags,
   resolveText,
   resolveVariable,
+  VARIABLE_REFERENCE,
 } from "../../shared/flare/index.js";
 import { parseXhtml } from "../../shared/xhtml.js";
 import type { DocumentTree } from "../types.js";
@@ -65,8 +66,6 @@ interface Topic {
   project: FlareProject | undefined;
   title: string | undefined;
 }
-
-const REFERENCE = /\[%=([^%\]]+)%\]/g;
 
 /** parse5 lowercases the prefixed names Flare writes. */
 const SNIPPETS = new Set(["madcap:snippetblock", "madcap:snippettext"]);
@@ -196,7 +195,7 @@ function resolveIn(parent: ParentNode, scope: Scope, topic: Topic): void {
     if (defaultTreeAdapter.isTextNode(child)) {
       if (project !== undefined && child.value.includes("[%=")) {
         child.value = child.value.replace(
-          REFERENCE,
+          VARIABLE_REFERENCE,
           (reference, raw: string) => valueOf(raw.trim(), scope, topic, project) ?? reference,
         );
       }
@@ -268,6 +267,9 @@ function expand(parent: ParentNode, ref: Element, src: string, scope: Scope, top
       chain: [...scope.chain, abs],
       filters: expression === undefined ? scope.filters : [...scope.filters, expression],
       overrides: new Map([...scope.overrides, ...snippetVariables(attrOf(ref, "madcap:snippetvariables"))]),
+      // The topic root's expression is every reference's fallback, nested
+      // ones included, so it travels with the scope.
+      ...(scope.snippetDefault === undefined ? {} : { snippetDefault: scope.snippetDefault }),
     },
     topic,
   );

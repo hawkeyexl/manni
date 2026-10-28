@@ -475,7 +475,9 @@ async function lintOne(
   // Anchor anything said about the frontmatter at the frontmatter.
   const metaPosition = tree.frontmatterPosition ?? origin();
 
-  // The target does not build this topic, so there is nothing to check.
+  // The target does not build this topic, so there is nothing to check. Only a
+  // target can exclude a page, so `excluded` implies one; the second test
+  // narrows its type for the message.
   const target = tree.flare?.target;
   if (tree.flare?.excluded && target !== undefined) {
     return withResolution(

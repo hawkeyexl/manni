@@ -85,6 +85,11 @@ describe("snippets", () => {
     expect(texts(defined(find(tree.sections, "Root")))).toEqual(["Version 4.3."]);
   });
 
+  it("filters a snippet nested in a snippet by the root's expression, when neither reference carries one", () => {
+    const tree = read(join(TOPICS, "Snippets.htm"), "HTML5");
+    expect(texts(defined(find(tree.sections, "Nested")))).toEqual(["Version 4.3."]);
+  });
+
   it("inserts a text snippet's inline content", () => {
     const tree = read(join(TOPICS, "Snippets.htm"), "HTML5");
     expect(texts(defined(find(tree.sections, "Inline")))).toEqual(["Name: Widget."]);
