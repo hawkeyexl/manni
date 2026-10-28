@@ -1,0 +1,16 @@
+WEBVTT
+
+NOTE Silent video. Cues are the on-screen step captions; the terminal text is in the transcript.
+
+1
+00:00:00.000 --> 00:00:08.767
+Four formats, four TODOs: DITA, AsciiDoc, RST and HTML, each with a TODO.
+
+2
+00:00:08.767 --> 00:00:15.200
+The eval sits beside the page: Markup takes no YAML block. A manifest holds it.
+
+3
+00:00:15.200 --> 00:00:25.600
+docevals grades every format: Each finding names the page's own line. Exit 1.
+

@@ -1,0 +1,4 @@
+run 1 621ms
+timing1 run 681ms
+timing2 run 603ms
+timing3 run 605ms
