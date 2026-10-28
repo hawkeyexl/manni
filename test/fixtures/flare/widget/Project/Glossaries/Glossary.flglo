@@ -1,0 +1,38 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<CatapultGlossary>
+  <GlossaryEntry
+    glossTerm="Glossary.Term0"
+    TermClass="Popup"
+    Stem=""
+    IgnoreCase="false">
+    <Terms>
+      <Term>widget</Term>
+      <Term>gadget</Term>
+    </Terms>
+    <Definition
+      Link="">The device this help covers.</Definition>
+  </GlossaryEntry>
+  <GlossaryEntry
+    glossTerm="Glossary.Term1"
+    TermClass="Popup"
+    Stem=""
+    IgnoreCase="false">
+    <Terms>
+      <Term>node version</Term>
+    </Terms>
+    <Definition
+      Link="">The release of Node that runs the widget.</Definition>
+  </GlossaryEntry>
+  <GlossaryEntry
+    glossTerm="Glossary.Term2"
+    TermClass="Popup"
+    Stem=""
+    IgnoreCase="false"
+    conditions="Default.PrintOnly">
+    <Terms>
+      <Term>print margin</Term>
+    </Terms>
+    <Definition
+      Link="">The white space around a printed page.</Definition>
+  </GlossaryEntry>
+</CatapultGlossary>

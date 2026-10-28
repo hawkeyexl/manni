@@ -27,7 +27,7 @@ sample-questions:
 graph:
   label: Create your manni.config.yaml
   type: task
-last-updated: 2026-10-04
+last-updated: 2026-10-28
 tags:
   - configuration
   - yaml
@@ -198,6 +198,8 @@ A schema reference can be one of three kinds:
 
 - A **built-in id** in `vendor:name:version` form, such as `google:okf:0.1`.
 - A **local file path** to a `.json` schema, such as `./schemas/article.json`.
+  A path to a MadCap Flare meta tag set, a `.flmeta` file, reads as a schema
+  too.
 - An **`http(s)` URL** to a remotely hosted schema.
 
 The default set is eleven built-in schemas, and it applies whether or not you list any. [`google:okf:0.1`](/manni/meta/schemas/) requires a `type` field. `passo-uno:seven-action:1.0` constrains `action` and requires nothing. The nine [manni vocabularies](/manni/meta/reference/schemas/manni-vocabularies/) follow, and `manni:core:1.0.0` among them requires `title` and `description`. Your `schemas` come after them. Set `defaults: false` to judge files by your `schemas` alone:

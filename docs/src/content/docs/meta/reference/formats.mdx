@@ -391,10 +391,17 @@ and snippets do both. Nothing in the config declares it.
   `<meta name="keywords">` in the page wins over the markers.
 - **Marker keywords are written in Flare.** A write to `keywords` read from
   markers is refused with exit `2`, and the file is untouched.
+- **A MadCap Flare page reads its glossary term references as `concepts`.**
+  The `glossTerm` of each `<MadCap:glossaryTerm>` marker joins the list, as
+  written, in document order and deduplicated. A `<meta name="concepts">` in
+  the page wins over the markers.
+- **Marker concepts are written in Flare.** A write to `concepts` read from
+  markers is refused with exit `2`, and the file is untouched.
 
 ```text
 Refusing to write "<key>": the result would not be well-formed XML (<parser message>). <file> is unchanged.
 Refusing to write "keywords": <file> reads them from its MadCap:keyword and MadCap:concept markers. Edit the markers in Flare.
+Refusing to write "concepts": <file> reads them from its MadCap:glossaryTerm markers. Edit the markers in Flare.
 ```
 
 [Check a MadCap Flare project](/manni/family/flare/) walks a Flare project

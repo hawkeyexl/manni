@@ -2,7 +2,7 @@ docs/src/content/docs/meta/reference/formats.mdx:
   citations:
     - id: formats-coerced-types-are-what-a-schema-sees
       claim:
-        lines: 383-386
+        lines: 390-393
         integrity: sha256-7e85cca69b2f8608c7364df3531ae4260274855520b8948325345d3c3ed2e8eb
       source:
         file: src/meta/extractors/xml.ts
@@ -35,7 +35,7 @@ docs/src/content/docs/meta/reference/formats.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: formats-coercion-table
       claim:
-        lines: 363-365
+        lines: 370-372
         integrity: sha256-42aff26e1e421ea565a92980bd5f99718a2be90478d4cc363aa76d0e609ef7bc
       source:
         file: src/meta/extractors/rst.ts
@@ -55,9 +55,9 @@ docs/src/content/docs/meta/reference/formats.mdx:
         integrity: sha256-b0853fc112a8eb2917509f69586171edeb5b88d55f70cf595c2c37db3b9780b8
       source:
         file: src/meta/extractors/html-write.ts
-        lines: 263-298
+        lines: 264-299
         integrity: sha256-5c3ad99d495f6d7771c83061b832041df2945484ed8d5b0cad7ad86fdaa3d9e4
-        commit-sha: 38731a33a1767d7e05639dc4144ad9d1d339f625
+        commit-sha: 343ef71848c2fa541f41eb5f993e18b5dd9c0c17
     - id: formats-html-parsing-never-throws
       claim:
         integrity: sha256-6fc781531a2e1fdd4af7705bb51fe68bbfd532e0ee945d4ceabbda23d80a9c20
@@ -90,18 +90,18 @@ docs/src/content/docs/meta/reference/formats.mdx:
         integrity: sha256-13d82f00eccb49649eb45958df2000de01f29c678ebb20d56ce373cbd12d06a1
       source:
         file: src/meta/extractors/html-read.ts
-        lines: 300-303
+        lines: 318-321
         integrity: sha256-a92e2c737679a8fc44c7a92ceb450df2810d532f848e307ed8cbf4685a63a02e
-        commit-sha: 38731a33a1767d7e05639dc4144ad9d1d339f625
+        commit-sha: 343ef71848c2fa541f41eb5f993e18b5dd9c0c17
     - id: formats-first-title-wins-verbatim
       claim:
         lines: 286-287
         integrity: sha256-a2257f3b2656b64904a096d5f6121a8f38a2b407176635271583978b3d1b0c18
       source:
         file: src/meta/extractors/html-read.ts
-        lines: 291-298
+        lines: 309-316
         integrity: sha256-b1143db6b08ecffae2c7a74e29ba956ad6df1910970b386dc7c1bf5d5ebf5ef2
-        commit-sha: 38731a33a1767d7e05639dc4144ad9d1d339f625
+        commit-sha: 343ef71848c2fa541f41eb5f993e18b5dd9c0c17
     - id: formats-three-ways-a-file-counts-as-dita
       claim:
         integrity: sha256-c35aa4a012527cb4fcb74e6a31ef2036da7f4a642152091d50c0714c5a7b3fdf
