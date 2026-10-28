@@ -12,6 +12,7 @@ import {
   readConfigFileSync,
   type ConfigFileOptions,
 } from "../../shared/config-file.js";
+import type { ToolsConfig } from "../../shared/tools.js";
 import { SiteError } from "../errors.js";
 import type { Verb } from "../types.js";
 
@@ -25,6 +26,8 @@ export interface SiteConfig {
   afterBuild: boolean;
   /** The family file's `collections:`, for the local `url:` port and path. */
   collections: CollectionConfig[];
+  /** The family file's `tools:`: Flare's target and madbuild's folder. */
+  tools: ToolsConfig;
   /** Directory of the config file; `null` when none was found. */
   configDir: string | null;
 }
@@ -46,10 +49,11 @@ export function loadSiteConfig(cwd: string, configPath?: string): SiteConfig {
     configPath === undefined
       ? findConfigFileSync(cwd, CONFIG_FILE)
       : readConfigFileSync(configPath, cwd, CONFIG_FILE);
-  if (file === null) return { commands: {}, afterBuild: false, collections: [], configDir: null };
+  if (file === null) return { commands: {}, afterBuild: false, collections: [], tools: {}, configDir: null };
   return {
     ...parseSiteConfig(file.value, file.source, file.dir),
     collections: file.collections,
+    tools: file.tools,
     configDir: file.dir,
   };
 }

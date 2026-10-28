@@ -1,0 +1,15 @@
+{
+  "ls": "Content  Project  Widget.flprj  manni.config.yaml  schemas\n",
+  "tail config": "tools:\n  flare:\n    target: HTML5\n",
+  "build": {
+    "announce": "manni: Flare in ./. Running madbuild -project Widget.flprj -target HTML5\n",
+    "standin": "stand-in madbuild: built HTML5 into Output/maya/HTML5\n"
+  },
+  "preview": "http://127.0.0.1:4321/\n",
+  "curl": "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<html xmlns=\"http://www.w3.org/1999/xhtml\">\n  <head><title>Stand-in build</title></head>\n",
+  "start": "manni: Flare has no development server. Run manni site build, then manni site preview.\n",
+  "exits": {
+    "build": "0",
+    "start": "2"
+  }
+}

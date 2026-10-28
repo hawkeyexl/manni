@@ -26,7 +26,7 @@ related-pages: ["a11y-ci", "meta-reference-configuration"]
 risks: ["idempotent"]
 sample-questions: ["How do I run the docs site locally without knowing its framework?", "Which port does manni site preview serve on?", "How do I run a framework manni does not detect?"]
 graph: { label: "manni site", type: concept }
-last-updated: 2026-10-21
+last-updated: 2026-10-28
 tags:
   - docs-site
   - dev-server
@@ -109,8 +109,8 @@ both and asks for an override.
 ## Which command runs
 
 manni detects Mintlify, Fern, Starlight, Docusaurus, VitePress, Nextra,
-Fumadocs, Rspress, MkDocs, Zensical, Sphinx, Hugo and Jekyll. The
-[framework table](/manni/site/reference/cli/#frameworks) has each one's
+Fumadocs, Rspress, MkDocs, Zensical, Sphinx, Hugo, Jekyll and MadCap Flare.
+The [framework table](/manni/site/reference/cli/#frameworks) has each one's
 marker, commands and default port.
 
 - **A Node framework** runs the project's own script when `package.json` has
@@ -120,11 +120,15 @@ marker, commands and default port.
 - **A Python tool** runs under `uv run` or `poetry run` when the project has a
   `uv.lock` or `poetry.lock`. Jekyll runs under `bundle exec`.
 - **A framework with no preview server of its own** writes a static directory.
-  MkDocs, Zensical, Sphinx, Hugo and Jekyll are in this group. `preview` serves
-  that directory with a small server built into manni, bound to `127.0.0.1`.
+  MkDocs, Zensical, Sphinx, Hugo, Jekyll and Flare are in this group.
+  `preview` serves that directory with a small server built into manni, bound
+  to `127.0.0.1`.
 
 Mintlify and Fern have no local build, so `manni site build` and
 `manni site preview` stop with exit `2` there. `manni site start` works.
+Flare is the reverse. It has no development server, so `start` exits `2`, and
+`preview` serves the last build. [Check a MadCap Flare project](/manni/family/flare/#build-and-preview-the-target)
+covers it.
 
 ## The port comes from the collection
 
