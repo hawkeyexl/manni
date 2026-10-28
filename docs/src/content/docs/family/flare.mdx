@@ -65,8 +65,9 @@ Project/Advanced/Topics.flmeta
 is misspelled `Configur.htm`. It names the variable `General.ProductVersion`,
 holds a paragraph conditioned `Default.PrintOnly`, and carries an index
 keyword marker. It marks one word as the glossary term `Glossary.Term0`, and
-sets the meta tag `Status` to `Reviewed`. `Configure.htm` has an empty `<title>`, as Flare writes it, and
-no description. The variable set defines `ProductVersion` as `4.2`. The
+sets the meta tag `Status` to `Reviewed`. `Configure.htm` has an empty
+`<title>`, as Flare writes it, and no description. The variable set defines
+`ProductVersion` as `4.2`. The
 `HTML5` target excludes `PrintOnly` content and sets `ProductVersion` to
 `4.3`. The `Print` target includes only `PrintOnly` content. The glossary
 defines `widget` and `node version`, plus one entry conditioned `PrintOnly`.
@@ -713,6 +714,7 @@ graph steps.
     Run with `npx doc-detective`. Config: .doc-detective.json. */}
 {/* test {"testId":"family-flare","description":"Validate a Flare project, build its graph, find the misspelled cross-reference, list a snippet's includers, read its glossary, and refuse the site steps that need Flare."} */}
 {/* step {"description":"meta validate fails Configure.htm on description alone, and passes the topic and the snippet.","runShell":{"command":"manni meta validate","workingDirectory":"test/fixtures/flare/widget","exitCodes":[1],"stdio":"3 files checked, 2 passed, 1 failed, 1 error"}} */}
+{/* step {"description":"A meta tag set is a schema: a mis-valued Enum tag fails, and the tag's desc is the guidance line.","runShell":{"command":"sed s/Reviewed/Reviewd/ Content/Topics/Install.htm | manni meta validate - --as html -s ./Project/Advanced/Topics.flmeta","workingDirectory":"test/fixtures/flare/widget","exitCodes":[1],"stdio":"Status: Where the topic is in review."}} */}
 {/* step {"description":"An empty Flare title reads as the topic's first heading.","runShell":{"command":"manni meta get title Content/Topics/Configure.htm","workingDirectory":"test/fixtures/flare/widget","exitCodes":[0],"stdio":"title=Configuring the widget"}} */}
 {/* step {"description":"graph build reads the topics, the snippet and the TOC.","runShell":{"command":"manni graph build","workingDirectory":"test/fixtures/flare/widget","exitCodes":[0],"stdio":"/4 docs, \\d+ triples/"}} */}
 {/* step {"description":"stats --check finds the misspelled MadCap cross-reference and exits 1.","runShell":{"command":"manni graph stats --check","workingDirectory":"test/fixtures/flare/widget","exitCodes":[1],"stdio":"Content/Topics/Install.htm -> Configur.htm"}} */}
