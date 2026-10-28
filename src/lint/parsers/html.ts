@@ -835,12 +835,12 @@ function findHead(doc: DefaultTreeAdapterTypes.Document): Element | undefined {
 }
 
 /**
- * True when a Flare page's `<title>` is empty or missing. meta then reads the
- * page's title from its first heading or its file name, as Flare does. That
- * title is derived, not written, so it stands in for no H1.
+ * True when a Flare page's `<title>` is empty or missing; the caller checks
+ * that the page is Flare's. meta then reads the page's title from its first
+ * heading or its file name, as Flare does. That title is derived, not
+ * written, so it stands in for no H1.
  */
-function derivedFlareTitle(content: string, doc: DefaultTreeAdapterTypes.Document): boolean {
-  if (!isFlare(content)) return false;
+function derivedFlareTitle(doc: DefaultTreeAdapterTypes.Document): boolean {
   const head = findHead(doc);
   const title = head ? firstElementChild(head, "title") : undefined;
   return title === undefined || flatText(title) === "";
@@ -868,7 +868,7 @@ function parseHtml(content: string, filePath: string, context?: ParseContext): D
   // the sections come from a second, resolved parse, while the links above
   // stay what the file says (proposal 0125, decision 12).
   const view =
-    context?.flare !== undefined && isFlare(content)
+    context?.flare !== undefined && flare
       ? resolveFlare(
           content,
           filePath,
@@ -890,7 +890,7 @@ function parseHtml(content: string, filePath: string, context?: ParseContext): D
     sections: view?.flare?.excluded
       ? []
       : sectionize(
-          withMetadataTitle(fragments, derivedFlareTitle(content, doc) ? null : frontmatter, position),
+          withMetadataTitle(fragments, flare && derivedFlareTitle(doc) ? null : frontmatter, position),
           documentEnd(content),
         ),
     links,
