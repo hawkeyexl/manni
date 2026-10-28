@@ -195,11 +195,12 @@ describe("xml parser: vocabularies", () => {
     expect(first.children[1]).toMatchObject({ kind: "codeBlock", language: "go" });
   });
 
-  it("ships DITA, DocBook and DITA maps as the built-ins", () => {
+  it("ships DITA, DocBook, DITA maps and Flare TOCs as the built-ins", () => {
     expect(XML_VOCABULARIES.map((v) => v.name)).toEqual([
       "dita",
       "docbook",
       "ditamap",
+      "flare-toc",
     ]);
   });
 });
@@ -694,7 +695,7 @@ describe("xml parser: failure modes", () => {
     const xml = `<invoice><customer>Acme</customer><total>10</total></invoice>`;
     expect(() => parse(xml, "invoice.xml")).toThrow(LintError);
     expect(() => parse(xml, "invoice.xml")).toThrow(
-      /^invoice\.xml: no known XML vocabulary matched <invoice>\. manni lint understands DITA, DocBook[^;]*\.$/,
+      /^invoice\.xml: no known XML vocabulary matched <invoice>\. manni lint understands DITA, DocBook, DITA map, Flare TOC\.$/,
     );
     // Proposal 0125, decision 8: the reader is a user, so no path into src/.
     expect(() => parse(xml, "invoice.xml")).not.toThrow(/src\/|XML_VOCABULARIES/);
@@ -855,9 +856,10 @@ describe("xml parser: registry shape", () => {
     expect(xmlParser.name).toBe("xml");
     expect(xmlParser.label).toBe("XML");
     // `.dita` and `.ditamap` too: that is what a DITA topic and a DITA map are
-    // called on disk, and a docset of them would otherwise be walked past.
-    expect(xmlParser.extensions).toEqual([".xml", ".dita", ".ditamap"]);
-    expect(xmlParser.walkExtensions).toEqual([".dita", ".ditamap"]);
+    // called on disk, and a docset of them would otherwise be walked past. A
+    // Flare TOC and browse sequence are `.fltoc` and `.flbrs`.
+    expect(xmlParser.extensions).toEqual([".xml", ".dita", ".ditamap", ".fltoc", ".flbrs"]);
+    expect(xmlParser.walkExtensions).toEqual([".dita", ".ditamap", ".fltoc", ".flbrs"]);
   });
 
   it("declares exactly the kinds it emits", () => {

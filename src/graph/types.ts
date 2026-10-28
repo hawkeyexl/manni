@@ -103,6 +103,12 @@ export interface DocModel {
    */
   routeLanguage?: string;
   /**
+   * The `xml:lang` of the Flare project a page belongs to (proposal 0125,
+   * decision 10), as written. The page's own key and a route's language
+   * outrank it. Absent for a page in no project.
+   */
+  projectLanguage?: string;
+  /**
    * Lowercase sha256 hex digest of the document's UTF-8 content, as read —
    * line endings included, so it matches `sha256sum <file>` (ADR 01036).
    */

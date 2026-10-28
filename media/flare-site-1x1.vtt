@@ -1,0 +1,24 @@
+WEBVTT
+
+NOTE Silent video. Cues are the on-screen step captions; the terminal text is in the transcript.
+
+1
+00:00:00.000 --> 00:00:07.367
+A MadCap Flare project: A .flprj marks it. The config names the HTML5 target.
+
+2
+00:00:07.367 --> 00:00:14.167
+Build, with a stand-in madbuild: It runs madbuild. Here, a stand-in, not MadCap Flare.
+
+3
+00:00:14.167 --> 00:00:19.467
+manni site preview: It serves the last build. It does not build first.
+
+4
+00:00:19.467 --> 00:00:26.000
+Default.htm answers at /: In a second terminal, / is the stand-in's Default.htm.
+
+5
+00:00:26.000 --> 00:00:32.733
+No development server: site start names the two commands to run. Exit 2.
+

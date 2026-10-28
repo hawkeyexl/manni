@@ -1,0 +1,45 @@
+{
+  "terms": [
+    {
+      "id": "Glossary.Term0",
+      "line": 3,
+      "record": {
+        "label": "CDC",
+        "alt-labels": ["Change data capture"],
+        "definition": "Captures each change made to a database."
+      }
+    },
+    {
+      "id": "object-manager",
+      "line": 15,
+      "record": {
+        "label": "Object manager",
+        "definition": "A tool that views and edits a database."
+      }
+    },
+    {
+      "id": "Glossary.Term2",
+      "line": 22,
+      "record": {
+        "label": "Replication"
+      }
+    },
+    {
+      "id": "Glossary.Term3",
+      "line": 33,
+      "record": {
+        "label": "Print margin",
+        "definition": "The white space around a printed page."
+      }
+    },
+    {
+      "id": "Glossary.Term4",
+      "line": 45,
+      "record": {
+        "label": "IMDG",
+        "definition": "In-Memory Data Grid. A distributed store that keeps data in memory."
+      }
+    }
+  ],
+  "notices": []
+}

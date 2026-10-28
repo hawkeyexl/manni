@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CatapultToc Version="1">
+  <TocEntry Title="Tour">
+    <TocEntry Title="Install" Link="/Content/Topics/Install.htm" />
+    <TocEntry Title="Snippets" Link="/Content/Topics/Snippets.htm" />
+  </TocEntry>
+</CatapultToc>

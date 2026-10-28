@@ -4,49 +4,13 @@
  * the last step of `start` and `preview` is a server that runs until Ctrl-C.
  */
 import { spawn, type ChildProcess } from "node:child_process";
-import { accessSync, constants, statSync } from "node:fs";
-import { delimiter, resolve } from "node:path";
 import { launcherCommandLine } from "../../shared/batch-launcher.js";
+import { findOnPath } from "../../shared/find-on-path.js";
 import { notice } from "../../shared/warn.js";
 import { renderAnnotate, runAnnotate } from "../commands/annotate.js";
 import { SiteError } from "../errors.js";
 import type { Plan, PlannedStep, Step } from "../types.js";
 import { serveStatic } from "./static-server.js";
-
-function isExecutable(path: string): boolean {
-  try {
-    if (!statSync(path).isFile()) return false;
-    if (process.platform !== "win32") accessSync(path, constants.X_OK);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-/**
- * Where `name` resolves, the way the OS would find it: a name with a separator
- * against `cwd`, a bare one along PATH. On Windows a name without one of
- * PATHEXT's extensions is tried with each in turn, so `npm` finds `npm.cmd`.
- */
-function findOnPath(name: string, cwd: string): string | undefined {
-  const win = process.platform === "win32";
-  const exts = win
-    ? (process.env["PATHEXT"] ?? ".COM;.EXE;.BAT;.CMD").split(";").filter((e) => e !== "")
-    : [];
-  const lower = name.toLowerCase();
-  const names =
-    win && !exts.some((e) => lower.endsWith(e.toLowerCase())) ? exts.map((e) => name + e) : [name];
-  const dirs = /[\\/]/.test(name)
-    ? [cwd]
-    : (process.env["PATH"] ?? "").split(delimiter).filter((d) => d !== "");
-  for (const dir of dirs) {
-    for (const candidate of names) {
-      const path = resolve(dir, candidate);
-      if (isExecutable(path)) return path;
-    }
-  }
-  return undefined;
-}
 
 function startExec(planned: PlannedStep, step: Extract<Step, { kind: "exec" }>): ChildProcess {
   const [name, ...args] = step.argv;

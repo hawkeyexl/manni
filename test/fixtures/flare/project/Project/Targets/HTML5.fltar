@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CatapultTarget Version="2" Type="WebHelp2" conditions="Default.ScreenOnly" ConditionTagExpression="exclude[Default.PrintOnly]">
+  <Variables>
+    <Variable Name="General/ProductVersion">4.3</Variable>
+  </Variables>
+</CatapultTarget>

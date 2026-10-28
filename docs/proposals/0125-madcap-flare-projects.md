@@ -1,6 +1,6 @@
 # 0125: MadCap Flare projects
 
-- **Status:** Accepted
+- **Status:** Implemented (#257, #258, #259, #260, #261)
 - **Serves:** Five journeys, each for a docset kept in MadCap Flare.
   - Maya · M1, "Stand up metadata validation for my repo".
   - Maya · M10, "Hold every page to the shape its doctype promises".
@@ -246,7 +246,7 @@ A contributor sets the meta tag `Status` to `Reviewd`. The meta tag set lists
 ```console
 $ manni meta validate
 ✗ Content/Topics/Install.htm
-    /Status  must match pattern "^(Draft|Reviewed|Published)(,(Draft|Reviewed|Published))*$"  (line 7)  [./Project/Advanced/Topics.flmeta]
+    /Status  must match pattern "^((Draft|Reviewed|Published)(,(Draft|Reviewed|Published))*)?$"  (line 7)  [./Project/Advanced/Topics.flmeta]
       ./Project/Advanced/Topics.flmeta Status: Where the topic is in review.
 ```
 
@@ -433,7 +433,7 @@ to write a topic.
 
 19. **A glossary term reference is a `concepts:` reference.** meta's HTML
     reader reads each `<MadCap:glossaryTerm glossTerm>` as an entry of the page
-    field `concepts`. term's `dangling-reference` and graph's `dcterms:subject`
+    field `concepts`. term's `undefined-term` and graph's `dcterms:subject`
     then work as they do for any page. A write to `concepts` read from markers
     is refused with exit 2.
 
@@ -445,6 +445,8 @@ to write a topic.
     - A `Text` tag is a string. So is a tag of any other type.
     - An `Enum` tag, Flare's list type, matches one or more of its `enum`
       values joined by commas. Flare writes a multi-value list that way.
+      An empty value passes too, because Flare writes `content=""` for a
+      tag that is not set.
     - Nothing is required, because Flare requires nothing.
 
     manni reads a meta tag set and never writes one. A `meta query` schema
@@ -627,12 +629,16 @@ skipped: target <name> excludes the page by its conditions
 # Part 3, exit 2
 Refusing to write "concepts": <file> reads them from its MadCap:glossaryTerm markers. Edit the markers in Flare.
 <path> is not a Flare meta tag set: its root element is <name>.
+<path>: is not a Flare glossary: its root element is <name>, not <CatapultGlossary>.
+<path>: could not be read as a Flare glossary.
 <path> is a Flare meta tag set, which manni reads and never writes.
 <file> is HTML, so its evals live in a manifest. Give its collection an externalMetadata entry that owns evals.
 <flprj> has <n> targets. Name the one to build with tools.flare.target.
+<flprj> has no targets, so there is nothing to build. Add a target in Flare.
 madbuild was not found. Install MadCap Flare, or set tools.flare.home to the folder that holds madbuild.exe.
 Flare has no development server. Run manni site build, then manni site preview.
 No Flare output at <out>. Run manni site build first.
+manni cannot tell whose Output folder to read, because USERNAME is not set and the system names no user. Set USERNAME to the account that runs madbuild.
 manni site annotate does not read Flare output.
 
 # Part 3, site build progress, exit unchanged
@@ -783,8 +789,10 @@ This repository has no Flare project, so the dogfood is two runs.
      `lint structure --explain` and `graph export chunks`. Its passages hold
      no `MadCap:variable` tag.
    - Part 3 runs `term check` on a glossary and `meta validate` against its
-     meta tag sets. `site build` runs on a Windows machine with Flare
-     installed, and `a11y check` runs against `site preview`.
+     meta tag sets. No Flare license is available to this project, so
+     `site build` runs a stand-in madbuild that copies the topics as
+     written. `site preview` serves that output, and `a11y check` runs
+     against it. Neither the stand-in nor its output is Flare's.
 
    The counts each run prints go in the pull request.
 
@@ -898,8 +906,8 @@ request is a `feat:` and ships its own demo video.
       `term.manifests`.
 - [ ] A glossary entry's later terms are `alt-labels`, and its id is its
       `glossTerm` id or, with none, its label's slug.
-- [ ] `MadCap:glossaryTerm` reads as `concepts`, a removed entry is a
-      `dangling-reference`, and a write to marker concepts exits 2.
+- [ ] `MadCap:glossaryTerm` reads as `concepts`, a removed entry is an
+      `undefined-term`, and a write to marker concepts exits 2.
 - [ ] A `.flmeta` path in `schemas:` validates `Text` tags and single and
       multiple `Enum` values. A file that is not a meta tag set exits 2.
 - [ ] A `meta query` schema change that would write a `.flmeta` exits 2.
@@ -939,6 +947,6 @@ request is a `feat:` and ships its own demo video.
 - [ ] The guide page has Part 3's site section.
 - [ ] This proposal's Status line names the five pull requests that
       implemented it.
-- [ ] The dogfood output, from a Windows machine, is in the pull request
+- [ ] The dogfood output, from the stand-in madbuild, is in the pull request
       description.
 - [ ] A demo video and its sources are in `media/`.

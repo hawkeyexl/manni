@@ -54,6 +54,7 @@ A docset is read in its own format. graph uses the same parsers as
 | Markdown, MDX | `.md`, `.markdown`, `.mdx` | headings | links, link references, and `href` on any JSX element |
 | HTML | `.html`, `.htm`, `.flsnp` | `h1`–`h6` | `href` on `<a>`, `<area>` and `<MadCap:xref>`, and `src` on `<MadCap:snippetBlock>` and `<MadCap:snippetText>`. Never `<link>`. |
 | DITA, DITA map, DocBook | `.dita`, `.ditamap`, `.xml` | topics and sections | `<xref>`, `<link>`, a map's `<topicref>`, DocBook `<link>` and `linkend` |
+| Flare TOC, browse sequence | `.fltoc`, `.flbrs` | titled `TocEntry` entries | `Link` on each `TocEntry` |
 | AsciiDoc | `.adoc`, `.asciidoc` | section titles | `xref:`, `link:` and URLs |
 | reStructuredText | `.rst` | section titles | embedded URIs, named references and `:doc:` |
 
@@ -65,6 +66,16 @@ none, so its slug is made from its title. An HTML `id`, a DITA `@id`, an
 AsciiDoc `[[id]]` and a reStructuredText `.. _label:` are kept verbatim, so a
 link written to `topic.dita#GUID-A1B2-C3D4` reaches that section. An id holding
 a space or a non-ASCII character is slugged instead.
+
+**A MadCap Flare topic reads as its target builds it.** Its sections come
+from the topic with its snippets expanded in place, its variables resolved and
+the content the target's conditions exclude left out. Its links stay what each
+file says, under every condition. A link that starts `/Content/` or
+`/Project/` resolves against the folder holding the project's `.flprj`, with
+no `routes:` entry. A link target that names a variable resolves through the
+variable. One that cannot resolve is skipped. A topic takes its language from
+its own `lang`, then a route's `language`, then the project's `xml:lang`.
+[Check a MadCap Flare project](/manni/family/flare/) walks through each rule.
 
 **Indirection derives nothing.** A DITA `keyref` or `conref`, a
 reStructuredText `:ref:` and an AsciiDoc `include::` produce no edge, and no

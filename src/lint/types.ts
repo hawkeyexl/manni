@@ -12,6 +12,7 @@
 import { ToolError } from "../shared/errors.js";
 import type { Severity } from "../shared/severity.js";
 import type { Guidance } from "../shared/guidance.js";
+import type { FlareRun } from "../shared/flare/index.js";
 
 /**
  * Operational/usage failure. Exits 2; never used for lint findings.
@@ -247,6 +248,29 @@ export interface DocumentTree {
    * or a key reference resolved only at build time does not.
    */
   links: { target: string; position: Position }[];
+  /**
+   * The MadCap Flare project a topic resolved against, and its target
+   * (proposal 0125). Absent for every other page, and for a topic no project
+   * holds. `excluded` marks a topic whose root the target excludes: its
+   * resolved view, and so `sections`, is empty, while `links` stay.
+   */
+  flare?: {
+    /** The `.flprj` file's name. */
+    project: string;
+    target?: { name: string; from: "tools.flare.target" | "the only target" };
+    excluded?: true;
+  };
+}
+
+/**
+ * What a parser may read beyond the page's own bytes. `parse`'s `filePath`
+ * is a display label, so the absolute path rides here. A MadCap Flare topic
+ * resolves against its project through `flare` (proposal 0125). A parser
+ * with no use for either ignores them.
+ */
+export interface ParseContext {
+  absPath: string;
+  flare?: FlareRun;
 }
 
 /**
@@ -287,7 +311,11 @@ export interface DocumentParser {
    * promise, because Asciidoctor loads a document asynchronously; the others
    * return the tree itself. A caller awaits either.
    */
-  parse(content: string, filePath: string): DocumentTree | Promise<DocumentTree>;
+  parse(
+    content: string,
+    filePath: string,
+    context?: ParseContext,
+  ): DocumentTree | Promise<DocumentTree>;
 }
 
 /**
@@ -351,8 +379,11 @@ export type FindingTemplate = Guidance;
  * symlink loop, a page a doc build moved between the walk and the read. It is a
  * skip rather than a finding because nothing was checked, and calling it a
  * finding would report the docs as wrong when the filesystem was.
+ *
+ * `excluded` is a MadCap Flare topic whose root carries conditions the run's
+ * target excludes (proposal 0125): the target does not build it.
  */
-export type SkipReason = "no-template" | "unsupported-format" | "unreadable";
+export type SkipReason = "no-template" | "unsupported-format" | "unreadable" | "excluded";
 
 /** Result of linting one file. */
 export interface FileResult {

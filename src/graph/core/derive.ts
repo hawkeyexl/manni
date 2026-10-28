@@ -785,9 +785,11 @@ export function deriveGraph(docs: DocModel[], options: DeriveOptions): Quad[] {
     const block = graphBlock(fm);
     // The page's own key outranks the route it sits under (ADR 01037): a
     // single English page inside a translated tree can correct its label,
-    // and a corpus that declares nothing keeps deriving nothing.
+    // and a corpus that declares nothing keeps deriving nothing. A Flare
+    // project's `xml:lang` comes last: a setting someone wrote wins over
+    // one manni detects (proposal 0125, decision 10).
     const pageLanguage = canonicalLanguage(
-      asString(fmValue(fm, ["lang", "language"])) ?? doc.routeLanguage,
+      asString(fmValue(fm, ["lang", "language"])) ?? doc.routeLanguage ?? doc.projectLanguage,
     );
 
     add(docIri, RDF_TYPE, iri(`${NS.graph}Document`));

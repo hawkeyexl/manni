@@ -185,7 +185,7 @@ The graph check in `manni check` reads the same cache.
 | `--collection` | `<name>` | every collection | Read only this configured collection. Repeatable. |
 | `--exclude` | `<glob>` | n/a | Glob to exclude. Repeatable. |
 | `--as` | `<format>` | by extension | Parse every input as `asciidoc`, `html`, `markdown`, `mdx`, `rst` or `xml`. Required with `-`. |
-| `--ext` | `<list>` | `.md,.markdown,.mdx,.html,.htm,.flsnp,.adoc,.asciidoc,.rst,.dita,.ditamap` | Extensions for directory walks and globs, comma-separated. |
+| `--ext` | `<list>` | `.md,.markdown,.mdx,.html,.htm,.flsnp,.adoc,.asciidoc,.rst,.dita,.ditamap,.fltoc,.flbrs` | Extensions for directory walks and globs, comma-separated. |
 | `--allow-empty` | n/a | off | Zero matched files writes an empty graph and exits 0. |
 | `-o, --out` | `<path>` | config `out`, else `graph/graph.ttl` | Where to write the Turtle. The directory is created if it does not exist. |
 | `--no-authoring` | n/a | config `authoring`, else on | Leave out author-facing content: strategy records, and every value a page's schemas mark `x-manni-location: external`. |
@@ -829,7 +829,7 @@ The warning is on stderr and the report on stdout.
 | `--collection` | `<name>` | every collection | Read only this configured collection. Repeatable. |
 | `--exclude` | `<glob>` | n/a | Glob to exclude. Repeatable. |
 | `--as` | `<format>` | by extension | Parse every input as `asciidoc`, `html`, `markdown`, `mdx`, `rst` or `xml`. Required with `-`. |
-| `--ext` | `<list>` | `.md,.markdown,.mdx,.html,.htm,.flsnp,.adoc,.asciidoc,.rst,.dita,.ditamap` | Extensions for directory walks and globs, comma-separated. |
+| `--ext` | `<list>` | `.md,.markdown,.mdx,.html,.htm,.flsnp,.adoc,.asciidoc,.rst,.dita,.ditamap,.fltoc,.flbrs` | Extensions for directory walks and globs, comma-separated. |
 | `--allow-empty` | n/a | off | Zero matched files is an empty report and exit 0. |
 | `-f, --format` | `<pretty\|json>` | `pretty` | Output format. |
 | `--dry-run` | n/a | off | Report proposals without writing files. |
@@ -1655,10 +1655,10 @@ sorted by `id`, and nothing reads the wall clock.
 | `id` | The passage's graph node IRI. |
 | `graph` | The manifest's `graph` digest. |
 | `page` | The page the passage comes from. |
-| `lines` | The passage's body lines, `N-M`. |
+| `lines` | The passage's body lines, `N-M`. A MadCap Flare topic's span is its own source lines, even where a snippet supplies the text. |
 | `language` | The page's language tag. |
 | `title` | The heading, or the page's title for a whole body. |
-| `text` | The passage, as the page reads at export time. |
+| `text` | The passage, as the page reads at export time. A MadCap Flare topic's passage is its text as its target builds it, with snippets expanded and variables resolved. |
 | `vector` | The node's vector. Present only when a sidecar from `manni graph embed` holds one for that node. |
 | `metadata` | The page's delivered fields. The delivered fields of every heading `meta` statement from the page down to this section overlay them, the nearest winning field by field. |
 | `provenance` | The passage's provenance record. |
@@ -1768,6 +1768,7 @@ URL style of the framework `manni site` detects.
 | Starlight, MkDocs, Zensical, Hugo, or none detected | `/guide/setup/` |
 | Docusaurus, Nextra, Fumadocs, Mintlify, Fern | `/guide/setup` |
 | VitePress, Rspress, Sphinx, Jekyll | `/guide/setup.html` |
+| Flare | `/guide/setup.htm` |
 
 | Message | Kind |
 |---|---|

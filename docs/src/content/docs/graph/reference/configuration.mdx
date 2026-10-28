@@ -191,7 +191,7 @@ sees it resolves to the page that serves it. Each entry is an object; only
 | `root` | string | required | The directory that prefix resolves into, relative to the config file. |
 | `extensions` | list of strings | `[".md", ".mdx", ".markdown", ".html", ".htm", ".adoc", ".asciidoc", ".rst", ".dita", ".ditamap", ".flsnp", ".fltoc", ".flbrs"]` | Extensions to try, in order, when a route names a page without one. Markdown comes first, so a tree holding `install.md` and a built `install.html` resolves to the source. Each must start with a dot. |
 | `indexFiles` | list of strings | `["index", "README"]` | Basenames to try for a directory route such as `/guides/`. |
-| `language` | BCP-47 tag | unset | The language of every document under `root`. A page's own `lang` or `language` frontmatter wins; absent that, the nearest enclosing route that declares one applies. Unset, the route says nothing about language. |
+| `language` | BCP-47 tag | unset | The language of every document under `root`. A page's own `lang` or `language` frontmatter wins; absent that, the nearest enclosing route that declares one applies. A MadCap Flare topic under no such route takes its project's `xml:lang`. Unset, the route says nothing about language. |
 
 Routes are corpus-defining, so they are config-only. There is no flag.
 

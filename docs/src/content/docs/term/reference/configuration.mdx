@@ -26,7 +26,7 @@ sample-questions:
 graph:
   label: Configuration reference
   type: reference
-last-updated: 2026-10-19
+last-updated: 2026-10-28
 tags:
   - configuration
   - yaml
@@ -114,7 +114,7 @@ it.
 
 | Key | Type | Default | Mirrors | Description |
 |---|---|---|---|---|
-| `manifests` | list of paths | `[]` | none | YAML or JSON manifests, TBX files, or SKOS files in Turtle or JSON-LD, holding entries outside any document. Paths are relative to the config file. Read on every run that loads the config. |
+| `manifests` | list of paths | `[]` | none | YAML or JSON manifests, TBX files, MadCap Flare glossaries, or SKOS files in Turtle or JSON-LD, holding entries outside any document. Paths are relative to the config file. Read on every run that loads the config. |
 | `abstractMaxLength` | non-negative integer | `60` | none | The length, in UTF-16 code units, past which `abstract-too-long` fires. |
 | `baseline` | path | none | `--baseline` | A [baseline](/manni/term/reference/cli/#baselines) file, relative to the config file. Setting it compares every `check` run against the file, without the flag. With `--baseline` and no key, the file is `.manni-term-baseline.json`. |
 | `severity` | mapping | the [defaults](/manni/term/reference/rules/) | none | Per-rule level: `error`, `warning`, `notice` or `off`. Only the rules named change. |
@@ -209,6 +209,23 @@ term:
 
 [Move and hand off a termbase](/manni/term/set-up/move-and-hand-off/#read-the-termbase-back)
 covers reading TBX, and what a write back keeps.
+
+## A Flare glossary
+
+A `term.manifests` path ending in `.flglo` is read as a MadCap Flare glossary.
+Each `GlossaryEntry` is a term, and its id is the entry's `glossTerm`. A
+glossary the help project owns can sit outside the docs and still be checked
+with them:
+
+```yaml title="manni.config.yaml"
+term:
+  manifests:
+    - terms.yaml
+    - help/Project/Glossaries/Glossary.flglo
+```
+
+[Check a MadCap Flare project](/manni/family/flare/#the-glossary-is-a-termbase)
+covers what each entry reads as.
 
 ## A SKOS file
 

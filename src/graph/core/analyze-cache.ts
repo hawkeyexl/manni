@@ -10,7 +10,8 @@
  * Only `parseBody`'s output is stored, which is a pure function of the bytes
  * and the format. Frontmatter, link resolution against the corpus, routes,
  * the meta view and git history all run on every build, so nothing a cache
- * entry holds depends on another page or on the clock.
+ * entry holds depends on another page or on the clock. A Flare topic resolved
+ * against its project does depend on other files, so it is never stored.
  *
  * A cache is an optimization: an unreadable, unparseable or malformed entry
  * is a miss, and a write that fails is dropped. Neither can fail a run.
@@ -22,6 +23,8 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { writeTextAtomic } from "../../shared/write-file.js";
 import pkg from "../../../package.json" with { type: "json" };
+import { isFlare } from "../../shared/xhtml.js";
+import type { ParseContext } from "../../lint/types.js";
 import { parseBody, type DocBody, type DocFormat } from "./analyze.js";
 
 /**
@@ -83,7 +86,19 @@ export class AnalyzeCache {
   ) {}
 
   /** `parseBody`, served from the entry for `path` when its key matches. */
-  readonly parse = async (content: string, path: string, format: DocFormat): Promise<DocBody> => {
+  readonly parse = async (
+    content: string,
+    path: string,
+    format: DocFormat,
+    context?: ParseContext,
+  ): Promise<DocBody> => {
+    // A Flare topic resolved against its project reads its snippets, variable
+    // sets and target too, so its bytes alone do not key it (proposal 0125).
+    // ponytail: Flare topics are reparsed every build; key on dependency hashes if large projects get slow.
+    if (context?.flare !== undefined && isFlare(content)) {
+      this.misses++;
+      return parseBody(content, path, format, context);
+    }
     const key = sha256(JSON.stringify([ENTRY_VERSION, this.version, format, path, content]));
     // Named by a digest, so a label's `..` or `:` cannot choose where it lands.
     const file = join(this.dir, `${sha256(path)}.json`);
@@ -92,7 +107,7 @@ export class AnalyzeCache {
       this.hits++;
       return cached;
     }
-    const body = await parseBody(content, path, format);
+    const body = await parseBody(content, path, format, context);
     this.misses++;
     this.writes.push(this.write(file, JSON.stringify({ key, body })));
     return body;

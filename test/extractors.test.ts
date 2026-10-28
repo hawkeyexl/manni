@@ -8,6 +8,7 @@ import { asciidocExtractor } from "../src/meta/extractors/asciidoc.js";
 import { rstExtractor } from "../src/meta/extractors/rst.js";
 import { xmlExtractor } from "../src/meta/extractors/xml.js";
 import { htmlExtractor } from "../src/meta/extractors/html.js";
+import { parserForExtension } from "../src/lint/parsers/index.js";
 import {
   extractorForExtension,
   extractorByName,
@@ -728,6 +729,37 @@ describe("html extractor", () => {
     expect(r.data.summary).toBe("");
   });
 
+  it("reads a block mapping or sequence in meta content as the literal string", () => {
+    // `content` is read as a YAML scalar, and manni writes a collection only
+    // in flow style. So prose whose YAML reading is a block mapping or a block
+    // sequence is the prose it reads as, not a structure nobody wrote.
+    const r = htmlExtractor.extract(
+      `<meta name="description" content="This includes the ability to: change the team name">
+<meta name="Products" content="Source Control User Guide: Microsoft Team Foundation Server">
+<meta name="note" content="- a">`,
+      "x.html",
+    );
+    expect(r.data.description).toBe("This includes the ability to: change the team name");
+    expect(r.data.Products).toBe("Source Control User Guide: Microsoft Team Foundation Server");
+    expect(r.data.note).toBe("- a");
+  });
+
+  it("still reads flow collections, numbers, booleans and quoted strings as typed", () => {
+    const r = htmlExtractor.extract(
+      `<meta name="list" content="[a, b]">
+<meta name="map" content=" {a: b}">
+<meta name="n" content="2">
+<meta name="flag" content="true">
+<meta name="quoted" content='"a: b"'>`,
+      "x.html",
+    );
+    expect(r.data.list).toEqual(["a", "b"]);
+    expect(r.data.map).toEqual({ a: "b" });
+    expect(r.data.n).toBe(2);
+    expect(r.data.flag).toBe(true);
+    expect(r.data.quoted).toBe("a: b");
+  });
+
   it("reports a document with no title or meta as absent", () => {
     const r = htmlExtractor.extract(`<html><body>Hi</body></html>`, "x.html");
     expect(r.present).toBe(false);
@@ -810,6 +842,129 @@ describe("html extractor: a Flare topic's title (0125)", () => {
       "a.htm",
     );
     expect(r.data).toEqual({ title: "", type: "concept" });
+  });
+});
+
+describe("html extractor: a Flare topic's index keywords (0125)", () => {
+  const FLARE_NS = "http://www.madcapsoftware.com/Schemas/MadCap.xsd";
+  const topic = (head: string, body: string): string =>
+    `<?xml version="1.0" encoding="utf-8"?>\n<html xmlns:MadCap="${FLARE_NS}">\n<head>${head}</head>\n<body>${body}</body>\n</html>\n`;
+
+  it("reads index keyword and concept markers, in head and body, as keywords", () => {
+    const r = htmlExtractor.extract(
+      topic(
+        '<MadCap:keyword term="install" />',
+        '<h1>T</h1><p>A <MadCap:concept term="setup;  ; Analysis:project" /> b.</p><MadCap:keyword term="install;Time\\:out;setup;Setup" />',
+      ),
+      "a.htm",
+    );
+    // Split on `;`, trimmed, empties dropped; a subentry stays one keyword;
+    // `\:` is a literal colon; deduplicated exactly, first occurrence first.
+    expect(r.data.keywords).toEqual(["install", "setup", "Analysis:project", "Time:out", "Setup"]);
+    expect(r.data.title).toBe("T");
+  });
+
+  it("keeps the text after a self-closed marker in its paragraph", () => {
+    const r = htmlExtractor.extract(
+      topic("", '<p>Before <MadCap:keyword term="a;b" /> after.</p><h2>Next</h2>'),
+      "a.htm",
+    );
+    expect(r.data.keywords).toEqual(["a", "b"]);
+    // The paragraph did not swallow the heading, so it is still the first one.
+    expect(r.data.title).toBe("Next");
+  });
+
+  it("points keywords at the first marker", () => {
+    const r = htmlExtractor.extract(
+      topic("", '\n<p>x</p>\n  <p><MadCap:keyword term="a" /></p>\n<MadCap:keyword term="b" />'),
+      "a.htm",
+    );
+    expect(r.lineFor("/keywords")).toBe(6);
+    expect(r.colFor?.("/keywords")).toBe(6);
+  });
+
+  it("lets a keywords meta tag win over the markers", () => {
+    const r = htmlExtractor.extract(
+      topic('<meta name="keywords" content="written" />', '<MadCap:keyword term="marker" />'),
+      "a.htm",
+    );
+    expect(r.data.keywords).toBe("written");
+  });
+
+  it("reads no keywords from marker-like elements on a page that is not a Flare topic", () => {
+    const r = htmlExtractor.extract(
+      '<?xml version="1.0"?>\n<html xmlns:MadCap="urn:other"><head></head><body><MadCap:keyword term="a" /></body></html>',
+      "a.htm",
+    );
+    expect(r.data.keywords).toBeUndefined();
+  });
+});
+
+describe("html extractor: a Flare topic's glossary term references (0125)", () => {
+  const FLARE_NS = "http://www.madcapsoftware.com/Schemas/MadCap.xsd";
+  const topic = (head: string, body: string): string =>
+    `<?xml version="1.0" encoding="utf-8"?>\n<html xmlns:MadCap="${FLARE_NS}">\n<head>${head}</head>\n<body>${body}</body>\n</html>\n`;
+
+  it("reads glossaryTerm markers as concepts, by glossTerm id, in order and deduplicated", () => {
+    const r = htmlExtractor.extract(
+      topic(
+        "",
+        '<h1>T</h1><p>A <MadCap:glossaryTerm glossTerm="Glossary.Term15">batch target</MadCap:glossaryTerm>, ' +
+          '<MadCap:glossaryTerm glossTerm="">empty</MadCap:glossaryTerm> ' +
+          '<MadCap:glossaryTerm glossTerm="Glossary.Term2">topic</MadCap:glossaryTerm> and ' +
+          '<MadCap:glossaryTerm glossTerm="Glossary.Term15">batch targets</MadCap:glossaryTerm>.</p>',
+      ),
+      "a.htm",
+    );
+    expect(r.data.concepts).toEqual(["Glossary.Term15", "Glossary.Term2"]);
+    expect(r.data.title).toBe("T");
+  });
+
+  it("points concepts at the first marker", () => {
+    const r = htmlExtractor.extract(
+      topic("", '\n<p>x</p>\n  <p><MadCap:glossaryTerm glossTerm="Glossary.Term1">a</MadCap:glossaryTerm></p>\n'),
+      "a.htm",
+    );
+    expect(r.lineFor("/concepts")).toBe(6);
+    expect(r.colFor?.("/concepts")).toBe(6);
+  });
+
+  it("lets a concepts meta tag win over the markers", () => {
+    const r = htmlExtractor.extract(
+      topic('<meta name="concepts" content="written" />', '<p><MadCap:glossaryTerm glossTerm="Glossary.Term1">a</MadCap:glossaryTerm></p>'),
+      "a.htm",
+    );
+    expect(r.data.concepts).toBe("written");
+  });
+
+  it("reads no concepts from marker-like elements on a page that is not a Flare topic", () => {
+    const r = htmlExtractor.extract(
+      '<?xml version="1.0"?>\n<html xmlns:MadCap="urn:other"><head></head><body><MadCap:glossaryTerm glossTerm="Glossary.Term1">a</MadCap:glossaryTerm></body></html>',
+      "a.htm",
+    );
+    expect(r.data.concepts).toBeUndefined();
+  });
+
+  it("leaves the wrapped text in its paragraph for lint", async () => {
+    const parser = parserForExtension(".htm");
+    if (parser === undefined) throw new Error("no .htm parser");
+    const tree = await parser.parse(
+      topic("", '<p>Build the <MadCap:glossaryTerm glossTerm="Glossary.Term15">batch target</MadCap:glossaryTerm> first.</p>'),
+      "a.htm",
+    );
+    // Every paragraph node anywhere in the tree, whatever section holds it.
+    const texts: string[] = [];
+    const walk = (node: unknown): void => {
+      if (Array.isArray(node)) {
+        for (const c of node) walk(c);
+      } else if (node !== null && typeof node === "object") {
+        const n = node as Record<string, unknown>;
+        if (n.kind === "paragraph" && typeof n.text === "string") texts.push(n.text);
+        for (const v of Object.values(n)) walk(v);
+      }
+    };
+    walk(tree.sections);
+    expect(texts.some((t) => t.includes("batch target"))).toBe(true);
   });
 });
 

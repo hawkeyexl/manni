@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CatapultToc Version="1">
+  <TocEntry Title="Get started">
+    <TocEntry Title="[%=System.LinkedTitle%]" Link="/Content/Topics/Install.htm" />
+    <TocEntry Title="[%=System.LinkedTitle%]" Link="/Content/Topics/Configure.htm" />
+  </TocEntry>
+</CatapultToc>

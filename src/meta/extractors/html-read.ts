@@ -33,7 +33,13 @@ export type HtmlSource =
    */
   | { kind: "element-text"; els: Element[] }
   /** A value read from an element's attribute — `<link href=…>`. */
-  | { kind: "element-attr"; els: Element[]; name: string };
+  | { kind: "element-attr"; els: Element[]; name: string }
+  /**
+   * A value Flare builds from markers in the topic, `MadCap:keyword` and the
+   * rest (proposal 0125, decision 16). A write cannot aim at it: the value is
+   * every marker's terms together, and the markers are Flare's to edit.
+   */
+  | { kind: "marker"; els: Element[] };
 
 export interface HtmlRead {
   data: Record<string, unknown>;
@@ -59,11 +65,19 @@ export function typeValue(raw: string): unknown {
   // Empty meta content (`content=""`) is the empty string, not the YAML `null`
   // that parsing "" would yield.
   if (raw === "") return "";
+  let value: unknown;
   try {
-    return parseYamlScalar(raw);
+    value = parseYamlScalar(raw);
   } catch {
     return raw;
   }
+  // A collection is read only in flow style, the one style the writer emits.
+  // Prose such as `Note: this` or `- a` parses as a block mapping or sequence
+  // that nobody wrote, so it stays the string it reads as.
+  if (typeof value === "object" && value !== null && !/^[[{]/.test(raw.trim())) {
+    return raw;
+  }
+  return value;
 }
 
 export function attrValue(el: Element, name: string): string | undefined {
@@ -179,6 +193,42 @@ function flareTitle(
   return stem === "" ? undefined : stem;
 }
 
+/** The index markers whose `term` values are a Flare topic's `keywords`. parse5 lowercases names. */
+const KEYWORD_MARKERS = new Set(["madcap:keyword", "madcap:concept"]);
+
+/**
+ * The keywords a run of index markers names (0125, decision 16): each `term`
+ * split on `;`, trimmed, empties dropped, `\:` read as a colon, and the first
+ * of any repeat kept. A subentry `A:B` is one keyword, as written.
+ */
+function markerKeywords(els: Element[]): string[] {
+  const out = new Set<string>();
+  for (const el of els) {
+    for (const piece of (attrValue(el, "term") ?? "").split(";")) {
+      const keyword = piece.trim().replace(/\\:/g, ":");
+      if (keyword !== "") out.add(keyword);
+    }
+  }
+  return [...out];
+}
+
+/** A glossary term reference, whose `glossTerm` id is one of a Flare topic's `concepts`. parse5 lowercases names. */
+const GLOSSARY_MARKER = "madcap:glossaryterm";
+
+/**
+ * The termbase ids a run of glossary term markers names (0125, decision 19):
+ * each `glossTerm` verbatim, empties dropped, the first of any repeat kept.
+ * The text a marker wraps is the page's prose, not a value.
+ */
+function markerConcepts(els: Element[]): string[] {
+  const out = new Set<string>();
+  for (const el of els) {
+    const id = attrValue(el, "glossterm") ?? "";
+    if (id !== "") out.add(id);
+  }
+  return [...out];
+}
+
 /** Every element a config path selects, walked down the child axis. */
 function matchHtmlPath(
   doc: DefaultTreeAdapterMap["document"],
@@ -238,6 +288,8 @@ export function readHtml(
   const colMap = new Map<string, number>();
   const sources = new Map<string, HtmlSource>();
   let head: Element | undefined;
+  const keywordMarkers: Element[] = [];
+  const glossaryMarkers: Element[] = [];
   // The document node has no location; anchor the root pointer at 1:1.
   lineMap.set("", 1);
   colMap.set("", 1);
@@ -290,6 +342,11 @@ export function readHtml(
               : location?.startCol;
           setKey(key, typeValue(value), { kind: "meta", el: node }, line, col);
         }
+      } else if (KEYWORD_MARKERS.has(node.tagName)) {
+        keywordMarkers.push(node);
+      } else if (node.tagName === GLOSSARY_MARKER && (attrValue(node, "glossterm") ?? "") !== "") {
+        // Only a marker naming an id, so the first one is where `concepts` points.
+        glossaryMarkers.push(node);
       }
       // Same guard, same node, nothing between that could change the answer:
       // recursion belongs inside the one check rather than behind a second.
@@ -311,6 +368,22 @@ export function readHtml(
   if (untitled && isFlare(body)) {
     const title = flareTitle(doc, options?.filePath);
     if (title !== undefined) data.title = title;
+  }
+
+  // A Flare topic's index markers are its keywords, unless the page writes a
+  // <meta name="keywords"> of its own (0125, decision 16). Set before config
+  // paths, so one naming `keywords` cannot overwrite them.
+  const keywords = markerKeywords(keywordMarkers);
+  if (data.keywords === undefined && keywords.length > 0 && isFlare(body)) {
+    const first = keywordMarkers[0]?.sourceCodeLocation;
+    setKey("keywords", keywords, { kind: "marker", els: keywordMarkers }, first?.startLine, first?.startCol);
+  }
+  // Its glossary term markers are its `concepts`, on the same terms (0125,
+  // decision 19).
+  const concepts = markerConcepts(glossaryMarkers);
+  if (data.concepts === undefined && concepts.length > 0 && isFlare(body)) {
+    const first = glossaryMarkers[0]?.sourceCodeLocation;
+    setKey("concepts", concepts, { kind: "marker", els: glossaryMarkers }, first?.startLine, first?.startCol);
   }
 
   // Element-derived metadata, lifted from `<head>` only. The body is prose, and

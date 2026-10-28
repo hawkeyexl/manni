@@ -15,6 +15,7 @@ import {
   documentBase,
   documentSetPatterns,
   noInputMessage,
+  parseContexts,
   resolveDocumentSet,
   routesFrom,
   STDIN,
@@ -152,6 +153,7 @@ export async function buildGraph(opts: BuildOptions = {}): Promise<BuiltGraph> {
     routes: routesFrom(config, base),
     ...(format === undefined ? {} : { format }),
     parse: cache.parse,
+    context: parseContexts(config, base),
   };
   /** Every page of `set`, its links resolved against `set`. `<stdin>` is the page `-` read. */
   const analyzeAll = (set: readonly string[]) => {

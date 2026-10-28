@@ -15,7 +15,7 @@ import type { Quad } from "../core/derive.js";
 import { GraphError } from "../types.js";
 import { CHUNKS_MANIFEST } from "./chunks.js";
 import { openArtifact, retrieveIn } from "./retrieve.js";
-import { documentBase } from "../core/discover.js";
+import { documentBase, parseContexts } from "../core/discover.js";
 import { bundledShapesPath } from "../core/pkg.js";
 import {
   compareFindings,
@@ -114,6 +114,7 @@ export async function runCheck(opts: CheckOptions = {}): Promise<CheckReport> {
     config.questionFiles,
     config.configDir,
     () => openCite({ ...opts, cwd }, dirname(graphPath), storeToQuads(store)),
+    parseContexts(config, root),
   );
   const findings = [...(await validateGraph(store, sources)), ...asked.findings].sort(
     compareFindings,

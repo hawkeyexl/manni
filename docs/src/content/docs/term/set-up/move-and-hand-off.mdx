@@ -35,7 +35,7 @@ sample-questions:
 graph:
   label: Move and hand off a termbase
   type: task
-last-updated: 2026-10-19
+last-updated: 2026-10-28
 tags:
   - conversion
   - translation
@@ -71,6 +71,7 @@ has nowhere to put a scope note, so no scope note is read from one.
 | Page metadata, `type: term`, in any format | n/a | every field |
 | YAML or JSON manifest under [`term.manifests`](/manni/term/reference/configuration/#a-manifest) | n/a | every field |
 | TBX v2 or v3 entry, in a `.tbx` file | no | every field except `abstract`, `broader`, `narrower`, `related-terms`, `see` and `scope-note`, a term per language |
+| MadCap Flare `GlossaryEntry`, in a `.flglo` file | no | `label`, `definition`, `alt-labels`, `id` |
 | SKOS concept, in a `.ttl` or `.jsonld` file you name or list | no | `label`, `definition`, `alt-labels`, `hidden-labels`, `broader`, `narrower`, `related-terms`, `scope-note`, `notation`, the five match fields, `notes`, `contexts`, a term per language |
 | DITA `<glossentry>` topic | no | `label`, `definition`, `alt-labels`, `scope-note`, `id` |
 | DITA `<glossgroup>` | no | the same, per child `<glossentry>` |

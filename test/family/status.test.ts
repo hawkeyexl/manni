@@ -162,7 +162,7 @@ describe.skipIf(!gitAvailable())("runStatus", () => {
     expect(row?.next).toBe("Run manni docevals run to see the whole error.");
   });
 
-  it("leaves docevals not set up where no collection member is a page it reads", async () => {
+  it("leaves docevals not set up where it reads the topics and none declares evals", async () => {
     dir = fixtureRepo("only-html");
     const report = await runStatus({ cwd: dir });
     expect(report.domains.find((d) => d.name === "docevals")).toEqual({

@@ -62,6 +62,9 @@ export {
   isMachineFormat,
 } from "./reporters/index.js";
 export { extractorByName, extractorForExtension, listFormats, supportedExtensions } from "./extractors/index.js";
+// `manni docevals` grades an HTML or XML page's source after its metadata
+// (proposal 0125, decision 21), sliced from the file so its lines stay the file's.
+export { bodyOffset } from "./extractors/body-offset.js";
 // `manni cite` keeps its citations in an external-metadata manifest and is the
 // first writer of one. Text in, text out; meta's own commands never call it,
 // so `meta fill` and `meta query` stay read-only on manifests.

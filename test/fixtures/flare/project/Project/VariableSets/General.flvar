@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CatapultVariableSet>
+  <Variable Name="ProductVersion" Comment="" EvaluatedDefinition="9.9">4.2</Variable>
+  <Variable Name="ProductVersion" Comment="" EvaluatedDefinition="5.0">5.0</Variable>
+  <Variable Name="Company" EvaluatedDefinition="MadCap">MadCap</Variable>
+  <Variable Name="Copyright" EvaluatedDefinition="MadCap 2026">[%=General.Company%] 2026</Variable>
+  <Variable Name="Yr" Type="DateTime" Format="yyyy" EvaluatedDefinition="2026"></Variable>
+  <Variable Name="A" EvaluatedDefinition="">[%=General.B%]</Variable>
+  <Variable Name="B" EvaluatedDefinition="">[%=General.A%]</Variable>
+</CatapultVariableSet>

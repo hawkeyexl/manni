@@ -185,6 +185,17 @@ describe("applyHtml — fidelity", () => {
     expect(read(out).version).toBe("2");
   });
 
+  it("round-trips a string holding a colon, which it writes quoted", () => {
+    // Unquoted, the reader takes such prose as the literal string anyway. The
+    // writer quotes it all the same, so its own output never leans on that.
+    const src = '<html><head><meta name="type" content="a"></head></html>';
+    const prose = "This includes the ability to: change the team name";
+    const out = applyHtml(src, { description: prose });
+    expect(out).toContain(`content="&quot;${prose}&quot;"`);
+    expect(read(out).description).toBe(prose);
+    expect(read(applyHtml(src, { note: "- a" })).note).toBe("- a");
+  });
+
   it("refuses a string that needs more than one line", () => {
     // Flow style puts a collection on one line, but a newline inside a string
     // survives into the output whatever the style. Refusing beats truncating.
@@ -442,6 +453,74 @@ describe("applyHtml — an XHTML page (0125)", () => {
     expect(xmlParseError(src)).toBeDefined();
     const out = applyHtml(src, { type: "concept" });
     expect(read(out).type).toBe("concept");
+  });
+
+  describe("keywords read from index markers", () => {
+    const page = (head: string): string =>
+      `<?xml version="1.0" encoding="utf-8"?>\n<html xmlns:MadCap="${FLARE_NS}">\n<head>\n<title>T</title>${head}\n</head>\n<body><p>Install <MadCap:keyword term="install;setup" /> it.</p><MadCap:concept term="Setup" /></body>\n</html>\n`;
+
+    it("refuses a write to them, naming the file or the page", () => {
+      const src = page("");
+      expect(read(src).keywords).toEqual(["install", "setup", "Setup"]);
+      for (const [filePath, file] of [
+        ["Content/Topics/Install.htm", "Content/Topics/Install.htm"],
+        [undefined, "the page"],
+      ] as const) {
+        let error: unknown;
+        try {
+          applyHtml(src, { keywords: ["x"] }, filePath === undefined ? {} : { filePath });
+        } catch (e) {
+          error = e;
+        }
+        expect(error).toBeInstanceOf(DocmetaError);
+        expect((error as DocmetaError).message).toBe(
+          `Refusing to write "keywords": ${file} reads them from its MadCap:keyword and MadCap:concept markers. Edit the markers in Flare.`,
+        );
+      }
+    });
+
+    it("writes another key and leaves the markers alone", () => {
+      const src = page("");
+      const out = applyHtml(src, { type: "concept" }, { filePath: "a.htm" });
+      expect(out).toBe(src.replace("<head>", '<head>\n<meta name="type" content="concept" />'));
+      expect(read(out)).toMatchObject({ type: "concept", keywords: ["install", "setup", "Setup"] });
+    });
+
+    it("writes keywords a meta tag holds, as on any page", () => {
+      const src = page('\n<meta name="keywords" content="old" />');
+      const out = applyHtml(src, { keywords: "new" }, { filePath: "a.htm" });
+      expect(out).toBe(src.replace('content="old"', 'content="new"'));
+      expect(read(out).keywords).toBe("new");
+    });
+  });
+
+  describe("concepts read from glossary term markers", () => {
+    const src = `<?xml version="1.0" encoding="utf-8"?>\n<html xmlns:MadCap="${FLARE_NS}">\n<head>\n<title>T</title>\n</head>\n<body><p>Build the <MadCap:glossaryTerm glossTerm="Glossary.Term15">batch target</MadCap:glossaryTerm>.</p></body>\n</html>\n`;
+
+    it("refuses a write to them, naming the file or the page", () => {
+      expect(read(src).concepts).toEqual(["Glossary.Term15"]);
+      for (const [filePath, file] of [
+        ["Content/Topics/Build.htm", "Content/Topics/Build.htm"],
+        [undefined, "the page"],
+      ] as const) {
+        let error: unknown;
+        try {
+          applyHtml(src, { concepts: ["x"] }, filePath === undefined ? {} : { filePath });
+        } catch (e) {
+          error = e;
+        }
+        expect(error).toBeInstanceOf(DocmetaError);
+        expect((error as DocmetaError).message).toBe(
+          `Refusing to write "concepts": ${file} reads them from its MadCap:glossaryTerm markers. Edit the markers in Flare.`,
+        );
+      }
+    });
+
+    it("writes another key and leaves the markers alone", () => {
+      const out = applyHtml(src, { type: "concept" }, { filePath: "a.htm" });
+      expect(out).toBe(src.replace("<head>", '<head>\n<meta name="type" content="concept" />'));
+      expect(read(out)).toMatchObject({ type: "concept", concepts: ["Glossary.Term15"] });
+    });
   });
 
   it("writes a plain HTML page exactly as before", () => {

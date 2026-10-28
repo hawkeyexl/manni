@@ -1,0 +1,51 @@
+manni reads a MadCap Flare glossary as a termbase and a meta tag set as a schema, demo video transcript (silent video; text describes what is on screen)
+
+Frame: 1080x1080, 30 fps, 39.0 s. Every terminal line is real output of sed, grep and of
+`node dist/cli.js ...` (typed as manni) run in C:\flare, a directory junction to media/scratch-flare-resources/,
+a git repository holding test/fixtures/flare/widget/ as committed, built by media/capture-flare-resources/capture.sh.
+In beat 3, manni's output goes through a pipe, so it prints without colour, as it does in a real terminal.
+
+[0:00-0:06] Title: The glossary is a termbase (1 / 4)
+$ manni term check; echo $?
+Project/Glossaries/Glossary.flglo:15
+  notice manni:term/unused-term          no page's concepts: names this term.   ("notice" in cyan)
+                                         Name it in the concepts: of a page that uses it.
+                                         manni:term unused-term: No page's concepts: names the entry, or an entry in another language with its id.
+                                         Guide: https://hawkeyexl.github.io/manni/term/reference/rules/#unused-term
+
+1 notice in 2 terms
+0
+Highlighted rows: lines containing "Glossary.flglo:15", "in 2 terms"
+Caption: Each entry is a term. HTML5 drops the print-only one.
+
+[0:06-0:17] Title: Glossary markers are concepts (2 / 4)
+$ grep -no '<MadCap:glossaryTerm[^>]*>' Content/Topics/Install.htm
+10:<MadCap:glossaryTerm glossTerm="Glossary.Term0">
+$ manni meta get concepts Content/Topics/Install.htm
+Using manni.config.yaml (.)
+Content/Topics/Install.htm: concepts=["Glossary.Term0"] (asserted)
+Highlighted rows: lines containing "glossTerm=\"Glossary.Term0\"", "concepts=[\"Glossary.Term0\"]"
+Caption: The topic's glossaryTerm marker is its concepts.
+
+[0:17-0:28] Title: A missing entry fails (3 / 4)
+$ sed -i 's/Term0/Term9/' Content/Topics/Install.htm
+$ manni term check | grep -A1 Install.htm; echo ${PIPESTATUS[0]}
+Content/Topics/Install.htm:10
+  error  manni:term/undefined-term       concepts: "Glossary.Term9" names no entry.
+1
+Highlighted rows: lines containing "Install.htm:10", "undefined-term"
+Caption: Term9 names no entry. Line 10 fails, exit 1.
+
+[0:28-0:39] Title: A meta tag set is a schema (4 / 4)
+$ sed -i 's/Reviewed/Reviewd/' Content/Topics/Install.htm
+$ manni meta validate Content/Topics/Install.htm; echo $?
+Using manni.config.yaml (.)
+✗ Content/Topics/Install.htm   (red cross)
+    /Status  must match pattern "^(Draft|Reviewed|Published)(,(Draft|Reviewed|Published))*$"  (line 6)  [./Project/Advanced/Topics.flmeta]   ("/Status" in cyan)
+      ./Project/Advanced/Topics.flmeta Status: Where the topic is in review.
+
+1 file checked, 0 passed, 1 failed, 1 error   (red)
+1
+Highlighted rows: lines containing "/Status", "Status: Where"
+Caption: Status takes only Draft, Reviewed or Published.
+
