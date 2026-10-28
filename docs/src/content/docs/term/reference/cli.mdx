@@ -836,7 +836,9 @@ New pages go in the first of these that is set:
 When none applies, `fill` refuses. A page is named `<id><ext>`, where the id is
 the slug of the label. The extension is the one most term pages in that
 directory use. When there are none, it is the most common page extension in
-the run, and `.md` when that finds nothing either.
+the run, and `.md` when that finds nothing either. Both counts take only
+`.md`, `.markdown`, `.mdx`, `.adoc`, `.asciidoc`, `.rst`, `.html`, `.htm` and
+`.dita`, the extensions `fill` writes a term page in.
 
 <Aside type="caution" title="fill writes by default">
 `fill` creates and changes files unless you pass `--dry-run`. Run it on a
