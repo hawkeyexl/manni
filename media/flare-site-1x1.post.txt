@@ -1,0 +1,13 @@
+manni site now knows a MadCap Flare project when it sees one.
+
+A folder that holds a .flprj is a Flare site. manni site build runs madbuild with the project and the target your config names. A project with one target needs no config at all.
+
+manni site preview serves the last build on port 4321, with manni's own static server. Default.htm answers at the root. It does not build first.
+
+manni site start says Flare has no development server, then names the two commands to run instead. It exits 2.
+
+A note on what you're watching. There is no Flare license on this machine, so madbuild here is a stand-in. It copies the topics and writes an index page, and its output says it's a stand-in. manni finds it on PATH and runs it with the same arguments it gives the real one.
+
+Every frame is a real run against a small Flare fixture, with that stand-in in place of madbuild.
+
+#techcomm #madcapflare #technicalwriting #docsascode

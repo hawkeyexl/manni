@@ -1,0 +1,24 @@
+build exit 0 567ms
+  line ms: 473 530
+preview url at 513ms
+curl 69ms
+start exit 2 491ms
+  line ms: 453
+timing1-build exit 0 586ms
+  line ms: 482 545
+timing1-preview url at 470ms
+timing1-curl 60ms
+timing1-start exit 2 523ms
+  line ms: 488
+timing2-build exit 0 592ms
+  line ms: 450 552
+timing2-preview url at 478ms
+timing2-curl 102ms
+timing2-start exit 2 482ms
+  line ms: 448
+timing3-build exit 0 588ms
+  line ms: 445 551
+timing3-preview url at 473ms
+timing3-curl 102ms
+timing3-start exit 2 479ms
+  line ms: 444

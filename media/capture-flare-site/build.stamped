@@ -1,0 +1,2 @@
+473	manni: Flare in ./. Running madbuild -project Widget.flprj -target HTML5
+530	stand-in madbuild: built HTML5 into Output/maya/HTML5
