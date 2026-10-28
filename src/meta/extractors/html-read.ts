@@ -365,7 +365,8 @@ export function readHtml(
     (titleSource.kind === "title" &&
       typeof data.title === "string" &&
       data.title.trim() === "");
-  if (untitled && isFlare(body)) {
+  const flare = isFlare(body);
+  if (untitled && flare) {
     const title = flareTitle(doc, options?.filePath);
     if (title !== undefined) data.title = title;
   }
@@ -374,14 +375,14 @@ export function readHtml(
   // <meta name="keywords"> of its own (0125, decision 16). Set before config
   // paths, so one naming `keywords` cannot overwrite them.
   const keywords = markerKeywords(keywordMarkers);
-  if (data.keywords === undefined && keywords.length > 0 && isFlare(body)) {
+  if (data.keywords === undefined && keywords.length > 0 && flare) {
     const first = keywordMarkers[0]?.sourceCodeLocation;
     setKey("keywords", keywords, { kind: "marker", els: keywordMarkers }, first?.startLine, first?.startCol);
   }
   // Its glossary term markers are its `concepts`, on the same terms (0125,
   // decision 19).
   const concepts = markerConcepts(glossaryMarkers);
-  if (data.concepts === undefined && concepts.length > 0 && isFlare(body)) {
+  if (data.concepts === undefined && concepts.length > 0 && flare) {
     const first = glossaryMarkers[0]?.sourceCodeLocation;
     setKey("concepts", concepts, { kind: "marker", els: glossaryMarkers }, first?.startLine, first?.startCol);
   }
