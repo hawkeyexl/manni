@@ -1,8 +1,8 @@
 /**
  * The built-in static server `manni site preview` uses for frameworks whose
- * own CLI has no preview (MkDocs, Zensical, Sphinx, Hugo, Jekyll). It serves a
- * build output directory, mounted at the collection `url:` path, until the
- * process is stopped. `node:http` and `node:fs` only.
+ * own CLI has no preview (MkDocs, Zensical, Sphinx, Hugo, Jekyll, Flare). It
+ * serves a build output directory, mounted at the collection `url:` path,
+ * until the process is stopped. `node:http` and `node:fs` only.
  */
 import { createReadStream } from "node:fs";
 import { stat } from "node:fs/promises";
@@ -24,6 +24,7 @@ export interface StaticOptions {
 // application/octet-stream; add a row when a site needs one.
 const MIME: Record<string, string> = {
   ".html": "text/html; charset=utf-8",
+  ".htm": "text/html; charset=utf-8",
   ".css": "text/css; charset=utf-8",
   ".js": "text/javascript; charset=utf-8",
   ".mjs": "text/javascript; charset=utf-8",
@@ -121,7 +122,12 @@ function handler(root: string, base: string) {
       redirect(res, 301, `${pathname}/${url.search}`);
       return;
     }
-    const file = path !== undefined && kind === "dir" ? join(path, "index.html") : path;
+    // Flare's HTML5 output starts at Default.htm, in a folder with no index.html.
+    let file = path;
+    if (path !== undefined && kind === "dir") {
+      const index = join(path, "index.html");
+      file = (await kindOf(index)) === "file" ? index : join(path, "Default.htm");
+    }
     if (file !== undefined && (await kindOf(file)) === "file") {
       sendFile(req, res, file);
     } else if ((await kindOf(notFound)) === "file") {

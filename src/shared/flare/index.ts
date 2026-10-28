@@ -12,6 +12,7 @@ export {
   FlareError,
   findProjectRoot,
   flareRun,
+  projectTargets,
 } from "./project.js";
 export { type FlareTarget, readTarget } from "./target.js";
 export {

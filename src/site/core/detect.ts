@@ -5,10 +5,14 @@
  * static server. Everything that can fail before a process starts fails here.
  */
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
+import { userInfo } from "node:os";
 import { dirname, join, posix, relative, resolve } from "node:path";
 import type { CollectionConfig } from "../../shared/collections.js";
 import { FAMILY_CONFIG_NAMES } from "../../shared/config-file.js";
+import { flareRun, projectTargets } from "../../shared/flare/index.js";
+import { findMadbuild, MADBUILD_NOT_FOUND, realMadbuildHost, type MadbuildHost } from "../../shared/flare/madbuild.js";
 import { searchPath } from "../../shared/git-root.js";
+import { flareHome } from "../../shared/tools.js";
 import { warn } from "../../shared/warn.js";
 import { SiteError } from "../errors.js";
 import type { Plan, PlannedStep, Verb } from "../types.js";
@@ -24,6 +28,8 @@ export interface ResolveOptions {
   host?: string;
   /** Everything after `--`. */
   passthrough: string[];
+  /** Where Flare's madbuild and the account name are looked up; the real host by default. */
+  flareHost?: MadbuildHost;
 }
 
 /** A command: Node frameworks name the script they prefer over the binary. */
@@ -38,6 +44,13 @@ interface Site {
   deps: Set<string>;
 }
 
+/** What a framework's commands may read beyond the site: the verb's step, the config, the host. */
+interface FrameworkContext {
+  verb: Verb;
+  config: SiteConfig;
+  host: MadbuildHost;
+}
+
 interface Framework {
   name: string;
   /** The marker that matched, for messages, or `null`. */
@@ -46,12 +59,16 @@ interface Framework {
   runner: "node" | "python" | "ruby" | "path";
   /** Node only: the package that provides the binary. */
   pkg?: (site: Site) => string;
-  commands: (site: Site) => { start: Cmd; build?: Cmd; preview?: Cmd; out?: string };
+  commands: (site: Site, ctx: FrameworkContext) => { start?: Cmd; build?: Cmd; preview?: Cmd; out?: string };
   /** `-a` means one `-a host:port`; `null` means the server takes no host. */
   hostFlag: "--host" | "--hostname" | "--bind" | "-a" | null;
   defaultPort: number;
   /** Where the built site is and how a page maps into it; absent when the build is not local. */
   layout?: (site: Site) => Layout;
+  /** `preview` serves the last build instead of building first: Flare's build is slow and Windows-only. */
+  servesBuild?: true;
+  /** The build is local, but `site annotate` cannot read its output. */
+  unannotated?: true;
 }
 
 /**
@@ -128,6 +145,39 @@ function zensicalMarker(s: Site): string | null {
     return null;
   }
   return files.some((f) => /\bzensical\b/.test(read(join(s.dir, f)))) ? "mkdocs.yml" : null;
+}
+
+const flprjIn = (s: Site): string | null => {
+  try {
+    return readdirSync(s.dir).find((f) => f.toLowerCase().endsWith(".flprj")) ?? null;
+  } catch {
+    return null;
+  }
+};
+
+/**
+ * A Flare project (proposal 0125, decision 22). The target is the one every
+ * domain reads; madbuild is looked for only when the step is the build, so
+ * `preview` serves a build made on another machine.
+ */
+function flare(s: Site, ctx: FrameworkContext): { build?: Cmd; out?: string } {
+  if (ctx.verb === "start") return {};
+  const { flprj, targets } = projectTargets(s.dir);
+  const tools = ctx.config.tools;
+  // Several targets and none named reads elsewhere as every condition included; a build needs one.
+  const target =
+    tools.flare?.target === undefined && targets.length !== 1
+      ? undefined
+      : flareRun(tools).projectFor(join(s.dir, flprj))?.target?.name;
+  if (target === undefined) {
+    throw new SiteError(`${flprj} has ${String(targets.length)} targets. Name the one to build with tools.flare.target.`);
+  }
+  // madbuild stamps the account that runs it into the output path.
+  const out = posix.join("Output", ctx.host.env["USERNAME"] ?? userInfo().username, target);
+  if (ctx.verb !== "build") return { out };
+  const madbuild = findMadbuild(flareHome(tools, ctx.config.configDir ?? s.dir), ctx.host);
+  if (madbuild === undefined) throw new SiteError(MADBUILD_NOT_FOUND);
+  return { build: { argv: [madbuild, "-project", flprj, "-target", target] }, out };
 }
 
 const sphinxSource = (s: Site): string => (has(s.dir, "conf.py") ? "." : "source");
@@ -272,6 +322,16 @@ const FRAMEWORKS: Framework[] = [
     layout: () => ({ out: "_site", content: ".", route: "html" }),
     hostFlag: "--host",
     defaultPort: 4000,
+  },
+  {
+    name: "Flare",
+    marker: flprjIn,
+    runner: "path",
+    commands: flare,
+    hostFlag: null,
+    defaultPort: 4321,
+    servesBuild: true,
+    unannotated: true,
   },
 ];
 
@@ -513,6 +573,7 @@ export function resolveAnnotateSite(opts: { cwd: string; dir?: string; configPat
     throw new SiteError(`${where} holds more than one docs site: ${list}. Pass --out, or set site.out in ${CONFIG_NAME}.`);
   }
   const fw = matches.length === 1 ? matches[0]?.fw : undefined;
+  if (fw?.unannotated === true) throw new SiteError(`manni site annotate does not read ${fw.name} output.`);
   if (fw !== undefined && fw.layout === undefined) {
     throw new SiteError(`${fw.name} builds on its own host, so there is no local site to annotate.`);
   }
@@ -563,7 +624,9 @@ export function resolvePlan(verb: Verb, opts: ResolveOptions): Plan {
     fw = matches[0]?.fw;
   }
 
-  const steps = needed.flatMap((v): PlannedStep[] => {
+  // A framework that serves its last build previews without building first.
+  const verbs = fw?.servesBuild === true && verb === "preview" ? ["preview" as const] : needed;
+  const steps = verbs.flatMap((v): PlannedStep[] => {
     const step = planStep(v);
     // Annotate joins the build it follows, before preview serves it (proposal 0095).
     if (v !== "build" || !config.afterBuild) return [step];
@@ -599,15 +662,19 @@ export function resolvePlan(verb: Verb, opts: ResolveOptions): Plan {
       };
     }
     if (fw === undefined) throw new SiteError(`no docs framework detected in ${where}. ${setIt}`);
-    const cmds = fw.commands(found);
+    const cmds = fw.commands(found, { verb: v, config, host: opts.flareHost ?? realMadbuildHost });
     const cmd = cmds[v];
     if (v === "build" && cmd === undefined) {
       throw new SiteError(`${fw.name} has no local build. Run manni site start, or set site.commands.build.`);
     }
+    if (v === "start" && cmd === undefined) {
+      throw new SiteError(`${fw.name} has no development server. Run manni site build, then manni site preview.`);
+    }
 
     let address: Address = { base: "/" };
     if (isServe) {
-      if (flagHost !== undefined && fw.hostFlag === null) {
+      // The built-in server takes any host; only a framework's own server may refuse one.
+      if (flagHost !== undefined && fw.hostFlag === null && cmd !== undefined) {
         throw new SiteError(`${fw.name}'s dev server takes no host option. Drop --host.`);
       }
       // Always read the url: its path is the mount point even when both flags set host and port.
@@ -622,13 +689,18 @@ export function resolvePlan(verb: Verb, opts: ResolveOptions): Plan {
       if (extra.length > 0) {
         throw new SiteError(`${fw.name} previews through manni's built-in server, which takes no extra arguments. Drop the arguments after --.`);
       }
+      const root = join(found.dir, config.out ?? cmds.out);
+      if (fw.servesBuild === true && !isDirectory(root)) {
+        const out = relative(opts.cwd, root).replace(/\\/g, "/") || ".";
+        throw new SiteError(`No ${fw.name} output at ${out}. Run manni site build first.`);
+      }
       return {
         announce: "",
         display: "",
         notFound: "",
         step: {
           kind: "static",
-          root: join(found.dir, config.out ?? cmds.out),
+          root,
           host: address.host ?? STATIC_HOST,
           port: address.port ?? fw.defaultPort,
           base: address.base,

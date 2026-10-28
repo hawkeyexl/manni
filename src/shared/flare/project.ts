@@ -85,12 +85,19 @@ function listOf(items: readonly string[]): string {
   return `${items.slice(0, -1).join(", ")} and ${items.at(-1) ?? ""}`;
 }
 
+const targetName = (file: string): string => basename(file).replace(/\.fltar$/i, "");
+
+/** A project folder's `.flprj`, and every target's name, sorted. */
+export function projectTargets(root: string): { flprj: string; targets: string[] } {
+  const names = filesIn(join(root, "Project", "Targets"), ".fltar", true).map(targetName);
+  return { flprj: filesIn(root, ".flprj")[0] ?? "", targets: [...new Set(names)].sort() };
+}
+
 function readProject(root: string, configured: string | undefined): FlareProject {
-  const flprj = filesIn(root, ".flprj")[0] ?? "";
+  const { flprj, targets } = projectTargets(root);
   const targetsDir = join(root, "Project", "Targets");
   const targetFiles = filesIn(targetsDir, ".fltar", true);
-  const names = targetFiles.map((file) => basename(file).replace(/\.fltar$/i, ""));
-  const targets = [...new Set(names)].sort();
+  const names = targetFiles.map(targetName);
 
   let chosen: string | undefined;
   if (configured !== undefined) {

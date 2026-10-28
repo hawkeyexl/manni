@@ -77,6 +77,17 @@ describe("the built-in static server", () => {
     expect(css.headers["content-type"]).toMatch(/^text\/css/);
   });
 
+  it("serves Flare's output: Default.htm for a directory with no index.html, and .htm as HTML", async () => {
+    const { port } = await serve("/manni/");
+    const home = await request(port, "/manni/flare/");
+    expect(home.status).toBe(200);
+    expect(home.headers["content-type"]).toBe("text/html; charset=utf-8");
+    expect(home.body).toContain("flare default page");
+    const topic = await request(port, "/manni/flare/Content/Topic.htm");
+    expect(topic.status).toBe(200);
+    expect(topic.headers["content-type"]).toBe("text/html; charset=utf-8");
+  });
+
   it("redirects a directory without its slash, and / to the base", async () => {
     const { port } = await serve("/manni/");
     const dir = await request(port, "/manni/guide");
