@@ -384,9 +384,17 @@ and snippets do both. Nothing in the config declares it.
   declares the MadCap namespace and has an empty or missing `<title>` reads its
   first `h1` to `h6`. With no heading, it reads its file name without the
   extension. A write to `title` fills the `<title>` element, or adds one.
+- **A MadCap Flare page reads its index keywords as `keywords`.** The `term`
+  of each `<MadCap:keyword>` and `<MadCap:concept>` marker joins the list, in
+  document order and deduplicated. A `term` splits on `;`. A subentry `A:B`
+  stays one keyword, and `\:` is a literal colon. A
+  `<meta name="keywords">` in the page wins over the markers.
+- **Marker keywords are written in Flare.** A write to `keywords` read from
+  markers is refused with exit `2`, and the file is untouched.
 
 ```text
 Refusing to write "<key>": the result would not be well-formed XML (<parser message>). <file> is unchanged.
+Refusing to write "keywords": <file> reads them from its MadCap:keyword and MadCap:concept markers. Edit the markers in Flare.
 ```
 
 [Check a MadCap Flare project](/manni/family/flare/) walks a Flare project

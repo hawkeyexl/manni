@@ -3,6 +3,7 @@ collections:
     paths:
       - "Content/**/*.htm"
       - "Content/Resources/Snippets/*.flsnp"
+      - "Project/TOCs/*.fltoc"
 meta:
   overrides:
     - files: "Content/**/*.htm"
@@ -14,3 +15,6 @@ meta:
       schemas: [./schemas/snippet.schema.json]
 graph:
   out: graph/graph.ttl
+tools:
+  flare:
+    target: HTML5

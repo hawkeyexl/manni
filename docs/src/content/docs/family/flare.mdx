@@ -1,19 +1,19 @@
 ---
 title: Check a MadCap Flare project
-description: "Validate the metadata of a MadCap Flare project's topics and snippets, keep every write openable in Flare, and find broken cross-references and includes."
+description: "Validate the metadata of a MadCap Flare project's topics and snippets, read each topic as its target builds it, and find broken cross-references and includes."
 sidebar:
   order: 4
 id: "family-flare"
 type: "how-to"
-keywords: ["MadCap Flare", "XHTML", "snippets", "cross-references", "manni meta validate", "manni graph stats"]
+keywords: ["MadCap Flare", "XHTML", "snippets", "cross-references", "Flare targets", "conditions", "variables", "TOCs", "manni meta validate", "manni graph stats", "manni lint structure"]
 language: en
 audiences: ["docs-engineers", "ci-engineers"]
 intent: "Check the topics and snippets of a MadCap Flare project kept in Git, and gate them in CI on a runner with no Flare install."
 lifecycle: published
-applies-to: ["domain:meta", "domain:graph", "domain:family"]
+applies-to: ["domain:meta", "domain:lint", "domain:graph", "domain:family"]
 prerequisites: ["meta-reference-configuration"]
 next-steps: ["family-check", "graph-get-started"]
-sample-questions: ["Can manni validate the metadata in a MadCap Flare project?", "Why does manni read an empty Flare title as the topic's first heading?", "How do I find a broken MadCap cross-reference or snippet include with manni?"]
+sample-questions: ["Can manni validate the metadata in a MadCap Flare project?", "Why does manni read an empty Flare title as the topic's first heading?", "How do I find a broken MadCap cross-reference or snippet include with manni?", "Which Flare target does manni resolve conditions and variables against?"]
 graph: { label: "Check a MadCap Flare project", type: task }
 last-updated: 2026-10-28
 tags:
@@ -36,8 +36,9 @@ pull request, so a missing description or a misspelled cross-reference ships.
 
 manni reads the project as it is, with no Flare install and no export step.
 Topics and snippets are HTML to every domain, so `manni meta validate` and
-`manni graph` run on them unchanged. This page walks one small project from a
-first validation to a CI gate.
+`manni graph` run on them unchanged. `manni lint` and `manni graph` read each
+topic as its target builds it, and a TOC as a map. This page walks one small
+project from a first validation to a CI gate.
 
 The project is the fixture `test/fixtures/flare/widget/` in the manni
 repository, so you can run each command there.
@@ -49,11 +50,20 @@ schemas/snippet.schema.json
 Content/Topics/Install.htm
 Content/Topics/Configure.htm
 Content/Resources/Snippets/BeforeYouStart.flsnp
+Project/TOCs/Main.fltoc
+Project/VariableSets/General.flvar
+Project/ConditionTagSets/Default.flcts
+Project/Targets/HTML5.fltar
+Project/Targets/Print.fltar
 ```
 
 `Install.htm` includes the snippet, and its cross-reference to the other topic
-is misspelled `Configur.htm`. `Configure.htm` has an empty `<title>`, as Flare
-writes it, and no description.
+is misspelled `Configur.htm`. It names the variable `General.ProductVersion`,
+holds a paragraph conditioned `Default.PrintOnly`, and carries an index
+keyword marker. `Configure.htm` has an empty `<title>`, as Flare writes it, and
+no description. The variable set defines `ProductVersion` as `4.2`. The
+`HTML5` target excludes `PrintOnly` content and sets `ProductVersion` to
+`4.3`. The `Print` target includes only `PrintOnly` content.
 
 ## What manni reads in a Flare project
 
@@ -70,8 +80,8 @@ writes it, and no description.
 - **Cross-references and snippet references are links.** `href` on
   `<MadCap:xref>` is one, and so is `src` on `<MadCap:snippetBlock>` and
   `<MadCap:snippetText>`. A broken one is a broken link. A target that names a
-  variable, such as `href="[%=Links.Video%]"`, is not a path, so it is not
-  checked.
+  variable, such as `href="[%=Links.Video%]"`, resolves through the variable
+  set. One that cannot resolve is skipped.
 
 The [formats reference](/manni/meta/reference/formats/#html) has the full read
 rules, and [How graph works](/manni/graph/get-started/how-graph-works/#what-graph-reads)
@@ -87,6 +97,7 @@ collections:
     paths:
       - "Content/**/*.htm"
       - "Content/Resources/Snippets/*.flsnp"
+      - "Project/TOCs/*.fltoc"
 meta:
   overrides:
     - files: "Content/**/*.htm"
@@ -98,13 +109,17 @@ meta:
       schemas: [./schemas/snippet.schema.json]
 graph:
   out: graph/graph.ttl
+tools:
+  flare:
+    target: HTML5
 ```
 
-The `help` collection names the topics and the snippets. Each topic is held to
+The `help` collection names the topics, the snippets and the TOC. Each topic is held to
 [`manni:core:1.0.0`](/manni/meta/reference/schemas/manni-core/) alone, which
 requires a title and a description. A snippet is a fragment of a topic, so its
 schema is an empty `object` that holds it to no page contract. `graph.out` is
-where `manni graph build` writes.
+where `manni graph build` writes. `tools.flare.target` names the target each
+topic is read as, as the next sections show.
 
 `defaults: false` keeps the built-in default schemas off these files. The
 [configuration reference](/manni/meta/reference/configuration/) has every key.
@@ -186,7 +201,7 @@ keeps HTML's own spelling, so a new tag there ends in `>`.
 
 ```console
 $ manni graph build
-Wrote …/graph/graph.ttl (3 docs, … triples, 0 concepts)
+Wrote …/graph/graph.ttl (4 docs, … triples, 2 concepts)
 $ manni graph stats --check
 …
 Broken internal links (1):
@@ -195,6 +210,8 @@ Broken internal links (1):
 # exit 1
 ```
 
+The four documents are the two topics, the snippet and the TOC. The two
+concepts are the topic's index keywords.
 `Install.htm` cross-references `Configur.htm`, which does not exist.
 `stats --check` exits `1` on a broken internal link. Fix the `href`, build again,
 and it exits `0`.
@@ -217,6 +234,173 @@ $ manni graph query --predicate dcterms:references --object urn:manni:graph:doc/
 
 `manni graph traverse <snippet> --reverse` walks the same edges inbound. The
 [explore guide](/manni/graph/explore/) covers both.
+
+## Pick the target
+
+Flare builds a topic for one target at a time. The target decides which
+conditioned content is in the output, and it can override a variable's
+value. manni reads each topic for one target per run.
+
+- **The project is found.** A topic belongs to the project in the nearest
+  folder above it that holds a `.flprj`. Two `.flprj` files in one folder stop
+  the run with exit `2`.
+- **`tools.flare.target` names the target.** Flare keeps each author's
+  primary target outside Git, so the config names it.
+- **A project with one target uses it.** With no name and one target, that
+  target applies.
+- **Otherwise no target applies.** Every condition is included, and every
+  variable takes its default. The run says so once, on stderr.
+
+```text
+manni: Widget.flprj has 2 targets and tools.flare.target names none, so every condition is included and every variable takes its default.
+```
+
+A name the project does not define stops the run with exit `2`, and the
+message lists the targets there are.
+
+```text
+manni: tools.flare.target "PDF" names no target in Widget.flprj. Its targets are HTML5 and Print.
+```
+
+A topic with no `.flprj` above it still reads, with its variables and
+conditions left as written. The run prints one notice that names the file.
+
+`tools.flare` is one of the outside tools under `tools:`. The
+[configuration reference](/manni/meta/reference/configuration/#tools) lists
+its keys, and `tools.flare.home` names the folder that holds `madbuild.exe`.
+
+## Read a topic as its target builds it
+
+[`manni lint structure`](/manni/lint/reference/cli/) checks a topic's sections
+against a template. Pass `--explain` to see the target the topic resolves
+against, and how its headings line up.
+
+```console
+$ manni lint structure Content/Topics/Install.htm -t tgdp:how-to:1.6 --explain
+Using manni.config.yaml (.)
+▸ Content/Topics/Install.htm
+    · flare                Widget.flprj, target HTML5 (tools.flare.target)
+    → cli                  tgdp:how-to:1.6  --template
+    alignment
+      (page)                 ← "Installing the widget"
+        overview               ← (missing)
+        before-you-start       ← "Before you start"
+        task                   ← "Steps"
+          sub-task               ← (none)
+        see-also               ← (missing)
+
+1 file, 1 routed, 0 unrouted
+```
+
+The `flare` line names the project and the target, then why that target
+applies. It reads `(the only target)` for a project with one target, and
+`Widget.flprj, no target` when none applies. The `Before you start` heading
+lives in the snippet, and it fills the template's `before-you-start` section.
+
+lint and graph read the topic as the target builds it.
+
+- **Snippets expand in place.** A snippet reference becomes the snippet's
+  content, nested snippets included. A condition expression on the reference,
+  or on the topic's root, applies inside the snippet. So do the reference's
+  snippet variables.
+- **Variables resolve.** A snippet's variable override wins over the
+  target's, and the target's wins over the variable set. `System.Title` and
+  `System.SourceFile` resolve too. A date variable keeps its reference.
+- **Excluded content leaves the tree.** The `PrintOnly` paragraph is not in
+  the `HTML5` build, so no rule counts it.
+- **Links stay what each file says.** A cross-reference in print-only
+  content is still checked, under every condition.
+- **A finding keeps a line in its own file.** A block from a snippet reports
+  at the line of the snippet reference. A snippet checked directly reports at
+  its own lines, so a fault in a snippet is fixed once.
+
+A topic whose root carries a condition the target excludes is not linted.
+`--explain` ends its block with the reason.
+
+```text
+skipped: target HTML5 excludes the page by its conditions
+```
+
+A variable the project does not define is kept as text, and a snippet that
+includes itself is expanded once. Each warns once on stderr, and the exit code
+does not change.
+
+```text
+manni: <file>: variable <Set.Name> is not defined in <flprj>. The reference is kept as text.
+manni: <file>: snippet <snippet> includes itself through <chain>. It is expanded once.
+```
+
+The graph's passages read the same way.
+[`manni graph export chunks`](/manni/graph/reference/cli/#chunks) writes each
+passage's text as a reader of the `HTML5` output sees it. Its line span stays
+the topic's own source lines.
+
+```console
+$ manni graph export chunks -o .manni/chunks
+$ grep -c "Version 4.3 needs Node 20." .manni/chunks/chunks.en-US.jsonl
+2
+$ grep -c "MadCap:variable" .manni/chunks/chunks.en-US.jsonl
+0
+```
+
+The target's `4.3` replaces the set's `4.2`. The two rows are the topic's
+whole body and its first section.
+
+A topic takes its language from its own `lang` first, then a route's
+`language`, then the project's `xml:lang`. The fixture's project says
+`en-us`, so every document reads as `en-US`.
+
+## Index keywords are keywords
+
+A topic's `<MadCap:keyword>` and `<MadCap:concept>` markers read as the page
+field `keywords`.
+
+```console
+$ manni meta get keywords Content/Topics/Install.htm
+Using manni.config.yaml (.)
+Content/Topics/Install.htm: keywords=["install","setup"] (asserted)
+```
+
+- **A `term` splits on `;`.** `term="install;setup"` is two keywords.
+- **A subentry stays whole.** `A:B` is one keyword, and `\:` is a literal
+  colon.
+- **Each keyword counts once**, in document order.
+- **A keywords meta tag wins.** A `<meta name="keywords">` in the page wins
+  over the markers.
+
+graph files the topic under each keyword as a `dcterms:subject`, and term's
+`keyword-candidate` rule reads them. A write to keywords read from markers is
+refused with exit `2`, because the markers belong to Flare.
+
+```text
+manni: Refusing to write "keywords": Content/Topics/Install.htm reads them from its MadCap:keyword and MadCap:concept markers. Edit the markers in Flare.
+```
+
+## TOCs are maps
+
+A TOC (`.fltoc`) or browse sequence (`.flbrs`) reads as a map in lint and
+graph, the way a DITA map does.
+
+- **A titled entry is a section.** So is a book entry with no `Link`, such
+  as `Get started`.
+- **A linked title is transparent.** An entry titled
+  `[%=System.LinkedTitle%]` shows its topic's title in Flare. manni leaves it
+  out of the structure and keeps its children.
+- **Each `Link` is a link.** A link to `/Content/Topics/Install.htm` resolves
+  against the folder holding the `.flprj`, with no `routes:` entry.
+- **An excluded entry leaves the structure.** Its link stays, so a missing
+  topic is still a broken link.
+
+```console
+$ manni graph query --subject urn:manni:graph:doc/Project/TOCs/Main.fltoc --predicate dcterms:references
+<urn:manni:graph:doc/Project/TOCs/Main.fltoc> dcterms:references <urn:manni:graph:doc/Content/Topics/Configure.htm>
+<urn:manni:graph:doc/Project/TOCs/Main.fltoc> dcterms:references <urn:manni:graph:doc/Content/Topics/Install.htm>
+
+2 match(es)
+```
+
+A TOC carries no metadata. `manni meta` does not read it, so `meta validate`
+passes over the TOC in the collection.
 
 ## Run it in CI
 
@@ -297,7 +481,10 @@ graph steps.
 {/* test {"testId":"family-flare","description":"Validate a Flare project, build its graph, find the misspelled cross-reference and list a snippet's includers."} */}
 {/* step {"description":"meta validate fails Configure.htm on description alone, and passes the topic and the snippet.","runShell":{"command":"manni meta validate","workingDirectory":"test/fixtures/flare/widget","exitCodes":[1],"stdio":"3 files checked, 2 passed, 1 failed, 1 error"}} */}
 {/* step {"description":"An empty Flare title reads as the topic's first heading.","runShell":{"command":"manni meta get title Content/Topics/Configure.htm","workingDirectory":"test/fixtures/flare/widget","exitCodes":[0],"stdio":"title=Configuring the widget"}} */}
-{/* step {"description":"graph build reads the topics and the snippet.","runShell":{"command":"manni graph build","workingDirectory":"test/fixtures/flare/widget","exitCodes":[0],"stdio":"/3 docs, \\d+ triples/"}} */}
+{/* step {"description":"graph build reads the topics, the snippet and the TOC.","runShell":{"command":"manni graph build","workingDirectory":"test/fixtures/flare/widget","exitCodes":[0],"stdio":"/4 docs, \\d+ triples/"}} */}
 {/* step {"description":"stats --check finds the misspelled MadCap cross-reference and exits 1.","runShell":{"command":"manni graph stats --check","workingDirectory":"test/fixtures/flare/widget","exitCodes":[1],"stdio":"Content/Topics/Install.htm -> Configur.htm"}} */}
 {/* step {"description":"The snippet reference is a dcterms:references edge from the topic that includes it.","runShell":{"command":"manni graph query --predicate dcterms:references --object urn:manni:graph:doc/Content/Resources/Snippets/BeforeYouStart.flsnp","workingDirectory":"test/fixtures/flare/widget","exitCodes":[0],"stdio":"1 match(es)"}} */}
+{/* step {"description":"lint names the Flare project and the target the topic resolves against.","runShell":{"command":"manni lint structure Content/Topics/Install.htm -t tgdp:how-to:1.6 --explain","workingDirectory":"test/fixtures/flare/widget","exitCodes":[0],"stdio":"· flare"}} */}
+{/* step {"description":"The target is the one tools.flare.target names.","runShell":{"command":"manni lint structure Content/Topics/Install.htm -t tgdp:how-to:1.6 --explain","workingDirectory":"test/fixtures/flare/widget","exitCodes":[0],"stdio":"target HTML5 (tools.flare.target)"}} */}
+{/* step {"description":"A topic's index keyword markers read as the keywords field.","runShell":{"command":"manni meta get keywords Content/Topics/Install.htm","workingDirectory":"test/fixtures/flare/widget","exitCodes":[0],"stdio":"keywords=[\"install\",\"setup\"]"}} */}
 {/* test end */}

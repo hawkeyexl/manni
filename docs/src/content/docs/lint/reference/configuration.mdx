@@ -9,7 +9,7 @@ audiences:
   - ci-engineers
 lifecycle: published
 action: remember
-last-updated: 2026-10-02
+last-updated: 2026-10-28
 ---
 
 import { Aside } from '@astrojs/starlight/components';
@@ -157,6 +157,8 @@ tools do not have the same settings.
 |---|---|---|---|---|
 | `tools.dita-ot` | object | absent | no | DITA Open Toolkit's settings, read by the run that starts it. |
 | `tools.dita-ot.home` | string | none | no | DITA-OT's installation directory, relative to this file. Unset means the `dita` on your `PATH`. A directory rather than a path to the launcher, because that is the unit DITA-OT ships as. |
+| `tools.flare` | object | absent | no | MadCap Flare's settings, read by every domain that reads a Flare topic. |
+| `tools.flare.target` | string | the project's only target, else none | no | The Flare target whose conditions and variable overrides apply when lint builds a topic's tree. With no target, every condition is included and every variable takes its default. |
 
 A path is kept as you spelled it and resolved when it is used. Whether it
 exists is a question for the run that needs it, so `manni lint tools` reports

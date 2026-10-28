@@ -362,7 +362,7 @@ Jobs:
       html  HTML (.html, .htm, .flsnp)  kinds: paragraph, codeBlock, list, table, admonition, image, blockquote, definitionList
       asciidoc  AsciiDoc (.adoc, .asciidoc)  kinds: paragraph, codeBlock, list, table, admonition, image, blockquote, definitionList
       rst  reStructuredText (.rst)  kinds: paragraph, codeBlock, list, table, admonition, image, blockquote, definitionList
-      xml  XML (.xml, .dita, .ditamap)  kinds: paragraph, codeBlock, list, table, admonition, image, blockquote, definitionList
+      xml  XML (.xml, .dita, .ditamap, .fltoc, .flbrs)  kinds: paragraph, codeBlock, list, table, admonition, image, blockquote, definitionList
 ```
 
 `[configured]` means the repository's config declares the job, and `[not
@@ -655,6 +655,23 @@ the pairing the matcher chose:
 2 files, 1 routed, 1 unrouted
 ```
 
+A MadCap Flare topic's block opens with one more line, `flare`, before the
+rungs. It names the project and the target its conditions and variables
+resolve against, and why that target applies.
+
+| Line | Means |
+|---|---|
+| `· flare  Widget.flprj, target HTML5 (tools.flare.target)` | [`tools.flare.target`](/manni/meta/reference/configuration/#tools) names the target. |
+| `· flare  Solo.flprj, target Online (the only target)` | The project has one target, so it applies. |
+| `· flare  Widget.flprj, no target` | No target applies. Every condition is included, and every variable takes its default. |
+
+A topic whose conditions the target excludes is not linted. Its block ends
+with this reason, and the target is the one the `flare` line names:
+
+```
+skipped: target HTML5 excludes the page by its conditions
+```
+
 ### The alignment block
 
 One row per rule, indented to follow the section tree. The left column names
@@ -792,6 +809,12 @@ manni lint structure docs/ -t nope:x:1
 manni lint structure docs/notes.md
 # manni: Nothing was checked: all 1 file(s) were skipped. 1 had no template: give a page a "type:" that a template serves, pass -t/--template <ref>, or set "lint.template" as a default. Run "manni lint structure <paths> --explain" to see how each file resolved.
 
+manni lint structure Content/Topics/PrintGuide.htm -t tgdp:how-to:1.6
+# manni: Nothing was checked: all 1 file(s) were skipped. 1 is excluded by the Flare target's conditions: name a target that builds them in tools.flare.target. Run "manni lint structure <paths> --explain" to see how each file resolved.
+
+manni lint structure Content/ -t tgdp:how-to:1.6
+# manni: tools.flare.target "PDF" names no target in Widget.flprj. Its targets are HTML5 and Print.
+
 manni lint structure docs/ --as notebook
 # manni: Unknown format "notebook". Run "manni lint tools" to see the formats manni lint reads.
 
@@ -799,7 +822,7 @@ manni lint templates infer page.md -f pretty
 # manni: Unknown --format "pretty". Use yaml or json.
 
 manni lint templates infer notes.txt
-# manni: no parser is registered for ".txt". Supported extensions: .md, .markdown, .mdx, .html, .htm, .flsnp, .adoc, .asciidoc, .rst, .dita, .ditamap. Use --as to override.
+# manni: no parser is registered for ".txt". Supported extensions: .md, .markdown, .mdx, .html, .htm, .flsnp, .adoc, .asciidoc, .rst, .dita, .ditamap, .fltoc, .flbrs. Use --as to override.
 
 cat page.md | manni lint templates infer -
 # manni: Reading from stdin (-) requires --as <format> to choose a parser.

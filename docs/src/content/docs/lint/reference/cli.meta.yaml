@@ -19,8 +19,11 @@ docs/src/content/docs/lint/reference/cli.mdx:
       lines: 352
       integrity: sha256-83bbab5ad45f7ed9da81980657f482eef99def0d3ad5e14cdaf5721196d24142
     - generated-by: Claude Opus 5
-      lines: 353-409
-      integrity: sha256-307d53b481c39b31ffc4cf3159c0d2f4485a3024914015a595ee494e3267747a
+      lines: 353-354
+      integrity: sha256-91a9436c1fe58daa5abc0c40892edded9f4a5e3e0b366b1f2bada259f39de717
+    - generated-by: Claude Opus 5
+      lines: 356-409
+      integrity: sha256-fe942528b46ab89c0b237415e61372f794072079f4f1e08fa56edb8983f4d942
     - generated-by: Claude Opus 5
       lines: 411-461
       integrity: sha256-dfd1b659eefc1c23eb308884b8624d0f934a637bf36dae7b63ec1e112342fa09
@@ -70,13 +73,16 @@ docs/src/content/docs/lint/reference/cli.mdx:
       lines: 574-577
       integrity: sha256-8e85f298a89828fffefa43d51cdd39d195374f21aea8ac3f99c0cdb6ba8b454f
     - generated-by: Claude Opus 5
-      lines: 579-791
-      integrity: sha256-44f975b8d8235366751352e7ebd7f6a19abb185f52930b14993db2f450a9a0bc
-    - generated-by: Claude Opus 5.5
-      lines: 792
-      integrity: sha256-38a59ada4ee2c7d9dca0e74e6ff9541f8dec58da3bae1abab058fd33f18d09fe
+      lines: 579-646
+      integrity: sha256-540c79b0958b9bc78706295ac7c57a8f9a2cd9cbfc9e8d81b29014ce43043469
     - generated-by: Claude Opus 5
-      lines: 794-821
+      lines: 665-800
+      integrity: sha256-d770018ca304d9abf20a1f2d2678c46fd16cdde2779ea546517bb140e9474347
+    - generated-by: Claude Opus 5
+      lines: 808-814
+      integrity: sha256-87bc8a7f64171a757c6f75668a7c52c233d5f30495a3497a35f0f2ea4452fef1
+    - generated-by: Claude Opus 5
+      lines: 817-844
       integrity: sha256-9b3967c4396c837914733b50b762ca4ac0a7c6e7bfe151702840f12e04f352e2
   owner:
     - "@hawkeyexl"
