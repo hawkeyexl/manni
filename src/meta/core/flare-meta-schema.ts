@@ -42,7 +42,8 @@ export function flareMetaSchema(text: string, ref: string): Record<string, unkno
   }
 
   const properties: Record<string, Record<string, unknown>> = {};
-  for (const tag of Array.from(root.getElementsByTagName("meta"))) {
+  // A set's tags are the root's own children; anything nested is not one.
+  for (const tag of Array.from(root.getElementsByTagName("meta")).filter((t) => t.parentNode === root)) {
     const name = tag.getAttribute("name");
     if (!name) continue;
     const property: Record<string, unknown> = { type: "string" };
