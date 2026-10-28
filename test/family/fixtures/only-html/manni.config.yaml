@@ -1,5 +1,5 @@
-# A Flare-style project: every collection member is an .htm topic, which
-# docevals does not read, and there is no docevals: section. meta is set up.
+# A Flare-style project: every collection member is an .htm topic. docevals
+# reads them and none declares evals, and there is no docevals: section. meta is set up.
 collections:
   - name: site
     paths:

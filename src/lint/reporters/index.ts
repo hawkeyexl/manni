@@ -266,6 +266,16 @@ export function renderExplain(run: LintRun, opts: ReportOptions = {}): string {
     const chosen = result.template;
     lines.push(`${chosen ? c.cyan("▸") : c.dim("-")} ${c.bold(result.file)}`);
 
+    // What a Flare topic resolved against, ahead of the routing it fed.
+    if (result.flare !== undefined) {
+      const { project, target } = result.flare;
+      const detail =
+        target === undefined
+          ? `${project}, no target`
+          : `${project}, target ${target.name} (${target.from})`;
+      lines.push(`    ${c.dim("·")} ${"flare".padEnd(20)} ${c.dim(detail)}`);
+    }
+
     const steps = result.resolution?.steps ?? [];
     if (steps.length === 0) {
       lines.push(`    ${c.dim("(no resolution recorded)")}`);
@@ -298,6 +308,8 @@ export function renderExplain(run: LintRun, opts: ReportOptions = {}): string {
           ? `; known doctypes: ${known.join(", ")}`
           : "";
       lines.push(`    ${c.red("✗")} no template serves type "${type}"${hint}`);
+    } else if (result.skipped === "excluded") {
+      lines.push(`    ${c.dim(`skipped: ${result.reason ?? "excluded"}`)}`);
     } else if (cause === "no-type") {
       lines.push(`    ${c.dim("skipped: the page declares no type")}`);
     }

@@ -1,0 +1,10 @@
+# Proposal 0125, decision 21: docevals reads every format meta reads. Each
+# page keeps its evals in a manifest of its own, because a YAML block cannot
+# go onto markup. The folder is a Flare project, so the topic reads resolved.
+collections:
+  - name: formats
+    paths:
+      - "Content/**/*.{htm,adoc,rst,dita}"
+    externalMetadata:
+      - file: "{page}.meta.yaml"
+        keys: [evals, eval-suite, eval-skip, meta-provenance]

@@ -1,0 +1,20 @@
+WEBVTT
+
+NOTE Silent video. Cues are the on-screen step captions; the terminal text is in the transcript.
+
+1
+00:00:00.000 --> 00:00:08.867
+A Flare topic as written: Install.htm uses a variable, a snippet and a PrintOnly paragraph. HTML5 sets ProductVersion to 4.3.
+
+2
+00:00:08.867 --> 00:00:17.467
+Project and target, found: lint finds Widget.flprj and the HTML5 target from config. The snippet's h2 fills before-you-start.
+
+3
+00:00:17.467 --> 00:00:34.300
+Passages as HTML5 builds them: Graph passages carry the text HTML5 builds: version 4.3, and the PrintOnly paragraph is gone.
+
+4
+00:00:34.300 --> 00:00:43.700
+Index keywords, read: Index keyword markers become the keywords field.
+

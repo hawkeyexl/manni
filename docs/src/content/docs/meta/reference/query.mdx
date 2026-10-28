@@ -30,7 +30,7 @@ sample-questions:
 graph:
   label: query command reference
   type: reference
-last-updated: 2026-09-27
+last-updated: 2026-10-28
 tags:
   - sql
   - database
@@ -668,6 +668,9 @@ cannot point the edit outside the repository.
 - **A URL reference refuses** with "vendor it first"
   ([`manni meta schemas vendor`](/manni/meta/reference/cli/#meta-schemas-vendor)). DDL
   cannot inspect, let alone edit, a schema a server owns.
+- **A Flare meta tag set refuses.** A `.flmeta` target exits `2` with
+  `<ref> is a Flare meta tag set, which manni reads and never writes.`
+  Flare owns the file.
 
 Where ownership is unclear, DDL refuses rather than guesses:
 

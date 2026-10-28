@@ -20,6 +20,7 @@
  * round trip, and a map or a list emits in flow style. A string with a newline
  * in it cannot fit in an attribute at all and is refused rather than truncated.
  */
+import { defaultTreeAdapter } from "parse5";
 import { stringify as stringifyYaml } from "yaml";
 import {
   DocmetaError,
@@ -29,6 +30,9 @@ import {
 import { dropUndefined, deepEqual } from "./patch-util.js";
 import { readHtml, type Element, type HtmlRead } from "./html-read.js";
 import { escapeText, valuesFor } from "./element-write.js";
+import { liftKey } from "./element-key.js";
+import { xmlParseError } from "./xml-read.js";
+import { isFlare } from "../../shared/xhtml.js";
 
 /** One character-range replacement in the source. */
 interface Edit {
@@ -46,16 +50,28 @@ export function applyHtml(
   // makes that necessary — so every position it reports is relative to the text
   // it hands back. Splice against that same text and restore the BOM as a
   // prefix, which leaves no offset arithmetic to get wrong.
-  const before = readHtml(original, { elements: options.elements });
+  const before = readHtml(original, {
+    elements: options.elements,
+    filePath: options.filePath,
+  });
   const content = before.body;
 
   // Structural checks run before the empty-patch shortcut, so an empty patch is
   // a usable pre-flight probe for "can this document be written at all?".
   // `fill` uses it to skip paying for inference on a file it could never write.
   const headStart = before.head?.sourceCodeLocation?.startTag;
-  if (before.head === undefined || headStart == null) {
+  // An XHTML page whose source writes no <head> at all, as most Flare
+  // snippets are, gains one just inside <html> (0125, decision 3). One whose
+  // source does write a <head> that parse5 could not locate is still refused.
+  const html =
+    headStart == null && before.xhtml && !HEAD_TAG.test(content.replace(COMMENT, ""))
+      ? htmlElement(before.head)
+      : undefined;
+  if (before.head === undefined || (headStart == null && html === undefined)) {
     throw new DocmetaError(
-      "This HTML document has no <head> element; manni meta fill writes metadata into <head>. Add one, or set the field manually.",
+      options.filePath === undefined
+        ? "This HTML document has no <head> element; manni meta fill writes metadata into <head>. Add one, or set the field manually."
+        : `${options.filePath} has no <head> element; manni meta fill writes metadata into <head>. Add one, or set the field manually.`,
     );
   }
 
@@ -64,6 +80,8 @@ export function applyHtml(
 
   const edits: Edit[] = [];
   const inserts: string[] = [];
+  // An XHTML page is XML, where a void tag has to close itself (0125).
+  const tagEnd = before.xhtml ? " />" : ">";
   /** Elements this write touches, so `verify` knows which keys move with them. */
   const moved = new Set<Element>();
   for (const [key, value] of Object.entries(clean)) {
@@ -71,12 +89,18 @@ export function applyHtml(
     // Emitted per branch rather than up front. A list-valued key is emitted one
     // item at a time below; emitting the whole array here would put one flow
     // list in the first element instead of one value in each.
-    if (source === undefined) {
+    if (source === undefined && key === "title" && flareTitleInsert(before)) {
+      // A Flare topic with no <title>, its commonest shape, gets the element
+      // rather than a <meta name="title"> (0125, decision 5).
+      inserts.push("<title>" + escapeText(emitScalar(key, value)) + "</title>");
+    } else if (source === undefined) {
       const name = escapeAttr(key, DQ);
       inserts.push(
         "<meta name=" + DQ + name + DQ + " content=" + DQ +
-          escapeAttr(emitScalar(key, value), DQ) + DQ + ">",
+          escapeAttr(emitScalar(key, value), DQ) + DQ + tagEnd,
       );
+    } else if (source.kind === "marker") {
+      throw new DocmetaError(markerRefusal(key, options.filePath ?? "the page"));
     } else if (source.kind === "meta") {
       edits.push(metaEdit(content, source.el, key, emitScalar(key, value)));
       moved.add(source.el);
@@ -102,16 +126,58 @@ export function applyHtml(
   }
 
   if (inserts.length > 0) {
-    edits.push(insertEdit(content, before.head, headStart.endOffset, inserts));
+    edits.push(
+      headStart != null
+        ? insertEdit(content, before.head, headStart, inserts, before.xhtml)
+        : createHeadEdit(content, html, inserts),
+    );
   }
 
   const next = spliceAll(content, edits);
+  // On an XHTML page that was well-formed XML, the result must be too. One
+  // that was already malformed is not this write's to judge.
+  if (before.xhtml && xmlParseError(content) === undefined) {
+    const error = xmlParseError(next);
+    if (error !== undefined) {
+      throw new DocmetaError(
+        `Refusing to write "${Object.keys(clean)[0] ?? ""}": the result would not be well-formed XML (${error}). ${options.filePath ?? "the page"} is unchanged.`,
+      );
+    }
+  }
   verify(next, before, clean, moved, options);
   // `content === original` is the BOM test: `readHtml` returns `body` with any
   // leading BOM removed, so the two are the same value exactly when there was
   // none to remove. When there was, it is the single character at `original[0]`,
   // put back in front of the spliced text.
   return content === original ? next : original.slice(0, 1) + next;
+}
+
+/** The Flare markers each marker-read key comes from, as the refusal names them. */
+const MARKERS: Record<string, string> = {
+  keywords: "MadCap:keyword and MadCap:concept",
+  concepts: "MadCap:glossaryTerm",
+};
+
+/** Why a key read from Flare's markers is not written (0125, decisions 16 and 19). */
+function markerRefusal(key: string, file: string): string {
+  return `Refusing to write "${key}": ${file} reads them from its ${MARKERS[key] ?? "MadCap"} markers. Edit the markers in Flare.`;
+}
+
+/** A `<head` start tag, looked for in the source with its comments removed. */
+const HEAD_TAG = /<head[\s>/]/i;
+const COMMENT = /<!--[\s\S]*?-->/g;
+
+/** The `<html>` element `head` sits in, when the source writes its start tag. */
+function htmlElement(head: Element | undefined): HtmlStart | undefined {
+  const parent = head?.parentNode;
+  if (!parent || !defaultTreeAdapter.isElementNode(parent)) return undefined;
+  const startTag = parent.sourceCodeLocation?.startTag;
+  return parent.tagName === "html" && startTag != null ? { el: parent, startTag } : undefined;
+}
+
+interface HtmlStart {
+  el: Element;
+  startTag: { endOffset: number };
 }
 
 const DQ = String.fromCharCode(34);
@@ -198,28 +264,81 @@ function elementTextEdit(el: Element, key: string, emitted: string): Edit {
 /**
  * Insert new `<meta>` tags immediately after `<head>`'s start tag, indented to
  * match whatever is already inside it.
+ *
+ * An XHTML `<head />` holds nothing, so it opens into `<head>` and `</head>`
+ * around the tags (0125, decision 3). Its attributes stay as written.
  */
 function insertEdit(
   content: string,
   head: Element,
-  at: number,
+  headStart: { startOffset: number; endOffset: number },
   tags: string[],
+  xhtml: boolean,
 ): Edit {
+  const at = headStart.endOffset;
   const { eol, indent } = headStyle(content, head, at);
+  const startTag = content.slice(headStart.startOffset, at);
+  if (
+    xhtml &&
+    head.sourceCodeLocation?.endTag == null &&
+    startTag.endsWith("/>")
+  ) {
+    // A self-closed head has no child to copy a style from, so its own line
+    // does: the close tag sits at the head's indent, a child one step in.
+    const lineStart = content.lastIndexOf("\n", headStart.startOffset - 1) + 1;
+    const lead = content.slice(lineStart, headStart.startOffset);
+    const own = /^[ \t]*$/.test(lead) ? lead : "";
+    return {
+      start: headStart.startOffset,
+      end: at,
+      text: headAround(startTag.replace(/\s*\/>$/, ">"), tags, eol, own),
+    };
+  }
   const text = tags.map((t) => `${eol}${indent}${t}`).join("");
   return { start: at, end: at, text };
 }
 
 /**
- * The line ending and indentation to use inside `<head>`, taken from its first
- * existing child so an inserted tag looks like the ones around it.
+ * A new `<head>` just inside `<html>`'s start tag, for an XHTML page whose
+ * source has none. It takes the indent of `<html>`'s first child, usually
+ * `<body>`, so it sits beside it.
+ */
+function createHeadEdit(
+  content: string,
+  html: HtmlStart | undefined,
+  tags: string[],
+): Edit {
+  /* c8 ignore next 3 -- defensive: applyHtml refuses first when there is no <html>. */
+  if (html === undefined) {
+    throw new DocmetaError("Internal error: no <html> start tag to insert a <head> after.");
+  }
+  const at = html.startTag.endOffset;
+  const { eol, indent } = headStyle(content, html.el, at);
+  return { start: at, end: at, text: eol + indent + headAround("<head>", tags, eol, indent) };
+}
+
+/** Whether a `title` with no source is written as a `<title>` element: on a Flare topic only. */
+function flareTitleInsert(before: HtmlRead): boolean {
+  return before.xhtml && isFlare(before.body);
+}
+
+/** `open`, then each tag a step in from `own`, then `</head>` back at `own`. */
+function headAround(open: string, tags: string[], eol: string, own: string): string {
+  const inner = own + (own === "" ? "  " : own);
+  return open + tags.map((t) => `${eol}${inner}${t}`).join("") + eol + own + "</head>";
+}
+
+/**
+ * The line ending and indentation to use inside `parent`, a `<head>` or an
+ * `<html>`, taken from its first existing child so an inserted tag looks like
+ * the ones around it.
  */
 function headStyle(
   content: string,
-  head: Element,
+  parent: Element,
   at: number,
 ): { eol: string; indent: string } {
-  for (const child of head.childNodes) {
+  for (const child of parent.childNodes) {
     const start = child.sourceCodeLocation?.startOffset;
     if (start == null || start < at) continue;
     const lineStart = content.lastIndexOf("\n", start - 1) + 1;
@@ -233,8 +352,8 @@ function headStyle(
       };
     }
   }
-  // Reached only for an empty `<head></head>`, where there is no child to copy
-  // the style from. Look only at the text above the insertion point: a document
+  // Reached for an empty `<head></head>`, or an `<html>` with no child on a
+  // line of its own, where there is no child to copy the style from. Look only at the text above the insertion point: a document
   // that mixes endings — an LF head in a generator's CRLF body — would
   // otherwise take its head's line ending from the body below it.
   const above = content.slice(0, at);
@@ -352,15 +471,27 @@ function verify(
 ): void {
   // Re-read with the *same* options the write used, or a key an `elements:`
   // path produced is invisible here and every write to one is refused.
-  const actual = readHtml(next, { elements: options.elements }).data;
+  const actual = readHtml(next, {
+    elements: options.elements,
+    filePath: options.filePath,
+  }).data;
   const expected: Record<string, unknown> = { ...before.data, ...patch };
   for (const [key, source] of before.sources) {
     if (key in patch) continue;
-    const els =
-      source.kind === "element-text" || source.kind === "element-attr"
-        ? source.els
-        : [source.el];
+    const els = "els" in source ? source.els : [source.el];
     if (els.some((el: Element) => moved.has(el))) expected[key] = actual[key];
+  }
+  // An empty <title> lifts no `head.title`, so filling it adds that key. It
+  // moved with its element as surely as one that was there before. A <title>
+  // the write inserted, on a Flare topic that had none, adds it too.
+  const title = before.sources.get("title");
+  const headTitle = liftKey("head", "title");
+  const titleWritten =
+    title === undefined
+      ? flareTitleInsert(before) && "title" in patch
+      : title.kind === "title" && moved.has(title.el);
+  if (titleWritten && headTitle in actual) {
+    expected[headTitle] ??= actual[headTitle];
   }
   if (!deepEqual(actual, expected)) {
     throw new DocmetaError(

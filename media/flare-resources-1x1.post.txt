@@ -1,0 +1,13 @@
+A MadCap Flare project already holds a termbase and a metadata schema. You just never called them that.
+
+manni now reads both.
+
+The glossary is a termbase. manni term check reads each .flglo entry as a term, keyed by its glossTerm id. The target applies, so a print-only entry drops out of the HTML5 check.
+
+Glossary markers are concepts. A topic's MadCap:glossaryTerm markers become its concepts field. Point one at a missing entry and term check fails at the marker's line.
+
+A meta tag set is a schema. manni meta validate reads the .flmeta file, so Status only takes Draft, Reviewed or Published. A typo fails with the tag's own description as guidance.
+
+Every frame is a real run against a small Flare fixture.
+
+#techcomm #madcapflare #technicalwriting #docsascode

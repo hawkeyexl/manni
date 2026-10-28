@@ -24,7 +24,7 @@ sample-questions:
 graph:
   label: Schema resolution reference
   type: reference
-last-updated: 2026-10-23
+last-updated: 2026-10-28
 tags:
   - schema-resolution
   - json-schema
@@ -294,6 +294,35 @@ line and column where parsing failed. It does **not** quote the file's contents
 back, because that message travels into `json` and `sarif` reports that are
 routinely uploaded to code scanning. A *fetched* body is quoted, deliberately.
 Seeing what a URL actually returned is how you tell a gateway from a schema.
+
+#### Flare meta tag sets
+
+A **file** reference ending in `.flmeta` is a MadCap Flare meta tag set, and
+meta reads it into a JSON Schema. It works in `schemas`,
+`overrides[].schemas`, `-s/--schema` and a document's `$schema`.
+
+- **Each `<meta>` is a string property.** Its `desc` is the property's
+  description, and a finding prints it as guidance.
+- **An `Enum` tag holds its list.** Its value matches one or more of the
+  tag's `enum` values, joined by commas, as Flare writes a list of several.
+  An empty value is Flare's "not set", and it passes.
+- **Nothing is required**, because Flare requires nothing.
+
+```text
+✗ Content/Topics/Install.htm
+    /Status  must match pattern "^((Draft|Reviewed|Published)(,(Draft|Reviewed|Published))*)?$"  (line 6)  [./Project/Advanced/Topics.flmeta]
+      ./Project/Advanced/Topics.flmeta Status: Where the topic is in review.
+```
+
+A `.flmeta` file whose root element is not `<CatapultMetaTagSet>` stops the
+run with exit `2`. manni reads a meta tag set and never writes one, so a
+[`meta query`](/manni/meta/reference/query/#which-schema-an-alter-edits)
+schema change that would write it exits `2` as well.
+
+```text
+manni: <ref> is not a Flare meta tag set: its root element is <name>.
+manni: <ref> is a Flare meta tag set, which manni reads and never writes.
+```
 
 #### Vendored references
 

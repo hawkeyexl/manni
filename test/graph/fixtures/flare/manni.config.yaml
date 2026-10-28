@@ -1,0 +1,10 @@
+# Two Flare topics and a snippet (proposal 0125). A cross-reference, a
+# snippet include and a misspelled cross-reference, built through the real CLI.
+collections:
+  - name: flare
+    paths:
+      - "."
+
+graph:
+  baseIri: https://example.com/flare/
+  out: graph.ttl

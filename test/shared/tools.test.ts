@@ -10,6 +10,7 @@ import {
   claudeCliMcpConfigPath,
   ditaOtHome,
   docDetectiveConfigPath,
+  flareHome,
   parseTools,
   valeConfigPath,
 } from "../../src/shared/tools.js";
@@ -46,7 +47,7 @@ describe("parseTools", () => {
 
   it("refuses a tool it does not know, naming the ones it does", () => {
     expect(() => parse({ prettier: {} })).toThrow(
-      `${SOURCE}: tools has unknown key "prettier". Supported keys: vale, dita-ot, doc-detective, claude-cli.`,
+      `${SOURCE}: tools has unknown key "prettier". Supported keys: vale, dita-ot, doc-detective, claude-cli, flare.`,
     );
   });
 
@@ -266,5 +267,56 @@ describe("claudeCliMcpConfigPath", () => {
 
   it("is undefined when none is set", () => {
     expect(claudeCliMcpConfigPath({}, dir)).toBeUndefined();
+  });
+});
+
+describe("parseTools: MadCap Flare", () => {
+  it("reads the target and the home", () => {
+    expect(parse({ flare: { target: "HTML5", home: "Flare.app" } })).toEqual({
+      flare: { target: "HTML5", home: "Flare.app" },
+    });
+  });
+
+  it("accepts the namespace with no keys", () => {
+    expect(parse({ flare: {} })).toEqual({ flare: {} });
+  });
+
+  it("refuses a key it never reads", () => {
+    expect(() => parse({ flare: { project: "Widget.flprj" } })).toThrow(
+      `${SOURCE}: tools.flare has unknown key "project". Supported keys: target, home.`,
+    );
+  });
+
+  it.each(["target", "home"])("refuses a %s that is not a usable string", (key) => {
+    for (const value of ["", "   ", 7, null, ["HTML5"]]) {
+      expect(() => parse({ flare: { [key]: value } })).toThrow(
+        `${SOURCE}: tools.flare.${key} must be a non-empty string.`,
+      );
+    }
+  });
+
+  it("refuses a namespace that is not a mapping", () => {
+    expect(() => parse({ flare: "HTML5" })).toThrow(`${SOURCE}: tools.flare must be a mapping.`);
+  });
+});
+
+describe("flareHome", () => {
+  const dir = join(process.cwd(), "repo", "root");
+
+  it("resolves a relative home against the config file's directory", () => {
+    expect(flareHome({ flare: { home: "vendor/Flare.app" } }, dir)).toBe(
+      join(dir, "vendor", "Flare.app"),
+    );
+  });
+
+  it("keeps an absolute home as written", () => {
+    const absolute = join(process.cwd(), "opt", "Flare.app");
+    expect(flareHome({ flare: { home: absolute } }, dir)).toBe(absolute);
+  });
+
+  // Unset means the madbuild on PATH.
+  it("is undefined when no home is set", () => {
+    expect(flareHome({}, dir)).toBeUndefined();
+    expect(flareHome({ flare: { target: "HTML5" } }, dir)).toBeUndefined();
   });
 });

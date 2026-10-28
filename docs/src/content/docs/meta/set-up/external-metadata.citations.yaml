@@ -110,27 +110,27 @@ docs/src/content/docs/meta/set-up/external-metadata.mdx:
         integrity: sha256-3fd43bd1e1c2b880733c027690fbb5f7b62b5fa54dde2248d5959f9df8baff72
       source:
         file: src/meta/commands/query.ts
-        lines: 3344-3351
+        lines: 3351-3358
         integrity: sha256-42c75dbbc97be83f6fd16d09d9379e3a636755457cd29fdae71ff6df23ae5e15
-        commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
+        commit-sha: 343ef71848c2fa541f41eb5f993e18b5dd9c0c17
     - id: join-field-write-refused-when-entry-matched
       claim:
         lines: 652
         integrity: sha256-d7d8e30e0b6a0639c700a7b2b5218b70da4569f4df4dcdef129d6d132afde5e3
       source:
         file: src/meta/commands/query.ts
-        lines: 2994-2997
+        lines: 3001-3004
         integrity: sha256-49f7d3db3de492b6a8eccb57d02c29254e371d6cc228c0f8c35db2aa03f6597a
-        commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
+        commit-sha: 343ef71848c2fa541f41eb5f993e18b5dd9c0c17
     - id: url-manifest-cannot-be-written
       claim:
         lines: 649
         integrity: sha256-e718e3abe8f0bbed0ca5ba21a7d6a5bd295f2437fb959845d26b350218e420f4
       source:
         file: src/meta/commands/query.ts
-        lines: 3146-3149
+        lines: 3153-3156
         integrity: sha256-f08065cb2b35ffe35134c23718880792743489af32ce7c5c719b888cb375868c
-        commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
+        commit-sha: 343ef71848c2fa541f41eb5f993e18b5dd9c0c17
     - id: manifest-splice-preserves-comments
       claim:
         integrity: sha256-756a1eb87c6a14d7fbd92fc09a0b513c213db34ea64626596c3884017ef52bec
@@ -216,9 +216,9 @@ docs/src/content/docs/meta/set-up/external-metadata.mdx:
         integrity: sha256-776e13f5b6c23a26000407530591ea750b9d963b928391ee3103f12a43a1dc7f
       source:
         file: src/meta/commands/query.ts
-        lines: 2993-2997
+        lines: 3000-3004
         integrity: sha256-64153ad32156f49017c5c25e6f2df03618b30844ddaa7228327bf509377e2a12
-        commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
+        commit-sha: 343ef71848c2fa541f41eb5f993e18b5dd9c0c17
     - id: duplicate-finding-fails-the-run
       claim:
         integrity: sha256-ef9bc63ec1edba49b0a15655a5204b49a849fd2329bceb2f21f1ef2f5af186c5

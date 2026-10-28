@@ -1,0 +1,3 @@
+manni: no docevals report is configured, so records carry no eval verdicts.
+manni: no vector sidecar, so chunks carry no vectors and retrieval is lexical only; configure graph.embed to add them.
+Wrote 11 chunks to C:\flare\out\chunks.json

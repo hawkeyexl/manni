@@ -6,7 +6,7 @@
  * comes from lint's section tree (proposal 0077 §2).
  */
 import { createHash } from "node:crypto";
-import { extname } from "node:path";
+import { dirname, extname, relative } from "node:path";
 import { unified } from "unified";
 import remarkParse from "remark-parse";
 import remarkGfm from "remark-gfm";
@@ -24,8 +24,11 @@ import { parserByName, parserForExtension } from "../../lint/parsers/index.js";
 import type {
   ContentNode,
   DocumentTree,
+  ParseContext,
   SectionNode,
 } from "../../lint/types.js";
+import { FlareError } from "../../shared/flare/index.js";
+import { isFlare } from "../../shared/xhtml.js";
 import type { Root, RootContent, Definition } from "mdast";
 import { errorMessage } from "../../shared/errors.js";
 import { GraphError } from "../types.js";
@@ -78,7 +81,18 @@ export interface AnalyzeOptions {
    * How the body is parsed. Absent, `parseBody`. `graph build` passes a cache's
    * `parse` here, which returns what `parseBody` would (`analyze-cache.ts`).
    */
-  parse?: (content: string, path: string, format: DocFormat) => Promise<DocBody>;
+  parse?: (
+    content: string,
+    path: string,
+    format: DocFormat,
+    context?: ParseContext,
+  ) => Promise<DocBody>;
+  /**
+   * What lint's parser may read beyond a page's bytes, by its label: its
+   * absolute path, and the run's Flare reader (proposal 0125). Absent, a
+   * Flare topic reads as its source.
+   */
+  context?: (label: string) => ParseContext | undefined;
 }
 
 /**
@@ -371,11 +385,22 @@ function pathIndexFor(allPaths: ReadonlySet<string>): PathIndex {
   return index;
 }
 
+/** A link Flare writes from its project root (proposal 0125, decision 17). */
+const FLARE_ROOTED = /^\/(?:Content|Project)\//i;
+
+/** A Flare TOC or browse sequence, which belongs to its project as a topic does. */
+const FLARE_MAP = /\.fl(?:toc|brs)$/i;
+
+/**
+ * `projectRoot` is the relative path from the page's folder to its Flare
+ * project's root, `.` at the root, for a page in one.
+ */
 function classifyLink(
   docPath: string,
   rawTarget: string,
   allPaths: ReadonlySet<string>,
   routes: RouteMapping[],
+  projectRoot?: string,
 ): DocLink | null {
   const raw = rawTarget;
   if (hasScheme(raw)) {
@@ -390,10 +415,18 @@ function classifyLink(
   const pathPart = hashAt === -1 ? raw : raw.slice(0, hashAt);
   const anchor = hashAt === -1 ? undefined : raw.slice(hashAt + 1);
   if (pathPart === "") return null; // same-document anchor
+  // In a Flare project, `/Content/` and `/Project/` name files from the
+  // project root, so they resolve like a relative link with no `routes:`
+  // entry. A project root above the labels is out of reach, and leaves the
+  // link to the routes as any other.
+  const fromRoot =
+    projectRoot !== undefined && FLARE_ROOTED.test(pathPart) ? `${projectRoot}${pathPart}` : undefined;
+  const target =
+    fromRoot !== undefined && resolveRelative(docPath, safeDecode(fromRoot)) !== null ? fromRoot : pathPart;
   // Site-root-absolute URLs (/docs/x/) are published-site routes. With route
   // mappings configured they resolve to source files (or count as broken when
   // a mapped basePath has no matching file); unmapped routes are skipped.
-  if (pathPart.startsWith("/")) {
+  if (target.startsWith("/")) {
     const resolved = resolveRoute(pathPart, routes, pathIndexFor(allPaths));
     if (resolved === null) return null;
     if (resolved === "broken") return { raw, kind: "broken" };
@@ -401,7 +434,7 @@ function classifyLink(
     if (anchor) link.anchor = anchor;
     return link;
   }
-  const resolved = resolveRelative(docPath, safeDecode(pathPart));
+  const resolved = resolveRelative(docPath, safeDecode(target));
   if (resolved !== null) {
     const index = pathIndexFor(allPaths);
     let candidates: string[];
@@ -461,6 +494,9 @@ export function metadataOf(
   path: string,
   format: DocFormat,
 ): { data: Record<string, unknown>; present: boolean } {
+  // A Flare TOC carries no metadata. meta does not claim the format, so its
+  // root's attributes (`Version`) are not a page's fields (0125, decision 17).
+  if (FLARE_MAP.test(path)) return { data: {}, present: false };
   try {
     const meta =
       format === "markdown" || format === "mdx"
@@ -487,19 +523,31 @@ export async function analyzeDoc(
   const path = normalizeDocPath(relPath);
   const format = formatOf(path, options.format);
   const parse = options.parse ?? parseBody;
+  const context = options.context?.(path);
   // A tree format is parsed first, so a malformed page is reported as a parse
   // failure rather than as whatever the metadata reader tripped on. Markdown
   // keeps its order: its parse cannot fail where its frontmatter can.
-  let body = isTreeFormat(format) ? await parse(content, path, format) : undefined;
+  let body = isTreeFormat(format) ? await parse(content, path, format, context) : undefined;
   const meta = metadataOf(content, path, format);
-  body ??= await parse(content, path, format);
+  body ??= await parse(content, path, format, context);
 
+  // A Flare page, or a TOC, belongs to the project in the nearest folder
+  // above it holding a `.flprj` (proposal 0125, decision 10).
+  const project =
+    context?.flare !== undefined && (FLARE_MAP.test(path) || isFlare(content))
+      ? context.flare.projectFor(context.absPath)
+      : undefined;
+  const projectRoot =
+    project === undefined || context === undefined
+      ? undefined
+      : relative(dirname(context.absPath), project.root).replace(/\\/g, "/") || ".";
   const links: DocLink[] = [];
   for (const target of body.linkTargets) {
-    const link = classifyLink(path, target, allPaths, routes);
+    const link = classifyLink(path, target, allPaths, routes, projectRoot);
     if (link) links.push(link);
   }
   const routeLanguage = routeLanguageFor(path, routes);
+  const projectLanguage = project?.language;
   const statements = statementsOf(content, format);
 
   return {
@@ -516,6 +564,7 @@ export async function analyzeDoc(
     // Omitted rather than set to undefined, so a doc under no localized route
     // carries no key at all — `routeLanguage` in JSON output means something.
     ...(routeLanguage === undefined ? {} : { routeLanguage }),
+    ...(projectLanguage === undefined ? {} : { projectLanguage }),
     // Over the content as read — line endings included, so the digest is
     // byte-faithful and equals `sha256sum <file>` for any valid-UTF-8 file
     // (ADR 01036). The CRLF corpus fixture depends on this not normalizing.
@@ -551,8 +600,9 @@ export async function parseBody(
   content: string,
   path: string,
   format: DocFormat,
+  context?: ParseContext,
 ): Promise<DocBody> {
-  if (isTreeFormat(format)) return parseTreeBody(content, path, format);
+  if (isTreeFormat(format)) return parseTreeBody(content, path, format, context);
   const isMdx = format === "mdx";
   let tree: Root;
   try {
@@ -675,14 +725,18 @@ export async function parseTree(
   content: string,
   path: string,
   format: TreeFormat,
+  context?: ParseContext,
 ): Promise<DocumentTree> {
   const parser = parserByName(format);
   if (parser === undefined) {
     throw new GraphError(`No parser reads ${format}.`);
   }
   try {
-    return await parser.parse(content, path);
+    return await parser.parse(content, path, context);
   } catch (error) {
+    // A Flare project that cannot be read is the run's fault, not this page's,
+    // and its message names the project already.
+    if (error instanceof FlareError) throw error;
     throw new GraphError(
       `Could not parse ${format} in ${path}: ${errorMessage(error)}`,
     );
@@ -825,8 +879,9 @@ async function parseTreeBody(
   content: string,
   path: string,
   format: TreeFormat,
+  context?: ParseContext,
 ): Promise<DocBody> {
-  const tree = await parseTree(content, path, format);
+  const tree = await parseTree(content, path, format, context);
   const minted = mintTreeSections(tree.sections);
   const imageTargets: string[] = [];
   const codeLanguages = new Set<string>();

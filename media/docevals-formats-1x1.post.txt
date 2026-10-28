@@ -1,0 +1,13 @@
+Your evals shouldn't care what format your docs are in.
+
+manni docevals used to grade Markdown and MDX pages only. It now grades every format manni reads: HTML, MadCap Flare topics, DITA, AsciiDoc and reStructuredText.
+
+Markup has no frontmatter, so a page's evals sit in a small manifest beside it.
+
+A deterministic eval reports the line in the file you wrote. A TODO on line 10 of a Flare topic fails at line 10.
+
+The LLM judge reads these pages too. It reads an HTML page as text, and a Flare topic as its target builds it.
+
+Every frame is a real run against a small test project, one page per format.
+
+#techcomm #docsascode #technicalwriting #dita #asciidoc

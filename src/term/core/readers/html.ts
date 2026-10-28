@@ -7,6 +7,7 @@
  * each element's offsets and line directly.
  */
 import { parse, type DefaultTreeAdapterMap } from "parse5";
+import { isXhtml, parseXhtml } from "../../../shared/xhtml.js";
 import type { Term, TermField, TermInput, TermReader, TermReadResult } from "../../types.js";
 import { LIST_HOLDS, htmlDlEntry } from "../writers/entries.js";
 import { collapse, declares, nothing, recordOf, skipped, termOf, textOf } from "./normalize.js";
@@ -30,7 +31,10 @@ function parseHtml(input: TermInput): ParsedHtml {
   // A BOM before `<html>` puts parse5 into a mode with no source locations for
   // the document's structure; meta's reader strips it for the same reason.
   const shift = input.content.charCodeAt(0) === 0xfeff ? 1 : 0;
-  const parsed = { root: parse(input.content.slice(shift), { sourceCodeLocationInfo: true }), shift };
+  const text = input.content.slice(shift);
+  // An XHTML page nests as an XML parser reads it: a self-closed element holds nothing.
+  const root = isXhtml(text) ? parseXhtml(text) : parse(text, { sourceCodeLocationInfo: true });
+  const parsed = { root, shift };
   cache.set(input, parsed);
   return parsed;
 }

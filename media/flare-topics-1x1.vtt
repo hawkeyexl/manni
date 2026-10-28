@@ -1,0 +1,20 @@
+WEBVTT
+
+NOTE Silent video. Cues are the on-screen step captions; the terminal text is in the transcript.
+
+1
+00:00:00.000 --> 00:00:09.133
+A MadCap Flare topic: Flare writes an empty &lt;title&gt; as standard. Install.htm links to Configure.htm, misspelled Configur.htm.
+
+2
+00:00:09.133 --> 00:00:19.433
+The title is the h1: The empty title reads as the h1, as Flare shows it. Only description fails: exit 1.
+
+3
+00:00:19.433 --> 00:00:31.233
+A write that closes its tags: query writes the description. The new &lt;meta&gt; closes itself, so the topic is still well-formed XML.
+
+4
+00:00:31.233 --> 00:00:43.367
+The broken xref, found: graph reads MadCap:xref as a link. stats --check reports Configur.htm as broken and exits 1.
+

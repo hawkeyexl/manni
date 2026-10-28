@@ -848,6 +848,8 @@ describe("formats", () => {
     // A dfn names a term without defining it, and is not written back.
     expect(pretty).toMatch(/^html +dfn +read$/m);
     expect(pretty).toMatch(/^tbx +TBX entry +read +write$/m);
+    // Flare owns its glossary, so it is read and never written.
+    expect(pretty).toMatch(/^flare-glossary +Flare glossary +read$/m);
     expect(pretty).toMatch(/^tbx +TBX v2 +write$/m);
     expect(pretty).toMatch(/^tbx +TBX v2 +write\ntbx3 +TBX v3 +write$/m);
     expect(pretty).toMatch(/^json +write$/m);

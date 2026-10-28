@@ -1,0 +1,68 @@
+{
+  "commit": null,
+  "evals": null,
+  "format": "manni-graph-chunks",
+  "graph": "sha256-91310ca06630925caf1be11bbcc67608cf7846b5119876f006c249b682b1932c",
+  "graphFile": "graph.jsonld",
+  "languages": {
+    "und": {
+      "file": "chunks.und.jsonl",
+      "model": null,
+      "rows": 17
+    }
+  },
+  "pages": {
+    "guide.html": {
+      "metadata": {
+        "description": "Install the SDK from a Sphinx-built page.",
+        "head.title": "Install guide",
+        "title": "Install guide"
+      }
+    },
+    "index.md": {
+      "metadata": {
+        "description": "One page per format, linked in both directions.",
+        "title": "Formats home"
+      }
+    },
+    "map.ditamap": {
+      "metadata": {
+        "id": "formats-map",
+        "map.title": [
+          "Formats map"
+        ]
+      }
+    },
+    "notes.adoc": {
+      "metadata": {
+        "description": "What changed, in AsciiDoc.",
+        "title": "Release notes"
+      }
+    },
+    "ref.rst": {
+      "metadata": {
+        "description": "Reference, in reStructuredText.",
+        "title": "Reference"
+      }
+    },
+    "topic.dita": {
+      "metadata": {
+        "concept.title": [
+          "SDK concept"
+        ],
+        "description": "What the SDK is, in DITA.",
+        "id": "sdk-concept"
+      }
+    }
+  },
+  "retrieve": {
+    "depth": 1,
+    "maxChars": 12000,
+    "seeds": 3,
+    "withhold": []
+  },
+  "searchIndex": "localizations.json",
+  "version": 1,
+  "withheld": [],
+  "worktree": null
+}

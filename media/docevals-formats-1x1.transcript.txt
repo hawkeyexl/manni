@@ -1,0 +1,59 @@
+manni docevals grades every format manni's metadata tool reads, demo video transcript (silent video; text describes what is on screen)
+
+Frame: 1080x1080, 30 fps, 25.6 s. Every terminal line is real output of ls, grep, cat and of
+`node dist/cli.js ...` (typed as manni) run in C:\formats, a directory junction to media/scratch-docevals-formats/,
+a git repository holding test/docevals/fixtures/formats/ as committed, built by media/capture-docevals-formats/capture.sh.
+
+[0:00-0:09] Title: Four formats, four TODOs (1 / 3)
+$ ls Content
+concept.dita       guide.adoc       notes.meta.yaml  topic.htm
+concept.meta.yaml  guide.meta.yaml  notes.rst        topic.meta.yaml
+$ grep -n TODO Content/*.{dita,adoc,rst,htm}
+Content/concept.dita:8:    <p>TODO: name the flags.</p>
+Content/guide.adoc:6:TODO: name the flags.
+Content/notes.rst:8:TODO: name the flags.
+Content/topic.htm:10:    <p>TODO: name the flags.</p>
+Highlighted rows: lines containing "TODO: name"
+Caption: DITA, AsciiDoc, RST and HTML, each with a TODO.
+
+[0:09-0:15] Title: The eval sits beside the page (2 / 3)
+$ cat Content/topic.meta.yaml
+Content/topic.htm:
+  evals:
+    - id: no-todo
+      assertion: The page carries no TODO marker.
+      grader: tool:regex
+      options: { pattern: "TODO", match: not-contains }
+      severity: error
+Highlighted rows: lines containing "Content/topic.htm:", "not-contains"
+Caption: Markup takes no YAML block. A manifest holds it.
+
+[0:15-0:26] Title: docevals grades every format (3 / 3)
+$ manni docevals run --deterministic-only; echo $?
+Content/concept.dita   (bold)
+  FAIL no-todo  Content/concept.meta.yaml:3   ("FAIL" in red, manifest path dimmed)
+       error:8 [regex/found] Pattern /TODO/ found in body, expected absent. Remove or reword the matching text.   ("error" in red, rule id dimmed)
+       Content/concept.meta.yaml no-todo: The page carries no TODO marker.   (dimmed)
+       Guide: https://hawkeyexl.github.io/manni/docevals/fix/   (dimmed)
+Content/guide.adoc   (bold)
+  FAIL no-todo  Content/guide.meta.yaml:3   ("FAIL" in red, manifest path dimmed)
+       error:6 [regex/found] Pattern /TODO/ found in body, expected absent. Remove or reword the matching text.   ("error" in red, rule id dimmed)
+       Content/guide.meta.yaml no-todo: The page carries no TODO marker.   (dimmed)
+       Guide: https://hawkeyexl.github.io/manni/docevals/fix/   (dimmed)
+Content/notes.rst   (bold)
+  FAIL no-todo  Content/notes.meta.yaml:3   ("FAIL" in red, manifest path dimmed)
+       error:8 [regex/found] Pattern /TODO/ found in body, expected absent. Remove or reword the matching text.   ("error" in red, rule id dimmed)
+       Content/notes.meta.yaml no-todo: The page carries no TODO marker.   (dimmed)
+       Guide: https://hawkeyexl.github.io/manni/docevals/fix/   (dimmed)
+Content/topic.htm   (bold)
+  FAIL no-todo  Content/topic.meta.yaml:3   ("FAIL" in red, manifest path dimmed)
+       error:10 [regex/found] Pattern /TODO/ found in body, expected absent. Remove or reword the matching text.   ("error" in red, rule id dimmed)
+       Content/topic.meta.yaml no-todo: The page carries no TODO marker.   (dimmed)
+       Guide: https://hawkeyexl.github.io/manni/docevals/fix/   (dimmed)
+
+Suites   (bold)
+  default: 0/4 passed — 0% vs target 100% below target   ("below target" in red)
+1
+Highlighted rows: lines containing "error:", "below target"
+Caption: Each finding names the page's own line. Exit 1.
+

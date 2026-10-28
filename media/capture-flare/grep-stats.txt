@@ -1,0 +1,2 @@
+Broken internal links (1):
+  Content/Topics/Install.htm -> Configur.htm

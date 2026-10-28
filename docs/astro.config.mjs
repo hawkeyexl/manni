@@ -563,9 +563,10 @@ export default defineConfig({
         },
         // `family` is not a domain. It documents the two verbs the umbrella
         // carries, `manni check` and `manni status`, and the Claude Code
-        // plugin that runs them (proposal 0078). It also holds the one walk
-        // across domains, from tags to a checked graph (proposal 0086). Three
-        // journey pages and a reference page, so no overview and no sub-groups.
+        // plugin that runs them (proposal 0078). It also holds two walks
+        // across domains, from tags to a checked graph (proposal 0086) and
+        // over a MadCap Flare project (proposal 0125). Four journey pages and
+        // a reference page, so no overview and no sub-groups.
         {
           label: "family",
           collapsed: true,
@@ -573,6 +574,7 @@ export default defineConfig({
             { label: "Gate every check", link: "/family/check/" },
             { label: "Keep an agent's docs green", link: "/family/claude-code/" },
             { label: "From tags to a knowledge graph", link: "/family/concept-lifecycle/" },
+            { label: "Check a MadCap Flare project", link: "/family/flare/" },
             {
               label: "Reference",
               collapsed: true,

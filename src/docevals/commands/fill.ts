@@ -30,6 +30,7 @@ import {
   EvalWriter,
   META_PROVENANCE_KEY,
   manifestEvalList,
+  markupRefusal,
   type WriteHome,
 } from "../core/write-location.js";
 import {
@@ -246,6 +247,17 @@ export async function runFill(
       plans = await load();
       writer = writerFor();
     }
+  }
+
+  // An HTML or XML page can hold no YAML block (proposal 0125). With no
+  // manifest to take its evals the run stops here, before a model is asked
+  // and before any page is written, so a refusal leaves the corpus as it was.
+  for (const plan of plans) {
+    if (plan.skip || plan.problems.some((p) => p.level === "error")) continue;
+    const markup = markupRefusal(plan.page);
+    if (markup === undefined) continue;
+    const home = await writer.homeFor(plan.page.file, plan.page.frontmatter.data, EVALS_KEY);
+    if (home.kind === "page") throw markup;
   }
 
   const threshold = options.confidence ?? config.fill.confidenceThreshold;
@@ -510,7 +522,11 @@ export async function runFill(
     let metaProvenance: EvalsMetaProvenanceReport;
     if (metaHome.kind === "url") {
       metaProvenance = { written: false, skipReason: "manifest-owned", manifest: metaHome.file };
-    } else if (metaHome.kind === "no-entry") {
+    } else if (
+      metaHome.kind === "no-entry" ||
+      (metaHome.kind === "page" && markupRefusal(plan.page) !== undefined)
+    ) {
+      // No entry to hold it, or a page of markup that can hold no YAML block.
       metaProvenance = { written: false, skipReason: "unwritable" };
     } else if (merged === undefined) {
       metaProvenance = { written: false, skipReason: "schema-mismatch" };

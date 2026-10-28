@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE concept PUBLIC "-//OASIS//DTD DITA Concept//EN" "concept.dtd">
+<concept id="widget">
+  <title>The widget</title>
+  <prolog><metadata><keywords><keyword>widget</keyword></keywords></metadata></prolog>
+  <conbody>
+    <p>The widget installs in one step.</p>
+    <p>TODO: name the flags.</p>
+  </conbody>
+</concept>

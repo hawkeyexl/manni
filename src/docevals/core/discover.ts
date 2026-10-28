@@ -1,13 +1,15 @@
 /**
  * Page discovery: resolve the run's document set (positional paths, or the
- * family `collections:`), read each file, and extract frontmatter using
- * the metadata tool's shared extractor (identical fence handling and JSON-Pointer ->
- * line maps as `manni meta validate`).
+ * family `collections:`), read each file, and extract its metadata with the
+ * metadata tool's own extractor for its format (identical fence handling and
+ * JSON-Pointer -> line maps as `manni meta validate`). Every format meta reads
+ * is a page here (proposal 0125, decision 21).
  */
 import { readFileSync, statSync } from "node:fs";
 import { resolve, relative, extname } from "node:path";
 import fg from "fast-glob";
 import { extractFrontmatter, type ExtractedMetadata } from "../../meta/index.js";
+import { bodyOffset, extractorForExtension, supportedExtensions } from "../../meta/internal.js";
 import { selectCollections } from "../../shared/collections.js";
 import { errorMessage } from "../../shared/errors.js";
 import { RECORD_TYPES } from "../../strategy/types.js";
@@ -26,7 +28,12 @@ export interface PageFile {
   absPath: string;
   /** Full file content. */
   content: string;
-  /** Content with the leading frontmatter block removed (judge input). */
+  /**
+   * What graders read as the page (judge input, `target: body`). For a fenced
+   * format, the content with its leading frontmatter block removed. For HTML
+   * and XML, the source after the page's metadata, sliced from the file so a
+   * grader's line numbers are the file's (`bodyOffset`).
+   */
   body: string;
   /**
    * The page's metadata, with every key an owning manifest supplies already
@@ -88,30 +95,36 @@ export function stripFrontmatterBlock(content: string): string {
   return body;
 }
 
-function formatForExtension(ext: string): string {
-  switch (ext.toLowerCase()) {
-    case ".md":
-    case ".markdown":
-      return "markdown";
-    case ".mdx":
-      return "mdx";
-    default:
-      return "markdown";
-  }
+/**
+ * `HTML` or `XML` for a page in either, whose body is markup (proposal 0125,
+ * decision 21). The judge reads it as text, and no YAML block is written to
+ * it. `undefined` for every other format.
+ */
+export function markupFormat(absPath: string): "HTML" | "XML" | undefined {
+  const name = extractorForExtension(extname(absPath))?.name;
+  return name === "html" ? "HTML" : name === "xml" ? "XML" : undefined;
 }
 
-/** Read and extract a single page. Extraction errors are captured, not thrown. */
+/**
+ * Read and extract a single page. Extraction errors are captured, not thrown.
+ * Discovery reads only extensions an extractor claims. A caller naming any
+ * other file reads it as Markdown, as every page read before decision 21.
+ */
 export function readPage(absPath: string, root: string): PageFile {
   const content = readFileSync(absPath, "utf8");
   const file = relative(root, absPath).replace(/\\/g, "/");
-  const format = formatForExtension(extname(absPath));
+  const extractor = extractorForExtension(extname(absPath));
+  const format = extractor?.name ?? "markdown";
   try {
-    const frontmatter = extractFrontmatter(content, format);
+    const frontmatter = extractor
+      ? extractor.extract(content, absPath)
+      : extractFrontmatter(content, format);
+    const offset = bodyOffset(content, absPath);
     return {
       file,
       absPath,
       content,
-      body: stripFrontmatterBlock(content),
+      body: offset === undefined ? stripFrontmatterBlock(content) : content.slice(offset),
       frontmatter,
     };
   } catch (e) {
@@ -229,7 +242,8 @@ function glob(patterns: string[], base: string, ignore: string[]): string[] {
   });
 }
 
-const SUPPORTED_EXTENSIONS = new Set([".md", ".markdown", ".mdx"]);
+/** Every extension meta reads (proposal 0125, decision 21). */
+const SUPPORTED_EXTENSIONS = new Set(supportedExtensions().map((e) => e.toLowerCase()));
 
 /**
  * Discover pages (proposal 0041). Positional `paths` are what the operator
@@ -287,8 +301,9 @@ export function discoverPages(
     .sort()
     .map((p) => readPage(resolve(p), root))
     .filter((page) => !isStrategyRecord(page));
-  // No page read means none resolves an eval. A collection of `.htm` topics
-  // is that, so the family reads the code as docevals not being set up.
+  // No page read means none resolves an eval. A collection of files no
+  // extractor reads is that, so the family reads the code as docevals not
+  // being set up.
   if (pages.length === 0) {
     throw new DocevalsError(
       `No documentation pages found (patterns: ${patterns.join(", ")})`,

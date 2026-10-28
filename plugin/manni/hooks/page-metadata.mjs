@@ -27,7 +27,7 @@ import { isMain, launch, project } from "./manni.mjs";
 /** The extensions `manni meta` reads, lower case. */
 export const EXTENSIONS = [
   ".md", ".markdown", ".mdx", ".adoc", ".asciidoc", ".rst",
-  ".xml", ".dita", ".ditamap", ".html", ".htm",
+  ".xml", ".dita", ".ditamap", ".html", ".htm", ".flsnp",
 ];
 
 /**

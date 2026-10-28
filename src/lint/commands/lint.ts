@@ -52,7 +52,8 @@ import {
   runDitaOtValidate,
   type DitaOtMessage,
 } from "../tools/dita-ot.js";
-import { ditaOtHome } from "../../shared/tools.js";
+import { ditaOtHome, type ToolsConfig } from "../../shared/tools.js";
+import { FlareError, flareRun, type FlareRun } from "../../shared/flare/index.js";
 import {
   assertNonEmpty,
   gitignoreOptions,
@@ -269,6 +270,12 @@ export interface LintFileResult extends FileResult {
    * one thing, and the reporter would read whichever it got.
    */
   alignment?: { tree: DocumentTree; template: Template };
+  /**
+   * The Flare project and target a topic resolved against (proposal 0125).
+   * Present when `--explain` asked for it, and only for a Flare topic in a
+   * project.
+   */
+  flare?: NonNullable<DocumentTree["flare"]>;
 }
 
 export interface LintRun {
@@ -417,6 +424,8 @@ interface LintContext {
   overrides?: TemplateOverride[];
   defaultTemplate?: string;
   explain: boolean;
+  /** The run's one Flare reader: each project read once, each notice said once. */
+  flare: FlareRun;
 }
 
 async function lintOne(
@@ -427,8 +436,14 @@ async function lintOne(
 ): Promise<LintFileResult> {
   let tree: DocumentTree;
   try {
-    tree = await parser.parse(content, label);
+    tree = await parser.parse(content, label, {
+      absPath: ctx.absoluteOf?.(label) ?? label,
+      flare: ctx.flare,
+    });
   } catch (err) {
+    // A Flare project that cannot be read as one is the run's problem, not
+    // the page's: an unknown target is the same mistake on every topic.
+    if (err instanceof FlareError) throw err;
     // A file that will not parse is that file's problem, not the run's: it is
     // reported and the run continues, so one broken page cannot hide the
     // findings in the other 199.
@@ -453,10 +468,22 @@ async function lintOne(
     defaultTemplate: ctx.defaultTemplate,
   });
   const withResolution = <T extends LintFileResult>(result: T): T =>
-    ctx.explain ? { ...result, resolution } : result;
+    ctx.explain
+      ? { ...result, resolution, ...(tree.flare === undefined ? {} : { flare: tree.flare }) }
+      : result;
 
   // Anchor anything said about the frontmatter at the frontmatter.
   const metaPosition = tree.frontmatterPosition ?? origin();
+
+  // The target does not build this topic, so there is nothing to check. Only a
+  // target can exclude a page, so `excluded` implies one; the second test
+  // narrows its type for the message.
+  const target = tree.flare?.target;
+  if (tree.flare?.excluded && target !== undefined) {
+    return withResolution(
+      skip(label, `target ${target.name} excludes the page by its conditions`, "excluded"),
+    );
+  }
 
   if (resolution.ref === null) {
     if (resolution.cause === "unknown-type") {
@@ -615,6 +642,8 @@ interface ManniRun {
   forcedParser?: DocumentParser;
   /** Whether `-` rode among the inputs. */
   usingStdin: boolean;
+  /** The family's top-level `tools:`, for `tools.flare`. */
+  tools: ToolsConfig;
 }
 
 /**
@@ -628,7 +657,7 @@ interface ManniRun {
  * error under manni and nothing at all under anybody else.
  */
 async function lintWithManni(run: ManniRun): Promise<LintFileResult[]> {
-  const { opts, config, cwd, files, forcedParser, usingStdin } = run;
+  const { opts, config, cwd, files, forcedParser, usingStdin, tools } = run;
 
   // The doctype -> template map. Built-ins go in first and user templates
   // overwrite them, so overriding `how-to` for a repo is one file with
@@ -667,6 +696,7 @@ async function lintWithManni(run: ManniRun): Promise<LintFileResult[]> {
     // the bottom of the chain, not the top. `--template` is the top.
     defaultTemplate: opts.defaultTemplate ?? config.template,
     explain: opts.explain === true,
+    flare: flareRun(tools),
   };
 
   // `--template` applies to every file, so a ref that will not load is bad
@@ -926,6 +956,7 @@ function assertSomethingWasChecked(
     (r) => r.skipped === "unsupported-format",
   ).length;
   const unreadable = results.filter((r) => r.skipped === "unreadable").length;
+  const excluded = results.filter((r) => r.skipped === "excluded").length;
   const advice = [
     unrouted > 0
       ? `${unrouted} had no template: give a page a "type:" that a template ` +
@@ -945,6 +976,10 @@ function assertSomethingWasChecked(
     unreadable > 0
       ? `${unreadable} could not be read: check the permissions on those ` +
         `paths, or drop them from the run with --exclude <glob>.`
+      : null,
+    excluded > 0
+      ? `${excluded} ${excluded === 1 ? "is" : "are"} excluded by the Flare ` +
+        `target's conditions: name a target that builds them in tools.flare.target.`
       : null,
   ]
     .filter((line): line is string => line !== null)
@@ -1073,6 +1108,7 @@ export async function runLint(opts: LintOptions): Promise<LintRun> {
       files,
       forcedParser,
       usingStdin,
+      tools: run.tools,
     });
   } else if (name === "dita-ot") {
     // `tools:` is the family's key, not the `lint:` section's, so the home is

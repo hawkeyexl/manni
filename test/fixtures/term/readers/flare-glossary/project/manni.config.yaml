@@ -1,0 +1,5 @@
+# A Flare project whose only target, HTML5, excludes Default.PrintOnly.
+collections:
+  - name: help
+    paths:
+      - "Project/Glossaries/*.flglo"

@@ -50,6 +50,10 @@
  *    the title, so untitled is the normal case and dropping those entries would
  *    flatten the whole table of contents.
  *
+ * Three more, earned by a Flare TOC: `untitledTitles` reads a title that names
+ * another file's title as none, `allowNoSections` lets a document with no
+ * section stand, and `keep` drops an element the target excludes.
+ *
  * ## Extending it for a bespoke schema
  *
  * Add one entry to `XML_VOCABULARIES` (or pass your own array to `parseXml`):
@@ -113,6 +117,7 @@ import type {
   DocumentTree,
   ImageNode,
   ListItemNode,
+  ParseContext,
   Point,
   Position,
   TableCellNode,
@@ -121,6 +126,7 @@ import type {
 } from "../types.js";
 import { LintError } from "../types.js";
 import { errorMessage } from "../../shared/errors.js";
+import { includes, parseConditionTags } from "../../shared/flare/index.js";
 import type { Fragment } from "./sectionize.js";
 import { sectionize } from "./sectionize.js";
 
@@ -155,6 +161,26 @@ export interface XmlVocabulary {
    * content belongs to the section that encloses it.
    */
   untitledSections?: boolean;
+  /**
+   * A `titleAttributes` value that reads as no title at all. A Flare TOC entry
+   * titled `[%=System.LinkedTitle%]` takes its title from the topic it links,
+   * so the entry itself carries none, and with `untitledSections` off it is
+   * transparent.
+   */
+  untitledTitles?: RegExp;
+  /**
+   * Whether a document with no section at all is still a document. Default
+   * false, which is an error: a topic with no titled section has no structure
+   * to check. A Flare TOC of LinkedTitle entries only is a real TOC whose
+   * every title comes from elsewhere.
+   */
+  allowNoSections?: boolean;
+  /**
+   * Whether an element stays in the structure. One it rejects is skipped with
+   * its subtree, as an unmapped element is. Links are read apart from the
+   * structure, so a rejected element's links stay: they are what the file says.
+   */
+  keep?(el: XmlElement, context: ParseContext | undefined): boolean;
   /** Children to look inside for a title (DocBook's `<info>`). */
   titleWrappers: readonly string[];
   /** Structural wrappers: no section, no content, walk through. */
@@ -510,6 +536,45 @@ const DITAMAP: XmlVocabulary = {
 };
 
 /**
+ * A MadCap Flare TOC (`.fltoc`) or browse sequence (`.flbrs`), both rooted at
+ * `<CatapultToc>` (proposal 0125, decision 17). It is the DITA map's shape: a
+ * tree of `<TocEntry>`s, each a section when it carries a `Title`, a book
+ * entry with no `Link` included.
+ *
+ * An entry titled `[%=System.LinkedTitle%]`, or untitled, takes its title from
+ * the topic it links and carries none of its own, so it is transparent and
+ * its children keep its level. A TOC may be made of nothing else, so a TOC
+ * with no section is still a TOC. An entry whose `conditions` the target
+ * excludes leaves the structure, while its `Link` stays a link.
+ */
+const FLARE_TOC: XmlVocabulary = {
+  name: "flare-toc",
+  label: "Flare TOC",
+  namespaces: [],
+  roots: ["CatapultToc"],
+  sections: ["TocEntry"],
+  titles: [],
+  // Read through `getAttribute`, so the case is Flare's own.
+  titleAttributes: ["Title"],
+  untitledTitles: /^\s*\[%=\s*System\.LinkedTitle\s*%\]\s*$/i,
+  allowNoSections: true,
+  keep: (el, context) => {
+    const target = context?.flare?.projectFor(context.absPath)?.target;
+    return includes(target?.expression, parseConditionTags(el.getAttribute("conditions")));
+  },
+  titleWrappers: [],
+  transparent: ["CatapultToc"],
+  paragraphs: [],
+  code: [],
+  codeLangAttributes: [],
+  unorderedLists: [],
+  orderedLists: [],
+  listItems: [],
+
+  links: [{ elements: ["TocEntry"], attribute: "Link" }],
+};
+
+/**
  * The vocabularies tried, in declaration order (which breaks scoring ties).
  * Exported so a bespoke schema is an array entry rather than a fork.
  */
@@ -517,6 +582,7 @@ export const XML_VOCABULARIES: readonly XmlVocabulary[] = [
   DITA,
   DOCBOOK,
   DITAMAP,
+  FLARE_TOC,
 ];
 
 /** Precomputed lookups for one vocabulary. */
@@ -857,6 +923,7 @@ class Flattener {
   constructor(
     private readonly c: Compiled,
     private readonly map: SourceMap,
+    private readonly context?: ParseContext,
   ) {}
 
   private span(el: XmlNode): Position {
@@ -906,7 +973,9 @@ class Flattener {
     }
     for (const attr of this.c.vocab.titleAttributes ?? []) {
       const value = el.getAttribute(attr);
-      if (value) return { title: flatten(value), end: this.startTagEnd(el) };
+      if (value && !this.c.vocab.untitledTitles?.test(value)) {
+        return { title: flatten(value), end: this.startTagEnd(el) };
+      }
     }
     if (this.c.vocab.untitledSections) {
       return { title: "", end: this.startTagEnd(el) };
@@ -916,6 +985,7 @@ class Flattener {
 
   /** Walk one element: section, wrapper, content, or skipped subtree. */
   visit(el: XmlElement, level: number): void {
+    if (this.c.vocab.keep && !this.c.vocab.keep(el, this.context)) return;
     const name = localName(el);
 
     if (this.c.sections.has(name)) {
@@ -1382,6 +1452,7 @@ export function parseXml(
   content: string,
   filePath: string,
   vocabularies: readonly XmlVocabulary[] = XML_VOCABULARIES,
+  context?: ParseContext,
 ): DocumentTree {
   const map = new SourceMap(content);
   const root = parseDocument(map.text, filePath);
@@ -1401,16 +1472,15 @@ export function parseXml(
   if (score <= 0) {
     throw new LintError(
       `${filePath}: no known XML vocabulary matched <${localName(root)}>. ` +
-        `manni lint understands ${names}; add an entry to XML_VOCABULARIES ` +
-        `in src/parsers/xml.ts to describe another schema.`,
+        `manni lint understands ${names}.`,
     );
   }
 
-  const flattener = new Flattener(best, map);
+  const flattener = new Flattener(best, map, context);
   flattener.visit(root, 0);
   const fragments = flattener.fragments;
 
-  if (!fragments.some((b) => b.type === "heading")) {
+  if (!best.vocab.allowNoSections && !fragments.some((b) => b.type === "heading")) {
     throw new LintError(
       `${filePath}: read as ${best.vocab.label}, but no titled section was found. ` +
         `A ${best.vocab.label} section is one of <${best.vocab.sections.join(">, <")}> ` +
@@ -1467,15 +1537,19 @@ export const xmlParser = {
    * the same thing a section tree is: `<topicref>` nesting is section nesting.
    * A docset of maps with no map template matches nothing and is skipped as
    * `no-template`, exactly as an untyped Markdown page is.
+   *
+   * `.fltoc` and `.flbrs` are a MadCap Flare TOC and browse sequence, the same
+   * tree of navigation entries under another name (proposal 0125).
    */
-  extensions: [".xml", ".dita", ".ditamap"],
+  extensions: [".xml", ".dita", ".ditamap", ".fltoc", ".flbrs"],
   /**
-   * A directory walk collects `.dita` and `.ditamap` but not `.xml`. Both of
-   * those are documentation by definition; `.xml` is a container a repository
+   * A directory walk collects `.dita`, `.ditamap`, `.fltoc` and `.flbrs` but
+   * not `.xml`. All four are documentation by definition; `.xml` is a container a repository
    * uses for build files, sitemaps, and project metadata, none of which match a
    * documentation vocabulary. Sweeping those in made one `pom.xml` fail an
    * otherwise clean tree. Naming an `.xml` file explicitly still parses it.
    */
-  walkExtensions: [".dita", ".ditamap"],
-  parse: (content, filePath) => parseXml(content, filePath),
+  walkExtensions: [".dita", ".ditamap", ".fltoc", ".flbrs"],
+  parse: (content: string, filePath: string, context?: ParseContext) =>
+    parseXml(content, filePath, XML_VOCABULARIES, context),
 } satisfies DocumentParser;

@@ -25,9 +25,10 @@ import type { ExtractedMetadata, MetadataExtractor } from "../types.js";
 
 export const htmlExtractor: MetadataExtractor = {
   name: "html",
-  extensions: [".html", ".htm"],
-  extract(content, _filePath, options): ExtractedMetadata {
-    const { data, lineMap, colMap } = readHtml(content, options);
+  // A Flare snippet is an XHTML fragment of a topic (proposal 0125).
+  extensions: [".html", ".htm", ".flsnp"],
+  extract(content, filePath, options): ExtractedMetadata {
+    const { data, lineMap, colMap } = readHtml(content, { ...options, filePath });
     return {
       data,
       present: Object.keys(data).length > 0,
