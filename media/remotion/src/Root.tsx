@@ -37,6 +37,7 @@ import { beats as graphAuthoringBeats, totalFrames as graphAuthoringTotalFrames,
 import { beats as strategySharedBeats, totalFrames as strategySharedTotalFrames, TYPING_MS as strategySharedTypingMs } from "./strategy-shared/beats";
 import { beats as flareBeats, totalFrames as flareTotalFrames, TYPING_MS as flareTypingMs } from "./flare/beats";
 import { beats as flareTargetsBeats, totalFrames as flareTargetsTotalFrames, TYPING_MS as flareTargetsTypingMs } from "./flare-targets/beats";
+import { beats as flareResourcesBeats, totalFrames as flareResourcesTotalFrames, TYPING_MS as flareResourcesTypingMs } from "./flare-resources/beats";
 
 /** sidecar-url-1x1: 23 px / 75 columns, derived in media/sidecar-url-1x1.script.md. */
 const DemoUrl: React.FC = () => <DemoView beats={urlBeats} fontPx={23} linePx={32} cols={75} />;
@@ -136,6 +137,16 @@ const DemoFlare: React.FC = () => <DemoView beats={flareBeats} fontPx={21} lineP
  * Ligatures off: the XHTML tags' `</` and `/>` would draw as one glyph.
  */
 const DemoFlareTargets: React.FC = () => <DemoView beats={flareTargetsBeats} fontPx={21} linePx={29} cols={82} typingMs={flareTargetsTypingMs} ligatures={false} />;
+
+/**
+ * flare-resources-1x1: 20 px / 86 columns, beat 1 at 19 px / 91, derived in
+ * media/flare-resources-1x1.script.md (media/capture-flare-resources/cols.mjs).
+ * Ligatures off: a terminal prints the Guide URL's `//` and the `$?` as characters.
+ * breakAfter "/": beat 1's Guide URL is wider than the row, so it breaks after a slash.
+ */
+const DemoFlareResources: React.FC = () => (
+  <DemoView beats={flareResourcesBeats} fontPx={20} linePx={28} cols={86} typingMs={flareResourcesTypingMs} ligatures={false} breakAfter="/" />
+);
 
 /**
  * concept-lifecycle-1x1: 23 px / 75 columns, derived in media/concept-lifecycle-1x1.script.md
@@ -535,6 +546,14 @@ export const Root: React.FC = () => (
       height={1080}
       fps={FPS}
       durationInFrames={flareTargetsTotalFrames}
+    />
+    <Composition
+      id="FlareResourcesDemo"
+      component={DemoFlareResources}
+      width={1080}
+      height={1080}
+      fps={FPS}
+      durationInFrames={flareResourcesTotalFrames}
     />
   </>
 );

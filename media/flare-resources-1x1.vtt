@@ -1,0 +1,20 @@
+WEBVTT
+
+NOTE Silent video. Cues are the on-screen step captions; the terminal text is in the transcript.
+
+1
+00:00:00.000 --> 00:00:06.467
+The glossary is a termbase: Each entry is a term. HTML5 drops the print-only one.
+
+2
+00:00:06.467 --> 00:00:17.333
+Glossary markers are concepts: The topic's glossaryTerm marker is its concepts.
+
+3
+00:00:17.333 --> 00:00:27.833
+A missing entry fails: Term9 names no entry. Line 10 fails, exit 1.
+
+4
+00:00:27.833 --> 00:00:38.967
+A meta tag set is a schema: Status takes only Draft, Reviewed or Published.
+
