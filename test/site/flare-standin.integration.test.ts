@@ -67,10 +67,17 @@ beforeEach(() => {
   if (process.platform !== "win32") chmodSync(join(work, "bin", "madbuild"), 0o755);
 });
 
-afterEach(() => {
-  server?.kill();
+afterEach(async () => {
+  // Windows refuses to remove a folder a live process runs in, so wait for the
+  // server to exit before removing its project.
+  const child = server;
   server = undefined;
-  rmSync(work, { recursive: true, force: true });
+  if (child !== undefined && child.exitCode === null && child.signalCode === null) {
+    const exited = new Promise((settle) => child.once("exit", settle));
+    child.kill();
+    await exited;
+  }
+  rmSync(work, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
 });
 
 describe("manni site on a Flare project, with the stand-in madbuild", () => {
