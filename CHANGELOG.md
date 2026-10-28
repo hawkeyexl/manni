@@ -4,6 +4,13 @@
 4.13.1. Entries below that version are docmeta releases; the repository
 history is the same one.
 
+## [4.27.1](https://github.com/hawkeyexl/manni/compare/v4.27.0...v4.27.1) (2026-10-28)
+
+
+### Bug Fixes
+
+* **meta:** read colon prose as text in every native format ([#262](https://github.com/hawkeyexl/manni/issues/262)) ([4a5e569](https://github.com/hawkeyexl/manni/commit/4a5e5697635999d1fea28c8f9d9eb502c3c0e138))
+
 # [4.27.0](https://github.com/hawkeyexl/manni/compare/v4.26.2...v4.27.0) (2026-10-28)
 
 

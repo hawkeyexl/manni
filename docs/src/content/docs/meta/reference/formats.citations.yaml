@@ -32,7 +32,7 @@ docs/src/content/docs/meta/reference/formats.mdx:
         file: src/meta/extractors/scalar-value.ts
         lines: 14-16
         integrity: sha256-72259fbf8c33070d1ec6523b2dd455e3bc945809530ffe00a5f7d04cad3937a3
-        commit-sha: 7231e8cbc1ccabd625ae2dfc55719623775268e5
+        commit-sha: 4a5e5697635999d1fea28c8f9d9eb502c3c0e138
     - id: formats-coercion-table
       claim:
         lines: 370-372
@@ -440,4 +440,4 @@ docs/src/content/docs/meta/reference/formats.mdx:
         file: src/meta/extractors/scalar-value.ts
         lines: 23-28
         integrity: sha256-3120d4eedc3e28db6502f63c4a7086762c465c0f31735e7ac585a4ba497c4915
-        commit-sha: 7231e8cbc1ccabd625ae2dfc55719623775268e5
+        commit-sha: 4a5e5697635999d1fea28c8f9d9eb502c3c0e138

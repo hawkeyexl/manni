@@ -1,7 +1,7 @@
 {
   "name": "manni",
   "description": "Checks the docs an agent edits against everything the repository set up in manni, blocks on errors, records the session manifest tracevals reads for a user who turns tracevals on, serves the docs graph to the agent, and hands the agent a page's metadata when it reads one.",
-  "version": "4.27.0",
+  "version": "4.27.1",
   "author": { "name": "hawkeyexl" },
   "homepage": "https://hawkeyexl.github.io/manni/",
   "repository": "https://github.com/hawkeyexl/manni",
