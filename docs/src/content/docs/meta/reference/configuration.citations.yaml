@@ -583,7 +583,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         file: src/meta/commands/query.ts
         lines: 2999-3005
         integrity: sha256-28ef77181c752706d444f68bcb3a8b2023f0e30660e9b7f1a87a18e825ffec60
-        commit-sha: 343ef71848c2fa541f41eb5f993e18b5dd9c0c17
+        commit-sha: c72a188d455b54a739b4ef728a55b4adac510f0a
     - id: remote-manifest-never-cached
       claim:
         lines: 764-767
@@ -824,7 +824,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         file: src/meta/commands/query.ts
         lines: 3387-3391
         integrity: sha256-4c5f3a39210ca21c83e142d65de4909302dc377f1aa62b22524dc4e767dffd3b
-        commit-sha: 343ef71848c2fa541f41eb5f993e18b5dd9c0c17
+        commit-sha: c72a188d455b54a739b4ef728a55b4adac510f0a
     - id: relocate-edits-manifest-keys
       claim:
         lines: 876-882
@@ -860,7 +860,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         file: src/meta/commands/query.ts
         lines: 552-563
         integrity: sha256-2c5230a83eb1f62ab0373b6b61b220dbf93c2d612c2aa7942a8dc76cd50e2636
-        commit-sha: 343ef71848c2fa541f41eb5f993e18b5dd9c0c17
+        commit-sha: c72a188d455b54a739b4ef728a55b4adac510f0a
     - id: fill-writes-an-owned-candidate-to-the-manifest
       claim:
         lines: 891
@@ -1174,7 +1174,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         file: src/shared/tools.ts
         lines: 231-235
         integrity: sha256-b248aaca8b99cb46607d73bde9edc4de970ee17c88ab0cb232ad5ed6992116ed
-        commit-sha: 38731a33a1767d7e05639dc4144ad9d1d339f625
+        commit-sha: c72a188d455b54a739b4ef728a55b4adac510f0a
     - id: term-starts-vale-with-the-configured-file
       claim:
         lines: 1425-1440
@@ -1427,7 +1427,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         file: src/meta/core/schema-registry.ts
         lines: 1208-1216
         integrity: sha256-0fdd2bc93eb0acbc84d62eaaf5f1c7ec2795441da58714327642a7d7ee77c36c
-        commit-sha: 343ef71848c2fa541f41eb5f993e18b5dd9c0c17
+        commit-sha: c72a188d455b54a739b4ef728a55b4adac510f0a
     - id: offline-flag-is-per-run
       claim:
         integrity: sha256-50cc1fbd993bc5e2a23e9cdb9373a16358550f893478fc626477be551f7abcc7
@@ -2259,7 +2259,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         file: src/meta/commands/query.ts
         lines: 2925-2929
         integrity: sha256-05846fc0a08d3c16222cb887a66fe3f1622e803e02eb6097fd17a6134c8b3557
-        commit-sha: 343ef71848c2fa541f41eb5f993e18b5dd9c0c17
+        commit-sha: c72a188d455b54a739b4ef728a55b4adac510f0a
     - id: derive-comparison-runs-on-every-validate
       claim:
         lines: 2538-2541
@@ -2322,7 +2322,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         file: src/meta/commands/query.ts
         lines: 2919-2945
         integrity: sha256-a5c4323463fd7ab4f1a911119d35775bce99da3da5e3ae7e0161e903367a5d31
-        commit-sha: 343ef71848c2fa541f41eb5f993e18b5dd9c0c17
+        commit-sha: c72a188d455b54a739b4ef728a55b4adac510f0a
     - id: fill-reports-a-managed-skip
       claim:
         lines: 2562
@@ -2498,7 +2498,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         file: src/shared/tools.ts
         lines: 231-235
         integrity: sha256-b248aaca8b99cb46607d73bde9edc4de970ee17c88ab0cb232ad5ed6992116ed
-        commit-sha: 38731a33a1767d7e05639dc4144ad9d1d339f625
+        commit-sha: c72a188d455b54a739b4ef728a55b4adac510f0a
     - id: override-globs-match-the-config-relative-path
       claim:
         lines: 2796
@@ -2622,7 +2622,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         file: src/shared/tools.ts
         lines: 106-125
         integrity: sha256-79651ee83ab9d9ef589a5fe0f999feb1ba8ded9ac2caf11a4cb524252fc7ab1a
-        commit-sha: 38731a33a1767d7e05639dc4144ad9d1d339f625
+        commit-sha: c72a188d455b54a739b4ef728a55b4adac510f0a
     - id: missing-vale-config-refused-when-vale-runs
       claim:
         lines: 1437-1440

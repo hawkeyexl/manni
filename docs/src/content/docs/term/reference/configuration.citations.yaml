@@ -15,7 +15,7 @@ docs/src/content/docs/term/reference/configuration.mdx:
         file: src/shared/tools.ts
         lines: 239-243
         integrity: sha256-5ccf0ef6937eea39ae3b48b100b143fb976177263f0bfe234391c668ed5863a5
-        commit-sha: 38731a33a1767d7e05639dc4144ad9d1d339f625
+        commit-sha: c72a188d455b54a739b4ef728a55b4adac510f0a
     - id: empty-term-section-no-keys
       claim:
         integrity: sha256-7d0655d425264f026c5f5d326f212ee791e1abffd5be4c9c1888551df0e07087
@@ -79,7 +79,7 @@ docs/src/content/docs/term/reference/configuration.mdx:
         file: src/shared/tools.ts
         lines: 219-225
         integrity: sha256-cf6c669a792e0d752cc7308c52ae6f6c7ced5de941e66f50c8682279c4d66bbc
-        commit-sha: 38731a33a1767d7e05639dc4144ad9d1d339f625
+        commit-sha: c72a188d455b54a739b4ef728a55b4adac510f0a
     - id: vale-finds-own-config
       claim:
         integrity: sha256-9c5cab61e3f16882afd2267e1200f1bd9637a91a3c7fb08d64925d17f8e48a07
@@ -87,7 +87,7 @@ docs/src/content/docs/term/reference/configuration.mdx:
         file: src/shared/tools.ts
         lines: 234-243
         integrity: sha256-825c348e3e8fa3b182253fae34b3d332fe6fe52aec666e2dd5d14cc9ffba29b1
-        commit-sha: 38731a33a1767d7e05639dc4144ad9d1d339f625
+        commit-sha: c72a188d455b54a739b4ef728a55b4adac510f0a
     - id: manifests-list-of-paths
       claim:
         lines: 65
@@ -114,7 +114,7 @@ docs/src/content/docs/term/reference/configuration.mdx:
         file: src/term/core/load-set.ts
         lines: 442-459
         integrity: sha256-821b1c6069afba73180e4b520c42495c19f6fa729bebe96ce0ba276c942c0abc
-        commit-sha: 343ef71848c2fa541f41eb5f993e18b5dd9c0c17
+        commit-sha: c72a188d455b54a739b4ef728a55b4adac510f0a
     - id: baseline-relative-to-config
       claim:
         lines: 67
@@ -186,7 +186,7 @@ docs/src/content/docs/term/reference/configuration.mdx:
         file: src/term/core/load-set.ts
         lines: 377-382
         integrity: sha256-4f247bb7c397b74d9992f137587265499529329e5a02318c2cc7e0b03e15db3e
-        commit-sha: 343ef71848c2fa541f41eb5f993e18b5dd9c0c17
+        commit-sha: c72a188d455b54a739b4ef728a55b4adac510f0a
     - id: manifest-key-is-id
       claim:
         integrity: sha256-c1fbe71810fd30844e4e8e54fc62dcd8eda5f3bf0ecb4963bb93ae5c41abf2ed
@@ -226,7 +226,7 @@ docs/src/content/docs/term/reference/configuration.mdx:
         file: src/term/types.ts
         lines: 443-456
         integrity: sha256-223481f41809d1c5a9485c4f3d5349143c76c1847da5e1a5a2a2eadfbb271a1a
-        commit-sha: 343ef71848c2fa541f41eb5f993e18b5dd9c0c17
+        commit-sha: c72a188d455b54a739b4ef728a55b4adac510f0a
     - id: severity-off-drops-rule
       claim:
         integrity: sha256-0f9187f4c00efecce25491bdfd5db145ba849f863fa6b0b84823bcdbe6b8ff8a
@@ -359,7 +359,7 @@ docs/src/content/docs/term/reference/configuration.mdx:
         file: src/term/core/load-set.ts
         lines: 442-449
         integrity: sha256-031fff1fe6110b3d2e56e51378927001c520461f91cafe8b09e96b8f552f4d7b
-        commit-sha: 343ef71848c2fa541f41eb5f993e18b5dd9c0c17
+        commit-sha: c72a188d455b54a739b4ef728a55b4adac510f0a
     - id: missing-manifest-message
       claim:
         lines: 262
@@ -368,7 +368,7 @@ docs/src/content/docs/term/reference/configuration.mdx:
         file: src/term/core/load-set.ts
         lines: 447-448
         integrity: sha256-d89a515f3d5182d996d201c74dfd054bcf56094a9e785ef63416d8066642bf37
-        commit-sha: 343ef71848c2fa541f41eb5f993e18b5dd9c0c17
+        commit-sha: c72a188d455b54a739b4ef728a55b4adac510f0a
     - id: abstract-max-length-type
       claim:
         lines: 66
@@ -404,7 +404,7 @@ docs/src/content/docs/term/reference/configuration.mdx:
         file: src/term/core/load-set.ts
         lines: 352
         integrity: sha256-e01cac2245b2ee790bf8936bc97ae98aff04cb87fb6ff75b3357b685765f522a
-        commit-sha: 343ef71848c2fa541f41eb5f993e18b5dd9c0c17
+        commit-sha: c72a188d455b54a739b4ef728a55b4adac510f0a
     - id: allow-empty-no-terms
       claim:
         lines: 69
@@ -413,7 +413,7 @@ docs/src/content/docs/term/reference/configuration.mdx:
         file: src/term/core/load-set.ts
         lines: 462-466
         integrity: sha256-eee4feda1ff997c95ddd5d2e77b3e44e3adf12622e307ae9a9c70a294c5c8957
-        commit-sha: 343ef71848c2fa541f41eb5f993e18b5dd9c0c17
+        commit-sha: c72a188d455b54a739b4ef728a55b4adac510f0a
     - id: allow-empty-missing-path
       claim:
         lines: 69
@@ -463,7 +463,7 @@ docs/src/content/docs/term/reference/configuration.mdx:
         file: src/term/core/load-set.ts
         lines: 359-363
         integrity: sha256-46dab77aa566c96dfd6f011fba5113cba1a1e6b53ff8f28221fd16fd6db50824
-        commit-sha: 343ef71848c2fa541f41eb5f993e18b5dd9c0c17
+        commit-sha: c72a188d455b54a739b4ef728a55b4adac510f0a
     - id: unknown-key-message
       claim:
         lines: 239

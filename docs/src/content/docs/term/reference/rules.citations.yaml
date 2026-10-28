@@ -330,7 +330,7 @@ docs/src/content/docs/term/reference/rules.mdx:
         file: src/term/core/load-set.ts
         lines: 241-255
         integrity: sha256-22d3f07e3ba16e32162c57c05faa7e4a92c4ec72b884ed1c6e175dccadd3d4bc
-        commit-sha: 343ef71848c2fa541f41eb5f993e18b5dd9c0c17
+        commit-sha: c72a188d455b54a739b4ef728a55b4adac510f0a
     - id: graph-concepts-resolved
       claim:
         integrity: sha256-e0f8f15f6ef892a072f4c4e1a8bd496782569d6aa6ac8aff66be995b5abe3048
