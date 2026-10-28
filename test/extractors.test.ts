@@ -772,8 +772,26 @@ describe("html extractor: a Flare topic's title (0125)", () => {
     expect(r.data.title).toBe("Set");
   });
 
-  it("adds no title to a topic with no <title> element", () => {
+  it("reads a missing <title> as an empty one: the first heading", () => {
     const r = htmlExtractor.extract(topic("", "<h1>Heading</h1>"), "a.htm");
+    expect(r.data.title).toBe("Heading");
+  });
+
+  it("reads a missing <title> as the file name's stem when there is no heading", () => {
+    const r = htmlExtractor.extract(topic("", "<p>No heading.</p>"), "Content/Topics/Configure.htm");
+    expect(r.data.title).toBe("Configure");
+    // A snippet with no <head> at all is titled the same way.
+    const snippet = `<?xml version="1.0" encoding="utf-8"?>\n<html xmlns:MadCap="${FLARE_NS}">\n<body><p>Shared.</p></body>\n</html>\n`;
+    expect(htmlExtractor.extract(snippet, "Snippets/Note.flsnp").data.title).toBe("Note");
+    // Standard input has no name to fall back to.
+    expect(htmlExtractor.extract(topic("", "<p>No heading.</p>"), "<stdin>").data.title).toBeUndefined();
+  });
+
+  it("adds no title to a page with no <title> that is not a Flare topic", () => {
+    const r = htmlExtractor.extract(
+      "<html><head></head><body><h1>Heading</h1></body></html>",
+      "page.html",
+    );
     expect(r.data.title).toBeUndefined();
   });
 

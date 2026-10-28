@@ -61,6 +61,7 @@
 
 <https://example.com/flare/doc/Snippets/BeforeYouStart.flsnp> a prov:Entity, graph:Document ;
   dcterms:hasPart <https://example.com/flare/doc/Snippets/BeforeYouStart.flsnp#before-you-start> ;
+  dcterms:title "Before you start" ;
   graph:contentHash "0448bdefcd849bcf0c6f0fdccc395bff74a6a36834885e5a4d9147e749313e36" ;
   graph:path "Snippets/BeforeYouStart.flsnp" .
 

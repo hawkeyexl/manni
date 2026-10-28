@@ -63,12 +63,15 @@ writes it, and no description.
 - **A self-closed element holds nothing.** In
   `<p>Version <MadCap:variable name="General.ProductVersion" /> needs Node 20.</p>`,
   the text after the variable stays in the paragraph, beside the variable.
-- **The title is the one Flare shows.** Flare leaves `<title>` empty and shows
-  the first heading instead. manni reads an empty `<title>` as the first `h1` to
-  `h6`, or as the file name when the topic has no heading.
+- **The title is the one Flare shows.** Flare leaves `<title>` empty, or leaves
+  it out, and shows the first heading instead. manni reads an empty or missing
+  `<title>` as the first `h1` to `h6`, or as the file name when the topic has
+  no heading.
 - **Cross-references and snippet references are links.** `href` on
   `<MadCap:xref>` is one, and so is `src` on `<MadCap:snippetBlock>` and
-  `<MadCap:snippetText>`. A broken one is a broken link.
+  `<MadCap:snippetText>`. A broken one is a broken link. A target that names a
+  variable, such as `href="[%=Links.Video%]"`, is not a path, so it is not
+  checked.
 
 The [formats reference](/manni/meta/reference/formats/#html) has the full read
 rules, and [How graph works](/manni/graph/get-started/how-graph-works/#what-graph-reads)
@@ -164,7 +167,9 @@ as before.
   +        <meta name="description" content="What to have in place before you install." />
   +    </head>
   ```
-- **A write to `title` fills the `<title>` element.**
+- **A page with no head gains one.** Most Flare snippets have no `<head>`. A
+  write adds one just inside `<html>`.
+- **A write to `title` fills the `<title>` element, or adds one.**
 - **A write never leaves malformed XML.** When the page parsed as XML before
   the write, the result must parse too. Otherwise the write is refused with exit
   `2`, and the file is untouched.

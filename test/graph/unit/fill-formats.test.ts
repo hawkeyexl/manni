@@ -308,7 +308,7 @@ describe("graph fill writes each format through meta", () => {
     expect(report.results[0]).toMatchObject({
       status: "error",
       error:
-        "This HTML document has no <head> element; manni meta fill writes metadata into <head>. Add one, or set the field manually.",
+        "bare.html has no <head> element; manni meta fill writes metadata into <head>. Add one, or set the field manually.",
     });
     expect(read(dir, "bare.html")).toBe(page);
   });

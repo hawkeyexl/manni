@@ -299,15 +299,16 @@ export function readHtml(
 
   for (const child of doc.childNodes) visit(child);
 
-  // Flare leaves a topic's <title> empty and shows its first heading instead.
-  // The source stays the <title> element, so a write fills it.
+  // Flare leaves a topic's <title> empty, or out, and shows its first heading
+  // instead. An empty one stays the source, so a write fills it. A missing one
+  // has no source, so a write inserts a <title> into <head>.
   const titleSource = sources.get("title");
-  if (
-    titleSource?.kind === "title" &&
-    typeof data.title === "string" &&
-    data.title.trim() === "" &&
-    isFlare(body)
-  ) {
+  const untitled =
+    titleSource === undefined ||
+    (titleSource.kind === "title" &&
+      typeof data.title === "string" &&
+      data.title.trim() === "");
+  if (untitled && isFlare(body)) {
     const title = flareTitle(doc, options?.filePath);
     if (title !== undefined) data.title = title;
   }

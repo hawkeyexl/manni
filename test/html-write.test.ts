@@ -42,6 +42,17 @@ describe("applyHtml — no-ops and refusals", () => {
     );
   });
 
+  it("names the file in the refusal when the path is known", () => {
+    expect(() =>
+      applyHtml(fx("no-head.html"), { type: "concept" }, { filePath: "docs/frag.html" }),
+    ).toThrow(
+      "docs/frag.html has no <head> element; manni meta fill writes metadata into <head>. Add one, or set the field manually.",
+    );
+    expect(() => applyHtml(fx("no-head.html"), { type: "concept" })).toThrow(
+      "This HTML document has no <head> element; manni meta fill writes metadata into <head>. Add one, or set the field manually.",
+    );
+  });
+
   it("refuses on an empty patch too, so fill's pre-flight probe is honest", () => {
     // fill.ts probes with {} before paying for inference; a false all-clear
     // there means the call is billed for a file that could never be written.
@@ -361,6 +372,51 @@ describe("applyHtml — an XHTML page (0125)", () => {
     );
     expect(read(out).title).toBe("Configure the widget");
     expect(xmlParseError(out)).toBeUndefined();
+  });
+
+  it("adds a <title> to a Flare topic that has none, which read as its heading", () => {
+    const src = `<?xml version="1.0" encoding="utf-8"?>\n<html xmlns:MadCap="${FLARE_NS}">\n    <head>\n        <link href="a.css" rel="stylesheet" />\n    </head>\n    <body>\n        <h1>Configuring</h1>\n    </body>\n</html>\n`;
+    expect(read(src).title).toBe("Configuring");
+    const out = applyHtml(src, { title: "Tools & tips" }, { filePath: "Configure.htm" });
+    expect(out).toBe(
+      src.replace("<head>\n", "<head>\n        <title>Tools &amp; tips</title>\n"),
+    );
+    expect(read(out)).toMatchObject({ title: "Tools & tips", "head.title": "Tools & tips" });
+    expect(xmlParseError(out)).toBeUndefined();
+  });
+
+  it.each([
+    ["LF", "\n"],
+    ["CRLF", "\r\n"],
+  ])("gives a snippet with no <head> one just inside <html> (%s)", (_, eol) => {
+    const lines = [
+      '<?xml version="1.0" encoding="utf-8"?>',
+      `<html xmlns:MadCap="${FLARE_NS}">`,
+      "    <body>",
+      "        <h2>Before you start</h2>",
+      "    </body>",
+      "</html>",
+      "",
+    ];
+    const src = lines.join(eol);
+    const out = applyHtml(src, { description: "x" }, { filePath: "Snippets/Before.flsnp" });
+    const head = [
+      "    <head>",
+      '        <meta name="description" content="x" />',
+      "    </head>",
+    ];
+    expect(out).toBe([...lines.slice(0, 2), ...head, ...lines.slice(2)].join(eol));
+    expect(xmlParseError(out)).toBeUndefined();
+    expect(read(out)).toMatchObject({ description: "x", title: "Before you start" });
+  });
+
+  it("still refuses a page whose <head> parse5 could not locate", () => {
+    // A stray <meta> before <head> makes parse5 imply a head and drop the real
+    // one, so there is nowhere a splice can land.
+    const src = `<?xml version="1.0" encoding="utf-8"?>\n<html xmlns:MadCap="${FLARE_NS}">\n<meta name="a" content="b" />\n<head>\n<title>T</title>\n</head>\n<body><p>x</p></body>\n</html>\n`;
+    expect(() => applyHtml(src, { description: "x" }, { filePath: "Topics/Stray.htm" })).toThrow(
+      "Topics/Stray.htm has no <head> element; manni meta fill writes metadata into <head>. Add one, or set the field manually.",
+    );
   });
 
   it("refuses a write whose result would not be well-formed XML", () => {

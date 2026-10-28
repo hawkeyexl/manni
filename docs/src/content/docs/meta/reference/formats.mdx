@@ -358,9 +358,10 @@ parse error.
 {/* cite formats-new-meta-goes-just-inside-head */}
 `fill` can write HTML. An existing tag has only its value replaced, so the
 surrounding quoting and spelling are preserved. A key with no tag yet gets a new
-`<meta>` just inside `<head>`, indented to match its neighbours. A document
-whose `<head>` is implied rather than written out, an HTML fragment for
-instance, is refused. There is no head to write into.
+`<meta>` just inside `<head>`, indented to match its neighbours. A plain HTML
+page whose `<head>` is implied rather than written out, an HTML fragment for
+instance, is refused. There is no head to write into, and the message names
+the file. An XHTML page with no head gains one, as the next section says.
 
 #### XHTML pages
 
@@ -372,14 +373,17 @@ and snippets do both. Nothing in the config declares it.
   where its tag does. The text after it is its sibling, as the file is written.
 - **A write closes its own tags.** Each new tag ends in ` />`. A self-closed
   `<head />` opens into `<head>` and `</head>` around the new tags.
+- **A page with no `<head>` gains one.** Most Flare snippets have none. A write
+  adds `<head>` just inside `<html>`, indented as the page is. When the source
+  holds a `<head>` the parser could not place, the write is refused instead.
 - **A write never leaves malformed XML.** When the page parsed as XML before
   the write, the result must parse too. Otherwise the write is refused with
   exit `2`, and the file is untouched. The message names the key and the
   parser's reason.
 - **A MadCap Flare page reads its title as Flare shows it.** A page that
-  declares the MadCap namespace and has an empty `<title>` reads its first `h1`
-  to `h6`. With no heading, it reads its file name without the extension. A
-  write to `title` fills the `<title>` element.
+  declares the MadCap namespace and has an empty or missing `<title>` reads its
+  first `h1` to `h6`. With no heading, it reads its file name without the
+  extension. A write to `title` fills the `<title>` element, or adds one.
 
 ```text
 Refusing to write "<key>": the result would not be well-formed XML (<parser message>). <file> is unchanged.

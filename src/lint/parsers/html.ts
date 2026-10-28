@@ -733,6 +733,7 @@ function collectLinks(
   ids: Map<Element, string>,
   heading: string | undefined,
   out: DocumentTree["links"],
+  flare: boolean,
 ): void {
   for (const child of parent.childNodes) {
     if (!defaultTreeAdapter.isElementNode(child)) continue;
@@ -741,9 +742,13 @@ function collectLinks(
     if (attr !== undefined) {
       const href = attrOf(child, attr);
       const permalink = (tag === "a" || tag === "area") && heading !== undefined && href === `#${heading}`;
-      if (href !== undefined && !permalink) out.push({ target: href, position: positionOf(child) });
+      // On a Flare page, a target holding `[%=` names a variable, which only
+      // the build resolves (a later part of proposal 0125). Until then it
+      // names no file, so it is not a link.
+      const variable = flare && href?.includes("[%=") === true;
+      if (href !== undefined && !permalink && !variable) out.push({ target: href, position: positionOf(child) });
     }
-    collectLinks(child, ids, HEADING_LEVELS.has(tag) ? ids.get(child) : heading, out);
+    collectLinks(child, ids, HEADING_LEVELS.has(tag) ? ids.get(child) : heading, out, flare);
   }
 }
 
@@ -850,7 +855,7 @@ function parseHtml(content: string, filePath: string): DocumentTree {
   const ids = new HeadingIds();
   walk(doc, fragments, ids);
   const links: DocumentTree["links"] = [];
-  collectLinks(doc, ids.byHeading, undefined, links);
+  collectLinks(doc, ids.byHeading, undefined, links, isFlare(content));
 
   const { frontmatter, position } = metadataOf(content, filePath, doc);
 

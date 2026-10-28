@@ -63,9 +63,10 @@ what breaks.
 - **cite, term and strategy read.** HTML pages carry citations through a
   `{page}.citations.yaml` manifest, and term and strategy records work as
   HTML pages.
-- **Every title is empty.** In MadCap's own help source, 1,336 of 1,337 topics
-  have an empty `<title>`. Flare titles them from their first heading.
-  `manni:core` requires a title, so it fails every one.
+- **Titles are left to the heading.** In MadCap's own help source, 2,179 of
+  3,796 topics have no `<title>`, and the rest mostly leave it empty. Flare
+  titles them from their first heading. `manni:core` requires a title, so it
+  fails each one.
 - **Writes break the topic.** `meta derive`, `meta fill` and `graph fill`
   insert `<meta name="x" content="y">` with no closing slash. Flare's topics
   are XML, and the result no longer parses as XML.
@@ -293,8 +294,9 @@ to write a topic.
 
 3. **Inserted tags close themselves.** On an XHTML page a write ends each new
    tag with ` />`. A self-closed `<head />` opens into `<head>` and `</head>`
-   around what the write inserts. On any other HTML page a write emits the
-   bytes it emits today.
+   around what the write inserts. A page with no `<head>` at all, as most
+   Flare snippets are, gains one just inside `<html>`. On any other HTML page
+   a write emits the bytes it emits today.
 
 4. **A write never leaves malformed XML.** When an XHTML page parsed as XML
    before a write, the written result must too. Otherwise the write is
@@ -303,9 +305,10 @@ to write a topic.
    `graph fill`, encryption, and `key rotate`.
 
 5. **A Flare topic's title is the one Flare shows.** On a page that declares
-   the MadCap namespace, an empty `<title>` reads as the text of the first
-   `h1` to `h6`. With no heading it reads as the file name, without its
-   extension. A write to `title` fills the `<title>` element.
+   the MadCap namespace, an empty or missing `<title>` reads as the text of
+   the first `h1` to `h6`. With no heading it reads as the file name, without
+   its extension. A write to `title` fills the `<title>` element, or adds one
+   to `<head>`.
 
 6. **`.flsnp` is HTML.** meta's HTML extractor and lint's HTML parser claim
    it, and a directory walk collects it. graph lists it, `.fltoc` and
@@ -318,7 +321,9 @@ to write a topic.
    harvests `href` on `<MadCap:xref>`, and `src` on `<MadCap:snippetBlock>` and
    `<MadCap:snippetText>`. graph turns each into `dcterms:references`, as it
    does an `<a href>`. So an include is an edge, and a broken one is a broken
-   link. `graph traverse --reverse` lists a snippet's includers.
+   link. `graph traverse --reverse` lists a snippet's includers. A target that
+   names a variable, such as `href="[%=Links.Video%]"`, is not a path Part 1
+   can check, so it is left out. Part 2 resolves it.
 
 8. **The XML vocabulary error names no source file.** It reads "manni
    understands DITA, DocBook, DITA map and Flare TOC", and says nothing about
@@ -371,7 +376,9 @@ to write a topic.
       other MadCap element keeps its text.
 
     Links and includes are what each file says, under every condition. A
-    broken cross-reference in print-only content is still broken.
+    broken cross-reference in print-only content is still broken. A link
+    target that names a variable resolves through the variable set, and is
+    checked as the path it resolves to.
 
 13. **Who reads the resolved view.** lint's structure rules, graph's sections
     and its search index read it through lint's tree. A Flare topic's passage
@@ -599,6 +606,7 @@ Every message goes to stderr.
 ```text
 # Part 1, exit 2
 Refusing to write "<key>": the result would not be well-formed XML (<parser message>). <file> is unchanged.
+<file> has no <head> element; manni meta fill writes metadata into <head>. Add one, or set the field manually.
 
 # Part 2, exit 2
 tools.flare.target "<name>" names no target in <flprj>. Its targets are <list>.
@@ -677,6 +685,11 @@ Flare in <dir>. Running madbuild -project <flprj> -target <target>
   linked topic has no definition, so `missing-definition` reports it.
 - **Tracked changes read as both.** A topic holding unaccepted changes reads
   with the inserted and the deleted text.
+- **Globs skip dot-files.** A collection path such as `Content/**/*.flsnp`
+  leaves out a file whose name starts with a dot. A project with one names it
+  in a path of its own.
+- **A head parse5 cannot place is refused.** A stray tag before `<head>` makes
+  the parser imply one. A write to that page exits 2, naming the file.
 - **Unread files.** Template pages, alias files, index link sets, search filter
   sets, relationship tables, auto-suggestion sets and micro content are not
   read.
@@ -817,9 +830,13 @@ request is a `feat:` and ships its own demo video.
 - [ ] A write into a plain HTML5 page is byte-identical to today's.
 - [ ] A write that would leave malformed XML exits 2 with the Part 1 message,
       and the file is untouched.
-- [ ] A Flare topic with an empty `<title>` reads its first heading as
-      `title`, or its file name with no heading. A write to `title` fills the
-      element.
+- [ ] A Flare topic with an empty or missing `<title>` reads its first
+      heading as `title`, or its file name with no heading. A write to `title`
+      fills the element, or adds one.
+- [ ] A write into an XHTML page with no `<head>` adds one inside `<html>`, and
+      the result parses as XML. A head the parser had to imply is refused,
+      naming the file.
+- [ ] A link target holding `[%=…%]` on a Flare page is not reported broken.
 - [ ] `manni meta validate x.flsnp` exits 0 on a valid snippet, and
       `lint tools` lists `.flsnp` under html.
 - [ ] `graph build` derives `dcterms:references` from `MadCap:xref href`,

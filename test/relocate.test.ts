@@ -611,11 +611,13 @@ describe("relocate: fixes from review", () => {
     expect(read(dir, "docs/a.md")).toContain("title: A");
   });
 
-  it("moves a key into a Flare topic as a tag that closes itself", async () => {
+  it("moves a key into an XHTML page as a tag that closes itself", async () => {
+    // Not a Flare topic: one of those reads its heading as its title (0125),
+    // so a manifest title either matches it already or stays.
     const dir = copy("relocate-as-sibling");
     writeFileSync(
       join(dir, "docs", "c.htm"),
-      '<?xml version="1.0" encoding="utf-8"?>\n<html xmlns:MadCap="http://www.madcapsoftware.com/Schemas/MadCap.xsd">\n  <head>\n    <meta name="tags" content="c" />\n  </head>\n  <body><h1>C</h1></body>\n</html>\n',
+      '<?xml version="1.0" encoding="utf-8"?>\n<html xmlns="http://www.w3.org/1999/xhtml">\n  <head>\n    <meta name="tags" content="c" />\n  </head>\n  <body><h1>C</h1></body>\n</html>\n',
     );
     writeFileSync(join(dir, "docs-meta.yaml"), `${read(dir, "docs-meta.yaml")}docs/c.htm:\n  title: C\n`);
     const result = await runRelocate({ inputs: ["docs/c.htm"], cwd: dir });
