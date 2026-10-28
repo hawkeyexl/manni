@@ -138,10 +138,13 @@ docs/src/content/docs/term/fix/index.mdx:
       lines: 348
       integrity: sha256-f1b901847390b0ed7e374e7c1e464ec17b46a427c487a5ad6cbd2906405083d5
     - generated-by: Claude Opus 5
-      lines: 353-462
-      integrity: sha256-65471b8755dc22b623ae0372cdd96ed5cf307cb5e79dfa818101542d8fc92fa9
+      lines: 353-424
+      integrity: sha256-7477c3443b342cf015dfaa848b2583451f7a779f213f74d1577d6ceefbccaa1a
     - generated-by: Claude Opus 5
-      lines: 464-480
+      lines: 429-463
+      integrity: sha256-9e30692321916f7f5d1915586f76a93423d3d1df44fdf360b0822725ef73d442
+    - generated-by: Claude Opus 5
+      lines: 465-481
       integrity: sha256-7a0e44222cabd516627b37ec79578cff6616d04f2bd3db7a368d3ce035ac806a
   owner:
     - "@hawkeyexl"

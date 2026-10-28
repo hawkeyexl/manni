@@ -5,7 +5,7 @@ type: how-to
 audiences:
   - ci-engineers
   - docs-engineers
-last-updated: 2026-10-23
+last-updated: 2026-10-27
 ---
 
 A gate that is not in CI is a linter someone runs sometimes. This page is the GitHub Actions recipe;
@@ -72,7 +72,11 @@ A local `llama-cpp` judge belongs in CI only on a runner with a GPU. See
 
 ```yaml
       - run: npx @hawkeyexl/manni docevals run --format github | tee "$GITHUB_STEP_SUMMARY"
+        shell: bash
 ```
+
+`shell: bash` runs the step with `pipefail`, so the job still fails when the
+evals do. Without it, the step reports `tee`'s exit code and passes.
 
 ## Before you enable it on pull requests
 

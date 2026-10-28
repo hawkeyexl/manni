@@ -86,7 +86,7 @@ docs/src/content/docs/meta/ci/recipes.mdx:
         commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: hook-needs-node-24
       claim:
-        lines: 301-302
+        lines: 306-307
         integrity: sha256-7586e9ec2cbcc07983fac21ddfb24918a8b187dc1fd1297d476a9100ca3e83cd
       source:
         file: package.json

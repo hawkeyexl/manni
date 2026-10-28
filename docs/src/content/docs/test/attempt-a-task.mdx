@@ -34,7 +34,7 @@ sample-questions:
 graph:
   label: Attempt a task as a persona
   type: task
-last-updated: 2026-10-24
+last-updated: 2026-10-27
 tags:
   - testing
   - synthetic-users
@@ -453,13 +453,21 @@ t1 · Fix a failing metadata check fast · as maya
 ```
 
 A bare `manni test tasks` runs every journey that declares `evals:`, which is
-the whole golden set. Here that is T1 alone. In the `github` format, a set
-that passes prints its total and nothing else:
+the whole golden set. Here that is six journeys: T1, T4 and T5 for Theo, and
+one each for Maya, Devin and Sara. The runs go one after another, and the
+total comes last:
 
 ```console
-$ manni test tasks -f github
-1 run: 1 passed
+$ manni test tasks
+d1 · Add the gate to our CI platform · as devin
+…
+t5 · Read a structure failure and fix it · as theo
+…
+6 runs: 6 passed · 2 warnings
 ```
+
+In the `github` format, only an eval that did not pass prints a line. A set
+with no warnings prints its total alone.
 
 ## Turns and cost
 

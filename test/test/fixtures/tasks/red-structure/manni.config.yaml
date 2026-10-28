@@ -1,0 +1,8 @@
+collections:
+  - name: guides
+    paths:
+      - "docs/**/*.md"
+
+lint:
+  structure:
+    tool: manni

@@ -1,0 +1,12 @@
+# A Flare-style project: every collection member is an .htm topic, which
+# docevals does not read, and there is no docevals: section. meta is set up.
+collections:
+  - name: site
+    paths:
+      - "Content/**/*.htm"
+
+meta:
+  overrides:
+    - files: "Content/**/*.htm"
+      schemas:
+        - manni:core:1.0.0
