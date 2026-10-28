@@ -20,7 +20,8 @@ docs/src/content/docs/family/flare.mdx:
       grader: ai
   provenance:
     - generated-by: Claude Opus 5.5
-      lines: 2-269
-      integrity: sha256-a0465656bd5f28cb188aaa0bf5c38e8cfa8205c7ca39af7062d677b77d0e4909
+      lines: 2-274
+      integrity: sha256-e2e7b6b82ba3ebe3825e0f00a65274893aacadf4878f3d215f2477691f9fc58e
   owner:
     - "@hawkeyexl"
+  created: 2026-10-28

@@ -170,9 +170,9 @@ docs/src/content/docs/meta/reference/element-metadata.mdx:
         integrity: sha256-c247d051b878e49a38bd97f040fd372dceab6e38b959af76b6facb269260c0cc
       source:
         file: src/meta/extractors/html-read.ts
-        lines: 326-331
+        lines: 327-332
         integrity: sha256-1e48a8b5ff1d4a6c9c69aa65b34bbbc2d32ecbb1725e434ff27ac01840a0122d
-        commit-sha: 0d47b00a02406b65645eee9a12d8f91393dc9076
+        commit-sha: 3b66e48e2699eed8410c821c4108ae61699999ab
     - id: element-generic-xml-key-is-always-a-list
       claim:
         lines: 118
@@ -205,9 +205,9 @@ docs/src/content/docs/meta/reference/element-metadata.mdx:
         integrity: sha256-c72bbb88c969fff8e79c6480f4e859c53034f3abce2d9f70f7f4f3ffdda47b19
       source:
         file: src/meta/extractors/html-read.ts
-        lines: 326-329
+        lines: 327-330
         integrity: sha256-a3861a459746aad32d8ad195d67502c1726be238cc8958c9b3b506c18d560a92
-        commit-sha: 0d47b00a02406b65645eee9a12d8f91393dc9076
+        commit-sha: 3b66e48e2699eed8410c821c4108ae61699999ab
     - id: element-maxitems-1-says-exactly-one
       claim:
         integrity: sha256-61741b0e5e7d69d8a4c4ac4a5e013e1fdc5f529dab3813ec60d54ff12af5c0fc
