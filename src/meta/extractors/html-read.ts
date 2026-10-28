@@ -204,6 +204,23 @@ function markerKeywords(els: Element[]): string[] {
   return [...out];
 }
 
+/** A glossary term reference, whose `glossTerm` id is one of a Flare topic's `concepts`. parse5 lowercases names. */
+const GLOSSARY_MARKER = "madcap:glossaryterm";
+
+/**
+ * The termbase ids a run of glossary term markers names (0125, decision 19):
+ * each `glossTerm` verbatim, empties dropped, the first of any repeat kept.
+ * The text a marker wraps is the page's prose, not a value.
+ */
+function markerConcepts(els: Element[]): string[] {
+  const out = new Set<string>();
+  for (const el of els) {
+    const id = attrValue(el, "glossterm") ?? "";
+    if (id !== "") out.add(id);
+  }
+  return [...out];
+}
+
 /** Every element a config path selects, walked down the child axis. */
 function matchHtmlPath(
   doc: DefaultTreeAdapterMap["document"],
@@ -264,6 +281,7 @@ export function readHtml(
   const sources = new Map<string, HtmlSource>();
   let head: Element | undefined;
   const keywordMarkers: Element[] = [];
+  const glossaryMarkers: Element[] = [];
   // The document node has no location; anchor the root pointer at 1:1.
   lineMap.set("", 1);
   colMap.set("", 1);
@@ -318,6 +336,9 @@ export function readHtml(
         }
       } else if (KEYWORD_MARKERS.has(node.tagName)) {
         keywordMarkers.push(node);
+      } else if (node.tagName === GLOSSARY_MARKER && (attrValue(node, "glossterm") ?? "") !== "") {
+        // Only a marker naming an id, so the first one is where `concepts` points.
+        glossaryMarkers.push(node);
       }
       // Same guard, same node, nothing between that could change the answer:
       // recursion belongs inside the one check rather than behind a second.
@@ -348,6 +369,13 @@ export function readHtml(
   if (data.keywords === undefined && keywords.length > 0 && isFlare(body)) {
     const first = keywordMarkers[0]?.sourceCodeLocation;
     setKey("keywords", keywords, { kind: "marker", els: keywordMarkers }, first?.startLine, first?.startCol);
+  }
+  // Its glossary term markers are its `concepts`, on the same terms (0125,
+  // decision 19).
+  const concepts = markerConcepts(glossaryMarkers);
+  if (data.concepts === undefined && concepts.length > 0 && isFlare(body)) {
+    const first = glossaryMarkers[0]?.sourceCodeLocation;
+    setKey("concepts", concepts, { kind: "marker", els: glossaryMarkers }, first?.startLine, first?.startCol);
   }
 
   // Element-derived metadata, lifted from `<head>` only. The body is prose, and

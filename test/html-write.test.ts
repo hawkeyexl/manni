@@ -483,6 +483,35 @@ describe("applyHtml — an XHTML page (0125)", () => {
     });
   });
 
+  describe("concepts read from glossary term markers", () => {
+    const src = `<?xml version="1.0" encoding="utf-8"?>\n<html xmlns:MadCap="${FLARE_NS}">\n<head>\n<title>T</title>\n</head>\n<body><p>Build the <MadCap:glossaryTerm glossTerm="Glossary.Term15">batch target</MadCap:glossaryTerm>.</p></body>\n</html>\n`;
+
+    it("refuses a write to them, naming the file or the page", () => {
+      expect(read(src).concepts).toEqual(["Glossary.Term15"]);
+      for (const [filePath, file] of [
+        ["Content/Topics/Build.htm", "Content/Topics/Build.htm"],
+        [undefined, "the page"],
+      ] as const) {
+        let error: unknown;
+        try {
+          applyHtml(src, { concepts: ["x"] }, filePath === undefined ? {} : { filePath });
+        } catch (e) {
+          error = e;
+        }
+        expect(error).toBeInstanceOf(DocmetaError);
+        expect((error as DocmetaError).message).toBe(
+          `Refusing to write "concepts": ${file} reads them from its MadCap:glossaryTerm markers. Edit the markers in Flare.`,
+        );
+      }
+    });
+
+    it("writes another key and leaves the markers alone", () => {
+      const out = applyHtml(src, { type: "concept" }, { filePath: "a.htm" });
+      expect(out).toBe(src.replace("<head>", '<head>\n<meta name="type" content="concept" />'));
+      expect(read(out)).toMatchObject({ type: "concept", concepts: ["Glossary.Term15"] });
+    });
+  });
+
   it("writes a plain HTML page exactly as before", () => {
     const content = fx("head-with-meta.html");
     const out = applyHtml(content, { audience: "developer" });

@@ -155,9 +155,10 @@ export function applyHtml(
 /** The Flare markers each marker-read key comes from, as the refusal names them. */
 const MARKERS: Record<string, string> = {
   keywords: "MadCap:keyword and MadCap:concept",
+  concepts: "MadCap:glossaryTerm",
 };
 
-/** Why a key read from Flare's markers is not written (0125, decision 16). */
+/** Why a key read from Flare's markers is not written (0125, decisions 16 and 19). */
 function markerRefusal(key: string, file: string): string {
   return `Refusing to write "${key}": ${file} reads them from its ${MARKERS[key] ?? "MadCap"} markers. Edit the markers in Flare.`;
 }

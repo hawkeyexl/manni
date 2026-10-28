@@ -433,7 +433,7 @@ to write a topic.
 
 19. **A glossary term reference is a `concepts:` reference.** meta's HTML
     reader reads each `<MadCap:glossaryTerm glossTerm>` as an entry of the page
-    field `concepts`. term's `dangling-reference` and graph's `dcterms:subject`
+    field `concepts`. term's `undefined-term` and graph's `dcterms:subject`
     then work as they do for any page. A write to `concepts` read from markers
     is refused with exit 2.
 
@@ -627,6 +627,8 @@ skipped: target <name> excludes the page by its conditions
 # Part 3, exit 2
 Refusing to write "concepts": <file> reads them from its MadCap:glossaryTerm markers. Edit the markers in Flare.
 <path> is not a Flare meta tag set: its root element is <name>.
+<path>: is not a Flare glossary: its root element is <name>, not <CatapultGlossary>.
+<path>: could not be read as a Flare glossary.
 <path> is a Flare meta tag set, which manni reads and never writes.
 <file> is HTML, so its evals live in a manifest. Give its collection an externalMetadata entry that owns evals.
 <flprj> has <n> targets. Name the one to build with tools.flare.target.
@@ -898,8 +900,8 @@ request is a `feat:` and ships its own demo video.
       `term.manifests`.
 - [ ] A glossary entry's later terms are `alt-labels`, and its id is its
       `glossTerm` id or, with none, its label's slug.
-- [ ] `MadCap:glossaryTerm` reads as `concepts`, a removed entry is a
-      `dangling-reference`, and a write to marker concepts exits 2.
+- [ ] `MadCap:glossaryTerm` reads as `concepts`, a removed entry is an
+      `undefined-term`, and a write to marker concepts exits 2.
 - [ ] A `.flmeta` path in `schemas:` validates `Text` tags and single and
       multiple `Enum` values. A file that is not a meta tag set exits 2.
 - [ ] A `meta query` schema change that would write a `.flmeta` exits 2.
