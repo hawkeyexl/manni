@@ -143,10 +143,13 @@ export function sharedTermDirectory(terms: readonly Term[]): string | undefined 
 /** The term page formats `fill` writes, by extension. */
 export const FILL_PAGE_FORMATS: Readonly<Record<string, string>> = {
   ".md": "markdown",
+  ".markdown": "markdown",
   ".mdx": "mdx",
   ".adoc": "asciidoc",
+  ".asciidoc": "asciidoc",
   ".rst": "rst",
   ".html": "html",
+  ".htm": "html",
   ".dita": "dita",
 };
 

@@ -5,6 +5,7 @@
  */
 import { describe, expect, it } from "vitest";
 import {
+  FILL_PAGE_FORMATS,
   mergeFound,
   namedConcepts,
   newCandidates,
@@ -12,6 +13,7 @@ import {
   planFromMetadata,
   sharedTermDirectory,
 } from "../../src/term/core/fill-plan.js";
+import { TERM_WRITERS } from "../../src/term/core/writers/index.js";
 import type { Term, TermBlock, TermReference, TermSet } from "../../src/term/types.js";
 
 function term(label: string, opts: { id?: string; alt?: string[]; definition?: string; path?: string; construct?: "page" | "manifest"; see?: string } = {}): Term {
@@ -138,6 +140,18 @@ describe("pageExtension", () => {
   it("then the most common page extension, then .md", () => {
     expect(pageExtension([], "/d/g", ["a.adoc", "b.adoc", "c.md", "terms.tbx"])).toBe(".adoc");
     expect(pageExtension([], "/d/g", ["terms.tbx"])).toBe(".md");
+  });
+
+  it("follows .htm pages, and the .markdown and .asciidoc spellings", () => {
+    expect(pageExtension([], "/d/g", ["a.htm", "b.htm", "c.md"])).toBe(".htm");
+    expect(pageExtension([], "/d/g", ["a.markdown"])).toBe(".markdown");
+    expect(pageExtension([], "/d/g", ["a.asciidoc"])).toBe(".asciidoc");
+  });
+
+  it("only picks an extension whose format writes one term per page", () => {
+    for (const [ext, format] of Object.entries(FILL_PAGE_FORMATS)) {
+      expect(TERM_WRITERS.find((w) => w.format === format)?.shapes, ext).toContain("directory");
+    }
   });
 });
 
