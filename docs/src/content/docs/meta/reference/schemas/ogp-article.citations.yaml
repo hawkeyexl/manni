@@ -175,9 +175,9 @@ docs/src/content/docs/meta/reference/schemas/ogp-article.mdx:
         integrity: sha256-19d0e2b09ba6645fe33448cbec71b326009001e28690ca537cfa8e6ea41e76c4
       source:
         file: src/meta/extractors/html-read.ts
-        lines: 326-329
+        lines: 306-309
         integrity: sha256-a92e2c737679a8fc44c7a92ceb450df2810d532f848e307ed8cbf4685a63a02e
-        commit-sha: 72a9d7ac3e4261937e19d09db43f5452795b9cca
+        commit-sha: 12225b68a574580436cf0e8e1e7e12d1bf9bf722
     - id: vocab-ogp-requires-four-properties
       claim:
         integrity: sha256-f97581469d03c6b965b995e9f0319e4d5d51cbbe371a29fb082673d88dbc39b7

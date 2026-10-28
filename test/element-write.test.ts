@@ -49,6 +49,12 @@ describe("updating element text in plain XML", () => {
     expect(r.data["article.title"]).toEqual(["Configure the router"]);
   });
 
+  it("round-trips element text holding a colon", () => {
+    const next = apply(ARTICLE, { "article.title": ["Note: this"] });
+    const r = xmlExtractor.extract(next, "a.xml");
+    expect(r.data["article.title"]).toEqual(["Note: this"]);
+  });
+
   it("escapes markup written into element text", () => {
     const next = apply(ARTICLE, { "article.title": ["a < b & c"] });
     expect(next).toContain("<title>a &lt; b &amp; c</title>");

@@ -11,7 +11,6 @@
  *     Attribute values are parsed as YAML scalars so `2` -> number, `true` ->
  *     boolean, etc., consistent with frontmatter typing.
  */
-import { parse as parseYamlScalar } from "yaml";
 import type { ExtractedMetadata, MetadataExtractor } from "../types.js";
 import {
   extractFrontmatter,
@@ -20,21 +19,13 @@ import {
   lineForFactory,
 } from "./frontmatter.js";
 import { applyFencedOnly } from "./frontmatter-write.js";
+import { typeValue } from "./scalar-value.js";
 
 const TITLE = /^=\s+(.+?)\s*$/;
 // `:!name:` or `:name!:` — an unset attribute.
 const UNSET = /^:(?:!([^:\s]+)|([^:\s]+)!):\s*$/;
 // `:name:` or `:name: value` — a set attribute (value optional).
 const SET = /^:([^:\s!][^:\s]*):(?:\s+(.*\S))?\s*$/;
-
-/** Parse a raw attribute value as a YAML scalar, falling back to the string. */
-function typeValue(raw: string): unknown {
-  try {
-    return parseYamlScalar(raw);
-  } catch {
-    return raw;
-  }
-}
 
 /**
  * Parse the native AsciiDoc document header (title + attribute entries).

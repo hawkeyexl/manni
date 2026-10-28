@@ -283,6 +283,38 @@ describe("asciidoc extractor", () => {
     expect(r.data.archived).toBe(false);
   });
 
+  it("reads a block mapping or sequence in a value as the literal string", () => {
+    const r = asciidocExtractor.extract(
+      `= T
+:description: This includes the ability to: change the team name
+:products: Source Control User Guide: Microsoft TFS
+:note: - a
+`,
+      "x.adoc",
+    );
+    expect(r.data.description).toBe("This includes the ability to: change the team name");
+    expect(r.data.products).toBe("Source Control User Guide: Microsoft TFS");
+    expect(r.data.note).toBe("- a");
+  });
+
+  it("still reads flow collections, numbers, booleans and quoted strings as typed", () => {
+    const r = asciidocExtractor.extract(
+      `= T
+:list: [a, b]
+:map: {a: b}
+:n: 2
+:flag: true
+:quoted: "a: b"
+`,
+      "x.adoc",
+    );
+    expect(r.data.list).toEqual(["a", "b"]);
+    expect(r.data.map).toEqual({ a: "b" });
+    expect(r.data.n).toBe(2);
+    expect(r.data.flag).toBe(true);
+    expect(r.data.quoted).toBe("a: b");
+  });
+
   it("maps the title and attributes to source lines", () => {
     const r = asciidocExtractor.extract(ADOC_HEADER, "x.adoc");
     expect(r.lineFor("/title")).toBe(1);
@@ -371,6 +403,36 @@ describe("rst extractor", () => {
     // values are parsed as YAML scalars, so `[a, b]` is an array
     expect(r.data.tags).toEqual(["a", "b"]);
     expect(r.data.timestamp).toBe("2026-06-25T10:00:00Z");
+  });
+
+  it("reads a block mapping or sequence in a value as the literal string", () => {
+    const r = rstExtractor.extract(
+      `:description: This includes the ability to: change the team name
+:products: Source Control User Guide: Microsoft TFS
+:note: - a
+`,
+      "x.rst",
+    );
+    expect(r.data.description).toBe("This includes the ability to: change the team name");
+    expect(r.data.products).toBe("Source Control User Guide: Microsoft TFS");
+    expect(r.data.note).toBe("- a");
+  });
+
+  it("still reads flow collections, numbers, booleans and quoted strings as typed", () => {
+    const r = rstExtractor.extract(
+      `:list: [a, b]
+:map: {a: b}
+:n: 2
+:flag: true
+:quoted: "a: b"
+`,
+      "x.rst",
+    );
+    expect(r.data.list).toEqual(["a", "b"]);
+    expect(r.data.map).toEqual({ a: "b" });
+    expect(r.data.n).toBe(2);
+    expect(r.data.flag).toBe(true);
+    expect(r.data.quoted).toBe("a: b");
   });
 
   it("maps fields to source lines; :title: field wins the /title line", () => {
@@ -566,6 +628,33 @@ describe("xml extractor", () => {
     const r = xmlExtractor.extract(`<doc title="" type="concept"/>`, "x.xml");
     expect(r.data.title).toBe("");
     expect(r.data.type).toBe("concept");
+  });
+
+  it("reads a block mapping or sequence in a value as the literal string", () => {
+    // Prose whose YAML reading is a block mapping or sequence stays the prose,
+    // in an attribute and in element text alike.
+    const r = xmlExtractor.extract(
+      `<doc description="This includes the ability to: change the team name" products="Source Control User Guide: Microsoft TFS" note="- a"><summary>Note: this</summary><step>- a</step></doc>`,
+      "x.xml",
+    );
+    expect(r.data.description).toBe("This includes the ability to: change the team name");
+    expect(r.data.products).toBe("Source Control User Guide: Microsoft TFS");
+    expect(r.data.note).toBe("- a");
+    expect(r.data["doc.summary"]).toEqual(["Note: this"]);
+    expect(r.data["doc.step"]).toEqual(["- a"]);
+  });
+
+  it("still reads flow collections, numbers, booleans and quoted strings as typed", () => {
+    const r = xmlExtractor.extract(
+      `<doc list="[a, b]" map=" {a: b}" n="2" flag="true" quoted='"a: b"'><count>3</count></doc>`,
+      "x.xml",
+    );
+    expect(r.data.list).toEqual(["a", "b"]);
+    expect(r.data.map).toEqual({ a: "b" });
+    expect(r.data.n).toBe(2);
+    expect(r.data.flag).toBe(true);
+    expect(r.data.quoted).toBe("a: b");
+    expect(r.data["doc.count"]).toEqual([3]);
   });
 
   it("throws on malformed XML", () => {
