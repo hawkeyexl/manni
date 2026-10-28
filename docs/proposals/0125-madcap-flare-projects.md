@@ -638,6 +638,7 @@ Refusing to write "concepts": <file> reads them from its MadCap:glossaryTerm mar
 madbuild was not found. Install MadCap Flare, or set tools.flare.home to the folder that holds madbuild.exe.
 Flare has no development server. Run manni site build, then manni site preview.
 No Flare output at <out>. Run manni site build first.
+manni cannot tell whose Output folder to read, because USERNAME is not set and the system names no user. Set USERNAME to the account that runs madbuild.
 manni site annotate does not read Flare output.
 
 # Part 3, site build progress, exit unchanged

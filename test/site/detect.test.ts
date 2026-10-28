@@ -571,6 +571,7 @@ describe("Flare (proposal 0125, decision 22)", () => {
       env: { USERNAME: "maya", ...opts.env },
       isFile: (path) => files.has(path),
       readdir: (path) => opts.dirs?.[path] ?? [],
+      username: () => "maya",
     };
   }
 
@@ -610,6 +611,23 @@ describe("Flare (proposal 0125, decision 22)", () => {
     const dir = site("flare");
     expect(error(() => plan("build", dir, { flareHost: onPath }))).toBe(
       "Widget.flprj has 2 targets. Name the one to build with tools.flare.target.",
+    );
+  });
+
+  it("reads the output folder's account from the system when USERNAME is not set", () => {
+    const dir = site("flare", { files: target("HTML5") });
+    const host: MadbuildHost = { ...onPath, env: { PATH: "/opt/flare" }, username: () => "devin" };
+    expect(error(() => plan("preview", dir, { flareHost: host }))).toBe(
+      "No Flare output at Output/devin/HTML5. Run manni site build first.",
+    );
+  });
+
+  // A container with no user database: os.userInfo() throws there, and the host answers nothing.
+  it("refuses cleanly when neither USERNAME nor the system names a user", () => {
+    const dir = site("flare", { files: target("HTML5") });
+    const host: MadbuildHost = { ...onPath, env: { PATH: "/opt/flare" }, username: () => undefined };
+    expect(error(() => plan("preview", dir, { flareHost: host }))).toBe(
+      "manni cannot tell whose Output folder to read, because USERNAME is not set and the system names no user. Set USERNAME to the account that runs madbuild.",
     );
   });
 

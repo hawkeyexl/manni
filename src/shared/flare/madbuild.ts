@@ -5,12 +5,15 @@
  * search is asserted on every OS without Flare installed.
  */
 import { readdirSync } from "node:fs";
+import { userInfo } from "node:os";
 import { join, win32 } from "node:path";
 import { findOnPath, realPathHost, type PathHost } from "../find-on-path.js";
 
 export interface MadbuildHost extends PathHost {
   /** The names in a folder, or none when it cannot be read. */
   readdir: (path: string) => string[];
+  /** The system's name for the user running manni, or none when it has no user database. */
+  username: () => string | undefined;
 }
 
 export const realMadbuildHost: MadbuildHost = {
@@ -20,6 +23,14 @@ export const realMadbuildHost: MadbuildHost = {
       return readdirSync(path);
     } catch {
       return [];
+    }
+  },
+  username: () => {
+    try {
+      return userInfo().username;
+    } catch {
+      // A container with no passwd entry throws.
+      return undefined;
     }
   },
 };

@@ -5,7 +5,6 @@
  * static server. Everything that can fail before a process starts fails here.
  */
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
-import { userInfo } from "node:os";
 import { dirname, join, posix, relative, resolve } from "node:path";
 import type { CollectionConfig } from "../../shared/collections.js";
 import { FAMILY_CONFIG_NAMES } from "../../shared/config-file.js";
@@ -176,7 +175,13 @@ function flare(s: Site, ctx: FrameworkContext): { build?: Cmd; out?: string } {
     throw new SiteError(`${flprj} has ${String(targets.length)} targets. Name the one to build with tools.flare.target.`);
   }
   // madbuild stamps the account that runs it into the output path.
-  const out = posix.join("Output", ctx.host.env["USERNAME"] ?? userInfo().username, target);
+  const account = ctx.host.env["USERNAME"] ?? ctx.host.username();
+  if (account === undefined) {
+    throw new SiteError(
+      "manni cannot tell whose Output folder to read, because USERNAME is not set and the system names no user. Set USERNAME to the account that runs madbuild.",
+    );
+  }
+  const out = posix.join("Output", account, target);
   if (ctx.verb !== "build") return { out };
   const madbuild = findMadbuild(flareHome(tools, ctx.config.configDir ?? s.dir), ctx.host);
   if (madbuild === undefined) throw new SiteError(MADBUILD_NOT_FOUND);

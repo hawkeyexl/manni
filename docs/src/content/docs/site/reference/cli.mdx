@@ -448,6 +448,7 @@ framework's own output, the built-in server's URL and the report of `annotate`.
 | `tools.flare.target` names no target | `manni: tools.flare.target "PDF" names no target in Widget.flprj. Its targets are HTML5 and Print.` | `2` |
 | `madbuild` is not found | `manni: madbuild was not found. Install MadCap Flare, or set tools.flare.home to the folder that holds madbuild.exe.` | `2` |
 | `preview` on Flare before a build | `manni: No Flare output at Output/maya/HTML5. Run manni site build first.` | `2` |
+| Flare, with no `USERNAME` and no system user | `manni: manni cannot tell whose Output folder to read, because USERNAME is not set and the system names no user. Set USERNAME to the account that runs madbuild.` | `2` |
 | The binary is not installed | `manni: mint not found on PATH. Install Mintlify's CLI, or set site.commands.start.` | `2` |
 | A runner manni adds is not installed | `manni: uv not found on PATH. Install uv, or set site.commands.start.` | `2` |
 | The binary cannot start | `manni: hugo could not start: spawn EACCES` | `2` |

@@ -24,6 +24,6 @@ docs/src/content/docs/site/annotate/index.mdx:
         integrity: sha256-d9d42a81fdd753d4de0a05a26fc05faec1a10e90db6a74dc6514af06e790638f
       source:
         file: src/site/core/detect.ts
-        lines: 634-635
+        lines: 639-640
         integrity: sha256-d59ee1972aaed945e32205883a14cd8ebc93c0b59e8adc5231404e2f13756e6f
-        commit-sha: 4213f480f31991a319fa385ec92471b3999b5b9e
+        commit-sha: 063a61a92d4db7a66275c6c98012ec3e6fc7a725
