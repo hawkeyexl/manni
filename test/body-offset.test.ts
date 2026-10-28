@@ -56,6 +56,11 @@ describe("bodyOffset", () => {
     expect(bodyOf(page, "page.xml")).toBe("\n<p>x</p>\n</doc>\n");
   });
 
+  it("counts a leading BOM on an XML page", () => {
+    const page = '﻿<?xml version="1.0"?>\n<doc>\n<p>x</p>\n</doc>\n';
+    expect(bodyOf(page, "page.xml")).toBe("\n<p>x</p>\n</doc>\n");
+  });
+
   it("starts a DITA topic's body after </prolog>", () => {
     const page = [
       '<?xml version="1.0"?>',

@@ -21,6 +21,8 @@ import type { PageFile } from "../core/discover.js";
 /** The page's text: each section's title and blocks, in document order. */
 export async function pageText(page: PageFile, flare: FlareRun): Promise<string> {
   const parser = parserForExtension(extname(page.absPath));
+  // A guard, not a path taken today: every markup format meta reads has a
+  // lint parser too. A format without one would be judged as its source.
   if (parser === undefined) return page.body;
   const tree = await parser.parse(page.content, page.absPath, { absPath: page.absPath, flare });
   return sectionsText(tree.sections).join("\n\n");

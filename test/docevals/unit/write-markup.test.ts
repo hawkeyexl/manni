@@ -10,6 +10,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { MockProvider } from "@hawkeyexl/inference";
 import { runFill } from "../../../src/docevals/commands/fill.js";
+import { runGenerate } from "../../../src/docevals/commands/generate.js";
 import { runPromote } from "../../../src/docevals/commands/promote.js";
 import { DocevalsError } from "../../../src/docevals/types.js";
 
@@ -74,6 +75,22 @@ describe("an eval write to an HTML or XML page", () => {
     );
     expect(provider.requests).toHaveLength(0);
     expect(readFileSync(join(root, "docs/install.htm"), "utf8")).toBe(HTML);
+  });
+
+  it("refuses generate on an HTML page no manifest owns, before asking a model", async () => {
+    const page = HTML.replace(
+      "<title>Install</title>",
+      `<title>Install</title><meta name="evals" content='[{id: names-installer, assertion: "The page names the installer.", grader: command}]'>`,
+    );
+    const root = workspace({ "install.htm": page });
+    const provider = new MockProvider([{ json: { code: "process.exit(0);\n" } }]);
+    const e = await rejection(runGenerate([], { cwd: root, providerInstance: provider }));
+    expect(e).toBeInstanceOf(DocevalsError);
+    expect((e as Error).message).toBe(
+      "docs/install.htm is HTML, so its evals live in a manifest. Give its collection an externalMetadata entry that owns evals.",
+    );
+    expect(provider.requests).toHaveLength(0);
+    expect(readFileSync(join(root, "docs/install.htm"), "utf8")).toBe(page);
   });
 
   it("refuses before any page is written, a Markdown page included", async () => {
