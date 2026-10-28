@@ -4,7 +4,7 @@ manni now reads a Flare topic the way its target builds it.
 
 Set tools.flare.target once. manni finds the project from the nearest .flprj and reads that target's conditions and variables.
 
-Snippets expand in place, so lint sees the snippet's heading as part of the page. Variables resolve with the target's override: ProductVersion is 4.2 in the variable set and 4.3 in HTML5, and the graph's passages say 4.3. A paragraph conditioned PrintOnly is gone from the HTML5 view.
+Snippets expand in place, so lint sees the snippet's heading as part of the page. Variables resolve with the target's override. ProductVersion is 4.2 in the variable set and 4.3 in HTML5. The graph's passages say 4.3. A paragraph conditioned PrintOnly is gone from the HTML5 view.
 
 Index keyword markers become the page's keywords field, so you can validate and query them like any other metadata.
 
