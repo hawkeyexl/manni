@@ -157,3 +157,12 @@ describe("a .flmeta schema ref", () => {
     expect(summary.failed).toBe(0);
   });
 });
+
+describe("a list tag with no values (review on #259)", () => {
+  it("is a plain string, rather than a pattern only commas match", () => {
+    const set = '<?xml version="1.0" encoding="utf-8"?>\n<CatapultMetaTagSet name="Empty">\n  <meta name="Owner" content="" type="Enum" enum="" />\n  <meta name="Spaces" content="" type="Enum" enum=" , " />\n</CatapultMetaTagSet>\n';
+    const schema = flareMetaSchema(set, "./Empty.flmeta") as { properties: Record<string, Record<string, unknown>> };
+    expect(schema.properties["Owner"]).toEqual({ type: "string" });
+    expect(schema.properties["Spaces"]).toEqual({ type: "string" });
+  });
+});
