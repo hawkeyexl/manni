@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CatapultVariableSet>
+  <Variable Name="ProductName" EvaluatedDefinition="Widget">Widget</Variable>
+  <Variable Name="ProductVersion" EvaluatedDefinition="4.2">4.2</Variable>
+  <Variable Name="FullName" EvaluatedDefinition="Widget 4.2">[%=General.ProductName%] [%=General.ProductVersion%]</Variable>
+  <Variable Name="Year" Type="DateTime" Format="yyyy" EvaluatedDefinition="2026"></Variable>
+</CatapultVariableSet>

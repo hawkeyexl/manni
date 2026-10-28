@@ -13,7 +13,7 @@ import { loadSiteConfig } from "../../site/core/config.js";
 import { detectFramework } from "../../site/core/detect.js";
 import { analyzeDoc } from "../core/analyze.js";
 import type { GraphConfig, RouteMapping } from "../core/config.js";
-import { documentBase, routesFrom } from "../core/discover.js";
+import { documentBase, parseContexts, routesFrom } from "../core/discover.js";
 import { openMetaView, withExternalMetadata, type MetaViewSource } from "../core/external.js";
 import { deliveredFields } from "../core/graph-output.js";
 import { STDIN_PATH } from "../core/iri.js";
@@ -126,7 +126,7 @@ export async function exportLlms(opts: LlmsOptions): Promise<{ pages: number; wa
   const paths = pages.map((p) => p.path);
   const view = await openMetaView(opts.source, cwd, paths, sources);
   const models = await withExternalMetadata(
-    await Promise.all(pages.map((p) => analyzeDoc(p.content, p.path, new Set(paths), { routes }))),
+    await Promise.all(pages.map((p) => analyzeDoc(p.content, p.path, new Set(paths), { routes, context: parseContexts(config, sources) }))),
     view,
   );
 

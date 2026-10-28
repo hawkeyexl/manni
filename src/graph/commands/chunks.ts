@@ -23,7 +23,7 @@ import { integrityOf, runDerive } from "../../meta/index.js";
 import { errorMessage } from "../../shared/errors.js";
 import { analyzeDoc, formatOf, isTreeFormat } from "../core/analyze.js";
 import type { GraphConfig } from "../core/config.js";
-import { documentBase, routesFrom } from "../core/discover.js";
+import { documentBase, parseContexts, routesFrom } from "../core/discover.js";
 import { emitJsonLd } from "../core/emit-jsonld.js";
 import { openMetaView, withExternalMetadata, type MetaViewSource } from "../core/external.js";
 import { CONFIGURED_EVALS_LEFT_OUT, deliveredFields, userFacing } from "../core/graph-output.js";
@@ -139,9 +139,10 @@ export async function exportChunks(opts: ChunksOptions): Promise<ChunksResult> {
   // What `build` reads: each page's own model, its manifests merged in.
   const allPaths = new Set(pages.map((p) => p.path));
   const routes = routesFrom(config, sources);
+  const context = parseContexts(config, sources);
   const view = await openMetaView(opts.source, cwd, [...allPaths], sources);
   let models = await withExternalMetadata(
-    await Promise.all(pages.map((p) => analyzeDoc(p.content, p.path, allPaths, { routes }))),
+    await Promise.all(pages.map((p) => analyzeDoc(p.content, p.path, allPaths, { routes, context }))),
     view,
   );
   // Without author-facing content (proposal 0110), a strategy record is no

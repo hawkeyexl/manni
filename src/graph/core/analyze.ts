@@ -24,8 +24,10 @@ import { parserByName, parserForExtension } from "../../lint/parsers/index.js";
 import type {
   ContentNode,
   DocumentTree,
+  ParseContext,
   SectionNode,
 } from "../../lint/types.js";
+import { FlareError } from "../../shared/flare/index.js";
 import type { Root, RootContent, Definition } from "mdast";
 import { errorMessage } from "../../shared/errors.js";
 import { GraphError } from "../types.js";
@@ -78,7 +80,18 @@ export interface AnalyzeOptions {
    * How the body is parsed. Absent, `parseBody`. `graph build` passes a cache's
    * `parse` here, which returns what `parseBody` would (`analyze-cache.ts`).
    */
-  parse?: (content: string, path: string, format: DocFormat) => Promise<DocBody>;
+  parse?: (
+    content: string,
+    path: string,
+    format: DocFormat,
+    context?: ParseContext,
+  ) => Promise<DocBody>;
+  /**
+   * What lint's parser may read beyond a page's bytes, by its label: its
+   * absolute path, and the run's Flare reader (proposal 0125). Absent, a
+   * Flare topic reads as its source.
+   */
+  context?: (label: string) => ParseContext | undefined;
 }
 
 /**
@@ -487,12 +500,13 @@ export async function analyzeDoc(
   const path = normalizeDocPath(relPath);
   const format = formatOf(path, options.format);
   const parse = options.parse ?? parseBody;
+  const context = options.context?.(path);
   // A tree format is parsed first, so a malformed page is reported as a parse
   // failure rather than as whatever the metadata reader tripped on. Markdown
   // keeps its order: its parse cannot fail where its frontmatter can.
-  let body = isTreeFormat(format) ? await parse(content, path, format) : undefined;
+  let body = isTreeFormat(format) ? await parse(content, path, format, context) : undefined;
   const meta = metadataOf(content, path, format);
-  body ??= await parse(content, path, format);
+  body ??= await parse(content, path, format, context);
 
   const links: DocLink[] = [];
   for (const target of body.linkTargets) {
@@ -551,8 +565,9 @@ export async function parseBody(
   content: string,
   path: string,
   format: DocFormat,
+  context?: ParseContext,
 ): Promise<DocBody> {
-  if (isTreeFormat(format)) return parseTreeBody(content, path, format);
+  if (isTreeFormat(format)) return parseTreeBody(content, path, format, context);
   const isMdx = format === "mdx";
   let tree: Root;
   try {
@@ -675,14 +690,18 @@ export async function parseTree(
   content: string,
   path: string,
   format: TreeFormat,
+  context?: ParseContext,
 ): Promise<DocumentTree> {
   const parser = parserByName(format);
   if (parser === undefined) {
     throw new GraphError(`No parser reads ${format}.`);
   }
   try {
-    return await parser.parse(content, path);
+    return await parser.parse(content, path, context);
   } catch (error) {
+    // A Flare project that cannot be read is the run's fault, not this page's,
+    // and its message names the project already.
+    if (error instanceof FlareError) throw error;
     throw new GraphError(
       `Could not parse ${format} in ${path}: ${errorMessage(error)}`,
     );
@@ -825,8 +844,9 @@ async function parseTreeBody(
   content: string,
   path: string,
   format: TreeFormat,
+  context?: ParseContext,
 ): Promise<DocBody> {
-  const tree = await parseTree(content, path, format);
+  const tree = await parseTree(content, path, format, context);
   const minted = mintTreeSections(tree.sections);
   const imageTargets: string[] = [];
   const codeLanguages = new Set<string>();

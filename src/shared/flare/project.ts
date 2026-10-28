@@ -34,6 +34,8 @@ export interface FlareProject {
   targets: string[];
   /** The target this run resolves against, when there is one. */
   target?: FlareTarget;
+  /** Why `target` is the one: the config named it, or it is the only one. */
+  targetFrom?: "tools.flare.target" | "the only target";
   variables: VariableSets;
 }
 
@@ -117,6 +119,7 @@ function readProject(root: string, configured: string | undefined): FlareProject
   const file = targetFiles[names.indexOf(chosen ?? "")];
   if (chosen !== undefined && file !== undefined) {
     project.target = readTarget(join(targetsDir, file));
+    project.targetFrom = configured === undefined ? "the only target" : "tools.flare.target";
   }
   return project;
 }

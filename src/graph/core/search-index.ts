@@ -29,7 +29,7 @@ import { byCodeUnit } from "./sort.js";
 import { NS } from "./vocab.js";
 import { canonicalLanguageTag, UNDETERMINED } from "./localizations.js";
 import type { GraphIndex } from "../runtime/graph.js";
-import type { ContentNode } from "../../lint/types.js";
+import type { ContentNode, ParseContext } from "../../lint/types.js";
 import { formatOf, mintTreeSections, parseTree } from "./analyze.js";
 import {
   documentPreamble,
@@ -72,6 +72,11 @@ export interface SearchIndexOptions {
   readDoc?: (path: string) => string | undefined;
   /** Warnings channel (missing sources are non-fatal — the entry loses text). */
   warnings?: string[];
+  /**
+   * Each page's parse context, by its label, so a Flare topic's text is what
+   * its target builds (proposal 0125). Absent, every page reads as its source.
+   */
+  context?: (label: string) => ParseContext | undefined;
 }
 
 /** Space-join labels, dropping case-insensitive duplicates, sorted. */
@@ -123,10 +128,14 @@ function plainText(nodes: readonly ContentNode[]): string[] {
  * that section. A section's text starts with its title, as a Markdown slice
  * starts at its heading line.
  */
-async function treeText(source: string, path: string): Promise<TreeText | undefined> {
+async function treeText(
+  source: string,
+  path: string,
+  context: ParseContext | undefined,
+): Promise<TreeText | undefined> {
   const format = formatOf(path);
   if (format === "markdown" || format === "mdx") return undefined;
-  const minted = mintTreeSections((await parseTree(source, path, format)).sections);
+  const minted = mintTreeSections((await parseTree(source, path, format, context)).sections);
   const sections = new Map<string, string>();
   for (const [n, section] of minted.sections.entries()) {
     const own = plainText(minted.owned[n] ?? []);
@@ -203,7 +212,7 @@ export async function buildSearchIndex(
     const tree =
       source === undefined || path === undefined
         ? undefined
-        : await treeText(source, path);
+        : await treeText(source, path, options.context?.(path));
     if (tree) treeTextOf.set(doc, tree);
     const body =
       source === undefined

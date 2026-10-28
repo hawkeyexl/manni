@@ -22,6 +22,7 @@ import {
   type ProvidersConfig,
 } from "../../shared/providers.js";
 import { errorMessage } from "../../shared/errors.js";
+import { parseTools, type ToolsConfig } from "../../shared/tools.js";
 // meta's budget, shared rather than copied, as `term fill` shares it.
 import { DEFAULT_CHUNK_CHARS } from "../../meta/commands/fill-prompt.js";
 import type { Severity } from "../../shared/severity.js";
@@ -128,6 +129,11 @@ export interface GraphConfig {
    * the file declares none, or no file governs the run.
    */
   providers: ProvidersConfig;
+  /**
+   * The family's top-level `tools:`, read for `tools.flare`. `{}` when the
+   * file declares none, or no file governs the run.
+   */
+  tools: ToolsConfig;
   /** Normalized base IRI (trailing slash for http(s); `urn:manni:graph:` default). */
   baseIri: string;
   /** Output path of the built Turtle file, relative to configDir. */
@@ -505,6 +511,8 @@ export interface ConfigFileContext {
   collections: CollectionConfig[];
   /** The file's top-level `providers:`; `{}` when it declares none. */
   providers?: ProvidersConfig;
+  /** The file's top-level `tools:`; `{}` when it declares none. */
+  tools?: ToolsConfig;
 }
 
 /**
@@ -542,10 +550,12 @@ export function parseConfig(text: string, configPath: string): GraphConfig {
         toError,
       )
     : {};
+  const tools = wrapped ? parseTools(doc.tools, configPath, toError) : {};
   return parseConfigSection(wrapped ? doc[CONFIG_SECTION] : doc, configPath, {
     source: configPath,
     collections,
     providers,
+    tools,
   });
 }
 
@@ -608,6 +618,7 @@ export function parseConfigSection(
     provider,
     model: r.model ?? null,
     providers: file.providers ?? {},
+    tools: file.tools ?? {},
     baseIri: resolveBaseIri(r.baseIri),
     out: r.out ?? "graph/graph.ttl",
     authoring: r.authoring ?? true,
@@ -707,6 +718,7 @@ export function loadConfig(path?: string, cwd = process.cwd()): GraphConfig {
     source: file.source,
     collections: file.collections,
     ...(file.providers === undefined ? {} : { providers: file.providers }),
+    tools: file.tools,
   });
 }
 

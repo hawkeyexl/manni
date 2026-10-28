@@ -40,6 +40,7 @@ import type {
   DocumentTree,
   ImageNode,
   ListItemNode,
+  ParseContext,
   Position,
   TableCellNode,
   TableNode,
@@ -48,6 +49,7 @@ import type {
 import type { Fragment } from "./sectionize.js";
 import { sectionize } from "./sectionize.js";
 import { fencedPosition, withMetadataTitle } from "./metadata.js";
+import { resolveFlare } from "./flare.js";
 
 type Node = DefaultTreeAdapterTypes.Node;
 type Element = DefaultTreeAdapterTypes.Element;
@@ -847,11 +849,11 @@ function derivedFlareTitle(content: string, doc: DefaultTreeAdapterTypes.Documen
   return title === undefined || flatText(title) === "";
 }
 
-function parseHtml(content: string, filePath: string): DocumentTree {
+function parseHtml(content: string, filePath: string, context?: ParseContext): DocumentTree {
   // An XHTML page, a Flare topic among them, nests as an XML parser reads it:
   // a self-closed element holds nothing (proposal 0125).
   const doc = isXhtml(content) ? parseXhtml(content) : parse(content, { sourceCodeLocationInfo: true });
-  const fragments: Fragment[] = [];
+  let fragments: Fragment[] = [];
   const ids = new HeadingIds();
   walk(doc, fragments, ids);
   const links: DocumentTree["links"] = [];
@@ -859,16 +861,37 @@ function parseHtml(content: string, filePath: string): DocumentTree {
 
   const { frontmatter, position } = metadataOf(content, filePath, doc);
 
+  // A Flare topic in a run that resolves Flare reads as its target builds it:
+  // the sections come from a second, resolved parse, while the links above
+  // stay what the file says (proposal 0125, decision 12).
+  const view =
+    context?.flare !== undefined && isFlare(content)
+      ? resolveFlare(
+          content,
+          filePath,
+          context.absPath,
+          context.flare,
+          typeof frontmatter?.title === "string" ? frontmatter.title : undefined,
+        )
+      : undefined;
+  if (view !== undefined) {
+    fragments = [];
+    walk(view.doc, fragments, new HeadingIds());
+  }
+
   return {
     format: "html",
     filePath,
     frontmatter,
     frontmatterPosition: position,
-    sections: sectionize(
-      withMetadataTitle(fragments, derivedFlareTitle(content, doc) ? null : frontmatter, position),
-      documentEnd(content),
-    ),
+    sections: view?.flare?.excluded
+      ? []
+      : sectionize(
+          withMetadataTitle(fragments, derivedFlareTitle(content, doc) ? null : frontmatter, position),
+          documentEnd(content),
+        ),
     links,
+    ...(view?.flare === undefined ? {} : { flare: view.flare }),
   };
 }
 

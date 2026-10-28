@@ -48,8 +48,13 @@
   graph:contentHash "13b0a2f8e250267b646f1ff841e23efdb19481d3b8e63336153ad6823a10eaab" ;
   graph:path "Install.htm" .
 
+<https://example.com/flare/doc/Install.htm#before-you-start> a graph:Section ;
+  dcterms:title "Before you start" ;
+  graph:level 2 ;
+  graph:order 1 .
+
 <https://example.com/flare/doc/Install.htm#installing-the-widget> a graph:Section ;
-  dcterms:hasPart <https://example.com/flare/doc/Install.htm#steps> ;
+  dcterms:hasPart <https://example.com/flare/doc/Install.htm#before-you-start>, <https://example.com/flare/doc/Install.htm#steps> ;
   dcterms:title "Installing the widget" ;
   graph:level 1 ;
   graph:order 1 .
@@ -57,7 +62,7 @@
 <https://example.com/flare/doc/Install.htm#steps> a graph:Section ;
   dcterms:title "Steps" ;
   graph:level 2 ;
-  graph:order 1 .
+  graph:order 2 .
 
 <https://example.com/flare/doc/Snippets/BeforeYouStart.flsnp> a prov:Entity, graph:Document ;
   dcterms:hasPart <https://example.com/flare/doc/Snippets/BeforeYouStart.flsnp#before-you-start> ;

@@ -26,6 +26,7 @@ import { mkdir, readFile } from "node:fs/promises";
 import { basename, dirname, extname, resolve } from "node:path";
 import { errorMessage, ToolError } from "../../shared/errors.js";
 import { writeTextAtomic } from "../../shared/write-file.js";
+import { flareRun } from "../../shared/flare/index.js";
 import { LintError } from "../types.js";
 import type { DocumentParser, DocumentTree } from "../types.js";
 import {
@@ -274,7 +275,11 @@ export async function runTemplatesInfer(
 
   let tree: DocumentTree;
   try {
-    tree = await parser.parse(content, opts.page === STDIN ? "<stdin>" : opts.page);
+    const label = opts.page === STDIN ? "<stdin>" : opts.page;
+    tree = await parser.parse(content, label, {
+      absPath: resolve(cwd, label),
+      flare: flareRun(run.tools),
+    });
   } catch (err) {
     // A page that will not parse has no shape to infer, and the parser's own
     // message already names the file and the syntax it choked on.
