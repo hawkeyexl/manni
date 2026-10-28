@@ -36,6 +36,7 @@ import { beats as pluginRecordsBeats, totalFrames as pluginRecordsTotalFrames, T
 import { beats as graphAuthoringBeats, totalFrames as graphAuthoringTotalFrames, TYPING_MS as graphAuthoringTypingMs } from "./graph-authoring/beats";
 import { beats as strategySharedBeats, totalFrames as strategySharedTotalFrames, TYPING_MS as strategySharedTypingMs } from "./strategy-shared/beats";
 import { beats as flareBeats, totalFrames as flareTotalFrames, TYPING_MS as flareTypingMs } from "./flare/beats";
+import { beats as flareTargetsBeats, totalFrames as flareTargetsTotalFrames, TYPING_MS as flareTargetsTypingMs } from "./flare-targets/beats";
 
 /** sidecar-url-1x1: 23 px / 75 columns, derived in media/sidecar-url-1x1.script.md. */
 const DemoUrl: React.FC = () => <DemoView beats={urlBeats} fontPx={23} linePx={32} cols={75} />;
@@ -128,6 +129,13 @@ const DemoTbx: React.FC = () => <DemoView beats={tbxBeats} fontPx={22} linePx={3
  * (media/capture-flare/cols.mjs). Ligatures off: the XHTML tags' `</` and `/>` would draw as one glyph.
  */
 const DemoFlare: React.FC = () => <DemoView beats={flareBeats} fontPx={21} linePx={29} cols={82} typingMs={flareTypingMs} ligatures={false} />;
+
+/**
+ * flare-targets-1x1: 21 px / 82 columns, beat 1 at 20 px / 86, derived in
+ * media/flare-targets-1x1.script.md (media/capture-flare-targets/cols.mjs).
+ * Ligatures off: the XHTML tags' `</` and `/>` would draw as one glyph.
+ */
+const DemoFlareTargets: React.FC = () => <DemoView beats={flareTargetsBeats} fontPx={21} linePx={29} cols={82} typingMs={flareTargetsTypingMs} ligatures={false} />;
 
 /**
  * concept-lifecycle-1x1: 23 px / 75 columns, derived in media/concept-lifecycle-1x1.script.md
@@ -519,6 +527,14 @@ export const Root: React.FC = () => (
       height={1080}
       fps={FPS}
       durationInFrames={flareTotalFrames}
+    />
+    <Composition
+      id="FlareTargetsDemo"
+      component={DemoFlareTargets}
+      width={1080}
+      height={1080}
+      fps={FPS}
+      durationInFrames={flareTargetsTotalFrames}
     />
   </>
 );

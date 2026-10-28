@@ -1,0 +1,58 @@
+manni reads a MadCap Flare topic as its target builds it, demo video transcript (silent video; text describes what is on screen)
+
+Frame: 1080x1080, 30 fps, 43.7 s. Every terminal line is real output of grep and of
+`node dist/cli.js ...` (typed as manni) run in C:\flare, a directory junction to media/scratch-flare-targets/,
+a git repository holding test/fixtures/flare/widget/ as committed, built by media/capture-flare-targets/capture.sh.
+
+[0:00-0:09] Title: A Flare topic as written (1 / 4)
+$ grep -E 'variable|snippet|PrintOnly' Content/Topics/Install.htm
+        <p>Version <MadCap:variable name="General.ProductVersion" /> needs Node 20.</p>
+        <MadCap:snippetBlock src="../Resources/Snippets/BeforeYouStart.flsnp" />
+        <p MadCap:conditions="Default.PrintOnly">This paragraph prints only.</p>
+$ grep -r ProductVersion Project
+Project/Targets/HTML5.fltar:    <Variable Name="General/ProductVersion">4.3</Variable>
+Project/VariableSets/General.flvar:  <Variable Name="ProductVersion" Comment="" EvaluatedDefinition="4.2">4.2</Variable>
+Highlighted rows: lines containing "Default.PrintOnly", ">4.3<"
+Caption: Install.htm uses a variable, a snippet and a PrintOnly paragraph. HTML5 sets ProductVersion to 4.3.
+
+[0:09-0:17] Title: Project and target, found (2 / 4)
+$ manni lint structure Content/Topics/Install.htm -t tgdp:how-to:1.6 --explain
+Using manni.config.yaml (.)
+▸ Content/Topics/Install.htm   (cyan marker)
+    · flare                Widget.flprj, target HTML5 (tools.flare.target)
+    → cli                  tgdp:how-to:1.6  --template   (green arrow)
+    alignment
+      (page)                 ← "Installing the widget"
+        overview               ← (missing)
+        before-you-start       ← "Before you start"
+        task                   ← "Steps"
+          sub-task               ← (none)
+        see-also               ← (missing)
+
+1 file, 1 routed, 0 unrouted
+Highlighted rows: lines containing "· flare", "before-you-start"
+Caption: lint finds Widget.flprj and the HTML5 target from config. The snippet's h2 fills before-you-start.
+
+[0:17-0:34] Title: Passages as HTML5 builds them (3 / 4)
+$ manni graph build && manni graph export chunks -o out
+Wrote C:\flare\graph\graph.ttl (4 docs, 133 triples, 2 concepts)
+manni: no docevals report is configured, so records carry no eval verdicts.
+manni: no vector sidecar, so chunks carry no vectors and retrieval is lexical only; configure graph.embed to add them.
+Wrote 11 chunks to C:\flare\out\chunks.json
+$ grep -m1 -o "Version [0-9.]* needs Node 20" out/*.jsonl
+Version 4.3 needs Node 20
+$ grep -rc "prints only" out
+out/chunks.en-US.jsonl:0
+out/chunks.json:0
+Highlighted rows: lines containing "Version 4.3 needs", "jsonl:0", "json:0"
+Caption: Graph passages carry the text HTML5 builds: version 4.3, and the PrintOnly paragraph is gone.
+
+[0:34-0:44] Title: Index keywords, read (4 / 4)
+$ grep keyword Content/Topics/Install.htm
+        <p>Index: <MadCap:keyword term="install;setup" /></p>
+$ manni meta get keywords Content/Topics/Install.htm
+Using manni.config.yaml (.)
+Content/Topics/Install.htm: keywords=["install","setup"] (asserted)
+Highlighted rows: lines containing "term=\"install;setup\"", "keywords=[\"install\""
+Caption: Index keyword markers become the keywords field.
+

@@ -1,0 +1,2 @@
+Project/Targets/HTML5.fltar:    <Variable Name="General/ProductVersion">4.3</Variable>
+Project/VariableSets/General.flvar:  <Variable Name="ProductVersion" Comment="" EvaluatedDefinition="4.2">4.2</Variable>
