@@ -75,9 +75,9 @@ import {
   buildSearchIndex,
   emitSearchIndex,
   partitionByLanguage,
-  plainText,
   type SearchIndexDoc,
 } from "../core/search-index.js";
+import { plainText } from "../../lint/parsers/sectionize.js";
 import type { CheckFinding } from "../core/shacl.js";
 import { byCodeUnit } from "../core/sort.js";
 import { VectorIndexError } from "../core/vector-index.js";

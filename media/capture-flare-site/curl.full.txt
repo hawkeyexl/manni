@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head><title>Stand-in build</title></head>
+  <body>
+    <h1>Stand-in build</h1>
+    <ul>
+      <li><a href="Content/Topics/Configure.htm">Content/Topics/Configure.htm</a></li>
+      <li><a href="Content/Topics/Install.htm">Content/Topics/Install.htm</a></li>
+    </ul>
+  </body>
+</html>

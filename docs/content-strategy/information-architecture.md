@@ -298,7 +298,7 @@ Two constraints hold across the section. `fix/index.mdx` has no subject dependen
 | Reference (`docevals/reference/index.mdx`) | ★ | The shelf index. A navigation page. |
 | CLI reference (`docevals/reference/cli.mdx`) | ★ | Every command and flag, including `--collection`. Guarded by `npm run docs:check-cli`. Source of truth: `src/docevals/cli.ts`. Serves every journey. |
 | Configuration reference (`docevals/reference/configuration.mdx`) | ★ | Every `docevals:` key with type and default, in camelCase, including `provider`, `model`, `execution.allow` and the turn budgets. How `collections:` supplies the pages, and a pointer to the family's `providers:` map on meta's configuration page. |
-| Frontmatter reference (`docevals/reference/frontmatter.mdx`) | ★ | Every eval field and the resolution order. |
+| Frontmatter reference (`docevals/reference/frontmatter.mdx`) | ★ | Every eval field and the resolution order. Where the eval keys live, including the manifest an HTML or XML page needs, and what `body` is in each format. |
 | Graders reference (`docevals/reference/graders.mdx`) | ★ | The four kinds in the registry with their options, and the exit `2` for a grader nobody registered. |
 | Output and exit codes (`docevals/reference/output-and-exit-codes.mdx`) | ★ | The seven formats and the exit codes. |
 | Files and state (`docevals/reference/files-and-state.mdx`) |  | The `.manni/docevals/` layout: caches, reviews, the golden set, generated scripts, and the baseline file. |
@@ -517,7 +517,7 @@ Reference pages must never contradict the source code. Before writing any Refere
 | `lint` journey pages (overview, get started, CI, fix) | `src/lint/commands/{lint,templates,tools}.ts` for behaviour, `src/lint/core/match.ts` and `src/lint/rules/` for what each rule means, `src/lint/reporters/index.ts` (pretty, json, github, explain) and `src/lint/reporters/{sarif,junit,alignment}.ts` for the exact emitted strings. Sample output captured from the built binary over `test/lint/fixtures/`, and replayed by the Doc Detective steps on the get-started and CI pages |
 | `docevals` CLI reference (`docevals/reference/cli.mdx`) | `src/docevals/cli.ts`, guarded by `scripts/check-cli-reference.mjs` |
 | `docevals` configuration reference (`docevals/reference/configuration.mdx`) | `src/docevals/core/config-schema.json`, `src/docevals/core/config.ts`, `src/shared/collections.ts`, `src/shared/providers.ts` |
-| `docevals` frontmatter reference (`docevals/reference/frontmatter.mdx`) | `src/docevals/schema.ts`, `src/docevals/core/resolve.ts`, `src/docevals/core/external.ts`, `src/docevals/core/write-location.ts` |
+| `docevals` frontmatter reference (`docevals/reference/frontmatter.mdx`) | `src/docevals/schema.ts`, `src/docevals/core/resolve.ts`, `src/docevals/core/external.ts`, `src/docevals/core/write-location.ts`, `src/docevals/core/discover.ts`, `src/meta/extractors/body-offset.ts` |
 | `docevals` graders reference (`docevals/reference/graders.mdx`) | `src/docevals/graders/registry.ts`, `src/docevals/graders/options.ts`, each grader under `src/docevals/graders/` |
 | `docevals` output and exit codes (`docevals/reference/output-and-exit-codes.mdx`) | `src/docevals/reporters/`, `src/shared/run.ts`, `src/shared/severity.ts` |
 | `docevals` files and state (`docevals/reference/files-and-state.mdx`) | `src/docevals/judge/cache.ts`, `src/docevals/fill/cache.ts`, `src/docevals/core/reviews.ts`, `src/docevals/core/baseline.ts`, `src/docevals/graders/scriptgen.ts` |

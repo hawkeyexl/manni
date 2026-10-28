@@ -1,19 +1,19 @@
 ---
 title: Check a MadCap Flare project
-description: "Validate the metadata of a MadCap Flare project's topics and snippets, read each topic as its target builds it, find broken cross-references and includes, and check the glossary and meta tag sets."
+description: "Validate the metadata of a MadCap Flare project's topics and snippets, read each topic as its target builds it, find broken cross-references and includes, check the glossary and meta tag sets, and build and preview the target."
 sidebar:
   order: 4
 id: "family-flare"
 type: "how-to"
-keywords: ["MadCap Flare", "XHTML", "snippets", "cross-references", "Flare targets", "conditions", "variables", "TOCs", "Flare glossaries", "meta tag sets", "manni meta validate", "manni term check", "manni graph stats", "manni lint structure"]
+keywords: ["MadCap Flare", "XHTML", "snippets", "cross-references", "Flare targets", "conditions", "variables", "TOCs", "Flare glossaries", "meta tag sets", "madbuild", "manni meta validate", "manni term check", "manni graph stats", "manni lint structure", "manni site build", "manni site preview"]
 language: en
 audiences: ["docs-engineers", "ci-engineers"]
 intent: "Check the topics and snippets of a MadCap Flare project kept in Git, and gate them in CI on a runner with no Flare install."
 lifecycle: published
-applies-to: ["domain:meta", "domain:lint", "domain:graph", "domain:term", "domain:family"]
+applies-to: ["domain:meta", "domain:lint", "domain:graph", "domain:term", "domain:docevals", "domain:site", "domain:family"]
 prerequisites: ["meta-reference-configuration"]
 next-steps: ["family-check", "graph-get-started"]
-sample-questions: ["Can manni validate the metadata in a MadCap Flare project?", "Why does manni read an empty Flare title as the topic's first heading?", "How do I find a broken MadCap cross-reference or snippet include with manni?", "Which Flare target does manni resolve conditions and variables against?", "Can manni check a MadCap Flare glossary as a termbase?"]
+sample-questions: ["Can manni validate the metadata in a MadCap Flare project?", "Why does manni read an empty Flare title as the topic's first heading?", "How do I find a broken MadCap cross-reference or snippet include with manni?", "Which Flare target does manni resolve conditions and variables against?", "Can manni check a MadCap Flare glossary as a termbase?", "Can manni build and preview a MadCap Flare target?"]
 graph: { label: "Check a MadCap Flare project", type: task }
 last-updated: 2026-10-28
 tags:
@@ -38,8 +38,9 @@ manni reads the project as it is, with no Flare install and no export step.
 Topics and snippets are HTML to every domain, so `manni meta validate` and
 `manni graph` run on them unchanged. `manni lint` and `manni graph` read each
 topic as its target builds it, and a TOC as a map. The glossary is a termbase,
-and a meta tag set is a schema. This page walks one small
-project from a first validation to a CI gate.
+and a meta tag set is a schema. Where Flare is installed, `manni site`
+builds and serves the target. This page walks one small project from a first
+validation to a CI gate.
 
 The project is the fixture `test/fixtures/flare/widget/` in the manni
 repository, so you can run each command there.
@@ -550,6 +551,84 @@ manni: <ref> is not a Flare meta tag set: its root element is <name>.
 manni: <ref> is a Flare meta tag set, which manni reads and never writes.
 ```
 
+## Grade the topics with docevals
+
+[`manni docevals`](/manni/docevals/) grades a Flare project's topics as it
+grades any page. A topic's metadata is HTML, with no room for a YAML block,
+so its evals live in a manifest. One `{page}.meta.yaml` beside each topic
+holds them.
+
+```yaml title="manni.config.yaml"
+collections:
+  - name: help
+    paths:
+      - "Content/**/*.htm"
+      - "Content/Resources/Snippets/*.flsnp"
+      - "Project/TOCs/*.fltoc"
+      - "Project/Glossaries/*.flglo"
+    externalMetadata:
+      - file: "{page}.meta.yaml"
+        keys: [evals, eval-suite, eval-skip, meta-provenance]
+```
+
+```yaml title="Content/Topics/Install.meta.yaml"
+Content/Topics/Install.htm:
+  evals:
+    - Every step names the command it runs.
+```
+
+A deterministic grader reads the topic's source, so its line numbers are the
+file's. The judge reads the topic as text, with its variables, snippets and
+conditions resolved against [the target](#pick-the-target). `docevals fill`
+writes its proposals into the manifest. The
+[frontmatter reference](/manni/docevals/reference/frontmatter/#html-and-xml-pages)
+has the rules.
+
+## Build and preview the target
+
+[`manni site`](/manni/site/) builds the project on a machine with Flare
+installed. A folder holding a `.flprj` is a Flare site, so there is no config
+key to set.
+
+- **`site build` runs madbuild.** It builds the target
+  [the run picks](#pick-the-target). A project with several targets and no
+  `tools.flare.target` stops with exit `2`, because a build needs one.
+- **madbuild is found.** manni looks on `PATH`, then in the folder
+  `tools.flare.home` names, then in the newest MadCap Flare install under
+  `Program Files`.
+- **`site preview` serves the last build.** madbuild writes it to
+  `Output/<USERNAME>/<target>`, where `USERNAME` is the account that ran it.
+  manni serves that folder on port 4321, starting at `Default.htm`. It does
+  not build first, because a Flare build is slow.
+
+```console
+$ manni site build
+manni: Flare in ./. Running madbuild -project Widget.flprj -target HTML5
+$ manni site preview
+http://127.0.0.1:4321/
+$ manni a11y check http://127.0.0.1:4321/
+```
+
+[`manni a11y check`](/manni/a11y/) checks the served output, as it checks any
+site. With a collection `url:` and `graph.export.llms` set,
+`manni graph export llms` links each topic as Flare publishes it, ending in
+`.htm`.
+
+Flare has no development server, and `site annotate` does not read Flare
+output. Each of these exits `2`. So does a build where madbuild is not found,
+and a preview before any build.
+
+```text
+manni: Flare has no development server. Run manni site build, then manni site preview.
+manni: manni site annotate does not read Flare output.
+manni: madbuild was not found. Install MadCap Flare, or set tools.flare.home to the folder that holds madbuild.exe.
+manni: No Flare output at Output/maya/HTML5. Run manni site build first.
+```
+
+A CI runner has no Flare install, so it runs every check but the build. The
+[site reference](/manni/site/reference/cli/#frameworks) has the Flare row of
+the framework table.
+
 ## Run it in CI
 
 `manni check` runs every domain the config sets up. Here that is
@@ -632,7 +711,7 @@ graph steps.
     build exposed as `manni` via `npm link` (see .github/workflows/docs-as-tests.yml).
     `meta fill` is left out because it needs a model.
     Run with `npx doc-detective`. Config: .doc-detective.json. */}
-{/* test {"testId":"family-flare","description":"Validate a Flare project, build its graph, find the misspelled cross-reference, list a snippet's includers and read its glossary."} */}
+{/* test {"testId":"family-flare","description":"Validate a Flare project, build its graph, find the misspelled cross-reference, list a snippet's includers, read its glossary, and refuse the site steps that need Flare."} */}
 {/* step {"description":"meta validate fails Configure.htm on description alone, and passes the topic and the snippet.","runShell":{"command":"manni meta validate","workingDirectory":"test/fixtures/flare/widget","exitCodes":[1],"stdio":"3 files checked, 2 passed, 1 failed, 1 error"}} */}
 {/* step {"description":"An empty Flare title reads as the topic's first heading.","runShell":{"command":"manni meta get title Content/Topics/Configure.htm","workingDirectory":"test/fixtures/flare/widget","exitCodes":[0],"stdio":"title=Configuring the widget"}} */}
 {/* step {"description":"graph build reads the topics, the snippet and the TOC.","runShell":{"command":"manni graph build","workingDirectory":"test/fixtures/flare/widget","exitCodes":[0],"stdio":"/4 docs, \\d+ triples/"}} */}
@@ -643,4 +722,8 @@ graph steps.
 {/* step {"description":"A topic's index keyword markers read as the keywords field.","runShell":{"command":"manni meta get keywords Content/Topics/Install.htm","workingDirectory":"test/fixtures/flare/widget","exitCodes":[0],"stdio":"keywords=[\"install\",\"setup\"]"}} */}
 {/* step {"description":"term reads the glossary as a termbase, without the entry the HTML5 target excludes.","runShell":{"command":"manni term check","workingDirectory":"test/fixtures/flare/widget","exitCodes":[0],"stdio":"1 notice in 2 terms"}} */}
 {/* step {"description":"A topic's glossary term markers read as the concepts field.","runShell":{"command":"manni meta get concepts Content/Topics/Install.htm","workingDirectory":"test/fixtures/flare/widget","exitCodes":[0],"stdio":"concepts=[\"Glossary.Term0\"]"}} */}
+{/* step {"description":"site start exits 2, because Flare has no development server.","runShell":{"command":"manni site start","workingDirectory":"test/fixtures/flare/widget","exitCodes":[2],"stdio":"Flare has no development server"}} */}
+{/* step {"description":"site build exits 2 where madbuild is not installed.","runShell":{"command":"manni site build","workingDirectory":"test/fixtures/flare/widget","exitCodes":[2],"stdio":"madbuild was not found"}} */}
+{/* step {"description":"site preview before any build exits 2 and names the output folder.","runShell":{"command":"manni site preview","workingDirectory":"test/fixtures/flare/widget","exitCodes":[2],"stdio":"No Flare output at Output/"}} */}
+{/* step {"description":"site annotate exits 2, because it does not read Flare output.","runShell":{"command":"manni site annotate","workingDirectory":"test/fixtures/flare/widget","exitCodes":[2],"stdio":"does not read Flare output"}} */}
 {/* test end */}
