@@ -53,8 +53,12 @@ export function flareMetaSchema(text: string, ref: string): Record<string, unkno
         .split(",")
         .map((v) => v.trim())
         .filter((v) => v !== "");
-      const one = `(${values.map(escape).join("|")})`;
-      property.pattern = `^(${one}(,${one})*)?$`;
+      // A list tag that lists nothing constrains nothing; an empty group would
+      // match commas alone and reject every real value.
+      if (values.length > 0) {
+        const one = `(${values.map(escape).join("|")})`;
+        property.pattern = `^(${one}(,${one})*)?$`;
+      }
     }
     properties[name] = property;
   }
