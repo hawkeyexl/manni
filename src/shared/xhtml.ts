@@ -78,6 +78,7 @@ export function parseXhtml(text: string): Document {
 
   const doc = parse(parsed, { sourceCodeLocationInfo: true });
   if (insertions.length > 0) unshift(doc, insertions);
+  // After unshift: hoist slices the original text by the tree's offsets.
   hoist(doc, text);
   return doc;
 }

@@ -236,6 +236,9 @@ function stamp(parent: ParentNode, location: Element["sourceCodeLocation"]): voi
  * reference's own condition expression and variable overrides. A snippet that
  * cannot be read stays a reference, since graph reports it as a broken link.
  * A snippet already open is a cycle: it warns once and is not expanded again.
+ * `src` resolves against the referencing file's folder, and an absolute `src`
+ * is read as the file-system path it names. The files are the user's own, so
+ * nothing fences the path.
  */
 function expand(parent: ParentNode, ref: Element, src: string, scope: Scope, topic: Topic): void {
   const abs = resolve(dirname(scope.file), src);
