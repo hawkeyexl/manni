@@ -221,7 +221,8 @@ export class DocevalsError extends ToolError {
     message: string,
     /**
      * Set where a caller acts on the kind of error rather than reporting it.
-     * `nothing-resolved`: no page this run would check resolves an eval.
+     * `nothing-resolved`: no page this run would check resolves an eval,
+     * including when it finds no page it reads.
      */
     readonly code?: "nothing-resolved",
   ) {

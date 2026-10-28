@@ -179,8 +179,18 @@ async function row(domain: Domain, family: Family, cwd: string, members: readonl
       return n > 0 ? inPlay(pages(n, "carries citations", "carry citations")) : notSetUp;
     }
     case "docevals": {
-      const { runList: listEvals } = await import("../../docevals/commands/list.js");
-      const { plans } = await listEvals([], { config: configPath, cwd });
+      const [{ runList: listEvals }, { DocevalsError }] = await Promise.all([
+        import("../../docevals/commands/list.js"),
+        import("../../docevals/types.js"),
+      ]);
+      let plans;
+      try {
+        ({ plans } = await listEvals([], { config: configPath, cwd }));
+      } catch (err) {
+        // No collection member is a page docevals reads, as `check` skips it.
+        if (err instanceof DocevalsError && err.code === "nothing-resolved") return notSetUp;
+        throw err;
+      }
       const n = plans.filter((p) => !p.skip && p.evals.length > 0).length;
       if (n === 0) return notSetUp;
       return inPlay(section ? "docevals: section" : pages(n, "declares evals", "declare evals"));
