@@ -57,7 +57,7 @@ docs/src/content/docs/meta/reference/formats.mdx:
         file: src/meta/extractors/html-write.ts
         lines: 264-299
         integrity: sha256-5c3ad99d495f6d7771c83061b832041df2945484ed8d5b0cad7ad86fdaa3d9e4
-        commit-sha: 343ef71848c2fa541f41eb5f993e18b5dd9c0c17
+        commit-sha: c72a188d455b54a739b4ef728a55b4adac510f0a
     - id: formats-html-parsing-never-throws
       claim:
         integrity: sha256-6fc781531a2e1fdd4af7705bb51fe68bbfd532e0ee945d4ceabbda23d80a9c20
@@ -363,7 +363,7 @@ docs/src/content/docs/meta/reference/formats.mdx:
         file: src/meta/extractors/html.ts
         lines: 26-40
         integrity: sha256-43b0d0caf2ed42a770b8aee4c707f1e7e47341205d97bedca0251fffbd967a44
-        commit-sha: d026fc24b63e04e7f747de4ccb3374c5c20557e0
+        commit-sha: c72a188d455b54a739b4ef728a55b4adac510f0a
     - id: formats-row-xml
       claim:
         lines: 18

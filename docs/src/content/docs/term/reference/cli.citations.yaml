@@ -41,7 +41,7 @@ docs/src/content/docs/term/reference/cli.mdx:
         file: src/term/core/load-set.ts
         lines: 399-418
         integrity: sha256-a6e273c53ceab0c6fedfa734a2330c961fef5f8504c05645b60d1f831b94bf95
-        commit-sha: 343ef71848c2fa541f41eb5f993e18b5dd9c0c17
+        commit-sha: c72a188d455b54a739b4ef728a55b4adac510f0a
     - id: stdin-needs-as
       claim:
         lines: 77
@@ -50,7 +50,7 @@ docs/src/content/docs/term/reference/cli.mdx:
         file: src/term/core/load-set.ts
         lines: 354-358
         integrity: sha256-649eee0a9afc54e520749b805c0f6faa4f61e5143900798fde83d38902046062
-        commit-sha: 343ef71848c2fa541f41eb5f993e18b5dd9c0c17
+        commit-sha: c72a188d455b54a739b4ef728a55b4adac510f0a
     - id: every-file-contributes-references
       claim:
         lines: 84-88
@@ -59,7 +59,7 @@ docs/src/content/docs/term/reference/cli.mdx:
         file: src/term/core/load-set.ts
         lines: 239-275
         integrity: sha256-359ebfc884cd6a1bf08bd397e489a31be7850fd45e5230391a5138f54ed173b3
-        commit-sha: 343ef71848c2fa541f41eb5f993e18b5dd9c0c17
+        commit-sha: c72a188d455b54a739b4ef728a55b4adac510f0a
     - id: no-terms-exit-2
       claim:
         lines: 87-88
@@ -68,7 +68,7 @@ docs/src/content/docs/term/reference/cli.mdx:
         file: src/term/core/load-set.ts
         lines: 462-466
         integrity: sha256-eee4feda1ff997c95ddd5d2e77b3e44e3adf12622e307ae9a9c70a294c5c8957
-        commit-sha: 343ef71848c2fa541f41eb5f993e18b5dd9c0c17
+        commit-sha: c72a188d455b54a739b4ef728a55b4adac510f0a
     - id: collection-not-with-paths
       claim:
         lines: 131
@@ -86,7 +86,7 @@ docs/src/content/docs/term/reference/cli.mdx:
         file: src/term/core/load-set.ts
         lines: 352
         integrity: sha256-e01cac2245b2ee790bf8936bc97ae98aff04cb87fb6ff75b3357b685765f522a
-        commit-sha: 343ef71848c2fa541f41eb5f993e18b5dd9c0c17
+        commit-sha: c72a188d455b54a739b4ef728a55b4adac510f0a
     - id: config-must-exist
       claim:
         lines: 134
@@ -549,7 +549,7 @@ docs/src/content/docs/term/reference/cli.mdx:
         file: src/term/core/load-set.ts
         lines: 462-466
         integrity: sha256-eee4feda1ff997c95ddd5d2e77b3e44e3adf12622e307ae9a9c70a294c5c8957
-        commit-sha: 343ef71848c2fa541f41eb5f993e18b5dd9c0c17
+        commit-sha: c72a188d455b54a739b4ef728a55b4adac510f0a
     - id: err-no-files
       claim:
         lines: 972
@@ -558,7 +558,7 @@ docs/src/content/docs/term/reference/cli.mdx:
         file: src/term/core/load-set.ts
         lines: 359-363
         integrity: sha256-46dab77aa566c96dfd6f011fba5113cba1a1e6b53ff8f28221fd16fd6db50824
-        commit-sha: 343ef71848c2fa541f41eb5f993e18b5dd9c0c17
+        commit-sha: c72a188d455b54a739b4ef728a55b4adac510f0a
     - id: err-stdin-needs-as
       claim:
         lines: 973
@@ -567,7 +567,7 @@ docs/src/content/docs/term/reference/cli.mdx:
         file: src/term/core/load-set.ts
         lines: 356-358
         integrity: sha256-cb26396871576319409976bf45edc2c606077ccba5a68809643557224099568b
-        commit-sha: 343ef71848c2fa541f41eb5f993e18b5dd9c0c17
+        commit-sha: c72a188d455b54a739b4ef728a55b4adac510f0a
     - id: err-file-not-found
       claim:
         lines: 974
@@ -756,7 +756,7 @@ docs/src/content/docs/term/reference/cli.mdx:
         file: src/term/core/load-set.ts
         lines: 442-459
         integrity: sha256-821b1c6069afba73180e4b520c42495c19f6fa729bebe96ce0ba276c942c0abc
-        commit-sha: 343ef71848c2fa541f41eb5f993e18b5dd9c0c17
+        commit-sha: c72a188d455b54a739b4ef728a55b4adac510f0a
     - id: allow-empty-missing-path
       claim:
         lines: 132

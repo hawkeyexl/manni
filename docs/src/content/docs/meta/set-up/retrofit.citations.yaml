@@ -186,9 +186,9 @@ docs/src/content/docs/meta/set-up/retrofit.mdx:
         integrity: sha256-b434cb91645fc3c84066f41be4d26f16a21838ce807764daf2b443931b3738bd
       source:
         file: CHANGELOG.md
-        lines: 1244-1247
+        lines: 1255-1258
         integrity: sha256-45e8f8c4528f6e8164bb9f060cb05f911f235aec5b19ef2d7c4001423d3c47e5
-        commit-sha: 801dbe750fcc54efeaf9c9091571665fd1d54eb1
+        commit-sha: 12225b68a574580436cf0e8e1e7e12d1bf9bf722
     - id: collection-exclude-removes-from-paths
       claim:
         lines: 138

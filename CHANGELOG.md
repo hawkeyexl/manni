@@ -4,6 +4,17 @@
 4.13.1. Entries below that version are docmeta releases; the repository
 history is the same one.
 
+# [4.27.0](https://github.com/hawkeyexl/manni/compare/v4.26.2...v4.27.0) (2026-10-28)
+
+
+### Features
+
+* **docevals:** read every format meta reads ([#260](https://github.com/hawkeyexl/manni/issues/260)) ([d0a978f](https://github.com/hawkeyexl/manni/commit/d0a978f906142f29b4dde031cd5c30d1587c5a0f))
+* read and write MadCap Flare topics and snippets ([#257](https://github.com/hawkeyexl/manni/issues/257)) ([2b9e662](https://github.com/hawkeyexl/manni/commit/2b9e6622836a194bf54d6749e1a3742e2b95b05c))
+* read Flare glossaries and meta tag sets ([#259](https://github.com/hawkeyexl/manni/issues/259)) ([274968e](https://github.com/hawkeyexl/manni/commit/274968ec19cc4c7aeda7ea06c63bb834b5e8e6c5))
+* read Flare topics as their target builds them ([#258](https://github.com/hawkeyexl/manni/issues/258)) ([b60199d](https://github.com/hawkeyexl/manni/commit/b60199d5502c05d76f69b965b6b382ca927c44ba))
+* **site:** build and preview a Flare project ([#261](https://github.com/hawkeyexl/manni/issues/261)) ([12225b6](https://github.com/hawkeyexl/manni/commit/12225b68a574580436cf0e8e1e7e12d1bf9bf722))
+
 ## [4.26.2](https://github.com/hawkeyexl/manni/compare/v4.26.1...v4.26.2) (2026-10-28)
 
 
