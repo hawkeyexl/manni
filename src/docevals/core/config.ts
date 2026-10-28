@@ -13,6 +13,7 @@ import {
   type ConfigFileOptions,
 } from "../../shared/config-file.js";
 import { parseCollections, type CollectionConfig } from "../../shared/collections.js";
+import { parseTools, type ToolsConfig } from "../../shared/tools.js";
 import { parse as parseYaml } from "yaml";
 import { Ajv2020 } from "ajv/dist/2020.js";
 import configSchema from "./config-schema.json" with { type: "json" };
@@ -196,6 +197,13 @@ export interface DocevalsConfig {
    * the file declares none, or no file governs the run.
    */
   providers: ProvidersConfig;
+  /**
+   * The family's top-level `tools:`, read for `tools.flare`, so the judge
+   * reads a Flare topic resolved (proposal 0125). `{}` when the file declares
+   * none, or no file governs the run. Optional because `DocevalsConfig` is
+   * exported, and a caller's own config predates it; absent reads as `{}`.
+   */
+  tools?: ToolsConfig;
   /** Findings baseline path, resolved against the config's directory (ADR 01017). */
   baseline: string | null;
   judge: {
@@ -422,10 +430,12 @@ export function parseConfig(text: string, configPath: string): DocevalsConfig {
   const providers = Object.hasOwn(doc, PROVIDERS_KEY)
     ? parseProviders(doc[PROVIDERS_KEY], configPath, dirname(resolve(configPath)), toError)
     : {};
+  const tools = wrapped ? parseTools(doc.tools, configPath, toError) : {};
   return parseConfigSection(wrapped ? doc[NAMESPACE] : doc, configPath, wrapped, {
     source: configPath,
     collections,
     providers,
+    tools,
   });
 }
 
@@ -463,6 +473,8 @@ export interface ConfigFileContext {
   collections: CollectionConfig[];
   /** The file's top-level `providers:`; `{}` when it declares none. */
   providers?: ProvidersConfig;
+  /** The file's top-level `tools:`; `{}` when it declares none. */
+  tools?: ToolsConfig;
 }
 
 /**
@@ -645,6 +657,7 @@ export function parseConfigSection(
     provider,
     model: r.model ?? null,
     providers: file.providers ?? {},
+    tools: file.tools ?? {},
     baseline: r.baseline ?? null,
     judge: {
       ensembleRuns: r.judge?.ensembleRuns ?? 3,
@@ -740,6 +753,7 @@ export function loadConfig(path?: string, cwd = process.cwd()): DocevalsConfig {
     source: file.source,
     collections: file.collections,
     providers: file.providers ?? {},
+    tools: file.tools,
   });
 
 }

@@ -29,8 +29,9 @@ import { byCodeUnit } from "./sort.js";
 import { NS } from "./vocab.js";
 import { canonicalLanguageTag, UNDETERMINED } from "./localizations.js";
 import type { GraphIndex } from "../runtime/graph.js";
-import type { ContentNode, ParseContext } from "../../lint/types.js";
+import type { ParseContext } from "../../lint/types.js";
 import { formatOf, mintTreeSections, parseTree } from "./analyze.js";
+import { plainText } from "../../lint/parsers/sectionize.js";
 import {
   documentPreamble,
   sectionOccurrences,
@@ -112,13 +113,6 @@ interface TreeText {
   doc: string | undefined;
   /** Each section's own prose, by its anchor. */
   sections: Map<string, string>;
-}
-
-/** Content nodes' plain text, one block each, LF only. */
-export function plainText(nodes: readonly ContentNode[]): string[] {
-  return nodes
-    .map((n) => n.text.replace(/\r\n/g, "\n").trim())
-    .filter((t) => t !== "");
 }
 
 /**

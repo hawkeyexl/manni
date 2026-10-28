@@ -25,6 +25,7 @@ import {
   EVALS_KEY,
   EvalWriter,
   manifestEvalList,
+  markupRefusal,
   updateManifestEval,
 } from "../core/write-location.js";
 import { sha256 } from "../judge/cache.js";
@@ -185,6 +186,25 @@ export async function runPromote(
       };
 
       if (assessment.promotable && assessment.code && options.write) {
+        // Where the eval lives decides where the rewrite goes. The page's own
+        // text is only consulted for a page-owned eval: a page whose evals a
+        // manifest owns carries none of them, so `hasEditableEval` is false
+        // there and the promotion used to be dropped without a word.
+        const home =
+          ev.source === "page"
+            ? await getWriter().homeFor(
+                plan.page.file,
+                plan.page.frontmatter.data,
+                EVALS_KEY,
+              )
+            : undefined;
+        if (home?.kind === "url") {
+          throw getWriter().urlRefusal(home, EVALS_KEY);
+        }
+        // An HTML or XML page can hold no YAML block (proposal 0125). Both
+        // refusals come before the script is written, so nothing is left behind.
+        const markup = home?.kind === "page" ? markupRefusal(plan.page) : undefined;
+        if (markup !== undefined) throw markup;
         const location = scriptLocationFor(target, config, cwd);
         mkdirSync(dirname(location.scriptAbsPath), { recursive: true });
         writeFileSync(location.scriptAbsPath, assessment.code);
@@ -202,21 +222,6 @@ export async function runPromote(
           // (renamed by ADR 01009).
           "generated-assertion-hash": sha256(ev.assertion),
         };
-        // Where the eval lives decides where the rewrite goes. The page's own
-        // text is only consulted for a page-owned eval: a page whose evals a
-        // manifest owns carries none of them, so `hasEditableEval` is false
-        // there and the promotion used to be dropped without a word.
-        const home =
-          ev.source === "page"
-            ? await getWriter().homeFor(
-                plan.page.file,
-                plan.page.frontmatter.data,
-                EVALS_KEY,
-              )
-            : undefined;
-        if (home?.kind === "url") {
-          throw getWriter().urlRefusal(home, EVALS_KEY);
-        }
         if (home?.kind === "no-entry") {
           proposal.error = home.message;
         } else if (home?.kind === "manifest") {

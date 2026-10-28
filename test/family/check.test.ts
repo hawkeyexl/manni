@@ -92,7 +92,7 @@ describe.skipIf(!gitAvailable())("runFamilyCheck", () => {
     expect(exitCodeFor(run)).toBe(0);
   });
 
-  it("only .htm topics: docevals reads none, so it is skipped and the exit is meta's", async () => {
+  it("only .htm topics: docevals reads them and none declares evals, so it is skipped and the exit is meta's", async () => {
     dir = fixtureRepo("only-html");
     const skipped = { command: "docevals run", status: "skipped", message: "no page resolves any evals" };
     const run = await runFamilyCheck({ cwd: dir, scope: { kind: "all" } });
