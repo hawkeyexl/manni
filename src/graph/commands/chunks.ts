@@ -15,11 +15,11 @@
  */
 import { execFile } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { basename, join, resolve } from "node:path";
+import { basename, extname, join, resolve } from "node:path";
 import { promisify } from "node:util";
 import { runCheck } from "../../cite/index.js";
 import type { CitationResult, PageCitationReport } from "../../cite/types.js";
-import { integrityOf, runDerive } from "../../meta/index.js";
+import { integrityOf, runDerive, supportedExtensions } from "../../meta/index.js";
 import { errorMessage } from "../../shared/errors.js";
 import { analyzeDoc, formatOf, isTreeFormat } from "../core/analyze.js";
 import type { GraphConfig } from "../core/config.js";
@@ -175,9 +175,13 @@ export async function exportChunks(opts: ChunksOptions): Promise<ChunksResult> {
   const worktree = git.commit === null ? null : git.dirty.size > 0 ? "modified" : "clean";
 
   const metadataByPage = new Map(models.map((m) => [m.path, m.frontmatter]));
+  // cite and derive read a page through meta, so a format meta does not read,
+  // a Flare TOC, carries no pins and no dates (proposal 0125).
+  const metaExtensions = new Set(supportedExtensions());
+  const metaPaths = paths.filter((p) => metaExtensions.has(extname(p).toLowerCase()));
   // Pins and eval verdicts are author-facing: a run without them reads neither.
-  const pins = authoring ? await pinsByPage(opts, sources, paths, metadataByPage) : new Map<string, Pin[]>();
-  const dates = await datesByPage(opts, sources, paths, git.commit !== null, authoring ? undefined : metadataByPage);
+  const pins = authoring ? await pinsByPage(opts, sources, metaPaths, metadataByPage) : new Map<string, Pin[]>();
+  const dates = await datesByPage(opts, sources, metaPaths, git.commit !== null, authoring ? undefined : metadataByPage);
   const evals = authoring ? readEvals(opts, sources, pages, warnings) : undefined;
   if (opts.evals === undefined) warnings.push("no docevals report is configured, so records carry no eval verdicts.");
   else if (!authoring) warnings.push(CONFIGURED_EVALS_LEFT_OUT);
