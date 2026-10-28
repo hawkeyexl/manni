@@ -1,0 +1,26 @@
+docs/src/content/docs/family/flare.mdx:
+  personas: ["maya", "devin"]
+  journeys: ["m1", "m10", "m18", "d16"]
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: "src/meta/extractors/html-read.ts"
+    - path: "src/meta/extractors/html-write.ts"
+    - path: "src/lint/parsers/html.ts"
+    - path: "src/shared/xhtml.ts"
+  eval-suite: family
+  evals:
+    - id: read-a-flare-project
+      assertion: "A reader can say how manni reads a Flare topic's empty title, and which MadCap elements become links."
+      type: capability
+      grader: ai
+    - id: find-a-broken-xref
+      assertion: "A reader can find a misspelled MadCap cross-reference with manni graph stats --check, and say what exit code 1 means."
+      type: capability
+      grader: ai
+  provenance:
+    - generated-by: Claude Opus 5.5
+      lines: 2-269
+      integrity: sha256-a0465656bd5f28cb188aaa0bf5c38e8cfa8205c7ca39af7062d677b77d0e4909
+  owner:
+    - "@hawkeyexl"

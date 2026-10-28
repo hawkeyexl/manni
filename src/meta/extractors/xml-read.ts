@@ -236,19 +236,11 @@ function matchElementPath(
 }
 
 /**
- * Parse and read. Throws for malformed XML, which the command layer records as
- * a per-file failure so the rest of the run continues (mirroring frontmatter).
+ * Parse `text`, pushing each error and fatal error onto `errors`. xmldom
+ * throws after reporting a fatal error, and so does this.
  */
-export function readXml(
-  content: string,
-  filePath?: string,
-  options?: ExtractOptions,
-): XmlRead {
-  // A BOM stays part of line 1; it doesn't shift line numbers.
-  const body = content.charCodeAt(0) === 0xfeff ? content.slice(1) : content;
-
-  const errors: string[] = [];
-  const doc = new DOMParser({
+function parseXml(text: string, errors: string[]): XmlDocument {
+  return new DOMParser({
     onError: (level, msg) => {
       if (level !== "error" && level !== "fatalError") return;
       // An entity the parser can't resolve is not structural damage. Only the
@@ -262,7 +254,37 @@ export function readXml(
       if (/entity not found/i.test(msg)) return;
       errors.push(msg);
     },
-  }).parseFromString(body, "text/xml");
+  }).parseFromString(text, "text/xml");
+}
+
+/**
+ * The first reason `text` is not well-formed XML, or undefined when it is.
+ * An undeclared entity is not a reason, as in `readXml`.
+ */
+export function xmlParseError(text: string): string | undefined {
+  const errors: string[] = [];
+  try {
+    parseXml(text, errors);
+  } catch (error) {
+    errors.push(error instanceof Error ? error.message : String(error));
+  }
+  return errors[0];
+}
+
+/**
+ * Parse and read. Throws for malformed XML, which the command layer records as
+ * a per-file failure so the rest of the run continues (mirroring frontmatter).
+ */
+export function readXml(
+  content: string,
+  filePath?: string,
+  options?: ExtractOptions,
+): XmlRead {
+  // A BOM stays part of line 1; it doesn't shift line numbers.
+  const body = content.charCodeAt(0) === 0xfeff ? content.slice(1) : content;
+
+  const errors: string[] = [];
+  const doc = parseXml(body, errors);
 
   if (errors.length > 0) {
     throw new Error(`Invalid XML: ${errors[0] ?? "parse error"}`);

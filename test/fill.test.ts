@@ -31,6 +31,7 @@ import { runValidate } from "../src/meta/commands/validate.js";
 import { DEFAULT_SCHEMAS } from "../src/meta/core/resolve-schema.js";
 import { DocmetaError } from "../src/meta/types.js";
 import { htmlExtractor } from "../src/meta/extractors/html.js";
+import { xmlParseError } from "../src/meta/extractors/xml-read.js";
 import { startSchemaServer } from "./helpers/schema-server.js";
 import { LOCAL_MODEL, localModelEnv, type LocalModelEnv } from "./helpers/local-model.js";
 
@@ -663,6 +664,29 @@ describe("runFill — mechanical checks precede confidence", () => {
     expect(after.slice(after.indexOf("<body>"))).toBe(
       before.slice(before.indexOf("<body>")),
     );
+  });
+
+  it("writes into a Flare topic a tag that closes itself, so it stays XML", async () => {
+    const file = "Configure.htm";
+    await writeFile(
+      join(dir, file),
+      readFileSync(join(here, "fixtures", "flare", "meta", "topic.htm"), "utf8"),
+      "utf8",
+    );
+    const { results } = await runFill({
+      ...base,
+      cwd: dir,
+      inputs: [file],
+      inferenceProvider: propose({
+        description: { value: "How to set the widget's options.", confidence: 0.95 },
+      }),
+    });
+    expect(results[0]?.error).toBeUndefined();
+    const after = await readFile(join(dir, file), "utf8");
+    expect(after).toContain(
+      '<meta name="description" content="How to set the widget\'s options." />',
+    );
+    expect(xmlParseError(after)).toBeUndefined();
   });
 
   it("corrects an invalid HTML value in the tag it was read from", async () => {

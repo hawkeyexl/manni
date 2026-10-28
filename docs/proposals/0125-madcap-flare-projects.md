@@ -1,6 +1,6 @@
 # 0125: MadCap Flare projects
 
-- **Status:** Proposed
+- **Status:** Accepted
 - **Serves:** Five journeys, each for a docset kept in MadCap Flare.
   - Maya · M1, "Stand up metadata validation for my repo".
   - Maya · M10, "Hold every page to the shape its doctype promises".

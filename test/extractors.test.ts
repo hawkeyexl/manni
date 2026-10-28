@@ -735,6 +735,66 @@ describe("html extractor", () => {
   });
 });
 
+describe("html extractor: a Flare topic's title (0125)", () => {
+  const FLARE_NS = "http://www.madcapsoftware.com/Schemas/MadCap.xsd";
+  const topic = (head: string, body: string): string =>
+    `<?xml version="1.0" encoding="utf-8"?>\n<html xmlns:MadCap="${FLARE_NS}">\n<head>${head}</head>\n<body>${body}</body>\n</html>\n`;
+
+  it("reads an empty <title> as the first heading's text, flattened", () => {
+    const r = htmlExtractor.extract(
+      readFileSync(`${here}/fixtures/flare/meta/topic.htm`, "utf8"),
+      "Content/Topics/Configure.htm",
+    );
+    expect(r.data.title).toBe("Configuring the widget");
+  });
+
+  it("takes an h2 when it is the first heading", () => {
+    const r = htmlExtractor.extract(
+      topic("<title>  </title>", "<p>Intro</p><h2>\n  Second   level\n</h2><h1>Later</h1>"),
+      "a.htm",
+    );
+    expect(r.data.title).toBe("Second level");
+  });
+
+  it("reads the file name's stem when the topic has no heading", () => {
+    const r = htmlExtractor.extract(
+      topic("<title></title>", "<p>No heading.</p>"),
+      "Content/Topics/Configure.htm",
+    );
+    expect(r.data.title).toBe("Configure");
+    // Standard input has no name to fall back to.
+    const stdin = htmlExtractor.extract(topic("<title></title>", "<p>No heading.</p>"), "<stdin>");
+    expect(stdin.data.title).toBe("");
+  });
+
+  it("leaves a non-empty <title> as written", () => {
+    const r = htmlExtractor.extract(topic("<title>Set</title>", "<h1>Heading</h1>"), "a.htm");
+    expect(r.data.title).toBe("Set");
+  });
+
+  it("adds no title to a topic with no <title> element", () => {
+    const r = htmlExtractor.extract(topic("", "<h1>Heading</h1>"), "a.htm");
+    expect(r.data.title).toBeUndefined();
+  });
+
+  it("keeps an empty title on a page that is not a Flare topic", () => {
+    const r = htmlExtractor.extract(
+      "<html><head><title></title></head><body><h1>Heading</h1></body></html>",
+      "page.html",
+    );
+    expect(r.data.title).toBe("");
+  });
+
+  it("nests a self-closed element as XML does on an XHTML page", () => {
+    // HTML5 parsing would put the rest of <head> inside <title />.
+    const r = htmlExtractor.extract(
+      `<?xml version="1.0"?>\n<html xmlns="http://www.w3.org/1999/xhtml"><head><title /><meta name="type" content="concept" /></head><body></body></html>`,
+      "a.htm",
+    );
+    expect(r.data).toEqual({ title: "", type: "concept" });
+  });
+});
+
 describe("extractor registry", () => {
   it("resolves markdown by extension", () => {
     expect(extractorForExtension(".md")?.name).toBe("markdown");
@@ -786,6 +846,7 @@ describe("extractor registry", () => {
       ".asciidoc",
       ".dita",
       ".ditamap",
+      ".flsnp",
       ".htm",
       ".html",
       ".markdown",

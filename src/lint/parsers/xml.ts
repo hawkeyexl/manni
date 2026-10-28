@@ -1401,8 +1401,7 @@ export function parseXml(
   if (score <= 0) {
     throw new LintError(
       `${filePath}: no known XML vocabulary matched <${localName(root)}>. ` +
-        `manni lint understands ${names}; add an entry to XML_VOCABULARIES ` +
-        `in src/parsers/xml.ts to describe another schema.`,
+        `manni lint understands ${names}.`,
     );
   }
 

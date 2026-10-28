@@ -17,6 +17,7 @@ import { MockProvider } from "@hawkeyexl/inference";
 import { runFill } from "../../../src/graph/commands/fill.js";
 import { runBuild } from "../../../src/graph/commands/build.js";
 import { extractorForExtension } from "../../../src/meta/index.js";
+import { xmlParseError } from "../../../src/meta/extractors/xml-read.js";
 import { defined } from "../helpers/defined.js";
 
 const fixture = join(
@@ -116,6 +117,23 @@ describe("graph fill writes each format through meta", () => {
     });
     expect(again.results[0]?.status).toBe("complete");
     expect(read(dir, "guide.html")).toBe(after);
+  });
+
+  it("writes a Flare topic's graph block as a tag that closes itself", async () => {
+    const topic = readFileSync(
+      join(fixture, "..", "..", "..", "fixtures", "flare", "meta", "topic.htm"),
+      "utf8",
+    );
+    const dir = copy({ "Configure.htm": topic });
+    const report = await fill(dir, ["Configure.htm"], [LABELS]);
+    expect(report.results[0]?.error).toBeUndefined();
+    const after = read(dir, "Configure.htm");
+    expect(after).toMatch(/<meta name="graph" content="[^"]*" \/>/);
+    expect(xmlParseError(after)).toBeUndefined();
+    expect(metadata(dir, "Configure.htm")["graph"]).toEqual({
+      label: "Install",
+      "alt-labels": ["setup"],
+    });
   });
 
   it("keeps a value a human set on an HTML page", async () => {

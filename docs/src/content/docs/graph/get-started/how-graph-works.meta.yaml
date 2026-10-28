@@ -16,6 +16,9 @@ docs/src/content/docs/graph/get-started/how-graph-works.mdx:
     - generated-by: Claude Opus 5
       lines: 20
       integrity: sha256-b59398f6b796e0e9fb145b585b1e4218a2f6a828ea94b691d1fb2179c2785ce0
+    - generated-by: Claude Opus 5.5
+      lines: 31
+      integrity: sha256-06c8d30c3dce28024599e7c805d31a46c12e722bd09924d8d30c4577db1f9c3f
     - generated-by: Claude Opus 5
       lines: 50-55
       integrity: sha256-c973d3986b85baaab182d395ac63b1d037eb4e671376804da7a748c9fc2afb34

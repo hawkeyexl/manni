@@ -238,7 +238,7 @@ describe("resolveDocumentSet — formats", () => {
       resolveDocumentSet(defaultConfig(dir), { paths: ["notes.txt", "a.md"] }, "build", dir),
     ).toEqual(["a.md"]);
     expect(stderr.join("")).toBe(
-      'manni: skipped notes.txt: no parser is registered for ".txt". Supported extensions: .md, .markdown, .mdx, .html, .htm, .adoc, .asciidoc, .rst, .dita, .ditamap. Use --as to override.\n',
+      'manni: skipped notes.txt: no parser is registered for ".txt". Supported extensions: .md, .markdown, .mdx, .html, .htm, .flsnp, .adoc, .asciidoc, .rst, .dita, .ditamap. Use --as to override.\n',
     );
   });
 

@@ -95,6 +95,19 @@ describe("projectPackage", () => {
     ]);
   });
 
+  // Proposal 0125: a Flare snippet is HTML, and a TOC or browse sequence is XML.
+  it.each([
+    ["Snippets/s.flsnp", "text/html"],
+    ["Project/TOCs/Main.fltoc", "application/xml"],
+    ["Project/Advanced/Browse.flbrs", "application/xml"],
+  ])("names %s's rendition %s", (path, format) => {
+    const cwd = mkdtempSync(join(tmpdir(), "manni-graph-pkg-"));
+    mkdirSync(join(cwd, ...path.split("/").slice(0, -1)), { recursive: true });
+    writeFileSync(join(cwd, ...path.split("/")), "<x/>\n");
+    const { quads } = projectPackage(storeOf(TTL.replaceAll("docs/a.md", path)), OPTS, cwd);
+    expect(has(quads, `${BASE}doc/${path}/rendition`, `${NS.iirds}format`, format)).toBe(true);
+  });
+
   it("carries the Phase-2 classification and the ProductVariant node", () => {
     const { quads } = projectPackage(storeOf(TTL), OPTS, cwdWithDoc());
     expect(

@@ -29,6 +29,8 @@ import {
 import { dropUndefined, deepEqual } from "./patch-util.js";
 import { readHtml, type Element, type HtmlRead } from "./html-read.js";
 import { escapeText, valuesFor } from "./element-write.js";
+import { liftKey } from "./element-key.js";
+import { xmlParseError } from "./xml-read.js";
 
 /** One character-range replacement in the source. */
 interface Edit {
@@ -46,7 +48,10 @@ export function applyHtml(
   // makes that necessary — so every position it reports is relative to the text
   // it hands back. Splice against that same text and restore the BOM as a
   // prefix, which leaves no offset arithmetic to get wrong.
-  const before = readHtml(original, { elements: options.elements });
+  const before = readHtml(original, {
+    elements: options.elements,
+    filePath: options.filePath,
+  });
   const content = before.body;
 
   // Structural checks run before the empty-patch shortcut, so an empty patch is
@@ -64,6 +69,8 @@ export function applyHtml(
 
   const edits: Edit[] = [];
   const inserts: string[] = [];
+  // An XHTML page is XML, where a void tag has to close itself (0125).
+  const tagEnd = before.xhtml ? " />" : ">";
   /** Elements this write touches, so `verify` knows which keys move with them. */
   const moved = new Set<Element>();
   for (const [key, value] of Object.entries(clean)) {
@@ -75,7 +82,7 @@ export function applyHtml(
       const name = escapeAttr(key, DQ);
       inserts.push(
         "<meta name=" + DQ + name + DQ + " content=" + DQ +
-          escapeAttr(emitScalar(key, value), DQ) + DQ + ">",
+          escapeAttr(emitScalar(key, value), DQ) + DQ + tagEnd,
       );
     } else if (source.kind === "meta") {
       edits.push(metaEdit(content, source.el, key, emitScalar(key, value)));
@@ -102,10 +109,20 @@ export function applyHtml(
   }
 
   if (inserts.length > 0) {
-    edits.push(insertEdit(content, before.head, headStart.endOffset, inserts));
+    edits.push(insertEdit(content, before.head, headStart, inserts, before.xhtml));
   }
 
   const next = spliceAll(content, edits);
+  // On an XHTML page that was well-formed XML, the result must be too. One
+  // that was already malformed is not this write's to judge.
+  if (before.xhtml && xmlParseError(content) === undefined) {
+    const error = xmlParseError(next);
+    if (error !== undefined) {
+      throw new DocmetaError(
+        `Refusing to write "${Object.keys(clean)[0] ?? ""}": the result would not be well-formed XML (${error}). ${options.filePath ?? "the page"} is unchanged.`,
+      );
+    }
+  }
   verify(next, before, clean, moved, options);
   // `content === original` is the BOM test: `readHtml` returns `body` with any
   // leading BOM removed, so the two are the same value exactly when there was
@@ -198,14 +215,42 @@ function elementTextEdit(el: Element, key: string, emitted: string): Edit {
 /**
  * Insert new `<meta>` tags immediately after `<head>`'s start tag, indented to
  * match whatever is already inside it.
+ *
+ * An XHTML `<head />` holds nothing, so it opens into `<head>` and `</head>`
+ * around the tags (0125, decision 3). Its attributes stay as written.
  */
 function insertEdit(
   content: string,
   head: Element,
-  at: number,
+  headStart: { startOffset: number; endOffset: number },
   tags: string[],
+  xhtml: boolean,
 ): Edit {
+  const at = headStart.endOffset;
   const { eol, indent } = headStyle(content, head, at);
+  const startTag = content.slice(headStart.startOffset, at);
+  if (
+    xhtml &&
+    head.sourceCodeLocation?.endTag == null &&
+    startTag.endsWith("/>")
+  ) {
+    // A self-closed head has no child to copy a style from, so its own line
+    // does: the close tag sits at the head's indent, a child one step in.
+    const lineStart = content.lastIndexOf("\n", headStart.startOffset - 1) + 1;
+    const lead = content.slice(lineStart, headStart.startOffset);
+    const own = /^[ \t]*$/.test(lead) ? lead : "";
+    const inner = own + (own === "" ? "  " : own);
+    return {
+      start: headStart.startOffset,
+      end: at,
+      text:
+        startTag.replace(/\s*\/>$/, ">") +
+        tags.map((t) => `${eol}${inner}${t}`).join("") +
+        eol +
+        own +
+        "</head>",
+    };
+  }
   const text = tags.map((t) => `${eol}${indent}${t}`).join("");
   return { start: at, end: at, text };
 }
@@ -352,7 +397,10 @@ function verify(
 ): void {
   // Re-read with the *same* options the write used, or a key an `elements:`
   // path produced is invisible here and every write to one is refused.
-  const actual = readHtml(next, { elements: options.elements }).data;
+  const actual = readHtml(next, {
+    elements: options.elements,
+    filePath: options.filePath,
+  }).data;
   const expected: Record<string, unknown> = { ...before.data, ...patch };
   for (const [key, source] of before.sources) {
     if (key in patch) continue;
@@ -361,6 +409,13 @@ function verify(
         ? source.els
         : [source.el];
     if (els.some((el: Element) => moved.has(el))) expected[key] = actual[key];
+  }
+  // An empty <title> lifts no `head.title`, so filling it adds that key. It
+  // moved with its element as surely as one that was there before.
+  const title = before.sources.get("title");
+  const headTitle = liftKey("head", "title");
+  if (title?.kind === "title" && moved.has(title.el) && headTitle in actual) {
+    expected[headTitle] ??= actual[headTitle];
   }
   if (!deepEqual(actual, expected)) {
     throw new DocmetaError(

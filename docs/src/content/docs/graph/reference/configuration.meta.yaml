@@ -42,6 +42,9 @@ docs/src/content/docs/graph/reference/configuration.mdx:
     - generated-by: Claude Opus 5
       lines: 40-42
       integrity: sha256-e1bd28b45f5f568052d91749e3a7712115afe08a5429d4121cf36986fb20e0ad
+    - generated-by: Claude Opus 5.5
+      lines: 43
+      integrity: sha256-f8bd4d16ad9037805d44bb2b2ce949d1f22d74b860824e9f088656f1c1109881
     - generated-by: Claude Opus 5
       lines: 44-47
       integrity: sha256-7042239b1ed12e1174532d85ee8a46bf7ba0dd337ede699c549d6b2d28f5e940
@@ -117,6 +120,9 @@ docs/src/content/docs/graph/reference/configuration.mdx:
     - generated-by: Claude Opus 5
       lines: 168-176
       integrity: sha256-0b67985a418e1a7e94e185fbb59b7a428755f9f03074b59d288d164b20a04e85
+    - generated-by: Claude Opus 5.5
+      lines: 178
+      integrity: sha256-c2d0fd1930488eca5fae2a495b4f9b4c3c234a15c54c99e3b6376641d161c3e9
     - generated-by: Claude Opus 5
       lines: 179-187
       integrity: sha256-e531e9fdcae6d35f1bebffa218972f8972dab3886ada6a4df9fd1fa0040f2aae

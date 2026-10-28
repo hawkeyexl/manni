@@ -14,6 +14,7 @@ import { dirname } from "node:path";
 import { stringify as stringifyYaml } from "yaml";
 import { applyHtml } from "../src/meta/extractors/html-write.js";
 import { htmlExtractor } from "../src/meta/extractors/html.js";
+import { xmlParseError } from "../src/meta/extractors/xml-read.js";
 import { DocmetaError } from "../src/meta/types.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -276,6 +277,12 @@ describe("applyHtml — the write-to-source invariant", () => {
       "title",
       "C",
     ],
+    [
+      "title carried by an empty <title>",
+      "<html><head><title></title></head></html>",
+      "title",
+      "C",
+    ],
   ];
   for (const [label, src, key, value] of cases) {
     it(`round-trips through the reader — ${label}`, () => {
@@ -283,4 +290,120 @@ describe("applyHtml — the write-to-source invariant", () => {
       expect(read(out)[key]).toEqual(value);
     });
   }
+});
+
+describe("applyHtml — an XHTML page (0125)", () => {
+  const flare = (name: string): string =>
+    readFileSync(`${here}/fixtures/flare/meta/${name}`, "utf8");
+  const FLARE_NS = "http://www.madcapsoftware.com/Schemas/MadCap.xsd";
+
+  it("closes an inserted tag itself, and the page still parses as XML", () => {
+    const content = flare("topic.htm");
+    const out = applyHtml(content, { description: "Set the options." });
+    expect(out).toContain(
+      '        <meta name="description" content="Set the options." />\n',
+    );
+    expect(xmlParseError(out)).toBeUndefined();
+    expect(read(out).description).toBe("Set the options.");
+    // Only the one line is new.
+    expect(out.replace(/ *<meta name="description"[^\n]*\n/, "")).toBe(content);
+  });
+
+  it("opens a self-closed <head /> around what it inserts", () => {
+    const src =
+      '<?xml version="1.0" encoding="utf-8"?>\n<html xmlns="http://www.w3.org/1999/xhtml">\n<head />\n<body><p>x</p></body>\n</html>\n';
+    const out = applyHtml(src, { type: "concept" });
+    expect(out).toBe(
+      src.replace(
+        "<head />",
+        '<head>\n  <meta name="type" content="concept" />\n</head>',
+      ),
+    );
+    expect(xmlParseError(out)).toBeUndefined();
+    expect(read(out).type).toBe("concept");
+  });
+
+  it("indents an opened <head /> as the file indents it", () => {
+    const src = `<?xml version="1.0" encoding="utf-8"?>\n<html xmlns:MadCap="${FLARE_NS}">\n    <head />\n    <body><p>x</p></body>\n</html>\n`;
+    const out = applyHtml(src, { type: "concept" });
+    expect(out).toBe(
+      src.replace(
+        "<head />",
+        '<head>\n        <meta name="type" content="concept" />\n    </head>',
+      ),
+    );
+    expect(xmlParseError(out)).toBeUndefined();
+  });
+
+  it("keeps the BOM, the XML declaration and CRLF byte for byte", () => {
+    const decl = '﻿<?xml version="1.0" encoding="utf-8"?>\r\n';
+    const src =
+      decl +
+      `<html xmlns:MadCap="${FLARE_NS}">\r\n  <head>\r\n    <title></title>\r\n  </head>\r\n  <body><h1>T</h1></body>\r\n</html>\r\n`;
+    const out = applyHtml(src, { type: "concept" });
+    expect(out.startsWith(decl)).toBe(true);
+    expect(out.match(/﻿/g)).toHaveLength(1);
+    expect(out.match(/(?<!\r)\n/g)).toBeNull();
+    expect(out).toContain('\r\n    <meta name="type" content="concept" />\r\n');
+    expect(xmlParseError(out.slice(1))).toBeUndefined();
+  });
+
+  it("fills a Flare topic's empty <title>, which reads as its heading", () => {
+    const content = flare("topic.htm");
+    expect(read(content).title).toBe("Configuring the widget");
+    const out = applyHtml(
+      content,
+      { title: "Configure the widget" },
+      { filePath: "Configure.htm" },
+    );
+    expect(out).toBe(
+      content.replace("<title></title>", "<title>Configure the widget</title>"),
+    );
+    expect(read(out).title).toBe("Configure the widget");
+    expect(xmlParseError(out)).toBeUndefined();
+  });
+
+  it("refuses a write whose result would not be well-formed XML", () => {
+    // parse5 reads <title> as RCDATA, so it ends at the first "</title>" even
+    // inside a CDATA section an XML parser honours. Replacing that span leaves
+    // the CDATA's tail and a stray end tag behind.
+    const src =
+      '<?xml version="1.0"?>\n<html xmlns="http://www.w3.org/1999/xhtml"><head><title><![CDATA[a</title>b]]></title></head><body></body></html>\n';
+    expect(xmlParseError(src)).toBeUndefined();
+    expect(() =>
+      applyHtml(src, { title: "New" }, { filePath: "docs/a.htm" }),
+    ).toThrow(
+      /^Refusing to write "title": the result would not be well-formed XML \(.+\)\. docs\/a\.htm is unchanged\.$/,
+    );
+    expect(() => applyHtml(src, { title: "New" })).toThrow(
+      /\. the page is unchanged\.$/,
+    );
+  });
+
+  it("does not hold a page that was already malformed XML to the check", () => {
+    const src =
+      '<?xml version="1.0"?>\n<html xmlns="http://www.w3.org/1999/xhtml"><head><title>a</title></head><body><br></body></html>\n';
+    expect(xmlParseError(src)).toBeDefined();
+    const out = applyHtml(src, { type: "concept" });
+    expect(read(out).type).toBe("concept");
+  });
+
+  it("writes a plain HTML page exactly as before", () => {
+    const content = fx("head-with-meta.html");
+    const out = applyHtml(content, { audience: "developer" });
+    expect(out).toBe(
+      content.replace(
+        "  <head>\n",
+        '  <head>\n    <meta name="audience" content="developer">\n',
+      ),
+    );
+  });
+});
+
+describe("xmlParseError", () => {
+  it("names the first error, and passes an undeclared entity", () => {
+    expect(xmlParseError("<a><b></a>")).toMatch(/mismatch/);
+    expect(xmlParseError("<a>&nbsp;</a>")).toBeUndefined();
+    expect(xmlParseError("")).toBeDefined();
+  });
 });

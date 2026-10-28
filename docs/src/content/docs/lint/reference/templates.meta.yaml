@@ -31,8 +31,14 @@ docs/src/content/docs/lint/reference/templates.mdx:
       lines: 285
       integrity: sha256-f1b901847390b0ed7e374e7c1e464ec17b46a427c487a5ad6cbd2906405083d5
     - generated-by: Claude Opus 5
-      lines: 287-434
-      integrity: sha256-4b31bb1f5a2b54d61f2f65e2076753659d90e9af180dc11e489d5400a24d9a8d
+      lines: 287-388
+      integrity: sha256-9f4bcc762a836ce74c89813d7a961bd84bf38a646e2a2f50b43c2c0372242533
+    - generated-by: Claude Opus 5.5
+      lines: 389
+      integrity: sha256-28369f32c9e22689ea0c9d52b754bbd21cca1235793f6954b5c9a119878bbe20
+    - generated-by: Claude Opus 5
+      lines: 390-434
+      integrity: sha256-9b5e405d9dacd13830c32861d09fe406e99fd92db8e39cfcc31dda9a1cd998d2
     - generated-by: Claude Opus 5.5
       lines: 435-436
       integrity: sha256-49f0af10478e1f472c5d286c5d2e92ad7c15d052f27eb491ed691bd720b73e32

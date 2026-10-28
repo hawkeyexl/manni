@@ -351,7 +351,9 @@ export const ALL_DERIVE_SOURCES: DeriveSource[] = [
  * links), and the extensions that name a document rather than an asset.
  * Markdown first, so a tree holding `install.md` and a built `install.html`
  * resolves a pretty URL to the source. No `.xml`: a link to `pom.xml` is an
- * asset, as a walk never collects one (proposal 0077 §3).
+ * asset, as a walk never collects one (proposal 0077 §3). A MadCap Flare
+ * snippet, TOC and browse sequence come last, so a broken include is a broken
+ * link (proposal 0125).
  */
 export const DEFAULT_LINK_EXTENSIONS = [
   ".md",
@@ -364,6 +366,9 @@ export const DEFAULT_LINK_EXTENSIONS = [
   ".rst",
   ".dita",
   ".ditamap",
+  ".flsnp",
+  ".fltoc",
+  ".flbrs",
 ];
 export const DEFAULT_INDEX_FILES = ["index", "README"];
 

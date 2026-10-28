@@ -62,6 +62,20 @@ describe("html links and ids", () => {
     expect(targets(tree)).toEqual([]);
   });
 
+  it("collects MadCap xref hrefs and snippet srcs, in document order, positioned on their elements", () => {
+    const page =
+      `<?xml version="1.0" encoding="utf-8"?>\n` +
+      `<html xmlns:MadCap="http://www.madcapsoftware.com/schemas/madcap.xsd"><head><title /></head><body>\n` +
+      `<h1>T</h1><p>See <MadCap:xref href="b.htm#x">B</MadCap:xref>.</p>\n` +
+      `<MadCap:snippetBlock src="../Snippets/s.flsnp" />\n` +
+      `<p><MadCap:snippetText src="t.flsnp" /> and <a href="c.htm">c</a></p>\n` +
+      `</body></html>\n`;
+    const tree = htmlParser.parse(page, "topic.htm");
+    expect(targets(tree)).toEqual(["b.htm#x", "../Snippets/s.flsnp", "t.flsnp", "c.htm"]);
+    const starts = ["<MadCap:xref", "<MadCap:snippetBlock", "<MadCap:snippetText", '<a href="c.htm"'];
+    expect(tree.links.map((l) => l.position.start.offset)).toEqual(starts.map((t) => page.indexOf(t)));
+  });
+
   it("drops a heading's self-permalink but keeps other links in the heading", () => {
     const tree = parse(
       `<h2 id="install">Install <a href="#install">¶</a> <a href="#other">o</a></h2>`,

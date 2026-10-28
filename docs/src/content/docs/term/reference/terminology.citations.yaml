@@ -23,9 +23,9 @@ docs/src/content/docs/term/reference/terminology.mdx:
         integrity: sha256-6d339e171b6083329d6ddf7f18dd26f735c4f78cf852115e9265bfebbf4a12e6
       source:
         file: src/term/core/readers/html.ts
-        lines: 103-104
+        lines: 107-108
         integrity: sha256-99f4c3112128fcbf8d8b4397558d2e94a25aaeec6ba89157e7dcfb157e1a4d39
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: 0d47b00a02406b65645eee9a12d8f91393dc9076
     - id: self-declaring-dita
       claim:
         integrity: sha256-43be77c99df87222e78a2b673c620dcbbb556193fc8d1e91ba90932bbf9a46ff
@@ -376,9 +376,9 @@ docs/src/content/docs/term/reference/terminology.mdx:
         integrity: sha256-f62d1acd842137320e3cbb1b4858b40b5221ff36426a3d641c38edf23bc2a62b
       source:
         file: src/term/core/readers/html.ts
-        lines: 140
+        lines: 144
         integrity: sha256-f5c786926d12b1e68600148e20193dd9ee44ac79d8a0f0a091f0b20e47e858c7
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: 0d47b00a02406b65645eee9a12d8f91393dc9076
     - id: id-construct-docbook
       claim:
         lines: 375-378
@@ -436,9 +436,9 @@ docs/src/content/docs/term/reference/terminology.mdx:
         integrity: sha256-ae8aa0e30a3ac0c103cd8c860e3a982667852e1e42f0e2e0e00edcd04d945091
       source:
         file: src/term/core/readers/html.ts
-        lines: 203
+        lines: 207
         integrity: sha256-76f9b1181a4fb7cea85064ab1d6cddc6db1771fd686709adfca72a8140f18374
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: 0d47b00a02406b65645eee9a12d8f91393dc9076
     - id: status-is-the-kind-of-label
       claim:
         integrity: sha256-26537ba7230198941adbe85664ddc73d4d1b47945a5238f2d553d10cae16ff1a

@@ -694,8 +694,10 @@ describe("xml parser: failure modes", () => {
     const xml = `<invoice><customer>Acme</customer><total>10</total></invoice>`;
     expect(() => parse(xml, "invoice.xml")).toThrow(LintError);
     expect(() => parse(xml, "invoice.xml")).toThrow(
-      /invoice\.xml: no known XML vocabulary matched <invoice>.*DITA, DocBook.*XML_VOCABULARIES/s,
+      /^invoice\.xml: no known XML vocabulary matched <invoice>\. manni lint understands DITA, DocBook[^;]*\.$/,
     );
+    // Proposal 0125, decision 8: the reader is a user, so no path into src/.
+    expect(() => parse(xml, "invoice.xml")).not.toThrow(/src\/|XML_VOCABULARIES/);
   });
 
   it("names the gap when a vocabulary matches but nothing is titled", () => {

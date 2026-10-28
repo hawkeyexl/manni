@@ -26,7 +26,7 @@
   description: Validate document metadata against JSON Schema
   entry: npx --yes @hawkeyexl/manni@latest meta validate
   language: system
-  files: '(?i)\.(adoc|asciidoc|dita|ditamap|htm|html|markdown|md|mdx|rst|xml)$'
+  files: '(?i)\.(adoc|asciidoc|dita|ditamap|flsnp|htm|html|markdown|md|mdx|rst|xml)$'
 
 # Stamps managed metadata before a commit, including `provenance` (proposal
 # 0046): with MANNI_GENERATED_BY exported, the lines an agent wrote are
@@ -39,7 +39,7 @@
   description: Stamp managed metadata, including provenance, before a commit
   entry: npx --yes @hawkeyexl/manni@latest meta derive
   language: system
-  files: '(?i)\.(adoc|asciidoc|dita|ditamap|htm|html|markdown|md|mdx|rst|xml)$'
+  files: '(?i)\.(adoc|asciidoc|dita|ditamap|flsnp|htm|html|markdown|md|mdx|rst|xml)$'
 
 # Checks the citations on the pages about to be committed (proposal 0044).
 # pre-commit appends the staged paths, so the run covers those pages and no
@@ -59,4 +59,4 @@
   description: Check the staged pages' citations against their sources
   entry: npx --yes @hawkeyexl/manni@latest cite check
   language: system
-  files: '(?i)\.(adoc|asciidoc|dita|ditamap|htm|html|markdown|md|mdx|rst|xml)$'
+  files: '(?i)\.(adoc|asciidoc|dita|ditamap|flsnp|htm|html|markdown|md|mdx|rst|xml)$'

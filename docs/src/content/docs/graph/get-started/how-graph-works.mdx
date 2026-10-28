@@ -20,7 +20,7 @@ concepts:
   - section
   - harvest rule
   - near miss
-last-updated: 2026-10-25
+last-updated: 2026-10-28
 ---
 
 You have built a graph and asked it a question. This page is the model behind
@@ -52,7 +52,7 @@ A docset is read in its own format. graph uses the same parsers as
 | Format | Extensions | Sections come from | Links come from |
 |---|---|---|---|
 | Markdown, MDX | `.md`, `.markdown`, `.mdx` | headings | links, link references, and `href` on any JSX element |
-| HTML | `.html`, `.htm` | `h1`–`h6` | `href` on `<a>` and `<area>`, never on `<link>` |
+| HTML | `.html`, `.htm`, `.flsnp` | `h1`–`h6` | `href` on `<a>`, `<area>` and `<MadCap:xref>`, and `src` on `<MadCap:snippetBlock>` and `<MadCap:snippetText>`. Never `<link>`. |
 | DITA, DITA map, DocBook | `.dita`, `.ditamap`, `.xml` | topics and sections | `<xref>`, `<link>`, a map's `<topicref>`, DocBook `<link>` and `linkend` |
 | AsciiDoc | `.adoc`, `.asciidoc` | section titles | `xref:`, `link:` and URLs |
 | reStructuredText | `.rst` | section titles | embedded URIs, named references and `:doc:` |

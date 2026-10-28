@@ -1,0 +1,16 @@
+collections:
+  - name: help
+    paths:
+      - "Content/**/*.htm"
+      - "Content/Resources/Snippets/*.flsnp"
+meta:
+  overrides:
+    - files: "Content/**/*.htm"
+      defaults: false
+      schemas:
+        - manni:core:1.0.0
+    - files: "Content/Resources/Snippets/*.flsnp"
+      defaults: false
+      schemas: [./schemas/snippet.schema.json]
+graph:
+  out: graph/graph.ttl

@@ -2,7 +2,7 @@ docs/src/content/docs/meta/reference/formats.mdx:
   citations:
     - id: formats-coerced-types-are-what-a-schema-sees
       claim:
-        lines: 345-348
+        lines: 371-374
         integrity: sha256-7e85cca69b2f8608c7364df3531ae4260274855520b8948325345d3c3ed2e8eb
       source:
         file: src/meta/extractors/xml.ts
@@ -35,7 +35,7 @@ docs/src/content/docs/meta/reference/formats.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: formats-coercion-table
       claim:
-        lines: 325-327
+        lines: 351-353
         integrity: sha256-42aff26e1e421ea565a92980bd5f99718a2be90478d4cc363aa76d0e609ef7bc
       source:
         file: src/meta/extractors/rst.ts
@@ -55,7 +55,7 @@ docs/src/content/docs/meta/reference/formats.mdx:
         integrity: sha256-7b7f1ebace76bab8904dac9bf868db8591a106396c1d077ad3fe06749392e14c
       source:
         file: src/meta/extractors/html-write.ts
-        lines: 198-211
+        lines: 215-256
         integrity: sha256-67058d065ff0ce5d559d241f9d54b187476f0841241c340f5d0736686a6dcd05
         commit-sha: 0a2483616fe8f79ac5f7ab88244a74e8c4e34759
     - id: formats-html-parsing-never-throws
@@ -90,18 +90,18 @@ docs/src/content/docs/meta/reference/formats.mdx:
         integrity: sha256-13d82f00eccb49649eb45958df2000de01f29c678ebb20d56ce373cbd12d06a1
       source:
         file: src/meta/extractors/html-read.ts
-        lines: 221-224
+        lines: 274-277
         integrity: sha256-a92e2c737679a8fc44c7a92ceb450df2810d532f848e307ed8cbf4685a63a02e
-        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+        commit-sha: 0d47b00a02406b65645eee9a12d8f91393dc9076
     - id: formats-first-title-wins-verbatim
       claim:
         lines: 286-287
         integrity: sha256-a2257f3b2656b64904a096d5f6121a8f38a2b407176635271583978b3d1b0c18
       source:
         file: src/meta/extractors/html-read.ts
-        lines: 212-219
+        lines: 265-272
         integrity: sha256-b1143db6b08ecffae2c7a74e29ba956ad6df1910970b386dc7c1bf5d5ebf5ef2
-        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+        commit-sha: 0d47b00a02406b65645eee9a12d8f91393dc9076
     - id: formats-three-ways-a-file-counts-as-dita
       claim:
         integrity: sha256-c35aa4a012527cb4fcb74e6a31ef2036da7f4a642152091d50c0714c5a7b3fdf
@@ -139,9 +139,9 @@ docs/src/content/docs/meta/reference/formats.mdx:
         integrity: sha256-b11967d1d4364e181bd5c49e73c73a213fb849e84fec88aefb0deec5a01f27d6
       source:
         file: src/meta/extractors/xml-read.ts
-        lines: 383-390
+        lines: 405-412
         integrity: sha256-4d707201f820a9c67e679bbf364d655e00b364f24e062b8a8b05adfebbbc945c
-        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+        commit-sha: 0d47b00a02406b65645eee9a12d8f91393dc9076
     - id: formats-elements-are-read-too
       claim:
         integrity: sha256-1b0820e94b6aff7cb972ed7480cdb378cbfe86e01fbe7a5c808e26ac4245ebc4
@@ -155,9 +155,9 @@ docs/src/content/docs/meta/reference/formats.mdx:
         integrity: sha256-0be6abf563c347d5e6a9fedb2ff4299d57c1290abd49d940e87a4a7112b5ff25
       source:
         file: src/meta/extractors/xml-read.ts
-        lines: 254-262
+        lines: 246-254
         integrity: sha256-0f951776c330ada6aa774ad6b1b5049f494a2f6aac12a7e5ea1363f1e769071c
-        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+        commit-sha: 0d47b00a02406b65645eee9a12d8f91393dc9076
     - id: formats-dita-read-by-the-xml-extractor
       claim:
         integrity: sha256-82a6493db8a551738014108a6b9c7cfeba664af8a7b3843d17f351eb3625a0fd
@@ -358,10 +358,10 @@ docs/src/content/docs/meta/reference/formats.mdx:
     - id: formats-row-html
       claim:
         lines: 19
-        integrity: sha256-f712dabce59b42936333de85aee30a18909e7ca8284b7342b1e9223f1c900754
+        integrity: sha256-e5983b3cdf9ab83928509769017fae5dd0c57f8bb635b4b444ce3a5771c0cb16
       source:
         file: src/meta/extractors/html.ts
-        lines: 26-39
+        lines: 26-40
         integrity: sha256-08d0d40944aa90634757577da5f15227352cdb407aecb7b800bcc35841adf668
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: formats-row-xml

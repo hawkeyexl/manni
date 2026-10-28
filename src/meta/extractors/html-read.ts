@@ -17,6 +17,7 @@ import {
   parseElementPath,
   type ElementPath,
 } from "./element-key.js";
+import { isFlare, isXhtml, parseXhtml } from "../../shared/xhtml.js";
 import type { ExtractOptions } from "../types.js";
 
 export type Element = DefaultTreeAdapterMap["element"];
@@ -44,6 +45,13 @@ export interface HtmlRead {
   sources: Map<string, HtmlSource>;
   /** The `<head>` element, or undefined when the document has none. */
   head: Element | undefined;
+  /** The page is XHTML (proposal 0125), so a write must leave it well-formed XML. */
+  xhtml: boolean;
+}
+
+/** `readHtml`'s options: extraction's, and the path a Flare title falls back to. */
+export interface HtmlReadOptions extends ExtractOptions {
+  filePath?: string;
 }
 
 /** Parse a raw value as a YAML scalar, falling back to the string. */
@@ -131,6 +139,46 @@ function liftableHeadChildren(
   return out;
 }
 
+/** All descendant text, whitespace collapsed and trimmed. */
+function flatText(node: DefaultTreeAdapterMap["parentNode"]): string {
+  let text = "";
+  const walk = (n: DefaultTreeAdapterMap["childNode"]): void => {
+    if (defaultTreeAdapter.isTextNode(n)) text += n.value;
+    else if (defaultTreeAdapter.isElementNode(n)) n.childNodes.forEach(walk);
+  };
+  node.childNodes.forEach(walk);
+  return text.replace(/\s+/g, " ").trim();
+}
+
+/** The first `h1`–`h6` in document order. */
+function firstHeading(node: DefaultTreeAdapterMap["parentNode"]): Element | undefined {
+  for (const child of node.childNodes) {
+    if (!defaultTreeAdapter.isElementNode(child)) continue;
+    if (/^h[1-6]$/.test(child.tagName)) return child;
+    const found = firstHeading(child);
+    if (found) return found;
+  }
+  return undefined;
+}
+
+/**
+ * The title Flare shows for a topic whose `<title>` is empty (proposal 0125,
+ * decision 5): its first heading's text, else the file name without its
+ * extension. Undefined when neither is there.
+ */
+function flareTitle(
+  doc: DefaultTreeAdapterMap["document"],
+  filePath: string | undefined,
+): string | undefined {
+  const heading = firstHeading(doc);
+  const text = heading ? flatText(heading) : "";
+  if (text !== "") return text;
+  // Standard input has no file name: "-" or load-files' `<stdin>` label.
+  if (filePath === "-" || filePath === "<stdin>") return undefined;
+  const stem = filePath?.replace(/^.*[\\/]/, "").replace(/\.[^.]*$/, "");
+  return stem === "" ? undefined : stem;
+}
+
 /** Every element a config path selects, walked down the child axis. */
 function matchHtmlPath(
   doc: DefaultTreeAdapterMap["document"],
@@ -161,7 +209,7 @@ function matchHtmlPath(
 /** Read metadata, positions, and per-key provenance from HTML source. */
 export function readHtml(
   source: string,
-  options?: ExtractOptions,
+  options?: HtmlReadOptions,
 ): HtmlRead {
   // A BOM is invisible in an editor, so letting the parser count it as a
   // character puts every caret on line 1 one column to the right of what the
@@ -178,7 +226,12 @@ export function readHtml(
   // deletes no line. `body` is returned so a caller that splices — the writer —
   // measures against the same text these positions describe.
   const body = source.charCodeAt(0) === 0xfeff ? source.slice(1) : source;
-  const doc = parse(body, { sourceCodeLocationInfo: true });
+  // An XHTML page is parsed so that a self-closed element holds nothing, as
+  // an XML parser reads it. Every location still indexes into `body`.
+  const xhtml = isXhtml(body);
+  const doc = xhtml
+    ? parseXhtml(body)
+    : parse(body, { sourceCodeLocationInfo: true });
 
   const data: Record<string, unknown> = {};
   const lineMap = new Map<string, number>();
@@ -246,6 +299,19 @@ export function readHtml(
 
   for (const child of doc.childNodes) visit(child);
 
+  // Flare leaves a topic's <title> empty and shows its first heading instead.
+  // The source stays the <title> element, so a write fills it.
+  const titleSource = sources.get("title");
+  if (
+    titleSource?.kind === "title" &&
+    typeof data.title === "string" &&
+    data.title.trim() === "" &&
+    isFlare(body)
+  ) {
+    const title = flareTitle(doc, options?.filePath);
+    if (title !== undefined) data.title = title;
+  }
+
   // Element-derived metadata, lifted from `<head>` only. The body is prose, and
   // an SVG `<title>` down in it labels a graphic rather than the page — which is
   // also why this walks `head` directly instead of reusing the visitor above.
@@ -298,5 +364,5 @@ export function readHtml(
     if (location?.startCol != null) colMap.set(pointer, location.startCol);
   }
 
-  return { data, body, lineMap, colMap, sources, head };
+  return { data, body, lineMap, colMap, sources, head, xhtml };
 }

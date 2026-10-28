@@ -400,6 +400,16 @@ describe("HTML dl", () => {
     });
   });
 
+  it("reads an XHTML page whose self-closed <script /> would swallow the body as HTML", () => {
+    // Proposal 0125: HTML5 parsing reads `<script />` as an open script and
+    // the rest of the file as its text. Parsed as XHTML, it holds nothing.
+    const read = reader("html-dl").read(inputFor("html/xhtml.html", "html"));
+    expect(read.terms.map((t) => [t.id, t.record])).toEqual([
+      ["pal", { label: "progressive lens", definition: "Corrective lenses whose power increases." }],
+    ]);
+    expect(read.notices).toEqual([]);
+  });
+
   it("reads nothing from a page that does not declare type: term-set", () => {
     expect(reader("html-dl").read(inputFor("html/not-term-set.html", "html"))).toEqual(EMPTY);
   });

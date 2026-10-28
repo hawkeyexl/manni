@@ -111,9 +111,9 @@ docs/src/content/docs/meta/reference/element-metadata.mdx:
         integrity: sha256-0447d42b596a5de48eda431c4a650937dc0a2c095a1b5c847fe1f1605af52ae5
       source:
         file: src/meta/extractors/xml-read.ts
-        lines: 398-403
+        lines: 420-425
         integrity: sha256-6dd5e2a18d51390cdca0273cf72777ff0048c5d982aa6ceaa39e2bb8244427fb
-        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+        commit-sha: 0d47b00a02406b65645eee9a12d8f91393dc9076
     - id: element-key-is-derived-never-spelled
       claim:
         integrity: sha256-a0b77f94aae095b14a30667a1388605e131a31ad36c19cb6f60e97de1dd2b58e
@@ -135,9 +135,9 @@ docs/src/content/docs/meta/reference/element-metadata.mdx:
         integrity: sha256-df232bf36273c34d162b68a712617a48a8268f4315ec3102d90f9279020f3b19
       source:
         file: src/meta/extractors/xml-read.ts
-        lines: 317-322
+        lines: 339-344
         integrity: sha256-471503c5e887be984910f568f79c9a4f752b66b4efe61f92452b16ec06d17193
-        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+        commit-sha: 0d47b00a02406b65645eee9a12d8f91393dc9076
     - id: element-every-occurrence-survives
       claim:
         integrity: sha256-742557522076099f182d7d710e42035ec946e6993a9c8f81246b1d7cc28a371b
@@ -152,9 +152,9 @@ docs/src/content/docs/meta/reference/element-metadata.mdx:
         integrity: sha256-388daed1ca8488f4b5bafb2765c49e0918f95fcaf2d430a75eb189457ea89733
       source:
         file: src/meta/extractors/xml-read.ts
-        lines: 405-411
+        lines: 427-433
         integrity: sha256-634907b68109b91c12442c2d96cf629bea023097468b657c50f3d39c79fa8dbd
-        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+        commit-sha: 0d47b00a02406b65645eee9a12d8f91393dc9076
     - id: element-dita-key-type-is-per-key
       claim:
         lines: 120
@@ -170,26 +170,26 @@ docs/src/content/docs/meta/reference/element-metadata.mdx:
         integrity: sha256-c247d051b878e49a38bd97f040fd372dceab6e38b959af76b6facb269260c0cc
       source:
         file: src/meta/extractors/html-read.ts
-        lines: 260-265
+        lines: 326-331
         integrity: sha256-1e48a8b5ff1d4a6c9c69aa65b34bbbc2d32ecbb1725e434ff27ac01840a0122d
-        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+        commit-sha: 0d47b00a02406b65645eee9a12d8f91393dc9076
     - id: element-generic-xml-key-is-always-a-list
       claim:
         lines: 118
         integrity: sha256-cb8440991c2c84a20de8b5f8947b6df7cd2eee29f4ef1ebd18812676bf2961bd
       source:
         file: src/meta/extractors/xml-read.ts
-        lines: 332-335
+        lines: 354-357
         integrity: sha256-70ae6c55d80bb172ad97b54c68342764d1fe2e14cf9e3164be4f0959523dc7ef
-        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+        commit-sha: 0d47b00a02406b65645eee9a12d8f91393dc9076
     - id: element-content-model-decides-cardinality
       claim:
         integrity: sha256-6c11184ce9f323723863f4552737d00c6e2a2fdc5d8751599ced5133c89cf071
       source:
         file: src/meta/extractors/html-read.ts
-        lines: 74-81
+        lines: 82-89
         integrity: sha256-fd56ca41312c6f748ae7d469ade9214068914c7459c8e9f1110c78a71b204c4e
-        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+        commit-sha: 0d47b00a02406b65645eee9a12d8f91393dc9076
     - id: element-dita-and-html-escape-the-list-default
       claim:
         lines: 97-100
@@ -205,33 +205,33 @@ docs/src/content/docs/meta/reference/element-metadata.mdx:
         integrity: sha256-c72bbb88c969fff8e79c6480f4e859c53034f3abce2d9f70f7f4f3ffdda47b19
       source:
         file: src/meta/extractors/html-read.ts
-        lines: 260-263
+        lines: 326-329
         integrity: sha256-a3861a459746aad32d8ad195d67502c1726be238cc8958c9b3b506c18d560a92
-        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+        commit-sha: 0d47b00a02406b65645eee9a12d8f91393dc9076
     - id: element-maxitems-1-says-exactly-one
       claim:
         integrity: sha256-61741b0e5e7d69d8a4c4ac4a5e013e1fdc5f529dab3813ec60d54ff12af5c0fc
       source:
         file: src/meta/extractors/xml-read.ts
-        lines: 323-335
+        lines: 345-357
         integrity: sha256-1813f1ded1b001fa9d06dfee7c26fc8af945a5d6b52ced274ba8bba06dfe5e31
-        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+        commit-sha: 0d47b00a02406b65645eee9a12d8f91393dc9076
     - id: element-plain-xml-commits-to-a-list
       claim:
         integrity: sha256-2bc14624acffaa345a97fe8fec47eb11550ad7fc5e87b144d87cbc668b039c0d
       source:
         file: src/meta/extractors/xml-read.ts
-        lines: 332-335
+        lines: 354-357
         integrity: sha256-70ae6c55d80bb172ad97b54c68342764d1fe2e14cf9e3164be4f0959523dc7ef
-        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+        commit-sha: 0d47b00a02406b65645eee9a12d8f91393dc9076
     - id: element-html-skips-script-and-style
       claim:
         integrity: sha256-3c207b7dee52556243ed0ff3ac57bbc8cd196c55175b97f084d19116e99e36c4
       source:
         file: src/meta/extractors/html-read.ts
-        lines: 65-72
+        lines: 73-80
         integrity: sha256-7b62a35a392a300349f5b5ad16ec2619b12169787c61b780ecbcb930231a9de3
-        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+        commit-sha: 0d47b00a02406b65645eee9a12d8f91393dc9076
     - id: element-two-exclusions
       claim:
         lines: 55-59
@@ -273,9 +273,9 @@ docs/src/content/docs/meta/reference/element-metadata.mdx:
         integrity: sha256-0b0b22f4c548ec17f3c615d8c26f933245ada8cdedffebd2efc157a4c0e14d3a
       source:
         file: src/meta/extractors/html-read.ts
-        lines: 101-109
+        lines: 109-117
         integrity: sha256-c410da37d39ff5e4144ec71a2d1b6b4f3de10b0362f51bc198679017721e3868
-        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+        commit-sha: 0d47b00a02406b65645eee9a12d8f91393dc9076
     - id: element-region-generic-xml
       claim:
         lines: 46

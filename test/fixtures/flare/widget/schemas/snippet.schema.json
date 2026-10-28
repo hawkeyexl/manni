@@ -1,0 +1,6 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "A Flare snippet",
+  "description": "A snippet is a fragment of a topic, so it is held to no page contract.",
+  "type": "object"
+}

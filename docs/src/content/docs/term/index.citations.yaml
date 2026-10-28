@@ -75,9 +75,9 @@ docs/src/content/docs/term/index.mdx:
         integrity: sha256-a3db65edb841d466f99e6e06821f2999933b53c02ac7c1cb8d7ea8fd73224c8d
       source:
         file: src/term/core/readers/html.ts
-        lines: 104
-        integrity: sha256-081c3c44063c0442c4ddbb156acd915e2c9c533977d3b68415f80c0fa6142f38
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        lines: 107-108
+        integrity: sha256-99f4c3112128fcbf8d8b4397558d2e94a25aaeec6ba89157e7dcfb157e1a4d39
+        commit-sha: 0d47b00a02406b65645eee9a12d8f91393dc9076
     - id: list-row-shape
       claim:
         lines: 33

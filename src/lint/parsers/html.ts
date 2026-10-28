@@ -28,6 +28,7 @@
 import { defaultTreeAdapter, parse } from "parse5";
 import type { DefaultTreeAdapterTypes } from "parse5";
 import { extractFrontmatter, extractorForExtension } from "../../meta/index.js";
+import { isFlare, isXhtml, parseXhtml } from "../../shared/xhtml.js";
 import type {
   AdmonitionNode,
   BlockquoteNode,
@@ -701,9 +702,24 @@ class HeadingIds {
 }
 
 /**
- * Every `<a href>` and `<area href>`, in document order - and nothing else
- * that carries an `href`. `<link rel="stylesheet">` and `<base>` name
- * resources and a URL base, not places a reader can go.
+ * The elements that link, and the attribute each names its target in. A
+ * MadCap Flare cross-reference and snippet include are links like `<a>`, so a
+ * broken include is a broken link (proposal 0125). parse5 lowercases the
+ * prefixed names Flare writes, `MadCap:snippetBlock` among them.
+ */
+const LINK_ATTRS = new Map([
+  ["a", "href"],
+  ["area", "href"],
+  ["madcap:xref", "href"],
+  ["madcap:snippetblock", "src"],
+  ["madcap:snippettext", "src"],
+]);
+
+/**
+ * Every `<a href>` and `<area href>`, and every MadCap xref and snippet
+ * reference, in document order - and nothing else that carries an `href`.
+ * `<link rel="stylesheet">` and `<base>` name resources and a URL base, not
+ * places a reader can go.
  *
  * A heading's self-permalink is left out: Sphinx, MkDocs and Docusaurus append
  * `<a href="#install">¶</a>` to every heading, and a graph that kept them would
@@ -721,9 +737,10 @@ function collectLinks(
   for (const child of parent.childNodes) {
     if (!defaultTreeAdapter.isElementNode(child)) continue;
     const tag = tagOf(child);
-    if (tag === "a" || tag === "area") {
-      const href = attrOf(child, "href");
-      const permalink = heading !== undefined && href === `#${heading}`;
+    const attr = LINK_ATTRS.get(tag);
+    if (attr !== undefined) {
+      const href = attrOf(child, attr);
+      const permalink = (tag === "a" || tag === "area") && heading !== undefined && href === `#${heading}`;
       if (href !== undefined && !permalink) out.push({ target: href, position: positionOf(child) });
     }
     collectLinks(child, ids, HEADING_LEVELS.has(tag) ? ids.get(child) : heading, out);
@@ -813,8 +830,22 @@ function findHead(doc: DefaultTreeAdapterTypes.Document): Element | undefined {
   return undefined;
 }
 
+/**
+ * True when a Flare page's `<title>` is empty or missing. meta then reads the
+ * page's title from its first heading or its file name, as Flare does. That
+ * title is derived, not written, so it stands in for no H1.
+ */
+function derivedFlareTitle(content: string, doc: DefaultTreeAdapterTypes.Document): boolean {
+  if (!isFlare(content)) return false;
+  const head = findHead(doc);
+  const title = head ? firstElementChild(head, "title") : undefined;
+  return title === undefined || flatText(title) === "";
+}
+
 function parseHtml(content: string, filePath: string): DocumentTree {
-  const doc = parse(content, { sourceCodeLocationInfo: true });
+  // An XHTML page, a Flare topic among them, nests as an XML parser reads it:
+  // a self-closed element holds nothing (proposal 0125).
+  const doc = isXhtml(content) ? parseXhtml(content) : parse(content, { sourceCodeLocationInfo: true });
   const fragments: Fragment[] = [];
   const ids = new HeadingIds();
   walk(doc, fragments, ids);
@@ -829,7 +860,7 @@ function parseHtml(content: string, filePath: string): DocumentTree {
     frontmatter,
     frontmatterPosition: position,
     sections: sectionize(
-      withMetadataTitle(fragments, frontmatter, position),
+      withMetadataTitle(fragments, derivedFlareTitle(content, doc) ? null : frontmatter, position),
       documentEnd(content),
     ),
     links,
@@ -853,6 +884,6 @@ export const htmlParser = {
     "definitionList",
     "definitionItem",
   ],
-  extensions: [".html", ".htm"],
+  extensions: [".html", ".htm", ".flsnp"],
   parse: parseHtml,
 } satisfies DocumentParser;

@@ -6,7 +6,7 @@ id: lint-reference-cli
 language: en
 lifecycle: published
 action: remember
-last-updated: 2026-10-20
+last-updated: 2026-10-28
 ---
 
 import { Aside } from '@astrojs/starlight/components';
@@ -359,7 +359,7 @@ Jobs:
     formats:
       markdown  Markdown (.md, .markdown)  kinds: paragraph, codeBlock, list, table, admonition, image, blockquote
       mdx  MDX (.mdx)  kinds: paragraph, codeBlock, list, table, admonition, image, blockquote, element
-      html  HTML (.html, .htm)  kinds: paragraph, codeBlock, list, table, admonition, image, blockquote, definitionList
+      html  HTML (.html, .htm, .flsnp)  kinds: paragraph, codeBlock, list, table, admonition, image, blockquote, definitionList
       asciidoc  AsciiDoc (.adoc, .asciidoc)  kinds: paragraph, codeBlock, list, table, admonition, image, blockquote, definitionList
       rst  reStructuredText (.rst)  kinds: paragraph, codeBlock, list, table, admonition, image, blockquote, definitionList
       xml  XML (.xml, .dita, .ditamap)  kinds: paragraph, codeBlock, list, table, admonition, image, blockquote, definitionList
@@ -799,7 +799,7 @@ manni lint templates infer page.md -f pretty
 # manni: Unknown --format "pretty". Use yaml or json.
 
 manni lint templates infer notes.txt
-# manni: no parser is registered for ".txt". Supported extensions: .md, .markdown, .mdx, .html, .htm, .adoc, .asciidoc, .rst, .dita, .ditamap. Use --as to override.
+# manni: no parser is registered for ".txt". Supported extensions: .md, .markdown, .mdx, .html, .htm, .flsnp, .adoc, .asciidoc, .rst, .dita, .ditamap. Use --as to override.
 
 cat page.md | manni lint templates infer -
 # manni: Reading from stdin (-) requires --as <format> to choose a parser.

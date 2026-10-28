@@ -1,0 +1,73 @@
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+@prefix graph: <https://hawkeyexl.github.io/manni/graph/ns#> .
+@prefix iirds: <http://iirds.tekom.de/iirds#> .
+@prefix iirdsSft: <http://iirds.tekom.de/iirds/domain/software#> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix schema: <https://schema.org/> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+<https://example.com/flare/activity/build> a prov:Activity ;
+  prov:qualifiedAssociation <https://example.com/flare/activity/build.assoc.manni> ;
+  prov:used <https://example.com/flare/doc/Configure.htm>, <https://example.com/flare/doc/Install.htm>, <https://example.com/flare/doc/Snippets/BeforeYouStart.flsnp> ;
+  prov:wasAssociatedWith <https://example.com/flare/agent/software/manni> .
+
+<https://example.com/flare/activity/build.assoc.manni> a prov:Association ;
+  prov:agent <https://example.com/flare/agent/software/manni> ;
+  prov:hadRole graph:toolRole .
+
+<https://example.com/flare/agent/software/manni> a prov:SoftwareAgent ;
+  foaf:name "manni" ;
+  graph:version "4.26.1" .
+
+<https://example.com/flare/doc/Configure.htm> a prov:Entity, graph:Document ;
+  dcterms:hasPart <https://example.com/flare/doc/Configure.htm#configuring-the-widget> ;
+  dcterms:title "Configuring the widget" ;
+  graph:contentHash "92797e23830994f7679a2b692e272f54cbc1f9be5135b6c0e31eab7e7afbbd3e" ;
+  graph:path "Configure.htm" .
+
+<https://example.com/flare/doc/Configure.htm#configuring-the-widget> a graph:Section ;
+  dcterms:hasPart <https://example.com/flare/doc/Configure.htm#options> ;
+  dcterms:title "Configuring the widget" ;
+  graph:level 1 ;
+  graph:order 1 .
+
+<https://example.com/flare/doc/Configure.htm#options> a graph:Section ;
+  dcterms:title "Options" ;
+  graph:level 2 ;
+  graph:order 1 .
+
+<https://example.com/flare/doc/Install.htm> a prov:Entity, graph:Document ;
+  dcterms:description "How to install the widget." ;
+  dcterms:hasPart <https://example.com/flare/doc/Install.htm#installing-the-widget> ;
+  dcterms:references <https://example.com/flare/doc/Configure.htm#options>, <https://example.com/flare/doc/Snippets/BeforeYouStart.flsnp> ;
+  dcterms:title "Installing the widget" ;
+  graph:brokenLink "Configur.htm" ;
+  graph:contentHash "13b0a2f8e250267b646f1ff841e23efdb19481d3b8e63336153ad6823a10eaab" ;
+  graph:path "Install.htm" .
+
+<https://example.com/flare/doc/Install.htm#installing-the-widget> a graph:Section ;
+  dcterms:hasPart <https://example.com/flare/doc/Install.htm#steps> ;
+  dcterms:title "Installing the widget" ;
+  graph:level 1 ;
+  graph:order 1 .
+
+<https://example.com/flare/doc/Install.htm#steps> a graph:Section ;
+  dcterms:title "Steps" ;
+  graph:level 2 ;
+  graph:order 1 .
+
+<https://example.com/flare/doc/Snippets/BeforeYouStart.flsnp> a prov:Entity, graph:Document ;
+  dcterms:hasPart <https://example.com/flare/doc/Snippets/BeforeYouStart.flsnp#before-you-start> ;
+  graph:contentHash "0448bdefcd849bcf0c6f0fdccc395bff74a6a36834885e5a4d9147e749313e36" ;
+  graph:path "Snippets/BeforeYouStart.flsnp" .
+
+<https://example.com/flare/doc/Snippets/BeforeYouStart.flsnp#before-you-start> a graph:Section ;
+  dcterms:title "Before you start" ;
+  graph:level 2 ;
+  graph:order 1 .
+
+<https://example.com/flare/graph> a prov:Entity ;
+  prov:wasGeneratedBy <https://example.com/flare/activity/build> .

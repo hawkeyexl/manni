@@ -19,6 +19,7 @@ import { runQuery } from "../src/meta/commands/query.js";
 import { renderDerive } from "../src/meta/reporters/derive.js";
 import { DocmetaError } from "../src/meta/types.js";
 import { markdownExtractor } from "../src/meta/extractors/markdown.js";
+import { xmlParseError } from "../src/meta/extractors/xml-read.js";
 import { hashLines } from "../src/shared/pin.js";
 import { STDIN_LINES_MARKER } from "../src/shared/run.js";
 import { parse as parseYaml } from "yaml";
@@ -159,6 +160,30 @@ describe("runDerive", () => {
     expect(
       again.results.flatMap((r) => r.fields.map((f) => f.status)),
     ).toEqual(Array<string>(6).fill("current"));
+  });
+
+  it("writes a Flare topic's derived fields as tags that close themselves", async () => {
+    const dir = makeTempRepo({
+      files: {
+        "manni.config.yaml":
+          'collections:\n  - name: help\n    paths: ["Content/**/*.htm"]\nmeta:\n  schemas: [./permissive.schema.json]\n  derive:\n    fields: [created]\n',
+        "permissive.schema.json": readFileSync(join(CORPUS, "permissive.schema.json"), "utf8"),
+        "Content/Configure.htm": readFileSync(
+          resolve(here, "fixtures", "flare", "meta", "topic.htm"),
+          "utf8",
+        ),
+      },
+    });
+    dirs.push(dir);
+    commit(dir, "add help", { authorDate: D1 });
+
+    const run = await runDerive({ inputs: [], cwd: dir });
+    expect(fieldsOf(run, "Content/Configure.htm").fields).toMatchObject([
+      { field: "created", derived: "2026-08-20", written: true },
+    ]);
+    const after = readFileSync(join(dir, "Content", "Configure.htm"), "utf8");
+    expect(after).toContain('<meta name="created" content="2026-08-20" />');
+    expect(xmlParseError(after)).toBeUndefined();
   });
 
   it("--dry-run reports what would change and writes nothing", async () => {
