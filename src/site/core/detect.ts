@@ -163,6 +163,9 @@ const flprjIn = (s: Site): string | null => {
 function flare(s: Site, ctx: FrameworkContext): { build?: Cmd; out?: string } {
   if (ctx.verb === "start") return {};
   const { flprj, targets } = projectTargets(s.dir);
+  if (targets.length === 0) {
+    throw new SiteError(`${flprj} has no targets, so there is nothing to build. Add a target in Flare.`);
+  }
   const tools = ctx.config.tools;
   // Several targets and none named reads elsewhere as every condition included; a build needs one.
   const target =

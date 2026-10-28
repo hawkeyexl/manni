@@ -123,6 +123,8 @@ function handler(root: string, base: string) {
       return;
     }
     // Flare's HTML5 output starts at Default.htm, in a folder with no index.html.
+    // The other frameworks served here write index.html in every directory, so
+    // in practice the fallback is Flare's alone; nothing gates it by framework.
     let file = path;
     if (path !== undefined && kind === "dir") {
       const index = join(path, "index.html");

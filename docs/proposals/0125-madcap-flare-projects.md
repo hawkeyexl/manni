@@ -634,6 +634,7 @@ Refusing to write "concepts": <file> reads them from its MadCap:glossaryTerm mar
 <path> is a Flare meta tag set, which manni reads and never writes.
 <file> is HTML, so its evals live in a manifest. Give its collection an externalMetadata entry that owns evals.
 <flprj> has <n> targets. Name the one to build with tools.flare.target.
+<flprj> has no targets, so there is nothing to build. Add a target in Flare.
 madbuild was not found. Install MadCap Flare, or set tools.flare.home to the folder that holds madbuild.exe.
 Flare has no development server. Run manni site build, then manni site preview.
 No Flare output at <out>. Run manni site build first.

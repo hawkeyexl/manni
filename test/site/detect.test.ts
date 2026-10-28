@@ -11,6 +11,7 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { detectFramework, resolveAnnotateSite, resolvePlan } from "../../src/site/core/detect.js";
+import { FlareError } from "../../src/shared/flare/index.js";
 import type { MadbuildHost } from "../../src/shared/flare/madbuild.js";
 import { SiteError } from "../../src/site/errors.js";
 import type { Plan, Step, Verb } from "../../src/site/types.js";
@@ -612,11 +613,20 @@ describe("Flare (proposal 0125, decision 22)", () => {
     );
   });
 
+  it("refuses a project with no targets, without asking for a name", () => {
+    const dir = site("flare-no-targets");
+    expect(error(() => plan("build", dir, { flareHost: onPath }))).toBe(
+      "Widget.flprj has no targets, so there is nothing to build. Add a target in Flare.",
+    );
+  });
+
+  // The project's own refusal, which lint and graph print too: a FlareError, exit 2 like a SiteError.
   it("refuses a named target the project does not have", () => {
     const dir = site("flare", { files: target("Web") });
     expect(() => plan("build", dir, { flareHost: onPath })).toThrow(
-      'tools.flare.target "Web" names no target in Widget.flprj. Its targets are HTML5 and Print.',
+      new FlareError('tools.flare.target "Web" names no target in Widget.flprj. Its targets are HTML5 and Print.'),
     );
+    expect(() => plan("build", dir, { flareHost: onPath })).toThrow(FlareError);
   });
 
   describe("finding madbuild", () => {
