@@ -35,6 +35,7 @@ import { beats as checkImpactBeats, totalFrames as checkImpactTotalFrames, TYPIN
 import { beats as pluginRecordsBeats, totalFrames as pluginRecordsTotalFrames, TYPING_MS as pluginRecordsTypingMs } from "./plugin-records/beats";
 import { beats as graphAuthoringBeats, totalFrames as graphAuthoringTotalFrames, TYPING_MS as graphAuthoringTypingMs } from "./graph-authoring/beats";
 import { beats as strategySharedBeats, totalFrames as strategySharedTotalFrames, TYPING_MS as strategySharedTypingMs } from "./strategy-shared/beats";
+import { beats as flareBeats, totalFrames as flareTotalFrames, TYPING_MS as flareTypingMs } from "./flare/beats";
 
 /** sidecar-url-1x1: 23 px / 75 columns, derived in media/sidecar-url-1x1.script.md. */
 const DemoUrl: React.FC = () => <DemoView beats={urlBeats} fontPx={23} linePx={32} cols={75} />;
@@ -121,6 +122,12 @@ const DemoSystemPrompt: React.FC = () => <DemoView beats={systemPromptBeats} fon
  * (media/capture-tbx/cols.mjs). Ligatures off: the TBX tags' `</` and `/>` would draw as one glyph.
  */
 const DemoTbx: React.FC = () => <DemoView beats={tbxBeats} fontPx={22} linePx={31} cols={78} typingMs={tbxTypingMs} ligatures={false} />;
+
+/**
+ * flare-topics-1x1: 21 px / 82 columns, derived in media/flare-topics-1x1.script.md
+ * (media/capture-flare/cols.mjs). Ligatures off: the XHTML tags' `</` and `/>` would draw as one glyph.
+ */
+const DemoFlare: React.FC = () => <DemoView beats={flareBeats} fontPx={21} linePx={29} cols={82} typingMs={flareTypingMs} ligatures={false} />;
 
 /**
  * concept-lifecycle-1x1: 23 px / 75 columns, derived in media/concept-lifecycle-1x1.script.md
@@ -504,6 +511,14 @@ export const Root: React.FC = () => (
       height={1080}
       fps={FPS}
       durationInFrames={strategySharedTotalFrames}
+    />
+    <Composition
+      id="FlareTopicsDemo"
+      component={DemoFlare}
+      width={1080}
+      height={1080}
+      fps={FPS}
+      durationInFrames={flareTotalFrames}
     />
   </>
 );

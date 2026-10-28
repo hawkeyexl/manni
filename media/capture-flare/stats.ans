@@ -1,0 +1,41 @@
+Triples:    88
+Documents:  3
+Sections:   5
+Concepts:   0
+References: 2
+
+Most connected:
+  Content/Topics/Install.htm (2)
+  Content/Resources/Snippets/BeforeYouStart.flsnp (1)
+  Content/Topics/Configure.htm (1)
+
+Orphan docs (0):
+  (none)
+
+Broken internal links (1):
+  Content/Topics/Install.htm -> Configur.htm
+
+Broken section refs (0):
+  (none)
+
+Coverage (documents):
+  title                    2/3  66.7%
+  description              2/3  66.7%
+  creator                  3/3  100.0%
+  created                  3/3  100.0%
+  modified                 3/3  100.0%
+  subject                  0/3  0.0%
+  label                    0/3  0.0%
+  language                 0/3  0.0%
+  type                     0/3  0.0%
+  applies-to               0/3  0.0%
+  about-product-lifecycle  0/3  0.0%
+  about-product-aspect     0/3  0.0%
+  sample-questions         0/3  0.0%
+
+Coverage (sections, not gated):
+  type                     0/5  0.0%
+  applies-to               0/5  0.0%
+  about-product-lifecycle  0/5  0.0%
+  about-product-aspect     0/5  0.0%
+  subject                  0/5  0.0%

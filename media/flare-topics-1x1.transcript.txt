@@ -1,0 +1,61 @@
+manni and MadCap Flare topics, demo video transcript (silent video; text describes what is on screen)
+
+Frame: 1080x1080, 30 fps, 43.4 s. Every terminal line is real output of grep, git, echo and of
+`node dist/cli.js ...` (typed as manni) run in C:\flare, a directory junction to media/scratch-flare-topics/,
+a git repository holding test/fixtures/flare/widget/ unchanged, built by media/capture-flare/capture.sh.
+
+[0:00-0:09] Title: A MadCap Flare topic (1 / 4)
+$ grep -E '<title>|<h1>' Content/Topics/Configure.htm
+        <title></title>
+        <h1>Configuring the widget</h1>
+$ grep xref Content/Topics/Install.htm
+            <li>See <MadCap:xref href="Configur.htm">Configuring the widget</MadCap:xref>.</li>
+Highlighted rows: lines containing "<title></title>", "href=\"Configur.htm\""
+Caption: Flare writes an empty <title> as standard. Install.htm links to Configure.htm, misspelled Configur.htm.
+
+[0:09-0:19] Title: The title is the h1 (2 / 4)
+$ manni meta get title Content/Topics/Configure.htm
+Using manni.config.yaml (.)
+Content/Topics/Configure.htm: title=Configuring the widget (asserted)
+$ manni meta validate; echo $?
+Using manni.config.yaml (.)
+✓ Content/Resources/Snippets/BeforeYouStart.flsnp   (green)
+✗ Content/Topics/Configure.htm   (red)
+    (root)  must have required property 'description'  (line 1)  [manni:core:1.0.0]
+      manni:core:1.0.0 description: One full non-empty sentence saying what the page is for.
+      Guide: https://hawkeyexl.github.io/manni/meta/reference/schemas/manni-core/
+✓ Content/Topics/Install.htm   (green)
+
+3 files checked, 2 passed, 1 failed, 1 error   (red)
+1
+Highlighted rows: lines containing "title=Configuring the widget", "must have required property"
+Caption: The empty title reads as the h1, as Flare shows it. Only description fails: exit 1.
+
+[0:19-0:31] Title: A write that closes its tags (3 / 4)
+$ manni meta query "UPDATE docs SET description = 'How to set the widget''s options.' WHERE _path = 'Content/Topics/Configure.htm'"
+Using manni.config.yaml (.)
+Content/Topics/Configure.htm: description: (unset) -> How to set the widget's options.
+✓ 1 change across 1 file — written   (green)
+$ git diff -U1
+diff --git a/Content/Topics/Configure.htm b/Content/Topics/Configure.htm
+index e45a073..ce3d324 100644
+--- a/Content/Topics/Configure.htm
++++ b/Content/Topics/Configure.htm
+@@ -3,2 +3,3 @@
+     <head>
++        <meta name="description" content="How to set the widget's options." />   (green, an added line)
+         <title></title>
+Highlighted rows: lines containing "<meta name=\"description\""
+Caption: query writes the description. The new <meta> closes itself, so the topic is still well-formed XML.
+
+[0:31-0:43] Title: The broken xref, found (4 / 4)
+$ manni graph build
+Wrote C:\flare\graph\graph.ttl (3 docs, 88 triples, 0 concepts)
+$ manni graph stats --check > stats.txt; echo $?
+1
+$ grep -A1 "internal links" stats.txt
+Broken internal links (1):
+  Content/Topics/Install.htm -> Configur.htm
+Highlighted rows: lines containing "-> Configur.htm"
+Caption: graph reads MadCap:xref as a link. stats --check reports Configur.htm as broken and exits 1.
+

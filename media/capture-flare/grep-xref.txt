@@ -1,0 +1,1 @@
+            <li>See <MadCap:xref href="Configur.htm">Configuring the widget</MadCap:xref>.</li>
