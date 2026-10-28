@@ -166,3 +166,11 @@ describe("a list tag with no values (review on #259)", () => {
     expect(schema.properties["Spaces"]).toEqual({ type: "string" });
   });
 });
+
+describe("a set's tags are the root's own children (review on #259)", () => {
+  it("leaves out a meta element nested deeper", () => {
+    const set = '<?xml version="1.0" encoding="utf-8"?>\n<CatapultMetaTagSet name="Nested">\n  <meta name="Status" content="" type="Text" />\n  <group>\n    <meta name="Stray" content="" type="Text" />\n  </group>\n</CatapultMetaTagSet>\n';
+    const schema = flareMetaSchema(set, "./Nested.flmeta") as { properties: Record<string, unknown> };
+    expect(Object.keys(schema.properties)).toEqual(["Status"]);
+  });
+});
