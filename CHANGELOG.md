@@ -4,6 +4,13 @@
 4.13.1. Entries below that version are docmeta releases; the repository
 history is the same one.
 
+## [4.26.2](https://github.com/hawkeyexl/manni/compare/v4.26.1...v4.26.2) (2026-10-28)
+
+
+### Bug Fixes
+
+* **family:** skip docevals where no collection member is a page it reads ([#255](https://github.com/hawkeyexl/manni/issues/255)) ([801dbe7](https://github.com/hawkeyexl/manni/commit/801dbe750fcc54efeaf9c9091571665fd1d54eb1))
+
 ## [4.26.1](https://github.com/hawkeyexl/manni/compare/v4.26.0...v4.26.1) (2026-10-25)
 
 

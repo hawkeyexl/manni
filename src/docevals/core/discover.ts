@@ -287,9 +287,12 @@ export function discoverPages(
     .sort()
     .map((p) => readPage(resolve(p), root))
     .filter((page) => !isStrategyRecord(page));
+  // No page read means none resolves an eval. A collection of `.htm` topics
+  // is that, so the family reads the code as docevals not being set up.
   if (pages.length === 0) {
     throw new DocevalsError(
       `No documentation pages found (patterns: ${patterns.join(", ")})`,
+      "nothing-resolved",
     );
   }
   return pages;

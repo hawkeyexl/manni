@@ -2,7 +2,7 @@ docs/src/content/docs/meta/set-up/index.mdx:
   citations:
     - id: validate-exits-0-or-1
       claim:
-        lines: 77
+        lines: 79
         integrity: sha256-1df6fe82622726ef405b596435a08f4d2aba5a51901a3b3ba1ea0ec47041fba6
       source:
         file: src/meta/cli.ts
@@ -11,7 +11,7 @@ docs/src/content/docs/meta/set-up/index.mdx:
         commit-sha: 0d3d8a74bd17fce503520bb2313a412ca60aeeca
     - id: github-format-emits-annotations
       claim:
-        lines: 77
+        lines: 79
         integrity: sha256-1df6fe82622726ef405b596435a08f4d2aba5a51901a3b3ba1ea0ec47041fba6
       source:
         file: src/meta/reporters/index.ts
@@ -20,7 +20,7 @@ docs/src/content/docs/meta/set-up/index.mdx:
         commit-sha: cb74827009894c38f8646504ae9eb4a2745761a9
     - id: no-paths-no-config-exits-2
       claim:
-        lines: 72
+        lines: 74
         integrity: sha256-0a46ee5ce50526220582cbb1b40c4e9cfb1cb51b4b85ca7ee52b68094f53fe1b
       source:
         file: src/shared/run.ts
@@ -29,7 +29,7 @@ docs/src/content/docs/meta/set-up/index.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: no-files-message-names-paths-or-collections
       claim:
-        lines: 72
+        lines: 74
         integrity: sha256-0a46ee5ce50526220582cbb1b40c4e9cfb1cb51b4b85ca7ee52b68094f53fe1b
       source:
         file: src/meta/commands/validate.ts
@@ -38,7 +38,7 @@ docs/src/content/docs/meta/set-up/index.mdx:
         commit-sha: cb74827009894c38f8646504ae9eb4a2745761a9
     - id: config-discovered-as-manni-config-yaml
       claim:
-        lines: 63
+        lines: 65
         integrity: sha256-00f81a6a2b4ce622955974fa78f2dd744215b21320bc02ab12844c889ed48a27
       source:
         file: src/shared/config-file.ts
@@ -47,7 +47,7 @@ docs/src/content/docs/meta/set-up/index.mdx:
         commit-sha: a589e08250dee7efaee7ed0f58df01986fad8d1d
     - id: meta-schemas-applied-from-config
       claim:
-        lines: 63
+        lines: 65
         integrity: sha256-00f81a6a2b4ce622955974fa78f2dd744215b21320bc02ab12844c889ed48a27
       source:
         file: src/meta/core/resolve-schema.ts

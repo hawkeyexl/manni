@@ -8,7 +8,7 @@ audiences:
   - contributors
 lifecycle: published
 action: troubleshoot
-last-updated: 2026-10-20
+last-updated: 2026-10-27
 ---
 
 import { Steps, Aside, CardGrid, LinkCard } from '@astrojs/starlight/components';
@@ -77,10 +77,10 @@ repository's config declares, which is what CI does.
 
 | Rule | What it means | What to do |
 | --- | --- | --- |
-| `manni:lint/structure/missing-section` | A section the template requires is absent. `Missing section "See also"` | Add the section, with the heading the message quotes, in the position the template declares. `manni lint templates show <template>` prints the whole shape in order. |
+| `manni:lint/structure/missing-section` | A section the template requires is absent. `Missing section "See also"` | Add the section, with the heading the message quotes, in the position the template declares. `npx @hawkeyexl/manni lint templates show <template>` prints the whole shape in order. |
 | `manni:lint/structure/section-order` | A section the template accepts sits in the wrong place. `Section "How it works" must come after "Use cases"` | Move the section past the one the message names. Nothing is missing, so do not add a second copy. |
 | `manni:lint/structure/missing-group` | A repeated unit is absent whole. `Missing group "cause-or-solution": expected "Cause" followed by "Solution"` | The doctype repeats a pair or a run of sections together. Add the whole unit, in the order the message lists. One finding covers the unit, so there is one thing to add. |
-| `manni:lint/structure/unexpected-section` | The page carries a section no rule took. `Unexpected section "Benchmarks". The template describes no section here, so move its content into a section it does describe, or remove it.` | Move the content into a section the template describes, or remove it. `manni lint templates show <template>` lists the sections it describes. If the template should allow the section, that is a change for the template's owner. They add a rule for it, or a trailing rule with `min: 0` and no heading. |
+| `manni:lint/structure/unexpected-section` | The page carries a section no rule took. `Unexpected section "Benchmarks". The template describes no section here, so move its content into a section it does describe, or remove it.` | Move the content into a section the template describes, or remove it. `npx @hawkeyexl/manni lint templates show <template>` lists the sections it describes. If the template should allow the section, that is a change for the template's owner. They add a rule for it, or a trailing rule with `min: 0` and no heading. |
 | `manni:lint/structure/heading` | A heading does not satisfy the rule. `Expected title "Overview", but found "Overvue"`, or `Expected one of "Next steps", "See also", but found "Onward"`, or `Expected title matching /^[Ss]ymptoms?\b/, but found "Problem"` | Fix the heading to what the message asks for. Exact text means exact text, typos and plurals included. A pattern means the wording varies but the form does not, as in `Symptom 1` and `Symptom 2`. |
 
 ### What is inside a section
@@ -204,7 +204,7 @@ the file:
 The `⚠` mark means passing, but read this. The exit code is `0`, and nothing
 about your page is wrong. Either the template asks about something this format
 cannot express, or the page is in the wrong format for its doctype. Run
-`manni lint tools` to see which kinds each format reports. This is a
+`npx @hawkeyexl/manni lint tools` to see which kinds each format reports. This is a
 repository-level conversation, not a page fix.
 
 ## Still stuck?
@@ -212,9 +212,9 @@ repository-level conversation, not a page fix.
 <Steps>
 
 1. **Ask what the template actually asks for.** Run
-   `manni lint templates show` with the template id from the finding, such as
+   `npx @hawkeyexl/manni lint templates show` with the template id from the finding, such as
    `tgdp:how-to:1.6`. It prints every section in order, how often each may
-   occur, what each must contain, and what each is for. `manni lint templates`
+   occur, what each must contain, and what each is for. `npx @hawkeyexl/manni lint templates`
    lists every template that could route a page, and where it came from.
 
 2. **Ask which config governed the run.** In `pretty` output the tool says so:

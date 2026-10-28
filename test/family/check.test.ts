@@ -92,6 +92,26 @@ describe.skipIf(!gitAvailable())("runFamilyCheck", () => {
     expect(exitCodeFor(run)).toBe(0);
   });
 
+  it("only .htm topics: docevals reads none, so it is skipped and the exit is meta's", async () => {
+    dir = fixtureRepo("only-html");
+    const skipped = { command: "docevals run", status: "skipped", message: "no page resolves any evals" };
+    const run = await runFamilyCheck({ cwd: dir, scope: { kind: "all" } });
+    expect(byCommand(run, "meta validate").status).toBe("pass");
+    expect(byCommand(run, "docevals run")).toEqual(skipped);
+    expect(exitCodeFor(run)).toBe(0);
+
+    // A hook names the one topic an agent edited.
+    const one = await runFamilyCheck({ cwd: dir, scope: { kind: "paths", paths: ["Content/index.htm"] } });
+    expect(byCommand(one, "docevals run")).toEqual(skipped);
+    expect(exitCodeFor(one)).toBe(0);
+
+    edit(dir, "Content/install.htm", (t) => t.replace(/\s*<meta name="description"[^>]*>/, ""));
+    const failing = await runFamilyCheck({ cwd: dir, scope: { kind: "all" } });
+    expect(byCommand(failing, "meta validate").status).toBe("fail");
+    expect(byCommand(failing, "docevals run")).toEqual(skipped);
+    expect(exitCodeFor(failing)).toBe(1);
+  });
+
   it("an untyped page missing description passes where meta: is absent", async () => {
     dir = fixtureRepo("only-docevals");
     const page = readFileSync(join(dir, "docs/page.md"), "utf8");

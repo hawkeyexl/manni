@@ -4,12 +4,17 @@ id: maya
 title: Maya, Documentation Engineer
 description: Maya owns a 2,000-page docs-as-code repo for a platform product.
 audience: docs-engineers
+proficiency:
+  - Markdown, YAML and Git.
+  - Reading a CI config.
 goals:
   - Every doc has correct, complete frontmatter so the search index and the content catalog stay trustworthy.
 pains:
   - Contributors omit required fields like `type`.
   - Values are fat-fingered, with `date-time` formatted incorrectly or enum values misspelled.
   - Metadata drifts as the team grows, and she has no enforcement mechanism. All she has is review fatigue.
+constraints:
+  - Wants every red build to point at a rule she can name, never at a model's verdict.
 ---
 
 Maya owns a 2,000-page docs-as-code repo for a platform product. She is comfortable with Markdown, YAML, Git, and reading a CI config. She is not a JSON Schema expert.

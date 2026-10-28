@@ -1,0 +1,5 @@
+# STANDARD.md defines required fields, but no schema enforces them yet.
+collections:
+  - name: pages
+    paths:
+      - "docs/**/*.md"
