@@ -78,6 +78,19 @@ describe("discoverPages", () => {
     );
   });
 
+  // `docevals run` over pages it cannot read checks nothing, so it is exit 2
+  // (ADR 01041). The family reads the code as "no page resolves any evals".
+  it("throws a nothing-resolved DocevalsError when every match is a page it does not read", () => {
+    let thrown: unknown;
+    try {
+      discoverPages(config, { paths: ["test/family/fixtures/only-html/Content"] }, ROOT);
+    } catch (err) {
+      thrown = err;
+    }
+    expect(thrown).toBeInstanceOf(DocevalsError);
+    expect(thrown).toMatchObject({ code: "nothing-resolved", message: expect.stringMatching(/^No documentation pages found/) });
+  });
+
   // A strategy record's `evals:` belong to `manni test tasks`, in tracevals'
   // vocabulary, so docevals reading one as page evals would refuse its graders.
   it("skips audience, persona and journey records, which are not pages", () => {

@@ -162,6 +162,18 @@ describe.skipIf(!gitAvailable())("runStatus", () => {
     expect(row?.next).toBe("Run manni docevals run to see the whole error.");
   });
 
+  it("leaves docevals not set up where no collection member is a page it reads", async () => {
+    dir = fixtureRepo("only-html");
+    const report = await runStatus({ cwd: dir });
+    expect(report.domains.find((d) => d.name === "docevals")).toEqual({
+      name: "docevals",
+      status: "not-set-up",
+      reason: "no page resolves any evals",
+      next: "Add a docevals: section, or declare evals in a page's frontmatter.",
+    });
+    expect(statusOf(report, "meta")).toBe("in-play");
+  });
+
   it("puts tracevals in play when tracevals.runtime exists, naming both models", async () => {
     dir = fixtureRepo("only-graph");
     const config = join(dir, "manni.config.yaml");
