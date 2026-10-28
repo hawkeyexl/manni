@@ -67,7 +67,8 @@ manni site [options] <command> [command options] [dir] [-- <args...>]
 ## `site start`
 
 Run the framework's dev server, with hot reload, until Ctrl-C or SIGTERM stops
-it. A stop by signal exits `0`.
+it. A stop by signal exits `0`. Flare has no development server, so `start`
+stops with exit `2` there.
 
 ```sh
 manni site start [dir] [options] [-- <args...>]
@@ -120,6 +121,10 @@ before anything is served. The serve step is the framework's own preview
 command, or the [built-in server](#the-built-in-server) for a framework that
 has none. With `site.annotate.after-build` set to `true`, `preview` annotates
 the build before it serves it.
+
+Flare is the exception. Its build is slow and runs only where Flare is
+installed, so `preview` serves the output of the last `site build` without
+building. With no output there, it exits `2`.
 
 ```sh
 manni site preview [dir] [options] [-- <args...>]
@@ -220,7 +225,8 @@ directory.
 | Jekyll | `_site` | the site's directory | `<path>.html` | none, text only |
 
 Mintlify and Fern build on their own hosts, so there is no local site to
-annotate. Nextra and Fumadocs write static pages only with
+annotate. `annotate` does not read Flare output, so it exits `2` for a Flare
+site. Nextra and Fumadocs write static pages only with
 `output: "export"` in `next.config`.
 
 ### What a page gains
@@ -325,6 +331,7 @@ needs.
 | Sphinx | `conf.py` or `source/conf.py` | `sphinx-autobuild <src> <src>/_build/html` | `sphinx-build -M html <src> <src>/_build` | the built-in server over `_build/html` | `--port` / `--host` | 8000 |
 | Hugo | `hugo.toml`, `hugo.yaml` or `hugo.json` | `hugo server` | `hugo` | the built-in server over `public/` | `--port` / `--bind` | 1313 |
 | Jekyll | `_config.yml`, with a Gemfile naming `jekyll` or `github-pages` | `jekyll serve` | `jekyll build` | the built-in server over `_site/` | `--port` / `--host` | 4000 |
+| Flare | a `.flprj` file | none | `madbuild -project <flprj> -target <target>` | the built-in server over `Output/<USERNAME>/<target>/` | none | 4321 |
 
 A dependency counts in `dependencies` or `devDependencies` of the site
 directory's `package.json`.
@@ -341,6 +348,13 @@ directory's `package.json`.
 - **Output directories.** The built-in server reads `site.out`, else the
   framework's default output directory. A custom `site_dir` or `publishDir`
   needs `site.out`.
+- **Flare.** The target is `tools.flare.target`, else the project's only
+  target. A project with several targets and none named exits `2`.
+  `madbuild` is found on `PATH`, then in the folder `tools.flare.home` names,
+  then in the newest `MadCap Flare` install under `Program Files`.
+  `USERNAME` is the account running manni, which madbuild writes into the
+  output path. The [Flare guide](/manni/family/flare/#build-and-preview-the-target)
+  walks through it.
 
 ## The port and host
 
@@ -359,7 +373,8 @@ applies to a command set in `site.commands`, and passing one is refused.
 
 ## The built-in server
 
-MkDocs, Zensical, Sphinx, Hugo and Jekyll have no preview server of their own.
+MkDocs, Zensical, Sphinx, Hugo, Jekyll and Flare have no preview server of
+their own.
 For those, `preview` serves the build output with a small static server inside
 manni.
 
@@ -368,8 +383,10 @@ manni.
   site built under `/manni/` answers there. Collections that share one local
   server mount at the path they have in common, such as `/manni/` for
   `/manni/guides/` and `/manni/api/`.
-- It serves `index.html` for a directory, and `404.html` for a missing path
-  when the output has one.
+- It serves `index.html` for a directory, else `Default.htm`, where Flare's
+  output starts. It serves `404.html` for a missing path when the output has
+  one.
+- It serves `.html` and `.htm` files as HTML.
 - It prints its URL to stdout, as `http://127.0.0.1:8000/`.
 
 ## Configuration
@@ -425,6 +442,11 @@ framework's own output, the built-in server's URL and the report of `annotate`.
 | `[dir]` has no marker | `manni: no docs framework detected in website/. Set site.commands.build in manni.config.yaml.` | `2` |
 | Two frameworks in one directory | `manni: docs/ holds more than one docs site: Docusaurus (@docusaurus/core), MkDocs (mkdocs.yml). Set site.commands.start in manni.config.yaml.` | `2` |
 | No local build (Mintlify, Fern) | `manni: Mintlify has no local build. Run manni site start, or set site.commands.build.` | `2` |
+| `start` on Flare | `manni: Flare has no development server. Run manni site build, then manni site preview.` | `2` |
+| A Flare project with several targets and none named | `manni: Widget.flprj has 2 targets. Name the one to build with tools.flare.target.` | `2` |
+| `tools.flare.target` names no target | `manni: tools.flare.target "PDF" names no target in Widget.flprj. Its targets are HTML5 and Print.` | `2` |
+| `madbuild` is not found | `manni: madbuild was not found. Install MadCap Flare, or set tools.flare.home to the folder that holds madbuild.exe.` | `2` |
+| `preview` on Flare before a build | `manni: No Flare output at Output/maya/HTML5. Run manni site build first.` | `2` |
 | The binary is not installed | `manni: mint not found on PATH. Install Mintlify's CLI, or set site.commands.start.` | `2` |
 | A runner manni adds is not installed | `manni: uv not found on PATH. Install uv, or set site.commands.start.` | `2` |
 | The binary cannot start | `manni: hugo could not start: spawn EACCES` | `2` |
@@ -465,6 +487,7 @@ spaces, and names the built page relative to the output.
 | An artifact from another graph | `manni: docs/public/graph/chunks.json was built from another graph; run manni graph publish.` | `2` |
 | A Nextra or Fumadocs server build | `manni: docs/out does not exist. Nextra writes static pages only with output: "export" in next.config.` | `2` |
 | Mintlify or Fern | `manni: Mintlify builds on its own host, so there is no local site to annotate.` | `2` |
+| Flare | `manni: manni site annotate does not read Flare output.` | `2` |
 | No site found, and no `--out` | `manni: no docs site found in ./, docs/, website/ or site/. Pass the site's directory, or pass --out.` | `2` |
 | No framework, and no `--out` | `manni: no docs framework detected in website/. Pass --out, or set site.out in manni.config.yaml.` | `2` |
 | Two frameworks, and no `--out` | `manni: docs/ holds more than one docs site: Docusaurus (@docusaurus/core), MkDocs (mkdocs.yml). Pass --out, or set site.out in manni.config.yaml.` | `2` |

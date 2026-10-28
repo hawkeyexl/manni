@@ -787,8 +787,10 @@ This repository has no Flare project, so the dogfood is two runs.
      `lint structure --explain` and `graph export chunks`. Its passages hold
      no `MadCap:variable` tag.
    - Part 3 runs `term check` on a glossary and `meta validate` against its
-     meta tag sets. `site build` runs on a Windows machine with Flare
-     installed, and `a11y check` runs against `site preview`.
+     meta tag sets. No Flare license is available to this project, so
+     `site build` runs a stand-in madbuild that copies the topics as
+     written. `site preview` serves that output, and `a11y check` runs
+     against it. Neither the stand-in nor its output is Flare's.
 
    The counts each run prints go in the pull request.
 
@@ -943,6 +945,6 @@ request is a `feat:` and ships its own demo video.
 - [ ] The guide page has Part 3's site section.
 - [ ] This proposal's Status line names the five pull requests that
       implemented it.
-- [ ] The dogfood output, from a Windows machine, is in the pull request
+- [ ] The dogfood output, from the stand-in madbuild, is in the pull request
       description.
 - [ ] A demo video and its sources are in `media/`.
