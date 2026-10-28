@@ -116,7 +116,9 @@ function readProject(root: string, configured: string | undefined): FlareProject
   };
   const language = readRoot(join(root, flprj))?.getAttribute("xml:lang");
   if (language) project.language = language;
-  const file = targetFiles[names.indexOf(chosen ?? "")];
+  // A target is named by its file's stem, and Flare keeps the names unique
+  // within a project, so the first file of that name is the target.
+  const file = chosen === undefined ? undefined : targetFiles[names.indexOf(chosen)];
   if (chosen !== undefined && file !== undefined) {
     project.target = readTarget(join(targetsDir, file));
     project.targetFrom = configured === undefined ? "the only target" : "tools.flare.target";
