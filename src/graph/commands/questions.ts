@@ -41,6 +41,8 @@ import {
 } from "../../shared/pin.js";
 import type { Severity } from "../../shared/severity.js";
 import { warn } from "../../shared/warn.js";
+import { isFlare } from "../../shared/xhtml.js";
+import type { ParseContext } from "../../lint/types.js";
 import {
   formatOf,
   type DocFormat,
@@ -73,6 +75,7 @@ import {
   buildSearchIndex,
   emitSearchIndex,
   partitionByLanguage,
+  plainText,
   type SearchIndexDoc,
 } from "../core/search-index.js";
 import type { CheckFinding } from "../core/shacl.js";
@@ -205,9 +208,22 @@ function lastLine(position: Position): number {
   return end.column <= 1 && end.line > start.line ? end.line - 1 : end.line;
 }
 
+/** A graph section's file lines, and for a resolved Flare topic its text. */
+export interface SectionSpan {
+  iri: string;
+  span: PageLines;
+  /** The section's resolved text: its title, then each of its own nodes'. */
+  text?: string;
+}
+
 /**
  * Each graph section of a page, with the file lines its own text spans: its
  * heading down to the next heading of any rank, as the search index slices it.
+ *
+ * A Flare topic parsed with its context reads as its target builds it
+ * (proposal 0125, decision 13). Each section then carries its resolved text,
+ * built as the search index builds it, and `text` is the whole topic's: the
+ * lead, then every section's. The lines stay the source lines.
  */
 export async function sectionSpans(
   graph: GraphIndex,
@@ -215,13 +231,18 @@ export async function sectionSpans(
   path: string,
   content: string,
   sections: readonly string[],
-): Promise<{ iri: string; span: PageLines }[]> {
+  context?: ParseContext,
+): Promise<{ spans: SectionSpan[]; text?: string }> {
   const format = formatOf(path);
-  const out: { iri: string; span: PageLines }[] = [];
+  const out: SectionSpan[] = [];
   if (isTreeFormat(format)) {
     const known = new Set(sections);
-    const minted = mintTreeSections((await parseTree(content, path, format)).sections);
+    const minted = mintTreeSections((await parseTree(content, path, format, context)).sections);
+    const resolved = format === "html" && context?.flare !== undefined && isFlare(content);
+    const texts = plainText(minted.unowned);
     for (const [n, section] of minted.sections.entries()) {
+      const text = [section.title, ...plainText(minted.owned[n] ?? [])].join("\n\n");
+      texts.push(text);
       const iri = `${doc}#${section.slug}`;
       const node = minted.nodes[n];
       if (!known.has(iri) || node === undefined) continue;
@@ -230,9 +251,9 @@ export async function sectionSpans(
         lastLine(head),
         ...(minted.owned[n] ?? []).map((c) => lastLine(c.position)),
       );
-      out.push({ iri, span: { start: head.start.line, end } });
+      out.push({ iri, span: { start: head.start.line, end }, ...(resolved ? { text } : {}) });
     }
-    return out;
+    return { spans: out, ...(resolved ? { text: texts.join("\n\n") } : {}) };
   }
   const occurrences = sectionOccurrences(graph, doc);
   for (const iri of sections) {
@@ -247,7 +268,7 @@ export async function sectionSpans(
     );
     if (span) out.push({ iri, span });
   }
-  return out;
+  return { spans: out };
 }
 
 /**
@@ -302,6 +323,7 @@ async function readPages(
   sources: string,
   view: { source: MetaViewSource; cwd: string },
   verb: "checked" | "exported",
+  context?: (label: string) => ParseContext | undefined,
 ): Promise<{
   pages: Page[];
   contents: Map<string, string>;
@@ -349,7 +371,7 @@ async function readPages(
       language: tag === undefined ? UNDETERMINED : canonicalLanguageTag(tag),
       bodyLine,
       body,
-      sections: await sectionSpans(graph, doc, path, content, sectionsOf.get(doc) ?? []),
+      sections: (await sectionSpans(graph, doc, path, content, sectionsOf.get(doc) ?? [], context?.(path))).spans,
       questions,
     };
   };
@@ -522,7 +544,8 @@ type Report = (kind: "knob" | Severity, message: string, draft?: "question" | "p
  * `questionFiles` are the golden-set files, and they and their answers'
  * `file`s resolve from `configDir`. The summary is absent when no question
  * exists. `cite` opens the cited row's seam on first use, and a `GraphError`
- * from it skips the row with a notice.
+ * from it skips the row with a notice. `context` gives each page's parse
+ * context, so a Flare topic reads as its target builds it.
  */
 export async function askSampleQuestions(
   store: Store,
@@ -533,6 +556,7 @@ export async function askSampleQuestions(
   questionFiles: readonly string[],
   configDir: string,
   cite?: () => CiteSeam | Promise<CiteSeam>,
+  context?: (label: string) => ParseContext | undefined,
 ): Promise<{ findings: CheckFinding[]; summary?: QuestionSummary }> {
   const knob = settings.severity;
   const top = settings.top;
@@ -543,7 +567,7 @@ export async function askSampleQuestions(
     questions: readQuestionFile(resolve(configDir, label), label),
   }));
   const graph = GraphIndex.fromQuads(storeToQuads(store), Object.fromEntries(PREFIXES));
-  const { pages, contents, pageAt } = await readPages(graph, sources, view, "checked");
+  const { pages, contents, pageAt } = await readPages(graph, sources, view, "checked", context);
   const total =
     pages.reduce((n, p) => n + p.questions.length, 0) +
     sets.reduce((n, f) => n + f.questions.length, 0);
@@ -562,7 +586,10 @@ export async function askSampleQuestions(
       // Missing pages were said once already, so the index's own warnings go.
       byLanguage = partitionByLanguage(
         graph,
-        await buildSearchIndex(graph, sources, { readDoc: (p) => contents.get(p) }),
+        await buildSearchIndex(graph, sources, {
+          readDoc: (p) => contents.get(p),
+          ...(context === undefined ? {} : { context }),
+        }),
       );
       manifest = readManifest(indexDir);
     }
@@ -962,13 +989,14 @@ export async function exportSampleQuestions(
   view: { source: MetaViewSource; cwd: string },
   questionFiles: readonly string[],
   configDir: string,
+  context?: (label: string) => ParseContext | undefined,
 ): Promise<{ lines: string[]; stale: number }> {
   const sets = questionFiles.map((label) => ({
     label,
     questions: readQuestionFile(resolve(configDir, label), label),
   }));
   const graph = GraphIndex.fromQuads(storeToQuads(store), Object.fromEntries(PREFIXES));
-  const { pages, pageAt } = await readPages(graph, sources, view, "exported");
+  const { pages, pageAt } = await readPages(graph, sources, view, "exported", context);
   let stale = 0;
 
   const pinned = (page: Page, file: string, pin: AnswerPin, reviewed: boolean): ExportedAnswer => {

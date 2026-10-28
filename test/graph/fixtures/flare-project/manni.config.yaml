@@ -1,0 +1,11 @@
+# A Flare project with one target (proposal 0125, part 2): variable link
+# targets, root-absolute links, the project's xml:lang and resolved passages.
+collections:
+  - name: flare
+    paths:
+      - "Content/**/*.htm"
+      - "Content/**/*.flsnp"
+
+graph:
+  baseIri: https://example.com/flare-project/
+  out: graph.ttl

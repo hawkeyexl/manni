@@ -177,3 +177,35 @@ describe("the project", () => {
     expect(find(tree.sections, "Before you start")).toBeUndefined();
   });
 });
+
+describe("a link target naming a variable", () => {
+  // The graph fixture's project: Links.Setup is Old.htm, which the one target
+  // overrides to Setup.htm; Links.Built is a date; Links.Undefined is no one's.
+  const INSTALL = join(
+    import.meta.dirname, "..", "..", "graph", "fixtures", "flare-project", "Content", "Topics", "Install.htm",
+  );
+  const links = (tree: DocumentTree): string[] => tree.links.map((l) => l.target);
+
+  it("resolves through the project's variables, with the target's override", () => {
+    expect(links(read(INSTALL))).toEqual([
+      "../Resources/Snippets/Note.flsnp",
+      "Setup.htm",
+      "Gone.htm",
+      "/Content/Topics/Setup.htm",
+      "/Content/Missing.htm",
+    ]);
+  });
+
+  it("is skipped when the variable is undefined or a date, and with no context", () => {
+    const skipped = [
+      "../Resources/Snippets/Note.flsnp",
+      "/Content/Topics/Setup.htm",
+      "/Content/Missing.htm",
+    ];
+    const content = readFileSync(INSTALL, "utf8");
+    expect(links(htmlParser.parse(content, "Install.htm"))).toEqual(skipped);
+    // The same bytes in a folder no project holds.
+    const orphan = { absPath: join(FLARE, "orphan", "Install.htm"), flare: flareRun(undefined) };
+    expect(links(htmlParser.parse(content, "Install.htm", orphan))).toEqual(skipped);
+  });
+});

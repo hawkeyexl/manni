@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CatapultTarget Version="2" Type="WebHelp2">
+  <Variables>
+    <Variable Name="Links/Setup">Setup.htm</Variable>
+  </Variables>
+</CatapultTarget>

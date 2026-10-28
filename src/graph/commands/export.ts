@@ -9,7 +9,7 @@ import { createHash } from "node:crypto";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { GraphError } from "../types.js";
-import { loadRunConfig } from "../core/config.js";
+import { type GraphConfig, loadRunConfig } from "../core/config.js";
 import { EVALS_ARE_AUTHOR_FACING, NO_AUTHORING_EXPORT } from "../core/graph-output.js";
 import { documentBase, parseContexts } from "../core/discover.js";
 import type { ParseContext } from "../../lint/types.js";
@@ -244,7 +244,7 @@ async function runQuestions(
   cwd: string,
   sources: string,
   graphPath: string,
-  config: { questionFiles: string[]; configDir: string },
+  config: Pick<GraphConfig, "questionFiles" | "configDir" | "tools">,
   source: { configPath?: string; noConfig?: boolean },
   out?: string,
 ): Promise<ExportResult> {
@@ -254,6 +254,7 @@ async function runQuestions(
     { source, cwd },
     config.questionFiles,
     config.configDir,
+    parseContexts(config, sources),
   );
   const outPath = out ? resolve(cwd, out) : join(dirname(graphPath), "questions.jsonl");
   mkdirSync(dirname(outPath), { recursive: true });

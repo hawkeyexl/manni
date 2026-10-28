@@ -115,7 +115,7 @@ interface TreeText {
 }
 
 /** Content nodes' plain text, one block each, LF only. */
-function plainText(nodes: readonly ContentNode[]): string[] {
+export function plainText(nodes: readonly ContentNode[]): string[] {
   return nodes
     .map((n) => n.text.replace(/\r\n/g, "\n").trim())
     .filter((t) => t !== "");

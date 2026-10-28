@@ -24,10 +24,13 @@ describe("sectionSpans for a tree format", () => {
       `${DOC}#first`,
       `${DOC}#second`,
     ]);
-    expect(spans).toEqual([
-      { iri: `${DOC}#first`, span: { start: 2, end: 3 } },
-      { iri: `${DOC}#second`, span: { start: 4, end: 6 } },
-    ]);
+    // A page that is no Flare topic carries no resolved text.
+    expect(spans).toEqual({
+      spans: [
+        { iri: `${DOC}#first`, span: { start: 2, end: 3 } },
+        { iri: `${DOC}#second`, span: { start: 4, end: 6 } },
+      ],
+    });
   });
 });
 

@@ -24,6 +24,7 @@ import {
   lookupVariable,
   parseConditionExpression,
   parseConditionTags,
+  resolveText,
   resolveVariable,
 } from "../../shared/flare/index.js";
 import { parseXhtml } from "../../shared/xhtml.js";
@@ -150,6 +151,19 @@ export function resolveFlare(
     { label, absPath, run, project, title },
   );
   return { doc, ...(flare === undefined ? {} : { flare }) };
+}
+
+/**
+ * A link target as the build names it (decision 12): each `[%=Set.Name%]` in
+ * it resolves through the project's variables, the target's overrides
+ * winning. A reference left over, to a variable no set defines or a date, or
+ * on a page with no project, names no file, so the target is undefined and is
+ * not a link.
+ */
+export function flareLinkTarget(href: string, project: FlareProject | undefined): string | undefined {
+  if (!href.includes("[%=")) return href;
+  const resolved = project === undefined ? href : resolveText(project.variables, href, project.target?.variables);
+  return resolved.includes("[%=") ? undefined : resolved;
 }
 
 /** Whether an element's condition tags stay under the target and every snippet filter. */
