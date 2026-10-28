@@ -31,6 +31,7 @@ import {
   supportedExtensions,
 } from "../../meta/internal.js";
 import { errorMessage } from "../../shared/errors.js";
+import { flareRun } from "../../shared/flare/index.js";
 import { CONCEPT_FIELDS, type FieldPath, fieldPointer, valueAt } from "../../shared/reference-fields.js";
 import { TermError } from "../errors.js";
 import type { TermBlock, TermInput, TermReader, TermReference, TermRun, TermSet } from "../types.js";
@@ -51,6 +52,33 @@ const TBX_EXTENSION = ".tbx";
 /** A TBX file carries no page metadata either; its reader parses the content itself. */
 export function tbxInput(content: string, file: string, path?: string): TermInput {
   return { content, file, ...(path === undefined ? {} : { path }), format: TBX_FORMAT, metadata: {}, lineFor: () => undefined };
+}
+
+/** The `TermInput.format` a Flare glossary is offered as, and the `--as` value that reads stdin as one. */
+export const FLARE_GLOSSARY_FORMAT = "flare-glossary";
+
+/** The extension a Flare glossary is read by, named, walked or listed. meta has no extractor for it. */
+const FLARE_GLOSSARY_EXTENSION = ".flglo";
+
+/**
+ * A Flare glossary carries no page metadata either. `conditions` is the
+ * expression of the target its project builds, which filters its entries.
+ */
+export function flareGlossaryInput(
+  content: string,
+  file: string,
+  path?: string,
+  conditions?: TermInput["conditions"],
+): TermInput {
+  return {
+    content,
+    file,
+    ...(path === undefined ? {} : { path }),
+    format: FLARE_GLOSSARY_FORMAT,
+    metadata: {},
+    lineFor: () => undefined,
+    ...(conditions === undefined ? {} : { conditions }),
+  };
 }
 
 /** The `TermInput.format` a SKOS file is offered as, and the `--as` value that reads stdin as one. */
@@ -159,9 +187,9 @@ export async function skosInput(content: string, file: string, path?: string): P
   };
 }
 
-/** What a directory or glob walk keeps when `--ext` is not given: every extractor's extensions, and TBX. */
+/** What a directory or glob walk keeps when `--ext` is not given: every extractor's extensions, TBX and Flare glossaries. */
 function defaultExtensions(): string[] {
-  return [...supportedExtensions(), TBX_EXTENSION];
+  return [...supportedExtensions(), TBX_EXTENSION, FLARE_GLOSSARY_EXTENSION];
 }
 
 /** A manifest carries no page metadata; its reader parses the content itself. */
@@ -335,6 +363,9 @@ export async function loadTermSet(opts: LoadTermSetOptions): Promise<TermSet> {
   }
 
   const set: TermSet = { terms: [], references: [], blocks: [], keywords: [], notices: [] };
+  const flare = flareRun(run.tools);
+  const glossary = (content: string, file: string, path: string): TermInput =>
+    flareGlossaryInput(content, file, path, flare.projectFor(path)?.target?.expression);
 
   if (inputs.length > 0) {
     const { files, gitignoreSkipped, named } = await resolveTargetSet({
@@ -379,6 +410,10 @@ export async function loadTermSet(opts: LoadTermSetOptions): Promise<TermSet> {
         read(tbxInput(await readInput(path, file), file, path), readers, set);
         continue;
       }
+      if (extname(file).toLowerCase() === FLARE_GLOSSARY_EXTENSION) {
+        read(glossary(await readInput(path, file), file, path), readers, set);
+        continue;
+      }
       const extractor = extractorForExtension(extname(file));
       // A file the walk returned always has a known extension; a path typed
       // with another one is refused here rather than read as nothing.
@@ -393,6 +428,8 @@ export async function loadTermSet(opts: LoadTermSetOptions): Promise<TermSet> {
 
   if (usingStdin && opts.as?.toLowerCase() === SKOS_FORMAT) {
     read(await skosInput(opts.stdin ?? "", STDIN_LABEL), readers, set);
+  } else if (usingStdin && opts.as?.toLowerCase() === FLARE_GLOSSARY_FORMAT) {
+    read(flareGlossaryInput(opts.stdin ?? "", STDIN_LABEL), readers, set);
   } else if (usingStdin && opts.as !== undefined) {
     const input =
       opts.as.toLowerCase() === TBX_FORMAT
@@ -414,8 +451,12 @@ export async function loadTermSet(opts: LoadTermSetOptions): Promise<TermSet> {
       read(await skosInput(content, path, path), readers, set);
       continue;
     }
-    const isTbx = extname(path).toLowerCase() === TBX_EXTENSION;
-    read(isTbx ? tbxInput(content, path, path) : manifestInput(content, path, path), readers, set);
+    const ext = extname(path).toLowerCase();
+    if (ext === FLARE_GLOSSARY_EXTENSION) {
+      read(glossary(content, path, path), readers, set);
+      continue;
+    }
+    read(ext === TBX_EXTENSION ? tbxInput(content, path, path) : manifestInput(content, path, path), readers, set);
   }
 
   if (set.terms.length === 0 && !allowEmpty) {

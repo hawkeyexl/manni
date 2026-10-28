@@ -1,0 +1,12 @@
+{
+  "term": "\u001b[1mProject/Glossaries/Glossary.flglo:15\u001b[22m\n  \u001b[36mnotice\u001b[39m manni:term/unused-term          no page's concepts: names this term.\n                                         Name it in the concepts: of a page that uses it.\n                                         \u001b[2mmanni:term unused-term: No page's concepts: names the entry, or an entry in another language with its id.\u001b[22m\n                                         \u001b[2mGuide: https://hawkeyexl.github.io/manni/term/reference/rules/#unused-term\u001b[22m\n\n1 notice in 2 terms\n",
+  "grep marker": "10:<MadCap:glossaryTerm glossTerm=\"Glossary.Term0\">\n",
+  "get": "Using manni.config.yaml (.)\n\u001b[2mContent/Topics/Install.htm:\u001b[22m concepts=[\"Glossary.Term0\"]\u001b[2m (asserted)\u001b[22m\n",
+  "undefined": "Content/Topics/Install.htm:10\n  error  manni:term/undefined-term       concepts: \"Glossary.Term9\" names no entry.\n",
+  "validate": "Using manni.config.yaml (.)\n\u001b[31m✗\u001b[39m Content/Topics/Install.htm\n    \u001b[36m/Status\u001b[39m  must match pattern \"^(Draft|Reviewed|Published)(,(Draft|Reviewed|Published))*$\"\u001b[2m  (line 6)\u001b[22m  \u001b[2m[./Project/Advanced/Topics.flmeta]\u001b[22m\n      \u001b[2m./Project/Advanced/Topics.flmeta Status: Where the topic is in review.\u001b[22m\n\n\u001b[31m1 file checked, 0 passed, 1 failed, 1 error\u001b[39m\n",
+  "exits": {
+    "term": "0",
+    "undefined": "1",
+    "validate": "1"
+  }
+}

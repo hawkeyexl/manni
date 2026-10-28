@@ -31,6 +31,7 @@ import {
 } from "../core/resolve-schema.js";
 import { detectJsonIndent, stripBom, toJsonText } from "../core/json-text.js";
 import { integrityOf } from "../core/integrity.js";
+import { flareMetaSchema, isFlareMetaRef } from "../core/flare-meta-schema.js";
 import {
   assertNotIgnored,
   posixRelative,
@@ -1964,8 +1965,11 @@ async function loadSetMembers(
     }
     let parsed: unknown;
     try {
-      parsed = JSON.parse(stripBom(text));
-    } catch {
+      // A Flare meta tag set reads as its schema, for the sibling checks; the
+      // target refusal below keeps it from being written (proposal 0125).
+      parsed = isFlareMetaRef(ref) ? flareMetaSchema(text, ref) : JSON.parse(stripBom(text));
+    } catch (err) {
+      if (err instanceof DocmetaError) throw err;
       throw new DocmetaError(
         `Schema "${ref}" is not valid JSON, so DDL cannot read it. Fix the file first.`,
       );
@@ -2198,6 +2202,9 @@ async function planSchemaMutation(
         }
       }
     }
+  }
+  if (target.kind === "file" && isFlareMetaRef(target.ref)) {
+    throw new DocmetaError(`${target.ref} is a Flare meta tag set, which manni reads and never writes.`);
   }
 
   const writes: SchemaWrite[] = [];

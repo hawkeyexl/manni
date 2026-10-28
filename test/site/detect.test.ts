@@ -10,7 +10,9 @@ import { cpSync, mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } f
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { resolvePlan } from "../../src/site/core/detect.js";
+import { detectFramework, resolveAnnotateSite, resolvePlan } from "../../src/site/core/detect.js";
+import { FlareError } from "../../src/shared/flare/index.js";
+import type { MadbuildHost } from "../../src/shared/flare/madbuild.js";
 import { SiteError } from "../../src/site/errors.js";
 import type { Plan, Step, Verb } from "../../src/site/types.js";
 import { resetWarnings } from "../../src/shared/warn.js";
@@ -550,5 +552,188 @@ describe("site.out and site.annotate.after-build (proposal 0095)", () => {
     expect(steps("start", on).map((s) => s.kind)).toEqual(["exec"]);
     rmSync(join(on, "manni.config.yaml"));
     expect(steps("build", on).map((s) => s.kind)).toEqual(["exec"]);
+  });
+});
+
+describe("Flare (proposal 0125, decision 22)", () => {
+  interface HostOptions {
+    platform?: NodeJS.Platform;
+    env?: Record<string, string>;
+    files?: string[];
+    dirs?: Record<string, string[]>;
+  }
+
+  /** A host where `files` exist and `dirs` list, and nothing else: never the real madbuild. */
+  function flareHost(opts: HostOptions = {}): MadbuildHost {
+    const files = new Set(opts.files ?? []);
+    return {
+      platform: opts.platform ?? "win32",
+      env: { USERNAME: "maya", ...opts.env },
+      isFile: (path) => files.has(path),
+      readdir: (path) => opts.dirs?.[path] ?? [],
+      username: () => "maya",
+    };
+  }
+
+  const onPath = flareHost({
+    platform: "linux",
+    env: { PATH: "/opt/flare" },
+    files: ["/opt/flare/madbuild"],
+  });
+  const target = (name: string): Record<string, string> => ({
+    "manni.config.yaml": `tools:\n  flare:\n    target: ${name}\n`,
+  });
+
+  it("is detected by a .flprj", () => {
+    const dir = site("flare");
+    expect(detectFramework(dir)).toBe("Flare");
+  });
+
+  it("builds the named target with madbuild, in the project folder", () => {
+    const dir = site("flare", { files: target("Print") });
+    const [first] = plan("build", dir, { flareHost: onPath }).steps;
+    expect(first?.step).toEqual({
+      kind: "exec",
+      argv: ["madbuild", "-project", "Widget.flprj", "-target", "Print"],
+      cwd: dir,
+    });
+    expect(first?.announce).toBe("Flare in ./. Running madbuild -project Widget.flprj -target Print");
+  });
+
+  it("builds the only target when none is named", () => {
+    const dir = site("flare-one-target");
+    expect(argv("build", dir, { flareHost: onPath })).toEqual([
+      ["madbuild", "-project", "Widget.flprj", "-target", "HTML5"],
+    ]);
+  });
+
+  it("refuses several targets with none named", () => {
+    const dir = site("flare");
+    expect(error(() => plan("build", dir, { flareHost: onPath }))).toBe(
+      "Widget.flprj has 2 targets. Name the one to build with tools.flare.target.",
+    );
+  });
+
+  it("reads the output folder's account from the system when USERNAME is not set", () => {
+    const dir = site("flare", { files: target("HTML5") });
+    const host: MadbuildHost = { ...onPath, env: { PATH: "/opt/flare" }, username: () => "devin" };
+    expect(error(() => plan("preview", dir, { flareHost: host }))).toBe(
+      "No Flare output at Output/devin/HTML5. Run manni site build first.",
+    );
+  });
+
+  // A container with no user database: os.userInfo() throws there, and the host answers nothing.
+  it("refuses cleanly when neither USERNAME nor the system names a user", () => {
+    const dir = site("flare", { files: target("HTML5") });
+    const host: MadbuildHost = { ...onPath, env: { PATH: "/opt/flare" }, username: () => undefined };
+    expect(error(() => plan("preview", dir, { flareHost: host }))).toBe(
+      "manni cannot tell whose Output folder to read, because USERNAME is not set and the system names no user. Set USERNAME to the account that runs madbuild.",
+    );
+  });
+
+  it("refuses a project with no targets, without asking for a name", () => {
+    const dir = site("flare-no-targets");
+    expect(error(() => plan("build", dir, { flareHost: onPath }))).toBe(
+      "Widget.flprj has no targets, so there is nothing to build. Add a target in Flare.",
+    );
+  });
+
+  // The project's own refusal, which lint and graph print too: a FlareError, exit 2 like a SiteError.
+  it("refuses a named target the project does not have", () => {
+    const dir = site("flare", { files: target("Web") });
+    expect(() => plan("build", dir, { flareHost: onPath })).toThrow(
+      new FlareError('tools.flare.target "Web" names no target in Widget.flprj. Its targets are HTML5 and Print.'),
+    );
+    expect(() => plan("build", dir, { flareHost: onPath })).toThrow(FlareError);
+  });
+
+  describe("finding madbuild", () => {
+    const programFiles = "C:\\Program Files\\MadCap Software";
+    const install = (name: string): string => `${programFiles}\\${name}\\Flare.app\\madbuild.exe`;
+    const madbuild = (host: MadbuildHost, files: Record<string, string> = target("HTML5")): string | undefined => {
+      const dir = site("flare", { files });
+      return argv("build", dir, { flareHost: host })[0]?.[0];
+    };
+
+    it("takes PATH first, through PATHEXT on Windows", () => {
+      const host = flareHost({
+        env: { PATH: "C:\\Flare\\bin", PATHEXT: ".EXE;.CMD", ProgramFiles: "C:\\Program Files" },
+        files: ["C:\\Flare\\bin\\madbuild.CMD", install("MadCap Flare 21")],
+        dirs: { [programFiles]: ["MadCap Flare 21"] },
+      });
+      expect(madbuild(host)).toBe("madbuild");
+    });
+
+    it("takes tools.flare.home next, resolved against the config file", () => {
+      let dir = "";
+      const host: MadbuildHost = {
+        ...flareHost({ dirs: { [programFiles]: ["MadCap Flare 21"] } }),
+        isFile: (path) => path === join(dir, "flare-home", "madbuild.exe") || path === install("MadCap Flare 21"),
+      };
+      dir = site("flare", {
+        files: { "manni.config.yaml": "tools:\n  flare:\n    target: HTML5\n    home: flare-home\n" },
+      });
+      expect(argv("build", dir, { flareHost: host })[0]?.[0]).toBe(join(dir, "flare-home", "madbuild.exe"));
+    });
+
+    it("takes the newest install under Program Files by its version, not its spelling", () => {
+      const names = ["MadCap Flare 9", "MadCap Flare 21", "MadCap Flare 19", "MadCap Software Other"];
+      const host = flareHost({
+        files: names.map(install),
+        dirs: { [programFiles]: names },
+      });
+      expect(madbuild(host)).toBe(install("MadCap Flare 21"));
+
+      const years = ["MadCap Flare 2023", "MadCap Flare 2024 r2", "MadCap Flare 2024"];
+      expect(madbuild(flareHost({ files: years.map(install), dirs: { [programFiles]: years } }))).toBe(
+        install("MadCap Flare 2024 r2"),
+      );
+    });
+
+    it("skips an install folder with no madbuild.exe", () => {
+      const host = flareHost({
+        files: [install("MadCap Flare 19")],
+        dirs: { [programFiles]: ["MadCap Flare 19", "MadCap Flare 21"] },
+      });
+      expect(madbuild(host)).toBe(install("MadCap Flare 19"));
+    });
+
+    it("refuses when none is found, and looks under Program Files only on Windows", () => {
+      const host = flareHost({
+        platform: "linux",
+        files: [install("MadCap Flare 21")],
+        dirs: { [programFiles]: ["MadCap Flare 21"] },
+      });
+      const dir = site("flare", { files: target("HTML5") });
+      expect(error(() => plan("build", dir, { flareHost: host }))).toBe(
+        "madbuild was not found. Install MadCap Flare, or set tools.flare.home to the folder that holds madbuild.exe.",
+      );
+    });
+  });
+
+  it("previews the last build with the built-in server on 4321, with no madbuild", () => {
+    const dir = site("flare", { files: { ...target("HTML5"), "Output/maya/HTML5/Default.htm": "" } });
+    expect(steps("preview", dir, { flareHost: flareHost() })).toEqual([
+      { kind: "static", root: join(dir, "Output", "maya", "HTML5"), host: "127.0.0.1", port: 4321, base: "/" },
+    ]);
+  });
+
+  it("refuses to preview a target that has not been built", () => {
+    const dir = site("flare", { files: target("HTML5") });
+    expect(error(() => plan("preview", dir, { flareHost: flareHost() }))).toBe(
+      "No Flare output at Output/maya/HTML5. Run manni site build first.",
+    );
+  });
+
+  it("has no development server", () => {
+    const dir = site("flare", { files: target("HTML5") });
+    expect(error(() => plan("start", dir, { flareHost: onPath }))).toBe(
+      "Flare has no development server. Run manni site build, then manni site preview.",
+    );
+  });
+
+  it("is not annotated", () => {
+    const dir = site("flare", { files: target("HTML5") });
+    expect(error(() => resolveAnnotateSite({ cwd: dir }))).toBe("manni site annotate does not read Flare output.");
   });
 });

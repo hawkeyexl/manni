@@ -62,6 +62,7 @@ describe("readers are registered", () => {
         "html-dl",
         "html-dfn",
         "tbx-entry",
+        "flare-glossary",
       ] as const
     ).map((construct) => reader(construct).label);
     expect(labels).toEqual([
@@ -73,8 +74,10 @@ describe("readers are registered", () => {
       "dl",
       "dfn",
       "TBX entry",
+      "Flare glossary",
     ]);
     expect(reader("tbx-entry").formats).toEqual(["tbx"]);
+    expect(reader("flare-glossary").formats).toEqual(["flare-glossary"]);
     expect(reader("page").formats).toEqual(["markdown", "mdx", "asciidoc", "rst", "html", "xml"]);
     expect(reader("manifest").formats).toEqual([MANIFEST_FORMAT]);
     expect(reader("html-dl").formats).toEqual(["html"]);

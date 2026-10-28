@@ -1,0 +1,6 @@
+Using manni.config.yaml (.)
+[31m✗[39m Content/Topics/Install.htm
+    [36m/Status[39m  must match pattern "^(Draft|Reviewed|Published)(,(Draft|Reviewed|Published))*$"[2m  (line 6)[22m  [2m[./Project/Advanced/Topics.flmeta][22m
+      [2m./Project/Advanced/Topics.flmeta Status: Where the topic is in review.[22m
+
+[31m1 file checked, 0 passed, 1 failed, 1 error[39m

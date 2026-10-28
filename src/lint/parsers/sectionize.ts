@@ -133,3 +133,15 @@ export function sectionize(fragments: Fragment[], docEnd: Position["end"]): Sect
   closeTo(0, docEnd);
   return roots;
 }
+
+/**
+ * Content nodes' plain text, one block each, LF only. `manni graph` indexes a
+ * non-Markdown document by it, and `manni docevals` judges an HTML or XML page
+ * by it (proposal 0125). It lives here, beside the tree, so neither tool loads
+ * the other to read one.
+ */
+export function plainText(nodes: readonly ContentNode[]): string[] {
+  return nodes
+    .map((n) => n.text.replace(/\r\n/g, "\n").trim())
+    .filter((t) => t !== "");
+}

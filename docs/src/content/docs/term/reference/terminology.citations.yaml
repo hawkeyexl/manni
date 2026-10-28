@@ -5,9 +5,9 @@ docs/src/content/docs/term/reference/terminology.mdx:
         integrity: sha256-adc063f70dd01634d8607eda36caeb51eccb1ffc12ef786c46ca24544366a512
       source:
         file: src/term/types.ts
-        lines: 26-51
+        lines: 27-52
         integrity: sha256-117e7851471860df36a23aa1204a0fceb5ed606c674210dc5a7bb7effcd6e400
-        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
+        commit-sha: 343ef71848c2fa541f41eb5f993e18b5dd9c0c17
     - id: term-set-deflist
       claim:
         lines: 22
@@ -28,7 +28,7 @@ docs/src/content/docs/term/reference/terminology.mdx:
         commit-sha: 0d47b00a02406b65645eee9a12d8f91393dc9076
     - id: self-declaring-dita
       claim:
-        integrity: sha256-43be77c99df87222e78a2b673c620dcbbb556193fc8d1e91ba90932bbf9a46ff
+        integrity: sha256-4af76b16dd10122d3306b86c4c256ec1b3e49d310ed5aeade662933c5a76a5f5
       source:
         file: src/term/core/readers/dita.ts
         lines: 109-120
@@ -36,7 +36,7 @@ docs/src/content/docs/term/reference/terminology.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: self-declaring-docbook
       claim:
-        integrity: sha256-43be77c99df87222e78a2b673c620dcbbb556193fc8d1e91ba90932bbf9a46ff
+        integrity: sha256-4af76b16dd10122d3306b86c4c256ec1b3e49d310ed5aeade662933c5a76a5f5
       source:
         file: src/term/core/readers/docbook.ts
         lines: 43-47
@@ -44,7 +44,7 @@ docs/src/content/docs/term/reference/terminology.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: self-declaring-asciidoc
       claim:
-        integrity: sha256-43be77c99df87222e78a2b673c620dcbbb556193fc8d1e91ba90932bbf9a46ff
+        integrity: sha256-4af76b16dd10122d3306b86c4c256ec1b3e49d310ed5aeade662933c5a76a5f5
       source:
         file: src/term/core/readers/asciidoc-glossary.ts
         lines: 36
@@ -52,7 +52,7 @@ docs/src/content/docs/term/reference/terminology.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: self-declaring-rst
       claim:
-        integrity: sha256-43be77c99df87222e78a2b673c620dcbbb556193fc8d1e91ba90932bbf9a46ff
+        integrity: sha256-4af76b16dd10122d3306b86c4c256ec1b3e49d310ed5aeade662933c5a76a5f5
       source:
         file: src/term/core/readers/rst-glossary.ts
         lines: 31
@@ -372,8 +372,8 @@ docs/src/content/docs/term/reference/terminology.mdx:
         commit-sha: df75e58da9c2ffb383db63ef9e4f7aeb6c30d0ad
     - id: id-construct-html-dt
       claim:
-        lines: 375-378
-        integrity: sha256-f62d1acd842137320e3cbb1b4858b40b5221ff36426a3d641c38edf23bc2a62b
+        lines: 375-379
+        integrity: sha256-6f522635524a9ae9e767c092de03797420fa5e57318781db24307f1a93f65efb
       source:
         file: src/term/core/readers/html.ts
         lines: 144
@@ -381,8 +381,8 @@ docs/src/content/docs/term/reference/terminology.mdx:
         commit-sha: 0d47b00a02406b65645eee9a12d8f91393dc9076
     - id: id-construct-docbook
       claim:
-        lines: 375-378
-        integrity: sha256-f62d1acd842137320e3cbb1b4858b40b5221ff36426a3d641c38edf23bc2a62b
+        lines: 375-379
+        integrity: sha256-6f522635524a9ae9e767c092de03797420fa5e57318781db24307f1a93f65efb
       source:
         file: src/term/core/readers/docbook.ts
         lines: 96
@@ -390,8 +390,8 @@ docs/src/content/docs/term/reference/terminology.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: id-construct-dita
       claim:
-        lines: 375-378
-        integrity: sha256-f62d1acd842137320e3cbb1b4858b40b5221ff36426a3d641c38edf23bc2a62b
+        lines: 375-379
+        integrity: sha256-6f522635524a9ae9e767c092de03797420fa5e57318781db24307f1a93f65efb
       source:
         file: src/term/core/readers/dita.ts
         lines: 82
@@ -399,7 +399,7 @@ docs/src/content/docs/term/reference/terminology.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: id-label-slug
       claim:
-        lines: 377-378
+        lines: 378-379
         integrity: sha256-44bb1d825b55ce85f38dc29567078bb5320da854541dbc837b59ff7179f152b7
       source:
         file: src/term/core/id.ts

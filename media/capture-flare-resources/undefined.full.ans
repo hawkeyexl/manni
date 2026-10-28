@@ -1,0 +1,17 @@
+Content/Topics/Install.htm:10
+  error  manni:term/undefined-term       concepts: "Glossary.Term9" names no entry.
+                                         Correct the value, or run manni term fill to add the term.
+                                         manni:term undefined-term: A page's concepts: names no entry, by label, id or alt-label.
+                                         Guide: https://hawkeyexl.github.io/manni/term/reference/rules/#undefined-term
+Project/Glossaries/Glossary.flglo:3
+  notice manni:term/unused-term          no page's concepts: names this term.
+                                         Name it in the concepts: of a page that uses it.
+                                         manni:term unused-term: No page's concepts: names the entry, or an entry in another language with its id.
+                                         Guide: https://hawkeyexl.github.io/manni/term/reference/rules/#unused-term
+Project/Glossaries/Glossary.flglo:15
+  notice manni:term/unused-term          no page's concepts: names this term.
+                                         Name it in the concepts: of a page that uses it.
+                                         manni:term unused-term: No page's concepts: names the entry, or an entry in another language with its id.
+                                         Guide: https://hawkeyexl.github.io/manni/term/reference/rules/#unused-term
+
+1 error, 2 notices in 2 terms

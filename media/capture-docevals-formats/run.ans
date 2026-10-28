@@ -1,0 +1,23 @@
+[1mContent/concept.dita[22m
+  [31mFAIL[39m no-todo  [2mContent/concept.meta.yaml:3[22m
+       [31merror[39m:8[2m [regex/found][22m Pattern /TODO/ found in body, expected absent. Remove or reword the matching text.
+[2m       Content/concept.meta.yaml no-todo: The page carries no TODO marker.[22m
+[2m       Guide: https://hawkeyexl.github.io/manni/docevals/fix/[22m
+[1mContent/guide.adoc[22m
+  [31mFAIL[39m no-todo  [2mContent/guide.meta.yaml:3[22m
+       [31merror[39m:6[2m [regex/found][22m Pattern /TODO/ found in body, expected absent. Remove or reword the matching text.
+[2m       Content/guide.meta.yaml no-todo: The page carries no TODO marker.[22m
+[2m       Guide: https://hawkeyexl.github.io/manni/docevals/fix/[22m
+[1mContent/notes.rst[22m
+  [31mFAIL[39m no-todo  [2mContent/notes.meta.yaml:3[22m
+       [31merror[39m:8[2m [regex/found][22m Pattern /TODO/ found in body, expected absent. Remove or reword the matching text.
+[2m       Content/notes.meta.yaml no-todo: The page carries no TODO marker.[22m
+[2m       Guide: https://hawkeyexl.github.io/manni/docevals/fix/[22m
+[1mContent/topic.htm[22m
+  [31mFAIL[39m no-todo  [2mContent/topic.meta.yaml:3[22m
+       [31merror[39m:10[2m [regex/found][22m Pattern /TODO/ found in body, expected absent. Remove or reword the matching text.
+[2m       Content/topic.meta.yaml no-todo: The page carries no TODO marker.[22m
+[2m       Guide: https://hawkeyexl.github.io/manni/docevals/fix/[22m
+
+[1mSuites[22m
+  default: 0/4 passed — 0% vs target 100% [31mbelow target[39m

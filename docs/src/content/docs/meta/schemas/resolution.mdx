@@ -35,7 +35,7 @@ sample-questions:
 graph:
   label: How schema resolution works & how to wire it
   type: task
-last-updated: 2026-09-27
+last-updated: 2026-10-28
 tags:
   - schema
   - resolution
@@ -189,7 +189,7 @@ Everywhere a schema is named, the value is a **reference**. That covers a `--sch
 
   Examples: `./schemas/api.schema.json`, `schemas/house.json`
 
-  Read from the local filesystem. Relative paths resolve against the current working directory.
+  Read from the local filesystem. Relative paths resolve against the current working directory. A `.flmeta` file reads as a [MadCap Flare meta tag set](/manni/meta/reference/schema-resolution/#flare-meta-tag-sets).
   </Card>
   <Card title="URL" icon="external">
   Anything starting with `http://` or `https://`.

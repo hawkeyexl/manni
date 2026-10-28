@@ -11,6 +11,7 @@
  */
 import type { CollectionConfig } from "../shared/collections.js";
 import type { ConfigFile } from "../shared/config-file.js";
+import type { ConditionExpression } from "../shared/flare/index.js";
 import type { Guidance } from "../shared/guidance.js";
 import type { Severity } from "../shared/severity.js";
 import type { ToolsConfig } from "../shared/tools.js";
@@ -220,6 +221,8 @@ export const TERM_CONSTRUCTS = [
   "tbx-entry",
   /** One `skos:Concept` in Turtle or JSON-LD: a term per language its `skos:prefLabel` holds. */
   "skos",
+  /** One `GlossaryEntry` in a MadCap Flare `.flglo`. */
+  "flare-glossary",
 ] as const;
 export type TermConstruct = (typeof TERM_CONSTRUCTS)[number];
 
@@ -268,12 +271,18 @@ export interface TermInput {
   file: string;
   /** As `TermLocation.path`. */
   path?: string;
-  /** The extractor that read the file (`markdown`, `mdx`, `asciidoc`, `rst`, `html`, `xml`), or `manifest`, `tbx` or `skos`. */
+  /** The extractor that read the file (`markdown`, `mdx`, `asciidoc`, `rst`, `html`, `xml`), or `manifest`, `tbx`, `skos` or `flare-glossary`. */
   format: string;
   /** The file's extracted metadata. `{}` for a manifest, which has none. */
   metadata: Record<string, unknown>;
   /** The extractor's JSON-Pointer line lookup for `metadata`. */
   lineFor: (pointer: string) => number | undefined;
+  /**
+   * The condition expression of the Flare target the file's project builds,
+   * for a Flare glossary. Absent with no project, no target or no expression,
+   * and then every entry is read.
+   */
+  conditions?: ConditionExpression;
 }
 
 export interface TermReadResult {

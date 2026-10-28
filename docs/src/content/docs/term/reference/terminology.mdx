@@ -35,7 +35,7 @@ sample-questions:
 graph:
   label: Terminology fields
   type: reference
-last-updated: 2026-10-20
+last-updated: 2026-10-28
 tags:
   - terminology
   - skos
@@ -86,8 +86,8 @@ a 1.0.0 page, and it stays valid.
 A DITA `<glossentry>` or `<glossgroup>`, a DocBook `<glossary>`, an AsciiDoc
 `[glossary]` list and a `.. glossary::` directive are read without
 `type: term-set`, because each construct declares itself. So is a `.tbx`
-file, whose root element names it TBX, and a `.ttl` or `.jsonld` file you
-name, which holds SKOS. `type`, `id` and `language` belong to the `manni:core`
+file, whose root element names it TBX, and a `.flglo` file, a MadCap Flare
+glossary. So is a `.ttl` or `.jsonld` file you name, which holds SKOS. `type`, `id` and `language` belong to the `manni:core`
 vocabulary, and a term page uses them as any page does.
 
 ```markdown title="docs/terms/progressive-lens.md"
@@ -431,7 +431,8 @@ An entry's `id` is, in order:
 
 1. the record's own `id`;
 2. the construct's identifier: `<dt id>` or `<dfn id>` in HTML, `xml:id` on a
-   DocBook `<glossentry>`, `@id` on a DITA topic, `id` on a TBX entry;
+   DocBook `<glossentry>`, `@id` on a DITA topic, `id` on a TBX entry,
+   `glossTerm` on a Flare `GlossaryEntry`;
 3. the slug of the preferred label, so `progressive lens` is
    `progressive-lens`.
 

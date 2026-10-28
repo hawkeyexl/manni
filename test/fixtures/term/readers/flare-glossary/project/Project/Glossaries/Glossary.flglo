@@ -1,0 +1,39 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!-- The file-level conditions do not filter its entries, as in Flare. -->
+<CatapultGlossary
+  conditions="Default.PrintOnly">
+  <GlossaryEntry
+    glossTerm="Glossary.Term0"
+    TermClass="Popup"
+    Stem=""
+    IgnoreCase="false">
+    <Terms>
+      <Term>Widget</Term>
+    </Terms>
+    <Definition
+      Link="">A part the product is built from.</Definition>
+  </GlossaryEntry>
+  <GlossaryEntry
+    glossTerm="Glossary.Term1"
+    TermClass="Popup"
+    Stem=""
+    IgnoreCase="false"
+    conditions="Default.PrintOnly">
+    <Terms>
+      <Term>Print margin</Term>
+    </Terms>
+    <Definition
+      Link="">The white space around a printed page.</Definition>
+  </GlossaryEntry>
+  <GlossaryEntry
+    glossTerm="Glossary.Term2"
+    TermClass="Popup"
+    Stem=""
+    IgnoreCase="false">
+    <Terms>
+      <Term>Gadget</Term>
+    </Terms>
+    <Definition
+      Link="/Content/Topics/Gadget.htm"></Definition>
+  </GlossaryEntry>
+</CatapultGlossary>

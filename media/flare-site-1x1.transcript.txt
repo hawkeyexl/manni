@@ -1,0 +1,50 @@
+manni site builds and previews a MadCap Flare project, demo video transcript (silent video; text describes what is on screen)
+
+Frame: 1080x1080, 30 fps, 32.7 s. Every terminal line is real output of ls, tail, curl, head and of
+`node dist/cli.js ...` (typed as manni) run in C:\widget, a directory junction to media/scratch-flare-site/,
+a git repository holding test/fixtures/flare/widget/ as committed, built by media/capture-flare-site/capture.sh.
+
+madbuild in this video is a stand-in, not MadCap Flare: test/fixtures/flare/madbuild-standin/, a few lines of
+Node that copy each topic as written and write a Default.htm linking them. It was first on PATH, and USERNAME
+was set to maya, so the output folder reads Output/maya/HTML5. The video makes no claim about real Flare output.
+
+[0:00-0:07] Title: A MadCap Flare project (1 / 5)
+$ ls
+Content  Project  Widget.flprj  manni.config.yaml  schemas
+$ tail -3 manni.config.yaml
+tools:
+  flare:
+    target: HTML5
+Highlighted rows: lines containing "Widget.flprj", "target: HTML5"
+Caption: A .flprj marks it. The config names the HTML5 target.
+
+[0:07-0:14] Title: Build, with a stand-in madbuild (2 / 5)
+$ manni site build; echo $?
+manni: Flare in ./. Running madbuild -project Widget.flprj -target HTML5
+stand-in madbuild: built HTML5 into Output/maya/HTML5
+0
+Highlighted rows: lines containing "Running madbuild", "stand-in madbuild"
+Caption: It runs madbuild. Here, a stand-in, not MadCap Flare.
+
+[0:14-0:19] Title: manni site preview (3 / 5)
+$ manni site preview
+http://127.0.0.1:4321/
+(the server keeps running; no prompt returns)
+Highlighted rows: lines containing "127.0.0.1:4321"
+Caption: It serves the last build. It does not build first.
+
+[0:19-0:26] Title: Default.htm answers at / (4 / 5)
+$ curl -s http://127.0.0.1:4321/ | head -3
+<?xml version="1.0" encoding="utf-8"?>
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head><title>Stand-in build</title></head>
+Highlighted rows: lines containing "Stand-in build"
+Caption: In a second terminal, / is the stand-in's Default.htm.
+
+[0:26-0:33] Title: No development server (5 / 5)
+$ manni site start; echo $?
+manni: Flare has no development server. Run manni site build, then manni site preview.
+2
+Highlighted rows: lines containing "no development server"
+Caption: site start names the two commands to run. Exit 2.
+

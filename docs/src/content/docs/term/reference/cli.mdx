@@ -28,7 +28,7 @@ sample-questions:
 graph:
   label: CLI reference
   type: reference
-last-updated: 2026-10-20
+last-updated: 2026-10-28
 tags:
   - cli
   - reference
@@ -116,6 +116,10 @@ jobs.
   directory or glob walk finds it, and when `term.manifests` lists it. The
   root element says the version: `<martif>` is TBX v2, and `<tbx>` is TBX v3.
   Each entry is a term per language it holds, all with the entry's id.
+- **A `.flglo` file is a MadCap Flare glossary.** It's read when you name it,
+  when a directory or glob walk finds it, and when `term.manifests` lists it.
+  Each `GlossaryEntry` is a term, with the entry's `glossTerm` as its id.
+  Inside a Flare project, an entry the target excludes is not read.
 - **A named `.ttl` or `.jsonld` file is a SKOS concept scheme.** It's read
   when you name it and when `term.manifests` lists it. A directory or glob
   walk never picks one up, because `manni graph build` writes Turtle too. Each
@@ -124,7 +128,8 @@ jobs.
   refused, because reading a termbase never fetches anything.
 - **`-` reads stdin**, alongside any named paths. It needs `--as <format>`,
   which names one of the metadata tool's
-  [extractors](/manni/meta/reference/formats/), or `tbx`, or `skos`. The
+  [extractors](/manni/meta/reference/formats/), or `tbx`, `skos` or
+  `flare-glossary`. The
   extractors are `markdown`, `mdx`, `asciidoc`, `rst`, `html` and `xml`.
   `--as skos` reads JSON-LD when the first character that isn't whitespace is
   `{` or `[`, and Turtle otherwise.
@@ -173,7 +178,7 @@ manni term list [paths...] [options]
 | Option | Argument | Default | Description |
 |---|---|---|---|
 | `--as` | `<format>` | n/a | Input format for stdin. Required with `-`. |
-| `--ext` | `<list>` | supported extensions and `tbx` | Comma-separated extensions kept when expanding directories and globs. Given once. |
+| `--ext` | `<list>` | supported extensions, `tbx` and `flglo` | Comma-separated extensions kept when expanding directories and globs. Given once. |
 | `--exclude` | `<glob>` | n/a | Glob to exclude from directory and glob walks. Repeatable, one glob per occurrence. |
 | `--collection` | `<name>` | every collection | Read one configured collection rather than every declared one. Repeatable, one name per occurrence. Cannot be combined with positional paths (exit 2). |
 | `--allow-empty` | n/a | off | Treat a missing path, no matched files or no terms as success rather than an error (exit 2). Wins over config `allowEmpty:`. |
@@ -972,31 +977,32 @@ manni term formats [options]
 ### Output
 
 ```
-markdown   page               read  write
-markdown   definition list    read  write
-mdx        page               read  write
-mdx        definition list    read  write
-asciidoc   page               read  write
-asciidoc   [glossary] list    read  write
-rst        page               read  write
-rst        .. glossary::      read  write
-html       page               read  write
-html       dl                 read  write
-html       dfn                read
-xml        page               read  write
-xml        DITA glossentry    read  write
-xml        DITA glossgroup    read  write
-xml        DocBook glossary   read  write
-manifest   manifest           read  write
-tbx        TBX entry          read  write
-skos       SKOS concept       read  write
-tbx        TBX v2                   write
-tbx3       TBX v3                   write
-skos       JSON-LD                  write
-skos-ttl   Turtle                   write
-csv                                 write
-json                                write
-vale       style                    write
+markdown         page               read  write
+markdown         definition list    read  write
+mdx              page               read  write
+mdx              definition list    read  write
+asciidoc         page               read  write
+asciidoc         [glossary] list    read  write
+rst              page               read  write
+rst              .. glossary::      read  write
+html             page               read  write
+html             dl                 read  write
+html             dfn                read
+xml              page               read  write
+xml              DITA glossentry    read  write
+xml              DITA glossgroup    read  write
+xml              DocBook glossary   read  write
+manifest         manifest           read  write
+tbx              TBX entry          read  write
+skos             SKOS concept       read  write
+flare-glossary   Flare glossary     read
+tbx              TBX v2                   write
+tbx3             TBX v3                   write
+skos             JSON-LD                  write
+skos-ttl         Turtle                   write
+csv                                       write
+json                                      write
+vale             style                    write
 ```
 
 ### Exit codes
@@ -1032,6 +1038,9 @@ written.
 | `term write -f tbx3 -o out/` | `manni: -f tbx3 writes one file, not a directory. Pass -o <file>.` |
 | `term list notes.tbx`, whose root element is `<glossary>` | `manni: notes.tbx: is not TBX: its root element is <glossary>, not <martif> or <tbx>.` |
 | `term list broken.tbx`, which is not well-formed | `manni: broken.tbx: could not be read as tbx: Invalid XML: Opening and ending tag mismatch: "term" != "tig"` |
+| `term list notes.flglo`, whose root element is `<glossary>` | `manni: notes.flglo: is not a Flare glossary: its root element is <glossary>, not <CatapultGlossary>.` |
+| `term list broken.flglo`, which is not well-formed | `manni: broken.flglo: could not be read as a Flare glossary.` |
+| `term write Glossary.flglo` | `manni: Glossary.flglo: a Flare glossary cannot be written in place. Pass -f <format> -o <path>.` |
 | `term write -f markdown -o docs/terms/`, one id twice in one language | `manni: two terms have the id "api" in de, and a directory holds one file per id in each language.` |
 | `term write -f markdown -o docs/terms/`, one id twice in a set of one language | `manni: two terms have the id "api", and a directory holds one file per id.` |
 | `term write -f markdown -o docs/terms/`, a language with a path character | `manni: the language "../de" cannot name a directory. Give the term a language without path characters.` |

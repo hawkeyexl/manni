@@ -1,0 +1,7 @@
+Content/notes.rst:
+  evals:
+    - id: no-todo
+      assertion: The page carries no TODO marker.
+      grader: tool:regex
+      options: { pattern: "TODO", match: not-contains }
+      severity: error
