@@ -136,6 +136,7 @@ describe("a manifest loaded from two bases", () => {
       paths: ["docs/**/*.md"],
       exclude: [],
       externalMetadata: [{ file: "./meta.yaml", keys: ["owner"] }],
+      declaresExternalMetadata: true,
     },
   ];
 

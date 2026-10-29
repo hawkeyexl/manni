@@ -112,12 +112,23 @@ export async function offerRelocation(opts: ValidateOfferOptions): Promise<Reloc
   // `location:external` one. A page with no possible home is not offered.
   const groups = new Map<string, Group>();
   for (const f of findings) {
-    const home = await keyHome(ctx, f.file, {}, f.key);
+    let home;
+    try {
+      home = await keyHome(ctx, f.file, {}, f.key);
+    } catch (err) {
+      // An id that cannot name a file (0126) is the report's finding to fix first.
+      if (err instanceof DocmetaError) continue;
+      throw err;
+    }
     let collection: string | undefined;
     if (f.schema === LOCATION_PAGE_SCHEMA) {
       if (home.kind === "manifest") collection = home.collection;
     } else if (home.kind === "unowned" && home.home.kind === "collection") {
       collection = home.home.collection;
+    } else if (home.kind === "manifest" && home.mint !== undefined) {
+      // A page with no id, in a collection that reads the metadata directory
+      // (0126): relocate mints it one and moves the value there.
+      collection = home.collection;
     }
     if (collection === undefined) continue;
     const group = groups.get(collection) ?? { files: new Set<string>(), keys: new Set<string>() };

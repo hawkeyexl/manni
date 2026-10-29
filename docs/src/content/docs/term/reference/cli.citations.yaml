@@ -93,9 +93,9 @@ docs/src/content/docs/term/reference/cli.mdx:
         integrity: sha256-a65808e799a397f468a0864f0efd3d5ae66bd75d68fc1d65e753e1aa32e7d599
       source:
         file: src/shared/config-file.ts
-        lines: 364-369
+        lines: 400-405
         integrity: sha256-df01b927ccc74e05bab4e536bbffacb8f056cb5e7c31cbad458ced8ec06de796
-        commit-sha: a589e08250dee7efaee7ed0f58df01986fad8d1d
+        commit-sha: 46ea4718fa7ee7e2ec7ed135a7a646d421ff3fb8
     - id: no-color-tty
       claim:
         lines: 135
@@ -592,18 +592,18 @@ docs/src/content/docs/term/reference/cli.mdx:
         integrity: sha256-77c400321692e6aeb6a8f221c6e1e97ddb77d30202d40b18b76a1353c982fc02
       source:
         file: src/shared/collections.ts
-        lines: 562-565
+        lines: 627-630
         integrity: sha256-cf34a629a869a2b153f7a1ef735b5b70a34e7f64102e745168365ca677431257
-        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
+        commit-sha: 46ea4718fa7ee7e2ec7ed135a7a646d421ff3fb8
     - id: err-config-not-found
       claim:
         lines: 977
         integrity: sha256-5c57e2422c2952ca7912c7fa007d59bdeb4f66458ef98b84bce68de08811d380
       source:
         file: src/shared/config-file.ts
-        lines: 380-382
+        lines: 416-418
         integrity: sha256-93f531b04c37b874a3558be21947d9f2f221e59c8e412fe7206542e70c4c46d8
-        commit-sha: a589e08250dee7efaee7ed0f58df01986fad8d1d
+        commit-sha: 46ea4718fa7ee7e2ec7ed135a7a646d421ff3fb8
     - id: err-unknown-check-format
       claim:
         lines: 978

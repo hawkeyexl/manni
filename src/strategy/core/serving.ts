@@ -9,7 +9,13 @@
  * no record is left out, since `strategy check` already reports it.
  */
 import { resolve } from "node:path";
-import { hasPagePlaceholder, pageManifestPath } from "../../shared/page-manifest.js";
+import {
+  hasIdPlaceholder,
+  hasPagePlaceholder,
+  idManifestPath,
+  isSafeManifestId,
+  pageManifestPath,
+} from "../../shared/page-manifest.js";
 import type { Severity } from "../../shared/severity.js";
 import { loadStrategy } from "../commands/run.js";
 import type { StrategyRecord } from "../types.js";
@@ -28,8 +34,9 @@ export interface ServingSet {
   /** Each page's named records, keyed by absolute path: personas first, then journeys, each once. */
   pages: Map<string, StrategyRecord[]>;
   /**
-   * Each named page's `{page}` manifests (0058), absolute, to the page's
-   * absolute path: a finding in one counts on its page (proposal 0109).
+   * Each named page's `{page}` manifests (0058) and `{id}` manifests (0126),
+   * absolute, to the page's absolute path: a finding in one counts on its
+   * page (proposal 0109).
    */
   manifests: Map<string, string>;
 }
@@ -73,8 +80,17 @@ export async function loadServing(opts: ServingOptions): Promise<ServingSet | un
   const manifests = new Map<string, string>();
   const configDir = run.configDir;
   if (configDir !== undefined) {
+    const ids = new Map([...(set.ids ?? [])].map(([label, id]) => [resolve(run.base, label), id]));
     for (const page of pages.keys()) {
+      const id = ids.get(page);
       for (const m of run.collections.flatMap((c) => c.externalMetadata)) {
+        // An `{id}` manifest (0126) is named by the page's id, not its path.
+        if (hasIdPlaceholder(m.file)) {
+          if (id === undefined || !isSafeManifestId(id)) continue;
+          const at = idManifestPath(m.file, configDir, id);
+          if (!manifests.has(at.abs)) manifests.set(at.abs, page);
+          continue;
+        }
         if (!hasPagePlaceholder(m.file)) continue;
         const at = pageManifestPath(m.file, configDir, page);
         if (!("outside" in at) && !manifests.has(at.abs)) manifests.set(at.abs, page);

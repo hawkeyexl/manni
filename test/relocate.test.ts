@@ -86,6 +86,8 @@ describe("relocate: a collection with no manifest yet (rung 1, 2)", () => {
         "collections:",
         "  - name: site",
         '    paths: ["docs/**/*.md"]',
+        "    # An empty list opts out of the metadata directory (proposal 0126), so",
+        "    # relocate gives the collection a manifest of its own (0047 section 3).",
         "    externalMetadata:",
         "      - file: ./site.metadata.yaml",
         "        keys: [owner, authors]",
@@ -276,27 +278,30 @@ describe("relocate: where a page with no collection goes (§3 cases 2 and 3)", (
     const dir = copy("relocate-default");
     const result = await runRelocate({ inputs: ["docs/", "guides/intro.md"], cwd: dir });
 
+    // The created collection declares no externalMetadata:, so its home is
+    // the metadata directory (proposal 0126), and each page is minted an id.
     expect(pretty(result)).toBe(
       [
-        "Created collection default (paths: docs/**, guides/intro.md) and default.metadata.yaml; it owns authors, owner.",
+        "Created collection default (paths: docs/**, guides/intro.md).",
+        "Created metadata/; it owns what each page's schemas mark external, one <id>.yaml per page.",
         "docs/install.md",
-        "    authors  → default.metadata.yaml:2",
-        "    owner    → default.metadata.yaml:4",
+        "    id       ← minted docs-install",
+        "    authors  → metadata/docs-install.yaml:2",
+        "    owner    → metadata/docs-install.yaml:4",
         "guides/intro.md",
-        "    owner    → default.metadata.yaml:6",
-        "2 files, 3 values moved to 1 manifest",
+        "    id       ← minted guides-intro",
+        "    owner    → metadata/guides-intro.yaml:2",
+        "2 files, 3 values moved to 2 manifests, 2 ids minted",
       ].join("\n"),
     );
     expect(yamlOf(dir, "manni.config.yaml")).toEqual({
       meta: { schemas: ["./steward.schema.json"] },
-      collections: [
-        {
-          name: "default",
-          paths: ["docs/**", "guides/intro.md"],
-          externalMetadata: [{ file: "./default.metadata.yaml", keys: ["authors", "owner"] }],
-        },
-      ],
+      collections: [{ name: "default", paths: ["docs/**", "guides/intro.md"] }],
     });
+    expect(yamlOf(dir, "metadata/docs-install.yaml")).toEqual({
+      "docs-install": { authors: ["ada"], owner: "platform" },
+    });
+    expect(read(dir, "docs/install.md")).toBe("---\ntitle: Install\nid: docs-install\n---\n# Install\n");
     expect(read(dir, "guides/other.md")).toContain("owner: support");
   });
 
@@ -311,14 +316,9 @@ describe("relocate: where a page with no collection goes (§3 cases 2 and 3)", (
     expect(result.config).toMatchObject({ file: "manni.config.yaml", created: true });
     expect(pretty(result).split("\n")[0]).toBe("Created manni.config.yaml.");
     expect(yamlOf(dir, "manni.config.yaml")).toEqual({
-      collections: [
-        {
-          name: "default",
-          paths: ["guides/intro.md"],
-          externalMetadata: [{ file: "./default.metadata.yaml", keys: ["owner"] }],
-        },
-      ],
+      collections: [{ name: "default", paths: ["guides/intro.md"] }],
     });
+    expect(yamlOf(dir, "metadata/guides-intro.yaml")).toEqual({ "guides-intro": { owner: "platform" } });
   });
 
   it("appends the target to the one collection's paths (case 3)", async () => {
@@ -832,14 +832,14 @@ describe("relocation core: the API later commands use", () => {
     expect(made === undefined ? undefined : offerPrompt(made, "write")).toEqual({
       notice:
         "no collection has a manifest for authors, owner, which their schemas prefer in external metadata.",
+      // The created collection reads the metadata directory (proposal 0126).
       question:
-        "Create collection default (paths: docs/**), with default.metadata.yaml, in manni.config.yaml, and move them out of 1 page? ",
+        "Create collection default (paths: docs/**) in manni.config.yaml, with metadata/<id>.yaml, and move them out of 1 page? ",
     });
 
     // One key reads in the singular.
-    const oneKeyPlan = await planRelocation(await context(fresh, ["docs/"]), {
-      files: ["docs/install.md"],
-      fields: ["owner"],
+    const oneKeyPlan = await planRelocation(await context(fresh, ["guides/"]), {
+      files: ["guides/intro.md"],
     });
     const [single] = relocationOffers(oneKeyPlan);
     expect(single === undefined ? undefined : offerPrompt(single, "write").notice).toBe(

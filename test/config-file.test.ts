@@ -117,9 +117,103 @@ describe("family config discovery", () => {
         paths: ["docs/guides"],
         exclude: [],
         externalMetadata: [],
+        declaresExternalMetadata: false,
       },
     ]);
     expect(stderr).toEqual([]);
+  });
+
+  describe("the metadata directory (0126)", () => {
+    const GUIDES = "collections:\n  - name: guides\n    paths: [docs/guides]\n";
+    const MANIFEST = "getting-started:\n  personas: [maya]\n";
+
+    afterEach(() => {
+      vi.unstubAllEnvs();
+    });
+
+    beforeEach(() => {
+      // Empty counts as unset, so a developer's own value never leaks in.
+      vi.stubEnv("MANNI_EXTERNAL_METADATA_DIR", "");
+    });
+
+    it("leaves a collection alone while metadata/ holds no manifest", async () => {
+      const root = await tree({ "manni.config.yaml": GUIDES, "metadata/notes.yaml": "title: notes\n" });
+      const found = await findConfigFile(root, META);
+      expect(found?.collections[0]?.externalMetadata).toEqual([]);
+      expect(found?.externalMetadataDir).toBeUndefined();
+    });
+
+    it("reads metadata/ by default once it holds a manifest", async () => {
+      const root = await tree({ "manni.config.yaml": GUIDES, "metadata/getting-started.yaml": MANIFEST });
+      const found = await findConfigFile(root, META);
+      expect(found?.collections[0]?.externalMetadata).toEqual([{ file: "metadata/{id}.yaml", implicit: true }]);
+    });
+
+    it("parses the top-level externalMetadataDir once, and reads the directory it names", async () => {
+      const root = await tree({ "manni.config.yaml": `externalMetadataDir: meta\n${GUIDES}` });
+      const found = await findConfigFile(root, META);
+      expect(found?.externalMetadataDir).toBe("meta");
+      // Named, so read even before it exists, carrying the refusal the loader gives.
+      expect(found?.collections[0]?.externalMetadata).toEqual([
+        { file: "meta/{id}.yaml", implicit: true, missing: `externalMetadataDir: meta does not exist. Create it, or check out the repository it names.` },
+      ]);
+    });
+
+    it("takes MANNI_EXTERNAL_METADATA_DIR over the key", async () => {
+      vi.stubEnv("MANNI_EXTERNAL_METADATA_DIR", "env-meta");
+      const root = await tree({ "manni.config.yaml": `externalMetadataDir: meta\n${GUIDES}` });
+      const found = await findConfigFile(root, META);
+      expect(found?.collections[0]?.externalMetadata).toEqual([
+        { file: "env-meta/{id}.yaml", implicit: true, missing: `MANNI_EXTERNAL_METADATA_DIR: env-meta does not exist. Create it, or check out the repository it names.` },
+      ]);
+    });
+
+    it("an explicit path reads it too", async () => {
+      const root = await tree({ "anything.yaml": `externalMetadataDir: meta\n${GUIDES}` });
+      const read = await readConfigFile("anything.yaml", root, META);
+      expect(read.externalMetadataDir).toBe("meta");
+      expect(read.collections[0]?.externalMetadata).toEqual([
+        { file: "meta/{id}.yaml", implicit: true, missing: `externalMetadataDir: meta does not exist. Create it, or check out the repository it names.` },
+      ]);
+    });
+
+    it("a family file with externalMetadataDir: and no section is still the tool's config", async () => {
+      const root = await tree({ "manni.config.yaml": "externalMetadataDir: meta\n" });
+      const found = await findConfigFile(root, META);
+      expect(found?.kind).toBe("manni");
+      expect(found?.value).toBeNull();
+      expect(found?.externalMetadataDir).toBe("meta");
+    });
+
+    it.each([
+      [
+        "empty",
+        "externalMetadataDir: ''\n",
+        "manni.config.yaml: externalMetadataDir must be a non-empty string naming a directory, relative to the config file.",
+      ],
+      [
+        "a URL",
+        "externalMetadataDir: https://example.com/meta\n",
+        "manni.config.yaml: externalMetadataDir is a URL. It names a directory this run reads and writes; check the repository out and name its path.",
+      ],
+    ])("refuses a value that is %s, in the tool's error class", async (_label, text, message) => {
+      class MyError extends Error {}
+      const root = await tree({ "manni.config.yaml": `${text}meta: {}\n` });
+      const run = findConfigFile(root, { ...META, toError: (m) => new MyError(m) });
+      await expect(run).rejects.toBeInstanceOf(MyError);
+      await expect(run).rejects.toThrow(message);
+    });
+
+    it("a legacy per-tool file never reads it", async () => {
+      const root = await tree({
+        "docmeta.config.yaml": "externalMetadataDir: meta\npaths: [docs]\n",
+        "metadata/getting-started.yaml": MANIFEST,
+      });
+      const found = await findConfigFile(root, META);
+      expect(found?.kind).toBe("legacy");
+      expect(found?.externalMetadataDir).toBeUndefined();
+      expect(found?.collections).toEqual([]);
+    });
   });
 
   it("a family file with both hands over the section and the collections", async () => {

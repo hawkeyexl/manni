@@ -37,7 +37,7 @@
  *    both.
  */
 import { readFile } from "node:fs/promises";
-import { isAbsolute, relative, resolve, sep } from "node:path";
+import { dirname, isAbsolute, relative, resolve, sep } from "node:path";
 import {
   LineCounter,
   isMap,
@@ -59,7 +59,12 @@ import {
 import {
   PAGE_PLACEHOLDER,
   findPageManifests,
+  hasIdPlaceholder,
   hasPagePlaceholder,
+  idManifestPath,
+  isSafeManifestId,
+  listIdManifests,
+  normalizeManifestPattern,
   pageManifestPath,
   sameFile,
 } from "../../shared/page-manifest.js";
@@ -90,6 +95,13 @@ export const EXTERNAL_OWNED_SCHEMA = "external:owned";
 export const EXTERNAL_DUPLICATE_SCHEMA = "external:duplicate";
 
 /**
+ * The `schema` ref of an unsafe-id finding (proposal 0126): the page's `id`
+ * cannot name a file in an `{id}` manifest's directory, so the page reads
+ * nothing from it.
+ */
+export const EXTERNAL_UNSAFE_ID_SCHEMA = "external:unsafe-id";
+
+/**
  * The `keyword` every external-metadata finding carries: no Ajv keyword
  * produced it.
  */
@@ -97,6 +109,9 @@ export const EXTERNAL_KEYWORD = "external";
 
 /** The join that names documents by path, and the default. */
 export const PATH_JOIN = "path";
+
+/** The join of an `{id}` manifest (proposal 0126), whose file the page's id names. */
+export const ID_JOIN = "id";
 
 /** One value a manifest supplied, and where it was written. */
 export interface ExternalMetadataValue {
@@ -209,6 +224,43 @@ const perPageRules = new WeakMap<ExternalMetadataIndex, readonly PerPageRule[]>(
  */
 const strayEntries = new WeakSet<ExternalMetadataEntry>();
 
+/**
+ * Every manifest one `{id}` pattern names (proposal 0126), as an index loaded
+ * it: one per resolved pattern, read whole, and shared by every collection
+ * whose entry resolves to it. Its values are not tagged by collection, so a
+ * page reads them through whichever of its collections reads the registry,
+ * and a page in two of them reads its file once.
+ */
+interface IdRegistry {
+  /** The pattern resolved from the config directory: the registry's identity. */
+  key: string;
+  /** The pattern as the run reports it (`metadata/{id}.yaml`), which an owner or a refusal names. */
+  file: string;
+  /** Its directory as the run reports it (`metadata`), for the unsafe-id finding. */
+  dir: string;
+  /** The pattern as the config wrote it, the directory it resolves from, and the run's base. */
+  pattern: string;
+  configDir: string;
+  base: string;
+  /** The collections that read it. */
+  readers: Set<string>;
+  /** id -> owned key -> value. */
+  values: Map<string, Values>;
+  /** Every file its values came from, as the run reports them. */
+  files: Set<string>;
+}
+
+/** The `{id}` registries each index was loaded with, kept beside it as `perPageRules` is. */
+const idRegistries = new WeakMap<ExternalMetadataIndex, readonly IdRegistry[]>();
+
+/**
+ * Entries read from an `{id}` manifest, to their registry's reported
+ * pattern. One registry serves every collection that reads it, so its
+ * orphans are checked on a whole-corpus run only, by pattern and id, and
+ * each names a file of its own, which goes with it.
+ */
+const idEntries = new WeakMap<ExternalMetadataEntry, string>();
+
 /** Every manifest of a run, loaded once and consulted per document. */
 export interface ExternalMetadataIndex {
   /**
@@ -247,6 +299,12 @@ export interface LoadExternalMetadataOptions {
    * placeholder ignores this and loads its one manifest as it always has.
    */
   pages?: readonly string[];
+  /**
+   * A metadata directory the key or the environment named that is not there
+   * (proposal 0126): `refuse`, the default, raises its refusal, and `empty`
+   * reads it as holding nothing, for the writer that creates it.
+   */
+  missingDirectory?: "refuse" | "empty";
 }
 
 /** A place a merged value lives, for a finding that must name it. */
@@ -280,6 +338,31 @@ export interface ExternalMetadataJoin {
   file: string;
   /** The collection that manifest belongs to (proposal 0041). */
   collection: string;
+  /**
+   * For an `{id}` manifest's join (proposal 0126), its pattern as the run
+   * reports it (`metadata/{id}.yaml`). Duplicates and orphans are keyed by
+   * it, not by `field`, so two directories whose pages share an id are two
+   * manifests.
+   */
+  pattern?: string;
+}
+
+/**
+ * The key a join's duplicates and orphans are counted under: an `{id}`
+ * join's pattern (proposal 0126), else its field. `orphanJoins` reads
+ * `matched` by the same key.
+ */
+export function joinKey(join: Pick<ExternalMetadataJoin, "field" | "pattern">): string {
+  return join.pattern ?? join.field;
+}
+
+/** A page `id` an `{id}` manifest (proposal 0126) cannot be found by. */
+export interface ExternalMetadataUnsafeId {
+  /** The id as the page holds it: the ciphertext, when it is encrypted. */
+  value: string;
+  encrypted: boolean;
+  /** The manifest's directory, as the run reports it: `metadata`. */
+  dir: string;
 }
 
 /** What `mergeExternalMetadata` hands back. */
@@ -292,8 +375,17 @@ export interface MergedMetadata {
    * second lookup, and without a fallback for an index that is not there.
    */
   collisions: ExternalMetadataCollision[];
-  /** Field-joined entries this document matched, one per manifest at most. */
+  /**
+   * Field-joined entries this document matched, one per manifest at most.
+   * An `{id}` manifest (proposal 0126) is matched by a safe id whether or not
+   * its file exists, since two pages carrying one id collide either way.
+   */
   joins: ExternalMetadataJoin[];
+  /**
+   * `{id}` manifests the page's `id` cannot name a file in (proposal 0126),
+   * so it read nothing from them. Present only when there is one.
+   */
+  unsafeIds?: ExternalMetadataUnsafeId[];
   /**
    * Where a merged pointer's value lives. Answers only for a value the
    * manifest supplied — a bare key or its `/key` pointer, and anything
@@ -325,10 +417,14 @@ function reported<T extends { file: string }>(of: T, file: string): T {
   return of.file === file ? of : { ...of, file };
 }
 
-/** The join an external-metadata config asks for: `path` unless it names a field. */
+/**
+ * The join an external-metadata config asks for: `path` unless it names a
+ * field. An `{id}` manifest (proposal 0126) takes no `join:`, and joins on `id`.
+ */
 export function externalMetadataJoin(
-  manifest: Pick<ExternalMetadataConfig, "join">,
+  manifest: Pick<ExternalMetadataConfig, "join"> & { file?: string },
 ): string {
+  if (manifest.file !== undefined && hasIdPlaceholder(manifest.file)) return ID_JOIN;
   return manifest.join ?? PATH_JOIN;
 }
 
@@ -358,12 +454,24 @@ export async function loadExternalMetadata(
   const resolvedBy = new Map<string, string>();
   const rules: PerPageRule[] = [];
   const implied: ImpliedOwner[] = [];
+  const registries = new Map<string, IdRegistry>();
 
   for (const { collection, manifest } of configured) {
+    // A directory someone named and nobody checked out must not read as
+    // pages with nothing kept (0126). Only the writer that creates it asks
+    // for it empty.
+    if (manifest.missing !== undefined && opts.missingDirectory !== "empty") {
+      throw new DocmetaError(manifest.missing);
+    }
     // The whole collection, because a `{page}` entry is read per member page.
     const declared = collections.find(
       (c) => c.name === collection && c.externalMetadata.includes(manifest),
     );
+    if (declared !== undefined && classifyRef(manifest.file).kind !== "url" && hasIdPlaceholder(manifest.file)) {
+      const owner = await loadPerId(declared, manifest, opts, registries, { owners, byPath, byField, entries });
+      if (owner !== undefined) implied.push(owner);
+      continue;
+    }
     if (
       declared !== undefined &&
       classifyRef(manifest.file).kind !== "url" &&
@@ -465,6 +573,7 @@ export async function loadExternalMetadata(
   const index: ExternalMetadataIndex = { owners, byPath, byField, entries };
   if (rules.length > 0) perPageRules.set(index, rules);
   if (implied.length > 0) impliedOwners.set(index, implied);
+  if (registries.size > 0) idRegistries.set(index, [...registries.values()]);
   return index;
 }
 
@@ -492,10 +601,11 @@ function ownership(
     };
   }
   const never = neverOwned(declared ?? { externalMetadata: [manifest] }, manifest);
+  const join = externalMetadataJoin(manifest);
   return {
     may: (key) => !never.has(key),
     why: (key) =>
-      key === manifest.join
+      key === join && join !== PATH_JOIN
         ? "the field this manifest joins on, which the page carries. Remove it from the entry."
         : `which another manifest of this collection names in its "keys". Move it to that manifest, or remove it from the entry.`,
   };
@@ -624,6 +734,92 @@ async function loadPerPage(
   return implied;
 }
 
+/**
+ * One `{id}` entry (proposal 0126): every manifest its pattern names, read
+ * whole the first time any collection's entry resolves to it, and joined on
+ * the page's `id` at the merge. A later collection reading the same pattern
+ * only joins the registry's readers, so its values are read once and lost by
+ * none of them.
+ *
+ * Each file keeps only the entry keyed by its own stem; its other root keys
+ * are ignored, and a file with no such entry is not a manifest. A missing
+ * directory holds none, and a page whose file is missing keeps nothing there.
+ *
+ * Ownership is the config's, recorded per collection as `{page}` records it,
+ * under the registry's one reported pattern, so two collections reading it
+ * are one owner of a page in both.
+ */
+async function loadPerId(
+  declared: CollectionConfig,
+  manifest: ExternalMetadataConfig,
+  opts: LoadExternalMetadataOptions,
+  registries: Map<string, IdRegistry>,
+  into: IndexUnderConstruction,
+): Promise<ImpliedOwner | undefined> {
+  const collection = declared.name;
+  const key = resolve(opts.configDir, normalizeManifestPattern(manifest.file));
+  let registry = registries.get(key);
+  if (registry === undefined) {
+    registry = {
+      key,
+      file: reportedPath(key, opts.base),
+      dir: reportedPath(dirname(key), opts.base),
+      pattern: manifest.file,
+      configDir: opts.configDir,
+      base: opts.base,
+      readers: new Set(),
+      values: new Map(),
+      files: new Set(),
+    };
+    registries.set(key, registry);
+    // ponytail: every file in the directory is read each run; index by page if that ever measures slow.
+    for (const { abs, id } of listIdManifests(manifest.file, opts.configDir)) {
+      const label = reportedPath(abs, opts.base);
+      // Parsed under the first reader's ownership. Every implicit entry's is
+      // the same; explicit entries that differ on one directory are an edge
+      // this does not reconcile.
+      const parsed = await parsedManifests.parse(
+        abs,
+        JSON.stringify([collection, ID_JOIN, opts.configDir, variantOf(declared, manifest), id]),
+        async () =>
+          parseManifest(
+            manifest,
+            collection,
+            await readManifest(abs, label),
+            label,
+            opts.configDir,
+            ID_JOIN,
+            ownership(declared, manifest),
+            id,
+          ),
+      );
+      const values = parsed.values.get(id);
+      if (values !== undefined) {
+        registry.values.set(id, new Map([...values].map(([owned, value]) => [owned, reported(value, label)])));
+        registry.files.add(label);
+      }
+      for (const entry of parsed.entries) {
+        const copy = reported(entry, label);
+        idEntries.set(copy, registry.file);
+        into.entries.push(copy);
+      }
+    }
+  }
+  registry.readers.add(collection);
+  for (const owned of manifest.keys ?? []) {
+    const list = into.owners.get(owned);
+    if (list) list.push({ collection, file: registry.file });
+    else into.owners.set(owned, [{ collection, file: registry.file }]);
+  }
+  if (manifest.keys !== undefined) return undefined;
+  return { collection: declared, manifest, file: registry.file, files: registry.files };
+}
+
+/** The file a registry names for `id`, as the run reports it. */
+function idManifestLabel(registry: IdRegistry, id: string): string {
+  return reportedPath(idManifestPath(registry.pattern, registry.configDir, id).abs, registry.base);
+}
+
 /** The index a manifest with this join is merged into. */
 function indexFor(join: string, into: IndexUnderConstruction): Map<string, Values> {
   if (join === PATH_JOIN) return into.byPath;
@@ -689,6 +885,12 @@ function parseManifest(
   configDir: string,
   join: string,
   owns: Ownership,
+  /**
+   * The one entry an `{id}` manifest's file is read for, its own stem
+   * (proposal 0126). Every other root key is ignored, and a root that is not
+   * a mapping holds no such entry.
+   */
+  only?: string,
 ): ParsedManifest {
   const target = new Map<string, Values>();
   const entries: ExternalMetadataEntry[] = [];
@@ -707,6 +909,7 @@ function parseManifest(
   // An empty manifest is a mapping with no entries: legal, and merges nothing.
   if (root === null || (isScalar(root) && root.value === null))
     return { values: target, entries };
+  if (!isMap(root) && only !== undefined) return { values: target, entries };
   if (!isMap(root)) {
     throw new DocmetaError(
       `Manifest ${file}: the manifest must be a mapping from document ${join === PATH_JOIN ? "path" : `"${join}"`} to owned keys.`,
@@ -724,6 +927,7 @@ function parseManifest(
   const seen = new Map<string, number | undefined>();
   for (const pair of root.items) {
     const spelled = isScalar(pair.key) ? String(pair.key.value) : String(pair.key);
+    if (only !== undefined && spelled !== only) continue;
     const entryLine = lineAt(pair.key);
     const where = entryLine === undefined ? file : `${file}:${entryLine}`;
     if (seen.has(spelled)) {
@@ -903,9 +1107,16 @@ function mergeWith(
   const implied = (impliedOwners.get(index) ?? []).filter((o) => mine(o.collection.name));
   const impliedOwns = (o: ImpliedOwner, key: string): boolean =>
     probing ? !neverOwned(o.collection, o.manifest).has(key) : ownsKey(o.collection, o.manifest, key, marked);
+  // The `{id}` registries this file's collections read (proposal 0126), and
+  // the page's id as they read it. A page with no usable id reads nothing
+  // from them, so they own nothing for it: a value it keeps is the
+  // location:external warning's, not a collision.
+  const registries = (idRegistries.get(index) ?? []).filter((r) => memberOf.some((c) => r.readers.has(c)));
+  const pageId = registries.length === 0 ? undefined : manifestIdOf(extracted.data[ID_JOIN]);
+  const unread = new Set(pageId !== undefined && "id" in pageId ? [] : registries.map((r) => r.file));
   /** Every manifest of this file's collections that owns `key` for it. Not asked while probing. */
   const ownersOf = (key: string): { collection: string; file: string }[] =>
-    pageOwners(index, key, memberOf, probing ? undefined : marked);
+    pageOwners(index, key, memberOf, probing ? undefined : marked).filter((o) => !unread.has(o.file));
   /** The keyless manifest a value came from, when one did. */
   const impliedFrom = (sv: ExternalMetadataValue): ImpliedOwner | undefined =>
     implied.find((o) => o.collection.name === sv.collection && o.files.has(sv.file));
@@ -976,6 +1187,31 @@ function mergeWith(
     }
   }
 
+  // Each `{id}` registry is read through the first of this file's
+  // collections that reads it, once however many do. A safe id is a join
+  // whether or not its file exists, so two pages carrying it collide before
+  // either has one.
+  const unsafeIds: ExternalMetadataUnsafeId[] = [];
+  /** A registry's values, and the keyless manifest they are judged under, when one is. */
+  const shared = new Map<ReadonlyMap<string, ExternalMetadataValue>, ImpliedOwner | undefined>();
+  for (const registry of registries) {
+    if (pageId === undefined) break;
+    if ("refused" in pageId) {
+      unsafeIds.push({ ...pageId.refused, dir: registry.dir });
+      continue;
+    }
+    const { id } = pageId;
+    const reader = memberOf.find((c) => registry.readers.has(c)) ?? "";
+    const file = idManifestLabel(registry, id);
+    // Keyed by its pattern, so two directories whose pages share an id never collide.
+    joins.push({ field: ID_JOIN, value: id, file, collection: reader, pattern: registry.file });
+    const values = registry.values.get(id);
+    if (values === undefined) continue;
+    sources.push(values);
+    shared.set(values, implied.find((o) => o.collection.name === reader && o.file === registry.file));
+    entryOf.set(values, () => index.entries.find((e) => idEntries.has(e) && e.file === file));
+  }
+
   // Two of this file's collections owning one key the manifests actually
   // supply for it is an operational error, not a finding: there is nothing
   // about the document to fix, and picking a winner would be the tiebreak
@@ -993,22 +1229,25 @@ function mergeWith(
     }
   }
 
+  const unsafe = unsafeIds.length === 0 ? {} : { unsafeIds };
   if (sources.length === 0) {
-    return { extracted, collisions, joins, locate: none };
+    return { extracted, collisions, joins, locate: none, ...unsafe };
   }
 
   const data: Record<string, unknown> = { ...extracted.data };
   const merged = new Map<string, ExternalMetadataValue>();
   for (const supplied of sources) {
+    const fromRegistry = shared.has(supplied);
     for (const [key, sv] of supplied) {
-      // Only the manifests of collections this file belongs to.
-      if (!mine(sv.collection)) continue;
+      // Only the manifests of collections this file belongs to. A registry
+      // was already read through one of them, whichever collection parsed it.
+      if (!fromRegistry && !mine(sv.collection)) continue;
       // A keyless manifest owns only what this file's schemas mark external
       // (0068 rule 5). An entry carrying anything else sets a key nothing
       // owns, which is the refusal a manifest with keys gives for one. With
       // the marks unknown (the schema set did not resolve, or the caller
       // passed none), nothing is owned and nothing is judged.
-      const from = impliedFrom(sv);
+      const from = fromRegistry ? shared.get(supplied) : impliedFrom(sv);
       if (from !== undefined && !impliedOwns(from, key)) {
         if (probing || marked === UNKNOWN) continue;
         throw unmarkedRefusal(label, key, sv, entryOf.get(supplied)?.(sv));
@@ -1028,7 +1267,32 @@ function mergeWith(
     const line = manifestLine(sv, split.rest);
     return { file: sv.file, ...(line === undefined ? {} : { line }) };
   };
-  return { extracted: { ...extracted, data }, collisions, joins, locate };
+  return { extracted: { ...extracted, data }, collisions, joins, locate, ...unsafe };
+}
+
+/**
+ * A page's `id` as an `{id}` manifest (proposal 0126) reads it: a safe id,
+ * one refused because it cannot name a file or is held encrypted, or
+ * `undefined` for a page with none. A ciphertext is refused rather than
+ * opened: the file it names would be named by a secret.
+ */
+export function manifestIdOf(
+  raw: unknown,
+): { id: string } | { refused: { value: string; encrypted: boolean } } | undefined {
+  if (isEncryptedValue(raw)) return { refused: { value: raw, encrypted: true } };
+  const id = joinValue(raw);
+  if (id === undefined) return undefined;
+  return isSafeManifestId(id) ? { id } : { refused: { value: id, encrypted: false } };
+}
+
+/**
+ * Why an id cannot name a file in `dir`, the directory as the run reports
+ * it: validate's unsafe-id finding, and the refusal a writer gives.
+ */
+export function unsafeIdMessage(refused: { value: string; encrypted: boolean }, dir: string): string {
+  return refused.encrypted
+    ? `id is encrypted, so it cannot name a file in ${dir}/; store it plain.`
+    : `id "${refused.value}" cannot name a file in ${dir}/; an id that names a manifest is lowercase letters, digits and "-", starting with a letter or digit.`;
 }
 
 /**
@@ -1237,6 +1501,12 @@ function inCollections(
  * values documents in the run carried, which the caller collects from each
  * document's `joins` — so this runs after the per-file loop, under the same
  * corpus invariant as `orphanEntries`.
+ *
+ * An `{id}` manifest's entry (proposal 0126) belongs to every collection
+ * that reads its directory, so only a run with no `collections` narrowing
+ * judges it: another collection's pages could carry the id. It is matched
+ * under its pattern, `joinKey`'s key, so a page of another directory
+ * carrying the same id does not hide it.
  */
 export function orphanJoins(
   index: ExternalMetadataIndex | null,
@@ -1244,12 +1514,30 @@ export function orphanJoins(
   collections?: readonly string[],
 ): ExternalMetadataEntry[] {
   if (!index) return [];
-  return index.entries.filter(
-    (e) =>
-      inCollections(e, collections) &&
+  return index.entries.filter((e) => {
+    const pattern = idEntries.get(e);
+    return (
+      (pattern !== undefined ? collections === undefined : inCollections(e, collections)) &&
       e.join !== PATH_JOIN &&
-      !(matched.get(e.join)?.has(e.spelled) ?? false),
-  );
+      !(matched.get(pattern ?? e.join)?.has(e.spelled) ?? false)
+    );
+  });
+}
+
+/**
+ * What an `{id}` manifest (proposal 0126) holds for one id: the owned keys
+ * of the entry keyed by it, as loaded, or `undefined` when the file has none
+ * or `ref` names no registry. `ref` is an entry of `index.entries` read from
+ * one, or a registry's reported pattern (`pageOwners`' `file`, a join's
+ * `pattern`) and an id.
+ */
+export function idManifestValues(
+  index: ExternalMetadataIndex | null,
+  ref: ExternalMetadataEntry | { pattern: string; id: string },
+): ReadonlyMap<string, ExternalMetadataValue> | undefined {
+  if (index === null) return undefined;
+  const [pattern, id] = "pattern" in ref ? [ref.pattern, ref.id] : [idEntries.get(ref), ref.spelled];
+  return (idRegistries.get(index) ?? []).find((r) => r.file === pattern)?.values.get(id);
 }
 
 /** The operational error an orphan check raises, naming the first entry. */
@@ -1262,8 +1550,9 @@ export function orphanError(orphans: readonly ExternalMetadataEntry[]): DocmetaE
     first.join === PATH_JOIN
       ? `names "${first.spelled}", which this run did not load`
       : `names ${first.join} "${first.spelled}", which no loaded document carries`;
-  // A stray per-page file holds its one page's entry, so the file goes with it.
-  const remove = strayEntries.has(first) ? "the file" : "it";
+  // A stray per-page file, or an `{id}` manifest (0126), holds its one page's
+  // entry, so the file goes with it.
+  const remove = strayEntries.has(first) || idEntries.has(first) ? "the file" : "it";
   return new DocmetaError(
     `Manifest ${where} ${what}${more}. Fix the entry, or remove ${remove}.`,
   );
@@ -1281,10 +1570,14 @@ export function pageOwners(
   marked: ReadonlySet<string> | undefined,
 ): { collection: string; file: string }[] {
   if (index === null) return [];
-  return [
+  const owners = [
     ...(index.owners.get(key) ?? []).filter((o) => memberOf.includes(o.collection)),
     ...(impliedOwners.get(index) ?? [])
       .filter((o) => memberOf.includes(o.collection.name) && ownsKey(o.collection, o.manifest, key, marked))
       .map((o) => ({ collection: o.collection.name, file: o.file })),
   ];
+  // Two collections reading one `{id}` registry (proposal 0126) are one
+  // manifest, so it is named once, by the first of them that owns the key.
+  const shared = new Set((idRegistries.get(index) ?? []).map((r) => r.file));
+  return owners.filter((o, i) => !shared.has(o.file) || owners.findIndex((p) => p.file === o.file) === i);
 }

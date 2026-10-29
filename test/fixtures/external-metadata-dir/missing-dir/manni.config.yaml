@@ -1,0 +1,5 @@
+# Proposal 0126: externalMetadataDir names a directory that does not exist.
+externalMetadataDir: nope-meta
+collections:
+  - name: site
+    paths: ["docs/*.md"]

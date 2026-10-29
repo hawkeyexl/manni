@@ -230,9 +230,9 @@ docs/src/content/docs/meta/ci/exit-codes-and-annotations.mdx:
         integrity: sha256-9c583529e2038b66fd68bf17ad8ed257c07012ca68db662784c5030d02f4ca11
       source:
         file: src/meta/reporters/rule-id.ts
-        lines: 125-127
+        lines: 133-135
         integrity: sha256-1ac11dc29366290380c0320ec5ab0cc59ecf543c36e339e9af43c6bbbf198b6a
-        commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
+        commit-sha: 46ea4718fa7ee7e2ec7ed135a7a646d421ff3fb8
     - id: fill-annotation-has-no-line
       claim:
         lines: 276-279

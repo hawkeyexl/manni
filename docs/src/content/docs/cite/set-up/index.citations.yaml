@@ -42,9 +42,9 @@ docs/src/content/docs/cite/set-up/index.mdx:
         integrity: sha256-823cfca5fdedd2b0f9090796d7bbd743b26e94a8634169828fc5ac6faa107352
       source:
         file: src/shared/config-file.ts
-        lines: 324
-        integrity: sha256-718e1b331ff4627c6a86aaeb745be2e216eb6cd6acbc8b81d7a0d8674a9bfc7f
-        commit-sha: a589e08250dee7efaee7ed0f58df01986fad8d1d
+        lines: 359-361
+        integrity: sha256-6e61d546debcdab530dcb1705b1984c709634183b6117f2ab768405eb192577b
+        commit-sha: 46ea4718fa7ee7e2ec7ed135a7a646d421ff3fb8
     - id: collection-paths-config-relative
       claim:
         lines: 37
@@ -60,9 +60,9 @@ docs/src/content/docs/cite/set-up/index.mdx:
         integrity: sha256-4ec87c8ea55fa4ce990393f81dd8477fed6b871248a097882ab85f71f3c281b9
       source:
         file: src/cite/commands/check.ts
-        lines: 200-210
+        lines: 203-213
         integrity: sha256-473fa9dbc7c8c57a21c0c516bd0ec06830610bd48cfe73fd0da009d5208702ca
-        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
+        commit-sha: 46ea4718fa7ee7e2ec7ed135a7a646d421ff3fb8
     - id: bare-check-covers-collections
       claim:
         lines: 38
@@ -105,9 +105,9 @@ docs/src/content/docs/cite/set-up/index.mdx:
         integrity: sha256-22c6f5cb961cfcf5e4d8d2f85c0eb8481a311726a3d7907abffbae88da8fac9d
       source:
         file: src/shared/config-file.ts
-        lines: 193-201
+        lines: 211-219
         integrity: sha256-a0977fdaef182d48c35eb7885ef089f697029ed2bfe7ef7dfb4f715266b35a26
-        commit-sha: a589e08250dee7efaee7ed0f58df01986fad8d1d
+        commit-sha: 46ea4718fa7ee7e2ec7ed135a7a646d421ff3fb8
     - id: root-is-git-root-above-cwd
       claim:
         lines: 54-58
@@ -230,9 +230,9 @@ docs/src/content/docs/cite/set-up/index.mdx:
         integrity: sha256-622dccd00088a07c45e856fc590b1d9b59c7df0e85b90e35f06dcc305d171bf2
       source:
         file: src/cite/commands/check.ts
-        lines: 177-181
+        lines: 180-184
         integrity: sha256-dd1fd746781a236fa50aca4af4a370c3d18e06a6eb84ceda7b7eb3eb133f10cb
-        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
+        commit-sha: 46ea4718fa7ee7e2ec7ed135a7a646d421ff3fb8
     - id: no-inputs-exits-2
       claim:
         integrity: sha256-622dccd00088a07c45e856fc590b1d9b59c7df0e85b90e35f06dcc305d171bf2

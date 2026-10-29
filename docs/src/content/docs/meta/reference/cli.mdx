@@ -29,7 +29,7 @@ sample-questions:
 graph:
   label: CLI reference
   type: reference
-last-updated: 2026-10-24
+last-updated: 2026-10-29
 tags:
   - cli
   - command-reference
@@ -1450,8 +1450,14 @@ belongs to. With no collections, `relocate` creates one named `default` whose
 `paths:` are the targets you typed (`docs/` becomes `docs/**`). With exactly
 one collection, the target naming the page is appended to its `paths:`. With
 several, and the page in none, the value stays. The manifest is the
-collection's first local `file:` entry, or `<collection>.metadata.yaml` beside
-the config file. With no config file, `manni.config.yaml` is created at the git
+collection's first local `file:` entry. A collection with no
+`externalMetadata:` key, `default` included, uses the [metadata
+directory](/manni/meta/reference/configuration/#the-metadata-directory)
+instead, one `<id>.yaml` per page. A run without `--dry-run` creates the
+directory when it is missing. A page
+with no `id` gets [a minted one](/manni/meta/reference/configuration/#minting-an-id).
+Any other collection gets `<collection>.metadata.yaml` beside the config file.
+With no config file, `manni.config.yaml` is created at the git
 root, else the working directory. Config edits keep comments and key order.
 
 {/* cite keys-change-moves-every-page-in-the-collection */}
@@ -1497,19 +1503,22 @@ lands whole or not at all.
 In `pretty` format, the first lines say what the config gains or loses. Then
 each page lists its values as `<key>  → <manifest>:<line>` (out of the page),
 `<key>  ← <manifest>` (into the page), or `<key>  stays: <reason>`. A page
+whose id the run mints lists `id  ← minted <id>` first. A page
 reached only through a `keys:` change is counted, not listed, unless a value on
 it stays. The last line
-counts files and values.
+counts files and values, and the ids minted when there are any.
 
 ```
 Using manni.config.yaml (.)
-Created site.metadata.yaml; collections[site].externalMetadata[0] owns owner, authors.
+Created metadata/; it owns what each page's schemas mark external, one <id>.yaml per page.
 docs/faq.md
-    owner    → site.metadata.yaml:2
+    id       ← minted faq
+    owner    → metadata/faq.yaml:2
 docs/install.md
-    authors  → site.metadata.yaml:4
-    owner    → site.metadata.yaml:6
-2 files, 3 values moved to 1 manifest
+    id       ← minted install
+    authors  → metadata/install.yaml:2
+    owner    → metadata/install.yaml:4
+2 files, 3 values moved to 2 manifests, 2 ids minted
 ```
 
 {/* cite dry-run-config-line-wording */}
@@ -1521,8 +1530,9 @@ The first lines take one of these shapes:
 
 | Config change | Line |
 |---|---|
-| A manifest is created | `Created site.metadata.yaml; collections[site].externalMetadata[0] owns owner, authors.` |
-| A collection is created (no collections before) | `Created collection default (paths: docs/**, guides/intro.md) and default.metadata.yaml; it owns authors, owner.` |
+| The metadata directory is created | `Created metadata/; it owns what each page's schemas mark external, one <id>.yaml per page.` |
+| A manifest is created for a collection that declares `externalMetadata:` | `Created site.metadata.yaml; collections[site].externalMetadata[0] owns owner, authors.` |
+| A collection is created (no collections before) | `Created collection default (paths: docs/**, guides/intro.md).` When the run creates the metadata directory, its line follows. |
 | A target is added to the one collection's `paths:` | `Added notes/** to collection site's paths; docs-meta.yaml now owns owner, authors.` |
 | A key is added to `keys:` | `Adding owner to docs-meta.yaml's keys moves it out of every page in collection site, 2 beyond the paths you named.` The count after the comma appears only when there are such pages. |
 | A key is removed from `keys:` | `Removing title from docs-meta.yaml's keys moves it into every page in collection site.` |
@@ -1534,7 +1544,7 @@ A value that stays names its reason:
 |---|---|
 | `no-home` | `owner    stays: this document is in none of the 2 collections, so it has no manifest` |
 | `read-only-format` | `owner    stays: the rst format cannot write this document's metadata` |
-| `no-join-value` | `owner    stays: this document has no id, which api-meta.yaml joins on` |
+| `no-join-value` | `owner    stays: this document has no id, which api-meta.yaml joins on`, or for the metadata directory `owner    stays: no id could be minted (its schemas do not allow id)` |
 | `values-differ` | `owner    stays: the page and docs-meta.yaml hold different values` |
 | `url-manifest` | `owner    stays: https://example.com/owners.yaml is fetched and cannot be written`, in either direction |
 | `unreadable` | `owner    stays: this document could not be parsed: Invalid YAML frontmatter: <parser message>` |
@@ -1552,10 +1562,11 @@ In `json` format the run is one object:
 |---|---|
 | `dryRun` | boolean |
 | `config` | `{ file, created, collectionsCreated, pathsAdded }` |
-| `manifests[]` | `{ file, collection, created, keysAdded, keysRemoved, undeclared }` |
+| `manifests[]` | `{ file, collection, created, keysAdded, keysRemoved, undeclared }`. The metadata directory's `file` is its pattern, `metadata/{id}.yaml`. |
+| `files[].minted` | string, the id the run minted into the page. Present only when it minted one. |
 | `files[].moved[]` | `{ key, to, reason }` plus `manifest` and `line` when `to` is `manifest`, or `from` when `to` is `page`. `to` is `page` or `manifest`. `reason` is `preferred` (a mark) or `owned` (a manifest already owns the key). `line` is omitted under `--dry-run`. |
 | `files[].stayed[]` | `{ key, reason }`, with a reason from the table above |
-| `summary` | `{ files, moved, stayed, manifestsCreated }` |
+| `summary` | `{ files, moved, stayed, manifestsCreated }`, plus `minted`, the count of minted ids, when there are any |
 
 {/* cite relocate-exit-0-and-1 */}
 {/* cite relocate-exit-1-when-a-value-stayed */}
@@ -1573,6 +1584,8 @@ for an operational error:
 | `--collection` with paths | `manni: --collection selects a configured collection; it cannot be combined with paths.` |
 | A format other than `pretty` or `json` | `manni: relocate --format must be pretty or json; got "sarif".` |
 | The manifest path to create exists and is not declared | `manni: site.metadata.yaml already exists and is not a manifest of collection site; declare it under externalMetadata, or move it.` |
+| A page's `id` cannot name a file in the metadata directory | `manni: docs/faq.md: id "Bad_ID" cannot name a file in metadata/; an id that names a manifest is lowercase letters, digits and "-", starting with a letter or digit.` |
+| Under `--dry-run`, the metadata directory `externalMetadataDir` or `MANNI_EXTERNAL_METADATA_DIR` names does not exist | `manni: MANNI_EXTERNAL_METADATA_DIR: nope does not exist. Create it, or check out the repository it names.` |
 | No paths and no collections | ``manni: No files to relocate. Pass paths/globs, or declare a collection under `collections:` in manni.config.yaml.`` |
 | A file changed between planning and writing, for example while a writer's prompt waited | `manni: docs/install.md changed after the relocation was planned, so nothing was written. Run the command again.` |
 | A write failed, and every file already written was put back | `manni: Could not write docs/faq.md: <reason>. Nothing was changed: the 2 files already written were restored.` |

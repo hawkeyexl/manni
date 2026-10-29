@@ -1,0 +1,6 @@
+# Proposal 0126: an id that cannot name a file in metadata/, or one held
+# encrypted, reads nothing from it. plain.md's id can, and its manifest is
+# what makes the default directory read.
+collections:
+  - name: site
+    paths: ["docs/*.md"]

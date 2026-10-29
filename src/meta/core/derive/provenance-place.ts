@@ -16,10 +16,23 @@ import {
   type CollectionConfig,
   type ExternalMetadataConfig,
 } from "../../../shared/collections.js";
-import { hasPagePlaceholder, pageManifestPath } from "../../../shared/page-manifest.js";
+import {
+  hasIdPlaceholder,
+  hasPagePlaceholder,
+  idManifestPath,
+  normalizeManifestPattern,
+  pageManifestPath,
+} from "../../../shared/page-manifest.js";
 import { DocmetaError } from "../../types.js";
 import { memberOf } from "../collections.js";
-import { externalMetadataJoin, outsideRefusal, PATH_JOIN, reportedPath } from "../external-metadata.js";
+import {
+  externalMetadataJoin,
+  manifestIdOf,
+  outsideRefusal,
+  PATH_JOIN,
+  reportedPath,
+  unsafeIdMessage,
+} from "../external-metadata.js";
 import { classifyRef } from "../schema-registry.js";
 import {
   PROVENANCE_FIELD,
@@ -41,8 +54,16 @@ export interface ProvenanceManifest {
   file: string;
   /** `path`, or the page field the manifest joins on. */
   join: string;
-  /** `file:` holds `{page}`, so each page keeps its record in a manifest of its own. */
+  /**
+   * `file:` holds `{page}` or `{id}`, so each page keeps its record in a
+   * manifest of its own, which may not exist yet.
+   */
   perPage: boolean;
+  /**
+   * `file:` holds `{id}` (proposal 0126): the page's own manifest is named by
+   * its id, and collections reading one directory share it.
+   */
+  perId?: true;
   /** `file:` as the config writes it, which a `{page}` manifest resolves per page. */
   written: string;
   /**
@@ -92,14 +113,20 @@ export function provenanceManifests(
         });
         continue;
       }
-      const absPath = isAbsolute(manifest.file) ? manifest.file : resolve(configDir, manifest.file);
+      const perId = hasIdPlaceholder(manifest.file);
+      const absPath = perId
+        ? resolve(configDir, normalizeManifestPattern(manifest.file))
+        : isAbsolute(manifest.file)
+          ? manifest.file
+          : resolve(configDir, manifest.file);
       const perPage = hasPagePlaceholder(manifest.file);
       out.push({
         collection: collection.name,
         absPath,
         file: perPage ? manifest.file : reportedPath(absPath, base),
         join: externalMetadataJoin(manifest),
-        perPage,
+        perPage: perPage || perId,
+        ...(perId ? { perId: true as const } : {}),
         written: manifest.file,
         ...(implied ? { implied: { collection, manifest, url } } : {}),
       });
@@ -120,6 +147,11 @@ function urlRefusal(collection: string, field: string): string {
  * that does not carry that field has no entry to write to, and is refused.
  * `marked` is what the page's schemas mark external, which decides whether a
  * manifest with no `keys` holds the record (proposal 0068).
+ *
+ * An `{id}` manifest (proposal 0126) holds the record in the file the page's
+ * id names, and two collections reading one directory are one manifest. A
+ * page with no id has no record there, so its record is its own; one whose
+ * id cannot name a file is refused.
  */
 export function provenancePlace(
   label: string,
@@ -133,11 +165,13 @@ export function provenancePlace(
 ): ProvenancePlace | undefined {
   if (manifests.length === 0) return undefined;
   const members = new Set(memberOf(collections, configDir, base, label));
-  const owning = manifests.filter(
-    (m) =>
-      members.has(m.collection) &&
-      (m.implied === undefined || ownsKey(m.implied.collection, m.implied.manifest, field, marked)),
-  );
+  const owning = manifests
+    .filter(
+      (m) =>
+        members.has(m.collection) &&
+        (m.implied === undefined || ownsKey(m.implied.collection, m.implied.manifest, field, marked)),
+    )
+    .filter((m, i, all) => m.perId === undefined || all.findIndex((o) => o.perId === true && o.absPath === m.absPath) === i);
   const [declared, second] = owning;
   if (declared === undefined) return undefined;
   if (second !== undefined) {
@@ -146,6 +180,17 @@ export function provenancePlace(
     );
   }
   if (declared.implied?.url === true) throw new DocmetaError(urlRefusal(declared.collection, field));
+  if (declared.perId === true) {
+    const own = manifestIdOf(data[declared.join]);
+    if (own === undefined) return undefined;
+    if ("refused" in own) {
+      const dir = reportedPath(resolve(declared.absPath, ".."), base);
+      throw new DocmetaError(`${label}: ${unsafeIdMessage(own.refused, dir)}`);
+    }
+    const absPath = idManifestPath(declared.written, configDir, own.id).abs;
+    const manifest = { ...declared, absPath, file: reportedPath(absPath, base) };
+    return { manifest, absPath, entry: own.id, join: declared.join };
+  }
   const manifest = declared.perPage ? ownManifest(declared, label, collections, configDir, base) : declared;
   if (manifest.join === PATH_JOIN) {
     const entry = toPosix(relative(configDir, resolve(base, label)));

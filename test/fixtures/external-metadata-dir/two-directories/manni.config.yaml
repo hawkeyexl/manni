@@ -1,0 +1,10 @@
+# Proposal 0126: site reads metadata/, and api reads api-meta/ through an
+# explicit {id} entry. A page in each carries id index, and they are two
+# manifests. metadata/auth.yaml is an orphan though an api page carries auth.
+collections:
+  - name: site
+    paths: ["docs/site/*.md"]
+  - name: api
+    paths: ["docs/api/*.md"]
+    externalMetadata:
+      - file: "api-meta/{id}.yaml"

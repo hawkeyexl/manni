@@ -1,6 +1,6 @@
 # 0060: a manifest per page, as built
 
-- **Status:** Implemented (#117)
+- **Status:** Implemented (#117); superseded in part by [0126](0126-id-keyed-external-metadata.md)
 - **Serves:** Two journeys.
   - Maya · M6, "Keep citations out of the page".
   - Devin · D5, "Gate citations in CI without blocking on prose".

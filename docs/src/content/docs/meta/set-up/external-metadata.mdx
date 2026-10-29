@@ -31,7 +31,7 @@ sample-questions:
 graph:
   label: Keep metadata outside the document
   type: task
-last-updated: 2026-10-21
+last-updated: 2026-10-29
 tags:
   - external-metadata
   - manifest
@@ -124,8 +124,9 @@ docs/ops.md
 
 1. **Write the manifest.** One entry per page, keyed by the page's path
    relative to the config file. Paths are exact. There are no globs. A page
-   that moves often can be keyed by a frontmatter field instead; see
-   [Survive renames with a field join](#survive-renames-with-a-field-join).
+   that moves often keeps its values in the
+   [metadata directory](#survive-renames-with-a-metadata-directory) instead,
+   found by its `id`.
 
    ```yaml title="docs-meta.yaml"
    docs/auth.md:
@@ -517,6 +518,203 @@ Every rule, including the timeout, the body cap, the redirect behaviour and
 `http://`, is in the
 [reference](/manni/meta/reference/configuration/#remote-manifests).
 
+### Another repository's checkout
+
+A run that can check the other repository out reads it as a directory. The
+[metadata directory](#survive-renames-with-a-metadata-directory) may be any
+path, and `externalMetadataDir:` at the top of the config names it. A
+relative path resolves from the config file's directory:
+
+```yaml title="docs-site/manni.config.yaml"
+externalMetadataDir: ../docs-meta
+collections:
+  - name: pages
+    paths: ["docs/**/*.md"]
+```
+
+`MANNI_EXTERNAL_METADATA_DIR` names it for one environment, and wins over the
+key. An empty value counts as unset, because that is what an absent CI secret
+expands to. A relative value resolves from the config file's directory too.
+So a CI job can read a checkout the committed config never mentions:
+
+```yaml title="docs-site/.github/workflows/manni.yml"
+name: Validate metadata
+on: [push, pull_request]
+jobs:
+  manni:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/checkout@v7
+        with:
+          repository: your-org/docs-meta
+          path: docs-meta
+          token: ${{ secrets.DOCS_META_READ_TOKEN }}
+      - uses: hawkeyexl/manni@v4
+        with:
+          command: meta validate
+        env:
+          MANNI_EXTERNAL_METADATA_DIR: docs-meta
+```
+
+A directory the key or the variable names is always read. When it is missing,
+every command stops before any page is judged, and names where the path came
+from:
+
+```
+$ MANNI_EXTERNAL_METADATA_DIR=../docs-meta manni meta validate
+manni: MANNI_EXTERNAL_METADATA_DIR: ../docs-meta does not exist. Create it, or check out the repository it names.
+                                                                                    exit 2
+```
+
+`manni meta relocate`, run without `--dry-run`, is the one command that
+creates the directory instead. A URL is refused, because the run reads and
+writes the directory. Fetch a single manifest by URL with
+[`file:`](#a-public-catalog) instead.
+
+## Survive renames with a metadata directory
+
+A manifest keyed or named by a page's path breaks when the page moves. A
+`{page}` manifest is named after the path, so the renamed page reads a file
+that does not exist, and loses every value it kept there. The old file is an
+orphan, and the next whole-corpus run is exit 2.
+
+The **metadata directory** keys each page's manifest by its `id` instead. A
+collection with no `externalMetadata:` reads `metadata/<id>.yaml` beside the
+config file, one file per page. A rename or a rewrite leaves the `id` alone,
+so the page keeps its values, with or without git.
+
+<Steps>
+
+1. **Give each page an `id`.** Use lowercase letters, digits and `-`,
+   starting with a letter or digit. That spelling names one file on every
+   filesystem.
+
+   ```md title="docs/install.md"
+   ---
+   title: Install
+   id: install
+   ---
+   ```
+
+2. **Write its manifest in `metadata/`.** The file is named for the id, and
+   holds one entry keyed by it.
+
+   ```yaml title="metadata/install.yaml"
+   install:
+     owner: platform-docs
+     last-reviewed: 2026-09-01
+   ```
+
+3. **Leave `externalMetadata:` out of the collection.** The collection reads
+   the directory with nothing more in the config.
+
+   ```yaml title="manni.config.yaml"
+   collections:
+     - name: site
+       paths: ["docs/**/*.md"]
+   ```
+
+4. **Run it.**
+
+   ```sh
+   npx -y @hawkeyexl/manni meta validate
+   ```
+
+</Steps>
+
+The directory owns what each page's schemas mark
+`x-manni-location: external`, as [a manifest with no
+keys](#let-the-schemas-name-the-keys) does. The stewardship vocabulary is in
+the built-in default set and marks `owner` and `last-reviewed` external, so
+the config names no schema. A page's citations and evals share the same file.
+
+Rename the page, and its values come with it:
+
+```
+$ git mv docs/install.md docs/setup.md
+$ manni meta get owner docs/setup.md
+docs/setup.md: owner=platform-docs
+```
+
+`metadata/` is read once it holds a manifest, a `.yaml` file whose root key
+is its own name. Until then nothing reads it, so an unrelated folder of that
+name changes nothing. [`relocate`](#moving-keys-in-or-out) writes the first
+manifest. `externalMetadata: []` keeps a collection out of the directory, and
+a collection that declares any entry keeps its own manifests instead.
+
+### When a page has no id
+
+Writers mint one. A writer is any command that stores a value, such as
+`fill`, `derive`, `relocate`, a `query` write or `cite add`. Before it puts a
+value in the directory for a page with no `id`, it writes one into the page.
+It says so on stderr:
+
+```
+manni: minted id "guides-auth" in docs/guides/auth.md, for metadata/guides-auth.yaml.
+```
+
+The id is a slug of the page's path below the collection's base, here
+`docs/`. The extension and a trailing `/index` are dropped. Every run of
+other characters becomes `-`, and a taken slug gains `-2`. It is minted once
+and never rewritten, so a later rename leaves it alone. The [configuration
+reference](/manni/meta/reference/configuration/#the-metadata-directory) has
+the whole rule.
+
+Three cases mint nothing, and the value stays in the page with a warning:
+
+- **The page's schemas do not allow `id`.** The [Agent Skills
+  schemas](/manni/meta/reference/agent-skills-schemas/) close their object,
+  so a skill keeps its values.
+- **Another schema reads `id` itself.** `docusaurus-docs` treats it as the
+  doc id, and a minted one would move the page's URL. Set one by hand.
+- **The page cannot be written.** stdin is one case, and an AsciiDoc page
+  without fenced front matter is another.
+
+```
+manni: docs/x.md: no id could be minted (its schemas do not allow id), so personas stays in the page.
+```
+
+### What the run checks
+
+- **Two pages with one id** each file `external:duplicate`, and the run exits
+  1. Both still read the file, so the schema judges what the site would
+  publish. A copied page is the usual cause, so give the copy an id of its
+  own.
+- **An id that cannot name a file** reads nothing and files
+  `external:unsafe-id`, exit 1. An uppercase letter or a `_` is the usual
+  cause. Ids are lowercase because a case-insensitive filesystem merges two
+  names that differ only in case. An encrypted id files it too.
+- **A file whose id no page carries** is exit 2 on a whole-corpus run. The
+  page was deleted, or its `id` was changed by hand.
+- **A page with no id** reads nothing from the directory, and files no
+  finding of its own. Require `id` in a schema to make it one.
+
+```
+$ manni meta validate
+manni: Manifest metadata/old-page.yaml:1 names id "old-page", which no loaded document carries. Fix the entry, or remove the file.
+```
+
+The `id` is contributor-controlled, as any join key is. A page that copies
+another's `id` reads that page's file, and the duplicate finding is what turns
+the run red.
+
+### An `{id}` manifest of your own
+
+A collection that declares its own manifests can still key one by id. `{id}`
+in `file:` names one file per page, found by the page's `id`. It takes no
+`join:`, because the join is the id. It may sit outside the config directory,
+in another checkout. It belongs in the file name and never in a directory
+name.
+
+```yaml title="manni.config.yaml"
+collections:
+  - name: api
+    paths: ["api/**/*.md"]
+    externalMetadata:
+      - file: "../docs-meta/api/{id}.yaml"
+```
+
 ## Survive renames with a field join
 
 {/* cite path-entry-orphaned-by-absolute-path-lookup */}
@@ -526,6 +724,10 @@ docset that rarely moves. It is the wrong shape for one that moves pages
 often. It is also wrong for a manifest kept by a team that does not watch the
 docs repository's renames. The path is the one thing about a page the manifest
 author does not control.
+
+A shared manifest, one file for the whole collection, survives a rename
+without the metadata directory. That suits a manifest fetched by URL, which
+takes no placeholder. It also suits a catalog a team reviews as one file.
 
 {/* cite join-accepts-any-top-level-field */}
 {/* cite join-keys-manifest-by-frontmatter-field */}
@@ -731,8 +933,9 @@ config edits keep comments and key order:
 | Your config | What `relocate` writes |
 |---|---|
 | The page's collection has a local manifest | The key is appended to that manifest's `keys:`. |
-| The collection has no manifest | `<collection>.metadata.yaml` beside the config file, and an `externalMetadata:` entry that owns the keys. |
-| No `collections:` at all | A collection named `default` whose `paths:` are the targets you typed, and `default.metadata.yaml`. |
+| The collection has no `externalMetadata:` key | `metadata/<id>.yaml` for each page, with no config edit. A page with no `id` gets [a minted one](#when-a-page-has-no-id). |
+| The collection's `externalMetadata:` has no local manifest | `<collection>.metadata.yaml` beside the config file, and an `externalMetadata:` entry that owns the keys. |
+| No `collections:` at all | A collection named `default` whose `paths:` are the targets you typed. Its pages get `metadata/<id>.yaml`. |
 | One collection, and the page is outside it | The target is appended to the collection's `paths:`. |
 | Several collections, and the page is in none | Nothing. The value stays, and the run exits 1. |
 | A key moves back into the pages and empties `keys:` | The `externalMetadata:` entry is removed and the manifest file is left on disk, with a line saying so. |

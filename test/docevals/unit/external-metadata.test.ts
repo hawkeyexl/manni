@@ -185,6 +185,17 @@ describe("refusals", () => {
   });
 });
 
+describe("the metadata directory (0126)", () => {
+  it("resolves the evals metadata/<id>.yaml supplies, for a page in two collections reading it", async () => {
+    const plan = planFor(await plansOf("id-dir"), "docs/install.md");
+    expect(plan.problems).toEqual([]);
+    expect(plan.suite).toBe("reference");
+    expect(plan.evals.map((e) => e.name)).toEqual(["no-todo-markers"]);
+    // --since selects the page when its manifest changes.
+    expect(plan.page.external?.evalManifests).toEqual([resolve(dir("id-dir"), "metadata", "install.yaml")]);
+  });
+});
+
 describe("a manifest per page", () => {
   it("resolves the suite and the evals the page's own manifest supplies", async () => {
     const plan = planFor(await plansOf("per-page"), "docs/install.md");

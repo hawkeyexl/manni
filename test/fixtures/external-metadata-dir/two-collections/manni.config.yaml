@@ -1,0 +1,7 @@
+# Proposal 0126: neither collection declares externalMetadata, so both read
+# metadata/<id>.yaml, found by each page's id. docs/both/ is in both.
+collections:
+  - name: guides
+    paths: ["docs/guides/*.md", "docs/both/*.md"]
+  - name: api
+    paths: ["docs/api/*.md", "docs/both/*.md"]

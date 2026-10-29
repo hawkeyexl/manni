@@ -1,0 +1,12 @@
+# Proposal 0126: no metadata/ yet. site declares no externalMetadata, so the
+# metadata directory is its created home (0047 section 3); api declares an
+# empty list, so it keeps a manifest of its own.
+collections:
+  - name: site
+    paths: ["docs/site/*.md"]
+  - name: api
+    paths: ["docs/api/*.md"]
+    externalMetadata: []
+meta:
+  defaults: false
+  schemas: [./steward.schema.json]

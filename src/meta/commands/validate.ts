@@ -12,10 +12,14 @@ import {
   orphanJoins,
   externalMetadataJoin,
   externalMetadataPointer,
+  joinKey,
   EXTERNAL_DUPLICATE_SCHEMA,
   EXTERNAL_KEYWORD,
   EXTERNAL_OWNED_SCHEMA,
+  EXTERNAL_UNSAFE_ID_SCHEMA,
+  ID_JOIN,
   PATH_JOIN,
+  unsafeIdMessage,
   type MergedMetadata,
 } from "../core/external-metadata.js";
 import {
@@ -618,7 +622,15 @@ export async function runValidate(
    */
   const homeless = async (label: string, own: Readonly<Record<string, unknown>>, key: string): Promise<number> => {
     if (label === STDIN_LABEL) return 0;
-    const home = await keyHome(relocationCtx(), label, own, key);
+    let home;
+    try {
+      home = await keyHome(relocationCtx(), label, own, key);
+    } catch (err) {
+      // An id that cannot name a file (0126) refuses a write, and is this
+      // run's unsafe-id finding rather than its failure.
+      if (err instanceof DocmetaError) return 0;
+      throw err;
+    }
     return home.kind === "unowned" &&
       home.home.kind === "none" &&
       home.home.reason === "collections" &&
@@ -650,10 +662,11 @@ export async function runValidate(
   };
   // Field-joined entries each document matched (0039), keyed by field then
   // value: the duplicate finding and the post-loop orphan check both need
-  // to know which documents claimed which value.
+  // to know which documents claimed which value. An `{id}` join (0126) is
+  // keyed by its pattern instead, so two directories are two manifests.
   const joinHits = new Map<
     string,
-    Map<string, { label: string; line?: number; file: string; shown: string }[]>
+    Map<string, { label: string; line?: number; file: string; shown: string; field: string }[]>
   >();
   // Corpus checks (0026) run only when the resolved file set IS the
   // config-resolved corpus — an invariant, not a flag list: any CLI reshaping
@@ -902,9 +915,10 @@ export async function runValidate(
       });
     }
     for (const j of merged.joins) {
+      const key = joinKey(j);
       const byValue =
-        joinHits.get(j.field) ??
-        new Map<string, { label: string; line?: number; file: string; shown: string }[]>();
+        joinHits.get(key) ??
+        new Map<string, { label: string; line?: number; file: string; shown: string; field: string }[]>();
       const line = extracted.lineFor(j.field);
       const hits = byValue.get(j.value) ?? [];
       // A finding names the join value as the page holds it: the ciphertext
@@ -913,10 +927,11 @@ export async function runValidate(
         label,
         file: j.file,
         shown: j.pageValue ?? j.value,
+        field: j.field,
         ...(line != null ? { line } : {}),
       });
       byValue.set(j.value, hits);
-      joinHits.set(j.field, byValue);
+      joinHits.set(key, byValue);
     }
     if (checksWillRun) checkEntries.push({ label, extracted });
 
@@ -1053,6 +1068,20 @@ export async function runValidate(
         ...(line != null ? { line } : {}),
       });
     }
+    // An id that cannot name a file in an `{id}` manifest's directory, or
+    // one held encrypted (0126): the page read nothing from it, and says why
+    // at the id's own line. The ciphertext is named, never its plaintext.
+    for (const { value, encrypted, dir } of merged.unsafeIds ?? []) {
+      const line = extracted.lineFor(ID_JOIN);
+      errors.push({
+        schema: EXTERNAL_UNSAFE_ID_SCHEMA,
+        keyword: EXTERNAL_KEYWORD,
+        subject: value,
+        instancePath: externalMetadataPointer(ID_JOIN),
+        message: unsafeIdMessage({ value, encrypted }, dir),
+        ...(line != null ? { line } : {}),
+      });
+    }
     results.push({
       file: label,
       format: extractor.name,
@@ -1096,8 +1125,8 @@ export async function runValidate(
   if (externalMetadata) {
     const byLabel = new Map(results.map((r) => [r.file, r]));
     const matched = new Map<string, Set<string>>();
-    for (const [field, byValue] of joinHits) {
-      matched.set(field, new Set(byValue.keys()));
+    for (const [key, byValue] of joinHits) {
+      matched.set(key, new Set(byValue.keys()));
       for (const hits of byValue.values()) {
         if (hits.length < 2) continue;
         for (const hit of hits) {
@@ -1111,8 +1140,8 @@ export async function runValidate(
             schema: EXTERNAL_DUPLICATE_SCHEMA,
             keyword: EXTERNAL_KEYWORD,
             subject: hit.shown,
-            instancePath: externalMetadataPointer(field),
-            message: `${hits.length} documents carry ${field} "${hit.shown}"; ${hit.file} cannot tell them apart (${others})`,
+            instancePath: externalMetadataPointer(hit.field),
+            message: `${hits.length} documents carry ${hit.field} "${hit.shown}"; ${hit.file} cannot tell them apart (${others})`,
             ...(hit.line != null ? { line: hit.line } : {}),
           });
           result.ok = false;

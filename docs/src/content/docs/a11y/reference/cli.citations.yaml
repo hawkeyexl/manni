@@ -256,9 +256,9 @@ docs/src/content/docs/a11y/reference/cli.mdx:
         integrity: sha256-0b48364247fc2a4bb4cf83d724cdc64c50970395942c867cc13e29ac523e4eb9
       source:
         file: src/shared/config-file.ts
-        lines: 377-382
+        lines: 413-418
         integrity: sha256-385abcd79702ff04016086391cb2c38ab007fef93c6fbbbe1f200eab26662f8a
-        commit-sha: a589e08250dee7efaee7ed0f58df01986fad8d1d
+        commit-sha: 46ea4718fa7ee7e2ec7ed135a7a646d421ff3fb8
     - id: no-config-same-option
       claim:
         lines: 81
@@ -300,9 +300,9 @@ docs/src/content/docs/a11y/reference/cli.mdx:
         integrity: sha256-1519ce2934c2092329db219ea86d6cfa27a0a1993e464fb7293ae5e0024d2ddb
       source:
         file: src/shared/collections.ts
-        lines: 568
+        lines: 633
         integrity: sha256-84ff935c5a5f70ea0feb9816b3d2ce2f5e0aa48128e595fd5ae923f5f6e4f19f
-        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
+        commit-sha: 46ea4718fa7ee7e2ec7ed135a7a646d421ff3fb8
     - id: seed-rung-config-urls
       claim:
         lines: 98
@@ -1006,9 +1006,9 @@ docs/src/content/docs/a11y/reference/cli.mdx:
         integrity: sha256-286807e221c0bff7082d81523c4667ae0547e433e2b3ffc9d72b379e8cf7bd79
       source:
         file: src/shared/collections.ts
-        lines: 568
+        lines: 633
         integrity: sha256-84ff935c5a5f70ea0feb9816b3d2ce2f5e0aa48128e595fd5ae923f5f6e4f19f
-        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
+        commit-sha: 46ea4718fa7ee7e2ec7ed135a7a646d421ff3fb8
     - id: usage-msg-not-http
       claim:
         lines: 628
@@ -1068,9 +1068,9 @@ docs/src/content/docs/a11y/reference/cli.mdx:
         integrity: sha256-29d5bc17af955399250282a978488d3d9daa2c35b4904591cebebb63c6dd1525
       source:
         file: src/shared/config-file.ts
-        lines: 315-320
+        lines: 350-355
         integrity: sha256-f4faec34c0d49f7cb56d6e9f798afd3f6d922a3d8fb41d6b52403e84f1ccab40
-        commit-sha: a589e08250dee7efaee7ed0f58df01986fad8d1d
+        commit-sha: 46ea4718fa7ee7e2ec7ed135a7a646d421ff3fb8
     - id: config-flag-wins
       claim:
         lines: 655-659
@@ -1192,9 +1192,9 @@ docs/src/content/docs/a11y/reference/cli.mdx:
         integrity: sha256-16c1e9a638ab18413dc336067bc172a7ad26699335feed38fd55cb55b583a950
       source:
         file: src/shared/config-file.ts
-        lines: 203-212
+        lines: 221-230
         integrity: sha256-90ad68f7f4ab347973183c055efa9413e9c71cf8a84301e9a0bfda90c4079d9b
-        commit-sha: a589e08250dee7efaee7ed0f58df01986fad8d1d
+        commit-sha: 46ea4718fa7ee7e2ec7ed135a7a646d421ff3fb8
     - id: crawl-scope-any-seed
       claim:
         lines: 128-129

@@ -9,11 +9,14 @@
  * This module only finds the file and hands a tool its slice. What the slice
  * may contain is the tool's business; it validates the value with its own
  * parser and its own error class, which is why `toError` is an option rather
- * than an import. Four top-level keys belong to the family rather than to a
+ * than an import. Five top-level keys belong to the family rather than to a
  * tool, and are parsed here once for every tool. They are `collections:`
  * (proposal 0041), `tools:` (proposal 0052) and `encryptionKey:` (proposal
  * 0045). The fourth is `providers:`, the inference provider settings every
- * tool that sends content to a model reads.
+ * tool that sends content to a model reads. The fifth is
+ * `externalMetadataDir:` (proposal 0126), the metadata directory that each
+ * collection with no `externalMetadata:` of its own reads. Its entry is added
+ * to those collections here.
  *
  * One older spelling is still read, with a warning on discovery: each tool's
  * pre-family file (`docmeta.config.yaml` for the metadata tool), whose whole
@@ -42,6 +45,11 @@ import { basename, dirname, join, relative, resolve } from "node:path";
 import { parse as parseYaml } from "yaml";
 import { parseCollections, type CollectionConfig } from "./collections.js";
 import { isValidEncryptionKey } from "./encryption.js";
+import {
+  EXTERNAL_METADATA_DIR_KEY,
+  applyMetadataDirectory,
+  parseExternalMetadataDir,
+} from "./external-metadata-dir.js";
 import { PROVIDERS_KEY, parseProviders, type ProvidersConfig } from "./providers.js";
 import { searchPath } from "./git-root.js";
 import { parseTools, type ToolsConfig } from "./tools.js";
@@ -131,6 +139,15 @@ export interface ConfigFile {
    * always absent for a `legacy` file, for the same reason as `collections`.
    */
   providers?: ProvidersConfig;
+  /**
+   * The document's top-level `externalMetadataDir:` (proposal 0126), as
+   * written, validated here. Absent when the key is, and always absent for a
+   * `legacy` file, for the same reason as `collections`.
+   * `MANNI_EXTERNAL_METADATA_DIR` wins over it; read it through
+   * `resolveExternalMetadataDir`, not directly. `collections` already carries
+   * the directory's entry.
+   */
+  externalMetadataDir?: string;
 }
 
 type ToError = (message: string) => Error;
@@ -190,6 +207,7 @@ const FAMILY_KEYS: readonly string[] = [
   TOOLS_KEY,
   ENCRYPTION_KEY_FIELD,
   PROVIDERS_KEY,
+  EXTERNAL_METADATA_DIR_KEY,
 ];
 
 function slice(
@@ -215,16 +233,33 @@ function slice(
 
 /**
  * The document's collections. Parsed with the tool's own `toError`, so a bad
- * `collections:` is reported in the class the tool already catches.
+ * `collections:` is reported in the class the tool already catches. Each one
+ * with no `externalMetadata:` gets the metadata directory's entry (0126),
+ * resolved from `dir`, so every tool reads the same manifests.
  */
 function collectionsOf(
   document: Document,
   source: string,
+  dir: string,
   toError: ToError,
 ): CollectionConfig[] {
   const { doc } = document;
   if (doc === null || !Object.hasOwn(doc, COLLECTIONS_KEY)) return [];
-  return parseCollections(doc[COLLECTIONS_KEY], source, toError);
+  return applyMetadataDirectory(parseCollections(doc[COLLECTIONS_KEY], source, toError), doc, {
+    source,
+    configDir: dir,
+    toError,
+  });
+}
+
+/** The document's `externalMetadataDir:`, validated, as a spreadable field. */
+function externalMetadataDirOf(
+  document: Document,
+  source: string,
+  toError: ToError,
+): { externalMetadataDir?: string } {
+  const value = document.doc === null ? undefined : parseExternalMetadataDir(document.doc, source, toError);
+  return value === undefined ? {} : { externalMetadataDir: value };
 }
 
 /**
@@ -333,9 +368,10 @@ export function findConfigFileSync(
         source,
         text: document.text,
         kind: "manni",
-        collections: collectionsOf(document, source, opts.toError),
+        collections: collectionsOf(document, source, dir, opts.toError),
         tools: toolsOf(document, source, opts.toError),
         ...encryptionKeyOf(document, source, opts.toError),
+        ...externalMetadataDirOf(document, source, opts.toError),
         ...providersOf(document, source, dir, opts.toError),
         ...found,
       };
@@ -390,11 +426,12 @@ export function readConfigFileSync(
     source: explicitPath,
     text: document.text,
     kind: "explicit",
-    collections: collectionsOf(document, explicitPath, opts.toError),
+    collections: collectionsOf(document, explicitPath, dirname(path), opts.toError),
     tools: toolsOf(document, explicitPath, opts.toError),
     // An unwrapped document carries no family key (else it would be wrapped),
     // so this only ever reads a family file's key.
     ...encryptionKeyOf(document, explicitPath, opts.toError),
+    ...externalMetadataDirOf(document, explicitPath, opts.toError),
     ...providersOf(document, explicitPath, dirname(path), opts.toError),
     ...found,
   };
@@ -456,9 +493,10 @@ function findFamilyConfigFileSync(
         value: null,
         wrapped: true,
         kind: "manni",
-        collections: collectionsOf(document, source, toError),
+        collections: collectionsOf(document, source, dir, toError),
         tools: toolsOf(document, source, toError),
         ...tolerantKeysOf(document),
+        ...externalMetadataDirOf(document, source, toError),
       };
     }
   }
@@ -509,8 +547,9 @@ function readFamilyConfigFileSync(
     value: family ? null : doc,
     wrapped: family,
     kind: "explicit",
-    collections: collectionsOf(document, explicitPath, toError),
+    collections: collectionsOf(document, explicitPath, dirname(path), toError),
     tools: toolsOf(document, explicitPath, toError),
     ...tolerantKeysOf(document),
+    ...externalMetadataDirOf(document, explicitPath, toError),
   };
 }

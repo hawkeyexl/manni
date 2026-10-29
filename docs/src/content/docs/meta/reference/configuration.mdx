@@ -27,7 +27,7 @@ sample-questions:
 graph:
   label: Configuration reference
   type: reference
-last-updated: 2026-10-28
+last-updated: 2026-10-29
 tags:
   - configuration
   - yaml
@@ -166,7 +166,7 @@ collections:
 | `paths` | `string[]` | yes | none | Files, directories, or globs, relative to the config file's directory. A non-empty list of non-empty strings. |
 | `exclude` | `string[]` | no | `[]` | Globs that remove a file from the collection, same base. Membership only. See [Membership](#membership). An explicit `[]` is accepted. |
 | `url` | `string` | no | none | One `http:` or `https:` root, where the collection is published. [`manni a11y check`](/manni/a11y/reference/cli/) seeds from it. See [Where a collection is published](#where-a-collection-is-published). |
-| `externalMetadata` | `ExternalMetadata[]` | no | `[]` | Manifests joined to this collection's members. See [External metadata](#external-metadata). An explicit `[]` is accepted. |
+| `externalMetadata` | `ExternalMetadata[]` | no | the [metadata directory](#the-metadata-directory) | Manifests joined to this collection's members. See [External metadata](#external-metadata). Absent, the collection reads the metadata directory. An explicit `[]` reads no external metadata. |
 
 {/* cite empty-collections-list-refused */}
 `collections:` absent means no configured documents, exactly as an absent
@@ -385,7 +385,7 @@ the journey, with a worked path for each; this section is the contract.
 
 | Field | Type | Required | Description |
 |---|---|---|---|
-| `file` | `string` | yes | Manifest path, relative to the config file's directory, or an `https://` URL fetched at the start of every run. A path may hold one `{page}` placeholder, which gives each page a manifest of its own; see [A manifest per page](#a-manifest-per-page). A manifest that cannot be read or fetched, or is not valid YAML, is an operational error (exit 2). A missing `{page}` manifest is the one exception, and reads as empty. See [Remote manifests](#remote-manifests). |
+| `file` | `string` | yes | Manifest path, relative to the config file's directory, or an `https://` URL fetched at the start of every run. A path may hold one placeholder, `{page}` or `{id}`, which gives each page a manifest of its own. See [A manifest per page](#a-manifest-per-page) and [A manifest per id](#a-manifest-per-id). A manifest that cannot be read or fetched, or is not valid YAML, is an operational error (exit 2). A missing per-page manifest is the one exception, and reads as empty. See [Remote manifests](#remote-manifests). |
 | `keys` | `string[]` | no | The top-level keys this manifest **owns**. Non-empty, no duplicates, disjoint across the collection's manifests, and never `$schema`. Each violation is a config error (exit 2) naming `collections[c].externalMetadata[i].keys`. Absent, the manifest owns the fields each page's schemas mark `x-manni-location: external`, and at most one entry per collection may leave it out. See [A manifest with no keys](#a-manifest-with-no-keys). |
 | `tokenEnv` | `string` | no | Name of an environment variable whose value is sent as a bearer token when `file` is a URL. Allowed only on a URL. On a path it is a config error (exit 2), because no request is made and the token would go nowhere. |
 | `join` | `string` | no | `path` (the default), or the top-level frontmatter field the manifest's keys are values of. Never `$schema`, and never a key the same entry owns. A rename cannot orphan a field-joined entry. See [Joining by a field](#joining-by-a-field). |
@@ -404,10 +404,13 @@ meta:
       schemas: [./schemas/page.json]  # requires `source` and `jira`
 ```
 
-`externalMetadata:` absent is exactly the behaviour every config had before the
-key existed. A repository whose manifest lives elsewhere keeps its own plain
-config and never mentions one. That way none of its runs warns about a file it
-cannot see.
+`externalMetadata:` absent reads the [metadata
+directory](#the-metadata-directory), and the default directory is read only
+once it holds a manifest. So a repository with no `metadata/` manifest reads
+no external metadata either way. A repository whose manifest lives elsewhere
+keeps its own plain config and never mentions one. That way none of its runs
+warns about a file it cannot see. `externalMetadata: []` reads nothing, even
+beside a metadata directory.
 
 The config refusals, each exit 2:
 
@@ -422,9 +425,14 @@ manni.config.yaml: collections[0].externalMetadata[1].keys claims "jira", which 
 manni.config.yaml: collections[0].externalMetadata: entries 1 and 2 both omit keys; at most one manifest may own the external-marked fields
 manni.config.yaml: collections[0].externalMetadata[0].join must be "path" or the name of a top-level frontmatter field.
 manni.config.yaml: collections[0].externalMetadata[0].join names "id", which the same entry owns — the value that selects an entry cannot come from the entry.
-manni.config.yaml: collections[0].externalMetadata[0].file uses "{collection}", which is not a placeholder. The only placeholder is {page}.
-manni.config.yaml: collections[0].externalMetadata[0].file contains "{" outside a {page} placeholder. Remove it, or write {page}.
+manni.config.yaml: collections[0].externalMetadata[0].file uses "{collection}", which is not a placeholder. The placeholders are {page} and {id}.
+manni.config.yaml: collections[0].externalMetadata[0].file contains "{" outside a placeholder. Remove it, or write {page} or {id}.
+manni.config.yaml: collections[0].externalMetadata[0].file uses {page} and {id}. A per-page manifest is named by one of them.
 manni.config.yaml: collections[0].externalMetadata[0].file uses {page} twice. One manifest names one page.
+manni.config.yaml: collections[0].externalMetadata[0].file uses {id} twice. One manifest names one page.
+manni.config.yaml: collections[0].externalMetadata[0].file uses {id} in a URL. A placeholder names a file this run can write, and a URL is not one.
+manni.config.yaml: collections[0].externalMetadata[0].file uses {id} in a directory name. Put it in the file name, such as metadata/{id}.yaml.
+manni.config.yaml: collections[0].externalMetadata[0].file uses {id}, and join is "slug". An {id} manifest is found by the page's id, so it takes no join. Remove join.
 manni.config.yaml: collections[0].externalMetadata[0].file uses {page} in an absolute path, so every manifest would sit outside the repository. Make it relative to the config file.
 manni.config.yaml: collections[0].externalMetadata[0].file uses {page} in a URL. A placeholder names a file this run can write, and a URL is not one.
 manni.config.yaml: collections[0].externalMetadata[0].file uses {page}, and join is "id". A per-page manifest is found by path, so it cannot be keyed by a field. Remove {page}, or remove join.
@@ -540,7 +548,186 @@ above. These are raised once the pages are known, each exit 2:
 
 The last is the [orphan check](#the-orphan-check) for a per-page manifest. A
 `git mv` that leaves a page's manifest behind is the usual cause, so move the
-two together.
+two together. A rename never strands the values in the [metadata
+directory](#the-metadata-directory).
+
+#### A manifest per id
+
+`file` may hold the placeholder `{id}` instead of `{page}`. For each page, it
+resolves to the page's `id`. The entry then names one manifest per page,
+found by the page's id and keyed by it, so a rename never strands it.
+
+| `file` | The manifest for a page with `id: guides-auth` |
+|---|---|
+| `"metadata/{id}.yaml"` | `metadata/guides-auth.yaml` |
+| `"../docs-meta/api/{id}.yaml"` | `../docs-meta/api/guides-auth.yaml`, in another checkout |
+| `"/srv/meta/{id}.citations.yaml"` | `/srv/meta/guides-auth.citations.yaml` |
+
+```yaml title="metadata/guides-auth.yaml"
+guides-auth:
+  owner: platform-docs
+  last-reviewed: 2026-09-01
+```
+
+The rules `{id}` adds to those of `{page}`:
+
+- **It takes no `join`.** The join is `id`, so any `join`, `path` included, is
+  refused.
+- **It may point outside the config directory.** An absolute path, or one
+  climbing out of the config file's directory, is allowed, because another
+  repository's checkout is the point. A `{page}` entry stays refused there.
+- **It names a file.** `{id}` sits in the file name, never in a directory
+  name, and never in a URL.
+- **Only the entry keyed by the file's own name is read.** A file with no such
+  entry is not a manifest, as with `{page}`.
+
+Which file a page reads, and the findings an id raises, are the same as for
+[the metadata directory](#the-metadata-directory). The refusals are in the
+list above.
+
+#### The metadata directory
+
+The **metadata directory** is the manifest every collection with no
+`externalMetadata:` key reads. It holds one `<id>.yaml` per page, so it is an
+[`{id}` manifest](#a-manifest-per-id) with no `keys`. It owns what each
+page's schemas mark `x-manni-location: external`, as [a manifest with no
+keys](#a-manifest-with-no-keys) does.
+
+```yaml title="manni.config.yaml"
+externalMetadataDir: ../docs-meta   # optional; the default is metadata
+collections:
+  - name: guides                    # reads ../docs-meta/<id>.yaml
+    paths: ["guides/**/*.md"]
+  - name: legal
+    paths: ["legal/**/*.md"]
+    externalMetadata: []            # reads no external metadata
+```
+
+| Key | Type | Required | Default | Description |
+|---|---|---|---|---|
+| `externalMetadataDir` | `string` | no | `metadata` | The metadata directory, at the top level beside `collections:`. Relative to the config file's directory. An absolute path is allowed, and a URL is refused. `MANNI_EXTERNAL_METADATA_DIR` in the environment wins over it. |
+
+- **The environment wins.** When `MANNI_EXTERNAL_METADATA_DIR` is set, it
+  names the directory and the key is not read. An empty variable counts as
+  unset, because that is what an absent CI secret expands to. A relative value
+  resolves from the config file's directory, as the key does.
+- **The key counts for discovery.** A `manni.config.yaml` carrying
+  `externalMetadataDir:` and no `meta:` section is still this tool's config,
+  and stops the [search](#discovery).
+- **A collection that declares `externalMetadata:` does not read it.** Any
+  entry means the collection manages its own manifests, and `[]` means it
+  reads none.
+
+When the directory is read:
+
+| How it is named | Read |
+|---|---|
+| `externalMetadataDir:` or `MANNI_EXTERNAL_METADATA_DIR` | Always. A missing directory is exit 2 for every command, except `manni meta relocate` without `--dry-run`, which creates it. |
+| The default, `metadata` | Once `metadata/` beside the config file holds a manifest, a `.yaml` file whose root key is its own name. Until then nothing reads it. `relocate` writes the first one. |
+| `--no-config`, or a legacy `docmeta.config.yaml` | Never. |
+
+The directory is one manifest for the whole config. It is loaded once and
+indexed by id, and its values belong to no one collection. A page in two
+collections that both read it reads its file once, and the two collections
+never own one key twice.
+
+The refusals, each exit 2. `manni check` prints a missing directory once:
+
+```
+manni.config.yaml: externalMetadataDir must be a non-empty string naming a directory, relative to the config file.
+manni.config.yaml: externalMetadataDir is a URL. It names a directory this run reads and writes; check the repository out and name its path.
+externalMetadataDir: ../docs-meta does not exist. Create it, or check out the repository it names.
+MANNI_EXTERNAL_METADATA_DIR: ../docs-meta does not exist. Create it, or check out the repository it names.
+```
+
+##### Which file a page reads
+
+A page reads `<directory>/<id>.yaml` when its `id` is safe. A safe id matches
+`^[a-z0-9][a-z0-9-]*$`, the pattern `manni:core-strict` gives `id`. It is also
+not a Windows device name: `con`, `prn`, `aux`, `nul`, `com1` to `com9` or
+`lpt1` to `lpt9`. A missing file reads as empty.
+
+| The page | What it reads | Finding |
+|---|---|---|
+| Carries a safe `id` | `<id>.yaml` | none |
+| Carries no `id` | nothing | none. A schema that requires `id` reports it, and `location:external` warns about a value left in the page. |
+| Carries an unsafe `id` | nothing | `external:unsafe-id/external`, error |
+| Carries an encrypted `id` | nothing | `external:unsafe-id/external`, error |
+| Shares its `id` with another page that reads the directory | `<id>.yaml` | [`external:duplicate/external`](#finding-identity) on each, error, whether or not the file exists |
+
+The two `external:unsafe-id` messages:
+
+```
+id "Getting_Started" cannot name a file in metadata/; an id that names a manifest is lowercase letters, digits and "-", starting with a letter or digit.
+id is encrypted, so it cannot name a file in metadata/; store it plain.
+```
+
+On a whole-corpus run, a file whose id no loaded page carries is the [orphan
+check](#the-orphan-check), exit 2:
+
+```
+manni: Manifest metadata/old-page.yaml:1 names id "old-page", which no loaded document carries. Fix the entry, or remove the file.
+```
+
+A value from the directory is located in its file, as every manifest value
+is. `manni cite` warns when `.gitignore` covers the directory:
+`metadata/ is covered by .gitignore, so CI checks out pages with no citations.`
+
+##### Minting an id
+
+A writer is any command that puts a value in a manifest. That is meta's
+`relocate`, `fill`, `derive`, `query` writes and `validate`'s offer, and
+cite's `add`, `update` and `remove`. It is also docevals' `fill`, `generate`
+and `promote --write`, `tracevals fill`, `graph fill` and `key rotate`.
+
+A writer may need to put a value in the directory for a page with no `id`.
+It first mints one into the page, through the format's own writer. Before
+minting, it reads every id in the collections that read the directory. It
+mints in sorted path order, so a run gives the same ids every time. Every
+writer but `relocate` says so once per page on stderr. `relocate` lists each
+minted id in its report instead.
+
+```
+manni: minted id "docevals-adopt" in docs/src/content/docs/docevals/adopt/index.mdx, for metadata/docevals-adopt.yaml.
+```
+
+The id is a frozen slug. It is minted once and never rewritten, so a later
+rename leaves it alone.
+
+1. Start from the page's path relative to its base. The base is the literal
+   prefix of the first `paths:` entry, in config order, of the first
+   collection the page is in. For a plain file entry, the base is its
+   directory. For the `default` collection, it is the config file's
+   directory.
+2. Drop the extension and a trailing `/index`. A page that is its base's own
+   `index` takes the base's last segment, or `index` when the base is the
+   config file's directory.
+3. Lowercase it, and turn each run of characters outside `a-z0-9` into `-`.
+   Trim `-` from both ends. If nothing is left, use `page`.
+4. If another page already carries the slug, or `<directory>/<slug>.yaml`
+   exists, append `-2`, `-3`, and so on.
+
+So under `paths: ["docs/src/content/docs/**/*.{md,mdx}"]`,
+`docs/src/content/docs/docevals/adopt/index.mdx` becomes `docevals-adopt`.
+Every minted id is safe.
+
+A writer mints nothing, and leaves the value in the page with a warning, in
+three cases.
+
+| Case | Warning reason |
+|---|---|
+| The page's schemas reject `id`, as the [Agent Skills schemas](/manni/meta/reference/agent-skills-schemas/) do | `its schemas do not allow id` |
+| A schema other than `manni:core` gives `id` a meaning of its own | `<schema> gives id a meaning of its own; set one by hand`, naming the schema |
+| The page cannot be written. That covers stdin, and AsciiDoc or RST without fenced front matter. It also covers HTML without `<head>`, XML without a root element, and DITA with a self-closing metadata container. | `the page cannot be written: <reason>` |
+
+```
+manni: docs/x.md: no id could be minted (its schemas do not allow id), so personas stays in the page.
+```
+
+A write that would give two pages one id is the existing duplicate-join
+refusal, exit 2. `key rotate` re-encrypts every file in the directory. A
+`query` `SET _path` moves a page that reads the directory, because its file
+does not move with it.
 
 #### A manifest with no keys
 
@@ -1004,14 +1191,24 @@ the run first met them.
 | Situation | Edit |
 |---|---|
 | The page's collection has a local manifest | The keys are appended to that entry's `keys:`. With several collections, the first in `collections:` order is used. |
-| The collection has no local manifest | `<collection>.metadata.yaml` is created beside the config file, and an entry owning the keys is added. A file already at that path that is not declared is an error (exit 2). |
+| The collection has no `externalMetadata:` key | Nothing is edited. The keys go to the [metadata directory](#the-metadata-directory), one `<id>.yaml` per page, and the directory is created when it is missing. A page with no `id` gets [a minted one](#minting-an-id). |
+| The collection's `externalMetadata:` has no local manifest | `<collection>.metadata.yaml` is created beside the config file, and an entry owning the keys is added. A file already at that path that is not declared is an error (exit 2). |
 | No collections are defined | A collection named `default` is added. Its `paths:` are the run's targets as typed: `docs/` becomes `docs/**`, and a file or glob stays itself. |
 | Exactly one collection, and the page is outside it | The run's target is appended to that collection's `paths:`. What `manni a11y` and `manni cite` see for the collection grows with it. |
 | Several collections, and the page is in none | Nothing is edited. The value stays and is named. |
 | A key moves back into the pages | It is removed from `keys:`. An entry left with no keys is removed, and so is an empty `externalMetadata:`. The manifest file stays on disk. |
 | No config file | `manni.config.yaml` is created at the git root, else the working directory. `--no-config` is refused. |
 
-One collection with no manifest, `manni meta relocate`:
+One collection with no `externalMetadata:`, `manni meta relocate`. The config
+is unchanged, and each page's values land in its own file:
+
+```text title="after"
+manni.config.yaml          # unchanged
+metadata/faq.yaml          # faq: { owner: … }
+metadata/install.yaml      # install: { authors: …, owner: … }
+```
+
+One collection with `externalMetadata: []`, `manni meta relocate`:
 
 ```yaml title="manni.config.yaml, after"
 collections:
@@ -1022,7 +1219,8 @@ collections:
         keys: [owner, authors]
 ```
 
-No collections, `manni meta relocate docs/ guides/intro.md`:
+No collections, `manni meta relocate docs/ guides/intro.md`. The new collection
+reads the metadata directory, and each page gets an id:
 
 ```yaml title="manni.config.yaml, after"
 meta:
@@ -1030,9 +1228,11 @@ meta:
 collections:
   - name: default
     paths: ["docs/**", "guides/intro.md"]
-    externalMetadata:
-      - file: ./default.metadata.yaml
-        keys: [authors, owner]
+```
+
+```text title="after"
+metadata/docs-install.yaml   # docs-install: { authors: …, owner: … }
+metadata/guides-intro.yaml   # guides-intro: { owner: … }
 ```
 
 One collection and a target outside it, `manni meta relocate notes/`:
@@ -1076,6 +1276,11 @@ A duplicate-join finding is shaped the same way. Its schema ref is
 is `/<field>`, at the field's line in each page. Its rule id is
 `external:duplicate/external`. See [Joining by a field](#joining-by-a-field).
 
+An unsafe-id finding has the schema ref `external:unsafe-id` and the rule id
+`external:unsafe-id/external`. It files when a page's `id` cannot name a file
+in the [metadata directory](#which-file-a-page-reads), or in an `{id}`
+manifest. The page then reads nothing from that manifest.
+
 {/* cite rule-6-finding-adds-only-a-file-field */}
 A rule 6 finding is not a new rule. It is whatever the schema said, with one
 extra JSON field: [`file`](/manni/meta/reference/output-and-exit-codes/#output-formats)
@@ -1095,8 +1300,8 @@ after the upgrade: the finding reappears and the run is exit 1 until
 
 | Exit | When |
 |---|---|
-| `2` | The config's `collections[].externalMetadata` is malformed. A manifest is missing, unreadable, not valid YAML, or not the mapping shape above. A [remote manifest](#remote-manifests) could not be fetched, the run is `--offline`, or the variable `tokenEnv` names is not set. An entry sets a key outside `keys:`, or sets `$schema`. An entry names a document the run did not load, or a field value no document carries, on an unscoped corpus run. One file is a member of two collections whose manifests own the same key. A `query` write would touch an owned key, rename a path-joined document, or change the join field of a matched one. |
-| `1` | The merged object fails its schema, including on a value the manifest supplied. A document carries an owned key. Two documents share one value of a join field. `fill` refuses a file because a candidate is owned. |
+| `2` | The config's `collections[].externalMetadata` or `externalMetadataDir` is malformed. A metadata directory the key or `MANNI_EXTERNAL_METADATA_DIR` names does not exist. A manifest is missing, unreadable, not valid YAML, or not the mapping shape above. A [remote manifest](#remote-manifests) could not be fetched, the run is `--offline`, or the variable `tokenEnv` names is not set. An entry sets a key outside `keys:`, or sets `$schema`. An entry names a document the run did not load, or a field value no document carries, on an unscoped corpus run. One file is a member of two collections whose manifests own the same key. A `query` write would touch an owned key, rename a path-joined document, or change the join field of a matched one. |
+| `1` | The merged object fails its schema, including on a value the manifest supplied. A document carries an owned key. Two documents share one value of a join field, or one `id` in the metadata directory. A page's `id` cannot name its manifest. `fill` refuses a file because a candidate is owned. |
 
 The split is the one every command already follows. Exit 2 means the run could
 not establish the contract and produced no verdict. Exit 1 means it did, and the
@@ -2764,10 +2969,11 @@ for these files, in order:
 
 1. `manni.config.yaml`, then `manni.config.yml`, read at their `meta:` key.
    A family file counts as the metadata tool's config when it carries `meta:`,
-   `collections:`, [`tools:`](#tools), [`encryptionKey:`](#encryption-key) or
+   `collections:`, [`tools:`](#tools), [`encryptionKey:`](#encryption-key),
+   [`externalMetadataDir:`](#the-metadata-directory) or
    [`providers:`](#providers). One with a family key and no `meta:` still
    describes this repository. It stops the search and hands the tool an empty
-   section plus the family keys. A family file with none of the five belongs
+   section plus the family keys. A family file with none of the six belongs
    to a sibling tool and is skipped, so the search continues.
 2. `docmeta.config.yaml`, then `docmeta.config.yml`: the metadata tool's own
    file from before the family file. Its **whole document** is the `meta:`
@@ -2815,7 +3021,7 @@ defaults.
 When you pass `-c/--config <path>` explicitly, no search happens at all and that
 file must exist; a missing config file is an error (exit 2). The file is read by
 the same rule whatever it is named. If it has a `meta:`, `collections:`,
-`tools:`, `encryptionKey:` or `providers:` key it is read as a family file. If it has none of them, the
+`tools:`, `encryptionKey:`, `externalMetadataDir:` or `providers:` key it is read as a family file. If it has none of them, the
 whole document is the `meta:` section. So `-c ./anything.yaml` works for
 both shapes without a flag, and an explicit path is never warned about.
 
@@ -2844,6 +3050,7 @@ not the directory you happened to run from. That applies to:
   that same directory;
 - `collections[].externalMetadata[].file`, and every document path inside the
   manifest it names;
+- `externalMetadataDir`, and a relative `MANNI_EXTERNAL_METADATA_DIR`;
 - `tools.vale.config`, `tools.dita-ot.home`, `tools.doc-detective.config` and
   `tools.claude-cli.mcpConfig`;
 - `overrides[].files`;

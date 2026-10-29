@@ -95,6 +95,15 @@ export type {
 } from "./core/relocation.js";
 export { externalWriteWarnings, offerExternalHomes } from "./core/location-writes.js";
 export type { ExternalWrite } from "./core/location-writes.js";
+// Proposal 0126: a key an `{id}` manifest owns lives in the file the page's
+// id names. `keyHome` mints a page with no id one first (`mint`), or says the
+// key stays in the page (`stay`); a writer prints these lines for each, and
+// `mintId` is the minting itself, for a writer that asks without `keyHome`.
+// `manifestIdOf` reads a page's id as a manifest is named by it, and
+// `unsafeIdMessage` says why one cannot be.
+export { mintId, mintedNotice, mintStayNotice } from "./core/mint-id.js";
+export type { MintedId, MintOutcome, MintRequest } from "./core/mint-id.js";
+export { manifestIdOf, unsafeIdMessage } from "./core/external-metadata.js";
 // `manni key rotate` re-encrypts the values a manifest supplies as well as
 // the ones a page carries. `reencryptMetadata` reads a page; this is the same
 // rule over metadata that is already parsed, and it skips `citations` too.
@@ -131,7 +140,9 @@ export { configMarks, familyMarks, marksValidator, metaSection, pageMarks } from
 export { metaPageView } from "./core/page-view.js";
 export type { MetaPageView } from "./core/page-view.js";
 export { schemaTrustRoot, urlManifestMessage } from "./core/config.js";
-export { mergeWithMarks } from "./core/external-metadata.js";
+// An `{id}` join is counted under its pattern (0126), and a writer reads the
+// entry an `{id}` manifest holds before it rewrites one.
+export { idManifestValues, joinKey, mergeWithMarks } from "./core/external-metadata.js";
 // `manni docevals` and `manni tracevals` point each eval result at the entry
 // that declares it, in the page or in the manifest that supplied it.
 export { declaredAt } from "./core/declared-at.js";

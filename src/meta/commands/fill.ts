@@ -23,11 +23,13 @@
  */
 import { readFile } from "node:fs/promises";
 import {
+  ID_JOIN,
   loadExternalMetadata,
   mergeWithMarks,
   pageOwners,
   type MergedMetadata,
 } from "../core/external-metadata.js";
+import { mintedNotice, mintStayNotice } from "../core/mint-id.js";
 import { pageMarks } from "../core/page-marks.js";
 import { keyHome, relocationContext, type KeyHome } from "../core/relocation.js";
 import {
@@ -261,6 +263,11 @@ interface ReadyFile {
   metaHome: KeyHome | undefined;
   /** Candidates that prefer external metadata and have no manifest. */
   flags: ExternalWrite[];
+  /**
+   * Candidates an `{id}` manifest owns that stay in the page, because no id
+   * can be minted for it (proposal 0126), each with the reason.
+   */
+  stays: { key: string; reason: string }[];
 }
 
 /** What the cache stores: the raw, *pre-gating* proposal for one file. */
@@ -881,6 +888,7 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
     // location the same way, and never fails the file.
     const destinations = new Map<string, ManifestHome>();
     const flags: ExternalWrite[] = [];
+    const stays: { key: string; reason: string }[] = [];
     let metaHome: KeyHome | undefined;
     if (label !== "<stdin>" && candidates.length > 0) {
       const located: Record<string, unknown> = { ...view.data };
@@ -896,6 +904,11 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
         if (home.kind === "url") {
           if (meta) continue;
           return errorResult(label, extractor.name, urlManifestMessage(key, home.file), schemaSet);
+        }
+        // No id can be minted for an `{id}` manifest (0126): the page keeps it.
+        if (home.kind === "stay") {
+          if (!meta) stays.push({ key, reason: home.reason });
+          continue;
         }
         if (home.kind === "manifest") {
           if (home.entry === undefined) {
@@ -980,6 +993,7 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
       destinations,
       metaHome,
       flags,
+      stays,
     };
   };
 
@@ -1002,6 +1016,7 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
       sealedCandidates,
       destinations,
       metaHome,
+      stays,
     } = ready;
     // The key before the first model request, so a refused prompt never
     // wastes a paid run. A dry run writes nothing, so it needs no key.
@@ -1433,6 +1448,10 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
     const pagePatch: MetadataPatch = Object.fromEntries(
       Object.entries(patch).filter(([key]) => !destinations.has(key)),
     );
+    // A page an `{id}` manifest names by an id minted for it carries the id
+    // (proposal 0126), written with the page's own fields.
+    const minting = entryWrites.find((w) => w.home.mint !== undefined)?.home;
+    if (minting?.mint !== undefined) pagePatch[ID_JOIN] = minting.mint.id;
 
     let next: string;
     try {
@@ -1503,6 +1522,10 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
     const pageWritten = next !== content && !dryRun && label !== "<stdin>";
     if (pageWritten) {
       await writeFileAtomic(resolve(base, label), next);
+      if (minting?.mint !== undefined) warn(mintedNotice(label, minting.mint.id, minting.file));
+      for (const s of stays) {
+        if (Object.hasOwn(pagePatch, s.key)) warn(mintStayNotice(label, s.key, s.reason));
+      }
     }
     if (manifestChanged) {
       const perManifest = new Map<Holding, MetaManifestOp[]>();

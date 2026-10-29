@@ -16,6 +16,7 @@ function collection(name: string, url?: string): CollectionConfig {
     paths: [`${name}/`],
     exclude: [],
     externalMetadata: [],
+    declaresExternalMetadata: false,
     ...(url === undefined ? {} : { url }),
   };
 }

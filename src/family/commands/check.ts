@@ -45,6 +45,7 @@ import type { Envelope } from "../core/envelope.js";
 import {
   COMMANDS,
   DOMAINS,
+  FamilyError,
   META_DEFAULTS_ONLY,
   NOT_SET_UP,
   collectionsOf,
@@ -371,6 +372,10 @@ async function checkUnshared(opts: FamilyCheckOptions): Promise<FamilyCheckRun> 
   const onNotice = opts.onNotice ?? ((): void => undefined);
   const family = await loadFamily(cwd, opts.configPath);
   if (family.collections.length === 0) throw nothingSetUpError();
+  // A metadata directory someone named and nobody checked out (proposal
+  // 0126) refuses every domain alike, so the run says it once, exit 2.
+  const missing = family.collections.flatMap((c) => c.externalMetadata).find((m) => m.missing !== undefined);
+  if (missing?.missing !== undefined) throw new FamilyError(missing.missing);
   const isMember = (label: string): boolean => collectionsOf(family, cwd, label).length > 0;
 
   let files: string[];

@@ -1,0 +1,14 @@
+# Proposal 0126: pages no id is minted for, so a value bound for metadata/
+# stays in the page. Docusaurus reads id as the doc id, agent-skills allows
+# no property it does not name, and AsciiDoc without fenced front matter
+# cannot be written. plain.md carries an id, and its manifest is what makes
+# metadata/ read.
+collections:
+  - name: site
+    paths: ["docs/**"]
+meta:
+  overrides:
+    - files: "docs/docusaurus.md"
+      schemas: [docusaurus:docs:3.10, manni:audience:1.0.0]
+    - files: "docs/skill/SKILL.md"
+      schemas: [agentskills:skill:1.0]

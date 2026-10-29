@@ -27,7 +27,7 @@ sample-questions:
 graph:
   label: Configuration reference
   type: reference
-last-updated: 2026-10-23
+last-updated: 2026-10-29
 tags:
   - configuration
   - reference
@@ -256,8 +256,8 @@ in the working directory only. In each directory it tries
 {/* cite discovery-sibling-file-skipped */}
 {/* cite discovery-family-keys-count */}
 The first file found wins; ancestor files are never merged. A family file
-counts when it carries `cite:`, `collections:`, `tools:`, `encryptionKey:` or
-`providers:`. One with none of these belongs to a sibling tool, and discovery
+counts when it carries `cite:`, `collections:`, `tools:`, `encryptionKey:`,
+`externalMetadataDir:` or `providers:`. One with none of these belongs to a sibling tool, and discovery
 keeps looking up the tree. The tool has no config file of its own from before the family
 file.
 

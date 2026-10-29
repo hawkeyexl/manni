@@ -5,25 +5,25 @@ docs/src/content/docs/meta/set-up/machine-authorship.mdx:
         integrity: sha256-1f40d0d2a26f5ed5cb1a5b9e3eded9af7b21084b217a8756eb087b22f90c0e25
       source:
         file: src/meta/commands/fill.ts
-        lines: 1778-1780
+        lines: 1801-1803
         integrity: sha256-e2ad11ef937dd3b5993e7f8317ae793d739f4154dbf341b060a05e4c7d23f89d
-        commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
+        commit-sha: 46ea4718fa7ee7e2ec7ed135a7a646d421ff3fb8
     - id: provenance-keys-withheld-from-model
       claim:
         integrity: sha256-1f40d0d2a26f5ed5cb1a5b9e3eded9af7b21084b217a8756eb087b22f90c0e25
       source:
         file: src/meta/commands/fill.ts
-        lines: 1036-1043
+        lines: 1051-1058
         integrity: sha256-fc4e2c325570ef08944fcb7b52e8327ccf9055be1cad86f56bf8678fc9766e02
-        commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
+        commit-sha: 46ea4718fa7ee7e2ec7ed135a7a646d421ff3fb8
     - id: meta-provenance-skipped-on-schema-mismatch
       claim:
         integrity: sha256-1f40d0d2a26f5ed5cb1a5b9e3eded9af7b21084b217a8756eb087b22f90c0e25
       source:
         file: src/meta/commands/fill.ts
-        lines: 1394-1408
+        lines: 1409-1423
         integrity: sha256-2d7eccb1fc20ef1e53841e645dc1bbb5d5fd3b45891521e02b7993ecca7b9f1e
-        commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
+        commit-sha: 46ea4718fa7ee7e2ec7ed135a7a646d421ff3fb8
     - id: meta-provenance-schema-mismatch-note-text
       claim:
         integrity: sha256-1f40d0d2a26f5ed5cb1a5b9e3eded9af7b21084b217a8756eb087b22f90c0e25
@@ -45,9 +45,9 @@ docs/src/content/docs/meta/set-up/machine-authorship.mdx:
         integrity: sha256-95da7a8b17ea203b6d306692609b29d99a9295b694fb9d98b9d186fd6191a544
       source:
         file: src/meta/commands/fill.ts
-        lines: 1654-1658
+        lines: 1677-1681
         integrity: sha256-7e674a8f3a0a6f11a07039363cf3d5bae0d27b9bb12e0e3f4969e1ef8fc9e4f2
-        commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
+        commit-sha: 46ea4718fa7ee7e2ec7ed135a7a646d421ff3fb8
     - id: meta-provenance-fields-are-json-pointers
       claim:
         integrity: sha256-95da7a8b17ea203b6d306692609b29d99a9295b694fb9d98b9d186fd6191a544
@@ -61,17 +61,17 @@ docs/src/content/docs/meta/set-up/machine-authorship.mdx:
         integrity: sha256-98174703da84540c6793ae0b31bb8ffac616839aed2553872a2c32bf2c06dd9c
       source:
         file: src/meta/commands/fill.ts
-        lines: 176-177
+        lines: 178-179
         integrity: sha256-767547931864d72dac68816d93cdcbd7a82f26c9fecdd31403021bde96892010
-        commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
+        commit-sha: 46ea4718fa7ee7e2ec7ed135a7a646d421ff3fb8
     - id: unfenced-format-refuses-provenance-stamp
       claim:
         integrity: sha256-7039fb1532232cd20ca72b17f50d4499b0e7e596e3ec78392f9cf28affb9a202
       source:
         file: src/meta/commands/derive.ts
-        lines: 1010-1017
+        lines: 1045-1052
         integrity: sha256-32ff03c2a90ab2fae6ac3e0e8e9a2c5a8504c082508784c891c757da5f2c4bf2
-        commit-sha: cb74827009894c38f8646504ae9eb4a2745761a9
+        commit-sha: 46ea4718fa7ee7e2ec7ed135a7a646d421ff3fb8
     - id: derive-file-error-exits-1
       claim:
         integrity: sha256-7039fb1532232cd20ca72b17f50d4499b0e7e596e3ec78392f9cf28affb9a202
@@ -85,17 +85,17 @@ docs/src/content/docs/meta/set-up/machine-authorship.mdx:
         integrity: sha256-847eace2a8ba9d5ee66ef790ce1713c14bd6006d6f46065ab33a041d0956e99b
       source:
         file: src/meta/core/derive/provenance-place.ts
-        lines: 79-82
+        lines: 100-103
         integrity: sha256-2a2feebe9dba28e0b36ae75d1090b49f8d9c027171d41a4a4e0e5bebde29ec6d
-        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
+        commit-sha: 46ea4718fa7ee7e2ec7ed135a7a646d421ff3fb8
     - id: empty-plan-removes-provenance-key
       claim:
         integrity: sha256-1a4a97071c2b901d6a4c4ab5d54c8e3356b2c281c47cfcf869202f66a5f52018
       source:
         file: src/meta/commands/derive.ts
-        lines: 1056-1062
+        lines: 1093-1099
         integrity: sha256-63730106799f1bd583ecc95e4e75448d2dafea08a6847a4e5c22683f7dc6ba5a
-        commit-sha: cb74827009894c38f8646504ae9eb4a2745761a9
+        commit-sha: 46ea4718fa7ee7e2ec7ed135a7a646d421ff3fb8
     - id: manifest-entry-with-no-keys-is-removed
       claim:
         integrity: sha256-1a4a97071c2b901d6a4c4ab5d54c8e3356b2c281c47cfcf869202f66a5f52018
@@ -165,9 +165,9 @@ docs/src/content/docs/meta/set-up/machine-authorship.mdx:
         integrity: sha256-270e1aebcc0c40be7a283d5254f4b22ab8ba9ff72b569a3eccec71b112b695f6
       source:
         file: src/meta/commands/derive.ts
-        lines: 343-347
+        lines: 345-349
         integrity: sha256-cbe2807a3f1f5fcf14afc15068b97bd08f863fb01f014402600a6c64e73010a5
-        commit-sha: cb74827009894c38f8646504ae9eb4a2745761a9
+        commit-sha: 46ea4718fa7ee7e2ec7ed135a7a646d421ff3fb8
     - id: range-past-end-of-file-is-refused
       claim:
         integrity: sha256-270e1aebcc0c40be7a283d5254f4b22ab8ba9ff72b569a3eccec71b112b695f6
@@ -189,17 +189,17 @@ docs/src/content/docs/meta/set-up/machine-authorship.mdx:
         integrity: sha256-270e1aebcc0c40be7a283d5254f4b22ab8ba9ff72b569a3eccec71b112b695f6
       source:
         file: src/meta/commands/derive.ts
-        lines: 463-469
+        lines: 465-471
         integrity: sha256-6ad96e3f20f2028bb216141bf421d7f546adde53742d52b48882e3a3995f33b8
-        commit-sha: cb74827009894c38f8646504ae9eb4a2745761a9
+        commit-sha: 46ea4718fa7ee7e2ec7ed135a7a646d421ff3fb8
     - id: several-ranges-per-page-accumulate
       claim:
         integrity: sha256-270e1aebcc0c40be7a283d5254f4b22ab8ba9ff72b569a3eccec71b112b695f6
       source:
         file: src/meta/commands/derive.ts
-        lines: 470-472
+        lines: 472-474
         integrity: sha256-1fa7cce4d6f8498ac1cc4e668ff9c23d17813e020878d22858cf6c257ef42185
-        commit-sha: cb74827009894c38f8646504ae9eb4a2745761a9
+        commit-sha: 46ea4718fa7ee7e2ec7ed135a7a646d421ff3fb8
     - id: generated-by-cannot-overrule-recorded-machine
       claim:
         integrity: sha256-3fb398aba93b2a36a119c2aa49e389cb28e3e8e847aba5234078a6b8220147e7
@@ -221,25 +221,25 @@ docs/src/content/docs/meta/set-up/machine-authorship.mdx:
         integrity: sha256-9a10f8f6c8089e8b096b4ecbf8ded6e3cb641a8abecc3d1aed02c66933925591
       source:
         file: src/meta/commands/derive.ts
-        lines: 348-353
+        lines: 350-355
         integrity: sha256-c3f1f9345ece525ecb9ae9d53b471e318b9149941dffcc8806da391db60f5e10
-        commit-sha: cb74827009894c38f8646504ae9eb4a2745761a9
+        commit-sha: 46ea4718fa7ee7e2ec7ed135a7a646d421ff3fb8
     - id: generated-by-flag-overrides-env-even-when-empty
       claim:
         integrity: sha256-9a10f8f6c8089e8b096b4ecbf8ded6e3cb641a8abecc3d1aed02c66933925591
       source:
         file: src/meta/commands/derive.ts
-        lines: 299-303
+        lines: 301-305
         integrity: sha256-648c9d786c6e0ac9fe2b2ccda4a65704dc6a564fa170e522dee0b00ee7b01152
-        commit-sha: cb74827009894c38f8646504ae9eb4a2745761a9
+        commit-sha: 46ea4718fa7ee7e2ec7ed135a7a646d421ff3fb8
     - id: blank-generated-by-value-is-unset
       claim:
         integrity: sha256-9a10f8f6c8089e8b096b4ecbf8ded6e3cb641a8abecc3d1aed02c66933925591
       source:
         file: src/meta/commands/derive.ts
-        lines: 1257-1261
+        lines: 1301-1305
         integrity: sha256-23091d49e18dd2928de54e89dea34b96be8da2b0f377118476b2005e4ffb2467
-        commit-sha: cb74827009894c38f8646504ae9eb4a2745761a9
+        commit-sha: 46ea4718fa7ee7e2ec7ed135a7a646d421ff3fb8
     - id: generated-by-attributes-all-uncommitted-lines
       claim:
         lines: 168
@@ -262,9 +262,9 @@ docs/src/content/docs/meta/set-up/machine-authorship.mdx:
         integrity: sha256-55859bc76b39482bd56af2fd8d806916ac637632fa72b9a73c1be9ac20ac1709
       source:
         file: src/meta/commands/derive.ts
-        lines: 218-219
+        lines: 220-221
         integrity: sha256-53d2ca78ddb4c0984b80c66ec3d3f2716e025b098976cbbc5056896bb8065602
-        commit-sha: cb74827009894c38f8646504ae9eb4a2745761a9
+        commit-sha: 46ea4718fa7ee7e2ec7ed135a7a646d421ff3fb8
     - id: derive-hook-ordered-before-validate-hook
       claim:
         lines: 75
@@ -298,9 +298,9 @@ docs/src/content/docs/meta/set-up/machine-authorship.mdx:
         integrity: sha256-fbee9db97ce3be6c8e17907d789ab2a03e335aa9144a2197024a45b650d7e94d
       source:
         file: src/meta/commands/derive.ts
-        lines: 1271-1281
+        lines: 1315-1325
         integrity: sha256-5cf746e8c301c1b265485e38af387ea6680e7a5ceda8f051e7e742495e2e95ce
-        commit-sha: cb74827009894c38f8646504ae9eb4a2745761a9
+        commit-sha: 46ea4718fa7ee7e2ec7ed135a7a646d421ff3fb8
     - id: provenance-is-a-builtin-managed-field
       claim:
         integrity: sha256-92982e12f04c9402446c8dd938e937450b3b3b8ea38ef90848a3732522591286
@@ -314,9 +314,9 @@ docs/src/content/docs/meta/set-up/machine-authorship.mdx:
         integrity: sha256-6fedd5181bee831ead0082f85c35f9fc1c3fa914171509b11b5e96544abcce95
       source:
         file: src/meta/commands/validate.ts
-        lines: 721-730
+        lines: 734-743
         integrity: sha256-6f9df11dc130841f621a9207a00e82ce264cc4ac92855aad30d05ff540127df1
-        commit-sha: cb74827009894c38f8646504ae9eb4a2745761a9
+        commit-sha: 46ea4718fa7ee7e2ec7ed135a7a646d421ff3fb8
     - id: changed-pin-finding-at-first-file-line
       claim:
         integrity: sha256-6fedd5181bee831ead0082f85c35f9fc1c3fa914171509b11b5e96544abcce95
@@ -373,6 +373,6 @@ docs/src/content/docs/meta/set-up/machine-authorship.mdx:
         integrity: sha256-847eace2a8ba9d5ee66ef790ce1713c14bd6006d6f46065ab33a041d0956e99b
       source:
         file: src/meta/core/derive/provenance-place.ts
-        lines: 141-147
+        lines: 175-181
         integrity: sha256-2af2ebc4f0b3c9337bd9e45669f2920425314a4e7b21eb99de76045707498186
-        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
+        commit-sha: 46ea4718fa7ee7e2ec7ed135a7a646d421ff3fb8

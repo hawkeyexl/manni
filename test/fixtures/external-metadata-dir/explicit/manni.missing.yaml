@@ -1,0 +1,6 @@
+# The same entry naming a directory that does not exist: empty, never refused.
+collections:
+  - name: api
+    paths: ["docs/*.md"]
+    externalMetadata:
+      - file: "nowhere/{id}.yaml"

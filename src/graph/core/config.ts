@@ -15,6 +15,7 @@ import {
 } from "../../shared/config-file.js";
 import type { CollectionConfig } from "../../shared/collections.js";
 import { parseCollections } from "../../shared/collections.js";
+import { applyMetadataDirectory } from "../../shared/external-metadata-dir.js";
 import {
   PROVIDERS_KEY,
   assertKnownProvider,
@@ -540,7 +541,11 @@ export function parseConfig(text: string, configPath: string): GraphConfig {
   // built from text selects from the same collections, and the same
   // providers, a discovered file would.
   const collections = Object.hasOwn(doc, COLLECTIONS_KEY)
-    ? parseCollections(doc[COLLECTIONS_KEY], configPath, toError)
+    ? applyMetadataDirectory(parseCollections(doc[COLLECTIONS_KEY], configPath, toError), doc, {
+        source: configPath,
+        configDir: dirname(resolve(configPath)),
+        toError,
+      })
     : [];
   const providers = Object.hasOwn(doc, PROVIDERS_KEY)
     ? parseProviders(

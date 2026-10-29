@@ -1,0 +1,4 @@
+install:
+  eval-suite: reference
+  evals:
+    - use: no-todo-markers

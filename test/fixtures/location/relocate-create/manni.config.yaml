@@ -4,3 +4,6 @@ meta:
 collections:
   - name: site
     paths: ["docs/**/*.md"]
+    # An empty list opts out of the metadata directory (proposal 0126), so
+    # relocate gives the collection a manifest of its own (0047 section 3).
+    externalMetadata: []

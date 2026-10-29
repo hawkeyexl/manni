@@ -34,6 +34,12 @@ export const EXTERNAL_OWNED_RULE = "external:owned/external";
 export const EXTERNAL_DUPLICATE_RULE = "external:duplicate/external";
 
 /**
+ * The page's `id` cannot name a file in an `{id}` manifest's directory, or
+ * is held encrypted, so the page reads nothing from it (proposal 0126).
+ */
+export const EXTERNAL_UNSAFE_ID_RULE = "external:unsafe-id/external";
+
+/**
  * A property its schema marks `x-manni-encrypt` holds a plain value
  * (proposal 0045). Builtin-shaped like `external:owned`.
  */
@@ -98,6 +104,8 @@ export const RESERVED_RULES: Record<string, string> = {
     "The document carries a key a manifest owns; the manifest is the only place that key may be set.",
   [EXTERNAL_DUPLICATE_RULE]:
     "Two documents carry the same value of a manifest's join field, so one manifest entry matched both.",
+  [EXTERNAL_UNSAFE_ID_RULE]:
+    "The page's id cannot name a file in the metadata directory, so its external metadata is not read.",
   [DERIVED_STALE_RULE]:
     "A managed field whose value differs from what git, CODEOWNERS or the GitHub or GitLab review record says; run `manni meta derive` to refresh it.",
 };

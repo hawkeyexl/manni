@@ -10,9 +10,14 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import {
+  ID_PLACEHOLDER,
   PAGE_PLACEHOLDER,
   findPageManifests,
+  hasIdPlaceholder,
   hasPagePlaceholder,
+  idManifestPath,
+  isSafeManifestId,
+  listIdManifests,
   normalizeManifestPattern,
   pageManifestPath,
   strayManifestGlob,
@@ -144,6 +149,117 @@ describe("strayManifestGlob", () => {
       const skip = new Set([resolve(dir, "docs", "a.citations.yaml")]);
       const found = findPageManifests("{page}.citations.yaml", dir, () => true, skip);
       expect(found.map((f) => f.entries.map((e) => e.spelled))).toEqual([["docs/b.md"]]);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+});
+
+describe("ID_PLACEHOLDER and hasIdPlaceholder (0126)", () => {
+  it("is the token {id}", () => {
+    expect(ID_PLACEHOLDER).toBe("{id}");
+  });
+
+  it("answers whether a file names one manifest per id", () => {
+    expect(hasIdPlaceholder("metadata/{id}.yaml")).toBe(true);
+    expect(hasIdPlaceholder("{page}.meta.yaml")).toBe(false);
+    expect(hasIdPlaceholder("./site.metadata.yaml")).toBe(false);
+  });
+});
+
+describe("isSafeManifestId (0126)", () => {
+  it.each(["getting-started", "a", "0126", "meta-set-up-external-metadata", "con1", "lpt10"])(
+    "accepts %s",
+    (id) => {
+      expect(isSafeManifestId(id)).toBe(true);
+    },
+  );
+
+  it.each([
+    ["empty", ""],
+    ["uppercase", "Getting-Started"],
+    ["an underscore", "getting_started"],
+    ["a dot", "notes.citations"],
+    ["a leading dash", "-draft"],
+    ["a slash", "docs/page"],
+    ["a space", "two words"],
+    ["a device name", "con"],
+    ["a numbered device name", "com7"],
+    ["a printer port", "lpt1"],
+    ["nul", "nul"],
+  ])("refuses %s", (_label, id) => {
+    expect(isSafeManifestId(id)).toBe(false);
+  });
+});
+
+describe("idManifestPath (0126)", () => {
+  it("substitutes the id into a pattern relative to the config directory", () => {
+    expect(idManifestPath("./metadata/{id}.yaml", configDir, "getting-started")).toEqual({
+      abs: resolve(configDir, "metadata/getting-started.yaml"),
+      rel: "metadata/getting-started.yaml",
+    });
+    expect(idManifestPath("metadata\\{id}.citations.yaml", configDir, "x")).toEqual({
+      abs: resolve(configDir, "metadata/x.citations.yaml"),
+      rel: "metadata/x.citations.yaml",
+    });
+  });
+
+  it("resolves a pattern above the config directory, as another checkout is", () => {
+    expect(idManifestPath("../docs-meta/{id}.yaml", configDir, "x")).toEqual({
+      abs: resolve(configDir, "../docs-meta/x.yaml"),
+      rel: "../docs-meta/x.yaml",
+    });
+  });
+
+  it("keeps an absolute pattern absolute", () => {
+    const abs = resolve("/srv/meta/{id}.yaml");
+    expect(idManifestPath(abs, configDir, "x").abs).toBe(resolve("/srv/meta/x.yaml"));
+  });
+});
+
+describe("listIdManifests (0126)", () => {
+  it("is empty when the directory is missing", () => {
+    const dir = mkdtempSync(join(tmpdir(), "manni-id-missing-"));
+    try {
+      expect(listIdManifests("metadata/{id}.yaml", dir)).toEqual([]);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("lists the files the pattern names by a safe id, sorted, and nothing else", () => {
+    const dir = mkdtempSync(join(tmpdir(), "manni-id-list-"));
+    try {
+      const meta = join(dir, "metadata");
+      mkdirSync(join(meta, "nested.yaml"), { recursive: true });
+      for (const name of [
+        "zeta.yaml",
+        "alpha.yaml",
+        "Upper.yaml",
+        "under_score.yaml",
+        "notes.citations.yaml",
+        "readme.md",
+      ]) {
+        writeFileSync(join(meta, name), "x: 1\n");
+      }
+      expect(listIdManifests("metadata/{id}.yaml", dir)).toEqual([
+        { abs: resolve(meta, "alpha.yaml"), id: "alpha" },
+        { abs: resolve(meta, "zeta.yaml"), id: "zeta" },
+      ]);
+      // The same directory under another suffix names other files.
+      expect(listIdManifests("./metadata/{id}.citations.yaml", dir)).toEqual([
+        { abs: resolve(meta, "notes.citations.yaml"), id: "notes" },
+      ]);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("reads the config directory itself for a pattern with no directory", () => {
+    const dir = mkdtempSync(join(tmpdir(), "manni-id-flat-"));
+    try {
+      writeFileSync(join(dir, "page.meta.yaml"), "x: 1\n");
+      expect(listIdManifests("{id}.meta.yaml", dir)).toEqual([{ abs: resolve(dir, "page.meta.yaml"), id: "page" }]);
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }

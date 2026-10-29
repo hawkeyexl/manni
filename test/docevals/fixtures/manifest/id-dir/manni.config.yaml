@@ -1,0 +1,25 @@
+# Proposal 0126: install.md keeps its evals in metadata/install.yaml, found
+# by its id. It is in both collections, which read one directory and so one
+# manifest, so docevals does not refuse it.
+collections:
+  - name: site
+    paths:
+      - "docs/**/*.md"
+  - name: guides
+    paths:
+      - "docs/install.md"
+
+docevals:
+  evals:
+    no-todo-markers:
+      assertion: The page carries no TODO, TBD or FIXME markers.
+      grader: tool:regex
+      options:
+        pattern: "\b(TODO|TBD|FIXME)\b"
+        match: not-contains
+      severity: error
+
+  suites:
+    reference:
+      target-pass-rate: 1.0
+      evals: [no-todo-markers]

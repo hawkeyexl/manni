@@ -1,0 +1,11 @@
+# Proposal 0126 for cite: limits.md keeps its citations in
+# metadata/limits.yaml, found by its id. It is in both collections, which
+# read one directory and so one manifest.
+collections:
+  - name: site
+    paths: ["docs/**/*.md"]
+  - name: limits
+    paths: ["docs/limits.md"]
+cite:
+  # The sources sit beside the pages in this fixture.
+  root: .

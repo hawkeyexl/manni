@@ -120,8 +120,23 @@ export class MetadataWriter {
   async homeFor(label: string, data: Readonly<Record<string, unknown>>): Promise<MetadataHome> {
     const home = await keyHome(this.ctx, label, data, METADATA_KEY);
     if (home.kind === "url") return { kind: "url", file: home.file };
+    // ponytail: until this writer mints (0126), a page with no id is refused
+    // as before, and a page none can be minted for keeps the block, as an
+    // unowned one did. C2 replaces both.
+    if (home.kind === "stay") {
+      return {
+        kind: "page",
+        proposed: {
+          kind: "collection",
+          collection: home.collection,
+          manifest: home.file,
+          createsManifest: true,
+          createsCollection: false,
+        },
+      };
+    }
     if (home.kind === "manifest") {
-      if (home.entry === undefined) {
+      if (home.entry === undefined || home.mint !== undefined) {
         return { kind: "no-entry", file: home.file, join: home.join };
       }
       return {

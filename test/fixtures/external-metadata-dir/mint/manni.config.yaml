@@ -1,0 +1,8 @@
+# Proposal 0126: pages a writer mints an id for. Neither collection declares
+# externalMetadata, so both read metadata/<id>.yaml, and other.md's id and
+# metadata/taken.yaml are slugs already taken.
+collections:
+  - name: site
+    paths: ["docs/**/*.md", "notes/single.md"]
+  - name: strategy
+    paths: ["strategy/{audiences,personas}/*.md"]
