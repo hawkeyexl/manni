@@ -232,9 +232,9 @@ export async function runPromote(
           if (next === undefined) {
             proposal.error = `${home.file}: eval "${ev.name}" not found in the entry for ${home.entry}`;
           } else {
-            await at.writeManifest(home, EVALS_KEY, next);
-            // A page with no id is minted one (proposal 0126), and its evals have moved.
-            if (home.mint !== undefined) await at.mintInto(plan.page, { ...home, mint: home.mint }, [EVALS_KEY]);
+            // A page with no id is minted one (proposal 0126), and its evals move with the write.
+            if (home.mint !== undefined) await at.mintInto(plan.page, { ...home, mint: home.mint }, EVALS_KEY, next);
+            else await at.writeManifest(home, EVALS_KEY, next);
             proposal.applied = true;
           }
         } else if (

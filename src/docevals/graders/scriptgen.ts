@@ -245,9 +245,9 @@ export function makeGenerateScripts(deps: ScriptgenDeps): GenerateFn {
             `${home.file}: eval "${ev.name}" not found in the entry for ${home.entry}`,
           );
         }
-        await at.writeManifest(home, EVALS_KEY, next);
-        // A page with no id is minted one (proposal 0126), and its evals have moved.
-        if (home.mint !== undefined) await at.mintInto(page, { ...home, mint: home.mint }, [EVALS_KEY]);
+        // A page with no id is minted one (proposal 0126), and its evals move with the write.
+        if (home.mint !== undefined) await at.mintInto(page, { ...home, mint: home.mint }, EVALS_KEY, next);
+        else await at.writeManifest(home, EVALS_KEY, next);
       } else if (ev.source === "page") {
         const abs = page.absPath;
         const updated = updatePageEval(

@@ -656,9 +656,9 @@ docs/src/content/docs/cite/fix/index.mdx:
         integrity: sha256-f50b4d53f9acb823c98add23c7e15b5ed9b85892812d17a343e214a029dd1026
       source:
         file: src/cite/core/sidecar.ts
-        lines: 581-590
+        lines: 582-591
         integrity: sha256-9afb8537d728598c8fb40c46d67f0821d1cd9011e20a185cac8451a9904b48c0
-        commit-sha: fefd408f2da5a18b6c6a613e12c5f5dcc2ac782e
+        commit-sha: 75715494a2eef4bea95e5803dcac2d644a6076e8
     - id: exit-table-zero
       claim:
         lines: 722
