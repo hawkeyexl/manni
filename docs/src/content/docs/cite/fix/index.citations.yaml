@@ -553,17 +553,17 @@ docs/src/content/docs/cite/fix/index.mdx:
         integrity: sha256-c42d16b7dad8d6348cd4554188a1aa2d9cf2060610e8b2def0b350d891e9b42f
       source:
         file: src/cite/commands/add.ts
-        lines: 388-396
+        lines: 403-411
         integrity: sha256-ba16a2e2063d0fbf9215cca117c5539bf9a2223ace142312c5841267bd216074
-        commit-sha: e9388316c721185044c2c16f35a31b957c3e1d41
+        commit-sha: fefd408f2da5a18b6c6a613e12c5f5dcc2ac782e
     - id: add-refuses-frontmatter
       claim:
         integrity: sha256-4b2ebb1c7c0fe58d00f5201b6821c60d0d96f957ef0567ee76278f58093053b1
       source:
         file: src/cite/commands/add.ts
-        lines: 388-396
+        lines: 403-411
         integrity: sha256-ba16a2e2063d0fbf9215cca117c5539bf9a2223ace142312c5841267bd216074
-        commit-sha: e9388316c721185044c2c16f35a31b957c3e1d41
+        commit-sha: fefd408f2da5a18b6c6a613e12c5f5dcc2ac782e
     - id: entry-invalid-duplicate-sample
       claim:
         lines: 624
@@ -656,9 +656,9 @@ docs/src/content/docs/cite/fix/index.mdx:
         integrity: sha256-f50b4d53f9acb823c98add23c7e15b5ed9b85892812d17a343e214a029dd1026
       source:
         file: src/cite/core/sidecar.ts
-        lines: 469-478
+        lines: 581-590
         integrity: sha256-9afb8537d728598c8fb40c46d67f0821d1cd9011e20a185cac8451a9904b48c0
-        commit-sha: 46ea4718fa7ee7e2ec7ed135a7a646d421ff3fb8
+        commit-sha: fefd408f2da5a18b6c6a613e12c5f5dcc2ac782e
     - id: exit-table-zero
       claim:
         lines: 722
@@ -728,9 +728,9 @@ docs/src/content/docs/cite/fix/index.mdx:
         integrity: sha256-9376722537811cfca897d9bc690d4e54c97fc8378300ab84f3f9eb78c51f4b16
       source:
         file: src/cite/core/sidecar.ts
-        lines: 177-180
+        lines: 225-228
         integrity: sha256-60f4e2f84d656eb0e532a8dd12d2afb786d141ae7268cb753b3229a14381d04d
-        commit-sha: 46ea4718fa7ee7e2ec7ed135a7a646d421ff3fb8
+        commit-sha: fefd408f2da5a18b6c6a613e12c5f5dcc2ac782e
     - id: claim-changed-marker-scope
       claim:
         integrity: sha256-33d1a0c37f8ccd29d7dc672fd41eccfe392287c7838de26dd88cc687f8411e85

@@ -29,25 +29,25 @@ docs/src/content/docs/cite/reference/configuration.mdx:
         integrity: sha256-dd2b6a80de52f286db6a2841cc0045e09159192ecd68ff35c9d6fbfb3cb22972
       source:
         file: src/cite/core/sidecar.ts
-        lines: 477-483
+        lines: 589-595
         integrity: sha256-73b7fc9bbd56ebaa6bec7a55d284fc4478257e2e30dd33034dc40ab03e9ea90c
-        commit-sha: 46ea4718fa7ee7e2ec7ed135a7a646d421ff3fb8
+        commit-sha: fefd408f2da5a18b6c6a613e12c5f5dcc2ac782e
     - id: no-config-frontmatter-only
       claim:
         integrity: sha256-dd2b6a80de52f286db6a2841cc0045e09159192ecd68ff35c9d6fbfb3cb22972
       source:
         file: src/cite/core/sidecar.ts
-        lines: 477-478
+        lines: 589-590
         integrity: sha256-dae4c906327d834b6eb32a2c2a313026a27656063640423ff509549c598aa7d3
-        commit-sha: 46ea4718fa7ee7e2ec7ed135a7a646d421ff3fb8
+        commit-sha: fefd408f2da5a18b6c6a613e12c5f5dcc2ac782e
     - id: url-manifest-refused
       claim:
         integrity: sha256-dd2b6a80de52f286db6a2841cc0045e09159192ecd68ff35c9d6fbfb3cb22972
       source:
         file: src/cite/core/sidecar.ts
-        lines: 221-226
+        lines: 269-274
         integrity: sha256-d46775f654bb6e98cb804184b23d749dd7121d8c3509c345b1a9efd71639c2ba
-        commit-sha: 46ea4718fa7ee7e2ec7ed135a7a646d421ff3fb8
+        commit-sha: fefd408f2da5a18b6c6a613e12c5f5dcc2ac782e
     - id: moved-keys-refused
       claim:
         integrity: sha256-cdc669af18e1f370876a88f7794436736bab8f1b25453b4f4d0ecfc7599a97d9
@@ -214,17 +214,17 @@ docs/src/content/docs/cite/reference/configuration.mdx:
         integrity: sha256-32e04d8b6c6640a44eca79f44945bfed9c60f4e4e25705ee6d4fb419f238661a
       source:
         file: src/key/commands/rotate.ts
-        lines: 634
+        lines: 648
         integrity: sha256-3b30a733a0353dc8e6e61975ff787ea3204ab57d2b8331fb96c59dbf932e4119
-        commit-sha: ddba7252337859626421b6060ae8952f93f61653
+        commit-sha: fefd408f2da5a18b6c6a613e12c5f5dcc2ac782e
     - id: commit-notice-add
       claim:
         integrity: sha256-32e04d8b6c6640a44eca79f44945bfed9c60f4e4e25705ee6d4fb419f238661a
       source:
         file: src/cite/commands/add.ts
-        lines: 708-712
+        lines: 765-769
         integrity: sha256-2e9e155a78a4e1571809ecb97cd125a13925a661c01306bd947a9c93cb8d8c4f
-        commit-sha: e9388316c721185044c2c16f35a31b957c3e1d41
+        commit-sha: fefd408f2da5a18b6c6a613e12c5f5dcc2ac782e
     - id: unknown-keys-error
       claim:
         integrity: sha256-37ca0fb41356b8c08b12aeb6216c5c73b58c1fd289843f4eb28a415aafbb0910
@@ -407,9 +407,9 @@ docs/src/content/docs/cite/reference/configuration.mdx:
         integrity: sha256-8a44e634704e00d6e35a37b49441f79c1912905e7d55e2b5012677a067c8cab8
       source:
         file: src/cite/commands/add.ts
-        lines: 585-591
+        lines: 600-606
         integrity: sha256-38e382c7d00ac5ed995437d77ccd64b63eef323ddaef18f95486cd4537a6ef31
-        commit-sha: e9388316c721185044c2c16f35a31b957c3e1d41
+        commit-sha: fefd408f2da5a18b6c6a613e12c5f5dcc2ac782e
     - id: check-decrypts
       claim:
         integrity: sha256-8a44e634704e00d6e35a37b49441f79c1912905e7d55e2b5012677a067c8cab8
@@ -423,17 +423,17 @@ docs/src/content/docs/cite/reference/configuration.mdx:
         integrity: sha256-8a44e634704e00d6e35a37b49441f79c1912905e7d55e2b5012677a067c8cab8
       source:
         file: src/key/commands/rotate.ts
-        lines: 597-612
+        lines: 611-626
         integrity: sha256-0e9b128feb17df3556f5c7944866221885f9e8b3dbd50633f673b876332a7dec
-        commit-sha: ddba7252337859626421b6060ae8952f93f61653
+        commit-sha: fefd408f2da5a18b6c6a613e12c5f5dcc2ac782e
     - id: rotate-manifest
       claim:
         integrity: sha256-8a44e634704e00d6e35a37b49441f79c1912905e7d55e2b5012677a067c8cab8
       source:
         file: src/key/commands/rotate.ts
-        lines: 232-238
+        lines: 235-241
         integrity: sha256-721b3db08284b7c87c7ee859c9df38f6a3bf1e859708c512afbe722345af5677
-        commit-sha: ddba7252337859626421b6060ae8952f93f61653
+        commit-sha: fefd408f2da5a18b6c6a613e12c5f5dcc2ac782e
     - id: exit-code-errors-only
       claim:
         integrity: sha256-f095ba949ddf8352526dd7989dcc22ba76c78e63804ad82f33f8df0d90073b4a
