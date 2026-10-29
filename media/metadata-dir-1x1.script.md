@@ -184,9 +184,9 @@ manni: MANNI_EXTERNAL_METADATA_DIR: ../elsewhere does not exist. Create it, or c
   capture run plus three timing runs (`media/capture-metadata-dir/latency.txt`),
   each line stamped with its millisecond after Enter. Every manni run prints
   `Using manni.config.yaml (.)` first, at 301-456 ms. The orphan error lands
-  41-48 ms after it, and the refusal 41-47 ms. relocate's report lands at
-  556-635 ms, validate's pass 22-83 ms after the config line, and `get`'s
-  value 33-36 ms after it. `git mv` takes 58-106 ms and `cat` 37-90 ms. The
+  41-48 ms after it, and the refusal 41-47 ms. The relocate report lands at
+  556-635 ms. The validate pass follows the config line by 22-83 ms, and the
+  `get` value by 33-36 ms. `git mv` takes 58-106 ms and `cat` 37-90 ms. The
   replay uses the first whole frame inside each range, or the first after it
   when none falls inside: 10 or 11 frames for the config line, then 2, 7, 1, 1
   and 2. `git mv` and `cat` get 2.
