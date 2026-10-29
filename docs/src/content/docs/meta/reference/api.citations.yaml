@@ -187,8 +187,8 @@ docs/src/content/docs/meta/reference/api.mdx:
       source:
         file: src/meta/index.ts
         lines: 111-130
-        integrity: sha256-5d9320c9fac4a7ecce25e7063c79373b762632ca51120ec49298efd6a10c2905
-        commit-sha: cb74827009894c38f8646504ae9eb4a2745761a9
+        integrity: sha256-a6dc37e728ee97529db6d35cb4fb075930756aae92daf31a1a4ca2dacc0db81c
+        commit-sha: d03514bdfa434eba44147e1a6f4e928a6f0f644b
     - id: api-manifest-joins-at-run-time
       claim:
         integrity: sha256-32d03c243ae19ab92851b4168f20b8aaf2a525e29f42b82bfc6383e5965419b9

@@ -921,9 +921,9 @@ docs/src/content/docs/meta/reference/cli.mdx:
         integrity: sha256-67e67889eaa2f042f7b72ed49f532faed837edcaf40353d1bd3b357c117c1846
       source:
         file: src/meta/core/relocation.ts
-        lines: 448-452
-        integrity: sha256-c488f60ed89338eb93b6d7a3ab6cad9ff43f4a9a30cf4a1d7293487b72ddc936
-        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
+        lines: 581-591
+        integrity: sha256-ee48b2306cd357ea247cd186a2564f937c70ca891a1892273641a3460eee6059
+        commit-sha: d03514bdfa434eba44147e1a6f4e928a6f0f644b
     - id: one-collection-gets-the-target-appended
       claim:
         integrity: sha256-67e67889eaa2f042f7b72ed49f532faed837edcaf40353d1bd3b357c117c1846
@@ -946,8 +946,8 @@ docs/src/content/docs/meta/reference/cli.mdx:
       source:
         file: src/meta/core/relocation.ts
         lines: 614
-        integrity: sha256-2083a2c13e0a9792802b8d5c032bc53304ee4c5b3936cf1878050b24812f0252
-        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
+        integrity: sha256-7f0de6608449d7c76cd91f89e4d8661b976bfe24144f51a7ec9638fbbf116b26
+        commit-sha: d03514bdfa434eba44147e1a6f4e928a6f0f644b
     - id: config-created-at-the-git-root
       claim:
         integrity: sha256-67e67889eaa2f042f7b72ed49f532faed837edcaf40353d1bd3b357c117c1846
@@ -970,9 +970,9 @@ docs/src/content/docs/meta/reference/cli.mdx:
         integrity: sha256-32f35a7bb7f46965daa38aa3df5863d86a610942a1375a9c7f053c639e717d61
       source:
         file: src/meta/commands/relocate.ts
-        lines: 156-161
-        integrity: sha256-92d02e89c551d822dc8e8b6246661b97a13a47c22bbc5cfac29c157ee3bf626d
-        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
+        lines: 156-164
+        integrity: sha256-b3fc878b8310203973f13f994e9e0713388d06e185ff9a51dbd8543e1f401aa9
+        commit-sha: d03514bdfa434eba44147e1a6f4e928a6f0f644b
     - id: derive-exit-0-applied-or-nothing
       claim:
         integrity: sha256-134dbc0a611f11e8ab66a603874641071e75418d3e5607a22115cb0d3817c725
@@ -1627,8 +1627,8 @@ docs/src/content/docs/meta/reference/cli.mdx:
       source:
         file: src/meta/commands/fill.ts
         lines: 1522-1529
-        integrity: sha256-1fb1aebda946929c308d61c9b9e2301064b1b06b1db83a2382f0c9c34e9c2152
-        commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
+        integrity: sha256-b1d430823114b01f631fde07388422049ce363f5382c32af56020d1a9f914a53
+        commit-sha: d03514bdfa434eba44147e1a6f4e928a6f0f644b
     - id: derive-command-not-on-path-message
       claim:
         lines: 1263
@@ -2498,16 +2498,16 @@ docs/src/content/docs/meta/reference/cli.mdx:
       source:
         file: src/meta/commands/query.ts
         lines: 3420-3430
-        integrity: sha256-c09ad5bc578bf3b1cb3fdb3fe5f99004ecf81194ac6804f9621f8426712404a6
-        commit-sha: c72a188d455b54a739b4ef728a55b4adac510f0a
+        integrity: sha256-c2c89a3911e051b12ae8e91a4178d66094364af7fe12cee0dd4b92a91cbc8262
+        commit-sha: d03514bdfa434eba44147e1a6f4e928a6f0f644b
     - id: cli-manifest-refusals-before-any-write
       claim:
         integrity: sha256-c0094071ebaac9890a4320edb041152ad7e9ae6424c709634271981f3dcb82dd
       source:
         file: src/meta/commands/query.ts
         lines: 1192-1201
-        integrity: sha256-20d5f3baa22d458bf1124a2164e0a5b418a22690393f1f668a2873b185737628
-        commit-sha: c72a188d455b54a739b4ef728a55b4adac510f0a
+        integrity: sha256-af5256e48429c786a8c7b0f80829bdd92126ae927fded46578ce73a7533d6b5f
+        commit-sha: d03514bdfa434eba44147e1a6f4e928a6f0f644b
     - id: cli-mutating-statement-applies-by-default
       claim:
         integrity: sha256-0f2bce5fd17d8d930483e4f676b65cb7d32ee2d064517eadee338ce86bab0141
@@ -2609,8 +2609,8 @@ docs/src/content/docs/meta/reference/cli.mdx:
       source:
         file: src/meta/core/relocation.ts
         lines: 1709
-        integrity: sha256-0bc12c7f396a0c800786dffd08513d95a4b52542aff024d413dacedeee82b808
-        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
+        integrity: sha256-1d3f37c5671a7ff91f93dae33be60561c9fd2450c2490ca8934386fc82e9fbbe
+        commit-sha: d03514bdfa434eba44147e1a6f4e928a6f0f644b
     - id: a-key-leaving-keys-stays-on-the-page
       claim:
         integrity: sha256-eabf75fe175181dbce33b6e36c298daff60056f8d03ce035e7cf86b557460a13

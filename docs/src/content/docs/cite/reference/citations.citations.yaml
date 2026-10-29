@@ -1293,8 +1293,8 @@ docs/src/content/docs/cite/reference/citations.mdx:
       source:
         file: src/cite/core/sidecar.ts
         lines: 325-335
-        integrity: sha256-3ab1c4a3526ab1da70b5d9be4fe239dadad0fa3d6dbbb32237ae0aa8d201be83
-        commit-sha: c4c8820ad03b39bd78625127e699a02af7e46588
+        integrity: sha256-dfce15db500811894db150030d491d3660f37cd6b722ae2194f2d57c4712693a
+        commit-sha: d03514bdfa434eba44147e1a6f4e928a6f0f644b
     - id: source-missing-meaning
       claim:
         lines: 654

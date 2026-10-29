@@ -809,8 +809,8 @@ docs/src/content/docs/meta/reference/query.mdx:
       source:
         file: src/meta/commands/query.ts
         lines: 1192-1201
-        integrity: sha256-20d5f3baa22d458bf1124a2164e0a5b418a22690393f1f668a2873b185737628
-        commit-sha: c72a188d455b54a739b4ef728a55b4adac510f0a
+        integrity: sha256-af5256e48429c786a8c7b0f80829bdd92126ae927fded46578ce73a7533d6b5f
+        commit-sha: d03514bdfa434eba44147e1a6f4e928a6f0f644b
     - id: select-writes-nothing
       claim:
         lines: 400
@@ -1404,5 +1404,5 @@ docs/src/content/docs/meta/reference/query.mdx:
       source:
         file: src/meta/commands/query.ts
         lines: 3360-3364
-        integrity: sha256-8a32237ed2679a812996bfde38fc588a1439f62d41b06a501292dae1b2e82d2f
-        commit-sha: c72a188d455b54a739b4ef728a55b4adac510f0a
+        integrity: sha256-4aade4c63fc55a45bfc4a766277f6e4840d6f3d871be19553b1774442b4674f5
+        commit-sha: d03514bdfa434eba44147e1a6f4e928a6f0f644b

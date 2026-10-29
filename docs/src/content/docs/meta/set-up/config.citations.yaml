@@ -361,8 +361,8 @@ docs/src/content/docs/meta/set-up/config.mdx:
       source:
         file: src/shared/config-file.ts
         lines: 240-253
-        integrity: sha256-6f57c384d5a5a8f84e8747112f0507f2229f11653725cac6c04b850059427be1
-        commit-sha: a589e08250dee7efaee7ed0f58df01986fad8d1d
+        integrity: sha256-d8a6bc721c9dab6fd8a611292772eb4b1da6eacaf1174fccdbc45bdd9e0ec371
+        commit-sha: d03514bdfa434eba44147e1a6f4e928a6f0f644b
     - id: collection-paths-resolve-from-config-dir
       claim:
         lines: 43

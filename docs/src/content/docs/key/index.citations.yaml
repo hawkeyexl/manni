@@ -339,8 +339,8 @@ docs/src/content/docs/key/index.mdx:
       source:
         file: src/shared/config-file.ts
         lines: 204-230
-        integrity: sha256-0a8fc75efc94aa7bb472f6e0b571e0c247ef9f1d6aeafe5948d7c4e07899d8b1
-        commit-sha: a589e08250dee7efaee7ed0f58df01986fad8d1d
+        integrity: sha256-5af500f7fdb9896674777c9f42e982c520aaef34c94198837f21fc44f2f6bb9c
+        commit-sha: d03514bdfa434eba44147e1a6f4e928a6f0f644b
     - id: key-set-exception
       claim:
         lines: 141-142
