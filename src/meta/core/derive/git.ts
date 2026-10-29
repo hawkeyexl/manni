@@ -1314,16 +1314,23 @@ async function commitEvidence(
     }
   }
   const movedValues = await past(moved);
-  const held = new Map(moved.map((r, i) => [`${r.input.label}\0${r.rev}`, movedValues[i]]));
+  // Keyed by the page's input object, then the revision, as
+  // `stampsInManifests` keys its reads.
+  const held = new Map<DeriveInput, Map<string, (typeof movedValues)[number]>>();
+  moved.forEach((r, i) => {
+    const bySha = held.get(r.input) ?? new Map<string, (typeof movedValues)[number]>();
+    bySha.set(r.rev, movedValues[i]);
+    held.set(r.input, bySha);
+  });
 
   return plans.map(({ entry, pathAt, trailers, pageBlob, manifest, manifestRel }) => {
     const commits = new Map<string, CommitEvidence>();
     for (const [sha, path] of pathAt) {
       const blob = pageBlob.get(sha) ?? fetched.get(`${sha}:${path}`);
-      const movedKey = `${entry.input.label}\0${sha}`;
+      const heldAt = held.get(entry.input);
       let stamp: ProvenanceEntry[] | undefined;
-      if (held.has(movedKey)) {
-        const value = held.get(movedKey);
+      if (heldAt?.has(sha) === true) {
+        const value = heldAt.get(sha);
         stamp = value === undefined ? undefined : provenanceEntries(value);
       } else if (manifest !== undefined) {
         stamp =
@@ -1490,7 +1497,10 @@ function placesAt(
     .flatMap((c) => c.externalMetadata)
     .filter((m) => !isUrlRef(m.file) && (m.keys === undefined || m.keys.includes(read.field)));
   if (manifests.length === 0) return [];
-  const data = read.content === undefined ? {} : extractStamps(extractorFor(read.input), read.content, read.input.absPath);
+  // The blob is the page as it stood at `rev`, so its own path picks the
+  // parser: a rename may have changed the extension since.
+  const extractor = extractorForExtension(extname(read.path)) ?? extractorFor(read.input);
+  const data = read.content === undefined ? {} : extractStamps(extractor, read.content, read.input.absPath);
   const places: PastPlace[] = [];
   for (const m of manifests) {
     const join = externalMetadataJoin(m);

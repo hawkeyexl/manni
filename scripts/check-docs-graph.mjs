@@ -75,7 +75,10 @@ async function manifestOnlyCreated(graphArgs) {
     const onPage = /^created:/m.test(frontmatter);
     // A page's manifest is found by its id, as meta finds it (proposal 0126).
     const id = parse(frontmatter)?.id;
-    if (typeof id !== "string") continue;
+    if (typeof id !== "string") {
+      console.warn(`${page}: no id, so its metadata/<id>.yaml is not checked.`);
+      continue;
+    }
     const inManifest = await readFile(`metadata/${id}.yaml`, "utf8").then(
       (text) => new RegExp(`^  created: ${o.value}\r?$`, "m").test(text),
       () => false,
