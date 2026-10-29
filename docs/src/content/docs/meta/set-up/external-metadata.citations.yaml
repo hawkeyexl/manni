@@ -6,80 +6,80 @@ docs/src/content/docs/meta/set-up/external-metadata.mdx:
         integrity: sha256-8ac1aee5fcfb4ab1c171c252e278eed0851c52c0e39804967b5074f3f5653b43
       source:
         file: src/meta/core/relocation.ts
-        lines: 803-804
+        lines: 823-824
         integrity: sha256-6e912e5b757ad678a252df95446eb2b72abefb912d084daef3df81037e21fb80
-        commit-sha: 77715cb1faddbd601238d5b6b1a36827cfcebb03
+        commit-sha: af75db2aa4909e9e36ecd00e8b21c2ee02488a3c
     - id: emptied-manifest-file-left-on-disk
       claim:
         lines: 938
         integrity: sha256-8ac1aee5fcfb4ab1c171c252e278eed0851c52c0e39804967b5074f3f5653b43
       source:
         file: src/meta/reporters/relocate.ts
-        lines: 178-183
+        lines: 179-184
         integrity: sha256-26918d41d071afea5bb5f0a230588bc8169a09857e278d84f1d17e2c60c03ba6
-        commit-sha: 77715cb1faddbd601238d5b6b1a36827cfcebb03
+        commit-sha: af75db2aa4909e9e36ecd00e8b21c2ee02488a3c
     - id: relocate-no-home-with-several-collections
       claim:
         lines: 937
         integrity: sha256-b0816c621d923b1007bb8d46064c74390efe7800c2fea1cb4b18dfadb843ba4c
       source:
         file: src/meta/core/relocation.ts
-        lines: 700-702
+        lines: 720-722
         integrity: sha256-12617f9546d5f85adcca2c24bf604b5b949158e6852db49f4acbfbf2b3b87fe0
-        commit-sha: 77715cb1faddbd601238d5b6b1a36827cfcebb03
+        commit-sha: af75db2aa4909e9e36ecd00e8b21c2ee02488a3c
     - id: relocate-exits-one-when-a-value-stayed
       claim:
         lines: 937
         integrity: sha256-b0816c621d923b1007bb8d46064c74390efe7800c2fea1cb4b18dfadb843ba4c
       source:
         file: src/meta/core/relocation.ts
-        lines: 212-214
+        lines: 232-234
         integrity: sha256-7a696206a70ac73d552cbdd045807425eb62dce4386440c38ece54ccbc8549ef
-        commit-sha: 77715cb1faddbd601238d5b6b1a36827cfcebb03
+        commit-sha: af75db2aa4909e9e36ecd00e8b21c2ee02488a3c
     - id: relocate-appends-target-to-only-collection
       claim:
         lines: 936
         integrity: sha256-db6205f21b7f3c58c805755fa264b68c7d5ef7d50ecac69d2099366537d30c67
       source:
         file: src/meta/core/relocation.ts
-        lines: 694-698
+        lines: 714-718
         integrity: sha256-a15ecd61183ed183bf26cd2f27cdf1f47c46e65a6ab118d00e66df16d5bf8ae4
-        commit-sha: 77715cb1faddbd601238d5b6b1a36827cfcebb03
+        commit-sha: af75db2aa4909e9e36ecd00e8b21c2ee02488a3c
     - id: relocate-creates-default-collection
       claim:
         lines: 935
         integrity: sha256-7c094794400a476c5852d9c6984da97e68d01c0bf04c4ec35016b4881c1e7e98
       source:
         file: src/meta/core/relocation.ts
-        lines: 674-684
+        lines: 694-704
         integrity: sha256-ee48b2306cd357ea247cd186a2564f937c70ca891a1892273641a3460eee6059
-        commit-sha: 77715cb1faddbd601238d5b6b1a36827cfcebb03
+        commit-sha: af75db2aa4909e9e36ecd00e8b21c2ee02488a3c
     - id: relocate-creates-collection-metadata-file
       claim:
         lines: 934
         integrity: sha256-d550681c913d59711c46e7e5b0b4541ad99bce2884b1d0f7034c0f8765390540
       source:
         file: src/meta/core/relocation.ts
-        lines: 736-738
+        lines: 756-758
         integrity: sha256-5de015d066cc65d037105fad3dce1163930ff6cd4b0dd7db07816e28f7a40726
-        commit-sha: 77715cb1faddbd601238d5b6b1a36827cfcebb03
+        commit-sha: af75db2aa4909e9e36ecd00e8b21c2ee02488a3c
     - id: relocate-home-is-first-local-manifest
       claim:
         lines: 932
         integrity: sha256-071c7f951d0cee7190aa1f09b446a293c9dd2d5732b2f83257f751d4eb7a833a
       source:
         file: src/meta/core/relocation.ts
-        lines: 704-707
+        lines: 724-727
         integrity: sha256-412c8b3c656d385d70573c258d0db1b4d7aab53566006fcf93c81c72ae633971
-        commit-sha: 77715cb1faddbd601238d5b6b1a36827cfcebb03
+        commit-sha: af75db2aa4909e9e36ecd00e8b21c2ee02488a3c
     - id: relocate-config-edit-keeps-comments-and-order
       claim:
         integrity: sha256-e1e5e6733f3dc268dc7e19642e3e40a85f57d20f26f3b0b720611eddf1a5be00
       source:
         file: src/meta/core/relocation.ts
-        lines: 2414-2415
-        integrity: sha256-e81353bad7ffd750242382621ca95525d779ef75116cda6da0dea62dd19fa126
-        commit-sha: 77715cb1faddbd601238d5b6b1a36827cfcebb03
+        lines: 2485-2487
+        integrity: sha256-5048a55252ae3036a788a98568319faf26252b7b59f4470041cc40d258d73dff
+        commit-sha: af75db2aa4909e9e36ecd00e8b21c2ee02488a3c
     - id: x-manni-location-decides-key-direction
       claim:
         integrity: sha256-e1e5e6733f3dc268dc7e19642e3e40a85f57d20f26f3b0b720611eddf1a5be00
