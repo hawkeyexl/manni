@@ -12,7 +12,9 @@
  *
  * Two refusals come before the config is read, because each rules out the
  * whole run: stdin, which is not a document a manifest can name, and
- * `--no-config`, which leaves nowhere to declare a manifest.
+ * `--no-config`, which leaves nowhere to declare a manifest. `--from`
+ * (proposal 0126) empties a manifest for every page, so it refuses paths and
+ * `--fields`, which would leave it declared and partly emptied.
  */
 import { resolveRunConfig, type ConfigNotice } from "../core/config.js";
 import { memberOf, retainMembers } from "../core/collections.js";
@@ -22,6 +24,7 @@ import { schemaLoadOptions } from "../core/schema-registry.js";
 import { Validator } from "../core/validator.js";
 import { extractorByName, listFormats } from "../extractors/index.js";
 import { DocmetaError } from "../types.js";
+import { warn } from "../../shared/warn.js";
 import {
   applyRelocation,
   planRelocation,
@@ -47,6 +50,11 @@ export interface RelocateOptions {
   inputs: string[];
   /** `--fields`: only these keys. Each must carry a mark, or be manifest-owned, for some file. */
   fields?: string[];
+  /**
+   * `--from <file>`, repeatable (proposal 0126): manifests to empty into
+   * where their keys now live. Refuses `inputs` and `fields`.
+   */
+  from?: string[];
   /** `--collection <name>`, repeatable: run over these configured collections. */
   collections?: string[];
   /** `-s/--schema`, repeatable: the schema set every page is judged by. */
@@ -81,6 +89,10 @@ export async function runRelocate(opts: RelocateOptions): Promise<RelocateResult
     throw new DocmetaError(
       "relocate writes collections: and externalMetadata: to the config file, and --no-config rules one out.",
     );
+  }
+  const from = opts.from ?? [];
+  if (from.length > 0 && (opts.inputs.length > 0 || opts.fields !== undefined)) {
+    throw new DocmetaError("--from empties a manifest for every page at once, so it takes no paths and no --fields.");
   }
   const run = await resolveRunConfig({
     cwd,
@@ -156,10 +168,15 @@ export async function runRelocate(opts: RelocateOptions): Promise<RelocateResult
   const plan = await planRelocation(ctx, {
     files,
     ...(opts.fields !== undefined ? { fields: opts.fields } : {}),
+    ...(from.length > 0 ? { from } : {}),
     // A metadata directory the key or the environment names that is not
     // there is created by a run that writes, and refused by a preview (0126).
     ...(opts.dryRun === true ? {} : { createDirectory: true }),
   });
   if (opts.dryRun === true) return plan.result;
-  return applyRelocation(ctx, plan);
+  const result = await applyRelocation(ctx, plan);
+  for (const file of plan.commented ?? []) {
+    warn(`${file} holds comments relocate does not carry; it is kept, emptied of entries.`);
+  }
+  return result;
 }

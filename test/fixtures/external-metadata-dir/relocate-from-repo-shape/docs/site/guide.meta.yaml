@@ -1,0 +1,6 @@
+docs/site/guide.md:
+  evals:
+    - id: has-title
+      # The page must name itself.
+      expect: title
+  reviewer: ada

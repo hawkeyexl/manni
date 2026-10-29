@@ -1,0 +1,20 @@
+# Proposal 0126: relocate --from empties {page} manifests into metadata/.
+# site keeps citations in {page}.citations.yaml and the rest in
+# {page}.meta.yaml. guide.md carries an id, and metadata/guide.yaml already
+# holds its reviewer, equal to the sidecar's. fresh.md carries none, and its
+# sidecar holds a comment. notes/clash.md holds a reviewer that differs from
+# its sidecar's. legacy.yaml is declared nowhere.
+collections:
+  - name: site
+    paths: ["docs/site/*.md"]
+    externalMetadata:
+      - file: "{page}.citations.yaml"
+        keys: [citations]
+      - file: "{page}.meta.yaml"
+  - name: notes
+    paths: ["docs/notes/*.md"]
+    externalMetadata:
+      - file: "{page}.meta.yaml"
+meta:
+  defaults: false
+  schemas: [./page.schema.json]

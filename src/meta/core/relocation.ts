@@ -32,6 +32,7 @@
  * ciphertext, verbatim.
  */
 import { isMissing } from "../../shared/manifest-cas.js";
+import { existsSync } from "node:fs";
 import { access, mkdir, readFile, stat, unlink } from "node:fs/promises";
 import { basename, dirname, extname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import picomatch from "picomatch";
@@ -43,8 +44,28 @@ import {
   isSeq,
   parse as parseYaml,
   parseDocument,
+  stringify,
+  visit,
   type Document,
+  type Pair,
+  type YAMLMap,
+  type YAMLSeq,
 } from "yaml";
+import {
+  colOf,
+  colonEnd,
+  contentEnd,
+  detectEol,
+  detectStyle,
+  emptySource,
+  flowText,
+  indentLines,
+  keyLines as cutLines,
+  keyString,
+  lineEnd,
+  rangeOf,
+  type Edit,
+} from "./yaml-splice.js";
 import {
   implicitExternalMetadata,
   isMember,
@@ -56,6 +77,8 @@ import {
 import { FAMILY_CONFIG_NAMES, type ConfigFile } from "../../shared/config-file.js";
 import {
   applyMetadataDirectory,
+  metadataDirState,
+  missingDirMessage,
   resolveExternalMetadataDir,
   type MetadataDirState,
   type ResolvedMetadataDir,
@@ -125,6 +148,8 @@ export type RelocateMove =
       /** 1-based line of the key in the manifest afterwards. Absent under `dryRun`. */
       line?: number;
       reason: RelocateMoveReason;
+      /** The `--from` manifest the value left (proposal 0126), for a move between manifests. */
+      from?: string;
     };
 
 /** One value that stayed on the wrong side. */
@@ -164,6 +189,12 @@ export interface RelocateManifestResult {
   undeclared: boolean;
   /** Pages beyond the named paths whose values a `keys:` change moves, or leaves. */
   beyond: number;
+  /**
+   * A `--from` manifest (proposal 0126) the run removed from the config.
+   * `reads` is the metadata directory, as `metadata/`, when its collection is
+   * left with no entries and so reads it. Not part of the JSON shape.
+   */
+  removed?: { reads?: string };
 }
 
 export interface RelocateConfigResult {
@@ -182,6 +213,8 @@ export interface RelocateSummary {
   manifestsCreated: number;
   /** Ids minted into pages (proposal 0126). Present only when some were. */
   minted?: number;
+  /** `--from` manifests left with no entries and deleted (0126). Present only when some were. */
+  deleted?: number;
 }
 
 export interface RelocateResult {
@@ -190,6 +223,8 @@ export interface RelocateResult {
   /** Every manifest the run creates, changes the keys of, or moves a value into or out of. */
   manifests: RelocateManifestResult[];
   files: RelocateFileResult[];
+  /** `--from` manifests left with no entries, deleted (proposal 0126). Present only when some were. */
+  deleted?: string[];
   summary: RelocateSummary;
 }
 
@@ -323,7 +358,23 @@ interface ManifestRef {
   keysBefore: string[];
   keysAdded: string[];
   keysRemoved: string[];
+  /**
+   * A `--from` manifest (proposal 0126) this plan empties: no key lives in
+   * it, each value it holds moves to where the config without it says, and
+   * the config no longer declares it.
+   */
+  from?: true;
+  /** A `--from` file the config does not declare, read with a path join. Never a home. */
+  loose?: true;
+  /** The metadata directory as the home of a collection `--from` leaves with no entries. */
+  emptiedHome?: true;
 }
+
+/** The collection a `--from` file the config does not declare is read under (0126). */
+const LOOSE = "--from";
+
+/** A `--from` manifest's identity across plans: its collection and its index there. */
+const refId = (m: Pick<ManifestRef, "collection" | "index">): string => `${m.collection}\0${String(m.index)}`;
 
 const toPosix = (p: string): string => p.split(sep).join("/");
 
@@ -391,30 +442,7 @@ class Model {
     });
     for (const c of this.collections) {
       c.externalMetadata.forEach((m, index) => {
-        const url = classifyRef(m.file).kind === "url";
-        const perPage = !url && hasPagePlaceholder(m.file);
-        const perId = !url && hasIdPlaceholder(m.file);
-        const absPath =
-          url || perPage || perId ? undefined : isAbsolute(m.file) ? m.file : resolve(configDir, m.file);
-        this.manifests.push({
-          collection: c.name,
-          index,
-          written: m.file,
-          url,
-          absPath,
-          file: perId ? this.patternFile(m.file) : absPath === undefined ? m.file : reported(absPath, ctx.base),
-          join: externalMetadataJoin(m),
-          perPage,
-          perId,
-          latent: false,
-          homed: [],
-          missing: m.missing !== undefined,
-          created: false,
-          implied: m.keys === undefined,
-          keysBefore: [...(m.keys ?? [])],
-          keysAdded: [],
-          keysRemoved: [],
-        });
+        this.manifests.push(this.refOf(c.name, index, m));
       });
       // Nothing reads the directory yet (0126), or the collection would
       // carry its entry. It is still the collection's created home.
@@ -422,15 +450,52 @@ class Model {
     }
   }
 
+  /** A declared entry as the model's manifest. */
+  private refOf(
+    collection: string,
+    index: number,
+    m: Pick<ExternalMetadataConfig, "file" | "keys" | "join" | "missing">,
+  ): ManifestRef {
+    const url = classifyRef(m.file).kind === "url";
+    const perPage = !url && hasPagePlaceholder(m.file);
+    const perId = !url && hasIdPlaceholder(m.file);
+    const absPath =
+      url || perPage || perId ? undefined : isAbsolute(m.file) ? m.file : resolve(this.configDir, m.file);
+    return {
+      collection,
+      index,
+      written: m.file,
+      url,
+      absPath,
+      file: perId ? this.patternFile(m.file) : absPath === undefined ? m.file : reported(absPath, this.ctx.base),
+      join: externalMetadataJoin(m),
+      perPage,
+      perId,
+      latent: false,
+      homed: [],
+      missing: m.missing !== undefined,
+      created: false,
+      implied: m.keys === undefined,
+      keysBefore: [...(m.keys ?? [])],
+      keysAdded: [],
+      keysRemoved: [],
+    };
+  }
+
   /** An `{id}` pattern as the run reports it: `metadata/{id}.yaml`. */
   private patternFile(pattern: string): string {
     return reported(resolve(this.configDir, normalizeManifestPattern(pattern)), this.ctx.base);
   }
 
+  /** The config file as an entry's origin names it. */
+  private source(): string {
+    return this.ctx.configFile?.source ?? FAMILY_CONFIG_NAMES[0] ?? "manni.config.yaml";
+  }
+
   /** The latent metadata directory as `c`'s created home (0126). */
   private addLatent(c: CollectionConfig): ManifestRef {
     const where = `collections[${String(this.collections.indexOf(c))}]`;
-    const source = this.ctx.configFile?.source ?? FAMILY_CONFIG_NAMES[0] ?? "manni.config.yaml";
+    const source = this.source();
     const ref: ManifestRef = {
       collection: c.name,
       index: 0,
@@ -451,6 +516,44 @@ class Model {
       keysAdded: [],
       keysRemoved: [],
     };
+    this.manifests.push(ref);
+    return ref;
+  }
+
+  /** The collections `--from` leaves with none of their entries (0126). */
+  private readonly emptiedNames = new Set<string>();
+
+  /**
+   * Empty `refs`, the `--from` manifests (proposal 0126). A collection left
+   * with none of its entries reads the metadata directory, which becomes its
+   * home: latent while the directory holds no manifest, and created by this
+   * plan when it is named and not there.
+   */
+  empty(refs: readonly ManifestRef[]): void {
+    for (const r of refs) r.from = true;
+    let state: MetadataDirState | undefined;
+    for (const c of this.collections) {
+      const own = this.manifestsOf(c.name);
+      if (own.length === 0 || own.some((m) => m.from !== true)) continue;
+      this.emptiedNames.add(c.name);
+      state ??= metadataDirState(this.dir);
+      const home = this.addLatent(c);
+      home.emptiedHome = true;
+      home.latent = state === "absent";
+      home.missing = state === "missing";
+    }
+  }
+
+  /** Does `--from` leave `collection` with none of its entries, so it reads the directory? */
+  emptied(collection: string): boolean {
+    return this.emptiedNames.has(collection);
+  }
+
+  /** A `--from` file the config does not declare (0126), emptied like a declared one. */
+  addLoose(file: string): ManifestRef {
+    const ref = this.refOf(LOOSE, -1, { file });
+    ref.from = true;
+    ref.loose = true;
     this.manifests.push(ref);
     return ref;
   }
@@ -528,17 +631,27 @@ class Model {
     return this.manifests.find(
       (m) =>
         members.includes(m.collection) &&
-        // A latent directory owns nothing until this plan creates it.
-        (!m.latent || this.dirActive) &&
+        // A `--from` manifest (0126) is on its way out, so no key lives there.
+        m.from !== true &&
+        // A latent directory owns nothing until this plan creates it, unless
+        // `--from` leaves a collection reading it.
+        (!m.latent || this.dirActive || m.emptiedHome === true) &&
         (m.implied ? this.impliedOwns(m, key, marked) : m.keysBefore.includes(key) || m.keysAdded.includes(key)),
     );
   }
 
-  /** Does a keyless manifest own `key` for a page whose schemas mark `marked`? */
+  /**
+   * Does a keyless manifest own `key` for a page whose schemas mark `marked`?
+   * Asked of the collection as the config declares it once the `--from`
+   * manifests are gone (0126), so a key only one of them named is free.
+   */
   impliedOwns(m: ManifestRef, key: string, marked: ReadonlySet<string> | undefined): boolean {
     const collection = this.collections.find((c) => c.name === m.collection);
     const declared = m.entry ?? collection?.externalMetadata[m.index];
-    return collection !== undefined && declared !== undefined && ownsKey(collection, declared, key, marked);
+    if (collection === undefined || declared === undefined) return false;
+    const gone = (i: number): boolean =>
+      this.manifests.some((r) => r.from === true && r.collection === m.collection && r.index === i);
+    return ownsKey({ externalMetadata: collection.externalMetadata.filter((_, i) => !gone(i)) }, declared, key, marked);
   }
 
   /** Does one of `members` declare a manifest with no `keys`? */
@@ -611,7 +724,7 @@ class Model {
     const name = collection;
     // A keyless manifest (proposal 0068) is a home only for what it owns: a
     // key cannot be added to a list it does not have.
-    const local = this.manifestsOf(name).find((m) => !m.url && !m.latent && (!m.implied || owns(m)));
+    const local = this.manifestsOf(name).find((m) => !m.url && !m.latent && m.from !== true && (!m.implied || owns(m)));
     const proposedOf = (m: { file: string; created: boolean }): ProposedHome => ({
       kind: "collection",
       collection: name,
@@ -625,11 +738,15 @@ class Model {
     // A collection that declares no `externalMetadata:` reads the metadata
     // directory (proposal 0126), so the directory is its created home, with
     // no config edit: writing a page's file there is what puts it in play.
+    // So is one `--from` leaves with no entries.
     const declared = this.collections.find((c) => c.name === name);
-    if (createsCollection || (declared !== undefined && !declared.declaresExternalMetadata)) {
+    if (createsCollection || (declared !== undefined && (!declared.declaresExternalMetadata || this.emptied(name)))) {
       const dir =
         this.manifestsOf(name).find(
-          (m) => m.latent || (m.perId && declared?.externalMetadata[m.index]?.implicit === true),
+          (m) =>
+            m.latent ||
+            m.emptiedHome === true ||
+            (m.perId && declared?.externalMetadata[m.index]?.implicit === true),
         ) ?? (commit && declared !== undefined ? this.addLatent(declared) : undefined);
       if (dir === undefined) return { proposed: proposedOf({ file: this.patternFile(this.dir.pattern), created: true }) };
       if (commit && dir.latent) this.dirActive = true;
@@ -693,10 +810,14 @@ class Model {
    * collection declares nothing else.
    */
   final(): CollectionConfig[] {
-    return this.collections.map((c) => {
+    return this.collections.map((c, i) => {
       const externalMetadata = c.externalMetadata.flatMap((em, index) => {
         if (em.implicit === true) return [];
-        const ref = this.manifests.find((m) => m.collection === c.name && m.index === index);
+        const ref = this.manifests.find(
+          (m) => m.collection === c.name && m.index === index && !m.latent && m.emptiedHome !== true,
+        );
+        // A `--from` manifest (0126) goes whole.
+        if (ref?.from === true) return [];
         // A keyless manifest (proposal 0068) is declared as it was.
         if (ref?.implied === true || (ref === undefined && em.keys === undefined)) return [em];
         const keys = ref === undefined ? (em.keys ?? []) : this.finalKeys(ref);
@@ -704,30 +825,20 @@ class Model {
       });
       if (externalMetadata.length > 0) return { ...c, externalMetadata, declaresExternalMetadata: true };
       // `editConfig` keeps a list written empty, an opt-out, and removes one
-      // it emptied. A collection left with no list reads the directory again
-      // once a re-read injects its entry; `relocate` does not plan for that
-      // yet, so the read-back check refuses it.
+      // it emptied.
       const optedOut = this.ctx.declaredCollections.some(
         (d) => d.name === c.name && d.declaresExternalMetadata && d.externalMetadata.length === 0,
       );
       if (optedOut) return { ...c, externalMetadata: [], declaresExternalMetadata: true };
-      // It reads the directory while the directory is read, and once this
-      // plan creates it.
-      // A named directory that is not there is planned only by the run that
-      // creates it, so afterwards it is simply read.
-      const reads = c.externalMetadata
-        .filter((em) => em.implicit === true)
-        .map((em) => {
-          if (em.missing === undefined) return em;
-          const { missing: _missing, ...read } = em;
-          return read;
-        });
-      const created = this.dirActive ? this.manifests.find((m) => m.collection === c.name && m.latent)?.entry : undefined;
-      return {
-        ...c,
-        externalMetadata: reads.length > 0 ? reads : created !== undefined ? [created] : [],
-        declaresExternalMetadata: false,
-      };
+      // A collection left with no list reads the directory whenever a re-read
+      // of the config would: while it holds a manifest, and once this plan
+      // fills it or creates the one the key or the environment names. A named
+      // one that is still not there carries the loader's refusal.
+      const state = this.dirActive || this.manifests.some((m) => m.missing) ? "read" : metadataDirState(this.dir);
+      if (state === "absent") return { ...c, externalMetadata: [], declaresExternalMetadata: false };
+      const entry = implicitExternalMetadata(this.dir.pattern, this.source(), `collections[${String(i)}]`);
+      if (state === "missing") entry.missing = missingDirMessage(this.dir);
+      return { ...c, externalMetadata: [entry], declaresExternalMetadata: false };
     });
   }
 
@@ -1036,11 +1147,54 @@ export interface RelocationRequest {
    * `relocate` without `--dry-run`.
    */
   createDirectory?: boolean;
+  /**
+   * `--from` (proposal 0126): manifests to empty, each a `file:` as the config
+   * spells it or a file it does not declare. Every value one holds moves to
+   * where the config without it says its key lives.
+   */
+  from?: readonly string[];
+}
+
+/** One value a `--from` manifest (0126) holds for a page, and the entry it sits under. */
+interface FromSource {
+  manifest: ManifestRef;
+  key: string;
+  entry: string;
+  /** The page's file of it, as the run reports it. */
+  file: string;
+  value: unknown;
+}
+
+/** A value a kept `--from` manifest holds, and why it could not leave, for the plan that keeps it. */
+interface KeptStay {
+  label: string;
+  key: string;
+  reason: RelocateStayReason;
+  detail: string;
 }
 
 type Intent =
-  | { kind: "out"; manifest: ManifestRef; reason: RelocateMoveReason; drop: boolean; entry: string }
-  | { kind: "in"; manifest: ManifestRef; drop: boolean; entry: string; value: unknown }
+  | {
+      kind: "out";
+      manifest: ManifestRef;
+      reason: RelocateMoveReason;
+      drop: boolean;
+      entry: string;
+      /** The `--from` manifest the value leaves (0126); absent, it leaves the page. */
+      from?: FromSource;
+      /** Equal copies other `--from` manifests hold (0126), which leave with it. */
+      also?: FromSource[];
+    }
+  | {
+      kind: "in";
+      manifest: ManifestRef;
+      drop: boolean;
+      entry: string;
+      value: unknown;
+      /** The `--from` value this is (0126), whose manifest is `manifest`. */
+      from?: FromSource;
+      also?: FromSource[];
+    }
   | {
       kind: "stay";
       reason: RelocateStayReason;
@@ -1074,6 +1228,8 @@ export interface RelocationWrite {
   path: string;
   text: string;
   kind: "manifest" | "config" | "page";
+  /** The file is deleted rather than written: a `--from` manifest left with no entries (0126). */
+  remove?: true;
   /**
    * The file's text on disk when the plan was made, or null when it did not
    * exist. Applying refuses a file that no longer matches, and a failed run
@@ -1115,6 +1271,12 @@ export interface RelocationPlan {
    * directory to create even when nothing moves into it.
    */
   directory?: { abs: string; missing: boolean };
+  /**
+   * `--from` manifests left with no entries that hold YAML comments, which
+   * relocate does not carry (0126): written emptied rather than deleted, as
+   * the run reports them. Present only when there is one.
+   */
+  commented?: string[];
 }
 
 /**
@@ -1155,23 +1317,111 @@ async function relocationPages(
  * Throws `DocmetaError` for a page that will not load, a schema that will not
  * resolve, a `--fields` name nothing marks or owns (U3), a manifest path that
  * exists undeclared (U6), a single-tool config file, and an edit that does
- * not read back as planned.
+ * not read back as planned. `--from` refuses a URL, the metadata directory,
+ * and a file neither declared nor on disk.
  */
 export async function planRelocation(
   ctx: RelocationContext,
   request: RelocationRequest,
 ): Promise<RelocationPlan> {
+  // A `--from` manifest (0126) holding a value that cannot leave it stays
+  // declared, so the config without it is not the one to plan against. The
+  // plan is made again with it kept, until every one still emptied empties.
+  const kept = new Map<string, KeptStay[]>();
+  // It ends: each pass returns a plan or keeps at least one more of the finitely many `--from` manifests.
+  for (;;) {
+    const planned = await planOnce(ctx, request, kept);
+    if ("plan" in planned) return planned.plan;
+    for (const [id, stays] of planned.blocked) kept.set(id, stays);
+  }
+}
+
+/**
+ * The manifests `--from` names (proposal 0126), emptied in `model`: each
+ * entry of the run's collections whose `file:` it spells after 0058's
+ * normalization, save those `kept` holds, or else the file itself, read
+ * with a path join. Each file the config does not declare is loaded here,
+ * for the pages `pages` names.
+ */
+async function fromManifests(
+  ctx: RelocationContext,
+  model: Model,
+  from: readonly string[],
+  kept: ReadonlyMap<string, unknown>,
+  pages: readonly string[],
+): Promise<{ refs: ManifestRef[]; loose: Map<ManifestRef, ExternalMetadataIndex | null> }> {
+  const at = (file: string): string => resolve(model.configDir, normalizeManifestPattern(file));
+  const selected = new Set(ctx.collections.map((c) => c.name));
+  const notThere = (file: string): DocmetaError => new DocmetaError(`--from ${file} is not declared and does not exist.`);
+  const refs: ManifestRef[] = [];
+  const loose = new Map<ManifestRef, ExternalMetadataIndex | null>();
+  for (const spelled of from) {
+    if (classifyRef(spelled).kind === "url") {
+      throw new DocmetaError(`--from ${spelled} is fetched and cannot be emptied; move its values in that repository.`);
+    }
+    if (at(spelled) === at(model.dir.pattern)) {
+      throw new DocmetaError(`--from ${spelled} is where values would move to; name the manifest to empty.`);
+    }
+    const declared = model.manifests.filter(
+      (m) => selected.has(m.collection) && !m.url && !m.latent && at(m.written) === at(spelled),
+    );
+    if (declared.length > 0) {
+      refs.push(...declared.filter((m) => !kept.has(refId(m))));
+      continue;
+    }
+    const pattern = hasPagePlaceholder(spelled) || hasIdPlaceholder(spelled);
+    if (!pattern && !existsSync(at(spelled))) throw notThere(spelled);
+    const ref = model.addLoose(spelled);
+    const index = await loadExternalMetadata(
+      [
+        {
+          name: LOOSE,
+          paths: ctx.collections.flatMap((c) => c.paths),
+          exclude: [],
+          externalMetadata: [{ file: spelled }],
+          declaresExternalMetadata: true,
+        },
+      ],
+      { configDir: model.configDir, base: ctx.base, offline: ctx.config?.offline ?? false, pages },
+    );
+    // A pattern names a file per page: one that names none for the run's pages is not there.
+    if (pattern && (index === null || index.entries.length === 0)) throw notThere(spelled);
+    loose.set(ref, index);
+    refs.push(ref);
+  }
+  model.empty(refs.filter((m) => m.loose !== true));
+  return { refs, loose };
+}
+
+/** One plan, with the `--from` manifests `kept` names kept, or the ones that turn out blocked. */
+async function planOnce(
+  ctx: RelocationContext,
+  request: RelocationRequest,
+  kept: ReadonlyMap<string, readonly KeptStay[]>,
+): Promise<{ plan: RelocationPlan } | { blocked: ReadonlyMap<string, KeptStay[]> }> {
   const configDir = plannedConfigDir(ctx);
   const model = new Model(ctx, configDir);
   const encryptionKey = lazyKey(ctx.configFile, ctx.env);
   const marks = marksOf(ctx);
+  const loaded = await relocationPages(ctx, request);
   const index = await loadExternalMetadata(ctx.declaredCollections, {
     configDir: ctx.configDir ?? ctx.cwd,
     base: ctx.base,
     offline: ctx.config?.offline ?? false,
-    pages: await relocationPages(ctx, request),
+    pages: loaded,
     ...(request.createDirectory === true ? { missingDirectory: "empty" as const } : {}),
   });
+  const from = await fromManifests(ctx, model, request.from ?? [], kept, loaded);
+  // What the metadata directory already holds, for a collection `--from`
+  // leaves reading it, which nothing above may have loaded (0126).
+  const home = model.manifests.find((m) => m.emptiedHome === true);
+  const dirIndex =
+    home?.entry === undefined
+      ? null
+      : await loadExternalMetadata(
+          [{ name: home.collection, paths: [], exclude: [], externalMetadata: [home.entry], declaresExternalMetadata: false }],
+          { configDir, base: ctx.base, missingDirectory: "empty" },
+        );
   const trustRoot = schemaTrustRoot(ctx.cwd, ctx.configDir);
   const forced = ctx.as !== undefined ? extractorByName(ctx.as) : undefined;
   const fields = request.fields === undefined ? undefined : new Set(request.fields);
@@ -1238,7 +1488,8 @@ export async function planRelocation(
       // One directory is one manifest for every collection that reads it
       // (0126), so its values carry no collection to compare.
       const id = model.ids.get(page.absPath);
-      sv = id === undefined ? undefined : idManifestValues(index, { pattern: m.file, id })?.get(key);
+      const at = id === undefined ? undefined : { pattern: m.file, id };
+      sv = at === undefined ? undefined : (idManifestValues(index, at) ?? idManifestValues(dirIndex, at))?.get(key);
       return sv !== undefined && sv.file === model.fileFor(m, page.absPath).file ? sv : undefined;
     }
     if (m.join === PATH_JOIN) {
@@ -1292,18 +1543,29 @@ export async function planRelocation(
     return "minted" in (await mintId(ctx, model.mintRequest(m, page.label)));
   };
 
-  /** Out of the page, into `m`. */
-  const planOut = async (page: Page, m: ManifestRef, key: string, reason: RelocateMoveReason): Promise<void> => {
+  /**
+   * Out of the page, into `m`. With `source`, out of a `--from` manifest
+   * (0126) instead, and a page that holds the key holds the same value.
+   */
+  const planOut = async (
+    page: Page,
+    m: ManifestRef,
+    key: string,
+    reason: RelocateMoveReason,
+    source?: FromSource,
+  ): Promise<void> => {
     if (page.intents.has(key)) return;
+    // A value set aside for a key leaving keys: is the page's, so a `--from` one is not.
+    const toward = source === undefined ? { toward: m } : {};
     if (m.url) {
-      stay(page, key, "url-manifest", urlDetail(m), { toward: m });
+      stay(page, key, "url-manifest", urlDetail(m), toward);
       return;
     }
     let entry: string | undefined;
     if (m.perId) {
       const named = await idEntry(page, m);
       if ("stay" in named) {
-        stay(page, key, "no-join-value", `no id could be minted (${named.stay})`, { toward: m });
+        stay(page, key, "no-join-value", `no id could be minted (${named.stay})`, toward);
         return;
       }
       entry = named.entry;
@@ -1311,15 +1573,104 @@ export async function planRelocation(
       entry = entryFor(m, page.label, page.own, configDir, ctx.base, encryptionKey);
     }
     if (entry === undefined) {
-      stay(page, key, "no-join-value", `this document has no ${m.join}, which ${m.file} joins on`, { toward: m });
+      stay(page, key, "no-join-value", `this document has no ${m.join}, which ${m.file} joins on`, toward);
       return;
     }
+    const value = source === undefined ? page.own[key] : source.value;
     const held = supplied(m, page, key);
-    if (held !== undefined && !deepEqual(held.value, page.own[key])) {
-      stay(page, key, "values-differ", `the page and ${held.file} hold different values`, { toward: m });
+    if (held !== undefined && !deepEqual(held.value, value)) {
+      stay(page, key, "values-differ", `${source?.file ?? "the page"} and ${held.file} hold different values`, toward);
       return;
     }
-    page.intents.set(key, { kind: "out", manifest: m, reason, drop: held !== undefined, entry });
+    if (source !== undefined && Object.hasOwn(page.own, key) && !deepEqual(page.own[key], value)) {
+      stay(page, key, "values-differ", `the page and ${source.file} hold different values`);
+      return;
+    }
+    // A latent directory a value moves into is one this plan creates (0126).
+    if (m.latent) model.dirActive = true;
+    page.intents.set(key, {
+      kind: "out",
+      manifest: m,
+      reason,
+      drop: held !== undefined,
+      entry,
+      ...(source !== undefined ? { from: source } : {}),
+    });
+  };
+
+  /**
+   * Every value `m`, a `--from` manifest (0126), holds for `page`, with the
+   * entry that names the page there.
+   */
+  const fromValues = (m: ManifestRef, page: Page): FromSource[] => {
+    const held = m.loose === true ? (from.loose.get(m) ?? null) : index;
+    if (held === null) return [];
+    let entry: string | undefined;
+    let values: ReadonlyMap<string, ExternalMetadataValue> | undefined;
+    let file: string;
+    if (m.perId) {
+      const own = manifestIdOf(page.own[ID_JOIN]);
+      if (own === undefined || "refused" in own) return [];
+      entry = own.id;
+      model.ids.set(page.absPath, entry);
+      values = idManifestValues(held, { pattern: m.file, id: entry });
+      file = model.idFile(m, entry).file;
+    } else {
+      entry = entryFor(m, page.label, page.own, configDir, ctx.base, encryptionKey);
+      if (entry === undefined) return [];
+      values = m.join === PATH_JOIN ? held.byPath.get(page.absPath) : held.byField.get(m.join)?.get(entry);
+      file = model.fileFor(m, page.absPath).file;
+    }
+    const named = entry;
+    // One directory serves every collection that reads it, so its values carry none.
+    return [...(values ?? [])].flatMap(([key, sv]) =>
+      sv.file === file && (m.perId || sv.collection === m.collection)
+        ? [{ manifest: m, key, entry: named, file, value: sv.value }]
+        : [],
+    );
+  };
+
+  /**
+   * One value of a `--from` manifest (0126) to where the config, without
+   * that manifest, says its key lives: the manifest that owns it, else the
+   * page. An equal value already there drops the copy, and a different one
+   * leaves it where it is. So does another `--from` manifest's value for the
+   * key: an equal one leaves with it, and a different one keeps both.
+   */
+  const planFrom = async (
+    page: Page,
+    source: FromSource,
+    external: ReadonlySet<string>,
+    prefs: ReadonlyMap<string, FieldLocation>,
+  ): Promise<void> => {
+    const { key } = source;
+    const have = page.intents.get(key);
+    if (have !== undefined) {
+      if (have.kind !== "stay" && have.from !== undefined && have.from.manifest !== source.manifest) {
+        if (deepEqual(have.from.value, source.value)) (have.also ??= []).push(source);
+        else stay(page, key, "values-differ", `${have.from.file} and ${source.file} hold different values`);
+      }
+      return;
+    }
+    const pref = prefs.get(key);
+    const owner = pref === "page" ? undefined : model.ownerOf(key, model.members(page.label), external);
+    if (owner !== undefined) {
+      await planOut(page, owner, key, pref === "external" ? "preferred" : "owned", source);
+      return;
+    }
+    const inPage = Object.hasOwn(page.own, key);
+    if (inPage && !deepEqual(page.own[key], source.value)) {
+      stay(page, key, "values-differ", `the page and ${source.file} hold different values`);
+      return;
+    }
+    page.intents.set(key, {
+      kind: "in",
+      manifest: source.manifest,
+      drop: inPage,
+      entry: source.entry,
+      value: source.value,
+      from: source,
+    });
   };
 
   /** Out of `m`, into the page. */
@@ -1377,13 +1728,16 @@ export async function planRelocation(
   };
   const homeless = new Map<string, { keys: string[]; reason: "collections" | "no-config"; collections: number }>();
   const marked = new Set<string>();
-  for (const label of request.files) {
-    const page = await load(label, false);
-    /* c8 ignore next -- a named page always has an extractor, or `load` threw. */
-    if (page === undefined) continue;
-    const members = currentMembers(label);
+  /**
+   * A page's metadata merged with its manifests', and what its schemas prefer
+   * for each key. Read with every key a writer is about to set, and every
+   * value a `--from` manifest (0126) holds for it, in place: a mark is
+   * evaluated only where its key is present.
+   */
+  const prepare = async (page: Page, held: readonly FromSource[]) => {
+    const members = currentMembers(page.label);
     const merged = await mergeWithMarks(
-      label,
+      page.label,
       { data: page.own, present: true, format: page.format, lineFor: () => undefined },
       index,
       members,
@@ -1391,9 +1745,9 @@ export async function planRelocation(
       { encryptionKey, marks },
     );
     const data = merged.extracted.data;
-    const required = request.require?.get(label) ?? [];
+    const required = request.require?.get(page.label) ?? [];
     const resolved = resolveSchemaSetWithSource({
-      filePath: label,
+      filePath: page.label,
       fileSchema: data[FILE_SCHEMA_KEY],
       ...(ctx.cliSchemas !== undefined ? { cliSchemas: [...ctx.cliSchemas] } : {}),
       config: ctx.config,
@@ -1404,6 +1758,7 @@ export async function planRelocation(
     });
     const probe: Record<string, unknown> = { ...data };
     for (const key of required) if (!(key in probe)) probe[key] = null;
+    for (const s of held) if (!(s.key in probe)) probe[s.key] = s.value;
     const prefs = new Map<string, FieldLocation>();
     /** What the schemas mark external, and so what a keyless manifest owns (0068). */
     const external = new Set<string>();
@@ -1413,7 +1768,26 @@ export async function planRelocation(
       if (p.location === "external") external.add(key);
     }
     for (const key of required) if (!prefs.has(key)) prefs.set(key, "external");
-    preferencesOf.set(label, prefs);
+    preferencesOf.set(page.label, prefs);
+    return { data, required, prefs, external };
+  };
+  /** Every value a `--from` manifest holds for a page, to check that each left (0126). */
+  const fromHeld: { page: Page; source: FromSource }[] = [];
+  /** What those of `refs` that reach `page` hold for it, noted in `fromHeld`. */
+  const heldFor = (page: Page, refs: readonly ManifestRef[]): FromSource[] => {
+    const members = currentMembers(page.label);
+    const held = refs.flatMap((m) => (m.loose === true || members.includes(m.collection) ? fromValues(m, page) : []));
+    for (const source of held) fromHeld.push({ page, source });
+    return held;
+  };
+  for (const label of request.files) {
+    const page = await load(label, false);
+    /* c8 ignore next -- a named page always has an extractor, or `load` threw. */
+    if (page === undefined) continue;
+    const held = heldFor(page, from.refs);
+    const { data, required, prefs, external } = await prepare(page, held);
+    // A `--from` value first: the slot its key takes is where that value goes.
+    for (const source of held) await planFrom(page, source, external, prefs);
 
     const planned = model.members(label);
     const joins = new Set(
@@ -1476,6 +1850,47 @@ export async function planRelocation(
       homeless.set(label, entry);
     }
   }
+
+  /** Every member page of `collection` on disk, labelled as the run labels its pages. */
+  const walk = async (collection: CollectionConfig): Promise<string[]> => {
+    const walked = await resolveTargetSet({
+      inputs: [...collection.paths],
+      cwd: configDir,
+      allowEmpty: true,
+      ...gitignoreOptions({
+        ...(ctx.respectGitignore !== undefined ? { flag: ctx.respectGitignore } : {}),
+        ...(ctx.config?.respectGitignore !== undefined ? { configured: ctx.config.respectGitignore } : {}),
+      }),
+    });
+    return walked.files.map((f) => reported(resolve(configDir, f), ctx.base));
+  };
+
+  // ---- A page the run's filters left out of an emptied manifest --------------
+  // The manifest leaves the config, so a value it held for such a page would be
+  // read by nothing (0126). It moves too.
+  const emptiedOf = model.collections.filter((c) => from.refs.some((m) => m.collection === c.name));
+  for (const label of dedupe((await Promise.all(emptiedOf.map(walk))).flat())) {
+    if (runSet.has(label)) continue;
+    const page = await load(label, true);
+    if (page === undefined) continue;
+    const held = heldFor(page, from.refs.filter((m) => m.loose !== true));
+    if (held.length === 0) continue;
+    if (page.unreadable !== undefined) {
+      for (const s of held) stay(page, s.key, "unreadable", unreadableDetail(page));
+      continue;
+    }
+    const { prefs, external } = await prepare(page, held);
+    for (const source of held) await planFrom(page, source, external, prefs);
+  }
+
+  // ---- A `--from` manifest kept, and the value that keeps it -----------------
+  for (const stays of kept.values()) {
+    for (const s of stays) {
+      const page = await load(s.label, !runSet.has(s.label));
+      if (page !== undefined && !page.intents.has(s.key)) stay(page, s.key, s.reason, s.detail);
+    }
+  }
+
   if (fields !== undefined) {
     for (const f of fields) {
       if (!marked.has(f) && !(request.require !== undefined && [...request.require.values()].some((ks) => ks.includes(f)))) {
@@ -1498,19 +1913,9 @@ export async function planRelocation(
       const collection = model.collections.find((c) => c.name === ref.collection);
       /* c8 ignore next -- a latent directory is one of the model's collections'. */
       if (collection === undefined) continue;
-      const walked = await resolveTargetSet({
-        inputs: [...collection.paths],
-        cwd: configDir,
-        allowEmpty: true,
-        ...gitignoreOptions({
-          ...(ctx.respectGitignore !== undefined ? { flag: ctx.respectGitignore } : {}),
-          ...(ctx.config?.respectGitignore !== undefined ? { configured: ctx.config.respectGitignore } : {}),
-        }),
-      });
-      const labels = dedupe([
-        ...request.files,
-        ...walked.files.map((f) => reported(resolve(configDir, f), ctx.base)),
-      ]).filter((label) => model.members(label).includes(ref.collection));
+      const labels = dedupe([...request.files, ...(await walk(collection))]).filter((label) =>
+        model.members(label).includes(ref.collection),
+      );
       for (const label of labels) {
         const page = await load(label, !runSet.has(label));
         if (page === undefined || page.unreadable !== undefined) continue;
@@ -1549,18 +1954,26 @@ export async function planRelocation(
   // A page planned before (or after) another page's mark removed the key would
   // otherwise send its copy to a manifest that no longer owns it. The move is
   // set aside, and put back if a page blocks the removal below.
-  const suspended: { page: Page; manifest: ManifestRef; key: string; reason: RelocateMoveReason }[] = [];
+  const suspended: {
+    page: Page;
+    manifest: ManifestRef;
+    key: string;
+    reason: RelocateMoveReason;
+    source?: FromSource;
+  }[] = [];
   for (const page of pages.values()) {
     for (const [key, intent] of [...page.intents]) {
       const m = intent.kind === "out" ? intent.manifest : intent.kind === "stay" ? intent.toward : undefined;
       if (m === undefined || !m.keysRemoved.includes(key)) continue;
       page.intents.delete(key);
       const prefs = preferencesOf.get(page.label);
+      const source = intent.kind === "out" ? intent.from : undefined;
       suspended.push({
         page,
         manifest: m,
         key,
         reason: intent.kind === "out" ? intent.reason : prefs?.get(key) === "external" ? "preferred" : "owned",
+        ...(source !== undefined ? { source } : {}),
       });
     }
   }
@@ -1575,19 +1988,9 @@ export async function planRelocation(
     const collection = model.collections.find((c) => c.name === name);
     /* c8 ignore next -- an affected collection is one of the model's. */
     if (collection === undefined) continue;
-    const walked = await resolveTargetSet({
-      inputs: [...collection.paths],
-      cwd: configDir,
-      allowEmpty: true,
-      ...gitignoreOptions({
-        ...(ctx.respectGitignore !== undefined ? { flag: ctx.respectGitignore } : {}),
-        ...(ctx.config?.respectGitignore !== undefined ? { configured: ctx.config.respectGitignore } : {}),
-      }),
-    });
-    const labels = dedupe([
-      ...request.files,
-      ...walked.files.map((f) => reported(resolve(configDir, f), ctx.base)),
-    ]).filter((label) => model.members(label).includes(name));
+    const labels = dedupe([...request.files, ...(await walk(collection))]).filter((label) =>
+      model.members(label).includes(name),
+    );
     for (const label of labels) {
       const page = await load(label, !runSet.has(label));
       if (page === undefined) continue;
@@ -1662,7 +2065,7 @@ export async function planRelocation(
         // The manifest keeps the key, so a copy set aside for the page goes to it after all.
         for (const s of suspended) {
           if (s.manifest === m && s.key === key) {
-            await planOut(s.page, m, key, s.reason);
+            await planOut(s.page, m, key, s.reason, s.source);
             touched.add(s.page);
           }
         }
@@ -1671,9 +2074,37 @@ export async function planRelocation(
     dirty = touched;
   }
 
+  // ---- A `--from` manifest a value cannot leave stays declared ---------------
+  // Its collection then keeps an entry, so the plan is made again with it
+  // kept, and each value that held it back reported where it stays (0126).
+  const blocked = new Map<string, KeptStay[]>();
+  for (const { page, source } of fromHeld) {
+    const m = source.manifest;
+    const intent = page.intents.get(source.key);
+    const left =
+      (intent?.kind === "in" && intent.manifest === m) ||
+      (intent?.kind === "out" && intent.from?.manifest === m) ||
+      (intent !== undefined && intent.kind !== "stay" && intent.also?.some((s) => s.manifest === m) === true);
+    if (left) continue;
+    // A manifest is never kept for nothing: a value that does not leave it stays, with its reason.
+    if (intent?.kind !== "stay") {
+      throw new DocmetaError(`relocate: ${source.file} holds ${source.key} for ${page.label}, which neither leaves nor stays.`);
+    }
+    // A file the config does not declare keeps what stays, and nothing reads it.
+    if (m.loose === true) continue;
+    const stays = blocked.get(refId(m)) ?? [];
+    stays.push({ label: page.label, key: source.key, reason: intent.reason, detail: intent.detail });
+    blocked.set(refId(m), stays);
+  }
+  if (blocked.size > 0) return { blocked };
+
   // ---- Manifest texts --------------------------------------------------------
   const writes: RelocationWrite[] = [];
   const lines = new Map<string, number>();
+  /** The files of the `--from` manifests, and those deleted or kept for their comments (0126). */
+  const emptied = new Set<string>();
+  const deleted: string[] = [];
+  const commented: string[] = [];
   /**
    * The edits, by the file they land in. One file for a concrete manifest;
    * one per page for a `{page}` manifest (proposal 0058), so each page's
@@ -1707,6 +2138,16 @@ export async function planRelocation(
       const line = found.get(entryId(o.entry, m.join))?.get(o.key);
       if (line !== undefined) lines.set(lineId(o.page, file, o.key), line);
     }
+    // A `--from` manifest (0126) left with no entries is deleted, unless it
+    // held comments anywhere, which relocate does not carry: then it is kept, emptied.
+    if (emptied.has(path) && holdsNoEntries(text)) {
+      if (!holdsComments(before)) {
+        writes.push({ path, text: "", kind: "manifest", before: disk, remove: true });
+        deleted.push(file);
+        return;
+      }
+      commented.push(file);
+    }
     if (m.created || text !== before) {
       writes.push({ path, text, kind: "manifest", before: disk });
     }
@@ -1721,6 +2162,7 @@ export async function planRelocation(
     const group = (at: { abs: string | undefined; file: string }): Edits | undefined => {
       /* c8 ignore next -- only a URL manifest has no path, and it was skipped. */
       if (at.abs === undefined) return undefined;
+      if (m.from === true) emptied.add(at.abs);
       const have = files.get(at.abs);
       if (have !== undefined) return have;
       const made: Edits = { file: at.file, outs: [], ins: [] };
@@ -1734,10 +2176,18 @@ export async function planRelocation(
         if ((intent.kind === "out" || intent.kind === "in") && intent.manifest === m) {
           const into = group(model.fileFor(m, page.absPath));
           if (intent.kind === "out") {
-            into?.outs.push({ page: page.label, entry: intent.entry, key, value: page.own[key], drop: intent.drop });
+            const value = intent.from === undefined ? page.own[key] : intent.from.value;
+            into?.outs.push({ page: page.label, entry: intent.entry, key, value, drop: intent.drop });
           } else {
             into?.ins.push({ entry: intent.entry, key });
           }
+        } else if (intent.kind === "out" && intent.from?.manifest === m) {
+          // The copy a value moving between manifests leaves behind (0126).
+          group(model.fileFor(m, page.absPath))?.ins.push({ entry: intent.from.entry, key });
+        }
+        // An equal copy another `--from` manifest held, which leaves with the value (0126).
+        for (const s of intent.kind === "stay" ? [] : (intent.also ?? [])) {
+          if (s.manifest === m) group(model.fileFor(m, page.absPath))?.ins.push({ entry: s.entry, key });
         }
       }
     }
@@ -1752,7 +2202,10 @@ export async function planRelocation(
   const needsConfig =
     model.created.length > 0 ||
     model.pathsAdded.length > 0 ||
-    model.manifests.some((m) => m.created || m.keysAdded.length > 0 || m.keysRemoved.length > 0);
+    model.manifests.some(
+      (m) =>
+        m.created || m.keysAdded.length > 0 || m.keysRemoved.length > 0 || (m.from === true && m.loose !== true),
+    );
   const target = await configTarget(ctx, configDir);
   // A directory the key or the environment names is created however little
   // moves into it; a latent one, by the first page's file written there.
@@ -1794,8 +2247,9 @@ export async function planRelocation(
       collectionsCreated: model.created,
       pathsAdded: model.pathsAdded,
     },
+    deleted,
   });
-  return {
+  const plan: RelocationPlan = {
     result,
     writes,
     lines,
@@ -1805,7 +2259,29 @@ export async function planRelocation(
     offers: buildOffers(model, orderedPages(), result, needsConfig ? configSource(target.path, ctx.cwd) : undefined),
     homeless: [...homeless].map(([file, h]) => ({ file, ...h })),
     ...(directory !== undefined ? { directory } : {}),
+    ...(commented.length > 0 ? { commented } : {}),
   };
+  return { plan };
+}
+
+/** Does YAML text hold a comment anywhere: above, below or inside any value? */
+function holdsComments(text: string): boolean {
+  const doc = parseDocument(text);
+  if (doc.commentBefore || doc.comment) return true;
+  let found = false;
+  // Pairs are not Nodes; yaml v2 keeps a block key's comment on its key Scalar.
+  visit(doc, (_, node) => {
+    if (!isNode(node) || !(node.commentBefore || node.comment)) return undefined;
+    found = true;
+    return visit.BREAK;
+  });
+  return found;
+}
+
+/** Does a manifest's text hold no entry: nothing, or an empty mapping? */
+function holdsNoEntries(text: string): boolean {
+  const root = parseDocument(text).contents;
+  return root === null || (isScalar(root) && root.value === null) || (isMap(root) && root.items.length === 0);
 }
 
 const compare = (a: string, b: string): number => (a < b ? -1 : a > b ? 1 : 0);
@@ -1838,7 +2314,8 @@ function planPageText(page: Page): void {
   const patch: MetadataPatch = {};
   const deletions: string[] = [];
   for (const [key, intent] of page.intents) {
-    if (intent.kind === "out") deletions.push(key);
+    // A value leaving a `--from` manifest (0126) takes the page's equal copy, when it has one.
+    if (intent.kind === "out" && Object.hasOwn(page.own, key)) deletions.push(key);
     else if (intent.kind === "in" && !intent.drop) patch[key] = intent.value;
   }
   // A value moving to an `{id}` manifest takes the id minted for it (0126).
@@ -2005,12 +2482,19 @@ async function configTarget(
   return { path: join(configDir, FAMILY_CONFIG_NAMES[0] ?? "manni.config.yaml"), text: null, disk: null };
 }
 
-/** The config text with the model's changes, comments and key order kept. */
+/**
+ * The config text with the model's changes. Each change is spliced into the
+ * text, so every byte outside the nodes it edits stays as it was: comments,
+ * quoting, folded scalars and flow padding. A change no splice can place,
+ * such as one in a flow-style `collections:`, writes the document whole,
+ * with comments and key order kept.
+ */
 function editConfig(text: string | null, model: Model, source: string): string {
   const doc = parseDocument(text ?? "");
   const [problem] = doc.errors;
   if (problem !== undefined) throw new DocmetaError(`${source}: invalid YAML: ${problem.message}`);
-  if (doc.contents !== null && !isMap(doc.contents)) {
+  const root = doc.contents;
+  if (root !== null && !isMap(root)) {
     throw new DocmetaError(`${source}: top level must be a mapping.`);
   }
   const fail = (): never => {
@@ -2027,62 +2511,131 @@ function editConfig(text: string | null, model: Model, source: string): string {
     return node;
   };
 
+  // The splices, against the original text. Each node is edited in the
+  // document too, which is what a whole write prints.
+  const src = text ?? "";
+  const eol = detectEol(src);
+  const style = isMap(root) ? detectStyle(src, root, eol) : { step: 2, indentSeq: true, eol };
+  let whole = text === null || root?.flow === true;
+  /** Flow lists written again once edited, and the items each block list gains. */
+  const flows = new Set<YAMLSeq>();
+  const appends = new Map<YAMLSeq, unknown[]>();
+  /** Nodes whose lines go: from the node's start through its content's end. */
+  const cuts: { from: number; to: number }[] = [];
+  /** A key's value replaced from the key on, or a key added after a mapping's last line. */
+  const refills: { start: number; end: number; col: number; key: string; value: unknown }[] = [];
+  const adds: { map: YAMLMap | null; key: string; value: unknown }[] = [];
+  const pairOf = (map: YAMLMap | null, key: string): Pair | undefined =>
+    map?.items.find((p) => keyString(p.key) === key);
+  const grow = (seq: YAMLSeq, item: unknown): void => {
+    seq.add(item);
+    // A list this edit made is written with its key.
+    if (rangeOf(seq) === undefined) return;
+    if (seq.flow === true) flows.add(seq);
+    else appends.set(seq, [...(appends.get(seq) ?? []), item]);
+  };
+  const cut = (node: unknown, to: unknown = node): void => {
+    const r = rangeOf(node);
+    const end = contentEnd(src, to);
+    if (r === undefined || end === undefined) whole = true;
+    else cuts.push({ from: r[0], to: end });
+  };
+  const shrink = (seq: YAMLSeq, item: unknown): void => {
+    seq.delete(seq.items.indexOf(item));
+    if (seq.flow === true) flows.add(seq);
+    else cut(item);
+  };
+  /** `key: value` in place of `pair`, whose value is empty or not a list. */
+  const refill = (pair: Pair, value: unknown): void => {
+    const k = rangeOf(pair.key);
+    const old = pair.value;
+    const end = isScalar(old) && old.value === null && emptySource(src, old) ? colonEnd(src, pair) : contentEnd(src, old);
+    if (k === undefined || end === undefined) whole = true;
+    else refills.push({ start: k[0], end, col: colOf(src, k[0]), key: keyString(pair.key), value });
+  };
+  /** A new list under `key` of `map`: in place of an empty value, else after the mapping. */
+  const fresh = (map: YAMLMap | null, key: string, value: unknown): void => {
+    const pair = pairOf(map, key);
+    if (pair === undefined) adds.push({ map, key, value });
+    else refill(pair, value);
+  };
+
   const declared = model.collections.length - model.created.length;
   const existing = doc.get("collections", true);
   if (declared > 0 && !isSeq(existing)) fail();
+  if (isSeq(existing) && existing.flow === true) whole = true;
   for (let i = 0; i < declared; i++) {
     const c = model.collections[i];
     const node = isSeq(existing) ? existing.items[i] : undefined;
     if (c === undefined || !isMap(node)) return fail();
+    if (node.flow === true) whole = true;
     for (const added of model.pathsAdded.filter((p) => p.collection === c.name)) {
       const paths = node.get("paths", true);
       if (!isSeq(paths)) return fail();
       const scalar = doc.createNode(added.path);
       const first = paths.items[0];
       if (isScalar(first) && first.type !== undefined) scalar.type = first.type;
-      paths.add(scalar);
+      grow(paths, scalar);
     }
     const refs = model.manifestsOf(c.name);
     for (const m of refs) {
       if (m.created) {
-        let list = node.get("externalMetadata", true);
+        const list = node.get("externalMetadata", true);
+        const made = manifestNode(doc, m.written, m.keysAdded);
+        if (isSeq(list) && (list.items.length > 0 || rangeOf(list) === undefined)) {
+          grow(list, made);
+          continue;
+        }
         // A list written empty, the opt-out from the metadata directory
         // (0126), is written afresh as a block list.
-        if (!isSeq(list) || list.items.length === 0) {
-          node.set("externalMetadata", doc.createNode([]));
-          list = node.get("externalMetadata", true);
-        }
-        if (!isSeq(list)) return fail();
-        list.add(manifestNode(doc, m.written, m.keysAdded));
+        const written = doc.createNode([made]);
+        fresh(node, "externalMetadata", written);
+        node.set("externalMetadata", written);
         continue;
       }
       if (m.keysAdded.length === 0) continue;
       const entry = node.getIn(["externalMetadata", m.index], true);
       const keys = isMap(entry) ? entry.get("keys", true) : undefined;
       if (!isSeq(keys)) return fail();
-      for (const key of m.keysAdded) keys.add(doc.createNode(key));
+      for (const key of m.keysAdded) grow(keys, doc.createNode(key));
     }
     // Removals last, highest index first, so earlier indices stay valid.
     const list = node.get("externalMetadata", true);
-    let emptied = false;
+    const dropped: unknown[] = [];
     for (const m of [...refs].filter((r) => !r.created).sort((a, b) => b.index - a.index)) {
+      // A `--from` manifest (0126) goes whole.
+      if (m.from === true) {
+        if (!isSeq(list)) return fail();
+        dropped.push(list.items[m.index]);
+        list.delete(m.index);
+        continue;
+      }
       if (m.keysRemoved.length === 0) continue;
       if (!isSeq(list)) return fail();
-      const entry = list.items[m.index];
+      const entry: unknown = list.items[m.index];
       const keys = isMap(entry) ? entry.get("keys", true) : undefined;
       if (!isSeq(keys)) return fail();
-      for (const key of m.keysRemoved) {
-        const at = keys.items.findIndex((item) => (isScalar(item) ? String(item.value) : String(item)) === key);
-        if (at >= 0) keys.delete(at);
+      const gone = keys.items.filter((item) => m.keysRemoved.includes(isScalar(item) ? String(item.value) : String(item)));
+      if (gone.length < keys.items.length) {
+        for (const item of gone) shrink(keys, item);
+        continue;
       }
-      if (keys.items.length === 0) {
-        list.delete(m.index);
-        emptied = true;
-      }
+      dropped.push(entry);
+      list.delete(m.index);
     }
+    if (!isSeq(list) || dropped.length === 0) continue;
     // Only a list this edit emptied goes. One written empty is an opt-out
     // from the metadata directory (proposal 0126), and stays.
-    if (emptied && isSeq(list) && list.items.length === 0) node.delete("externalMetadata");
+    if (list.items.length === 0) {
+      const pair = pairOf(node, "externalMetadata");
+      node.delete("externalMetadata");
+      if (pair === undefined) whole = true;
+      else cut(pair.key, pair.value);
+    } else if (list.flow === true) {
+      flows.add(list);
+    } else {
+      for (const item of dropped) cut(item);
+    }
   }
   for (const created of model.created) {
     const c = model.collections.find((x) => x.name === created.name);
@@ -2102,10 +2655,81 @@ function editConfig(text: string | null, model: Model, source: string): string {
       for (const item of made.items) if (isMap(item)) flowSeq(item.get("keys", true), false);
     }
     const seq = doc.get("collections", true);
-    if (isSeq(seq)) seq.add(node);
-    else doc.set("collections", doc.createNode([node]));
+    if (isSeq(seq) && (seq.items.length > 0 || rangeOf(seq) === undefined)) {
+      grow(seq, node);
+      continue;
+    }
+    const written = doc.createNode([node]);
+    fresh(isMap(root) ? root : null, "collections", written);
+    doc.set("collections", written);
   }
-  return doc.toString({ flowCollectionPadding: false });
+  if (whole) return doc.toString({ flowCollectionPadding: false });
+
+  // ---- The splices, applied from the end of the text back -------------------
+  const opts = { lineWidth: 0, indent: style.step, indentSeq: style.indentSeq, flowCollectionPadding: false };
+  /** `node` as YAML lines: the first where the splice starts, the rest at column `col`. */
+  const lines = (node: unknown, col: number): string =>
+    indentLines(stringify(node, opts).replace(/\n$/, "").split("\n"), col, 1).join(eol);
+  const edits: Edit[] = [];
+  for (const { from, to } of cuts) {
+    // The comment lines just above a node, as deep as it or deeper, describe it, and go with it.
+    let start = src.lastIndexOf("\n", from - 1) + 1;
+    // The node's line's indentation: a list item's dash, or the key.
+    const depth = src.slice(start, from).search(/\S|$/);
+    while (start > 0) {
+      const prev = src.lastIndexOf("\n", start - 2) + 1;
+      const above = src.slice(prev, start);
+      const at = above.search(/\S/);
+      if (at < depth || above.charAt(at) !== "#") break;
+      start = prev;
+    }
+    edits.push({ ...cutLines(src, start, to, eol), insert: "" });
+  }
+  for (const seq of flows) {
+    const r = rangeOf(seq);
+    const end = contentEnd(src, seq);
+    /* c8 ignore next -- a list in `flows` has a range. */
+    if (r === undefined || end === undefined) return doc.toString({ flowCollectionPadding: false });
+    // The list's own comments stay in the text, so the copy written carries none.
+    const copy = seq.clone();
+    delete copy.comment;
+    delete copy.commentBefore;
+    edits.push({ start: r[0], end, insert: flowText(copy, src.charAt(r[0] + 1) === " ") });
+  }
+  for (const [seq, items] of appends) {
+    const r = rangeOf(seq);
+    const end = contentEnd(src, seq);
+    /* c8 ignore next -- a list in `appends` has a range. */
+    if (r === undefined || end === undefined) return doc.toString({ flowCollectionPadding: false });
+    const col = colOf(src, r[0]);
+    const at = lineEnd(src, end);
+    edits.push({ start: at, end: at, insert: items.map((item) => `${eol}${" ".repeat(col)}- ${lines(item, col + 2)}`).join("") });
+  }
+  for (const { start, end, col, key, value } of refills) {
+    edits.push({ start, end, insert: lines({ [key]: value }, col) });
+  }
+  for (const { map, key, value } of adds) {
+    const first = rangeOf(map?.items[0]?.key);
+    const end = map === null ? undefined : contentEnd(src, map);
+    if (first === undefined || end === undefined) {
+      const lead = src === "" || src.endsWith("\n") ? "" : eol;
+      edits.push({ start: src.length, end: src.length, insert: `${lead}${lines({ [key]: value }, 0)}${eol}` });
+      continue;
+    }
+    const col = colOf(src, first[0]);
+    const at = lineEnd(src, end);
+    edits.push({ start: at, end: at, insert: `${eol}${" ".repeat(col)}${lines({ [key]: value }, col)}` });
+  }
+  // From the end back, each before the last one applied; two that overlap write the document whole.
+  const order = edits.map((e, i) => ({ e, i })).sort((a, b) => b.e.start - a.e.start || b.i - a.i);
+  let out = src;
+  let floor = src.length;
+  for (const { e } of order) {
+    if (e.end > floor) return doc.toString({ flowCollectionPadding: false });
+    out = out.slice(0, e.start) + e.insert + out.slice(e.end);
+    floor = e.start;
+  }
+  return out;
 }
 
 /**
@@ -2167,8 +2791,10 @@ function buildResult(input: {
   dryRun: boolean;
   lines: ReadonlyMap<string, number>;
   config: RelocateConfigResult;
+  /** `--from` manifests left with no entries, deleted (0126). */
+  deleted: readonly string[];
 }): RelocateResult {
-  const { model, pages, dryRun, lines } = input;
+  const { model, pages, dryRun, lines, deleted } = input;
   const files: RelocateFileResult[] = [];
   for (const page of pages) {
     const moved: RelocateMove[] = [];
@@ -2189,6 +2815,7 @@ function buildResult(input: {
         manifest,
         ...(line !== undefined ? { line } : {}),
         reason: intent.reason,
+        ...(intent.from !== undefined ? { from: intent.from.file } : {}),
       });
     }
     for (const [key, intent] of intents) {
@@ -2205,17 +2832,27 @@ function buildResult(input: {
     }
   }
   const touches = (m: ManifestRef, page: Page): boolean =>
-    [...page.intents.values()].some((i) => (i.kind === "in" || i.kind === "out") && i.manifest === m);
+    [...page.intents.values()].some(
+      (i) => (i.kind === "in" || i.kind === "out") && (i.manifest === m || (i.kind === "out" && i.from?.manifest === m)),
+    );
   // A metadata directory (0126) is created when this plan homes a key in it,
   // or when it is one the key or the environment names that is not there.
   const creates = (m: ManifestRef): boolean =>
     m.created || m.missing || (m.latent && (m.homed.length > 0 || pages.some((p) => touches(m, p))));
+  // A file `--from` names that the config does not declare is no manifest of the config's.
   const manifests: RelocateManifestResult[] = model.manifests
     .filter(
-      (m) => creates(m) || m.keysAdded.length > 0 || m.keysRemoved.length > 0 || pages.some((p) => touches(m, p)),
+      (m) =>
+        m.loose !== true &&
+        (m.from === true ||
+          creates(m) ||
+          m.keysAdded.length > 0 ||
+          m.keysRemoved.length > 0 ||
+          pages.some((p) => touches(m, p))),
     )
     .map((m) => {
       const keys = model.finalKeys(m);
+      const home = model.manifests.find((r) => r.emptiedHome === true && r.collection === m.collection);
       return {
         file: m.file,
         collection: m.collection,
@@ -2224,7 +2861,8 @@ function buildResult(input: {
         keysAdded: [...m.keysAdded],
         keysRemoved: [...m.keysRemoved],
         keys,
-        undeclared: !m.implied && keys.length === 0 && !m.created,
+        undeclared: m.from === true || (!m.implied && keys.length === 0 && !m.created),
+        ...(m.from === true ? { removed: home === undefined ? {} : { reads: `${model.dirOf(home)}/` } } : {}),
         beyond: pages.filter(
           (p) =>
             p.beyond &&
@@ -2249,7 +2887,9 @@ function buildResult(input: {
       // Collections reading one directory list it once each, and it is one manifest.
       manifestsCreated: new Set(manifests.filter((m) => m.created).map((m) => m.file)).size,
       ...(minted > 0 ? { minted } : {}),
+      ...(deleted.length > 0 ? { deleted: deleted.length } : {}),
     },
+    ...(deleted.length > 0 ? { deleted: [...deleted] } : {}),
   };
 }
 
@@ -2337,7 +2977,8 @@ export async function applyRelocation(
   const written: RelocationWrite[] = [];
   for (const w of plan.writes) {
     try {
-      await write(w.path, w.text);
+      if (w.remove === true) await remove(w.path);
+      else await write(w.path, w.text);
     } catch (err) {
       throw await rollBack(written, `Could not write ${label(w)}: ${errorMessage(err)}.`);
     }

@@ -831,9 +831,9 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         integrity: sha256-bbb0f7a51e16666d91abdfc5a796cf3b28af7290b8b276d5c8239b34bb7d82a2
       source:
         file: src/meta/core/relocation.ts
-        lines: 1568-1573
+        lines: 1981-1986
         integrity: sha256-ec13b34e72acb42261bc2d30978b9995feb52bfbc3709284b4c42716427d80d1
-        commit-sha: fefd408f2da5a18b6c6a613e12c5f5dcc2ac782e
+        commit-sha: af75db2aa4909e9e36ecd00e8b21c2ee02488a3c
     - id: validate-runs-the-orphan-check-on-a-corpus
       claim:
         lines: 1075
@@ -885,80 +885,80 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         integrity: sha256-adaff5d22482dad8cd42f94ca47f4aa4a68b15575431c3f5a049fde72828615e
       source:
         file: src/meta/core/relocation.ts
-        lines: 689-731
-        integrity: sha256-e05ccd5709ccd53d49401d5f4b456868f08de093fff62e2c26810e58798741c3
-        commit-sha: d03514bdfa434eba44147e1a6f4e928a6f0f644b
+        lines: 806-842
+        integrity: sha256-f4b67f8bc4cab9beecd44ae6fdd1a603c5bf09d30f645d3b0acb2663f1607577
+        commit-sha: af75db2aa4909e9e36ecd00e8b21c2ee02488a3c
     - id: only-relocate-edits-collections
       claim:
         integrity: sha256-e21f3f1af31d0e8db02fc59afdfddd67be1545f02b473e392f35815403772148
       source:
         file: src/meta/core/relocation.ts
-        lines: 611-623
-        integrity: sha256-9327bccfa4d5846bad94f9fec0927775a0e7408ab29b2a7aa811c2a1e74ef877
-        commit-sha: d03514bdfa434eba44147e1a6f4e928a6f0f644b
+        lines: 724-736
+        integrity: sha256-00dc935ec94c51e2bf974098c4cb9b59dd96db635d7990f040bbf797ccc121b8
+        commit-sha: af75db2aa4909e9e36ecd00e8b21c2ee02488a3c
     - id: keys-appended-to-the-existing-local-manifest
       claim:
         lines: 1140
         integrity: sha256-7400e46e113b48419956557342da1d9a991836fd0ecc2a1059856820079e845d
       source:
         file: src/meta/core/relocation.ts
-        lines: 614-623
-        integrity: sha256-40b64899a0ff6049fec4f278b47a8cb2b0da6c5f6f0c4baff46ea175036d1045
-        commit-sha: d03514bdfa434eba44147e1a6f4e928a6f0f644b
+        lines: 727-736
+        integrity: sha256-ec6dc9129fada0bdf0c3807cdf23277560947b6aae35533fd3ee82652491b3e1
+        commit-sha: af75db2aa4909e9e36ecd00e8b21c2ee02488a3c
     - id: collection-metadata-yaml-created
       claim:
         lines: 1142
         integrity: sha256-c6bd1117aa5911e656e3ee819408fc4af39700daf40a2df60a6e3913a5732a17
       source:
         file: src/meta/core/relocation.ts
-        lines: 639-646
+        lines: 756-763
         integrity: sha256-432c5bdc267f3fd8438bbff9b5d44eea97600a0aa7c79d86c0113be1ea422beb
-        commit-sha: 46ea4718fa7ee7e2ec7ed135a7a646d421ff3fb8
+        commit-sha: af75db2aa4909e9e36ecd00e8b21c2ee02488a3c
     - id: default-collection-added
       claim:
         lines: 1143
         integrity: sha256-ae4b41644186957cf474c6a8aaf3b689161f1e6dc26774806572e92d68e97b16
       source:
         file: src/meta/core/relocation.ts
-        lines: 574-592
+        lines: 687-705
         integrity: sha256-b812f1bf43e0d3bd9da8a618e5f32f3b0a4933e2679ab8fa3741331f508634c0
-        commit-sha: d03514bdfa434eba44147e1a6f4e928a6f0f644b
+        commit-sha: af75db2aa4909e9e36ecd00e8b21c2ee02488a3c
     - id: target-appended-to-the-only-collection
       claim:
         lines: 1144
         integrity: sha256-16637574c24bbf8fc51fa6344f6e62a43ce72f2f0c12792ad1380bb96180b846
       source:
         file: src/meta/core/relocation.ts
-        lines: 593-606
+        lines: 706-719
         integrity: sha256-eb400df6207f3d345b357f199e02db011ba34cb6a3f1cc817b5b3974a629fc42
-        commit-sha: 46ea4718fa7ee7e2ec7ed135a7a646d421ff3fb8
+        commit-sha: af75db2aa4909e9e36ecd00e8b21c2ee02488a3c
     - id: several-collections-and-no-membership-edits-nothing
       claim:
         lines: 1145
         integrity: sha256-120931012905831776bdf3542ad778aac24a7f4a52474add369ebbf092aa24fd
       source:
         file: src/meta/core/relocation.ts
-        lines: 607-609
+        lines: 720-722
         integrity: sha256-12617f9546d5f85adcca2c24bf604b5b949158e6852db49f4acbfbf2b3b87fe0
-        commit-sha: 46ea4718fa7ee7e2ec7ed135a7a646d421ff3fb8
+        commit-sha: af75db2aa4909e9e36ecd00e8b21c2ee02488a3c
     - id: emptied-manifest-entry-removed
       claim:
         lines: 1146
-        integrity: sha256-920b01dbb52a6aeed33a42466d1a487651d0eec9dc8dc2604254819f8399af19
+        integrity: sha256-03d5496cf7a1b1c0d29d3bc73a55fb1f9567a5bdfe51952c60cd43d0dc65470a
       source:
         file: src/meta/core/relocation.ts
-        lines: 679-731
-        integrity: sha256-987aac57ddd3b995aec5c4a3b2afab34f873f87fcb5ceda8e2d4fd1130a38320
-        commit-sha: d03514bdfa434eba44147e1a6f4e928a6f0f644b
+        lines: 796-842
+        integrity: sha256-564e3a32644efe01d04e48ab9781e44fc9309ba2f6e62ee7f475813d47097d3c
+        commit-sha: af75db2aa4909e9e36ecd00e8b21c2ee02488a3c
     - id: relocate-refuses-no-config
       claim:
         lines: 1147
         integrity: sha256-8c8a045d81f675a33abeaed933d97dd69b98a902a439e00f9f9984a916584602
       source:
         file: src/meta/core/relocation.ts
-        lines: 565-567
+        lines: 678-680
         integrity: sha256-276737add7d09fcfa8bac28c3cef42b7b6e8ded40d1e932a5474e5bc9e55e982
-        commit-sha: 46ea4718fa7ee7e2ec7ed135a7a646d421ff3fb8
+        commit-sha: af75db2aa4909e9e36ecd00e8b21c2ee02488a3c
     - id: external-owned-finding-shape
       claim:
         integrity: sha256-c2af31766280d958d186bbf724fdbe67d1e6265891e7a809ca60efe3a5cbe464
@@ -989,9 +989,9 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         integrity: sha256-e34c62a445517f5f2b0e9136500f966bd3dbbdd0772f87954aa9f4a785b45406
       source:
         file: src/meta/cli.ts
-        lines: 900
+        lines: 902
         integrity: sha256-b900d16ea81ba54da695ee6ec4f8e9c3d17f1700d0b307ed74045692b603e056
-        commit-sha: 0d3d8a74bd17fce503520bb2313a412ca60aeeca
+        commit-sha: 77715cb1faddbd601238d5b6b1a36827cfcebb03
     - id: external-ref-classifies-as-a-builtin-id
       claim:
         integrity: sha256-b9848df12f447808856882497ee30c1a4d8c7ff0b933f9a32c242805d8d2dd8e
@@ -1595,9 +1595,9 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         integrity: sha256-acb9a4ecd367863131d6ee29d64b3ffc9cd546c60959adcec9b4ea981f08835f
       source:
         file: src/meta/cli.ts
-        lines: 1355-1359
+        lines: 1357-1361
         integrity: sha256-5abfe6d52902e66ac8e3b44e7f2781ada6faa56ccd8786005a5a6c19d0ee58e0
-        commit-sha: 0d3d8a74bd17fce503520bb2313a412ca60aeeca
+        commit-sha: 77715cb1faddbd601238d5b6b1a36827cfcebb03
     - id: fill-model-needs-an-explicit-provider
       claim:
         lines: 2100
@@ -2363,9 +2363,9 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         integrity: sha256-472af5cef90b3e952fb5719621c3d0a6d5c889f28a0d165fbc0d4d558fb29bb4
       source:
         file: src/meta/cli.ts
-        lines: 1638
+        lines: 1640
         integrity: sha256-1df16324aab3fc342c34710f82e77fa159cda9e9686d4ddcb6a4032eb3b979ed
-        commit-sha: 0d3d8a74bd17fce503520bb2313a412ca60aeeca
+        commit-sha: 77715cb1faddbd601238d5b6b1a36827cfcebb03
     - id: overlapping-collections-resolve-one-schema-set
       claim:
         integrity: sha256-40dafd7edcaaf5b1e9a0c3b3fd75274e69ec62577c42b8f03b0de7f69b926f1c
