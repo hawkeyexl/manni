@@ -212,9 +212,9 @@ docs/src/content/docs/meta/set-up/config.mdx:
         integrity: sha256-733c0b2524ed1903bd3560cdcfd64a88195eabb411d4f725708cc91cfbf30146
       source:
         file: src/meta/commands/validate.ts
-        lines: 1164-1174
+        lines: 1165-1175
         integrity: sha256-a534dc72a969d7026f974ba01d23c808d84e76f62ccb179329f8412cb4fcd8e4
-        commit-sha: 46ea4718fa7ee7e2ec7ed135a7a646d421ff3fb8
+        commit-sha: 992712576ac55646e1005be573c402d6419cbdcc
     - id: notices-go-to-stderr
       claim:
         integrity: sha256-733c0b2524ed1903bd3560cdcfd64a88195eabb411d4f725708cc91cfbf30146
@@ -378,9 +378,9 @@ docs/src/content/docs/meta/set-up/config.mdx:
         integrity: sha256-ccaea7a4e51be923a8e80d44e4a0a9dd69a565c75a835b06d59a8189cec4958d
       source:
         file: src/meta/core/external-metadata.ts
-        lines: 504-506
+        lines: 515-517
         integrity: sha256-55e40b5ece9b5bcb3bdd7db7bd7e794020e74c28c0090585286392b7d038d0fa
-        commit-sha: 46ea4718fa7ee7e2ec7ed135a7a646d421ff3fb8
+        commit-sha: 992712576ac55646e1005be573c402d6419cbdcc
     - id: local-schema-ref-rebased-to-config-dir
       claim:
         lines: 43

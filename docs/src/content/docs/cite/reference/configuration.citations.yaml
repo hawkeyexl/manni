@@ -670,9 +670,9 @@ docs/src/content/docs/cite/reference/configuration.mdx:
         integrity: sha256-59fc3d01f1daa14d9b1cc572880a07a5fc642aee421ad6e553420d4234d9c9bd
       source:
         file: src/shared/page-manifest.ts
-        lines: 69-78
+        lines: 70-79
         integrity: sha256-fbc2de481f1358fdc001ceeeef45f72e2c86391b9841e472e9955be6c3621c6c
-        commit-sha: 46ea4718fa7ee7e2ec7ed135a7a646d421ff3fb8
+        commit-sha: 992712576ac55646e1005be573c402d6419cbdcc
     - id: commit-notice-update
       claim:
         integrity: sha256-32e04d8b6c6640a44eca79f44945bfed9c60f4e4e25705ee6d4fb419f238661a
