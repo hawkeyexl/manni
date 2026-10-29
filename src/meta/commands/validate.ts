@@ -380,6 +380,7 @@ export async function runValidate(
     offline: opts.offline ?? config?.offline ?? false,
     // A `{page}` manifest (0058) is read for exactly the pages this run reads.
     pages: files.map((file) => resolve(base, file)),
+    ...(opts.env !== undefined ? { env: opts.env } : {}),
   });
 
   const validator = new Validator(

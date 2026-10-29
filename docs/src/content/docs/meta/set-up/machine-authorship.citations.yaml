@@ -314,9 +314,9 @@ docs/src/content/docs/meta/set-up/machine-authorship.mdx:
         integrity: sha256-6fedd5181bee831ead0082f85c35f9fc1c3fa914171509b11b5e96544abcce95
       source:
         file: src/meta/commands/validate.ts
-        lines: 734-743
+        lines: 735-744
         integrity: sha256-6f9df11dc130841f621a9207a00e82ce264cc4ac92855aad30d05ff540127df1
-        commit-sha: 46ea4718fa7ee7e2ec7ed135a7a646d421ff3fb8
+        commit-sha: 992712576ac55646e1005be573c402d6419cbdcc
     - id: changed-pin-finding-at-first-file-line
       claim:
         integrity: sha256-6fedd5181bee831ead0082f85c35f9fc1c3fa914171509b11b5e96544abcce95

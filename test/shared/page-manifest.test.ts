@@ -5,10 +5,11 @@
  *
  * Everything here is string and path arithmetic. No file is read.
  */
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
+import { ToolError } from "../../src/shared/errors.js";
 import {
   ID_PLACEHOLDER,
   PAGE_PLACEHOLDER,
@@ -22,6 +23,19 @@ import {
   pageManifestPath,
   strayManifestGlob,
 } from "../../src/shared/page-manifest.js";
+
+/** Directories `readdirSync` refuses, to the error code it refuses them with. */
+const { refused } = vi.hoisted(() => ({ refused: new Map<string, string>() }));
+
+vi.mock("node:fs", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("node:fs")>();
+  const readdirSync = (...args: unknown[]): unknown => {
+    const code = refused.get(String(args[0]));
+    if (code !== undefined) throw Object.assign(new Error(`${code}: scandir '${String(args[0])}'`), { code });
+    return (actual.readdirSync as (...a: unknown[]) => unknown)(...args);
+  };
+  return { ...actual, readdirSync };
+});
 
 const configDir = resolve("/repo");
 
@@ -186,6 +200,8 @@ describe("isSafeManifestId (0126)", () => {
     ["a device name", "con"],
     ["a numbered device name", "com7"],
     ["a printer port", "lpt1"],
+    ["a zero-numbered serial port", "com0"],
+    ["a zero-numbered printer port", "lpt0"],
     ["nul", "nul"],
   ])("refuses %s", (_label, id) => {
     expect(isSafeManifestId(id)).toBe(false);
@@ -262,6 +278,18 @@ describe("listIdManifests (0126)", () => {
       expect(listIdManifests("{id}.meta.yaml", dir)).toEqual([{ abs: resolve(dir, "page.meta.yaml"), id: "page" }]);
     } finally {
       rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  // A ToolError is what the bin runner prints as one line and exit 2.
+  it("refuses a directory it cannot list, naming it from the run's base", () => {
+    refused.set(resolve(configDir, "site", "metadata"), "EACCES");
+    try {
+      const list = (): unknown => listIdManifests("metadata/{id}.yaml", resolve(configDir, "site"), configDir);
+      expect(list).toThrow(ToolError);
+      expect(list).toThrow("site/metadata: the metadata directory cannot be read (EACCES).");
+    } finally {
+      refused.clear();
     }
   });
 });

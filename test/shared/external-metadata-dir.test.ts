@@ -9,8 +9,10 @@
  * has no `metadata/`, `manifest/` has one holding a manifest, and `unrelated/`
  * has one holding only a YAML file that is not one.
  */
-import { describe, expect, it } from "vitest";
-import { dirname, resolve } from "node:path";
+import { describe, expect, it, vi } from "vitest";
+import { mkdirSync, mkdtempSync, rmSync, utimesSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
   externalMetadataOrigin,
@@ -31,6 +33,18 @@ import {
 } from "../../src/shared/external-metadata-dir.js";
 import { parseConfig as parseDocevalsConfig } from "../../src/docevals/core/config.js";
 import { parseConfig as parseGraphConfig } from "../../src/graph/core/config.js";
+
+/** Every file the probe opened, in order. */
+const { opened } = vi.hoisted(() => ({ opened: [] as string[] }));
+
+vi.mock("node:fs", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("node:fs")>();
+  const openSync = (...args: unknown[]): unknown => {
+    opened.push(String(args[0]));
+    return (actual.openSync as (...a: unknown[]) => unknown)(...args);
+  };
+  return { ...actual, openSync };
+});
 
 const here = dirname(fileURLToPath(import.meta.url));
 const fixtures = resolve(here, "..", "fixtures", "external-metadata-dir");
@@ -171,6 +185,52 @@ describe("metadataDirState (0126)", () => {
 
   it("reads the default once it holds a manifest keyed by its own stem", () => {
     expect(metadataDirState(at(resolve(fixtures, "manifest")))).toBe("read");
+  });
+
+  /** A config directory whose `metadata/` holds `files`, removed after `run`. */
+  function withMetadata(files: Record<string, string>, run: (configDir: string, meta: string) => void): void {
+    const configDir = mkdtempSync(join(tmpdir(), "manni-dir-state-"));
+    try {
+      const meta = join(configDir, "metadata");
+      mkdirSync(meta);
+      for (const [name, text] of Object.entries(files)) writeFileSync(join(meta, name), text);
+      run(configDir, meta);
+    } finally {
+      rmSync(configDir, { recursive: true, force: true });
+    }
+  }
+
+  it("opens no file past the first manifest", () => {
+    withMetadata({ "a.yaml": "a:\n  x: 1\n", "b.yaml": "b:\n  x: 1\n" }, (configDir, meta) => {
+      opened.length = 0;
+      expect(metadataDirState(at(configDir))).toBe("read");
+      expect(opened).toEqual([resolve(meta, "a.yaml")]);
+    });
+  });
+
+  // Set explicitly, since two writes can land in one tick of the clock.
+  it("probes a directory once until its mtime moves", () => {
+    withMetadata({ "a.yaml": "a:\n  x: 1\n" }, (configDir, meta) => {
+      utimesSync(meta, 1_000, 1_000);
+      expect(metadataDirState(at(configDir))).toBe("read");
+      writeFileSync(join(meta, "a.yaml"), "title: no longer a manifest\n");
+      utimesSync(meta, 1_000, 1_000);
+      opened.length = 0;
+      expect(metadataDirState(at(configDir))).toBe("read");
+      expect(opened).toEqual([]);
+      utimesSync(meta, 2_000, 2_000);
+      expect(metadataDirState(at(configDir))).toBe("absent");
+      expect(opened).toEqual([resolve(meta, "a.yaml")]);
+    });
+  });
+
+  // Only the head is read, so what the loader would refuse further down
+  // does not hide the manifest the file opens with.
+  it("reads a manifest by its head, whatever follows it", () => {
+    const long = `long:\n  summary: ${"x".repeat(8_000)}\n  broken: [unclosed\n`;
+    withMetadata({ "long.yaml": long }, (configDir) => {
+      expect(metadataDirState(at(configDir))).toBe("read");
+    });
   });
 });
 

@@ -17,9 +17,9 @@
  *
  * Shared, so it imports nothing from a tool.
  */
-import { readFileSync, statSync } from "node:fs";
-import { isAbsolute, relative, resolve } from "node:path";
-import { parse as parseYaml } from "yaml";
+import { closeSync, openSync, readSync, statSync, type Stats } from "node:fs";
+import { dirname, isAbsolute, relative, resolve } from "node:path";
+import { isMap, isScalar, parseDocument } from "yaml";
 import {
   implicitExternalMetadata,
   isUrlRef,
@@ -109,6 +109,12 @@ export function resolveExternalMetadataDir(opts: {
   return { abs, spelled, source, pattern: `${prefix}${ID_PLACEHOLDER}.yaml` };
 }
 
+/** A manifest's root key is its first line, so a probe reads no more of a file than this. */
+const PROBE_BYTES = 4096;
+
+/** Each default directory probed in this process, by path, with the mtime it had then. */
+const probed = new Map<string, { mtimeMs: number; state: MetadataDirState }>();
+
 /**
  * Whether a run reads `dir`. A directory the key or the environment names is
  * read when it exists and `missing` when it does not. The default is read
@@ -117,29 +123,50 @@ export function resolveExternalMetadataDir(opts: {
  * `absent`, and nothing reads it.
  */
 export function metadataDirState(dir: ResolvedMetadataDir): MetadataDirState {
-  if (dir.source !== "default") return isDirectory(dir.abs) ? "read" : "missing";
-  return listIdManifests(`${ID_PLACEHOLDER}.yaml`, dir.abs).some(({ abs, id }) => holdsEntry(abs, id))
+  const stats = statOf(dir.abs);
+  if (dir.source !== "default") return stats?.isDirectory() === true ? "read" : "missing";
+  // Every config parse in a run asks, so the answer stands until a file is
+  // added or removed, which moves the directory's mtime. ponytail: a file
+  // edited in place in the same process is seen by the next run.
+  const seen = probed.get(dir.abs);
+  if (stats !== undefined && seen?.mtimeMs === stats.mtimeMs) return seen.state;
+  // `some` stops at the first manifest, so the rest are never opened.
+  const state = listIdManifests(dir.pattern, dirname(dir.abs)).some(({ abs, id }) => holdsEntry(abs, id))
     ? "read"
     : "absent";
+  if (stats !== undefined) probed.set(dir.abs, { mtimeMs: stats.mtimeMs, state });
+  return state;
 }
 
-function isDirectory(path: string): boolean {
+function statOf(path: string): Stats | undefined {
   try {
-    return statSync(path).isDirectory();
+    return statSync(path);
   } catch {
-    return false;
+    return undefined;
   }
 }
 
-/** Does the YAML file at `abs` have the root key `id`? Unreadable or unparsable is no. */
+/**
+ * Does the YAML file at `abs` have the root key `id`? Only its first
+ * `PROBE_BYTES` are read. A cut-off head need not parse to its end, but the
+ * keys before the cut are whole, and the loader reports what follows.
+ * Unreadable is no.
+ */
 function holdsEntry(abs: string, id: string): boolean {
-  let root: unknown;
+  const head = Buffer.alloc(PROBE_BYTES);
+  let read: number;
   try {
-    root = parseYaml(readFileSync(abs, "utf8"));
+    const fd = openSync(abs, "r");
+    try {
+      read = readSync(fd, head, 0, PROBE_BYTES, 0);
+    } finally {
+      closeSync(fd);
+    }
   } catch {
     return false;
   }
-  return typeof root === "object" && root !== null && !Array.isArray(root) && Object.hasOwn(root, id);
+  const root = parseDocument(head.toString("utf8", 0, read)).contents;
+  return isMap(root) && root.items.some(({ key }) => isScalar(key) && String(key.value) === id);
 }
 
 /** The refusal for a directory someone named that is not there, without its exit code. */

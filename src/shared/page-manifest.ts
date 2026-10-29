@@ -25,6 +25,7 @@ import { readFileSync, readdirSync, realpathSync, type Dirent } from "node:fs";
 import { isAbsolute, posix, relative, resolve, sep } from "node:path";
 import fg from "fast-glob";
 import { LineCounter, isMap, isNode, isScalar, parseDocument } from "yaml";
+import { ToolError, errorMessage } from "./errors.js";
 
 /** The placeholder that names a page's manifest by its path. */
 export const PAGE_PLACEHOLDER = "{page}";
@@ -218,7 +219,7 @@ export function hasIdPlaceholder(file: string): boolean {
 }
 
 /** Names Windows gives its devices, which no file there may take. */
-const DEVICE_NAME = /^(?:con|prn|aux|nul|com[1-9]|lpt[1-9])$/;
+const DEVICE_NAME = /^(?:con|prn|aux|nul|com[0-9]|lpt[0-9])$/;
 
 /**
  * May `id` name a manifest file (proposal 0126)? core-strict's pattern,
@@ -251,13 +252,15 @@ export function idManifestPath(
  * The parser keeps `{id}` in that segment, so one directory holds them all.
  * A file whose name only looks like one, `Notes.yaml` or `a.b.yaml` against
  * `{id}.yaml`, names no id, and so no manifest. A missing directory holds
- * none.
+ * none. One that cannot be listed refuses the run, naming the directory
+ * relative to `base`, the directory the run reports paths from.
  *
  * Synchronous, like `findPageManifests`. Nothing is read but the directory.
  */
 export function listIdManifests(
   file: string,
   configDir: string,
+  base: string = configDir,
 ): { abs: string; id: string }[] {
   const normalized = normalizeManifestPattern(file);
   const cut = normalized.lastIndexOf("/");
@@ -273,7 +276,10 @@ export function listIdManifests(
     // ENOTDIR: a file where the directory would be, which holds no manifest either.
     const code = typeof err === "object" && err !== null && "code" in err ? err.code : undefined;
     if (code === "ENOENT" || code === "ENOTDIR") return [];
-    throw err;
+    const shown = slashes(relative(base, dir)) || ".";
+    throw new ToolError(
+      `${shown}: the metadata directory cannot be read (${typeof code === "string" ? code : errorMessage(err)}).`,
+    );
   }
   const found: { abs: string; id: string }[] = [];
   for (const entry of entries) {

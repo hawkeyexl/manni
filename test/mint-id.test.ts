@@ -158,6 +158,14 @@ describe("mintId", () => {
     expect(await mintId(ctx, request(ctx, "docs/skill/SKILL.md"))).toEqual({ stay: "its schemas do not allow id" });
   });
 
+  // Neither page is on disk, so the scan holds no slug for either.
+  it("leaves a page that stays no slug to push a later page past", async () => {
+    const ctx = await contextOf(at("mint-stay"));
+    const stayed = await mintId(ctx, request(ctx, "docs/ghost.adoc"));
+    expect("stay" in stayed && stayed.stay).toMatch(/^the page cannot be written: /);
+    expect(await minted(ctx, "docs/ghost.md")).toBe("ghost");
+  });
+
   it("mints nothing for a page its format's writer cannot write", async () => {
     const ctx = await contextOf(at("mint-stay"));
     expect(await mintId(ctx, request(ctx, "docs/native.adoc"))).toEqual({
