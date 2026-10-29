@@ -1,0 +1,31 @@
+{
+  "cat sidecar": "docs/guide.md:\n  personas: [maya]\n  owner: ada\n",
+  "validate orphan": {
+    "using": "Using manni.config.yaml (.)\n",
+    "rest": "manni: Manifest docs/guide.meta.yaml:1 names \"docs/guide.md\", which this run did not load. Fix the entry, or remove the file.\n"
+  },
+  "relocate": {
+    "using": "Using manni.config.yaml (.)\n",
+    "rest": "Removed collections[site].externalMetadata[0] ({page}.meta.yaml); collection site reads metadata/.\nCreated metadata/; it owns what each page's schemas mark external, one <id>.yaml per page.\ndocs/guide.md\n    \u001b[36mid      \u001b[39m  ← minted guide\n    \u001b[36mpersonas\u001b[39m  → metadata/guide.yaml:2  (from docs/guide.meta.yaml)\n    \u001b[36mowner   \u001b[39m  → metadata/guide.yaml:4  (from docs/guide.meta.yaml)\n1 file, 2 values moved to 1 manifest, 1 id minted, 1 emptied manifest deleted\n"
+  },
+  "cat manifest": "guide:\n  personas:\n    - maya\n  owner: ada\n",
+  "validate renamed": {
+    "using": "Using manni.config.yaml (.)\n",
+    "rest": "\u001b[32m✓\u001b[39m docs/getting-started.md\n\n\u001b[32m1 file checked, 1 passed, 0 failed, 0 errors\u001b[39m\n"
+  },
+  "get": {
+    "using": "Using manni.config.yaml (.)\n",
+    "rest": "\u001b[2mdocs/getting-started.md:\u001b[22m owner=ada\u001b[2m (asserted)\u001b[22m\n"
+  },
+  "env missing": {
+    "using": "Using manni.config.yaml (.)\n",
+    "rest": "manni: MANNI_EXTERNAL_METADATA_DIR: ../elsewhere does not exist. Create it, or check out the repository it names.\n"
+  },
+  "exits": {
+    "validate orphan": "2",
+    "relocate": "0",
+    "validate renamed": "0",
+    "get": "0",
+    "env missing": "2"
+  }
+}

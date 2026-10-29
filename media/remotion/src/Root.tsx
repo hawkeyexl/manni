@@ -40,6 +40,7 @@ import { beats as flareTargetsBeats, totalFrames as flareTargetsTotalFrames, TYP
 import { beats as flareResourcesBeats, totalFrames as flareResourcesTotalFrames, TYPING_MS as flareResourcesTypingMs } from "./flare-resources/beats";
 import { beats as docevalsFormatsBeats, totalFrames as docevalsFormatsTotalFrames, TYPING_MS as docevalsFormatsTypingMs } from "./docevals-formats/beats";
 import { beats as flareSiteBeats, totalFrames as flareSiteTotalFrames, TYPING_MS as flareSiteTypingMs } from "./flare-site/beats";
+import { beats as metadataDirBeats, totalFrames as metadataDirTotalFrames, TYPING_MS as metadataDirTypingMs } from "./metadata-dir/beats";
 
 /** sidecar-url-1x1: 23 px / 75 columns, derived in media/sidecar-url-1x1.script.md. */
 const DemoUrl: React.FC = () => <DemoView beats={urlBeats} fontPx={23} linePx={32} cols={75} />;
@@ -166,6 +167,15 @@ const DemoDocevalsFormats: React.FC = () => (
  */
 const DemoFlareSite: React.FC = () => (
   <DemoView beats={flareSiteBeats} fontPx={24} linePx={34} cols={72} typingMs={flareSiteTypingMs} ligatures={false} />
+);
+
+/**
+ * metadata-dir-1x1: 24 px / 72 columns, derived in media/metadata-dir-1x1.script.md
+ * (media/capture-metadata-dir/cols.mjs). Ligatures off: a terminal prints `$?` and `../`
+ * as characters.
+ */
+const DemoMetadataDir: React.FC = () => (
+  <DemoView beats={metadataDirBeats} fontPx={24} linePx={34} cols={72} typingMs={metadataDirTypingMs} ligatures={false} />
 );
 
 /**
@@ -590,6 +600,14 @@ export const Root: React.FC = () => (
       height={1080}
       fps={FPS}
       durationInFrames={flareSiteTotalFrames}
+    />
+    <Composition
+      id="MetadataDirDemo"
+      component={DemoMetadataDir}
+      width={1080}
+      height={1080}
+      fps={FPS}
+      durationInFrames={metadataDirTotalFrames}
     />
   </>
 );

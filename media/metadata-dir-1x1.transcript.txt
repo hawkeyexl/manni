@@ -1,0 +1,69 @@
+manni meta keeps a page's external metadata in metadata/<id>.yaml, demo video transcript (silent video; text describes what is on screen)
+
+Frame: 1080x1080, 30 fps, 43.3 s. Every terminal line is real output of cat, git mv and of
+`node dist/cli.js ...` (typed as manni) run in media/scratch-metadata-dir/, a one-page git repository
+built by media/capture-metadata-dir/capture.sh. Its config gives the collection a per-page manifest,
+externalMetadata: - file: "{page}.meta.yaml", and its schema marks personas and owner x-manni-location: external.
+
+[0:00-0:04] Title: Metadata beside the page (1 / 6)
+$ cat docs/guide.meta.yaml
+docs/guide.md:
+  personas: [maya]
+  owner: ada
+Highlighted rows: lines containing "docs/guide.md:"
+Caption: The sidecar holds personas and owner, keyed by path.
+
+[0:04-0:12] Title: Rename it, and the run stops (2 / 6)
+$ git mv docs/guide.md docs/getting-started.md
+$ manni meta validate; echo $?
+Using manni.config.yaml (.)
+manni: Manifest docs/guide.meta.yaml:1 names "docs/guide.md", which this run did not load. Fix the entry, or remove the file.
+2
+Highlighted rows: lines containing "did not load"
+Caption: The sidecar still names docs/guide.md. Exit 2.
+
+[0:12-0:21] Title: manni meta relocate --from (3 / 6)
+$ git mv docs/getting-started.md docs/guide.md
+$ manni meta relocate --from "{page}.meta.yaml"
+Using manni.config.yaml (.)
+Removed collections[site].externalMetadata[0] ({page}.meta.yaml); collection site reads metadata/.
+Created metadata/; it owns what each page's schemas mark external, one <id>.yaml per page.
+docs/guide.md
+    id        ← minted guide
+    personas  → metadata/guide.yaml:2  (from docs/guide.meta.yaml)
+    owner     → metadata/guide.yaml:4  (from docs/guide.meta.yaml)
+1 file, 2 values moved to 1 manifest, 1 id minted, 1 emptied manifest deleted
+Highlighted rows: lines containing "minted guide", "metadata/guide.yaml"
+Caption: Rename undone. Values move to metadata/, keyed by id.
+
+[0:21-0:25] Title: One file per id (4 / 6)
+$ cat metadata/guide.yaml
+guide:
+  personas:
+    - maya
+  owner: ada
+Highlighted rows: lines containing "guide:"
+Caption: Named and keyed by guide, the id minted into the page.
+
+[0:25-0:37] Title: Rename it again (5 / 6)
+$ git mv docs/guide.md docs/getting-started.md
+$ manni meta validate; echo $?
+Using manni.config.yaml (.)
+✓ docs/getting-started.md
+
+1 file checked, 1 passed, 0 failed, 0 errors
+0
+$ manni meta get docs/getting-started.md --fields owner
+Using manni.config.yaml (.)
+docs/getting-started.md: owner=ada (asserted)
+Highlighted rows: lines containing "1 passed", "owner=ada"
+Caption: Found by id, not path. Exit 0; owner still reads ada.
+
+[0:37-0:43] Title: Another checkout, not there (6 / 6)
+$ MANNI_EXTERNAL_METADATA_DIR=../elsewhere manni meta validate; echo $?
+Using manni.config.yaml (.)
+manni: MANNI_EXTERNAL_METADATA_DIR: ../elsewhere does not exist. Create it, or check out the repository it names.
+2
+Highlighted rows: lines containing "does not exist"
+Caption: The variable moves the directory. Missing, it exits 2.
+

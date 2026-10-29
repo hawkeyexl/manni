@@ -1,0 +1,8 @@
+437	Using manni.config.yaml (.)
+670	Removed collections[site].externalMetadata[0] ({page}.meta.yaml); collection site reads metadata/.
+692	Created metadata/; it owns what each page's schemas mark external, one <id>.yaml per page.
+717	docs/guide.md
+798	    [36mid      [39m  ← minted guide
+824	    [36mpersonas[39m  → metadata/guide.yaml:2  (from docs/guide.meta.yaml)
+854	    [36mowner   [39m  → metadata/guide.yaml:4  (from docs/guide.meta.yaml)
+879	1 file, 2 values moved to 1 manifest, 1 id minted, 1 emptied manifest deleted

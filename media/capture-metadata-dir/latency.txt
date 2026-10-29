@@ -1,0 +1,60 @@
+cat-sidecar 39ms
+git-mv 58ms
+validate-orphan exit 2 444ms
+  line ms: 313 404
+git-mv-back 65ms
+relocate exit 0 933ms
+  line ms: 437 670 692 717 798 824 854 879
+cat-manifest 90ms
+git-mv-again 60ms
+validate-renamed exit 0 504ms
+  line ms: 357 429 448 466
+get exit 0 386ms
+  line ms: 316 348
+env-missing exit 2 439ms
+  line ms: 307 400
+timing1-cat-sidecar 39ms
+timing1-git-mv 103ms
+timing1-validate-orphan exit 2 479ms
+  line ms: 348 393
+timing1-git-mv-back 72ms
+timing1-relocate exit 0 899ms
+  line ms: 356 660 683 706 730 768 790 811
+timing1-cat-manifest 38ms
+timing1-git-mv-again 60ms
+timing1-validate-renamed exit 0 502ms
+  line ms: 354 428 446 465
+timing1-get exit 0 425ms
+  line ms: 366 386
+timing1-env-missing exit 2 443ms
+  line ms: 311 355
+timing2-cat-sidecar 37ms
+timing2-git-mv 58ms
+timing2-validate-orphan exit 2 412ms
+  line ms: 323 368
+timing2-git-mv-back 59ms
+timing2-relocate exit 0 878ms
+  line ms: 321 623 692 713 732 752 772 792
+timing2-cat-manifest 45ms
+timing2-git-mv-again 106ms
+timing2-validate-renamed exit 0 679ms
+  line ms: 321 393 466 537
+timing2-get exit 0 423ms
+  line ms: 344 379
+timing2-env-missing exit 2 452ms
+  line ms: 313 410
+timing3-cat-sidecar 38ms
+timing3-git-mv 66ms
+timing3-validate-orphan exit 2 467ms
+  line ms: 328 424
+timing3-git-mv-back 64ms
+timing3-relocate exit 0 931ms
+  line ms: 431 694 717 739 762 785 859 886
+timing3-cat-manifest 42ms
+timing3-git-mv-again 64ms
+timing3-validate-renamed exit 0 505ms
+  line ms: 337 415 437 459
+timing3-get exit 0 883ms
+  line ms: 585 721
+timing3-env-missing exit 2 593ms
+  line ms: 358 501

@@ -1,0 +1,2 @@
+307	Using manni.config.yaml (.)
+400	manni: MANNI_EXTERNAL_METADATA_DIR: ../elsewhere does not exist. Create it, or check out the repository it names.
