@@ -1,0 +1,41 @@
+# Proposal 0126: a config shaped like this repository's own. relocate --from
+# removes site's externalMetadata: entries, and every other byte stays.
+
+# The published pages.
+collections:
+  - name: site
+    paths:
+      - "docs/site/*.md"
+    # Where the pages are published.
+    url: http://127.0.0.1:4321/manni/
+    externalMetadata:
+      - file: "{page}.citations.yaml"
+        keys: [citations]
+      # No `keys`: this manifest owns every other external field.
+      - file: "{page}.meta.yaml"
+  # The content strategy's records, which keep their own pins.
+  - name: strategy
+    paths:
+      - "docs/strategy/*.md"
+    externalMetadata:
+      - file: "{page}.citations.yaml"
+        keys: [citations]
+
+meta:
+  defaults: false
+  schemas: [./page.schema.json]
+
+docevals:
+  # One suite per domain, in flow style with padding.
+  suites:
+    site: { target-pass-rate: 1.0, evals: [no-todo-markers] }
+    meta: { target-pass-rate: 1.0, evals: [no-todo-markers] }
+
+graph:
+  export:
+    llms:
+      title: manni
+      summary: One CLI for docs-as-code. It validates metadata, pins sentences to sources, and serves the docs with their proof.
+      notes: >-
+        A folded scalar, which a writer that prints
+        the document again would fold anew.

@@ -65,6 +65,7 @@ export function relocateJson(result: RelocateResult): unknown {
       keysAdded: m.keysAdded,
       keysRemoved: m.keysRemoved,
       undeclared: m.undeclared,
+      ...(m.removed?.reads !== undefined ? { reads: m.removed.reads } : {}),
     })),
     files: result.files.map((f) => ({
       file: f.file,

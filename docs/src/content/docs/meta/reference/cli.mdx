@@ -1482,8 +1482,9 @@ minted one. An equal value already at the target drops the copy. A different
 value stays as `values-differ`, and its manifest stays declared and on disk.
 A declared `--from` with nothing left in it is removed from
 `externalMetadata:`. With `--collection`, only that collection's entries go.
-A file left with no entries is deleted, unless it holds YAML comments, which
-relocate does not carry. Such a file is kept, emptied, with a warning:
+A file left with no entries is deleted, unless it holds YAML comments, even
+inside a value, which relocate does not carry. Such a file is kept, emptied,
+with a warning:
 `manni: docs/x.meta.yaml holds comments relocate does not carry; it is kept, emptied of entries.`
 
 ### Arguments
@@ -1582,7 +1583,7 @@ In `json` format the run is one object:
 |---|---|
 | `dryRun` | boolean |
 | `config` | `{ file, created, collectionsCreated, pathsAdded }` |
-| `manifests[]` | `{ file, collection, created, keysAdded, keysRemoved, undeclared }`. The metadata directory's `file` is its pattern, `metadata/{id}.yaml`. `undeclared` is also true for a `--from` manifest the run removed from the config. |
+| `manifests[]` | `{ file, collection, created, keysAdded, keysRemoved, undeclared }`. The metadata directory's `file` is its pattern, `metadata/{id}.yaml`. `undeclared` is also true for a `--from` manifest the run removed from the config. Such a manifest carries `reads`, the directory its collection reads afterwards, such as `metadata/`, when the run left the collection no entries. |
 | `files[].minted` | string, the id the run minted into the page. Present only when it minted one. |
 | `files[].moved[]` | `{ key, to, reason }` plus `manifest` and `line` when `to` is `manifest`, or `from` when `to` is `page`. A move between manifests carries `from` too. `to` is `page` or `manifest`. `reason` is `preferred` (a mark) or `owned` (a manifest already owns the key). `line` is omitted under `--dry-run`. |
 | `files[].stayed[]` | `{ key, reason }`, with a reason from the table above |

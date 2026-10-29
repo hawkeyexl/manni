@@ -759,8 +759,8 @@ and the two pages gain an `id:` line. The move loses nothing:
 - **A different value** stays where it is, as `values-differ`. Its manifest
   stays declared and on disk, and the run exits 1. Settle the value, then run
   `--from` again.
-- **A file holding YAML comments** is emptied and kept, with a warning,
-  because `relocate` does not carry comments to another file:
+- **A file holding YAML comments**, even inside a value, is emptied and kept,
+  with a warning, because `relocate` does not carry comments to another file:
   `manni: docs/install.meta.yaml holds comments relocate does not carry; it is kept, emptied of entries.`
 
 `--from` empties a manifest for every page at once, so it takes no paths and

@@ -44,8 +44,28 @@ import {
   isSeq,
   parse as parseYaml,
   parseDocument,
+  stringify,
+  visit,
   type Document,
+  type Pair,
+  type YAMLMap,
+  type YAMLSeq,
 } from "yaml";
+import {
+  colOf,
+  colonEnd,
+  contentEnd,
+  detectEol,
+  detectStyle,
+  emptySource,
+  flowText,
+  indentLines,
+  keyLines as cutLines,
+  keyString,
+  lineEnd,
+  rangeOf,
+  type Edit,
+} from "./yaml-splice.js";
 import {
   implicitExternalMetadata,
   isMember,
@@ -1162,8 +1182,19 @@ type Intent =
       entry: string;
       /** The `--from` manifest the value leaves (0126); absent, it leaves the page. */
       from?: FromSource;
+      /** Equal copies other `--from` manifests hold (0126), which leave with it. */
+      also?: FromSource[];
     }
-  | { kind: "in"; manifest: ManifestRef; drop: boolean; entry: string; value: unknown }
+  | {
+      kind: "in";
+      manifest: ManifestRef;
+      drop: boolean;
+      entry: string;
+      value: unknown;
+      /** The `--from` value this is (0126), whose manifest is `manifest`. */
+      from?: FromSource;
+      also?: FromSource[];
+    }
   | {
       kind: "stay";
       reason: RelocateStayReason;
@@ -1297,6 +1328,7 @@ export async function planRelocation(
   // declared, so the config without it is not the one to plan against. The
   // plan is made again with it kept, until every one still emptied empties.
   const kept = new Map<string, KeptStay[]>();
+  // It ends: each pass returns a plan or keeps at least one more of the finitely many `--from` manifests.
   for (;;) {
     const planned = await planOnce(ctx, request, kept);
     if ("plan" in planned) return planned.plan;
@@ -1602,7 +1634,8 @@ async function planOnce(
    * One value of a `--from` manifest (0126) to where the config, without
    * that manifest, says its key lives: the manifest that owns it, else the
    * page. An equal value already there drops the copy, and a different one
-   * leaves it where it is.
+   * leaves it where it is. So does another `--from` manifest's value for the
+   * key: an equal one leaves with it, and a different one keeps both.
    */
   const planFrom = async (
     page: Page,
@@ -1611,7 +1644,14 @@ async function planOnce(
     prefs: ReadonlyMap<string, FieldLocation>,
   ): Promise<void> => {
     const { key } = source;
-    if (page.intents.has(key)) return;
+    const have = page.intents.get(key);
+    if (have !== undefined) {
+      if (have.kind !== "stay" && have.from !== undefined && have.from.manifest !== source.manifest) {
+        if (deepEqual(have.from.value, source.value)) (have.also ??= []).push(source);
+        else stay(page, key, "values-differ", `${have.from.file} and ${source.file} hold different values`);
+      }
+      return;
+    }
     const pref = prefs.get(key);
     const owner = pref === "page" ? undefined : model.ownerOf(key, model.members(page.label), external);
     if (owner !== undefined) {
@@ -1623,7 +1663,14 @@ async function planOnce(
       stay(page, key, "values-differ", `the page and ${source.file} hold different values`);
       return;
     }
-    page.intents.set(key, { kind: "in", manifest: source.manifest, drop: inPage, entry: source.entry, value: source.value });
+    page.intents.set(key, {
+      kind: "in",
+      manifest: source.manifest,
+      drop: inPage,
+      entry: source.entry,
+      value: source.value,
+      from: source,
+    });
   };
 
   /** Out of `m`, into the page. */
@@ -2033,14 +2080,20 @@ async function planOnce(
   const blocked = new Map<string, KeptStay[]>();
   for (const { page, source } of fromHeld) {
     const m = source.manifest;
-    // A file the config does not declare keeps what stays, and nothing reads it.
-    if (m.loose === true) continue;
     const intent = page.intents.get(source.key);
     const left =
-      (intent?.kind === "in" && intent.manifest === m) || (intent?.kind === "out" && intent.from?.manifest === m);
+      (intent?.kind === "in" && intent.manifest === m) ||
+      (intent?.kind === "out" && intent.from?.manifest === m) ||
+      (intent !== undefined && intent.kind !== "stay" && intent.also?.some((s) => s.manifest === m) === true);
     if (left) continue;
+    // A manifest is never kept for nothing: a value that does not leave it stays, with its reason.
+    if (intent?.kind !== "stay") {
+      throw new Error(`relocate: ${source.file} holds ${source.key} for ${page.label}, which neither leaves nor stays.`);
+    }
+    // A file the config does not declare keeps what stays, and nothing reads it.
+    if (m.loose === true) continue;
     const stays = blocked.get(refId(m)) ?? [];
-    if (intent?.kind === "stay") stays.push({ label: page.label, key: source.key, reason: intent.reason, detail: intent.detail });
+    stays.push({ label: page.label, key: source.key, reason: intent.reason, detail: intent.detail });
     blocked.set(refId(m), stays);
   }
   if (blocked.size > 0) return { blocked };
@@ -2086,9 +2139,9 @@ async function planOnce(
       if (line !== undefined) lines.set(lineId(o.page, file, o.key), line);
     }
     // A `--from` manifest (0126) left with no entries is deleted, unless it
-    // holds comments, which relocate does not carry: then it is kept, emptied.
+    // held comments anywhere, which relocate does not carry: then it is kept, emptied.
     if (emptied.has(path) && holdsNoEntries(text)) {
-      if (!/(^|\s)#/.test(text)) {
+      if (!holdsComments(before)) {
         writes.push({ path, text: "", kind: "manifest", before: disk, remove: true });
         deleted.push(file);
         return;
@@ -2131,6 +2184,10 @@ async function planOnce(
         } else if (intent.kind === "out" && intent.from?.manifest === m) {
           // The copy a value moving between manifests leaves behind (0126).
           group(model.fileFor(m, page.absPath))?.ins.push({ entry: intent.from.entry, key });
+        }
+        // An equal copy another `--from` manifest held, which leaves with the value (0126).
+        for (const s of intent.kind === "stay" ? [] : (intent.also ?? [])) {
+          if (s.manifest === m) group(model.fileFor(m, page.absPath))?.ins.push({ entry: s.entry, key });
         }
       }
     }
@@ -2205,6 +2262,19 @@ async function planOnce(
     ...(commented.length > 0 ? { commented } : {}),
   };
   return { plan };
+}
+
+/** Does YAML text hold a comment anywhere: above, below or inside any value? */
+function holdsComments(text: string): boolean {
+  const doc = parseDocument(text);
+  if (doc.commentBefore || doc.comment) return true;
+  let found = false;
+  visit(doc, (_, node) => {
+    if (!isNode(node) || !(node.commentBefore || node.comment)) return undefined;
+    found = true;
+    return visit.BREAK;
+  });
+  return found;
 }
 
 /** Does a manifest's text hold no entry: nothing, or an empty mapping? */
@@ -2411,12 +2481,19 @@ async function configTarget(
   return { path: join(configDir, FAMILY_CONFIG_NAMES[0] ?? "manni.config.yaml"), text: null, disk: null };
 }
 
-/** The config text with the model's changes, comments and key order kept. */
+/**
+ * The config text with the model's changes. Each change is spliced into the
+ * text, so every byte outside the nodes it edits stays as it was: comments,
+ * quoting, folded scalars and flow padding. A change no splice can place,
+ * such as one in a flow-style `collections:`, writes the document whole,
+ * with comments and key order kept.
+ */
 function editConfig(text: string | null, model: Model, source: string): string {
   const doc = parseDocument(text ?? "");
   const [problem] = doc.errors;
   if (problem !== undefined) throw new DocmetaError(`${source}: invalid YAML: ${problem.message}`);
-  if (doc.contents !== null && !isMap(doc.contents)) {
+  const root = doc.contents;
+  if (root !== null && !isMap(root)) {
     throw new DocmetaError(`${source}: top level must be a mapping.`);
   }
   const fail = (): never => {
@@ -2433,69 +2510,131 @@ function editConfig(text: string | null, model: Model, source: string): string {
     return node;
   };
 
+  // The splices, against the original text. Each node is edited in the
+  // document too, which is what a whole write prints.
+  const src = text ?? "";
+  const eol = detectEol(src);
+  const style = isMap(root) ? detectStyle(src, root, eol) : { step: 2, indentSeq: true, eol };
+  let whole = text === null || root?.flow === true;
+  /** Flow lists written again once edited, and the items each block list gains. */
+  const flows = new Set<YAMLSeq>();
+  const appends = new Map<YAMLSeq, unknown[]>();
+  /** Nodes whose lines go: from the node's start through its content's end. */
+  const cuts: { from: number; to: number }[] = [];
+  /** A key's value replaced from the key on, or a key added after a mapping's last line. */
+  const refills: { start: number; end: number; col: number; key: string; value: unknown }[] = [];
+  const adds: { map: YAMLMap | null; key: string; value: unknown }[] = [];
+  const pairOf = (map: YAMLMap | null, key: string): Pair | undefined =>
+    map?.items.find((p) => keyString(p.key) === key);
+  const grow = (seq: YAMLSeq, item: unknown): void => {
+    seq.add(item);
+    // A list this edit made is written with its key.
+    if (rangeOf(seq) === undefined) return;
+    if (seq.flow === true) flows.add(seq);
+    else appends.set(seq, [...(appends.get(seq) ?? []), item]);
+  };
+  const cut = (node: unknown, to: unknown = node): void => {
+    const r = rangeOf(node);
+    const end = contentEnd(src, to);
+    if (r === undefined || end === undefined) whole = true;
+    else cuts.push({ from: r[0], to: end });
+  };
+  const shrink = (seq: YAMLSeq, item: unknown): void => {
+    seq.delete(seq.items.indexOf(item));
+    if (seq.flow === true) flows.add(seq);
+    else cut(item);
+  };
+  /** `key: value` in place of `pair`, whose value is empty or not a list. */
+  const refill = (pair: Pair, value: unknown): void => {
+    const k = rangeOf(pair.key);
+    const old = pair.value;
+    const end = isScalar(old) && old.value === null && emptySource(src, old) ? colonEnd(src, pair) : contentEnd(src, old);
+    if (k === undefined || end === undefined) whole = true;
+    else refills.push({ start: k[0], end, col: colOf(src, k[0]), key: keyString(pair.key), value });
+  };
+  /** A new list under `key` of `map`: in place of an empty value, else after the mapping. */
+  const fresh = (map: YAMLMap | null, key: string, value: unknown): void => {
+    const pair = pairOf(map, key);
+    if (pair === undefined) adds.push({ map, key, value });
+    else refill(pair, value);
+  };
+
   const declared = model.collections.length - model.created.length;
   const existing = doc.get("collections", true);
   if (declared > 0 && !isSeq(existing)) fail();
+  if (isSeq(existing) && existing.flow === true) whole = true;
   for (let i = 0; i < declared; i++) {
     const c = model.collections[i];
     const node = isSeq(existing) ? existing.items[i] : undefined;
     if (c === undefined || !isMap(node)) return fail();
+    if (node.flow === true) whole = true;
     for (const added of model.pathsAdded.filter((p) => p.collection === c.name)) {
       const paths = node.get("paths", true);
       if (!isSeq(paths)) return fail();
       const scalar = doc.createNode(added.path);
       const first = paths.items[0];
       if (isScalar(first) && first.type !== undefined) scalar.type = first.type;
-      paths.add(scalar);
+      grow(paths, scalar);
     }
     const refs = model.manifestsOf(c.name);
     for (const m of refs) {
       if (m.created) {
-        let list = node.get("externalMetadata", true);
+        const list = node.get("externalMetadata", true);
+        const made = manifestNode(doc, m.written, m.keysAdded);
+        if (isSeq(list) && (list.items.length > 0 || rangeOf(list) === undefined)) {
+          grow(list, made);
+          continue;
+        }
         // A list written empty, the opt-out from the metadata directory
         // (0126), is written afresh as a block list.
-        if (!isSeq(list) || list.items.length === 0) {
-          node.set("externalMetadata", doc.createNode([]));
-          list = node.get("externalMetadata", true);
-        }
-        if (!isSeq(list)) return fail();
-        list.add(manifestNode(doc, m.written, m.keysAdded));
+        const written = doc.createNode([made]);
+        fresh(node, "externalMetadata", written);
+        node.set("externalMetadata", written);
         continue;
       }
       if (m.keysAdded.length === 0) continue;
       const entry = node.getIn(["externalMetadata", m.index], true);
       const keys = isMap(entry) ? entry.get("keys", true) : undefined;
       if (!isSeq(keys)) return fail();
-      for (const key of m.keysAdded) keys.add(doc.createNode(key));
+      for (const key of m.keysAdded) grow(keys, doc.createNode(key));
     }
     // Removals last, highest index first, so earlier indices stay valid.
     const list = node.get("externalMetadata", true);
-    let emptied = false;
+    const dropped: unknown[] = [];
     for (const m of [...refs].filter((r) => !r.created).sort((a, b) => b.index - a.index)) {
       // A `--from` manifest (0126) goes whole.
       if (m.from === true) {
         if (!isSeq(list)) return fail();
+        dropped.push(list.items[m.index]);
         list.delete(m.index);
-        emptied = true;
         continue;
       }
       if (m.keysRemoved.length === 0) continue;
       if (!isSeq(list)) return fail();
-      const entry = list.items[m.index];
+      const entry: unknown = list.items[m.index];
       const keys = isMap(entry) ? entry.get("keys", true) : undefined;
       if (!isSeq(keys)) return fail();
-      for (const key of m.keysRemoved) {
-        const at = keys.items.findIndex((item) => (isScalar(item) ? String(item.value) : String(item)) === key);
-        if (at >= 0) keys.delete(at);
+      const gone = keys.items.filter((item) => m.keysRemoved.includes(isScalar(item) ? String(item.value) : String(item)));
+      if (gone.length < keys.items.length) {
+        for (const item of gone) shrink(keys, item);
+        continue;
       }
-      if (keys.items.length === 0) {
-        list.delete(m.index);
-        emptied = true;
-      }
+      dropped.push(entry);
+      list.delete(m.index);
     }
+    if (!isSeq(list) || dropped.length === 0) continue;
     // Only a list this edit emptied goes. One written empty is an opt-out
     // from the metadata directory (proposal 0126), and stays.
-    if (emptied && isSeq(list) && list.items.length === 0) node.delete("externalMetadata");
+    if (list.items.length === 0) {
+      const pair = pairOf(node, "externalMetadata");
+      node.delete("externalMetadata");
+      if (pair === undefined) whole = true;
+      else cut(pair.key, pair.value);
+    } else if (list.flow === true) {
+      flows.add(list);
+    } else {
+      for (const item of dropped) cut(item);
+    }
   }
   for (const created of model.created) {
     const c = model.collections.find((x) => x.name === created.name);
@@ -2515,10 +2654,81 @@ function editConfig(text: string | null, model: Model, source: string): string {
       for (const item of made.items) if (isMap(item)) flowSeq(item.get("keys", true), false);
     }
     const seq = doc.get("collections", true);
-    if (isSeq(seq)) seq.add(node);
-    else doc.set("collections", doc.createNode([node]));
+    if (isSeq(seq) && (seq.items.length > 0 || rangeOf(seq) === undefined)) {
+      grow(seq, node);
+      continue;
+    }
+    const written = doc.createNode([node]);
+    fresh(isMap(root) ? root : null, "collections", written);
+    doc.set("collections", written);
   }
-  return doc.toString({ flowCollectionPadding: false });
+  if (whole) return doc.toString({ flowCollectionPadding: false });
+
+  // ---- The splices, applied from the end of the text back -------------------
+  const opts = { lineWidth: 0, indent: style.step, indentSeq: style.indentSeq, flowCollectionPadding: false };
+  /** `node` as YAML lines: the first where the splice starts, the rest at column `col`. */
+  const lines = (node: unknown, col: number): string =>
+    indentLines(stringify(node, opts).replace(/\n$/, "").split("\n"), col, 1).join(eol);
+  const edits: Edit[] = [];
+  for (const { from, to } of cuts) {
+    // The comment lines just above a node, as deep as it or deeper, describe it, and go with it.
+    let start = src.lastIndexOf("\n", from - 1) + 1;
+    // The node's line's indentation: a list item's dash, or the key.
+    const depth = src.slice(start, from).search(/\S|$/);
+    while (start > 0) {
+      const prev = src.lastIndexOf("\n", start - 2) + 1;
+      const above = src.slice(prev, start);
+      const at = above.search(/\S/);
+      if (at < depth || above.charAt(at) !== "#") break;
+      start = prev;
+    }
+    edits.push({ ...cutLines(src, start, to, eol), insert: "" });
+  }
+  for (const seq of flows) {
+    const r = rangeOf(seq);
+    const end = contentEnd(src, seq);
+    /* c8 ignore next -- a list in `flows` has a range. */
+    if (r === undefined || end === undefined) return doc.toString({ flowCollectionPadding: false });
+    // The list's own comments stay in the text, so the copy written carries none.
+    const copy = seq.clone();
+    delete copy.comment;
+    delete copy.commentBefore;
+    edits.push({ start: r[0], end, insert: flowText(copy, src.charAt(r[0] + 1) === " ") });
+  }
+  for (const [seq, items] of appends) {
+    const r = rangeOf(seq);
+    const end = contentEnd(src, seq);
+    /* c8 ignore next -- a list in `appends` has a range. */
+    if (r === undefined || end === undefined) return doc.toString({ flowCollectionPadding: false });
+    const col = colOf(src, r[0]);
+    const at = lineEnd(src, end);
+    edits.push({ start: at, end: at, insert: items.map((item) => `${eol}${" ".repeat(col)}- ${lines(item, col + 2)}`).join("") });
+  }
+  for (const { start, end, col, key, value } of refills) {
+    edits.push({ start, end, insert: lines({ [key]: value }, col) });
+  }
+  for (const { map, key, value } of adds) {
+    const first = rangeOf(map?.items[0]?.key);
+    const end = map === null ? undefined : contentEnd(src, map);
+    if (first === undefined || end === undefined) {
+      const lead = src === "" || src.endsWith("\n") ? "" : eol;
+      edits.push({ start: src.length, end: src.length, insert: `${lead}${lines({ [key]: value }, 0)}${eol}` });
+      continue;
+    }
+    const col = colOf(src, first[0]);
+    const at = lineEnd(src, end);
+    edits.push({ start: at, end: at, insert: `${eol}${" ".repeat(col)}${lines({ [key]: value }, col)}` });
+  }
+  // From the end back, each before the last one applied; two that overlap write the document whole.
+  const order = edits.map((e, i) => ({ e, i })).sort((a, b) => b.e.start - a.e.start || b.i - a.i);
+  let out = src;
+  let floor = src.length;
+  for (const { e } of order) {
+    if (e.end > floor) return doc.toString({ flowCollectionPadding: false });
+    out = out.slice(0, e.start) + e.insert + out.slice(e.end);
+    floor = e.start;
+  }
+  return out;
 }
 
 /**
