@@ -1,0 +1,139 @@
+meta-reference-agent-skills-schemas:
+  personas:
+    - sara
+  journeys:
+    - s1
+  visibility: public
+  review-interval: P180D
+  eval-suite: meta
+  evals:
+    - id: pick-skill-schema
+      assertion: A reader can say which of the two SKILL.md schemas to run for a skill that is published and for one that stays in Claude Code.
+      type: capability
+      grader: ai
+    - id: explain-strict-skill-schema
+      assertion: A reader can explain why the Agent Skills schema rejects keys the Claude Code schema tolerates.
+      type: capability
+      grader: ai
+  provenance:
+    - generated-by: Claude Opus 5
+      lines: 2-9
+      integrity: sha256-e706923edc8ef7fdcd19148994326f675d5bac128efc202d7bac06b308004faa
+    - generated-by: Claude Opus 5.5
+      lines: 10-11
+      integrity: sha256-2599a2baab5dffe8a8c5d92bebe066fe7965dbd45503ad4c5697d07e2d2a2bd6
+    - generated-by: Claude Opus 5
+      lines: 13-17
+      integrity: sha256-f2e9e3ee2516c0ee211e09d9b63eec95b9a2de140cd2d2a49087ef9a0ecbcf0b
+    - generated-by: Claude Fable 5.1
+      lines: 18-19
+      integrity: sha256-6be2a8757095124edc835f76bae21bb14ab41a7b4163510c1061341b05f18d72
+    - generated-by: Claude Opus 5
+      lines: 20-22
+      integrity: sha256-179488e4f1fdffda8654a4efc6be062711df7fbf1bc61a3949a8487968e8569d
+    - generated-by: Claude Opus 5.5
+      lines: 24-28
+      integrity: sha256-f32e8b69f86e100ecf3371f9d26246557aea245a29a1b2da7f8f94f9735e9342
+    - generated-by: Claude Opus 5
+      lines: 30-36
+      integrity: sha256-46971310e7d4f750d30b45cdc42121dc03f431f32a34d859289c22ef0b2b71e1
+    - generated-by: Claude Opus 5.5
+      lines: 38-46
+      integrity: sha256-1bd6d80b6c652a234363708b3445ac90e3ea708faae02f284831d6777bd99e13
+    - generated-by: Claude Opus 5
+      lines: 48-55
+      integrity: sha256-38aaf74303d0a48f57a21bf4693b8cced9fa457b71dbc6cd5c8b8ad4648de747
+    - generated-by: Claude Fable 5.1
+      lines: 56
+      integrity: sha256-af4c90a40ba302906980a43ccae64769298486515cd0fd0001af6b68ac3bef9d
+    - generated-by: Claude Opus 5
+      lines: 57-73
+      integrity: sha256-6859d04b1d359bfb671104021a10b3c9f05d77ba6c49023f82e18ef58dcfdd98
+    - generated-by: Claude Opus 5.5
+      lines: 74
+      integrity: sha256-4a265bc0a0296c7be08853a9c14e1f9b22f18a35f0eb362fcf788f67243a2d64
+  owner:
+    - "@hawkeyexl"
+  created: 2026-08-25
+  source-of-truth:
+    - path: src/meta/schemas/agent-skills/1.0.json
+    - path: src/meta/schemas/claude-skill/2.1.json
+    - path: src/meta/schemas/claude-subagent/2.1.json
+  meta-provenance:
+    - generated-by: claude-sonnet-4-5
+      fields:
+        - /tags
+        - /action
+        - /prerequisites
+        - /next-steps
+        - /related-pages
+        - /source-of-truth
+        - /risks
+      confidence:
+        /tags: 0.85
+        /action: 0.9
+        /prerequisites: 0.75
+        /next-steps: 0.9
+        /related-pages: 0.95
+        /source-of-truth: 0.9
+        /risks: 0.95
+  citations:
+    - id: skills-subagent-is-a-different-contract
+      claim:
+        integrity: sha256-38da61ad33d97e04ae6a5bfd1a92e9d140b99e30848d450c9574e290ee900819
+      source:
+        file: src/meta/schemas/claude-subagent/2.1.json
+        lines: 5-8
+        integrity: sha256-3a39b749e62bbbfea5cffcf34ec3b6a964e17686e9689fbd00f93bace19fd864
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: skills-stacking-reports-claude-only-keys
+      claim:
+        integrity: sha256-1b2419868e193fd727e25731610e51f912be948dee321a1110669b26ecba3e0b
+      source:
+        file: src/meta/schemas/claude-skill/2.1.json
+        lines: 5
+        integrity: sha256-9b119abff34170901f532872b91539484a84be6636b6b05fd2bb90613cf2bfbe
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: skills-each-failure-is-attributed
+      claim:
+        integrity: sha256-41b32ea8d07d8e95d2ce14d2c99665c6e7a8de9e63cafdf6eaab8b3d6efdb428
+      source:
+        file: src/meta/core/validator.ts
+        lines: 951-962
+        integrity: sha256-5df291a46b86659b90de1a063b96f3fe5ec57fc2989611328d6041f2ddb1cf7d
+        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
+    - id: skills-spec-schema-rejects-claude-only-keys
+      claim:
+        lines: 31-35
+        integrity: sha256-6ca84632f69ee63b5ca10ce671faa5df29d46a71a0738b723a567c9ddcb4ed6d
+      source:
+        file: src/meta/schemas/agent-skills/1.0.json
+        lines: 8
+        integrity: sha256-e1b6fd8541ba5542d4a83ba797ad19f93213527609df4f73e3ce1416f8991246
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: skills-claude-schema-is-a-superset
+      claim:
+        integrity: sha256-5dd660b4d615a660951a6b348de9fe1ff00ddbe287bd2a19b9cb716cf9931508
+      source:
+        file: src/meta/schemas/claude-skill/2.1.json
+        lines: 5
+        integrity: sha256-9b119abff34170901f532872b91539484a84be6636b6b05fd2bb90613cf2bfbe
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: skills-row-agent-skills
+      claim:
+        lines: 10
+        integrity: sha256-8211227a14db8a280203177ef8064315de6960260b4d09a5d111e44d131f80f6
+      source:
+        file: src/meta/schemas/agent-skills/1.0.json
+        lines: 3-8
+        integrity: sha256-130fcc995b2c85763e363f319fe4278754c834deb9f140067db8502c84337343
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
+    - id: skills-row-claude-skill
+      claim:
+        lines: 11
+        integrity: sha256-2c74babf5bda1d9265cf419cad25a36bcbe4eefd69076342fb5a61ca8a264df1
+      source:
+        file: src/meta/schemas/claude-skill/2.1.json
+        lines: 3-7
+        integrity: sha256-e24ac2bbede0fdfbe959b57f8910bdd1d5f20b6f944cefbee5f056c51a47da1d
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1

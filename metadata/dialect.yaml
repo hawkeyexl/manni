@@ -1,0 +1,71 @@
+dialect:
+  personas:
+    - maya
+    - devin
+    - sara
+    - theo
+  visibility: public
+  review-interval: P180D
+  eval-suite: meta
+  evals:
+    - id: define-dialect
+      assertion: A reader can say what dialect means in manni meta.
+      type: capability
+      grader: ai
+  provenance:
+    - generated-by: Claude Opus 5
+      lines: 2-10
+      integrity: sha256-3e283f91e521c677878fedded0c8221f2ebefab885e6be32e48437e653035470
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-17
+  source-of-truth:
+    - path: src/meta/core/validator.ts
+      kind: implementation
+      lines: 63-77
+    - path: src/meta/core/validator.ts
+      kind: implementation
+      lines: 461-468
+  meta-provenance:
+    - generated-by: claude-sonnet-4-5
+      fields:
+        - /tags
+        - /action
+        - /concepts
+        - /prerequisites
+        - /next-steps
+        - /source-of-truth
+        - /risks
+        - /alt-labels
+        - /broader
+        - /narrower
+        - /scope-note
+      confidence:
+        /tags: 0.9
+        /action: 0.95
+        /concepts: 0.9
+        /prerequisites: 0.85
+        /next-steps: 0.9
+        /source-of-truth: 0.95
+        /risks: 0.95
+        /alt-labels: 0.8
+        /broader: 0.9
+        /narrower: 0.95
+        /scope-note: 0.85
+  citations:
+    - id: dialect-detected-from-meta-schema-uri
+      claim:
+        integrity: sha256-8567a38181b531825d20399f923605cdbb5c043dda262d3953ce80ad4cdf1900
+      source:
+        file: src/meta/core/validator.ts
+        lines: 66-80
+        integrity: sha256-27d7ea2baae75ac8a017379e30f20e6cea6b54d7e0a8caf82a071b7c39ce17aa
+        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
+    - id: dialects-coexist-in-one-run
+      claim:
+        integrity: sha256-8567a38181b531825d20399f923605cdbb5c043dda262d3953ce80ad4cdf1900
+      source:
+        file: src/meta/core/validator.ts
+        lines: 592-599
+        integrity: sha256-8840fb1cfdaac1a347c7aa343d4b2263d18d993c62b39c7e730df0b431727c3a
+        commit-sha: cb74827009894c38f8646504ae9eb4a2745761a9

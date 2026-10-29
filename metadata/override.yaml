@@ -1,0 +1,70 @@
+override:
+  personas:
+    - maya
+    - devin
+    - sara
+    - theo
+  visibility: public
+  review-interval: P180D
+  eval-suite: meta
+  evals:
+    - id: define-override
+      assertion: A reader can say what override means in manni meta.
+      type: capability
+      grader: ai
+  provenance:
+    - generated-by: Claude Opus 5
+      lines: 2-11
+      integrity: sha256-30cd8250a620d5a9be7ef7fed03b96e0bcd2ee2ba057ec8c75667c14d6c4e55f
+    - generated-by: Claude Opus 5
+      lines: 16
+      integrity: sha256-98fbf68ff4090ac9529db81efbce3892c04beec6d1fd5306f972a068c4177156
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-17
+  source-of-truth:
+    - path: src/meta/core/resolve-schema.ts
+      kind: implementation
+  meta-provenance:
+    - generated-by: claude-sonnet-4-5
+      fields:
+        - /tags
+        - /action
+        - /concepts
+        - /prerequisites
+        - /next-steps
+        - /source-of-truth
+        - /risks
+        - /alt-labels
+        - /broader
+        - /scope-note
+      confidence:
+        /tags: 0.85
+        /action: 0.9
+        /concepts: 0.8
+        /prerequisites: 0.75
+        /next-steps: 0.9
+        /source-of-truth: 0.9
+        /risks: 0.95
+        /alt-labels: 0.85
+        /broader: 0.8
+        /scope-note: 0.9
+  citations:
+    - id: config-overrides-match-by-glob
+      claim:
+        lines: 6-9
+        integrity: sha256-54b0a79d9d2ed68a9e7770ac6a92b66891f06b3f5d1a8155a183f31bb0c33c91
+      source:
+        file: src/meta/core/resolve-schema.ts
+        lines: 264-275
+        integrity: sha256-8076723b61abc464a9c0b625cd2c47b62a561da9389b74064519fa29efdd0796
+        commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
+    - id: schema-resolution-precedence-chain
+      claim:
+        lines: 10-15
+        integrity: sha256-b13b3b865c02e45609631afb35681e37106a0098bcc65dca0d2c72bc299f0340
+      source:
+        file: src/meta/core/resolve-schema.ts
+        lines: 553-612
+        integrity: sha256-6fb09f29f342076634fd2a5b5360017ebf8764e897dba65fb192ca2b23584538
+        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560

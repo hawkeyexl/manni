@@ -1,0 +1,85 @@
+strategy-reference-rules:
+  personas:
+    - sara
+    - theo
+  journeys:
+    - s17
+    - t1
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: src/strategy/core/check.ts
+    - path: src/strategy/core/severity.ts
+    - path: src/strategy/types.ts
+  eval-suite: strategy
+  evals:
+    - id: name-rule-severity
+      assertion: A reader can name each strategy check rule and its default severity.
+      type: capability
+      grader: ai
+    - id: fix-a-rule
+      assertion: A reader can say what edit clears a finding of any strategy check rule.
+      type: capability
+      grader: ai
+  provenance:
+    - generated-by: Claude Opus 5.5
+      lines: 2-18
+      integrity: sha256-77f79c23a9d9ac8c8271b7cb19f31ba45328ab1505ca9d1444761c1ef35f22a8
+    - generated-by: Claude Opus 5.5
+      lines: 24-60
+      integrity: sha256-38a9e2bf05bb73b8fa9b97c5f71b7d333d68ed015ed55db45e2ea14ada93bd35
+    - generated-by: Claude Opus 5.5
+      lines: 103-147
+      integrity: sha256-96277068747d59cc5dbdf3601ddc59498f187f33e85c33ffd86ab4c83ee3a345
+    - generated-by: Claude Opus 5.5
+      lines: 183-288
+      integrity: sha256-3d1d0a480042b0036203de57e1d2da92ede4c16086a75adef51c02cd1f147c82
+  owner:
+    - "@hawkeyexl"
+  created: 2026-10-22
+  citations:
+    - id: rule-id-prefix
+      claim:
+        integrity: sha256-fa944a5a320ee72e0a98196a44f8acf3239feb738469dc09dcdbb9a05da7247e
+      source:
+        file: src/strategy/core/severity.ts
+        lines: 5
+        integrity: sha256-b2492754d095e3baa831201571394600122125f485a454f89835ce05dcd4bb28
+        commit-sha: 544bb2afeed952d29440ecbcf3628ee4d33eee54
+    - claim:
+        lines: 19-22
+        integrity: sha256-22a64deba8570fb03362f3a897b3dd4fdf0f870cd909cb9967394f8d3e71be72
+      source:
+        file: src/strategy/core/severity.ts
+        lines: 14-17
+        integrity: sha256-5564e5e2d07c87f0fa002767d802671dbce1c5f6e0c8e2262c26e891560d83bb
+        commit-sha: 909b6f4a1ce153d0eb9e407f27dec0b535f798f3
+    - claim:
+        lines: 76
+        integrity: sha256-7a32eacf6090e89801e71499754c752324572e9985a7da4f22af97e93d160416
+      source:
+        file: src/strategy/commands/run.ts
+        lines: 88-89
+        integrity: sha256-43aecd1316b7d1867fd732a104fc11b1044eefa749ebc5fd8b75def0d38df51e
+        commit-sha: 909b6f4a1ce153d0eb9e407f27dec0b535f798f3
+    - id: duplicate-borrowed-fix
+      claim:
+        integrity: sha256-cbe6b15c04dfd5a4d44335da83fcbb8bb413582de91cb4b2c7bfae9d6eafea30
+      source:
+        file: src/strategy/core/check.ts
+        lines: 284-285
+        integrity: sha256-5fa0e089eaed54eb4b8a926a41d734a4d16aaac8e67011e8d00ac0e1b087e24d
+    - id: borrowed-dropped
+      claim:
+        integrity: sha256-623fc98e37d1db17da449b6fb62ddf54db9b8c79b2c027280216105307986ba9
+      source:
+        file: src/strategy/core/check.ts
+        lines: 371
+        integrity: sha256-3ec22558b4e717814e7d71e859db532caebd3e11c1be857931ea9ce0a88a011a
+    - id: borrowed-boundary
+      claim:
+        integrity: sha256-3cb0f212ddaa87bc17972824af6cefc2539bf17a298833197ca3bd92bc43c508
+      source:
+        file: src/strategy/commands/run.ts
+        lines: 59-60
+        integrity: sha256-fee2f8d74e508c4a34499fa5dc40db393ee7c2d8b362f454f3a25cd8d3a3b257

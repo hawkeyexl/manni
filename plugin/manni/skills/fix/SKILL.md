@@ -70,7 +70,7 @@ Never delete a term, a label or an alt-label, and never set a rule `off`, to mak
 ## strategy check
 
 Each finding names the field and the value, or the record, then says what to do. Under it, the report names the rule, says what it means and links the rules page. Read those lines before you edit.
-A finding can sit in a `{page}.meta.yaml` sidecar. Edit the value there, not in the page.
+A finding can sit in a manifest, such as `metadata/<id>.yaml`. Edit the value there, not in the page.
 Run `manni strategy get <id>` to see a record, its parent and the pages that name it.
 
 | Rule | Repair |

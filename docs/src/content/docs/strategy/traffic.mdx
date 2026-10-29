@@ -259,7 +259,7 @@ Three kinds of row say the strategy is wrong.
 - **An `unplanned` page.** A read page names no journey, so the strategy does
   not account for its traffic. Here it is the home page, which takes the most
   views. Add the journeys it serves to its `journeys:`, in the page or its
-  `{page}.meta.yaml` sidecar. Then `manni strategy check` holds the new
+  `metadata/<id>.yaml` manifest. Then `manni strategy check` holds the new
   values to the records.
 - **A journey with pages and no views.** Its pages exist, and no reader in
   the export reached them. `-f json` and `jq` list them:

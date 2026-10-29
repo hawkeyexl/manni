@@ -1,0 +1,67 @@
+meta-reference-schemas-manni-evals:
+  personas:
+    - sara
+  journeys:
+    - s1
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: src/meta/schemas/evals/1.0.0.json
+    - path: src/meta/schemas/evals-strict/1.0.0.json
+    - path: src/meta/core/schema-registry.ts
+  eval-suite: meta
+  evals:
+    - id: entries
+      assertion: A reader can write an inline eval entry with an id, an assertion and a grader.
+      type: capability
+      grader: ai
+    - id: graders
+      assertion: A reader can pick a grader for an eval.
+      type: capability
+      grader: ai
+  provenance:
+    - generated-by: Claude Opus 5.5
+      lines: 2-15
+      integrity: sha256-954d001e899cc429c8fdd3de0bebbf7f18a4c7a0228071946a310f05809ba3d8
+    - generated-by: Claude Opus 5.5
+      lines: 23-24
+      integrity: sha256-e35de401b3128816c9416d0bbf980ca3a437ccbab4b8108139bbec2b40458165
+    - generated-by: Claude Opus 5.5
+      lines: 30-177
+      integrity: sha256-d049487bd65893f630fd3f1f3b544b6abb9444fe7fae47da6a4bbc77082ba2e8
+    - generated-by: Claude Opus 5.5
+      lines: 182-183
+      integrity: sha256-a607fb34b6eb4b0fedbad6ea1d39c45a2bcbad9ebf97b9ea341ec03f833c2d0d
+    - generated-by: Claude Opus 5.5
+      lines: 188-245
+      integrity: sha256-47b71bc67d9c314b7db0f284cca68a7f0e9891b82dd8217a093c38ab6c009436
+    - generated-by: Claude Opus 5.5
+      lines: 258-283
+      integrity: sha256-65f6f06a3f1b76d49859c99ca90faa4f669812008d4f98b7bb65eb0bc15e90af
+    - generated-by: Claude Opus 5.5
+      lines: 286
+      integrity: sha256-2433d2048db449c8a2ccb844050eb72db50d81c92c4c0d7677757617a8354144
+    - generated-by: Claude Opus 5.5
+      lines: 289-297
+      integrity: sha256-f5eef99710152b1bc938c57710c53d0bc74f8990fc9003ad8ab979f7de52b0e1
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-26
+  meta-provenance:
+    - generated-by: claude-sonnet-4-5
+      fields:
+        - /resource
+        - /tags
+        - /action
+        - /prerequisites
+        - /next-steps
+        - /related-pages
+        - /risks
+      confidence:
+        /resource: 0.95
+        /tags: 0.85
+        /action: 0.9
+        /prerequisites: 0.8
+        /next-steps: 0.85
+        /related-pages: 0.9
+        /risks: 0.95

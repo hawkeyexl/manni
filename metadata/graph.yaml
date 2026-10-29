@@ -1,0 +1,35 @@
+graph:
+  visibility: public
+  review-interval: P180D
+  eval-suite: graph
+  evals:
+    - id: what-it-does
+      assertion: A reader can say what manni graph derives a graph from, and that nothing in it is inferred from prose.
+      type: capability
+      grader: ai
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-24
+  meta-provenance:
+    - generated-by: claude-sonnet-4-5
+      fields:
+        - /tags
+        - /action
+        - /related-pages
+      confidence:
+        /tags: 0.75
+        /action: 0.95
+        /related-pages: 0.75
+  provenance:
+    - generated-by: Claude Opus 5.5
+      lines: 2-45
+      integrity: sha256-6ab75e25a9d1a646025b98f38f67cb8c5349772f9575b6125e55ba2971cdf4c4
+    - generated-by: Claude Opus 5.5
+      lines: 47-66
+      integrity: sha256-8754ebbe218af7cbe0e79849ec14c20f1cf50eebb90391da5fd762a1f272734f
+    - generated-by: GPT-6
+      lines: 67
+      integrity: sha256-bcd1d913a76a5fb526a3e5fcc208954ff825d30022dbf930b7e79e34cd989b5e
+    - generated-by: Claude Opus 5.5
+      lines: 68-104
+      integrity: sha256-94d775d1b7c3f258807512316972a11de90c5d6bb5da0a892faf55cecb059034

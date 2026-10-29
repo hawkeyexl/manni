@@ -1,0 +1,39 @@
+meta-reference-glossary:
+  personas:
+    - maya
+    - devin
+    - sara
+    - theo
+  visibility: public
+  review-interval: P180D
+  eval-suite: meta
+  evals:
+    - id: find-term
+      assertion: A reader can find the short definition of any term manni meta or manni graph uses and open its page.
+      type: capability
+      grader: ai
+  provenance:
+    - generated-by: Claude Opus 5.5
+      lines: 2-5
+      integrity: sha256-78af1005cd473a05d3524425a1039ce35889bb6ed89f2e5e5cd1a630fb9428bc
+    - generated-by: Claude Opus 5
+      lines: 7-22
+      integrity: sha256-17be007a54295bd2f09c4e975e5d94b78cf4c37773d653ab31a6dde625c5df8c
+    - generated-by: Claude Opus 5.5
+      lines: 24-62
+      integrity: sha256-e897584644adc0878a8f9edca571d6a7f798961f1d216e4d0adca165d0298f06
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-17
+  meta-provenance:
+    - generated-by: claude-sonnet-4-5
+      fields:
+        - /tags
+        - /action
+        - /risks
+        - /next-steps
+      confidence:
+        /tags: 0.85
+        /action: 0.75
+        /risks: 0.95
+        /next-steps: 0.75

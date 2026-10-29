@@ -1,0 +1,29 @@
+tracevals-reference:
+  personas:
+    - maya
+    - devin
+    - sara
+    - theo
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: src/tracevals/cli.ts
+  eval-suite: tracevals
+  evals:
+    - id: find-reference-page
+      assertion: A reader can pick the reference page that answers a lookup about a command, config key, grader, or report field.
+      type: capability
+      grader: ai
+  provenance:
+    - generated-by: Claude Opus 5
+      lines: 2-11
+      integrity: sha256-b8deaf60f5e5f623c46016d86bfc1e8f453a8429c3b9ef94215319cfa70f4b50
+    - generated-by: Claude Sonnet 5.5
+      lines: 12
+      integrity: sha256-330824f183f39196363120f73bb766ea1afc74200665b734cd4fcc5f8f31eb19
+    - generated-by: Claude Opus 5
+      lines: 13-65
+      integrity: sha256-2222491c137ae1c774d099b8c329c018af1ad3c70a59e51656d6438973d88819
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-16

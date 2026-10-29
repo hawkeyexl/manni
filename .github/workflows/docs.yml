@@ -82,7 +82,7 @@ jobs:
         run: node dist/cli.js strategy check --format github
       # The docs cite this repository's own sources, so one checkout answers
       # both ends of every pin. Bare, like the steps above, so the pages come
-      # from the `site` collection and the entries from its sidecar.
+      # from the `site` collection and the entries from metadata/<id>.yaml.
       #
       # This gate exists because the check only ever ran when someone asked
       # for it. #61 shifted the lines of 25 citations and nothing looked. It

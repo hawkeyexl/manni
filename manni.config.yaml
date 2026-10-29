@@ -30,6 +30,10 @@
 # pages against this checkout, and every other cite key is a default, so it
 # needs no section of its own.
 collections:
+  # The site declares no externalMetadata, so each page's external values
+  # (personas, journeys, evals, citations) live in metadata/<id>.yaml. The
+  # page's id finds that file, so a rename or an edit never strands them
+  # (proposal 0126). MANNI_EXTERNAL_METADATA_DIR moves the directory.
   - name: site
     paths:
       - "docs/src/content/docs/**/*.{md,mdx}"
@@ -48,13 +52,6 @@ collections:
     # of documents lives, not a setting of the accessibility tool — the whole
     # reason a collection is declared once for every tool to read.
     url: http://127.0.0.1:4321/manni/
-    externalMetadata:
-      - file: "{page}.citations.yaml"
-        keys: [citations]
-      # No `keys` (proposal 0068): this manifest owns every other field the
-      # page's schemas mark `x-manni-location: external`, so a page's
-      # bookkeeping sits beside it and never reaches the published site.
-      - file: "{page}.meta.yaml"
   # The content strategy, one record per audience, persona and journey
   # (proposal 0102). `manni strategy check` holds every page's audiences:,
   # personas: and journeys: to these records. The Docs workflow's
@@ -62,7 +59,8 @@ collections:
   #
   # Each record's evidence pins live beside it in `{record}.citations.yaml`,
   # written and checked by `manni cite` (proposal 0108). A persona pins its
-  # goals and pains by pointer, as `theo.md#/pains/0`.
+  # goals and pains by pointer, as `theo.md#/pains/0`. It declares its own
+  # manifest, so it does not read metadata/.
   - name: strategy
     paths:
       - "docs/content-strategy/{audiences,personas,journeys}/*.md"
@@ -187,7 +185,7 @@ site:
 
 # The evals tool grading this site. A bare `manni docevals run` reads the
 # `site` collection above, the same pages a bare `manni meta validate` reads.
-# Each page's evals sit in its `{page}.meta.yaml` manifest, beside an
+# Each page's evals sit in its `metadata/<id>.yaml` manifest, beside an
 # `eval-suite:` naming the domain the page documents. The fixture showcase the
 # tool's own tests run lives beside its fixtures, in
 # test/docevals/fixtures/pages/manni.config.yaml.
@@ -284,7 +282,7 @@ strategy:
 
 # The graph tool over this site. Its own key, its own settings; the metadata
 # tool above never reads them. It declares no document set of its own: the
-# `site` collection is the one every tool reads, and its `{page}.meta.yaml`
+# `site` collection is the one every tool reads, and its `metadata/<id>.yaml`
 # manifests reach the graph exactly as they reach `manni meta validate`.
 # `npm run docs:check-graph` names the graph section by path, builds it and
 # checks it, then asserts that a manifest-only value reached the graph.

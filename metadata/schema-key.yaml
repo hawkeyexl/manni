@@ -1,0 +1,63 @@
+schema-key:
+  personas:
+    - maya
+    - devin
+    - sara
+    - theo
+  visibility: public
+  review-interval: P180D
+  eval-suite: meta
+  evals:
+    - id: define-schema-key
+      assertion: A reader can say what the $schema key means in manni meta.
+      type: capability
+      grader: ai
+  provenance:
+    - generated-by: Claude Opus 5
+      lines: 2-13
+      integrity: sha256-415e9628eb9a66351f9f27d1c2cd0848410dddbe9c6431421b496a41f452d501
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-17
+  source-of-truth:
+    - path: src/meta/core/resolve-schema.ts
+    - path: src/meta/core/validator.ts
+  meta-provenance:
+    - generated-by: claude-sonnet-4-5
+      fields:
+        - /tags
+        - /action
+        - /concepts
+        - /next-steps
+        - /source-of-truth
+        - /risks
+        - /broader
+        - /scope-note
+        - /prerequisites
+      confidence:
+        /tags: 0.85
+        /action: 0.9
+        /concepts: 0.85
+        /next-steps: 0.9
+        /source-of-truth: 0.95
+        /risks: 0.9
+        /broader: 0.75
+        /scope-note: 0.9
+        /prerequisites: 0.85
+  citations:
+    - id: schema-key-takes-a-string-or-a-list
+      claim:
+        integrity: sha256-0cf73e89c65731092a4a17e7e787de8fd5defa46a02ccf02f77deccb3be45f32
+      source:
+        file: src/meta/core/resolve-schema.ts
+        lines: 277-286
+        integrity: sha256-71ef438f3ca35d85e21c28ff90ee155ade916de0a113151793b8687fc90e4cc3
+        commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
+    - id: schema-key-stripped-before-validation
+      claim:
+        integrity: sha256-0cf73e89c65731092a4a17e7e787de8fd5defa46a02ccf02f77deccb3be45f32
+      source:
+        file: src/meta/core/validator.ts
+        lines: 946-948
+        integrity: sha256-b8f39d6d21f30a400cabe25059d553fc2d70ec3f6633292881c053d55975c4ca
+        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb

@@ -1,0 +1,36 @@
+test-reference-cli:
+  personas:
+    - devin
+    - maya
+    - sara
+  journeys:
+    - d17
+    - s19
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: src/test/cli.ts
+    - path: src/test/commands/procedures.ts
+    - path: src/shared/tools.ts
+    - path: src/test/core/judge-run.ts
+  eval-suite: test
+  evals:
+    - id: compose-command
+      assertion: A reader can compose a manni test procedures command from the documented arguments and flags.
+      type: capability
+      grader: ai
+    - id: read-message
+      assertion: A reader can match a manni test procedures message to its cause and its exit code.
+      type: capability
+      grader: ai
+    - id: evals-per-run
+      assertion: A reader can say which evals a manni test tasks run gets, and where each one comes from.
+      type: capability
+      grader: ai
+  provenance:
+    - generated-by: Claude Opus 5.5
+      lines: 2-986
+      integrity: sha256-a48b05ccdad73324f39b313083a6632a173b3751a8aaeb8d960a237dff0f012d
+  owner:
+    - "@hawkeyexl"
+  created: 2026-10-05

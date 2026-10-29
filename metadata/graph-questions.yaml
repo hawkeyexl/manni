@@ -1,0 +1,29 @@
+graph-questions:
+  personas:
+    - maya
+  journeys:
+    - m27
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: src/graph/core/questions.ts
+    - path: src/graph/commands/fill-questions.ts
+    - path: src/graph/commands/check.ts
+    - path: src/graph/commands/export.ts
+  eval-suite: graph
+  evals:
+    - id: draft-and-review
+      assertion: A reader can draft sample questions with graph fill and say how to mark a draft as reviewed.
+      type: capability
+      grader: ai
+    - id: keep-pins-true
+      assertion: A reader can say what graph check reports when a pinned answer moves, and which command re-pins it.
+      type: capability
+      grader: ai
+  owner:
+    - "@hawkeyexl"
+  created: 2026-10-18
+  provenance:
+    - generated-by: Claude Opus 5.5
+      lines: 2-316
+      integrity: sha256-0d8e4c7ee9f13aa31b39c87f01767a1b51000cedff76e5e21f275bc2b05d4126

@@ -145,11 +145,11 @@ records.
 | Field | Names | Where it lives |
 |---|---|---|
 | `audiences:` | audience records | the page |
-| `personas:` | persona records | the page or its `{page}.meta.yaml` sidecar |
-| `journeys:` | journey records | the page or its `{page}.meta.yaml` sidecar |
+| `personas:` | persona records | the page or its `metadata/<id>.yaml` manifest |
+| `journeys:` | journey records | the page or its `metadata/<id>.yaml` manifest |
 
-A value in a sidecar counts as one in the page does. A finding about it sits
-at the sidecar's line.
+A value in a manifest counts as one in the page does. A finding about it sits
+at the manifest's line.
 
 {/* cite field-gated-on-records */}
 A field is checked only when the set holds a record of its type. A docset
@@ -169,8 +169,6 @@ collections:
   - name: site
     paths:
       - "docs/src/content/docs/**/*.{md,mdx}"
-    externalMetadata:
-      - file: "{page}.meta.yaml"
   - name: strategy
     paths:
       - "docs/content-strategy/{audiences,personas,journeys}/*.md"

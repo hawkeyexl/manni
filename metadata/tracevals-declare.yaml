@@ -1,0 +1,38 @@
+tracevals-declare:
+  personas:
+    - maya
+  journeys:
+    - m21
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: src/meta/schemas/artifact-evals/1.1.0.json
+    - path: src/tracevals/evals/extract.ts
+  eval-suite: tracevals
+  evals:
+    - id: declare-an-eval
+      assertion: A reader can write a metadata.evals entry with an id, an assertion and a grader, and choose its severity.
+      type: capability
+      grader: ai
+  provenance:
+    - generated-by: Claude Opus 5
+      lines: 2-79
+      integrity: sha256-7a3b96c86f288e765d322aec8c5973d9b9b3b18cfdf87b5ba1a4402d8529172c
+    - generated-by: Claude Opus 5.5
+      lines: 80
+      integrity: sha256-6ca6eea69d1ecb3ef1eeb081929787d797a60ebc90618720919b82a6b68f00dc
+    - generated-by: Claude Opus 5
+      lines: 81-167
+      integrity: sha256-77db583fb69e31843d44a2f5c3aea441b1c3f03030e3d2768cae9219760638d5
+    - generated-by: Claude Opus 5
+      lines: 171
+      integrity: sha256-f1b901847390b0ed7e374e7c1e464ec17b46a427c487a5ad6cbd2906405083d5
+    - generated-by: Claude Opus 5
+      lines: 176-181
+      integrity: sha256-5ee69bf6306a6c4dc174576503ffb7c2c8289d5223cdf8e5e2b84d8d0e786e2d
+    - generated-by: Claude Opus 5
+      lines: 185-206
+      integrity: sha256-e249b6ac034279a41520376d5074cc5affe5f0aa0b9713d9fb8906d40ba8381a
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-16

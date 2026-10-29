@@ -658,7 +658,7 @@ npm run docs:check-docevals  # the evals tool over the whole site, deterministic
 npm run docs:check-graph  # build a graph of docs/src/content/docs/graph/ from
                         # the root config's graph: section, check it against
                         # the bundled shapes, and assert the pages'
-                        # {page}.meta.yaml manifests reached it. Needs `build`.
+                        # metadata/<id>.yaml manifests reached it. Needs `build`.
 node dist/cli.js docevals run --ai-only  # the site's judged evals, on this machine
                         # with llama-cpp and granite-4.1-3b-q2 from the root
                         # config. Local only: CI never runs it, because a CPU

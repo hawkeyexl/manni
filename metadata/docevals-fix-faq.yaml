@@ -1,0 +1,45 @@
+docevals-fix-faq:
+  personas:
+    - theo
+  journeys:
+    - t6
+  provenance:
+    - generated-by: Claude Fable 5.1
+      lines: 2-19
+      integrity: sha256-1116deb4199519574fea311919acd539992c1f8b6f57554650c80e330ed5e8be
+    - generated-by: Claude Fable 5.1
+      lines: 23-39
+      integrity: sha256-855c3599e55974fddd5d54dcc1b1393c1bd9d8f02cf46005aec0fac9b558d2fd
+    - generated-by: Claude Fable 5.1
+      lines: 44-46
+      integrity: sha256-0325e124ead6ee5e396307e41361dc1c3f4dbd146821d691f4de793cd54300ec
+    - generated-by: Claude Fable 5.1
+      lines: 51-53
+      integrity: sha256-d66f7d3b9d687b09fe5cc6cbcdd47ac04479e53732ae94ad64a91d18c1817225
+    - generated-by: Claude Opus 5
+      lines: 55-68
+      integrity: sha256-f571943cd2a27a6fe51166dfae7992ab0260e42ae26cec972a1a56e22e0f59fd
+    - generated-by: Claude Fable 5.1
+      lines: 70
+      integrity: sha256-4f2da5ec9825e090c5fc33b749e8154f66586758aac48cc9bbdc6561b66b1549
+    - generated-by: Claude Opus 5
+      lines: 72-74
+      integrity: sha256-5c09839f3011c99a7044ed23f37943dfc19f35effbffdc63ed1b8cef2293a019
+    - generated-by: Claude Fable 5.1
+      lines: 76-78
+      integrity: sha256-5dfb3cdf0c347a084c0efbee1f7a153f6e5283641ea2cf96c1f68efc407cb97d
+    - generated-by: Claude Opus 5
+      lines: 80
+      integrity: sha256-f37bc4e0c3ae5e76b0dbc25a49b240961046877070d313b34f2ab158577a2f53
+    - generated-by: Claude Fable 5.1
+      lines: 82-95
+      integrity: sha256-a52a328a407fca6e72ab579415ffd4e91e2e7175e438b37af9750b14a1498642
+    - generated-by: Claude Opus 5
+      lines: 97
+      integrity: sha256-0059e3de53e4375415351af1c703acb6658964f54fb83a8850b2d938a067791a
+    - generated-by: Claude Fable 5.1
+      lines: 98-116
+      integrity: sha256-713b4887d828a8ff71d18c08a391cf4ef86f96a9b7988a08db9eb4b89d6fcac7
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-06
