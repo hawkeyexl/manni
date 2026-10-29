@@ -1,0 +1,31 @@
+cite-ci-stale-windows:
+  personas:
+    - devin
+    - maya
+  journeys:
+    - d18
+    - m5
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: src/cite/commands/history.ts
+    - path: src/cite/core/timeline.ts
+    - path: src/cite/reporters/pretty.ts
+    - path: test/cite/timeline.test.ts
+  eval-suite: cite
+  evals:
+    - id: add-history-job
+      assertion: A reader can add a scheduled job that runs manni cite history with a full-history checkout and keeps the JSON report.
+      type: capability
+      grader: ai
+    - id: read-window
+      assertion: A reader can say from one pretty row how long a window lasted, which releases shipped it, and why it closed.
+      type: capability
+      grader: ai
+  owner:
+    - "@hawkeyexl"
+  created: 2026-10-21
+  provenance:
+    - generated-by: Claude Opus 5.5
+      lines: 2-151
+      integrity: sha256-4a4e92bbbe99fc5fb6d20a5ce3a5a1e0e730b76021fc604280ae9772d4117473

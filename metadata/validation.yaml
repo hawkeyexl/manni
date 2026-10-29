@@ -1,0 +1,55 @@
+validation:
+  personas:
+    - maya
+    - devin
+    - sara
+    - theo
+  visibility: public
+  review-interval: P180D
+  eval-suite: meta
+  evals:
+    - id: define-validation
+      assertion: A reader can say what validation means in manni meta.
+      type: capability
+      grader: ai
+  provenance:
+    - generated-by: Claude Opus 5
+      lines: 2-9
+      integrity: sha256-f9d3d5bff172edb757ca7bb39ff8b7784e4609b94155629c5ca3d3aca68f5d2c
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-17
+  source-of-truth:
+    - path: src/meta/commands/validate.ts
+      kind: implementation
+  meta-provenance:
+    - generated-by: claude-sonnet-4-5
+      fields:
+        - /tags
+        - /action
+        - /concepts
+        - /prerequisites
+        - /next-steps
+        - /source-of-truth
+        - /risks
+        - /alt-labels
+        - /scope-note
+      confidence:
+        /tags: 0.85
+        /action: 0.9
+        /concepts: 0.9
+        /prerequisites: 0.85
+        /next-steps: 0.8
+        /source-of-truth: 0.95
+        /risks: 0.9
+        /alt-labels: 0.75
+        /scope-note: 0.9
+  citations:
+    - id: validation-begins-with-extraction
+      claim:
+        integrity: sha256-578ec2f62a07f5ca3f08f9a8fe386f689009c0e317fb48755ed9e4c4d315969a
+      source:
+        file: src/meta/commands/validate.ts
+        lines: 2-4
+        integrity: sha256-97b0094f92f878c4a00cd4ee7ff1bd55cba7c72424b6dcf89c3fe8d0961ae9ce
+        commit-sha: 7a6eb280efa865bbed56a3b498f4361c1fc35dfe

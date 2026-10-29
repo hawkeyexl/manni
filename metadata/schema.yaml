@@ -1,0 +1,57 @@
+schema:
+  personas:
+    - maya
+    - devin
+    - sara
+    - theo
+  visibility: public
+  review-interval: P180D
+  eval-suite: meta
+  evals:
+    - id: define-schema
+      assertion: A reader can say what schema means in manni meta.
+      type: capability
+      grader: ai
+  provenance:
+    - generated-by: Claude Opus 5
+      lines: 2-9
+      integrity: sha256-751d2e0ffa5ae85db2007d561909f283842650ba5124dbb4b6b5c830f189024d
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-17
+  source-of-truth:
+    - path: src/meta/core/schema-registry.ts
+      kind: implementation
+  meta-provenance:
+    - generated-by: claude-sonnet-4-5
+      fields:
+        - /tags
+        - /action
+        - /concepts
+        - /next-steps
+        - /related-pages
+        - /source-of-truth
+        - /risks
+        - /narrower
+        - /prerequisites
+        - /broader
+      confidence:
+        /tags: 0.85
+        /action: 0.9
+        /concepts: 0.85
+        /next-steps: 0.8
+        /related-pages: 0.9
+        /source-of-truth: 0.85
+        /risks: 0.95
+        /narrower: 0.75
+        /prerequisites: 0.85
+        /broader: 0.9
+  citations:
+    - id: schema-comes-from-a-builtin-a-file-or-a-url
+      claim:
+        integrity: sha256-6ed8163b63269109343f41d0ef905cce905c2227e3ce7deb686aa9f954b8a7db
+      source:
+        file: src/meta/core/schema-registry.ts
+        lines: 618-629
+        integrity: sha256-d90a35561f5a1fe78578e6f93047d7b1f1ceaa64bee2989b9729aa62642840a7
+        commit-sha: c72a188d455b54a739b4ef728a55b4adac510f0a

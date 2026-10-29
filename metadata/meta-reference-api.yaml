@@ -1,0 +1,591 @@
+meta-reference-api:
+  personas:
+    - devin
+  journeys:
+    - d3
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: src/index.ts
+  eval-suite: meta
+  evals:
+    - id: find-api-export
+      assertion: A reader can name the exported function that runs validation from a Node.js script and the result type it returns.
+      type: capability
+      grader: ai
+    - id: import-api-esm
+      assertion: A reader can import manni meta's programmatic entry point from an ES module on Node.js 24 or newer.
+      type: capability
+      grader: ai
+  provenance:
+    - generated-by: Claude Opus 5
+      lines: 2-9
+      integrity: sha256-6a4713fc714407447a580ed02724eeb0d4a043da83343bca3e2adac3492d47e6
+    - generated-by: Claude Fable 5.1
+      lines: 10
+      integrity: sha256-d0a676d4e4bb2232c2c35ccdf166df3ca985aa182689634cabd610da841b82c3
+    - generated-by: Claude Opus 5
+      lines: 12
+      integrity: sha256-c01811287846818af634bd375021b36b79dcd9b47ef1f3b7111e65e45e91bd71
+    - generated-by: Claude Fable 5.1
+      lines: 13
+      integrity: sha256-e836215d9fc5463d94c236317ae079ded9d14ba726de5dff24e767563b6f41a5
+    - generated-by: Claude Opus 5
+      lines: 14-17
+      integrity: sha256-dbca6c353efc65402ef31964631e1d51b2124b0233c6ea9215cb88c0e74304a3
+    - generated-by: Claude Fable 5.1
+      lines: 18
+      integrity: sha256-19aa5860e543323b69252623a54e1511ad5b4b1aacc51807b176827428677d99
+    - generated-by: Claude Opus 5
+      lines: 19-34
+      integrity: sha256-c39eb4a5ad85675e41aa2310fe06c26cb8140fdfd8ef6432567fa549ea1319b6
+    - generated-by: Claude Fable 5.1
+      lines: 35-36
+      integrity: sha256-ed0ecc2dd516c8ca82b4da58cba68e3ad0f9e302505d1240121621ba5bb56132
+    - generated-by: Claude Opus 5
+      lines: 37
+      integrity: sha256-f2cee7ba33ea70c7fffd26c867c529694a584bf953b3cc551103b3fd61bdd1d0
+    - generated-by: Claude Fable 5.1
+      lines: 38
+      integrity: sha256-a8c607bcf59bdb45516c8100c1d055d5a406aa5175529777b3e093e23371faeb
+    - generated-by: Claude Opus 5.5
+      lines: 39-40
+      integrity: sha256-2ab4a4dc99ceccaeb9cff8527748e64e1d712a98225dc119092b9c3ea5480c4e
+    - generated-by: Claude Fable 5.1
+      lines: 41
+      integrity: sha256-00b675a26b9656f63f6bf9402728b7882ae4bc6b5c8445811aeda9785aff00b0
+    - generated-by: Claude Opus 5
+      lines: 42-44
+      integrity: sha256-e884e0c5ced1383867ec49b7f2c09a304b60442c1280bf3d8708d82ecbb7f81c
+    - generated-by: Claude Fable 5.1
+      lines: 45
+      integrity: sha256-47548efb6039c8effcfdf9d69be2e90e69f91fea0fded4cf34bb4c633101ad3e
+    - generated-by: Claude Opus 5
+      lines: 46-55
+      integrity: sha256-7e5f465258b6162883c7218c8de81e57ba01c79ed925dde499c82e7140e7caae
+    - generated-by: Claude Opus 5.5
+      lines: 56
+      integrity: sha256-f76afe1234223389f3104c89eb7791e5bbf9ee418d4f9128807aff797d306512
+    - generated-by: Claude Opus 5
+      lines: 57-58
+      integrity: sha256-1c0e1b52fb078af07c47ec5ca6236738e3aec653d6c641ce655786bb0543b108
+    - generated-by: Claude Fable 5.1
+      lines: 61
+      integrity: sha256-927e8389d7c7db33ce5b780fdd9bb3bd0fd0608343dc3d73cd67519b3f5b4d3b
+    - generated-by: Claude Opus 5
+      lines: 62-67
+      integrity: sha256-582d3143aad01786d48acdfd0474b191c90f16ad852a98e51a6500709d8895bd
+    - generated-by: Claude Fable 5.1
+      lines: 68
+      integrity: sha256-a64017a160c1e2ee54a39f8b5e5a0b0463d34dfcb65aa913906947752c1eeea4
+    - generated-by: Claude Opus 5
+      lines: 69-78
+      integrity: sha256-d28c9a90b0c1996e9e0ca41f5740e902d8baf4c5e227e742aa35fd87cdf0c7b3
+    - generated-by: Claude Opus 5
+      lines: 80
+      integrity: sha256-fc561561cedaf100d0163247c1a54bf671c2840a3e08a5d68992d03dd73be5d5
+    - generated-by: Claude Opus 5.5
+      lines: 81
+      integrity: sha256-77c956be22d6d8b23b9d137307cee83c53e73a44771c80a7257485af3f03ca1d
+    - generated-by: Claude Opus 5
+      lines: 83-85
+      integrity: sha256-21116d693eb7200ad87daee39ce5bb434d5248b5a76e9307b227370340fbc1b3
+    - generated-by: Claude Opus 5.5
+      lines: 86
+      integrity: sha256-08ffc038ec807202bd6b725fe9d8090626c9eb13542e7f8aa9568f23a80b1696
+    - generated-by: Claude Fable 5.1
+      lines: 88-89
+      integrity: sha256-e396e2e6ed3987f7fe180bbe4d01129329c1b585e84dfa1e28a9154fa3f17dd4
+    - generated-by: Claude Opus 5
+      lines: 90-108
+      integrity: sha256-77b507e5faa9326bd957373551b2773dee65158d4dee1de765f3e7122fbb11ed
+    - generated-by: Claude Opus 5
+      lines: 114-138
+      integrity: sha256-b1976db5381bf9173987ee047ccd12376d10ed3ebe49f7014ff7d12f9482c450
+    - generated-by: Claude Opus 5.5
+      lines: 139
+      integrity: sha256-62f20cc8f50bc7c55a7ebb6640c79d9c12b4dd21136d8eb0768e141003d0677a
+    - generated-by: Claude Opus 5
+      lines: 141-143
+      integrity: sha256-20fe6fc469508160f95daf7bcc2466b257344f76ef9d43239f008c21feb7de77
+    - generated-by: Claude Opus 5.5
+      lines: 144
+      integrity: sha256-96e43ed488087e349b2db681e0d364a115fb48cfc3d86c792746017bcb689f14
+    - generated-by: Claude Opus 5
+      lines: 145
+      integrity: sha256-2f745db6f808900ac992bae9d8283745c6cb53745728ff4d3a1eb7d4a3e1ee14
+    - generated-by: Claude Fable 5.1
+      lines: 146
+      integrity: sha256-e5353fd449ff3f42b135417c4adcbb8b6444e1f6798edf1625d46fc2d3256374
+    - generated-by: Claude Opus 5.5
+      lines: 149
+      integrity: sha256-b47a78aee576c859dd46d94e762a54bfa51b659c8746dbf02335bbe54e7fb80d
+    - generated-by: Claude Opus 5
+      lines: 151
+      integrity: sha256-9e647d2a13d1c98078b1e43017964db4cb4b1d79d0ba2ffac612ee580be05fd3
+    - generated-by: Claude Opus 5
+      lines: 155
+      integrity: sha256-fcc419182b122d78a622ceaff4e371fc3fd87a9a4a54de73917680f16f33cc6d
+    - generated-by: Claude Opus 5
+      lines: 159-160
+      integrity: sha256-9d34bd3175ef64edda2b2e025299524cc41fcf0f618b5cb3125656f2e3eab8cb
+    - generated-by: Claude Opus 5
+      lines: 164-192
+      integrity: sha256-a1072c33ef2abb98c7307a8f907136b3ff32deed5438acd6d5017f7c19d96e8f
+    - generated-by: Claude Fable 5.1
+      lines: 194
+      integrity: sha256-cbce6a36ea755eee06662dbbd1afcda04c68bbeb4dcdf33706dad80e857e4a2e
+    - generated-by: Claude Opus 5
+      lines: 196
+      integrity: sha256-6142f6b98aa07cf80015ed25351353d463c8afc8697a49639f61f7453f540c1f
+    - generated-by: Claude Fable 5.1
+      lines: 197-207
+      integrity: sha256-b3396fefd8f344d17d51fde5c0c1ebcf189ec047f3dc00b28f885f7fb168f867
+    - generated-by: Claude Opus 5
+      lines: 209-220
+      integrity: sha256-685ee09536e7b738cca06d3f7ab8a98f3d8a08aab5a90cc99a0781ae53bfd391
+    - generated-by: Claude Opus 5.5
+      lines: 221
+      integrity: sha256-421ce8ea8d5ce9d5f4160b1ef587ba66036a3b79e3567ff3be179bda9344a69c
+    - generated-by: Claude Opus 5
+      lines: 222-282
+      integrity: sha256-1eafa33686b4b26a4105ed384e317fb1fc19d3f345f8bc893129f65a00eee2cb
+    - generated-by: Claude Fable 5.1
+      lines: 283
+      integrity: sha256-e993400206826ac7e5ddf5102f25a51fa99f491a0d374dcf007c8b248ccd5cd4
+    - generated-by: Claude Opus 5
+      lines: 284-287
+      integrity: sha256-01e4559e9649812ae3c1a612938cba6f8d0146e853cd7967a618cab3f405c68d
+    - generated-by: Claude Opus 5
+      lines: 290-297
+      integrity: sha256-428b301e88c99b33c0c24169fa9cb9a330694fab77df0cf96b0a6f4f22d43b5f
+    - generated-by: Claude Fable 5.1
+      lines: 298
+      integrity: sha256-682c5c677536c87d877c613218683d4f173efe7913be7611cf806166082302bb
+    - generated-by: Claude Opus 5
+      lines: 299
+      integrity: sha256-029ce8188a5552fc41b7a1c25a740cb0bdec04f6ddb76a71547cb00b91a0b87e
+    - generated-by: Claude Opus 5
+      lines: 301-302
+      integrity: sha256-37ebc4ba3126763ce22fbf41d3ab17aa4a8f638daf95301c09d972368a366ca4
+    - generated-by: Claude Opus 5
+      lines: 305
+      integrity: sha256-1d85a41c03927c2a6ac9034bddf8a931403536d32d650acd4361c5c3e2934c18
+    - generated-by: Claude Opus 5
+      lines: 308-310
+      integrity: sha256-039f64c1bfad25c3f93afdb4ce19c82c88a8b43a9b2ffbefe8872e39822475ad
+    - generated-by: Claude Opus 5.5
+      lines: 311-312
+      integrity: sha256-956a11ef0c115e3cb32c519a8ed1ca9ad97e5ae8a617b1627f9fad469c137eff
+    - generated-by: Claude Opus 5
+      lines: 314-324
+      integrity: sha256-d7b0186707d691c48272a9afb607be6140f9422da757547f6798c70760438c4b
+    - generated-by: Claude Fable 5.1
+      lines: 325
+      integrity: sha256-1ca038aa435328cfe67247608d4397929f67ce64224a07161c33f16c6aaaa391
+    - generated-by: Claude Opus 5
+      lines: 326-331
+      integrity: sha256-6bc1bb50356df548a96ed2bfbe20d0e5979b9492a7febad25e13d700e59746d4
+    - generated-by: Claude Fable 5.1
+      lines: 332
+      integrity: sha256-a418816918c5e210421f0f0fadf2744c3a908632d2fc00a1256fd799e27fdcc4
+    - generated-by: Claude Opus 5
+      lines: 333-340
+      integrity: sha256-c0a569ede8041d6a01a6659e2f8e4aa7e2449cb80c098d65c8e7774aca7e37da
+    - generated-by: Claude Fable 5.1
+      lines: 341
+      integrity: sha256-c02ccca4014d8d4c284449db7b87bdffa4dc59151a18ac577a13000ebbf749fc
+    - generated-by: Claude Opus 5
+      lines: 343-344
+      integrity: sha256-5b88e20f82dbe3ef3f6016d8dc80791f6808ddbab119f104217a0626a4fc620a
+    - generated-by: Claude Fable 5.1
+      lines: 345
+      integrity: sha256-e9fdbab132faa5d690cabc036fbeb7e2c030696602653f0ec48835c61a3375d3
+    - generated-by: Claude Opus 5
+      lines: 346-352
+      integrity: sha256-009c0efdf61420809dff68f1393e36a1258b02e8e1019b6ba1d5e73f5cbc21fb
+    - generated-by: Claude Fable 5.1
+      lines: 353
+      integrity: sha256-914c5b44ef5d0fcf109f243b77b8926534d53ab73cb4ea051e25c21420fba2dc
+    - generated-by: Claude Opus 5
+      lines: 355-363
+      integrity: sha256-0d76a91cd3087b64b5e679600a777bf25c9f4201d8c737e89310f8359dfc2071
+    - generated-by: Claude Fable 5.1
+      lines: 364
+      integrity: sha256-163309efcad4126c68d6c78e555433aebadd2095edb8d3d8f81f1a8ee1e96b98
+    - generated-by: Claude Opus 5
+      lines: 365-369
+      integrity: sha256-4c5656f33aff2396498783c48c3b8e692903495059b61a4a5d89d85f904a9dc8
+    - generated-by: Claude Fable 5
+      lines: 370
+      integrity: sha256-67569e9cfbedb2539c1c4188b9126452d80294e9b6ac3ef4d8b3b120b739434f
+    - generated-by: Claude Fable 5.1
+      lines: 372
+      integrity: sha256-84e783f5edf3f54d90bb6333474aa98fc4e5d87147ec369ca137fa67f35cf1ba
+    - generated-by: Claude Fable 5
+      lines: 373-375
+      integrity: sha256-c9c151cb176a87ff990697235325ce269283bfaa89d7ca91f901b0640d8551e0
+    - generated-by: Claude Opus 5
+      lines: 376-378
+      integrity: sha256-a60824f1636c9189607e3fc11b507fde7fb2cb1ad33161d1a5bd0ccdeba4d66b
+    - generated-by: Claude Opus 5.5
+      lines: 379
+      integrity: sha256-4d14b388a5bab037b8cc3c3d71e59020b90c5f7e7bb515d4ef3f9d0846f99132
+    - generated-by: Claude Opus 5
+      lines: 380
+      integrity: sha256-da1bd0a9013a7406444b66dc353816a0a053af11a05d29d4b3c380d872add11d
+    - generated-by: Claude Fable 5.1
+      lines: 381
+      integrity: sha256-a824196b005f61c58187e846ec30f655ee78c81829983021c1e730e5159b40fb
+    - generated-by: Claude Opus 5
+      lines: 382
+      integrity: sha256-898c9a2897cd9d18cb02b15c0293516ac14a2e418fe0d9ec6ca7cd0a6287c234
+    - generated-by: Claude Fable 5
+      lines: 383
+      integrity: sha256-944a6a2b4315d94869db6c2c6bc6b21683d5a532fa53c96af39e96682bf4e73c
+    - generated-by: Claude Opus 5
+      lines: 384
+      integrity: sha256-5e5f68d5d6e67edd076d2350edbba9fdae9dfd21eea34e9b6b14c0cb4baf4b01
+    - generated-by: Claude Fable 5.1
+      lines: 385
+      integrity: sha256-34e2d3f50f73707c2c4ffc4146033c8547e3d403ce64579de751e501f16536c3
+    - generated-by: Claude Opus 5
+      lines: 386-402
+      integrity: sha256-a72ee210423201c5a1419d7ea7521d2ae6da695b9ffbb1662876f123399589f4
+    - generated-by: Claude Fable 5.1
+      lines: 403
+      integrity: sha256-5db4410a894874c5da428a92d85d1f8b24f5ea311af65e7474e097f2e57e0191
+    - generated-by: Claude Opus 5
+      lines: 405-439
+      integrity: sha256-86aff0828f2663f1643dc171561505d4620e5818cc171a05324164e6d8a41224
+    - generated-by: Claude Fable 5.1
+      lines: 440-442
+      integrity: sha256-a9fabae9a3f50a68a145cdd7c5ed60ca8ec2e36fa935937d5d4957d473332c93
+    - generated-by: Claude Opus 5
+      lines: 444
+      integrity: sha256-893bee853d3292b8c655a62156a7f59aa9e96473623b53fd8af448d77ac51677
+    - generated-by: Claude Fable 5.1
+      lines: 445-450
+      integrity: sha256-c90d2c166fe8fc4513f6adfbb134da27a3bb9a17321015bb382159519e33d50c
+    - generated-by: Claude Opus 5
+      lines: 451-453
+      integrity: sha256-5dd07bd6581631fe44ffbf502d7e4f56092f7363f72ad352a0830e4e9e276638
+    - generated-by: Claude Opus 5.5
+      lines: 454
+      integrity: sha256-6d1d466d121a7baa6b14dc7b3d46a140438328b85df2eb6cb6f3bf9af165ed52
+    - generated-by: Claude Fable 5.1
+      lines: 455
+      integrity: sha256-52b106cd6bd95fa8c9bfe79c0f52a1c2efced785484dc36bda868926b96f4d42
+    - generated-by: Claude Opus 5.5
+      lines: 456
+      integrity: sha256-c7daaaaae76bb7800d5dc9f633a34ad35d30700d54eb40eda01254014ee1f3c8
+  owner:
+    - "@hawkeyexl"
+  created: 2026-08-23
+  meta-provenance:
+    - generated-by: claude-sonnet-4-5
+      fields:
+        - /tags
+        - /action
+        - /prerequisites
+        - /next-steps
+        - /related-pages
+        - /risks
+      confidence:
+        /tags: 0.9
+        /action: 0.95
+        /prerequisites: 0.8
+        /next-steps: 0.92
+        /related-pages: 0.95
+        /risks: 1
+  citations:
+    - id: api-sibling-tools-are-namespaces
+      claim:
+        lines: 452-453
+        integrity: sha256-c26e055f043e9d82acabb65c768f65a542ea0a87d89ed0b1fe65320c1f2e16ce
+      source:
+        file: src/index.ts
+        lines: 5-19
+        integrity: sha256-32e68e722e4426ab7bb41ef47f63226255527f3f421a4bedc9b9ca2229edfa47
+        commit-sha: a13745cefe15407b4f1c5cb2ba70d5638605c04b
+    - id: api-namespace-cannot-collide
+      claim:
+        integrity: sha256-e0357514e8b03e0b6eab0dd59d0bae4d203d732c60be94c3715935295cea6eff
+      source:
+        file: src/index.ts
+        lines: 5-7
+        integrity: sha256-0b556b0562caeb71038066fb3e3b32297581b1d01c5df4cc1cc60a9055d6329a
+        commit-sha: a13745cefe15407b4f1c5cb2ba70d5638605c04b
+    - id: api-docmeta-error
+      claim:
+        lines: 440
+        integrity: sha256-1c640d7315f632f275ea86c9c5ebc1437bfb7104d8afa887066b59ca3a648d80
+      source:
+        file: src/meta/types.ts
+        lines: 297-303
+        integrity: sha256-b10d04cab48012e007339557bca3842dbdbc8ac452ea3a38e5012c3bb8fd08c6
+        commit-sha: cb74827009894c38f8646504ae9eb4a2745761a9
+    - id: api-write-file-atomic
+      claim:
+        lines: 434
+        integrity: sha256-423101da0e47a0f817fe0f15f7ebc937717e0ce9a35bb84ca92ae15e4cbba1f9
+      source:
+        file: src/meta/index.ts
+        lines: 266
+        integrity: sha256-08b67c3e1bb6c93676019ea9101b19fbf7d8c5725fabbad52f64119059de95c2
+        commit-sha: 46ea4718fa7ee7e2ec7ed135a7a646d421ff3fb8
+    - id: api-frontmatter-exports
+      claim:
+        lines: 422-428
+        integrity: sha256-7e84bfc61624489555fc32a9a4387dd4d6cff30a8a96f0739f3b6db8ac2de6fb
+      source:
+        file: src/meta/index.ts
+        lines: 259-265
+        integrity: sha256-339b69d20016daf8fba2db1a1fce78904f7a8c5587fa1dfda4b688907c8cde79
+        commit-sha: 46ea4718fa7ee7e2ec7ed135a7a646d421ff3fb8
+    - id: api-frontmatter-path-is-shared
+      claim:
+        integrity: sha256-c0e7f18b6624dd0f939cfa29699c3f3b6ef42b6a458ca0b4a423ded06527ba3a
+      source:
+        file: src/meta/extractors/frontmatter.ts
+        lines: 1-17
+        integrity: sha256-58e8bf9ba242734a4927ce5622bb91f1f9d2cb023671e9e664e508c668dd7e8c
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: api-extractor-exports
+      claim:
+        lines: 407-411
+        integrity: sha256-59d3850f338c56e1ada867e8265c4a283d21f5266666d6b094a34dc36cf886c4
+      source:
+        file: src/meta/index.ts
+        lines: 267-270
+        integrity: sha256-b3423fe97636988ec0f1be9d8f71107d1443cebeed7b914cea1c29aff1d48e23
+        commit-sha: 46ea4718fa7ee7e2ec7ed135a7a646d421ff3fb8
+    - id: api-extraction-is-a-seam
+      claim:
+        integrity: sha256-5894276f29bac034ddb4d1be92e9ad4f534e387eaf6b3ffc7f6a4c9262bc4109
+      source:
+        file: src/meta/extractors/index.ts
+        lines: 1-5
+        integrity: sha256-604e4c7e7a4bc5d47ee131111c90ebaee544de3b703117383d697e120241e2a7
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: api-reporter-exports
+      claim:
+        lines: 363-394
+        integrity: sha256-284bc357b300faf4e696e5275c81499e069d4fecd2b975e112a500d339cafb78
+      source:
+        file: src/meta/index.ts
+        lines: 221-258
+        integrity: sha256-e5fd9f5fdf780b3dd4a2752f6e90b496a650c6559a8e1fff6971d16f6246aec4
+        commit-sha: 46ea4718fa7ee7e2ec7ed135a7a646d421ff3fb8
+    - id: api-reporters-are-pure-formatting
+      claim:
+        integrity: sha256-016f9ff2e016967e9744e5d769a9fc1ac0e684aa918634145de9f871e0040dbc
+      source:
+        file: src/meta/reporters/index.ts
+        lines: 1-14
+        integrity: sha256-c37576afb5e998c2da2c4279353932e438dd87b382a9259b0f01d60b66969d7c
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: api-config-exports
+      claim:
+        lines: 339-355
+        integrity: sha256-fbd8017fa6680e8a5ce1fa01e0226390adbbb0928fc6a78b16ce694032218c5b
+      source:
+        file: src/meta/index.ts
+        lines: 76-91
+        integrity: sha256-636572d77df808a89eea08e68d3fe88e8f9275a34521dd2df0ef942e73cbc0ac
+        commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
+    - id: api-config-loading-exports
+      claim:
+        integrity: sha256-6fa15027d0666428f2e3c9e93cfe712651aa75313f8365e3482148c71376b92f
+      source:
+        file: src/meta/index.ts
+        lines: 60-64
+        integrity: sha256-3a4a32000b85e7b40442f6766123dce487470f5e66aafef49bd5ef6656ea6e09
+        commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
+    - id: api-schema-cache-exports
+      claim:
+        lines: 321-327
+        integrity: sha256-d91e06c0bfc13f9fc0b6c3c0e3dc0443ed7a0a9fc08cabf20a9b733dc9d459fe
+      source:
+        file: src/meta/index.ts
+        lines: 213-220
+        integrity: sha256-02829cc666f2bab47a19d19fa2c0604f6c9a5bd8d8e95fad448f3510ddbb77c9
+        commit-sha: 46ea4718fa7ee7e2ec7ed135a7a646d421ff3fb8
+    - id: api-schema-cache-is-shared-across-runs
+      claim:
+        integrity: sha256-0e7d4c8fe6decc6987bf0a11403a7ba02c27f2b94ec4cf13f7943230b82f4f72
+      source:
+        file: src/meta/core/schema-cache.ts
+        lines: 1-12
+        integrity: sha256-bccfc18504dfc489bda12b75dc4bcab19559336ab8f44a237933e43e85a415d2
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: api-schema-loading-exports
+      claim:
+        lines: 298-310
+        integrity: sha256-7a03718053570aff256183e34f4befd233605d4f0f59651188957f68b8affbc4
+      source:
+        file: src/meta/index.ts
+        lines: 92-106
+        integrity: sha256-22262f77a0dbe6f37ebf8197f9a715fc26e3ed23aeadd08b4bb6b1fb02c05e85
+        commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
+    - id: api-schema-resolution-exports
+      claim:
+        lines: 288-292
+        integrity: sha256-f640763fd4b2ee02f9edc6bf90d07df6a3e7b2158b1da78970b45ec99ea3b317
+      source:
+        file: src/meta/index.ts
+        lines: 53-59
+        integrity: sha256-f5de1bbc3f6b72a9a1088925893f55ed2f195072c432abee1895b47a8ef4a71e
+        commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
+    - id: api-resolution-precedence-chain
+      claim:
+        integrity: sha256-c7d76a2de1d69c9102f98b92876f6c4dc01344766d0445c893ae66154c1f5eca
+      source:
+        file: src/meta/core/resolve-schema.ts
+        lines: 1-10
+        integrity: sha256-b9200715546d364ab046739b511f84e75a7099f01425729406288040da602d4f
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
+    - id: api-derive-exports
+      claim:
+        lines: 220-276
+        integrity: sha256-1a1646907d70ff2feb1b949061dbda2662d6e23d6a0257fb9b4a9d3bac7590ff
+      source:
+        file: src/meta/index.ts
+        lines: 131-201
+        integrity: sha256-e61c8d55817ef6797baa0e1764bf996958eb2bcfebdf755c6fe5bcb670618762
+        commit-sha: 46ea4718fa7ee7e2ec7ed135a7a646d421ff3fb8
+    - id: api-derived-values-never-merge
+      claim:
+        integrity: sha256-a92bc993513d0f9595ba9ae03fa64b4186573f9f746c60ddd828c13f9f90b389
+      source:
+        file: src/meta/core/derive/types.ts
+        lines: 1-20
+        integrity: sha256-3bbc51e1f4e8ce16a40095800615f18683d07ccf26631c983b84af436fdcd8e0
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: api-reencrypt-exports
+      claim:
+        lines: 205-207
+        integrity: sha256-103433af6bd761ce6f7bf242b485fe5d7d4e0832b943c9ec48f19471b2b4d7d3
+      source:
+        file: src/meta/index.ts
+        lines: 46-52
+        integrity: sha256-8fb32080453f9670608f398a52b0ce76cfa1f9df8202fbb8763901fcc14b3b36
+        commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
+    - id: api-reencrypt-is-metas-half
+      claim:
+        integrity: sha256-d92bd0f8e71a7e1a060db18911916728af64b8db43686d97677471d438a7e307
+      source:
+        file: src/meta/core/reencrypt.ts
+        lines: 1-16
+        integrity: sha256-404b7a4679c5387ac0bcca6254f1aca4f9ed32a2d1c33f0c3d9886859875eed2
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: api-external-metadata-exports
+      claim:
+        lines: 139-162
+        integrity: sha256-d09c71eedb2601bb84ded353a3c155f2bc3402968587d74edcecb209db292540
+      source:
+        file: src/meta/index.ts
+        lines: 111-130
+        integrity: sha256-a6dc37e728ee97529db6d35cb4fb075930756aae92daf31a1a4ca2dacc0db81c
+        commit-sha: d03514bdfa434eba44147e1a6f4e928a6f0f644b
+    - id: api-manifest-joins-at-run-time
+      claim:
+        integrity: sha256-32d03c243ae19ab92851b4168f20b8aaf2a525e29f42b82bfc6383e5965419b9
+      source:
+        file: src/meta/core/external-metadata.ts
+        lines: 1-20
+        integrity: sha256-eda0d46c747ca14a224c3d76b66a9f5f0728b40d02c138274d9601720ac3322b
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
+    - id: api-collection-exports
+      claim:
+        lines: 112-118
+        integrity: sha256-bb5dbb05255d457bd65a4af74e4113c88f3420540480db2fdb5546396e020b77
+      source:
+        file: src/meta/index.ts
+        lines: 65-75
+        integrity: sha256-894a01bbe3418b2318f5704789f9f024a7634b198fdbb52bf0f1af09f7ea8b74
+        commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
+    - id: api-collections-live-in-the-shared-layer
+      claim:
+        integrity: sha256-13f2d8fcf45318a8c00965cd49aef40127376301976a8f3a92f55aff89463945
+      source:
+        file: src/meta/index.ts
+        lines: 61-64
+        integrity: sha256-36edf1058d43a0d2bdf27b303018e40b81a8d40dd56abe74352780878d84f8b1
+        commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
+    - id: api-what-a-collection-is
+      claim:
+        integrity: sha256-22a0a343bcbbe1475ae87c6f124aec5782b23fee490bc0b52f2fb9e644d4d0b1
+      source:
+        file: src/shared/collections.ts
+        lines: 1-20
+        integrity: sha256-03cf4847b019f9736421dc9ea5f773cb1a2175d2592ccd0dcf1c0860ab822299
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
+    - id: api-validation-engine-exports
+      claim:
+        lines: 79-88
+        integrity: sha256-41b184e1435e54460b05598097474103fa03604221720ec20575f694cd8df69d
+      source:
+        file: src/meta/index.ts
+        lines: 35-52
+        integrity: sha256-315ed288e875b4288150404cfda8b3d9aad17a550011c3ecf5631cafb2b96207
+        commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
+    - id: api-operational-failures-are-exit-2
+      claim:
+        lines: 68
+        integrity: sha256-a64017a160c1e2ee54a39f8b5e5a0b0463d34dfcb65aa913906947752c1eeea4
+      source:
+        file: src/shared/run.ts
+        lines: 24-37
+        integrity: sha256-731c8ac7d223ae66f23904fe28271963d5e352e3f70564e346d97a5d392d4cb5
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: api-command-core-exports
+      claim:
+        lines: 35-65
+        integrity: sha256-77421a467432c8bab203e0b87a0e3a5376d45fc672f88f3b305a068dd65de3d5
+      source:
+        file: src/meta/index.ts
+        lines: 2-34
+        integrity: sha256-c7d6caa7862646cb973d2712780d9898789e793d6f8de639677be0f373570304
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: api-is-esm-only
+      claim:
+        integrity: sha256-e4e8b5909e205c54d2d8e5d560d367c7b6f319452d9e19a4a87a81ba435f006b
+      source:
+        file: package.json
+        lines: 5-19
+        integrity: sha256-ff424e79b645173f86d0a58dc20c02e631fa3bbc52749dece17c3818d71fb4f0
+        commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
+    - id: api-entry-point-alongside-the-cli
+      claim:
+        integrity: sha256-d0a676d4e4bb2232c2c35ccdf166df3ca985aa182689634cabd610da841b82c3
+      source:
+        file: src/index.ts
+        lines: 1-2
+        integrity: sha256-8145ecb10228c9cdf0a3bebf4e5b667d0e5e6f8b398223fb130d2f7121d8201f
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: api-index-once-membership-per-file
+      claim:
+        lines: 165-168
+        integrity: sha256-98ad1db8ef914525295f6511614731df768dd1e4a80f7d492046c819a7f77a7c
+      source:
+        file: src/meta/core/external-metadata.ts
+        lines: 1-20
+        integrity: sha256-eda0d46c747ca14a224c3d76b66a9f5f0728b40d02c138274d9601720ac3322b
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
+    - id: api-cores-have-no-cli-plumbing
+      claim:
+        integrity: sha256-68e9c41fd7d5d06aa7ef5a1556c586a563bde3e033fcf25d80781b053a1f5acc
+      source:
+        file: src/meta/commands/validate.ts
+        lines: 1-12
+        integrity: sha256-93ea4728e27eb7e3fe74de5b18835507c1b62d8e528c9f6a4ce77f6609fdaccf
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
+    - id: api-json-format-serializes-these-shapes
+      claim:
+        integrity: sha256-56d798bce3c337402d8fe93ebf6272b66912b251298351030af5f8278d3cf80e
+      source:
+        file: src/meta/reporters/index.ts
+        lines: 303-314
+        integrity: sha256-96ed1375b03b05a524d20e67fe16600c5dae6b6e7dba967dc7678a0ad2bdb641
+        commit-sha: cb74827009894c38f8646504ae9eb4a2745761a9

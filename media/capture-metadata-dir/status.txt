@@ -1,0 +1,4 @@
+ M docs/guide.md
+ D docs/guide.meta.yaml
+ M manni.config.yaml
+?? metadata/

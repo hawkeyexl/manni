@@ -1,0 +1,2 @@
+313	Using manni.config.yaml (.)
+404	manni: Manifest docs/guide.meta.yaml:1 names "docs/guide.md", which this run did not load. Fix the entry, or remove the file.

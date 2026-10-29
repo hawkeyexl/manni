@@ -2,9 +2,9 @@
  * semantic-release plugin: re-stamp the docs' derived fields for the release.
  *
  * Runs in `prepare`, after `release-sync-versions.mjs` has rewritten the
- * install pins and before `@semantic-release/git` commits. The pages and the
- * manifests beside them, `<page>.meta.yaml`, are in that plugin's `assets`, so
- * the `chore(release): X.Y.Z` commit carries stamps that agree with it.
+ * install pins and before `@semantic-release/git` commits. The pages and their
+ * manifests, `metadata/<id>.yaml`, are in that plugin's `assets`, so the
+ * `chore(release): X.Y.Z` commit carries stamps that agree with it.
  *
  * A pin rewritten in a page is a body change, so the page's `last-updated`
  * and `provenance` stop agreeing with git the moment the sync runs. Without

@@ -1,10 +1,11 @@
 /**
  * manni graph over its own docs section, through the repo-root config.
  *
- * The root `manni.config.yaml` is the one source of truth for the site: its
- * `site` collection declares the `{page}.meta.yaml` manifests that
- * `manni meta validate` reads, and its `graph:` section carries the graph
- * settings. So this build reads each page's metadata exactly as meta does.
+ * The root `manni.config.yaml` is the one source of truth for the site. Its
+ * `site` collection reads the metadata directory, one `metadata/<id>.yaml`
+ * manifest per page, as `manni meta validate` does. Its `graph:` section
+ * carries the graph settings. So this build reads each page's metadata
+ * exactly as meta does.
  *
  * It builds the graph of docs/src/content/docs/graph/, checks it against the
  * bundled shapes, and then proves the manifests were read. A page's `created`
@@ -14,8 +15,8 @@
  * green; this is the assertion that catches it.
  *
  * Then the other direction (proposal 0110). `created` is a field its schema
- * prefers in a sidecar, so a `--no-authoring` build of the same section must
- * hold none of those manifest-only dates.
+ * marks external, so a `--no-authoring` build of the same section must hold
+ * none of those manifest-only dates.
  *
  * Usage: npm run docs:check-graph   (needs `npm run build` first)
  */
@@ -70,9 +71,15 @@ async function manifestOnlyCreated(graphArgs) {
   for (const { s, o } of matches) {
     if (!s.startsWith(DOC_PREFIX)) continue;
     const page = s.slice(DOC_PREFIX.length);
-    const manifest = page.replace(/\.mdx?$/, ".meta.yaml");
-    const onPage = /^created:/m.test(frontmatterOf(await readFile(page, "utf8")));
-    const inManifest = await readFile(manifest, "utf8").then(
+    const frontmatter = frontmatterOf(await readFile(page, "utf8"));
+    const onPage = /^created:/m.test(frontmatter);
+    // A page's manifest is found by its id, as meta finds it (proposal 0126).
+    const id = parse(frontmatter)?.id;
+    if (typeof id !== "string") {
+      console.warn(`${page}: no id, so its metadata/<id>.yaml is not checked.`);
+      continue;
+    }
+    const inManifest = await readFile(`metadata/${id}.yaml`, "utf8").then(
       (text) => new RegExp(`^  created: ${o.value}\r?$`, "m").test(text),
       () => false,
     );
@@ -85,7 +92,7 @@ const fromManifest = await manifestOnlyCreated([]);
 
 if (fromManifest === 0) {
   console.error(
-    "docs:check-graph: no dcterms:created came from a {page}.meta.yaml manifest. " +
+    "docs:check-graph: no dcterms:created came from a metadata/<id>.yaml manifest. " +
       "The graph build is not reading the site's external metadata.",
   );
   process.exit(1);
@@ -100,7 +107,7 @@ const leaked = await manifestOnlyCreated(["-g", USER_FACING]);
 if (leaked > 0) {
   console.error(
     `docs:check-graph: a --no-authoring build still carries ${leaked} created dates only a manifest holds. ` +
-      "Values a schema prefers in a sidecar are reaching a graph built without author-facing content.",
+      "Values a schema marks external are reaching a graph built without author-facing content.",
   );
   process.exit(1);
 }

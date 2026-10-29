@@ -1,0 +1,29 @@
+tracevals-ci-consume-results:
+  personas:
+    - devin
+  journeys:
+    - d15
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: src/tracevals/history.ts
+    - path: src/tracevals/types.ts
+  eval-suite: tracevals
+  evals:
+    - id: consume-json
+      assertion: A reader can write the JSON report to a file and find the evals that regressed since the previous run.
+      type: capability
+      grader: ai
+  provenance:
+    - generated-by: Claude Opus 5
+      lines: 2-233
+      integrity: sha256-fbdf37dba4023a18da6f0065b08fef63d226a11cfa54459846bef508b954bb34
+    - generated-by: Claude Opus 5.5
+      lines: 234
+      integrity: sha256-21002ce2b3ccd08795ed61be4c3a2e6da8385e60b887ba15e5462504f3d3ad1c
+    - generated-by: Claude Opus 5
+      lines: 235-283
+      integrity: sha256-5f08ad4b58070061d082bc3d5e854f7398c5b1323dabbf79abf11d513b03e174
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-16

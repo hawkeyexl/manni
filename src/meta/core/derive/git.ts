@@ -23,10 +23,20 @@
 import { constants as bufferConstants } from "node:buffer";
 import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
 import { availableParallelism } from "node:os";
-import { dirname, extname, isAbsolute, posix, relative, sep } from "node:path";
+import { dirname, extname, isAbsolute, posix, relative, resolve, sep } from "node:path";
 import { parse as parseYaml } from "yaml";
+import { isMember, isUrlRef, parseCollections, type CollectionConfig } from "../../../shared/collections.js";
 import { mapConcurrent } from "../../../shared/concurrency.js";
+import { FAMILY_CONFIG_NAMES } from "../../../shared/config-file.js";
+import { applyMetadataDirectory } from "../../../shared/external-metadata-dir.js";
 import { findGitRoot } from "../../../shared/git-root.js";
+import {
+  hasIdPlaceholder,
+  hasPagePlaceholder,
+  idManifestPath,
+  pageManifestPath,
+} from "../../../shared/page-manifest.js";
+import { externalMetadataJoin, manifestIdOf, PATH_JOIN } from "../external-metadata.js";
 import { locateFrontmatter } from "../../extractors/frontmatter.js";
 import {
   extractorByName,
@@ -104,6 +114,12 @@ export interface GitSourceOptions {
   generatedBy?: string;
   /** `derive.machines`; `DEFAULT_MACHINES` when absent. */
   machines?: readonly string[];
+  /**
+   * The config file's directory. Its config at a past commit says which
+   * manifest held a page's values then, read where today's manifest did not
+   * exist yet (proposal 0126). Absent: only today's manifest is read.
+   */
+  configDir?: string;
 }
 
 export interface GitSourceResult {
@@ -173,6 +189,8 @@ interface FileHistory {
   oldBlob: string | null;
   newBlob: string | null;
   pathAtCommit: string;
+  /** The page's path at the commit's first parent: `pathAtCommit` unless the commit renamed it. */
+  pathBefore: string;
   /** A merge's parents after the first; empty for any other commit. */
   otherParents: string[];
   /**
@@ -262,7 +280,8 @@ export async function deriveFromGit(
         reasons.push(`git could not read the history at ${root}`);
         continue;
       }
-      const manifestStamps = await stampsInManifests(run, root, bucket, found, blobs, parse);
+      const past = pastManifests(run, root, opts.configDir, parse);
+      const manifestStamps = await stampsInManifests(run, root, bucket, found, blobs, parse, past);
 
       const facts = bucket.map((entry) =>
         judge(
@@ -285,7 +304,7 @@ export async function deriveFromGit(
           blame: await blameOf(run, entry.rel, entry.input.content),
           history: found.get(entry.rel) ?? [],
         }));
-        const evidence = await commitEvidence(run, root, pages, blobs, parse);
+        const evidence = await commitEvidence(run, root, pages, blobs, parse, past);
         const provenanceRun: ProvenanceRun = {
           machines,
           ...(opts.generatedBy !== undefined ? { generatedBy: opts.generatedBy } : {}),
@@ -711,6 +730,7 @@ function attribute(
         oldBlob: entry.oldBlob === NULL_SHA ? null : entry.oldBlob,
         newBlob: entry.newBlob === NULL_SHA ? null : entry.newBlob,
         pathAtCommit: entry.newPath,
+        pathBefore: entry.oldPath,
         otherParents: record.parents.slice(1),
         otherParentBlobs: [],
       });
@@ -859,7 +879,9 @@ type ManifestStamp = (field: StampedDateField, rev: string) => unknown;
  * Read, per page, the stamps the manifests that own its dated fields held at
  * the fact commits: the oldest commit for `created`, and the newest body
  * change and its parent for `last-updated`. One `git cat-file --batch` by
- * `<rev>:<path>` for the whole root, as provenance reads its manifest.
+ * `<rev>:<path>` for the whole root, as provenance reads its manifest. Where
+ * the manifest did not exist yet at a commit, `past` reads the one that
+ * commit's config declared.
  */
 async function stampsInManifests(
   run: GitRun,
@@ -868,11 +890,9 @@ async function stampsInManifests(
   histories: ReadonlyMap<string, FileHistory[]>,
   blobs: ReadonlyMap<string, string>,
   parse: ParseYaml,
+  past: PastManifests,
 ): Promise<Map<string, ManifestStamp>> {
-  interface Read {
-    label: string;
-    field: StampedDateField;
-    rev: string;
+  interface Read extends PastRead {
     spec: string;
     key: string;
     join: string;
@@ -889,21 +909,27 @@ async function stampsInManifests(
       const rel = insideRoot(root, ref.absPath);
       if (rel === undefined) continue;
       const key = ref.join === "path" ? entryAt(ref.entry, entry.rel, at.pathAtCommit) : ref.entry;
-      const revs = field === "created" ? [at.sha] : [at.sha, `${at.sha}^`];
-      for (const rev of revs) {
-        reads.push({ label: entry.input.label, field, rev, spec: `${rev}:${rel}`, key, join: ref.join });
+      const sides = [{ rev: at.sha, path: at.pathAtCommit, blob: at.newBlob }];
+      if (field !== "created") sides.push({ rev: `${at.sha}^`, path: at.pathBefore, blob: at.oldBlob });
+      for (const { rev, path, blob } of sides) {
+        const content = blob === null ? undefined : blobs.get(blob);
+        reads.push({ input: entry.input, field, rev, path, content, spec: `${rev}:${rel}`, key, join: ref.join });
       }
     }
   }
   const out = new Map<string, ManifestStamp>();
   if (reads.length === 0) return out;
   const fetched = await fetchSpecs(run, [...new Set(reads.map((r) => r.spec))]);
+  const moved = reads.filter((r) => !fetched.has(r.spec));
+  const movedValues = await past(moved);
+  const held = new Map(moved.map((r, i) => [r, movedValues[i]]));
   const values = new Map<string, unknown>();
   const keyOf = (label: string, field: string, rev: string): string => `${label}\0${field}\0${rev}`;
   for (const r of reads) {
-    values.set(keyOf(r.label, r.field, r.rev), manifestValue(fetched.get(r.spec), r.key, r.join, r.field, parse));
+    const value = held.has(r) ? held.get(r) : manifestValue(fetched.get(r.spec), r.key, r.join, r.field, parse);
+    values.set(keyOf(r.input.label, r.field, r.rev), value);
   }
-  for (const label of new Set(reads.map((r) => r.label))) {
+  for (const label of new Set(reads.map((r) => r.input.label))) {
     out.set(label, (field, rev) => values.get(keyOf(label, field, rev)));
   }
   return out;
@@ -1235,6 +1261,7 @@ async function commitEvidence(
   pages: readonly BlamedPage[],
   blobs: ReadonlyMap<string, string>,
   parse: ParseYaml,
+  past: PastManifests,
 ): Promise<Map<string, CommitEvidence>[]> {
   const plans = pages.map(({ entry, blame, history }) => {
     const pathAt = new Map<string, string>();
@@ -1275,27 +1302,52 @@ async function commitEvidence(
   }
   const fetched = await fetchSpecs(run, [...specs]);
 
+  // A commit older than today's manifest reads the one its own config
+  // declared, or else the page's frontmatter there (0126).
+  const moved: PastRead[] = [];
+  for (const { entry, pathAt, pageBlob, manifestRel } of plans) {
+    if (manifestRel === undefined) continue;
+    for (const [sha, path] of pathAt) {
+      if (fetched.has(`${sha}:${manifestRel}`)) continue;
+      const content = pageBlob.get(sha) ?? fetched.get(`${sha}:${path}`);
+      moved.push({ rev: sha, path, content, field: PROVENANCE_FIELD, input: entry.input });
+    }
+  }
+  const movedValues = await past(moved);
+  // Keyed by the page's input object, then the revision, as
+  // `stampsInManifests` keys its reads.
+  const held = new Map<DeriveInput, Map<string, (typeof movedValues)[number]>>();
+  moved.forEach((r, i) => {
+    const bySha = held.get(r.input) ?? new Map<string, (typeof movedValues)[number]>();
+    bySha.set(r.rev, movedValues[i]);
+    held.set(r.input, bySha);
+  });
+
   return plans.map(({ entry, pathAt, trailers, pageBlob, manifest, manifestRel }) => {
     const commits = new Map<string, CommitEvidence>();
     for (const [sha, path] of pathAt) {
       const blob = pageBlob.get(sha) ?? fetched.get(`${sha}:${path}`);
+      const heldAt = held.get(entry.input);
+      let stamp: ProvenanceEntry[] | undefined;
+      if (heldAt?.has(sha) === true) {
+        const value = heldAt.get(sha);
+        stamp = value === undefined ? undefined : provenanceEntries(value);
+      } else if (manifest !== undefined) {
+        stamp =
+          manifestRel === undefined
+            ? []
+            : manifestStamp(
+                fetched.get(`${sha}:${manifestRel}`),
+                manifest.join === "path" ? entryAt(manifest.entry, entry.rel, path) : manifest.entry,
+                manifest.join,
+                parse,
+              );
+      }
       commits.set(sha, {
         sha,
         trailers: trailers.get(sha) ?? logged.get(sha) ?? { generatedBy: [], coAuthoredBy: [] },
         ...(blob !== undefined ? { blob } : {}),
-        ...(manifest !== undefined
-          ? {
-              stamp:
-                manifestRel === undefined
-                  ? []
-                  : manifestStamp(
-                      fetched.get(`${sha}:${manifestRel}`),
-                      manifest.join === "path" ? entryAt(manifest.entry, entry.rel, path) : manifest.entry,
-                      manifest.join,
-                      parse,
-                    ),
-            }
-          : {}),
+        ...(stamp !== undefined ? { stamp } : {}),
       });
     }
     return commits;
@@ -1321,6 +1373,155 @@ function entryAt(entry: string, rel: string, relAtCommit: string): string {
   if (relAtCommit === rel) return entry;
   const fromHere = posix.relative(posix.dirname(rel), relAtCommit);
   return posix.join(posix.dirname(entry), fromHere);
+}
+
+// ---------------------------------------------------------------------------
+// A manifest that moved (proposal 0126)
+
+/** One page's manifest-held field at a commit whose tree lacks the manifest the page reads today. */
+interface PastRead {
+  input: DeriveInput;
+  field: string;
+  rev: string;
+  /** The page's path at `rev`, as git names it. */
+  path: string;
+  /** The page's text at `rev`, which carries its id or join value; undefined when unknown. */
+  content: string | undefined;
+}
+
+/** Each read's value, in input order; undefined where no manifest held one. */
+type PastManifests = (reads: readonly PastRead[]) => Promise<unknown[]>;
+
+/** One place a page's value may have lived at a commit: a blob spec and the page's key there. */
+interface PastPlace {
+  spec: string;
+  key: string;
+  join: string;
+}
+
+/**
+ * The value a page's manifest held at a commit older than that manifest. A
+ * relocation moves a page's values, from a `{page}` sidecar into
+ * `metadata/<id>.yaml` say, and the file read today did not exist before it.
+ * So the commit's own config says where they lived. Its collections declared
+ * manifests for the page's path then, keyed by the id or join value its text
+ * carried then. The first that holds the field answers. As the history walk
+ * follows a page across a rename, this follows its values across a move.
+ *
+ * Each config and each manifest is read once per commit in a run. A run with
+ * no config directory, or one outside the root, reads nothing.
+ */
+function pastManifests(
+  run: GitRun,
+  root: string,
+  configDir: string | undefined,
+  parse: ParseYaml,
+): PastManifests {
+  // The root itself is a config directory too, where `insideRoot` names nothing.
+  const dir = configDir === undefined ? undefined : relative(root, configDir).split(sep).join("/");
+  if (configDir === undefined || dir === undefined || dir.startsWith("..") || isAbsolute(dir)) {
+    return (reads) => Promise.resolve(reads.map(() => undefined));
+  }
+  const configSpecs = (rev: string): string[] =>
+    FAMILY_CONFIG_NAMES.map((name) => `${rev}:${dir === "" ? "" : `${dir}/`}${name}`);
+  const texts = new Map<string, string | undefined>();
+  const read = async (specs: readonly string[]): Promise<void> => {
+    const wanted = [...new Set(specs)].filter((spec) => !texts.has(spec));
+    const found = await fetchSpecs(run, wanted);
+    for (const spec of wanted) texts.set(spec, found.get(spec));
+  };
+  const declared = new Map<string, CollectionConfig[]>();
+  const collectionsAt = (rev: string): CollectionConfig[] => {
+    const text = configSpecs(rev).map((spec) => texts.get(spec)).find((t) => t !== undefined);
+    if (text === undefined) return [];
+    let collections = declared.get(text);
+    if (collections === undefined) {
+      collections = collectionsIn(parse(text), configDir);
+      declared.set(text, collections);
+    }
+    return collections;
+  };
+  return async (reads) => {
+    if (reads.length === 0) return [];
+    await read(reads.flatMap((r) => configSpecs(r.rev)));
+    const places = reads.map((r) => placesAt(r, collectionsAt(r.rev), root, configDir));
+    await read(places.flat().map((p) => p.spec));
+    return reads.map((r, i) => {
+      for (const p of places[i] ?? []) {
+        const value = manifestValue(texts.get(p.spec), p.key, p.join, r.field, parse);
+        if (value !== undefined) return value;
+      }
+      return undefined;
+    });
+  };
+}
+
+/** A config at a past commit that `parseCollections` refused. */
+class PastConfigRefused extends Error {}
+
+/**
+ * The collections a config document declared, with the metadata directory's
+ * entry where a collection declared no manifest. One that no longer parses
+ * declared none: the page's own frontmatter answers for it.
+ */
+function collectionsIn(doc: unknown, configDir: string): CollectionConfig[] {
+  if (!isRecord(doc) || doc["collections"] === undefined) return [];
+  const source = FAMILY_CONFIG_NAMES[0] ?? "manni.config.yaml";
+  const toError = (message: string): Error => new PastConfigRefused(message);
+  try {
+    const collections = parseCollections(doc["collections"], source, toError);
+    return applyMetadataDirectory(collections, doc, { source, configDir, toError, state: "read" });
+  } catch (err) {
+    if (err instanceof PastConfigRefused) return [];
+    throw err;
+  }
+}
+
+/**
+ * Where one page's field may have lived at a commit: each manifest of a
+ * collection the page belonged to then that may own the field, resolved for
+ * the page as it was. A manifest with `keys` owns those; one without owns
+ * what the page's schemas marked, which a past commit does not say, so it is
+ * read whenever it holds the field.
+ */
+function placesAt(
+  read: PastRead,
+  collections: readonly CollectionConfig[],
+  root: string,
+  configDir: string,
+): PastPlace[] {
+  const pageAbs = resolve(root, read.path);
+  const rel = relative(configDir, pageAbs).split(sep).join("/");
+  const manifests = collections
+    .filter((c) => isMember(c, rel))
+    .flatMap((c) => c.externalMetadata)
+    .filter((m) => !isUrlRef(m.file) && (m.keys === undefined || m.keys.includes(read.field)));
+  if (manifests.length === 0) return [];
+  // The blob is the page as it stood at `rev`, so its own path picks the
+  // parser: a rename may have changed the extension since.
+  const extractor = extractorForExtension(extname(read.path)) ?? extractorFor(read.input);
+  const data = read.content === undefined ? {} : extractStamps(extractor, read.content, pageAbs);
+  const places: PastPlace[] = [];
+  for (const m of manifests) {
+    const join = externalMetadataJoin(m);
+    let abs: string | undefined;
+    let key: string | undefined;
+    if (hasIdPlaceholder(m.file)) {
+      const own = manifestIdOf(data[join]);
+      if (own !== undefined && "id" in own) {
+        abs = idManifestPath(m.file, configDir, own.id).abs;
+        key = own.id;
+      }
+    } else {
+      const at = hasPagePlaceholder(m.file) ? pageManifestPath(m.file, configDir, pageAbs) : { abs: resolve(configDir, m.file) };
+      const value = data[join];
+      abs = "abs" in at ? at.abs : undefined;
+      key = join === PATH_JOIN ? rel : typeof value === "string" || typeof value === "number" ? String(value) : undefined;
+    }
+    const file = abs === undefined ? undefined : insideRoot(root, abs);
+    if (file !== undefined && key !== undefined) places.push({ spec: `${read.rev}:${file}`, key, join });
+  }
+  return places;
 }
 
 /**

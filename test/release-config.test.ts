@@ -145,11 +145,12 @@ describe("re-stamping derived fields during the release", () => {
   });
 
   it("commits the manifests the stamps live in", () => {
-    // Derived fields the vocabularies place externally live in a manifest
-    // beside each page, which the `*.md` and `*.mdx` globs do not reach.
+    // Derived fields the vocabularies place externally live in each page's
+    // metadata/<id>.yaml (proposal 0126), which the docs' `*.md` and `*.mdx`
+    // globs do not reach.
     const committed = picomatch(gitAssets());
-    expect(committed("docs/src/content/docs/index.meta.yaml")).toBe(true);
-    expect(committed("docs/src/content/docs/meta/ci/recipes.meta.yaml")).toBe(true);
+    expect(committed("metadata/home.yaml")).toBe(true);
+    expect(committed("metadata/meta-ci-recipes.yaml")).toBe(true);
   });
 });
 
@@ -174,11 +175,11 @@ describe("re-anchoring citations during the release", () => {
 
   it("commits the files the citations live in", () => {
     // The pins are external metadata, not frontmatter: each page keeps them
-    // in a manifest beside it (proposal 0058), which the docs' `*.md` and
+    // in its metadata/<id>.yaml (proposal 0126), which the docs' `*.md` and
     // `*.mdx` globs do not reach. Without a glob that does, the re-anchoring
     // happens and is then thrown away.
     const committed = picomatch(gitAssets());
-    expect(committed("docs/src/content/docs/cite/index.citations.yaml")).toBe(true);
-    expect(committed("docs/src/content/docs/meta/reference/cli.citations.yaml")).toBe(true);
+    expect(committed("metadata/cite.yaml")).toBe(true);
+    expect(committed("metadata/meta-reference-cli.yaml")).toBe(true);
   });
 });

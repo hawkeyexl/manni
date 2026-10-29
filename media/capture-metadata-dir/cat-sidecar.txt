@@ -1,0 +1,3 @@
+docs/guide.md:
+  personas: [maya]
+  owner: ada

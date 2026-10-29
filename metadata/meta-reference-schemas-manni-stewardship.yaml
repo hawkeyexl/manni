@@ -1,0 +1,67 @@
+meta-reference-schemas-manni-stewardship:
+  personas:
+    - sara
+  journeys:
+    - s1
+    - s16
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: src/meta/schemas/stewardship/1.0.0.json
+    - path: src/meta/schemas/stewardship-strict/1.0.0.json
+    - path: src/meta/schemas/stewardship/1.1.0.json
+    - path: src/meta/schemas/stewardship-strict/1.1.0.json
+    - path: src/meta/schemas/stewardship/1.2.0.json
+    - path: src/meta/schemas/stewardship-strict/1.2.0.json
+    - path: src/meta/core/schema-registry.ts
+  eval-suite: meta
+  evals:
+    - id: fields
+      assertion: A reader can record a page's owner, review interval and source of truth.
+      type: capability
+      grader: ai
+    - id: strict-overlay
+      assertion: A reader can say what the stewardship strict overlay rejects that the open vocabulary accepts.
+      type: capability
+      grader: ai
+  provenance:
+    - generated-by: Claude Opus 5.5
+      lines: 2-17
+      integrity: sha256-c958fd323375550b0066cf51c715618f4c7a8e59c20d25b497fea2c1ba862512
+    - generated-by: Claude Opus 5.5
+      lines: 25-26
+      integrity: sha256-e35de401b3128816c9416d0bbf980ca3a437ccbab4b8108139bbec2b40458165
+    - generated-by: Claude Opus 5.5
+      lines: 32-204
+      integrity: sha256-845c8e79da6bc592e2791167284b184befdf0384c4da33bac113f974980732db
+    - generated-by: Claude Opus 5.5
+      lines: 206-317
+      integrity: sha256-0eee59947784a6bba6bd13ddce016ee2da5081c96fd616039c0d934e6a330937
+    - generated-by: Claude Opus 5.5
+      lines: 330-355
+      integrity: sha256-16f3a9a460fd591e01a0e7287c9ed1257124fa90d2658c4e9d43da1c26789c3a
+    - generated-by: Claude Opus 5.5
+      lines: 357-358
+      integrity: sha256-85df2ea01a1e0b2d0aef29d2d59132612b320a02b6d0f65f612472125555bfd6
+    - generated-by: Claude Opus 5.5
+      lines: 360-411
+      integrity: sha256-4e0cd946971e5d11bc33408bd885e4374d7b87231e11d49094af14d98c12daa7
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-26
+  meta-provenance:
+    - generated-by: claude-sonnet-4-5
+      fields:
+        - /tags
+        - /action
+        - /next-steps
+        - /related-pages
+        - /risks
+        - /prerequisites
+      confidence:
+        /tags: 0.85
+        /action: 0.88
+        /next-steps: 0.75
+        /related-pages: 0.8
+        /risks: 0.92
+        /prerequisites: 0.75

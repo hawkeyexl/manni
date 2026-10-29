@@ -152,6 +152,7 @@ export async function deriveMetadata(
       fields: ctx.fields,
       ...(ctx.generatedBy !== undefined ? { generatedBy: ctx.generatedBy } : {}),
       ...(ctx.machines !== undefined ? { machines: ctx.machines } : {}),
+      ...(ctx.configDir !== undefined ? { configDir: ctx.configDir } : {}),
     });
     sources.git = result.status;
     git = result.records;

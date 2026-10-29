@@ -1,0 +1,65 @@
+meta-reference-schemas-manni-lifecycle:
+  personas:
+    - sara
+  journeys:
+    - s1
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: src/meta/schemas/lifecycle/1.0.0.json
+    - path: src/meta/schemas/lifecycle-strict/1.0.0.json
+    - path: src/meta/core/schema-registry.ts
+  eval-suite: meta
+  evals:
+    - id: fields
+      assertion: A reader can mark a page deprecated and name its replacement.
+      type: capability
+      grader: ai
+    - id: strict-overlay
+      assertion: A reader can say what the lifecycle strict overlay rejects that the open vocabulary accepts.
+      type: capability
+      grader: ai
+  provenance:
+    - generated-by: Claude Opus 5.5
+      lines: 2-13
+      integrity: sha256-cad6c67aa81f9987d2a5d26800e036b64338c3b3fbd405371c9d98902a474076
+    - generated-by: Claude Opus 5.5
+      lines: 21-22
+      integrity: sha256-e35de401b3128816c9416d0bbf980ca3a437ccbab4b8108139bbec2b40458165
+    - generated-by: Claude Opus 5.5
+      lines: 28-93
+      integrity: sha256-fad838fd52552d16de80b7c9f69ea0f999fe2bf487e18873fec3faaf987ea05f
+    - generated-by: Claude Opus 5.5
+      lines: 96
+      integrity: sha256-20b0ae6a594367945359817e43ce2cac6cdcea3f693a9d6b6c77545115ce6c37
+    - generated-by: Claude Opus 5.5
+      lines: 101
+      integrity: sha256-f1b901847390b0ed7e374e7c1e464ec17b46a427c487a5ad6cbd2906405083d5
+    - generated-by: Claude Opus 5.5
+      lines: 107-147
+      integrity: sha256-b8d13e20f2b92e166c7565748e7473c7966bc73d37293b953b06c75b49781809
+    - generated-by: Claude Opus 5.5
+      lines: 160-183
+      integrity: sha256-5e780c43bcf822cca9bf0fd270349c049c731b16bbc3fc2f9ec774e9591c6574
+    - generated-by: Claude Opus 5.5
+      lines: 186-191
+      integrity: sha256-dc9d29ded9f6dd34d3abf5c9419f4f124fd7093d1500bdc660aec53ee05343f7
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-26
+  meta-provenance:
+    - generated-by: claude-sonnet-4-5
+      fields:
+        - /resource
+        - /tags
+        - /action
+        - /related-pages
+        - /prerequisites
+        - /next-steps
+      confidence:
+        /resource: 0.95
+        /tags: 0.8
+        /action: 0.85
+        /related-pages: 0.9
+        /prerequisites: 0.85
+        /next-steps: 0.75

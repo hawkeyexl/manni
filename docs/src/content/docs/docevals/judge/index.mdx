@@ -4,7 +4,8 @@ description: What makes a verdict reproducible, how the ensemble reaches consens
 type: concept
 audiences:
   - schema-authors
-last-updated: 2026-10-23
+last-updated: 2026-10-29
+id: docevals-judge
 ---
 
 Sooner or later someone senior asks the real question: **why should a model be allowed to block our
@@ -183,7 +184,7 @@ A judged result read as personas says so. Pretty adds the ids after the zone, an
 `personas` list to the result:
 
 ```text
-  FAIL fix-and-rerun [auto-fail] (read as theo)  docs/src/content/docs/meta/fix/index.meta.yaml:16
+  FAIL fix-and-rerun [auto-fail] (read as theo)  metadata/meta-fix.yaml:16
 ```
 
 No tag means the judge read no persona. After opting an eval in, look for the tag. If it is missing,

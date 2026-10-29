@@ -1,0 +1,71 @@
+meta-reference-schemas-diataxis:
+  personas:
+    - sara
+    - maya
+  journeys:
+    - s1
+    - m3
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: src/meta/schemas/diataxis/1.0.json
+    - path: src/meta/core/schema-registry.ts
+  eval-suite: meta
+  evals:
+    - id: turn-on
+      assertion: A reader can turn on diataxis:diataxis:1.0 for their pages.
+      type: capability
+      grader: ai
+    - id: four-forms
+      assertion: A reader can name the four type values the Diátaxis schema accepts.
+      type: capability
+      grader: ai
+  provenance:
+    - generated-by: Claude Opus 5.5
+      lines: 2-81
+      integrity: sha256-58676f51b635a3ccddeb6e50e6c62be92b7fab0a5d5405bddbc3f3891a344bf6
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-26
+  meta-provenance:
+    - generated-by: claude-sonnet-4-5
+      fields:
+        - /resource
+        - /tags
+        - /action
+        - /next-steps
+        - /related-pages
+        - /prerequisites
+      confidence:
+        /resource: 0.95
+        /tags: 0.7
+        /action: 0.85
+        /next-steps: 0.7
+        /related-pages: 0.9
+        /prerequisites: 0.85
+  citations:
+    - id: taxonomy-diataxis-is-not-in-the-default-set
+      claim:
+        integrity: sha256-e106e9e77a5193038dc625927888c306a90c8dae2661856468d11c0a396d7d58
+      source:
+        file: src/meta/core/resolve-schema.ts
+        lines: 35-37
+        integrity: sha256-c524978711da65266d5c80de3cb5e5a6adaa69bbb5c5a9e8301c83ae66028ddd
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
+    - id: taxonomy-diataxis-requires-and-constrains-type
+      claim:
+        integrity: sha256-850d50f342f367163a19e8ebbd1f3996adce5b76657739a221f195351d7190d3
+      source:
+        file: src/meta/schemas/diataxis/1.0.json
+        lines: 8-13
+        integrity: sha256-eb032decab002a44515845a44957313bdd14e12d9f4c077a7a92c0dfbaefbbe4
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: taxonomy-diataxis-four-forms
+      claim:
+        lines: 46-49
+        integrity: sha256-c7965ad03d78f749c06dcf09664a098fce99532ecf9378400e484c070cddf84f
+      source:
+        file: src/meta/schemas/diataxis/1.0.json
+        lines: 12-13
+        integrity: sha256-1175148898279c096d485707094e5fd08c65975f82f548472da002a2d4275f58
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d

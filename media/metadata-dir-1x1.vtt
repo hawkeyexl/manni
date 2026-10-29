@@ -1,0 +1,28 @@
+WEBVTT
+
+NOTE Silent video. Cues are the on-screen step captions; the terminal text is in the transcript.
+
+1
+00:00:00.000 --> 00:00:04.000
+Metadata beside the page: The sidecar holds personas and owner, keyed by path.
+
+2
+00:00:04.000 --> 00:00:11.567
+Rename it, and the run stops: The sidecar still names docs/guide.md. Exit 2.
+
+3
+00:00:11.567 --> 00:00:21.000
+manni meta relocate --from: Rename undone. Values move to metadata/, keyed by id.
+
+4
+00:00:21.000 --> 00:00:25.167
+One file per id: Named and keyed by guide, the id minted into the page.
+
+5
+00:00:25.167 --> 00:00:36.633
+Rename it again: Found by id, not path. Exit 0; owner still reads ada.
+
+6
+00:00:36.633 --> 00:00:43.333
+Another checkout, not there: The variable moves the directory. Missing, it exits 2.
+

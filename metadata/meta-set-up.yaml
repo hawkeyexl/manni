@@ -1,0 +1,210 @@
+meta-set-up:
+  personas:
+    - maya
+  journeys:
+    - m1
+  visibility: public
+  review-interval: P180D
+  eval-suite: meta
+  evals:
+    - id: stand-up-gate
+      assertion: A reader can go from a repo with no validation to a manni meta check that runs on every pull request.
+      type: capability
+      grader: ai
+    - id: validate-folder
+      assertion: A reader can validate a whole folder and read the summary line.
+      type: capability
+      grader: ai
+  provenance:
+    - generated-by: Claude Fable 5.1
+      lines: 2-8
+      integrity: sha256-0850ae4be5d114c60147eff6269ba6c67120b0060c5c91382dc300d85992e69c
+    - generated-by: Claude Fable 5.1
+      lines: 10-27
+      integrity: sha256-17e97a5785c8253a4747896b058001be96951279656aa20645c2be141595bd77
+    - generated-by: Claude Fable 5.1
+      lines: 31-39
+      integrity: sha256-9c7ae72175f6ae567ce656c1da57b1dff13f87f811204b7ef44d296b16d4cff3
+    - generated-by: Claude Opus 5
+      lines: 40-47
+      integrity: sha256-9968a5ef9a4c9c5fe64c2752ddf303e07e98f955a0801680ce76ad39d6aa7c5a
+    - generated-by: Claude Fable 5.1
+      lines: 49
+      integrity: sha256-cd5959d8ed16a1afe9635e0f8b57cefc8765d3935fe8aa9edf18400dd588c892
+    - generated-by: Claude Fable 5.1
+      lines: 51
+      integrity: sha256-a6788eef33b6d1dea3e77b9610dc41fa7ce3c8e344933b9932984d11269ff0e3
+    - generated-by: Claude Fable 5.1
+      lines: 57-59
+      integrity: sha256-e74a4c43b69b23d16e7a8bc45c9b1c899ef05bf7aead8638a444d7d94dbb0c0d
+    - generated-by: Claude Opus 5
+      lines: 60
+      integrity: sha256-41ee4e387d1829cb10191c55cbfe4590780043270982d7967aaca001b276f5e9
+    - generated-by: Claude Fable 5.1
+      lines: 61-63
+      integrity: sha256-ccd9e1f982c2197fff27636f2ec1f7ac44a2779eb4aef1d4a4297b490fe13930
+    - generated-by: Claude Fable 5.1
+      lines: 67-73
+      integrity: sha256-f24382acaecb4f9b4e511aca42260213120254f2158cd21baba19f0e09e8e96c
+    - generated-by: Claude Opus 5
+      lines: 74
+      integrity: sha256-0a46ee5ce50526220582cbb1b40c4e9cfb1cb51b4b85ca7ee52b68094f53fe1b
+    - generated-by: Claude Fable 5.1
+      lines: 75-95
+      integrity: sha256-0974a59afca6e959c0333f3925f09c61c3442e183db901e86053db35177c6b55
+    - generated-by: Claude Opus 5
+      lines: 97-98
+      integrity: sha256-53cad17403009e1d744f7c342424060766a2d3197c21fc8972f041a740082504
+    - generated-by: Claude Fable 5.1
+      lines: 100-123
+      integrity: sha256-933514400470fc4fd2dd2c81d5d909094cb57813a83ff2fb68f2403d974cdbe0
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-05
+  meta-provenance:
+    - generated-by: claude-sonnet-4-5
+      fields:
+        - /tags
+        - /action
+        - /risks
+        - /related-pages
+      confidence:
+        /tags: 0.85
+        /action: 0.9
+        /risks: 0.85
+        /related-pages: 0.85
+  citations:
+    - id: validate-exits-0-or-1
+      claim:
+        lines: 79
+        integrity: sha256-1df6fe82622726ef405b596435a08f4d2aba5a51901a3b3ba1ea0ec47041fba6
+      source:
+        file: src/meta/cli.ts
+        lines: 902
+        integrity: sha256-b900d16ea81ba54da695ee6ec4f8e9c3d17f1700d0b307ed74045692b603e056
+        commit-sha: 77715cb1faddbd601238d5b6b1a36827cfcebb03
+    - id: github-format-emits-annotations
+      claim:
+        lines: 79
+        integrity: sha256-1df6fe82622726ef405b596435a08f4d2aba5a51901a3b3ba1ea0ec47041fba6
+      source:
+        file: src/meta/reporters/index.ts
+        lines: 332-333
+        integrity: sha256-d0c47a5d3c1214c717b3ba54048196f79caf3b9915d9d5df6246ebd13a6def4e
+        commit-sha: cb74827009894c38f8646504ae9eb4a2745761a9
+    - id: no-paths-no-config-exits-2
+      claim:
+        lines: 74
+        integrity: sha256-0a46ee5ce50526220582cbb1b40c4e9cfb1cb51b4b85ca7ee52b68094f53fe1b
+      source:
+        file: src/shared/run.ts
+        lines: 34-37
+        integrity: sha256-dfb73e357414a8e011dcc57b2dbfb65905a4b750d73caf37777cf39e0edad42b
+        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+    - id: no-files-message-names-paths-or-collections
+      claim:
+        lines: 74
+        integrity: sha256-0a46ee5ce50526220582cbb1b40c4e9cfb1cb51b4b85ca7ee52b68094f53fe1b
+      source:
+        file: src/meta/commands/validate.ts
+        lines: 320-324
+        integrity: sha256-73d56d153f0de0ed6e64cb6ade7318f324b35250a12838d444586b957050d6c4
+        commit-sha: 46ea4718fa7ee7e2ec7ed135a7a646d421ff3fb8
+    - id: config-discovered-as-manni-config-yaml
+      claim:
+        lines: 65
+        integrity: sha256-00f81a6a2b4ce622955974fa78f2dd744215b21320bc02ab12844c889ed48a27
+      source:
+        file: src/shared/config-file.ts
+        lines: 59-63
+        integrity: sha256-6667b3b66a8f9f4789df5eb19546fa2f212465ab532996ae90ec45f8ed02eb71
+        commit-sha: 46ea4718fa7ee7e2ec7ed135a7a646d421ff3fb8
+    - id: meta-schemas-applied-from-config
+      claim:
+        lines: 65
+        integrity: sha256-00f81a6a2b4ce622955974fa78f2dd744215b21320bc02ab12844c889ed48a27
+      source:
+        file: src/meta/core/resolve-schema.ts
+        lines: 592-602
+        integrity: sha256-b01c18f9e05654a4cfb97c7817650fdabd59e2014546ec6925b09f2c4fd4d0d7
+        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
+    - id: bare-validate-reads-every-collection
+      claim:
+        lines: 53
+        integrity: sha256-23b4200b127b40399a05997509b2db106f4feb482deb936ab5721c1c27671f3d
+      source:
+        file: src/meta/core/config.ts
+        lines: 1899-1907
+        integrity: sha256-a25173e88e325e9018ce01428895706356f063070cd986fe69698790dc264ad8
+        commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
+    - id: every-file-satisfies-every-schema
+      claim:
+        lines: 53
+        integrity: sha256-23b4200b127b40399a05997509b2db106f4feb482deb936ab5721c1c27671f3d
+      source:
+        file: src/meta/core/validator.ts
+        lines: 951-962
+        integrity: sha256-5df291a46b86659b90de1a063b96f3fe5ec57fc2989611328d6041f2ddb1cf7d
+        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
+    - id: explicit-file-bypasses-ext-filter
+      claim:
+        lines: 32
+        integrity: sha256-afd83372c654d12b38041a076d67122d4c8faedfd948fd30f6e288425b62517e
+      source:
+        file: src/meta/core/load-files.ts
+        lines: 308-311
+        integrity: sha256-4599d601ad8068f93a532f63eb18d8e223706720fc069d02d27c2a17f0a63699
+        commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e
+    - id: node-24-floor
+      claim:
+        lines: 14
+        integrity: sha256-70b11580b3b79d5a7044d2b616dcd08dfd6b81ff96941036950f9eac496b306e
+      source:
+        file: package.json
+        lines: 50-52
+        integrity: sha256-2de8e81748272b9a64ecbd0ef087b7b148d787302d6d51977510a7c17687ae12
+        commit-sha: cb74827009894c38f8646504ae9eb4a2745761a9
+    - id: okf-requires-type
+      claim:
+        lines: 9
+        integrity: sha256-7cbaff43b68a37473f0976a4f8fcf52e5b8a091d738725bd99a91397cfd495d3
+      source:
+        file: src/meta/schemas/core/1.0.0.json
+        lines: 7-10
+        integrity: sha256-98fcf79e73fedcae890cf5bd3e046d078dd3d4383a6605e807f275913b625764
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
+    - id: timestamp-must-be-date-time
+      claim:
+        lines: 9
+        integrity: sha256-7cbaff43b68a37473f0976a4f8fcf52e5b8a091d738725bd99a91397cfd495d3
+      source:
+        file: src/meta/schemas/okf/0.1.json
+        lines: 33-37
+        integrity: sha256-30703890e606f296ef36c155042169a9b71ab86c3034c083ef1943641f4cc3b9
+        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+    - id: resource-must-be-uri
+      claim:
+        lines: 9
+        integrity: sha256-7cbaff43b68a37473f0976a4f8fcf52e5b8a091d738725bd99a91397cfd495d3
+      source:
+        file: src/meta/schemas/okf/0.1.json
+        lines: 23-27
+        integrity: sha256-21478cb800432b039b033e90404eb05994906c25c46b30b115890d9468f07407
+        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+    - id: collections-is-a-family-level-key
+      claim:
+        integrity: sha256-4819bfc7c24097c4d09d550b354d408dbb2ba9558251e4d34e3308d5b8004982
+      source:
+        file: src/shared/config-file.ts
+        lines: 199-200
+        integrity: sha256-af94ed52dbb272ac789ea321e4aa9fb971f14cff43bbeceb14f2b9e2c597c806
+        commit-sha: 46ea4718fa7ee7e2ec7ed135a7a646d421ff3fb8
+    - id: six-registered-extractors
+      claim:
+        lines: 15
+        integrity: sha256-881492c4194425b5ae8cec51fa3e319a4de4b2f498bc843a39b97a7f6cb12932
+      source:
+        file: src/meta/extractors/index.ts
+        lines: 14-21
+        integrity: sha256-f994b01563bf4f2b68ce83079179e9ca6093ad5980da0aba5b7b0a427364ce94
+        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7

@@ -1,0 +1,65 @@
+extractor:
+  personas:
+    - maya
+    - devin
+    - sara
+    - theo
+  visibility: public
+  review-interval: P180D
+  eval-suite: meta
+  evals:
+    - id: define-extractor
+      assertion: A reader can say what extractor means in manni meta.
+      type: capability
+      grader: ai
+  provenance:
+    - generated-by: Claude Opus 5
+      lines: 2-12
+      integrity: sha256-ea903e6cf9eb1dc54d0a047de27bb8bc0c7356771d0ab4ae70bf57e82e76a032
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-17
+  source-of-truth:
+    - path: src/meta/extractors/index.ts
+      kind: implementation
+    - path: src/meta/commands/validate.ts
+      kind: implementation
+  meta-provenance:
+    - generated-by: claude-sonnet-4-5
+      fields:
+        - /tags
+        - /action
+        - /concepts
+        - /prerequisites
+        - /next-steps
+        - /source-of-truth
+        - /risks
+        - /broader
+        - /scope-note
+      confidence:
+        /tags: 0.85
+        /action: 0.95
+        /concepts: 0.9
+        /prerequisites: 0.85
+        /next-steps: 0.9
+        /source-of-truth: 0.95
+        /risks: 0.95
+        /broader: 0.9
+        /scope-note: 0.9
+  citations:
+    - id: one-extractor-per-format
+      claim:
+        integrity: sha256-e7b3984def61178de35f79220219be3a2157c117bf72f20b0e319627a531dd4a
+      source:
+        file: src/meta/extractors/index.ts
+        lines: 14-21
+        integrity: sha256-f994b01563bf4f2b68ce83079179e9ca6093ad5980da0aba5b7b0a427364ce94
+        commit-sha: 7a6eb280efa865bbed56a3b498f4361c1fc35dfe
+    - id: stdin-requires-as
+      claim:
+        integrity: sha256-e7b3984def61178de35f79220219be3a2157c117bf72f20b0e319627a531dd4a
+      source:
+        file: src/meta/commands/validate.ts
+        lines: 1095-1101
+        integrity: sha256-0c3b3d2a1bb415917787bfb33df3ea75db73cf65e5d1affa71105f10bd5faa9d
+        commit-sha: 992712576ac55646e1005be573c402d6419cbdcc

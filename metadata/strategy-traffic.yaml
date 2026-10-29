@@ -1,0 +1,40 @@
+strategy-traffic:
+  personas:
+    - sara
+  journeys:
+    - s18
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: docs/content-strategy/traffic.sql
+  eval-suite: strategy
+  evals:
+    - id: traffic-per-journey
+      assertion: A reader can turn a page-views export into traffic per journey and per persona, and say what an unplanned row means.
+      type: capability
+      grader: ai
+  provenance:
+    - generated-by: Claude Opus 5.5
+      lines: 2-290
+      integrity: sha256-ded7c6cbe929cba384b2b30005b5a21cc6de3c675a7fbb33fd81272584ae54a5
+  owner:
+    - "@hawkeyexl"
+  created: 2026-10-23
+  citations:
+    - id: route-from-graph-routes
+      claim:
+        integrity: sha256-12638732c5d97df83a1112acd5d44170423d421c67662a990866e48d1ddc61b1
+      source:
+        file: manni.config.yaml
+        lines: 314-316
+        integrity: sha256-9b62e293d17aaa09d4aea6de8e20daeeb3c221799755a9a74a12efcf8e58cb8f
+        commit-sha: 60e7f812644b5affc738ed476d53857199dbebc1
+    - id: traffic-sql
+      claim:
+        lines: 41-83
+        integrity: sha256-c0a8d1b39f6202c5b8bbd1426bf7c51f54e1f457d2fc0a41fb477985799d5d52
+      source:
+        file: docs/content-strategy/traffic.sql
+        lines: 1-41
+        integrity: sha256-fcb559cc0ed23315b4882617c4ffcb0d47795add032207fde63066242c7d1544
+      quote: true

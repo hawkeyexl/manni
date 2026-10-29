@@ -1,0 +1,236 @@
+meta-schemas-field-location:
+  personas:
+    - sara
+    - maya
+  journeys:
+    - s1
+    - m4
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: src/meta/core/location.ts
+    - path: src/meta/core/relocation.ts
+    - path: src/meta/commands/relocate.ts
+    - path: src/meta/commands/validate-offer.ts
+  eval-suite: meta
+  evals:
+    - id: mark-location
+      assertion: A reader can mark a property x-manni-location and read the warning validate reports for a misplaced value.
+      type: capability
+      grader: ai
+    - id: relocate-values
+      assertion: A reader can move misplaced values with manni meta relocate.
+      type: capability
+      grader: ai
+    - id: choose-marks
+      assertion: A reader can decide whether a field belongs on the page or in a manifest.
+      type: capability
+      grader: ai
+  provenance:
+    - generated-by: Claude Opus 5
+      lines: 2-60
+      integrity: sha256-ce045548be6dde00710dd34e5b969a48de55b6703df925a66a920b8326e556c7
+    - generated-by: Claude Opus 5
+      lines: 69-70
+      integrity: sha256-111e28d22ca5b54c74688ce0acda8e4e07cfff8859f0c7560fe8d09cdcefe3bc
+    - generated-by: Claude Opus 5
+      lines: 72-75
+      integrity: sha256-460557ca5ded8808f6126bfee63f187f57d136d57730477b9d34185e9a6e49ca
+    - generated-by: Claude Opus 5
+      lines: 77-205
+      integrity: sha256-6a41fc51a4ad183e897a1a5eea1dcaa4eeccde7df27e99454ed31776373a913e
+    - generated-by: Claude Opus 5
+      lines: 208
+      integrity: sha256-0a69fa04a4467debd9782087c8060134a236e49ae1c7095b1f94f028ab0b249b
+    - generated-by: Claude Opus 5
+      lines: 210-282
+      integrity: sha256-e43eeaae74f297576c5328f980645b0a39ffffdb7e686b775ac79eda949d9cde
+    - generated-by: Claude Opus 5
+      lines: 286-291
+      integrity: sha256-aafa89391ed500d4292d3e6f8b0f8519369271a20e5c8071aa08bde4155f7be7
+    - generated-by: Claude Opus 5
+      lines: 294-467
+      integrity: sha256-d67e0ab2ce1fc4063aa062656855fac7c7203b42908eb10ae59067ed3932eafe
+    - generated-by: Claude Opus 5.5
+      lines: 469-472
+      integrity: sha256-13b731d160a679e61bb8679c56782d401cadfb033f9cb8238b8fba44c93d58f6
+    - generated-by: Claude Opus 5
+      lines: 473
+      integrity: sha256-23cca02b74f386463efa24796c7a9011b0d2c93f0c38b4d15d5d276205b59b43
+    - generated-by: Claude Opus 5.5
+      lines: 474
+      integrity: sha256-553795952ca25d320d1b9bcc465edd78e128dfda86f8dd58683013cc42a70376
+    - generated-by: Claude Opus 5.5
+      lines: 476-478
+      integrity: sha256-641a12817eee71317cbf87d86a3ee2027dd1a302085bf39c6216174a897c0030
+    - generated-by: Claude Opus 5.5
+      lines: 480-481
+      integrity: sha256-b15151b08980db04588786556f4a9b6a3ef83f72a4921bdc0b9e7e7290ab77a5
+    - generated-by: Claude Opus 5.5
+      lines: 483-484
+      integrity: sha256-c6a2092569cf7ee5a3e5e9317a5db2ec82d8059399367115b154d99e6682b7ff
+    - generated-by: Claude Opus 5
+      lines: 490-504
+      integrity: sha256-45df1d179bed465870ab26a19e55bf1ad51bc56ed2d116ebfce1137a556ec2a4
+    - generated-by: Claude Opus 5
+      lines: 509-549
+      integrity: sha256-f380e7ebefea68d20900623273912f571f40077c636611ec57c5ce998bbc3f06
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-15
+  meta-provenance:
+    - generated-by: claude-sonnet-4-5
+      fields:
+        - /tags
+        - /action
+        - /prerequisites
+        - /related-pages
+      confidence:
+        /tags: 0.85
+        /action: 0.95
+        /prerequisites: 0.85
+        /related-pages: 0.95
+  citations:
+    - id: later-schema-wins-on-a-mark
+      claim:
+        integrity: sha256-65d415eb59e20e3e7e6ba0617020404bdd9d074834ddd81d972e3c2fd4d76a70
+      source:
+        file: src/meta/core/validator.ts
+        lines: 771-779
+        integrity: sha256-3b7515831639551c487098af7a1bb96164eaba40a87a3839df62c28fdda70092
+        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
+    - id: a-mark-covers-a-whole-top-level-key
+      claim:
+        integrity: sha256-41e35fcd2286e34627ab7e1569437b03f0356f839b2c8edf17c041191c6a54e5
+      source:
+        file: src/meta/core/validator.ts
+        lines: 165-170
+        integrity: sha256-ffb5f8b6454ea9627588234c4750fa15bf2de9148f17f83bf28fb4a5c7bef61e
+        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
+    - id: encrypted-and-external-decrypts-in-the-manifest
+      claim:
+        lines: 443-444
+        integrity: sha256-5103fa868d137b1ae86f359fa98f2e775eff1d6954349c489f5ff967682b1c16
+      source:
+        file: src/meta/core/external-metadata.ts
+        lines: 1169-1175
+        integrity: sha256-ec1f4494ff206c8d5bb37b8464603f8558df039b62f69eced8ee01a0ccbe2f08
+        commit-sha: 992712576ac55646e1005be573c402d6419cbdcc
+    - id: no-config-is-not-offered
+      claim:
+        lines: 434
+        integrity: sha256-001f21f041c4d3ad321e799d00ed5ba864afedfea1bc46f3a55595ec3e62f829
+      source:
+        file: src/meta/commands/relocate.ts
+        lines: 88-91
+        integrity: sha256-cb438f51b9802958ffccdc39bc49d8db367ab8e057ff9f47f64fdcc7ff79580e
+        commit-sha: 77715cb1faddbd601238d5b6b1a36827cfcebb03
+    - id: a-value-that-stays-exits-1
+      claim:
+        integrity: sha256-17527dfc7a5041e193437b538b86d9d82d1cb1d63e920236c88d410cab33dd59
+      source:
+        file: src/meta/core/relocation.ts
+        lines: 232-234
+        integrity: sha256-7a696206a70ac73d552cbdd045807425eb62dce4386440c38ece54ccbc8549ef
+        commit-sha: af75db2aa4909e9e36ecd00e8b21c2ee02488a3c
+    - id: relocate-moves-values-to-their-mark
+      claim:
+        integrity: sha256-dceab7481b0a784d6b82d7a3872734c62f96ee035efa4ee64a69386e670a3e2c
+      source:
+        file: src/meta/commands/relocate.ts
+        lines: 81-87
+        integrity: sha256-92ebc8193a5308eff25ce77e02581e5c252fb8cd7ca5e39fef0dd2d3221add0b
+        commit-sha: 77715cb1faddbd601238d5b6b1a36827cfcebb03
+    - id: sarif-rule-id-for-location-external
+      claim:
+        lines: 146
+        integrity: sha256-fb384b7d0ccc702b4295f36070cd691385977e0d4e2ae44037c193676ab4918a
+      source:
+        file: src/meta/reporters/rule-id.ts
+        lines: 65-72
+        integrity: sha256-217b8a405c03b6cf03d68c00d2be3f266db172c75caecc01a1b36e1156d8195c
+        commit-sha: 46ea4718fa7ee7e2ec7ed135a7a646d421ff3fb8
+    - id: junit-warnings-are-not-failures
+      claim:
+        lines: 147
+        integrity: sha256-ddffda1bbf124689ff96c54a72aeffa573db2565b9d6aa12f608cf3be56dfb0d
+      source:
+        file: src/meta/reporters/junit.ts
+        lines: 87-91
+        integrity: sha256-982e94e1401e5a4ea5ff5d75a5151fd83d93258edeac10112ce9685f91a2a0a2
+        commit-sha: a13745cefe15407b4f1c5cb2ba70d5638605c04b
+    - id: location-external-points-at-the-page-line
+      claim:
+        lines: 115
+        integrity: sha256-28ba066f72a33ebfba71c81790006aa129debac4d3b75427391339bd79738cf1
+      source:
+        file: src/meta/commands/validate.ts
+        lines: 476-481
+        integrity: sha256-f9ebe6cfa4d1fc4869626c0ba763cb224f66eb119244753a5dcb8c1b5284778d
+        commit-sha: 992712576ac55646e1005be573c402d6419cbdcc
+    - id: location-page-points-at-the-manifest-line
+      claim:
+        lines: 116
+        integrity: sha256-f2e23d6f70c3854478e5cdea81aaa3c77ca9f73838a00d71a1f4a7f7c5001a23
+      source:
+        file: src/meta/commands/validate.ts
+        lines: 494-500
+        integrity: sha256-76ea9587ed1a61fda49c35c283c66bf72e189c2cb3e9d472945e24a5429aa1d2
+        commit-sha: 992712576ac55646e1005be573c402d6419cbdcc
+    - id: a-misplaced-value-is-a-warning
+      claim:
+        integrity: sha256-fd378ca047b8b1df4f9ddfebdc384567076c273d27a39ec3f16fd545b57db69f
+      source:
+        file: src/meta/commands/validate.ts
+        lines: 468-475
+        integrity: sha256-1973f37dd5436ece748c776b24dbfea838d2cad07428841d9036551a77a89caa
+        commit-sha: 992712576ac55646e1005be573c402d6419cbdcc
+    - id: where-a-location-mark-counts
+      claim:
+        integrity: sha256-646dc84ff071894eb3c038c24d258a9f67582ebd61e227bbf0a2d74d234ed3a4
+      source:
+        file: src/meta/core/location.ts
+        lines: 5-16
+        integrity: sha256-a24b2a76006f135456232a55f59512f2304ed0104904dbacb80fd496283891da
+        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+    - id: no-mark-means-no-preference
+      claim:
+        integrity: sha256-7695fa0fdd3e0be07506c89dcac43aa38cbafc17a645c7f3a5c5d3380f78ef5a
+      source:
+        file: src/meta/core/location.ts
+        lines: 22-30
+        integrity: sha256-2ae48510eb76977255d5a48620f86896ab52e26c30cefcb98826bc2dc281d999
+        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+    - id: x-manni-location-says-page-or-external
+      claim:
+        integrity: sha256-58d29ec4b7fe1767b58b6d960a70cf0a9f10603ff33ce08c66bb3e94aa182a2e
+      source:
+        file: src/meta/core/location.ts
+        lines: 20-23
+        integrity: sha256-c1642c08050b354c72e4a3741072f31438caa22117a31f49c0addcd6f9d26b19
+        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+    - id: writers-follow-the-manifest-not-the-mark
+      claim:
+        integrity: sha256-c91d48f71c9158c367af6b22fd2928fe1a799315a2ec9e58042474478b5373dc
+      source:
+        file: src/meta/core/external-metadata.ts
+        lines: 84-91
+        integrity: sha256-566b9a706afeb0ee880f0c31afa7d72f1fcfe64177535f1dc04f72deff372a88
+        commit-sha: 46ea4718fa7ee7e2ec7ed135a7a646d421ff3fb8
+    - id: url-manifest-write-is-refused
+      claim:
+        lines: 373
+        integrity: sha256-cdf9f72d15760ddc8ef42a076541221895484de6bf2e8a029006f04553c66b78
+      source:
+        file: src/meta/commands/query.ts
+        lines: 3167-3171
+        integrity: sha256-498f7cd21ff8c8eaa06a5d124edf0e84232822f01e60078f49037a8a18baf7d3
+        commit-sha: 46ea4718fa7ee7e2ec7ed135a7a646d421ff3fb8
+    - id: keys-are-per-collection
+      claim:
+        integrity: sha256-2af7623b88a73d6c3b90872aec898d8f117cdcc3f4b515795866d9a4b5a1425f
+      source:
+        file: src/shared/collections.ts
+        lines: 417-423
+        integrity: sha256-bb34eb54b93975df25155299599631892503a8779ac51578da6316e798b1a3fc
+        commit-sha: 46ea4718fa7ee7e2ec7ed135a7a646d421ff3fb8

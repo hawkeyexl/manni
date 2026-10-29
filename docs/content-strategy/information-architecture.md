@@ -342,7 +342,7 @@ And every page that presents a command carries inline Doc Detective steps over
 transcript therefore cannot drift from what the binary prints.
 `npm run docs:check-graph` builds a graph of this section and checks it against
 the bundled shapes. It reads the root `manni.config.yaml`, so each page's
-`{page}.meta.yaml` manifest reaches the graph as it reaches `manni meta validate`.
+`metadata/<id>.yaml` manifest reaches the graph as it reaches `manni meta validate`.
 
 Three drift guards read these pages directly, in
 `test/graph/unit/{schema-sync,vocabulary}.test.ts`. The configuration page must

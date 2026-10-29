@@ -293,8 +293,8 @@ Corpus-defining settings such as routes and derive sources may be config-only.
 - `npm run docs:check-graph`, the dogfood. It builds the graph of the site's
   graph section through the repository's own `manni.config.yaml`, whose
   `graph:` section describes the site, then runs the shapes gate. Last, it
-  asserts that a value only a `{page}.meta.yaml` manifest holds reached the
-  graph.
+  asserts that a value only a page's `metadata/<id>.yaml` manifest holds
+  reached the graph.
 - The fixture corpus carries its own config. Run `node dist/cli.js graph build`
   from `test/graph/fixtures/corpus/`. `graph stats --check` exits 1 there by
   design.

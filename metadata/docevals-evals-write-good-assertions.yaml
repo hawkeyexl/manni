@@ -1,0 +1,21 @@
+docevals-evals-write-good-assertions:
+  personas:
+    - sara
+    - maya
+  journeys:
+    - s8
+    - m14
+    - s10
+  provenance:
+    - generated-by: Claude Fable 5.1
+      lines: 2-47
+      integrity: sha256-dfa838b48d2053ea20515555fb2869b341109502807b1f8ef2c29ffa9b5c4b04
+    - generated-by: Claude Opus 5.5
+      lines: 48
+      integrity: sha256-af70a53d39fd1ffa05fffca7f55e85355fb8de8a65c76e4bf6893e0cbb859b61
+    - generated-by: Claude Fable 5.1
+      lines: 58-137
+      integrity: sha256-b751cbe7b415b29b279c8dc43e36ece3dc151df2d7450bad45be6ce41e053ea7
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-06

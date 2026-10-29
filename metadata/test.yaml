@@ -1,0 +1,36 @@
+test:
+  personas:
+    - devin
+    - maya
+    - sara
+  journeys:
+    - d17
+    - s19
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: src/test/commands/procedures.ts
+    - path: src/test/core/doc-detective.ts
+    - path: src/test/reporters/
+    - path: src/test/core/judge-run.ts
+  eval-suite: test
+  evals:
+    - id: input-precedence
+      assertion: A reader can say which files manni test procedures tests when given paths, a collection, or nothing.
+      type: capability
+      grader: ai
+    - id: gate-in-ci
+      assertion: A reader can add manni test procedures to a CI job and say what each of its exit codes means.
+      type: capability
+      grader: ai
+    - id: two-verbs
+      assertion: A reader can say what manni test tasks checks that manni test procedures does not.
+      type: capability
+      grader: ai
+  provenance:
+    - generated-by: Claude Opus 5.5
+      lines: 2-189
+      integrity: sha256-490d04e008aa7fa09b42c6f2ffa560ae788f55de6f9d441571ebfa5cf7af15af
+  owner:
+    - "@hawkeyexl"
+  created: 2026-10-05

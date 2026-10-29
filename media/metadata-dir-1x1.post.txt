@@ -1,0 +1,11 @@
+Rename a docs page, and the metadata kept beside it gets stranded. manni meta now keeps it somewhere a rename can't reach.
+
+A page's external metadata lives in metadata/<id>.yaml, found by the page's id. Rename the page, and the link holds.
+
+manni meta relocate --from "{page}.meta.yaml" moves an existing per-page setup into that directory in one command. It mints an id into any page that lacks one, deletes the emptied sidecars and drops the old config entry.
+
+MANNI_EXTERNAL_METADATA_DIR points the directory at another repository's checkout. If that checkout is missing, the run stops with exit 2 and says which variable to fix.
+
+Every frame is a real run against a one-page demo repository.
+
+#techcomm #docsascode #technicalwriting #metadata

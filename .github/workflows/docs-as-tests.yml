@@ -17,6 +17,8 @@ on:
   pull_request:
     paths:
       - "docs/**"
+      # Each page's external metadata, its evals among them (proposal 0126).
+      - "metadata/**"
       - "src/**"
       - "test/fixtures/**"
       # The docevals pages' steps run against this corpus and its config.

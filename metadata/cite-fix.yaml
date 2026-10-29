@@ -1,0 +1,1286 @@
+cite-fix:
+  personas:
+    - theo
+  journeys:
+    - t2
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: src/cite/commands/check.ts
+    - path: src/cite/commands/add.ts
+    - path: src/cite/commands/update.ts
+    - path: src/cite/core/severity.ts
+    - path: src/cite/core/sidecar.ts
+    - path: src/cite/core/manifest.ts
+    - path: src/cite/reporters/pretty.ts
+    - path: test/cite/cli.integration.test.ts
+  eval-suite: cite
+  evals:
+    - id: decode-finding
+      assertion: A reader can decode a manni cite finding line into its id, its claim end and its source end.
+      type: capability
+      grader: ai
+      options:
+        readers: personas
+    - id: apply-rule-fix
+      assertion: A reader can find the rule behind a finding and run the command that clears it.
+      type: capability
+      grader: ai
+      options:
+        readers: personas
+  provenance:
+    - generated-by: Claude Fable 5.1
+      lines: 2-21
+      integrity: sha256-3eb32860c87a96cf06e63ddc78cedd53e72cf2f59a040c91261271af5d12f6ae
+    - generated-by: Claude Opus 5.5
+      lines: 22-24
+      integrity: sha256-2a779bf0008b99531d1bd1a5372af6b03cf616de6d28863da14e0f8a0056a4c5
+    - generated-by: Claude Fable 5.1
+      lines: 25
+      integrity: sha256-f1b901847390b0ed7e374e7c1e464ec17b46a427c487a5ad6cbd2906405083d5
+    - generated-by: Claude Opus 5.5
+      lines: 27-30
+      integrity: sha256-37e2cad85056408c2b9467ae6afb8cc7177b0712cdc163c4fb09ec0021ed89a2
+    - generated-by: Claude Fable 5.1
+      lines: 32
+      integrity: sha256-f1b901847390b0ed7e374e7c1e464ec17b46a427c487a5ad6cbd2906405083d5
+    - generated-by: Claude Opus 5.5
+      lines: 33
+      integrity: sha256-18ef31d20cfa7684a5ceaf5cc97e431c09e47d4719fe40b47eca066d9194e968
+    - generated-by: Claude Fable 5.1
+      lines: 34-39
+      integrity: sha256-b2e7707ee5df05ac35843962d8af14a46b7bd8f7dd319f09f10c481e0b54cc3e
+    - generated-by: Claude Opus 5.5
+      lines: 40
+      integrity: sha256-b672603accd777dfe795f8460191abf7adcd4b775c2dc6c1f9bd0236d85c8972
+    - generated-by: Claude Fable 5.1
+      lines: 41
+      integrity: sha256-fa9aebd47410e8bf11896a072775c83cf146b981392df2fb6ea6a94e197a274d
+    - generated-by: Claude Opus 5.5
+      lines: 42-50
+      integrity: sha256-fefed605dbb1214da1f90c168aa9630ede892541edaa93288d74c14315d019cb
+    - generated-by: Claude Opus 5
+      lines: 52
+      integrity: sha256-701379ac71ec309e6e3628bd1e60595692c170f81013fedbe4f900cec3b2140a
+    - generated-by: Claude Fable 5.1
+      lines: 53
+      integrity: sha256-3da29bb5c0c893ce30e709bfb90730b9430c1fb01cd131f2e8739c6469034fe6
+    - generated-by: Claude Opus 5.5
+      lines: 54-55
+      integrity: sha256-c5d8d0925c2e894ba662318c00ee2ff747e0042280407df2703cb46245e9bf5e
+    - generated-by: Claude Fable 5.1
+      lines: 56-64
+      integrity: sha256-559a27f7b4b3567b3f51fa4b0f8c9a3fb759d381da4af327482fcb07ddaf69c3
+    - generated-by: Claude Opus 5.5
+      lines: 67-71
+      integrity: sha256-f87d1b3b1078556ba0c14ade46066e8a5a5334e40053a254d05da112e6397826
+    - generated-by: Claude Fable 5.1
+      lines: 72-74
+      integrity: sha256-1524d12995973de9238e82710524f2a4b000369bd2d8d08dc466c45b27799f61
+    - generated-by: Claude Opus 5
+      lines: 75
+      integrity: sha256-1296355629f606e038b9f0becd7c933abc1eb97e842d61b3bd3eca9e5d14f6b7
+    - generated-by: Claude Fable 5.1
+      lines: 76-78
+      integrity: sha256-a5245956b0915655053bade7f0f4f2f4e0efe16e25fc0998d999d1252ecfcd60
+    - generated-by: Claude Opus 5
+      lines: 80-81
+      integrity: sha256-77868f88d3d59d5766e48eb07a98a37952e67826e01aebfb7ee4c2731753ee22
+    - generated-by: Claude Opus 5.5
+      lines: 82
+      integrity: sha256-45a811ff7fb789fbe80957c04c863a867de8beca9768e799369c39fde564984c
+    - generated-by: Claude Fable 5.1
+      lines: 83
+      integrity: sha256-0e6e40eda75e55849d3ab08e67567e2a85ecbdd5b14bb1399224a9c938a9f41b
+    - generated-by: Claude Opus 5
+      lines: 84-89
+      integrity: sha256-72c725af12b646effb872870f057bafa0d397e8e0dc0feb6eb45ea1db08b0dfe
+    - generated-by: Claude Fable 5.1
+      lines: 90-101
+      integrity: sha256-9bdf112a4a065c52de6c5c6b16692154c6b3d6e58150c809d93bd0d982b6e6b4
+    - generated-by: Claude Opus 5.5
+      lines: 102
+      integrity: sha256-2e22d33ae4f6fbb4ffd716c3f2281c51c45e89bd455288e181312d27656b29dc
+    - generated-by: Claude Fable 5.1
+      lines: 103
+      integrity: sha256-f1b901847390b0ed7e374e7c1e464ec17b46a427c487a5ad6cbd2906405083d5
+    - generated-by: Claude Opus 5
+      lines: 105-106
+      integrity: sha256-782307c518f3785d99adef66392e617b4b29da96bd205d480397a3e52d5ec055
+    - generated-by: Claude Fable 5.1
+      lines: 107-110
+      integrity: sha256-46fec0030000b3dc89fc67477a68641baf4a152e9f463b00c072c6c5d6c760f5
+    - generated-by: Claude Opus 5
+      lines: 112-114
+      integrity: sha256-d96de2dc3dcda2d20101165a1a05436a1ce23035f9e8ed7366b79147f546e692
+    - generated-by: Claude Fable 5.1
+      lines: 116-128
+      integrity: sha256-8f744df326c2af77a2c677f134d01487e5224384e85d99345732ac2934661467
+    - generated-by: Claude Opus 5.5
+      lines: 129-130
+      integrity: sha256-bfe3186419a3cd82a3ae5bff206679dfbdd0fdf78d0027a2cde21f567de835f4
+    - generated-by: Claude Fable 5.1
+      lines: 131
+      integrity: sha256-f1b901847390b0ed7e374e7c1e464ec17b46a427c487a5ad6cbd2906405083d5
+    - generated-by: Claude Opus 5
+      lines: 133-134
+      integrity: sha256-590517276202dbe3f42c43381a86779aebc4362ef9f2a51fe3b41d5537af2fc9
+    - generated-by: Claude Fable 5.1
+      lines: 135-150
+      integrity: sha256-63d5347e64b3b1be6ae3ce945087da27d7f72c50781e28943c58154e6c2a93ea
+    - generated-by: Claude Opus 5.5
+      lines: 151
+      integrity: sha256-342d986c509605c11263e8895df31c17f5e7d3c05203003efbb464d003532963
+    - generated-by: Claude Fable 5.1
+      lines: 152
+      integrity: sha256-f1b901847390b0ed7e374e7c1e464ec17b46a427c487a5ad6cbd2906405083d5
+    - generated-by: Claude Opus 5
+      lines: 154-155
+      integrity: sha256-ff4eebdfd95a01656a8fbb05289eb270e800cd11e192d509f858b5556d7c05f9
+    - generated-by: Claude Fable 5.1
+      lines: 156-157
+      integrity: sha256-ca455ea5619b3ca6c3c92c2c877911d71f82cf5f5babf4575bd7ba6c28544012
+    - generated-by: Claude Opus 5
+      lines: 166-167
+      integrity: sha256-40569b3ee3e9a9528a4bbc25dd3c325d3e0fe7d09ea1e8803404cb0b232b86ae
+    - generated-by: Claude Fable 5.1
+      lines: 173
+      integrity: sha256-f1b901847390b0ed7e374e7c1e464ec17b46a427c487a5ad6cbd2906405083d5
+    - generated-by: Claude Opus 5
+      lines: 174
+      integrity: sha256-fe40c0025284199aa6563508418b1a528e6ed220537796b8c3fd4309d1579e70
+    - generated-by: Claude Fable 5.1
+      lines: 175-195
+      integrity: sha256-b199a9209f04b447d79e851cc573b61bbb41cb830d6d25c89ad97cabfc7f847c
+    - generated-by: Claude Opus 5
+      lines: 197
+      integrity: sha256-f1782eda92577c71af71e027b5def60f3c8f5e3f2cbb1dcfdb639414ecb501bb
+    - generated-by: Claude Fable 5.1
+      lines: 198-205
+      integrity: sha256-a706af6e4f79c0a1ccd240cacfcd969fec8b4493070046b2c26d5ccf5fe34104
+    - generated-by: Claude Opus 5.5
+      lines: 207
+      integrity: sha256-342d986c509605c11263e8895df31c17f5e7d3c05203003efbb464d003532963
+    - generated-by: Claude Fable 5.1
+      lines: 208
+      integrity: sha256-f1b901847390b0ed7e374e7c1e464ec17b46a427c487a5ad6cbd2906405083d5
+    - generated-by: Claude Opus 5
+      lines: 210-211
+      integrity: sha256-a81e5623bb900100b945bc297ed11326a950f18a63637beefe20e7e64a789331
+    - generated-by: Claude Opus 5
+      lines: 220-221
+      integrity: sha256-bcfd05e4b48f0d4583e12c8240afec33546b1f2691361bba4a20e03aa8f94be6
+    - generated-by: Claude Fable 5.1
+      lines: 222-230
+      integrity: sha256-7fe8f3bf4a1b38acabd45fb22ec000d6cc01b5c05f01f86e0ca1b843bbd97440
+    - generated-by: Claude Opus 5.5
+      lines: 231
+      integrity: sha256-5d51cbd924b85c7cf76c8dff9f4873efc1299331f904871e7edd1f7b28d75ea6
+    - generated-by: Claude Fable 5.1
+      lines: 232
+      integrity: sha256-f1b901847390b0ed7e374e7c1e464ec17b46a427c487a5ad6cbd2906405083d5
+    - generated-by: Claude Opus 5
+      lines: 234-242
+      integrity: sha256-0d358b11e70e14d888a36ca5d3c9ee41799cf206c6b23f2fb276a1259bd87487
+    - generated-by: Claude Fable 5.1
+      lines: 244-246
+      integrity: sha256-5198001e33d40817a2c38ad9caa7546510b2dd0e14e7a1436c9ce1f9b9477787
+    - generated-by: Claude Opus 5
+      lines: 247
+      integrity: sha256-c33050069596bc898811492374da5ead72b987e262118776165ca8c62c52c197
+    - generated-by: Claude Fable 5.1
+      lines: 248-249
+      integrity: sha256-221b445f628766cd69a45674fcbb6ba40e7ebc2cdc736618f9376dbb48013476
+    - generated-by: Claude Opus 5
+      lines: 251
+      integrity: sha256-4f247a9379628f3164176ed8197a3f66c019c63ceb72c9e33f3891a5822346da
+    - generated-by: Claude Fable 5.1
+      lines: 252-255
+      integrity: sha256-0a721274eebcca86526091671fcc8ad94b9db579e89bf4b9a0c049e2dc61fc31
+    - generated-by: Claude Opus 5.5
+      lines: 256
+      integrity: sha256-e60337c8fe44b241a9f7624b4381c7ba88955a4ea131096be1e5a86045100fdd
+    - generated-by: Claude Fable 5.1
+      lines: 257
+      integrity: sha256-f1b901847390b0ed7e374e7c1e464ec17b46a427c487a5ad6cbd2906405083d5
+    - generated-by: Claude Opus 5
+      lines: 259
+      integrity: sha256-6347e38180f92ff14216e111d99174f0a00f1db9e021ee4624ebbe0bb509cf57
+    - generated-by: Claude Fable 5.1
+      lines: 260-272
+      integrity: sha256-8666f8294bab8a8396bf3f088eebbd272f6571b7af5b2f8fa681a38687dfd296
+    - generated-by: Claude Opus 5.5
+      lines: 273-290
+      integrity: sha256-ff84b9e670d794fc1bfd4164356aa073f0e03f00e1b605696fc8f2549838fff2
+    - generated-by: Claude Fable 5.1
+      lines: 292
+      integrity: sha256-be72a8bbf3fd4c126e20f5b456797ae7d2179be18ebd5d74b4f117cea3c97b19
+    - generated-by: Claude Opus 5.5
+      lines: 294-300
+      integrity: sha256-42a6288d4e3142e5eadf8b4d11f637c0630ae37959abdb3986e74053194d1889
+    - generated-by: Claude Fable 5.1
+      lines: 302-306
+      integrity: sha256-d54c61fe854c58ec8aecdb1d156cf3f0c1de8997fe9cf0b546b0c04f5583c554
+    - generated-by: Claude Opus 5.5
+      lines: 307
+      integrity: sha256-2e22d33ae4f6fbb4ffd716c3f2281c51c45e89bd455288e181312d27656b29dc
+    - generated-by: Claude Fable 5.1
+      lines: 308
+      integrity: sha256-f1b901847390b0ed7e374e7c1e464ec17b46a427c487a5ad6cbd2906405083d5
+    - generated-by: Claude Opus 5
+      lines: 310-311
+      integrity: sha256-b0b49239b282fb39636a7b35a316ca1f03b9ce1b2ae16dc40ec30af93c901d52
+    - generated-by: Claude Fable 5.1
+      lines: 312-314
+      integrity: sha256-e2bb59078cc2e5d783584d2ab45a5fa3e6fb7d8c1056f36f1622953b61902bb5
+    - generated-by: Claude Opus 5
+      lines: 316
+      integrity: sha256-ce9be15164cb89791c94bc39f992f3dccd3f1261bd32dfc92a0e662d9ec6ca95
+    - generated-by: Claude Fable 5.1
+      lines: 317-326
+      integrity: sha256-ffa843188c96d2662ebcaaf535666f53b0e81511ee2bfdfa9278f303af8619af
+    - generated-by: Claude Opus 5
+      lines: 328-331
+      integrity: sha256-11ef49d1656353230eabe410105370972806fffafb1dad46678b5dd1caaaabc8
+    - generated-by: Claude Opus 5.5
+      lines: 333-346
+      integrity: sha256-3b4d65b9ddc918481fdc5414f79215bbf6b1cdc2ef8a620b8648ad3789972f63
+    - generated-by: Claude Fable 5.1
+      lines: 348-352
+      integrity: sha256-4b7c6ca6d2ab7c89428bbc81755669c871729c5f9a33db28bdd792714e2831e5
+    - generated-by: Claude Opus 5.5
+      lines: 353
+      integrity: sha256-b397b2629a1ef2d30f81dca439c564250f209bb74370df6490012547586cb2e8
+    - generated-by: Claude Fable 5.1
+      lines: 354
+      integrity: sha256-f1b901847390b0ed7e374e7c1e464ec17b46a427c487a5ad6cbd2906405083d5
+    - generated-by: Claude Opus 5
+      lines: 356
+      integrity: sha256-2c1969aebc2ea9bdd20964f0e7334f5bc4f4e5227d18a7a0516c32438ea1db98
+    - generated-by: Claude Fable 5.1
+      lines: 357-359
+      integrity: sha256-b32d784d53f230bb5ab605a6ac272c58d0466befb83b7fdf472911c8c1c06077
+    - generated-by: Claude Opus 5
+      lines: 361
+      integrity: sha256-80f293655ff9f6391c6b0384da7c7c82c767163ffb59e8dc5cccd172bf7f0118
+    - generated-by: Claude Fable 5.1
+      lines: 362-367
+      integrity: sha256-ff3d3a81737b9066d8523de013a8891e6278bce605bad781fe78fc13f7d554ed
+    - generated-by: Claude Opus 5.5
+      lines: 369-404
+      integrity: sha256-6550a8e5d982d6845153e043174a378f317ea4e23d623330e55f807dc0c82b79
+    - generated-by: Claude Fable 5.1
+      lines: 406-410
+      integrity: sha256-095692431f8278e128fce39392dfc21dca32b7608a48e70665e54ba55a97b131
+    - generated-by: Claude Opus 5.5
+      lines: 411
+      integrity: sha256-115b47febf6d2421becc5fa67f3745c911544732221f2b262aef7bc61b90e9e7
+    - generated-by: Claude Fable 5.1
+      lines: 412
+      integrity: sha256-f1b901847390b0ed7e374e7c1e464ec17b46a427c487a5ad6cbd2906405083d5
+    - generated-by: Claude Opus 5
+      lines: 414-415
+      integrity: sha256-9510ca4a1d487326670d5f3ead2dfcf42796d6014afe480810b00f8cb8433436
+    - generated-by: Claude Fable 5.1
+      lines: 416
+      integrity: sha256-fefe8f8fd6090069aafbfff2df12c17ca4f4661d722e76a4bc88f97fb4373a55
+    - generated-by: Claude Opus 5
+      lines: 417-419
+      integrity: sha256-870a2d0ece01409ef2f3b7214808b1dc8be8f0c242b8c4401887fda5d9d63414
+    - generated-by: Claude Fable 5.1
+      lines: 421-431
+      integrity: sha256-06c64e7e5523969efe36431ecd021a65c6c4c8b8d4d25263eb3041a6815245a2
+    - generated-by: Claude Fable 5.1
+      lines: 431
+      integrity: sha256-f1b901847390b0ed7e374e7c1e464ec17b46a427c487a5ad6cbd2906405083d5
+    - generated-by: Claude Opus 5
+      lines: 433
+      integrity: sha256-24948ca733c83d4ee079539269e373c463facb4c1c7d555049fb52e6f2bccec1
+    - generated-by: Claude Fable 5.1
+      lines: 434-436
+      integrity: sha256-01d812a13498e72f387cf70060f22ec428aff71f262f2580012ef4b19dac88e3
+    - generated-by: Claude Opus 5
+      lines: 437-439
+      integrity: sha256-7976ac7675b96bdf8379ef50a311b453370660cb1a482d1802b6cd644e46e6b6
+    - generated-by: Claude Opus 5.5
+      lines: 441-474
+      integrity: sha256-46e8d5610d38b77fcce2d5a5ec342fbae1a3f0b39da0a2dd4f3f6db324828f62
+    - generated-by: Claude Opus 5
+      lines: 476
+      integrity: sha256-32887271d4c07b7cf80773f88bcae642b21826a63b8c822f04954b0f24a9a71e
+    - generated-by: Claude Fable 5.1
+      lines: 477-479
+      integrity: sha256-06bd5a46b867e32d45c00d57c43368a819c218f37073281dc648fa2116582da9
+    - generated-by: Claude Opus 5.5
+      lines: 481-501
+      integrity: sha256-c397e9b1ddfd62e0c3aec4028e37aae2a193608362ea9e9b1cfa6c60ab81dbab
+    - generated-by: Claude Fable 5.1
+      lines: 503-508
+      integrity: sha256-08bbc4d7a4cfab8be21b182bb4c0bfbb923553163141f9e952f8b5db372969d6
+    - generated-by: Claude Opus 5.5
+      lines: 509
+      integrity: sha256-92822de13c2a2ea5b38250ad847fbd3faad82e31a02a1e1db7fce18aa90c4371
+    - generated-by: Claude Fable 5.1
+      lines: 510-513
+      integrity: sha256-9ddcaba237fd3ca627b6716a6890b02bcdb0dee00e6542f1d8d5956995bf1017
+    - generated-by: Claude Opus 5
+      lines: 515
+      integrity: sha256-88a58db038652f6bc8d72220511f21e5dba51d07d95ec0fe1d59d39b0ac0f738
+    - generated-by: Claude Fable 5.1
+      lines: 516
+      integrity: sha256-919b82192104a97d0dc5ca14e80d5ac17e3642a5fdaca7c8331deaa06ef3063d
+    - generated-by: Claude Opus 5
+      lines: 517-521
+      integrity: sha256-1f5f3dcc5e72b49ed07b898a2fbaf3ec5600f6d1f584cc6bdeba07d2d7cdf2ca
+    - generated-by: Claude Fable 5.1
+      lines: 523-526
+      integrity: sha256-cda5d7594423ae658304c9280e12a863903037253a1e967471cfe18691db9e1a
+    - generated-by: Claude Opus 5.5
+      lines: 527
+      integrity: sha256-e9265396705605013105cc1c192277cdbe8460f80771972907682bd52e547b90
+    - generated-by: Claude Fable 5.1
+      lines: 528
+      integrity: sha256-f1b901847390b0ed7e374e7c1e464ec17b46a427c487a5ad6cbd2906405083d5
+    - generated-by: Claude Opus 5
+      lines: 530-535
+      integrity: sha256-e570a1f2f94ab06bcdd906327ac8b060d24ca266ad9212907184a33c25921b81
+    - generated-by: Claude Fable 5.1
+      lines: 536
+      integrity: sha256-af633fe16fcb17d894ee312243d6c14d6e1d094dd9f66c51474b0433ebe537d1
+    - generated-by: Claude Opus 5
+      lines: 538
+      integrity: sha256-04454c5d3f30fc087bf1000579c0396fe025cc3ba4357594f1fd46d468cf547a
+    - generated-by: Claude Fable 5.1
+      lines: 539-545
+      integrity: sha256-8abc1ab792708f6ee72008ae95d72df5c57ddf0a7da2737da27be32834fbadd9
+    - generated-by: Claude Fable 5.1
+      lines: 544
+      integrity: sha256-f1b901847390b0ed7e374e7c1e464ec17b46a427c487a5ad6cbd2906405083d5
+    - generated-by: Claude Opus 5.5
+      lines: 546
+      integrity: sha256-7243e21ad2e7f62e3c76fda8f24c9cf9491435072e1ee9d50a2a58da948eacf6
+    - generated-by: Claude Fable 5.1
+      lines: 547
+      integrity: sha256-f1b901847390b0ed7e374e7c1e464ec17b46a427c487a5ad6cbd2906405083d5
+    - generated-by: Claude Opus 5
+      lines: 549
+      integrity: sha256-ad7abd7143cfd74782de66c993840da099e961300e6f612cce85f6f11a80816f
+    - generated-by: Claude Fable 5.1
+      lines: 550-554
+      integrity: sha256-30185007459452d183ba24d147c47d9e487de3742012f0e33b39028cb0fad260
+    - generated-by: Claude Opus 5
+      lines: 556-560
+      integrity: sha256-b5ba89bd1ebdcdc7348b2e9c7fb3aed32a38c6fac688d0128558d556d21aeb1a
+    - generated-by: Claude Opus 5.5
+      lines: 561
+      integrity: sha256-43438232d1f370b30f3b38109c37406cc5c16a770a6e0d3a63a618c680d2d2ac
+    - generated-by: Claude Opus 5
+      lines: 562-584
+      integrity: sha256-2ed6af27b90fb130b51f99408d2b24d73351be6c9faad97c6ba4c552e96a2e46
+    - generated-by: Claude Fable 5.1
+      lines: 586-591
+      integrity: sha256-1334630cffe876e55079031a05a75ea574f3d3350aba3ffd1f0674cea8601622
+    - generated-by: Claude Opus 5
+      lines: 593
+      integrity: sha256-1e6bd0f9d7c99464b470b50f3dbd707bafb389894d3a7f35c4c3b3ccc640bab9
+    - generated-by: Claude Opus 5.5
+      lines: 594-595
+      integrity: sha256-01875f4310f2ab53f00ab325a5215b3f41714ed80eccb6b6c1dcbdce131bd647
+    - generated-by: Claude Fable 5.1
+      lines: 597-599
+      integrity: sha256-a383987f9ade057008b83a1d1efb6e2564b76a5b9c0482c45d9df79b1a5fbc55
+    - generated-by: Claude Opus 5.5
+      lines: 600-603
+      integrity: sha256-06f730b8efdee8dcdb66da1898eccdded94e3ebc39dbcec9ad153a5fac5a1c09
+    - generated-by: Claude Opus 5
+      lines: 605
+      integrity: sha256-09a900d91be8db47824478c27ac9b1af94ead0b922401cf7b0d8fc07cf1a66d8
+    - generated-by: Claude Fable 5.1
+      lines: 606-611
+      integrity: sha256-719877ef0f75934c0902226789b2a53e99850b756acab67d705d5bc907cc144f
+    - generated-by: Claude Opus 5.5
+      lines: 613-617
+      integrity: sha256-d1d6d2a4569f86cc4ffc1f0758ede52f345eb1fd89399e42ba3e81dfbc95b1f2
+    - generated-by: Claude Fable 5.1
+      lines: 619-623
+      integrity: sha256-5f95c35b1a2571f80d7dd78e7729bec899ff6d642a9d737cbde1431d83b08517
+    - generated-by: Claude Opus 5.5
+      lines: 624
+      integrity: sha256-d4b8a84d1ac3117126e9ecd494d7a91f360efaddae96bd11ac0f54bcf1792e28
+    - generated-by: Claude Fable 5.1
+      lines: 625
+      integrity: sha256-f1b901847390b0ed7e374e7c1e464ec17b46a427c487a5ad6cbd2906405083d5
+    - generated-by: Claude Opus 5
+      lines: 627-628
+      integrity: sha256-26c625e432129afc328aff2ff374a56bdb71bdebc545c0e135aa054833788811
+    - generated-by: Claude Fable 5.1
+      lines: 629
+      integrity: sha256-37ae8de081320cf472f126f8079a06117f3bf69dce7ab8dec7bbff1d9eba412b
+    - generated-by: Claude Opus 5
+      lines: 630-631
+      integrity: sha256-17cb24b6cec6102eb838db4007d5049a37b8c2fe81e8bbd81bacbe24ed5d67be
+    - generated-by: Claude Fable 5.1
+      lines: 632
+      integrity: sha256-5c10412937e542d9fb68be281366eee1fc18bb37d75f5c81180a04ee84ae88be
+    - generated-by: Claude Opus 5
+      lines: 634
+      integrity: sha256-95cd7ae997103cb86c8f4c6226e875abc13997a6762aecd5cc5bb257c4030b07
+    - generated-by: Claude Fable 5.1
+      lines: 635-640
+      integrity: sha256-15a0affbce71ccc7cab56d689c86dcb55867c0d5020abb8df58e6d7dc42441ec
+    - generated-by: Claude Opus 5
+      lines: 642
+      integrity: sha256-178fd341fbbb1f754e47d6c621258a6f656a28858a808ca3e086d478663df654
+    - generated-by: Claude Fable 5.1
+      lines: 643-644
+      integrity: sha256-da07459718c795768fc0e4a42f5701e9b4806bba711913324b4b7a65cb1bb833
+    - generated-by: Claude Opus 5.5
+      lines: 646-650
+      integrity: sha256-e244f8093d41b8b14932738c193f45d57deae3f0ae1b7f8e27aab8272a88b771
+    - generated-by: Claude Opus 5
+      lines: 652-661
+      integrity: sha256-0a6960212332c847cf18f957fd656efbf6d0db990cf622a07e7efa4f6804b14f
+    - generated-by: Claude Fable 5.1
+      lines: 663-667
+      integrity: sha256-52302e375e7e4a28f77b38f0ccadeb79b466e08edaf719bc7a8f1e5ff27d864f
+    - generated-by: Claude Opus 5.5
+      lines: 668
+      integrity: sha256-60cec10c72b515c4ee1a01f4b72ff66c6f995a65dcef36e96905b003ca507005
+    - generated-by: Claude Fable 5.1
+      lines: 669
+      integrity: sha256-f1b901847390b0ed7e374e7c1e464ec17b46a427c487a5ad6cbd2906405083d5
+    - generated-by: Claude Opus 5
+      lines: 671
+      integrity: sha256-8f20109ad1229bfd6df889c40be316812fcf66c3ca527d1cb7cafe7deb478b00
+    - generated-by: Claude Fable 5.1
+      lines: 672-712
+      integrity: sha256-e9fd66ea7912d681888860c145ac085c10ff4c9afbe773668ab29bac73598d21
+    - generated-by: Claude Opus 5.5
+      lines: 713-714
+      integrity: sha256-3d362f64c815576c6b4bb90a8da8ada0c0fa7cbc6e82635025ab3ed3830f8a9a
+    - generated-by: Claude Fable 5.1
+      lines: 715-723
+      integrity: sha256-b99b3ac59219685c7adb4baf9000590e2e79444f3b32c8e5188a4001fce0f887
+    - generated-by: Claude Opus 5.5
+      lines: 724
+      integrity: sha256-9376722537811cfca897d9bc690d4e54c97fc8378300ab84f3f9eb78c51f4b16
+    - generated-by: Claude Fable 5.1
+      lines: 726-747
+      integrity: sha256-271630c830d7f799ab99af4333e8637d1154f9e8b426fc061ec2c4250502a95a
+    - generated-by: Claude Fable 5.1
+      lines: 749-753
+      integrity: sha256-c7588c7af84eba1472b02266340f2db5ddd0984ec4ff77fa805788e462bafe5f
+    - generated-by: Claude Opus 5.5
+      lines: 754
+      integrity: sha256-f0c00db929c420992bc1d74105d09906ab95d01ff9ea3b7867dc57b42eb2b7ab
+    - generated-by: Claude Fable 5.1
+      lines: 755-759
+      integrity: sha256-7faffb5e64906a6f3bbc834d4f69f77d6e20cd50b2add8b6d577cc71cb3ae685
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-12
+  meta-provenance:
+    - generated-by: claude-sonnet-4-5
+      fields:
+        - /tags
+        - /action
+        - /prerequisites
+        - /next-steps
+      confidence:
+        /tags: 0.9
+        /action: 0.98
+        /prerequisites: 0.88
+        /next-steps: 0.85
+  citations:
+    - id: row-mark-severity
+      claim:
+        lines: 38
+        integrity: sha256-f77c106fa0a38af626f2d55e2619b2cf606eb0a112a62088af18f719f468756d
+      source:
+        file: src/cite/reporters/pretty.ts
+        lines: 48-58
+        integrity: sha256-4b3e319b0382b747ad84dcf56977324657662ad8b86fe9e1498103a82d7d2b1c
+        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
+    - id: row-mark-current-skipped
+      claim:
+        lines: 38
+        integrity: sha256-f77c106fa0a38af626f2d55e2619b2cf606eb0a112a62088af18f719f468756d
+      source:
+        file: src/cite/reporters/pretty.ts
+        lines: 373-380
+        integrity: sha256-262e6afb0d4c5ba60d3304d8b39325522959012c6666ee4c80561afe41f248a1
+        commit-sha: e9388316c721185044c2c16f35a31b957c3e1d41
+    - id: row-id-column
+      claim:
+        lines: 39
+        integrity: sha256-d569ac1e5e61d36dca0f9b8a3955a171f57f5d704666873412c0397054b3249b
+      source:
+        file: src/cite/reporters/pretty.ts
+        lines: 119-122
+        integrity: sha256-51623c250a5398ebf404117076899a6c335f69b8d9c353707df424ce0cb953b2
+        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
+    - id: row-source-end-column
+      claim:
+        lines: 41
+        integrity: sha256-fa9aebd47410e8bf11896a072775c83cf146b981392df2fb6ea6a94e197a274d
+      source:
+        file: src/cite/reporters/pretty.ts
+        lines: 210-222
+        integrity: sha256-d1bd58db4f4a8cc14fe3fbd5d5dc6bcec0ccbd91a04b8f3bf241a692e56fb7b1
+        commit-sha: e9388316c721185044c2c16f35a31b957c3e1d41
+    - id: annotation-site
+      claim:
+        integrity: sha256-0cbd79b051a706653783876b6a24efab6757ee0d76b95072a9a6c23de58705b2
+      source:
+        file: src/cite/core/adapt.ts
+        lines: 251-263
+        integrity: sha256-f4ddba27f65411b2caa1414dfbe106d73925c06ed48bb044e332ca1205ac324f
+        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
+    - id: rule-table-severities
+      claim:
+        lines: 60-78
+        integrity: sha256-8da428336480c25d814c7ccf28f32c90a21966e0dee20398bcbd13a73f3d169e
+      source:
+        file: src/cite/core/severity.ts
+        lines: 21-39
+        integrity: sha256-8654c508771713c6379e76cf1280856c7fea2642ef0f3007ec11c3197ae9ec80
+        commit-sha: e9388316c721185044c2c16f35a31b957c3e1d41
+    - id: update-reports-skipped
+      claim:
+        integrity: sha256-41160be69446d503db8ce9ed539889d7eb0c658b2a7721e7750f5097b6e206be
+      source:
+        file: src/cite/commands/update.ts
+        lines: 721-731
+        integrity: sha256-7002025e958431bf466d55d294f8c48016391ce00091e5616f6b01a365488832
+        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
+    - id: update-skipped-exit-one
+      claim:
+        integrity: sha256-41160be69446d503db8ce9ed539889d7eb0c658b2a7721e7750f5097b6e206be
+      source:
+        file: src/cite/commands/update.ts
+        lines: 1428-1434
+        integrity: sha256-df6b54e34303f278a361b13a275bad7cc9f982920f656ffbae9f0a0ba1ac6560
+        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
+    - id: current-skipped-not-findings
+      claim:
+        integrity: sha256-95dedee1dd0def2ce001dc967da6056bf4e29f01a73056b8801a2a892e1797af
+      source:
+        file: src/cite/core/adapt.ts
+        lines: 238-249
+        integrity: sha256-33ecd40d1eb34f424a3734e09bef8b5700b90f05b1b9bcaed5931fff51b5ffbd
+        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
+    - id: severity-rejects-non-rules
+      claim:
+        integrity: sha256-95dedee1dd0def2ce001dc967da6056bf4e29f01a73056b8801a2a892e1797af
+      source:
+        file: src/cite/core/config.ts
+        lines: 202
+        integrity: sha256-a981b2a8922de2440ddea0611499be6c0a64d592d7d1035ff87b71d06267c89f
+        commit-sha: ddba7252337859626421b6060ae8952f93f61653
+    - id: source-moved-sample
+      claim:
+        lines: 101
+        integrity: sha256-e2cfa7afdd883b1d077364c7f01db75040ccbe60021753f97fc1aef709ef849b
+      source:
+        file: src/cite/core/adapt.ts
+        lines: 100-101
+        integrity: sha256-7d63c14536a7d313d6169a63fb4f1054d3d0786c7ac6b69cc3b0e84743881573
+        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
+    - id: source-moved-found-elsewhere
+      claim:
+        integrity: sha256-46fec0030000b3dc89fc67477a68641baf4a152e9f463b00c072c6c5d6c760f5
+      source:
+        file: src/cite/core/classify.ts
+        lines: 281-290
+        integrity: sha256-3b6ef5df3fb90c08544db53132e85f0cc3c3cfaaadc04364abea67bdcccb4ec9
+        commit-sha: b9712a2920c49c2b7e247108d80b629a4dc6ef9b
+    - id: source-moved-warning
+      claim:
+        integrity: sha256-46fec0030000b3dc89fc67477a68641baf4a152e9f463b00c072c6c5d6c760f5
+      source:
+        file: src/cite/core/severity.ts
+        lines: 22
+        integrity: sha256-a3b44cfae722a2ddf537f64d919432b808f5b5a7480da487746a2c67fdfcb454
+        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
+    - id: update-rewrites-source-lines
+      claim:
+        integrity: sha256-52c6b045f0b86d016413f8d70f0d33c27a24573591e188598a7a7352ca7b30ce
+      source:
+        file: src/cite/commands/update.ts
+        lines: 295-296
+        integrity: sha256-201477e971d60ab6cb4927556d44abaf4c7f4460724274a50a7d56bb1322fd54
+        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
+    - id: update-moved-output
+      claim:
+        lines: 121-122
+        integrity: sha256-1e298a911010cd04ebfa316672c1efd1cc9a52a133518ab22c8a65e0ad635d5e
+      source:
+        file: src/cite/reporters/pretty.ts
+        lines: 599-603
+        integrity: sha256-98e4127cdc82c79e281606b40834f9fad1f63923bf1adad5ec0e0566946b0acc
+        commit-sha: e9388316c721185044c2c16f35a31b957c3e1d41
+    - id: source-moved-ambiguous-sample
+      claim:
+        lines: 129
+        integrity: sha256-9be8c8c84d83aeb76f18825105e341b59dde29d2c54b8333a50ef9cddb314e06
+      source:
+        file: src/cite/core/adapt.ts
+        lines: 102-105
+        integrity: sha256-4974cbffbdb424db6ff39ab52a3e4426a33b10d2079b5e8e4b443a17208c4025
+        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
+    - id: source-moved-ambiguous-candidates
+      claim:
+        integrity: sha256-732c7c0b3f26491131e034085073c53fe5744cdb69d911afc83be08efe04ae46
+      source:
+        file: src/cite/core/classify.ts
+        lines: 439-443
+        integrity: sha256-16ca03786a8e73885968456b8c78a35e61ae70b57d6ea7bc4fe106517b2f2922
+        commit-sha: ddba7252337859626421b6060ae8952f93f61653
+    - id: update-skips-ambiguous-source
+      claim:
+        integrity: sha256-732c7c0b3f26491131e034085073c53fe5744cdb69d911afc83be08efe04ae46
+      source:
+        file: src/cite/commands/update.ts
+        lines: 1044-1049
+        integrity: sha256-056eed2796a9f523b030d6f97dcb42409ff970b61ee24356a06ff8843ac8d9cb
+        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
+    - id: source-changed-classify
+      claim:
+        integrity: sha256-89b79d4330b36cd3b9e077cd50667fc63792d49958b67811eecbd5d8f3cc4fd3
+      source:
+        file: src/cite/core/classify.ts
+        lines: 299-310
+        integrity: sha256-e1f61e84a9a5885bd07e64f5d56f18eb79c6441ca3d3cae2c700edd1c623c34f
+        commit-sha: b9712a2920c49c2b7e247108d80b629a4dc6ef9b
+    - id: show-diff-subjects-diff
+      claim:
+        integrity: sha256-89b79d4330b36cd3b9e077cd50667fc63792d49958b67811eecbd5d8f3cc4fd3
+      source:
+        file: src/cite/reporters/pretty.ts
+        lines: 406-407
+        integrity: sha256-b7ca8ac5c37861d315a231ba256e97bafb0250e0387b683660f6794a9c5ed107
+        commit-sha: e9388316c721185044c2c16f35a31b957c3e1d41
+    - id: source-changed-variants
+      claim:
+        integrity: sha256-b6e7ff4dba00dba01188f6ce08f99375dab728afb5bab6278c86d7bd8cb482ff
+      source:
+        file: src/cite/core/adapt.ts
+        lines: 112-116
+        integrity: sha256-8cbffac6bb131ad23781346f712fe29005290e70853591ae48c3d947c8f2f2e9
+        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
+    - id: no-git-warns-once
+      claim:
+        integrity: sha256-b6e7ff4dba00dba01188f6ce08f99375dab728afb5bab6278c86d7bd8cb482ff
+      source:
+        file: src/cite/core/check-page.ts
+        lines: 377-394
+        integrity: sha256-de68e986a675c3ffb4295148ab8b6579f3a321b448b6ed8b8d93f5bc0f3f5942
+        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
+    - id: decode-sample-changed
+      claim:
+        lines: 21
+        integrity: sha256-0a34843d1239789e0def403b21bc390b4f7ad2d6f86736ad77025803ea9cbb97
+      source:
+        file: src/cite/core/adapt.ts
+        lines: 108-119
+        integrity: sha256-d8b49109c8ecb2631d7e30fb9f167eb6729b85831149bd62a38f8dd61e4e81f8
+        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
+    - id: no-git-message
+      claim:
+        lines: 174
+        integrity: sha256-fe40c0025284199aa6563508418b1a528e6ed220537796b8c3fd4309d1579e70
+      source:
+        file: src/cite/core/git.ts
+        lines: 166-167
+        integrity: sha256-6678e0368536531e163b31932db28fbc814981d4aa9aa46c38e7d9817d408322
+        commit-sha: b9712a2920c49c2b7e247108d80b629a4dc6ef9b
+    - id: accept-output-sample
+      claim:
+        lines: 192-194
+        integrity: sha256-bea8e9a4bea23bcd13de264113ea75e9b8e52aa6ecbcc99a199372ba43c53492
+      source:
+        file: src/cite/reporters/pretty.ts
+        lines: 501-511
+        integrity: sha256-4b2b7e820314046089f83d228698aff01a8e842de3faa82f7e9b88e9b2c90092
+        commit-sha: e9388316c721185044c2c16f35a31b957c3e1d41
+    - id: accept-output-summary
+      claim:
+        lines: 192-194
+        integrity: sha256-bea8e9a4bea23bcd13de264113ea75e9b8e52aa6ecbcc99a199372ba43c53492
+      source:
+        file: src/cite/reporters/pretty.ts
+        lines: 669-670
+        integrity: sha256-5e5b31dce028d0cb7ddde3b39916bc9d759962a29d269a7fc937bff8f84f21b3
+        commit-sha: e9388316c721185044c2c16f35a31b957c3e1d41
+    - id: accept-settles-both-ends
+      claim:
+        integrity: sha256-d172827f97e515d276671e435243a10d8e6c11e116fee5faae5268d46457e265
+      source:
+        file: src/cite/commands/update.ts
+        lines: 336-393
+        integrity: sha256-fc6260fb6b0cf0562a35faf140252178546f2b7724a840fdf5d2ef0c909d966e
+        commit-sha: e9388316c721185044c2c16f35a31b957c3e1d41
+    - id: never-true-sample
+      claim:
+        lines: 206
+        integrity: sha256-651a4ea2b074fdb397b73ffc43c8ab914fb9862cee54661823ab6008e9f40e01
+      source:
+        file: src/cite/core/adapt.ts
+        lines: 121-122
+        integrity: sha256-47d0ec08b4405394f8a1bfc0005747a877d0224de6883b9c956438aeb5797475
+        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
+    - id: never-true-searches-file
+      claim:
+        integrity: sha256-808cbc1e219a82e597880bacbf227a6af8d4006a6e96a71040f9ac08b62420e1
+      source:
+        file: src/cite/core/classify.ts
+        lines: 182-198
+        integrity: sha256-94de85637c7ffc457cdcfc117ed503edaf7c177b13eeadeb4d30522b1fa0513c
+        commit-sha: b9712a2920c49c2b7e247108d80b629a4dc6ef9b
+    - id: never-true-not-move
+      claim:
+        integrity: sha256-808cbc1e219a82e597880bacbf227a6af8d4006a6e96a71040f9ac08b62420e1
+      source:
+        file: src/cite/core/classify.ts
+        lines: 114-117
+        integrity: sha256-665e75cd92a969a1aa9183edf50819bb6811f44fe0d70613276f16ef380bde60
+        commit-sha: b9712a2920c49c2b7e247108d80b629a4dc6ef9b
+    - id: never-true-remint-head
+      claim:
+        integrity: sha256-92208f459b65ae2d293800b1dcf7920e5e845ddee0a8b3538e469b266160a600
+      source:
+        file: src/cite/commands/update.ts
+        lines: 1243-1260
+        integrity: sha256-0de8736bf780aab12eea02c8d2cc607f36242e20fd28c9304d80314600258550
+        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
+    - id: never-true-both-pins
+      claim:
+        integrity: sha256-92208f459b65ae2d293800b1dcf7920e5e845ddee0a8b3538e469b266160a600
+      source:
+        file: src/cite/reporters/pretty.ts
+        lines: 617-618
+        integrity: sha256-654f8798385ec20cb4f07521aa3a1870d0908ba15e6a7d5cbe4a75a2b7bd9a64
+        commit-sha: e9388316c721185044c2c16f35a31b957c3e1d41
+    - id: source-missing-sample
+      claim:
+        lines: 230
+        integrity: sha256-23b4deeae57f85b22a31972236949ce6556d65932c53dcb903475923fce6dc3f
+      source:
+        file: src/cite/core/adapt.ts
+        lines: 72-77
+        integrity: sha256-5a26a2d36c656cd6ee676e40ff7590ffb2f00b05068a44ec85cca8456fcb3c40
+        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
+    - id: source-missing-not-in-index
+      claim:
+        integrity: sha256-8e34f7fdae02a1c6a7df0719eca6dc56c2afaef6aa867529cd43bede5bec2cd5
+      source:
+        file: src/cite/core/sources.ts
+        lines: 176
+        integrity: sha256-77702f30bfc199d991dacb9a334b9a6236b5f10b764fbe43ea57c82ff4ec3e4d
+        commit-sha: ddba7252337859626421b6060ae8952f93f61653
+    - id: source-missing-git-ls-files
+      claim:
+        integrity: sha256-8e34f7fdae02a1c6a7df0719eca6dc56c2afaef6aa867529cd43bede5bec2cd5
+      source:
+        file: src/cite/core/sources.ts
+        lines: 75-79
+        integrity: sha256-e4efebe2b16abb8156015879a7470029e1c49b4a304b6bc62c025732307bcb7f
+        commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e
+    - id: encrypted-missing-sample
+      claim:
+        lines: 255
+        integrity: sha256-a2d640cce77939b0446b097d9ac590c00dccaeb7d5f01a7d8a23e5cd733866a9
+      source:
+        file: src/cite/core/adapt.ts
+        lines: 77-80
+        integrity: sha256-a185092e8f89afd135bd58af066773035a503fbe10d6e53c0a9594f996204c56
+        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
+    - id: encrypted-missing-never-names-path
+      claim:
+        integrity: sha256-84dfaba4b9cef943fdd13a3bfbc332c43e734c81fead3b0fbc14292a133f05cc
+      source:
+        file: src/cite/core/adapt.ts
+        lines: 67-91
+        integrity: sha256-e2fa155e2700bfb85a0f829f5495aa6c26e4046439c40c7719ef6d29d1ac5280
+        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
+    - id: ciphertext-82-chars
+      claim:
+        integrity: sha256-c83e5960c9a920a3c6c6ffc2a5526d02a49587d8316d64bdba68244f1d3a9fe8
+      source:
+        file: src/cite/core/range.ts
+        lines: 26
+        integrity: sha256-46550845a8a951a3d4cb75c452f1a1a92bc260d76d58ebd65cb5a5a3b1f3640c
+        commit-sha: ddba7252337859626421b6060ae8952f93f61653
+    - id: claim-moved-sample
+      claim:
+        lines: 306
+        integrity: sha256-e425dfc6cea9b04e988ad899c68b5df7988323d3b70514f72db986630185eea0
+      source:
+        file: src/cite/reporters/pretty.ts
+        lines: 153-155
+        integrity: sha256-73daaef04d9e27f00e584d26c3b076374e5d134652896df338c97175ec763398
+        commit-sha: e9388316c721185044c2c16f35a31b957c3e1d41
+    - id: claim-moved-found-verbatim
+      claim:
+        integrity: sha256-e2bb59078cc2e5d783584d2ab45a5fa3e6fb7d8c1056f36f1622953b61902bb5
+      source:
+        file: src/cite/core/claims.ts
+        lines: 131-144
+        integrity: sha256-a4fba04fb601a37abbc27cbe3c4259e63086df5d88a7e0931b4963247a93085a
+        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
+    - id: claim-moved-notice
+      claim:
+        integrity: sha256-e2bb59078cc2e5d783584d2ab45a5fa3e6fb7d8c1056f36f1622953b61902bb5
+      source:
+        file: src/cite/core/severity.ts
+        lines: 27
+        integrity: sha256-df5bad5b605557a2fe8ae2c2a9608a1e1a1d3068ea3fd6ae6477f267eba96326
+        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
+    - id: update-rewrites-claim-lines
+      claim:
+        integrity: sha256-ec8e792ffd1c4057638da75c74fa2c1154a9b7702cbc5abfc72632db8be4ca01
+      source:
+        file: src/cite/commands/update.ts
+        lines: 163-164
+        integrity: sha256-d38c7fb11f8624e4d8554fb293c407f151e3c40738a4a13cfcd5417047536ac0
+        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
+    - id: update-claim-moved-output
+      claim:
+        lines: 324-325
+        integrity: sha256-146dfd7ff91e43867492b1fddbbf78d4f725db9f58e7c4f91aec46c7132f2911
+      source:
+        file: src/cite/reporters/pretty.ts
+        lines: 476-480
+        integrity: sha256-e64cf3dad3cac96697514477d88f2380b8f2f37083715c10fcd8afc1de5cde55
+        commit-sha: e9388316c721185044c2c16f35a31b957c3e1d41
+    - id: marker-claim-never-moves
+      claim:
+        integrity: sha256-15651ab18ce524a8524cffd751e6ec4f5cc9783ed4157e88153061adcd100e4f
+      source:
+        file: src/cite/core/claims.ts
+        lines: 149-156
+        integrity: sha256-04e8cb067e73f1b6fee41fbf255301be00173ffedb02d1a02a618a69d8b00b3f
+        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
+    - id: claim-moved-ambiguous-sample
+      claim:
+        lines: 352
+        integrity: sha256-655df3c002a391262f0b8ba071bc25377cb9f43e032ccbe798907a806309730d
+      source:
+        file: src/cite/reporters/pretty.ts
+        lines: 161-165
+        integrity: sha256-d4eae59db61a72fd08582ea9c94fca45c905dd7f2c466e13434059aed9d82c42
+        commit-sha: e9388316c721185044c2c16f35a31b957c3e1d41
+    - id: update-skips-ambiguous-claim
+      claim:
+        integrity: sha256-b32d784d53f230bb5ab605a6ac272c58d0466befb83b7fdf472911c8c1c06077
+      source:
+        file: src/cite/commands/update.ts
+        lines: 1014-1019
+        integrity: sha256-5f7aab4c96de6d6a090851b249d66a30c645a6fbf2a5529996eba6c5cfe40396
+        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
+    - id: marker-cannot-be-ambiguous
+      claim:
+        integrity: sha256-b41ceb00f6f89032a7a0d0dafea630b7d147ae93c87e50e7e874cacafe0cca86
+      source:
+        file: src/cite/core/claims.ts
+        lines: 149-156
+        integrity: sha256-04e8cb067e73f1b6fee41fbf255301be00173ffedb02d1a02a618a69d8b00b3f
+        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
+    - id: claim-changed-sample
+      claim:
+        lines: 410
+        integrity: sha256-6e09eb184af8ce9b48994490d1365512fd8150c86dab754400810c15d215c594
+      source:
+        file: src/cite/reporters/pretty.ts
+        lines: 175-178
+        integrity: sha256-14eb18f771ad80b6c184396adf19a1e6c74f1abde05b0392077787744a7b17d6
+        commit-sha: e9388316c721185044c2c16f35a31b957c3e1d41
+    - id: claim-changed-warning
+      claim:
+        integrity: sha256-33d1a0c37f8ccd29d7dc672fd41eccfe392287c7838de26dd88cc687f8411e85
+      source:
+        file: src/cite/core/severity.ts
+        lines: 30
+        integrity: sha256-81cb1d32893abc7879a686ab064b9789ef4534a88155317d961421173f20f673
+        commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
+    - id: claim-accept-output
+      claim:
+        lines: 429-430
+        integrity: sha256-a6a66f29ba98eed69b26277f674ea76328ab0ad1b16519683818b143c50204fe
+      source:
+        file: src/cite/reporters/pretty.ts
+        lines: 501-509
+        integrity: sha256-06d7e286b9372a66ba923e6a32638947641977848331f2ef4eb8f6ce22895141
+        commit-sha: e9388316c721185044c2c16f35a31b957c3e1d41
+    - id: accept-repins-unit-at-first-line
+      claim:
+        integrity: sha256-d0c7fece8e9bbb60ac0a2725b600ae2b391c245d8110716f87e0ea61c541008f
+      source:
+        file: src/cite/commands/update.ts
+        lines: 361-395
+        integrity: sha256-a598123775bef238273c6f29b48a590f0cd9c91bbaafed0c42b742003a8ec868
+        commit-sha: e9388316c721185044c2c16f35a31b957c3e1d41
+    - id: claim-changed-configurable
+      claim:
+        integrity: sha256-06bd5a46b867e32d45c00d57c43368a819c218f37073281dc648fa2116582da9
+      source:
+        file: src/cite/core/severity.ts
+        lines: 100-105
+        integrity: sha256-d87765678d8b1752c333febde6f649a7e8c5f10211deb77833cf05fbc0bbf1b4
+        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
+    - id: marker-orphan-sample
+      claim:
+        lines: 509
+        integrity: sha256-92822de13c2a2ea5b38250ad847fbd3faad82e31a02a1e1db7fce18aa90c4371
+      source:
+        file: src/cite/core/page.ts
+        lines: 440-447
+        integrity: sha256-10ecc384167c34e8730f5b4008fabb7889532174829312be8d1c935c1b1fb2fa
+        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
+    - id: cite-true-names-id-true
+      claim:
+        integrity: sha256-5f59c50f3a60febb72653a6b8279f005b52b699e84742bb8473ff857971d4389
+      source:
+        file: src/shared/statements.ts
+        lines: 202-203
+        integrity: sha256-efee60a1bf54f607832ae603af76609bd4a09710a283a6fddd0838ff4733884d
+        commit-sha: cb74827009894c38f8646504ae9eb4a2745761a9
+    - id: marker-invalid-sample
+      claim:
+        lines: 527
+        integrity: sha256-e9265396705605013105cc1c192277cdbe8460f80771972907682bd52e547b90
+      source:
+        file: src/cite/core/page.ts
+        lines: 58-59
+        integrity: sha256-07dfd7b7db52e4aae2d2bd6782a13aa5f1000a38d823ec87bbd010c0a17d56d9
+        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
+    - id: marker-invalid-json-payload
+      claim:
+        integrity: sha256-68be575bc3a7c42875ae70f55eadf53396ae7d204776aecb6de3f76ff7916704
+      source:
+        file: src/shared/statements.ts
+        lines: 196-199
+        integrity: sha256-82c5a7d2e534316ea45d0dd776890aa34214e95a5138110ffe2c89dae0f2c90f
+        commit-sha: cb74827009894c38f8646504ae9eb4a2745761a9
+    - id: marker-invalid-over-500
+      claim:
+        integrity: sha256-68be575bc3a7c42875ae70f55eadf53396ae7d204776aecb6de3f76ff7916704
+      source:
+        file: src/cite/core/page.ts
+        lines: 410-418
+        integrity: sha256-9e7e145f34238b8f082fcdc1773a0bb483e8f41ce8a9225522bd8545d7bb0f25
+        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
+    - id: add-marker-writes-both
+      claim:
+        integrity: sha256-d5e041c367fdc9a82a15853ffaa70de35fc34823775cd866fde0d47b5c43ae03
+      source:
+        file: src/cite/cli.ts
+        lines: 424-425
+        integrity: sha256-46c2de19cd9507cd56b8ff54f41fc2968196a4f01e8278b0312a78bf84ed583b
+        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
+    - id: marker-repeated-sample
+      claim:
+        lines: 546
+        integrity: sha256-7243e21ad2e7f62e3c76fda8f24c9cf9491435072e1ee9d50a2a58da948eacf6
+      source:
+        file: src/cite/core/page.ts
+        lines: 450-463
+        integrity: sha256-81294dfbb151a7ab30ae1c5a2bd5df1aac01e6932851d7c4c6b19da7e73b70d0
+        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
+    - id: marker-repeated-warning
+      claim:
+        integrity: sha256-54cd61836edc6af6c3ae7fb1fe4c8719c00afb7acc99bd513abef419212edd6c
+      source:
+        file: src/cite/core/severity.ts
+        lines: 34
+        integrity: sha256-f2d8fdb26f294a7a5f4c121b7943aea50861e1e0043679a295bbe5d1ac2a6e6c
+        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
+    - id: anchor-invalid-sample
+      claim:
+        lines: 590
+        integrity: sha256-f4bd4092ac2489f612e0eab9795437f24fcadf93e62505fc3ea1c38afdeaf35e
+      source:
+        file: src/cite/core/page.ts
+        lines: 527-532
+        integrity: sha256-8c5c078ba9321f64132aff0d4d69d89c5e2bf39a557ff15d9d7bceb635e28b38
+        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
+    - id: anchor-invalid-claim-not-judged
+      claim:
+        integrity: sha256-01875f4310f2ab53f00ab325a5215b3f41714ed80eccb6b6c1dcbdce131bd647
+      source:
+        file: src/cite/core/claims.ts
+        lines: 127-128
+        integrity: sha256-2cee7489311ce78fdb209b7596f0cceb0c26e17862598b8554239e79c2aa46ed
+        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
+    - id: anchor-invalid-both-row
+      claim:
+        lines: 599
+        integrity: sha256-9af05fd0815d68269551c5d2a8d4267113d788d7564b4a8d157ae8b4620c83c7
+      source:
+        file: src/cite/core/page.ts
+        lines: 527-532
+        integrity: sha256-8c5c078ba9321f64132aff0d4d69d89c5e2bf39a557ff15d9d7bceb635e28b38
+        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
+    - id: anchor-invalid-quote-row
+      claim:
+        lines: 600
+        integrity: sha256-87e77d61203afb9dd014f17624882d26364c3ee9cc947f4062e10b023b74f18a
+      source:
+        file: src/cite/core/page.ts
+        lines: 536-543
+        integrity: sha256-e13b03bd3144ae8bb577d361cf64d85d1cecef11dbd709d83ee64fea3c35d44c
+        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
+    - id: anchor-invalid-fence-row
+      claim:
+        lines: 601
+        integrity: sha256-12e2113ee7bcf557fd99d246e18e80a65af1504ba5272cab03c06005643b621f
+      source:
+        file: src/cite/core/check-page.ts
+        lines: 143-153
+        integrity: sha256-14b193b247fdca3fb776ad3757723084ef8821e445f569c70dc79a286e86f5fc
+        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
+    - id: add-refuses-frontmatter-sample
+      claim:
+        lines: 610
+        integrity: sha256-c42d16b7dad8d6348cd4554188a1aa2d9cf2060610e8b2def0b350d891e9b42f
+      source:
+        file: src/cite/commands/add.ts
+        lines: 403-411
+        integrity: sha256-ba16a2e2063d0fbf9215cca117c5539bf9a2223ace142312c5841267bd216074
+        commit-sha: fefd408f2da5a18b6c6a613e12c5f5dcc2ac782e
+    - id: add-refuses-frontmatter
+      claim:
+        integrity: sha256-4b2ebb1c7c0fe58d00f5201b6821c60d0d96f957ef0567ee76278f58093053b1
+      source:
+        file: src/cite/commands/add.ts
+        lines: 403-411
+        integrity: sha256-ba16a2e2063d0fbf9215cca117c5539bf9a2223ace142312c5841267bd216074
+        commit-sha: fefd408f2da5a18b6c6a613e12c5f5dcc2ac782e
+    - id: entry-invalid-duplicate-sample
+      claim:
+        lines: 624
+        integrity: sha256-d4b8a84d1ac3117126e9ecd494d7a91f360efaddae96bd11ac0f54bcf1792e28
+      source:
+        file: src/cite/core/page.ts
+        lines: 394-398
+        integrity: sha256-0c3a63b181307eaa166e6403f2d5f1e96d6b883a14052d8a8beaf02ec4cfb774
+        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
+    - id: entry-invalid-schema-sample
+      claim:
+        lines: 623
+        integrity: sha256-309d1909c9982956f3a7d041b70963b99ea5a00f4b57d0034ab7ff5a4ad61aec
+      source:
+        file: src/cite/core/page.ts
+        lines: 332-335
+        integrity: sha256-d999e03f391387bb264d29072fea2ef530031003ed03c6e5936576bfd56652e9
+        commit-sha: e9388316c721185044c2c16f35a31b957c3e1d41
+    - id: entry-invalid-shape
+      claim:
+        integrity: sha256-2cdd8561a21af9747ede585b5fd422b811d1fff9264f0797ff240f0c9c581274
+      source:
+        file: src/cite/core/page.ts
+        lines: 313-357
+        integrity: sha256-9aa6abd953cad2c99f83e0eaa7abd540e5667e9702a1e00f12f40bd3dcbc5215
+        commit-sha: e9388316c721185044c2c16f35a31b957c3e1d41
+    - id: entry-invalid-pin-prefix
+      claim:
+        lines: 638-639
+        integrity: sha256-4a2c20645baef2b64a3a724033e94efd1ff1c44878f3b1d2cfe751f8320ff2df
+      source:
+        file: src/cite/core/page.ts
+        lines: 373-390
+        integrity: sha256-80d94271660c20943a66e56ee1c3233debb3db424a992aa98f577572fb4ab705
+        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
+    - id: entry-invalid-pin-prefix-prose
+      claim:
+        integrity: sha256-b4d4e3d30e8ecb41c0bb662ba3fd3042d2555f8dc56bcd9c4ee0fc28f013ff6d
+      source:
+        file: src/cite/core/page.ts
+        lines: 373-390
+        integrity: sha256-80d94271660c20943a66e56ee1c3233debb3db424a992aa98f577572fb4ab705
+        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
+    - id: entry-invalid-manifest-owns
+      claim:
+        integrity: sha256-da07459718c795768fc0e4a42f5701e9b4806bba711913324b4b7a65cb1bb833
+      source:
+        file: src/cite/core/page.ts
+        lines: 287-296
+        integrity: sha256-ec287db3629e87fc56ea79254189110a1a4bfe78881ca2c18ea1008c99198ce1
+        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
+    - id: quote-drift-sample
+      claim:
+        lines: 668
+        integrity: sha256-60cec10c72b515c4ee1a01f4b72ff66c6f995a65dcef36e96905b003ca507005
+      source:
+        file: src/cite/core/check-page.ts
+        lines: 163-170
+        integrity: sha256-86861778cea0db103923bb4ac93dd01929c56ac1a3eabb03115fa3e2beef2892
+        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
+    - id: quote-drift-faithful
+      claim:
+        integrity: sha256-2c41c31d2b4fbae5693e1b5532557fe48550022e5c4df13ab4cac0ba318ecbb5
+      source:
+        file: src/cite/core/check-page.ts
+        lines: 95-103
+        integrity: sha256-cc44937c64b2e95631628d716da4ede4935f4acc5fd7d6e41ff9ddd83e56bc55
+        commit-sha: ddba7252337859626421b6060ae8952f93f61653
+    - id: local-green-summary
+      claim:
+        lines: 702
+        integrity: sha256-4ec91219ae44be4535a62ec66f665090ff6047bb0f895a3f11e756ed74cb9e06
+      source:
+        file: src/cite/reporters/pretty.ts
+        lines: 463-474
+        integrity: sha256-bdae7999c082105a413ea57899be7ba8fc1c76d0b0d3d6dea9878bfc28c44061
+        commit-sha: e9388316c721185044c2c16f35a31b957c3e1d41
+    - id: bare-check-uses-collections
+      claim:
+        lines: 712-715
+        integrity: sha256-39a7362377e381b4cb03a8356b8207b017d579abc55ec3e1c1f5593951d84e2d
+      source:
+        file: src/cite/core/config.ts
+        lines: 386-392
+        integrity: sha256-6645471fc70a60e3b0ce86eb2d80cd138f747f553be3a56600733f83778d1e9f
+        commit-sha: ddba7252337859626421b6060ae8952f93f61653
+    - id: no-config-no-sidecar
+      claim:
+        lines: 714-715
+        integrity: sha256-f50b4d53f9acb823c98add23c7e15b5ed9b85892812d17a343e214a029dd1026
+      source:
+        file: src/cite/core/sidecar.ts
+        lines: 582-591
+        integrity: sha256-9afb8537d728598c8fb40c46d67f0821d1cd9011e20a185cac8451a9904b48c0
+        commit-sha: 75715494a2eef4bea95e5803dcac2d644a6076e8
+    - id: exit-table-zero
+      claim:
+        lines: 722
+        integrity: sha256-da900d2a04f846e122b74941091608332fe825c20758206d0911777a952b35c0
+      source:
+        file: src/cite/cli.ts
+        lines: 405-407
+        integrity: sha256-42f037380b39026477e3aefbac0ae3d2c2c9313cf89892466286592059657b49
+        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
+    - id: exit-table-one-check
+      claim:
+        lines: 723
+        integrity: sha256-045efe64a562de93f7bf62d08ababbce49159b7992227362e697e0941bed547f
+      source:
+        file: src/cite/commands/check.ts
+        lines: 414-416
+        integrity: sha256-d51b978f9fa088753d24578d22c1dbbd55f75f157ec76b756d82b78ad164740e
+        commit-sha: 46ea4718fa7ee7e2ec7ed135a7a646d421ff3fb8
+    - id: exit-table-one-update
+      claim:
+        lines: 723
+        integrity: sha256-045efe64a562de93f7bf62d08ababbce49159b7992227362e697e0941bed547f
+      source:
+        file: src/cite/commands/update.ts
+        lines: 1428-1434
+        integrity: sha256-df6b54e34303f278a361b13a275bad7cc9f982920f656ffbae9f0a0ba1ac6560
+        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
+    - id: exit-table-two-prefix
+      claim:
+        lines: 724
+        integrity: sha256-9376722537811cfca897d9bc690d4e54c97fc8378300ab84f3f9eb78c51f4b16
+      source:
+        file: src/shared/run.ts
+        lines: 16-24
+        integrity: sha256-2dc80f036c8289917750865e5f41eaa1325bed58f646b03adaef0992c59a98f3
+        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+    - id: exit-table-two-no-inputs
+      claim:
+        lines: 724
+        integrity: sha256-9376722537811cfca897d9bc690d4e54c97fc8378300ab84f3f9eb78c51f4b16
+      source:
+        file: src/cite/commands/check.ts
+        lines: 180-184
+        integrity: sha256-dd1fd746781a236fa50aca4af4a370c3d18e06a6eb84ceda7b7eb3eb133f10cb
+        commit-sha: 46ea4718fa7ee7e2ec7ed135a7a646d421ff3fb8
+    - id: exit-table-two-unknown-format
+      claim:
+        lines: 724
+        integrity: sha256-9376722537811cfca897d9bc690d4e54c97fc8378300ab84f3f9eb78c51f4b16
+      source:
+        file: src/cite/cli.ts
+        lines: 345-349
+        integrity: sha256-21210a9c7359a4df4d8ef15e68c05ac5b080775c547873ba0eadd2ac63a668be
+        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
+    - id: exit-table-two-update-no-check-sources
+      claim:
+        lines: 724
+        integrity: sha256-9376722537811cfca897d9bc690d4e54c97fc8378300ab84f3f9eb78c51f4b16
+      source:
+        file: src/cite/cli.ts
+        lines: 570-574
+        integrity: sha256-02ef0a00b5e7384ebd83f6896396ed517e5bfd5fbe6002090012ba5aec6cf2ea
+        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
+    - id: exit-table-two-url-manifest
+      claim:
+        lines: 724
+        integrity: sha256-9376722537811cfca897d9bc690d4e54c97fc8378300ab84f3f9eb78c51f4b16
+      source:
+        file: src/cite/core/sidecar.ts
+        lines: 225-228
+        integrity: sha256-60f4e2f84d656eb0e532a8dd12d2afb786d141ae7268cb753b3229a14381d04d
+        commit-sha: fefd408f2da5a18b6c6a613e12c5f5dcc2ac782e
+    - id: claim-changed-marker-scope
+      claim:
+        integrity: sha256-33d1a0c37f8ccd29d7dc672fd41eccfe392287c7838de26dd88cc687f8411e85
+      source:
+        file: src/cite/core/claims.ts
+        lines: 149-155
+        integrity: sha256-89d0eb0d7df5d2a73ab52ecb3b5b3d48ad05db6d077f4dca65ea54faf70f194e
+        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
+    - id: entry-invalid-too-wide
+      claim:
+        integrity: sha256-2cdd8561a21af9747ede585b5fd422b811d1fff9264f0797ff240f0c9c581274
+      source:
+        file: src/cite/core/page.ts
+        lines: 359-371
+        integrity: sha256-590bcadb6c3bb0161fd80b5a8e07f5a6a70d0c2273a89665061b9cd887444a47
+        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
+    - id: row-manifest-column
+      claim:
+        lines: 42
+        integrity: sha256-b33d05735ab2fbd2fdadd3e226ea7899e0d2ab8f27bcbfa366ec063ed8b16204
+      source:
+        file: src/cite/reporters/pretty.ts
+        lines: 418-421
+        integrity: sha256-be4f3b638888dabcbbd4bc74e30b118dbd22e55f905de5ce1294adc81ea3bfe8
+        commit-sha: e9388316c721185044c2c16f35a31b957c3e1d41
+    - id: page-line-manifest
+      claim:
+        lines: 27-28
+        integrity: sha256-0f51ff76a3b41007c7ad11042aa4fc3b439fc60accd3ba942ad04817219d655b
+      source:
+        file: src/cite/reporters/pretty.ts
+        lines: 346-349
+        integrity: sha256-3e038ad23a4ceb1ef5bf2e72f7bf2d32eba551128c0c9a7350e4efea907d5d4f
+        commit-sha: e9388316c721185044c2c16f35a31b957c3e1d41
+    - id: row-claim-end-column
+      claim:
+        lines: 40-42
+        integrity: sha256-42da941336a46165289e8e0fd9c7606bd88615f3988df196118d389440eb9fe9
+      source:
+        file: src/cite/reporters/pretty.ts
+        lines: 140-194
+        integrity: sha256-b79073a279474a82dcdd14157c0ecf1d3f043d2eed6b96a88c9f3079c34ac6d2
+        commit-sha: e9388316c721185044c2c16f35a31b957c3e1d41
+    - id: encrypted-missing-reasons
+      claim:
+        lines: 263-272
+        integrity: sha256-37e7272585af0f64914918fe6abd21e5009fb655eefb93abe99447757487aff9
+      source:
+        file: src/cite/core/sources.ts
+        lines: 162-176
+        integrity: sha256-049a0b46269071a1abaf4b688cd2d922ee26d9943e3efde952635833d9a2a792
+        commit-sha: ddba7252337859626421b6060ae8952f93f61653
+    - id: source-changed-sample
+      claim:
+        lines: 146-152
+        integrity: sha256-6f4d268cc06165f8ad4d9145c53c4864443f9efc4677cd2287b96da83d17b29a
+      source:
+        file: src/cite/core/adapt.ts
+        lines: 108-119
+        integrity: sha256-d8b49109c8ecb2631d7e30fb9f167eb6729b85831149bd62a38f8dd61e4e81f8
+        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
