@@ -134,9 +134,12 @@ describe("derive follows a page's values across a manifest move (0126)", () => {
     const dir = beforeMove();
     move(dir, "docs/howto.md");
     expect(await staleOf(dir)).toEqual([]);
-    expect(await derivedOf(dir, "docs/howto.md")).toMatchObject({
+    expect(await derivedOf(dir, "docs/howto.md")).toEqual({
       created: { status: "current", derived: "2026-08-01" },
-      provenance: { status: "current" },
+      provenance: {
+        status: "current",
+        derived: [{ "generated-by": FABLE, lines: 4, integrity: hashLines("ONE, by a machine") }],
+      },
     });
   });
 });

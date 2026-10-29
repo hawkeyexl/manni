@@ -1500,7 +1500,7 @@ function placesAt(
   // The blob is the page as it stood at `rev`, so its own path picks the
   // parser: a rename may have changed the extension since.
   const extractor = extractorForExtension(extname(read.path)) ?? extractorFor(read.input);
-  const data = read.content === undefined ? {} : extractStamps(extractor, read.content, read.input.absPath);
+  const data = read.content === undefined ? {} : extractStamps(extractor, read.content, pageAbs);
   const places: PastPlace[] = [];
   for (const m of manifests) {
     const join = externalMetadataJoin(m);
