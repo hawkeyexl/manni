@@ -712,6 +712,6 @@ meta-fix:
         integrity: sha256-2a92270a056121c9517f9f40032ce7b62e09aacc74668d10a25ea220748cdc48
       source:
         file: src/meta/core/derive/git.ts
-        lines: 283-285
+        lines: 302-304
         integrity: sha256-d3c5b10c171e6feaf1de8163a163f27553ce88a39bf7ec4f3d35555114975845
-        commit-sha: df75e58da9c2ffb383db63ef9e4f7aeb6c30d0ad
+        commit-sha: fd2988877dfe18f26e6ca8cdbc616fd806c0fb85

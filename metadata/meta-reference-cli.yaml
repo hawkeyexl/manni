@@ -2205,9 +2205,9 @@ meta-reference-cli:
         integrity: sha256-93da992ba49b1c66a3ef2c8c73ac10ea2f1ca2ea5484cfc03be40ce9d070e4ec
       source:
         file: src/meta/core/derive/index.ts
-        lines: 340-345
+        lines: 341-346
         integrity: sha256-b77c496b8d324d44ac58081c83afdc33586077769eb7f02d37b7725ddb2b7e4e
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: fd2988877dfe18f26e6ca8cdbc616fd806c0fb85
     - id: derive-no-origin-remote-message
       claim:
         lines: 1260
@@ -2397,18 +2397,18 @@ meta-reference-cli:
         integrity: sha256-9b349d3d92b9ee408282c58537bcf40d8601c4c19e716b0db51dbd25d981c1fc
       source:
         file: src/meta/core/derive/index.ts
-        lines: 339-345
+        lines: 340-346
         integrity: sha256-8d94d670a0f8cbe29dc1ec17506b4fbe533ec05a8c728ec3ef0174c776c5a62c
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: fd2988877dfe18f26e6ca8cdbc616fd806c0fb85
     - id: excluded-source-derives-null
       claim:
         lines: 1185
         integrity: sha256-9b349d3d92b9ee408282c58537bcf40d8601c4c19e716b0db51dbd25d981c1fc
       source:
         file: src/meta/core/derive/index.ts
-        lines: 247-256
+        lines: 248-257
         integrity: sha256-d831c4367edaa0412609ff9482cb26ff1fed17bfbe921da77c901d47be27bafa
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: fd2988877dfe18f26e6ca8cdbc616fd806c0fb85
     - id: derive-refuses-stdin-outright
       claim:
         lines: 1178
