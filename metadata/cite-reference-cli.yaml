@@ -26,9 +26,6 @@ cite-reference-cli:
     - generated-by: Claude Fable 5.1
       lines: 2-7
       integrity: sha256-69aa97a2036e6d43a1a0318ca64ae530f4afe7a29612ab17671d5518496e376c
-    - generated-by: Claude Opus 5.5
-      lines: 9-10
-      integrity: sha256-8cecdd8c73895292c49f55fb8b20ec19b625b76ebcb3fd4fe958ec24d3fde295
     - generated-by: Claude Opus 5
       lines: 11-15
       integrity: sha256-01b90624772859e72858c40e5a6795f2b245645da1aa2957d2488af79adfdbf6
