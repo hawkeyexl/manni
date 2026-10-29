@@ -130,9 +130,9 @@ meta-schemas-field-location:
         integrity: sha256-17527dfc7a5041e193437b538b86d9d82d1cb1d63e920236c88d410cab33dd59
       source:
         file: src/meta/core/relocation.ts
-        lines: 212-214
+        lines: 232-234
         integrity: sha256-7a696206a70ac73d552cbdd045807425eb62dce4386440c38ece54ccbc8549ef
-        commit-sha: 77715cb1faddbd601238d5b6b1a36827cfcebb03
+        commit-sha: af75db2aa4909e9e36ecd00e8b21c2ee02488a3c
     - id: relocate-moves-values-to-their-mark
       claim:
         integrity: sha256-dceab7481b0a784d6b82d7a3872734c62f96ee035efa4ee64a69386e670a3e2c

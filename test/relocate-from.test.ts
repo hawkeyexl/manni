@@ -47,10 +47,10 @@ afterEach(() => {
   for (const d of dirs.splice(0)) rmSync(d, { recursive: true, force: true });
 });
 
-function copy(): string {
+function copy(from = FIXTURE): string {
   const dir = mkdtempSync(join(tmpdir(), "manni-relocate-from-"));
   dirs.push(dir);
-  cpSync(FIXTURE, dir, { recursive: true });
+  cpSync(from, dir, { recursive: true });
   return dir;
 }
 
@@ -158,15 +158,16 @@ describe("relocate --from: into the metadata directory", () => {
     const dir = copy();
     const result = await runRelocate({ inputs: [], cwd: dir, from: BOTH, collections: ["site"] });
     const json = JSON.parse(renderRelocate(result, "json")) as {
-      manifests: { file: string; undeclared: boolean }[];
+      manifests: { file: string; undeclared: boolean; reads?: string }[];
       files: { file: string; minted?: string; moved: Record<string, unknown>[] }[];
       deleted?: string[];
       summary: Record<string, unknown>;
     };
-    expect(json.manifests.map((m) => [m.file, m.undeclared])).toEqual([
-      ["{page}.citations.yaml", true],
-      ["{page}.meta.yaml", true],
-      ["metadata/{id}.yaml", false],
+    // `reads` names the directory a collection left with no entries reads, on each removed entry.
+    expect(json.manifests.map((m) => [m.file, m.undeclared, m.reads])).toEqual([
+      ["{page}.citations.yaml", true, "metadata/"],
+      ["{page}.meta.yaml", true, "metadata/"],
+      ["metadata/{id}.yaml", false, undefined],
     ]);
     expect(json.files.find((f) => f.file === "docs/site/fresh.md")).toEqual({
       file: "docs/site/fresh.md",
@@ -206,6 +207,9 @@ describe("relocate --from: what stays", () => {
       ].join("\n"),
     );
     expect(relocateFailed(result)).toBe(true);
+    // site keeps an entry, so it reads no directory, and the JSON names none.
+    const json = JSON.parse(renderRelocate(result, "json")) as { manifests: Record<string, unknown>[] };
+    expect(json.manifests.filter((m) => "reads" in m)).toEqual([]);
     // notes keeps its entry, and clash's sidecar keeps every value.
     const config = yamlOf(dir, "manni.config.yaml") as { collections: Record<string, unknown>[] };
     expect(config.collections[1]).toMatchObject({ externalMetadata: [{ file: "{page}.meta.yaml" }] });
@@ -239,6 +243,89 @@ describe("relocate --from: what stays", () => {
   });
 });
 
+// A collection's manifests never share a key, so the second holder is legacy.yaml, which
+// holds guide.md's reviewer as guide.meta.yaml does.
+describe("relocate --from: two manifests holding one key for a page", () => {
+  it("drops the second, equal copy, so both are emptied and deleted, and validate is clean", async () => {
+    const dir = copy();
+    const result = await runRelocate({ inputs: [], cwd: dir, from: ["legacy.yaml", ...BOTH], collections: ["site"] });
+    expect(relocateFailed(result)).toBe(false);
+    expect(result.files.flatMap((f) => f.stayed)).toEqual([]);
+    expect(yamlOf(dir, "metadata/guide.yaml")).toEqual({
+      guide: { reviewer: "ada", citations: ["https://example.com/guide"], personas: ["maya"] },
+    });
+    expect(existsSync(join(dir, "legacy.yaml"))).toBe(false);
+    expect(existsSync(join(dir, "docs/site/guide.meta.yaml"))).toBe(false);
+    const config = yamlOf(dir, "manni.config.yaml") as { collections: Record<string, unknown>[] };
+    expect(config.collections[0]).toEqual({ name: "site", paths: ["docs/site/*.md"] });
+    const { results } = await runValidate({ cwd: dir, inputs: [], collections: ["site"] });
+    expect(results.flatMap((r) => r.errors)).toEqual([]);
+  });
+
+  it("keeps both on disk, and the manifest declared, while the values differ, and exits 1", async () => {
+    const dir = copy();
+    writeFileSync(join(dir, "legacy.yaml"), "docs/site/guide.md:\n  reviewer: zed\n");
+    const result = await runRelocate({ inputs: [], cwd: dir, from: [...BOTH, "legacy.yaml"], collections: ["site"] });
+    expect(result.files.find((f) => f.file === "docs/site/guide.md")?.stayed).toEqual([
+      expect.objectContaining({
+        key: "reviewer",
+        reason: "values-differ",
+        detail: "legacy.yaml and docs/site/guide.meta.yaml hold different values",
+      }),
+    ]);
+    expect(relocateFailed(result)).toBe(true);
+    // Nothing is lost: each keeps its reviewer, and metadata/ is untouched.
+    expect(yamlOf(dir, "docs/site/guide.meta.yaml")).toMatchObject({ "docs/site/guide.md": { reviewer: "ada" } });
+    expect(read(dir, "legacy.yaml")).toBe("docs/site/guide.md:\n  reviewer: zed\n");
+    expect(read(dir, "metadata/guide.yaml")).toBe(read(FIXTURE, "metadata/guide.yaml"));
+    const config = yamlOf(dir, "manni.config.yaml") as { collections: { externalMetadata?: unknown }[] };
+    expect(config.collections[0]?.externalMetadata).toEqual([{ file: "{page}.meta.yaml" }]);
+  });
+});
+
+// `relocate-from-repo-shape/`: a config shaped like this repository's, with a
+// folded scalar, padded flow mappings, a long line and comments beside the
+// collections. guide.meta.yaml holds a comment inside an `evals:` list item.
+describe("relocate --from: a config and sidecars shaped like this repository's", () => {
+  const SHAPED = resolve(here, "fixtures", "external-metadata-dir", "relocate-from-repo-shape");
+  /** Site's externalMetadata: lines, which the run removes and nothing else. */
+  const ENTRIES = [
+    "    externalMetadata:",
+    '      - file: "{page}.citations.yaml"',
+    "        keys: [citations]",
+    "      # No `keys`: this manifest owns every other external field.",
+    '      - file: "{page}.meta.yaml"',
+    "",
+  ].join("\n");
+
+  it("removes only site's entries from the config, and leaves every other byte as it was", async () => {
+    const dir = copy(SHAPED);
+    const before = read(dir, "manni.config.yaml");
+    expect(before).toContain(ENTRIES);
+    const result = await runRelocate({ inputs: [], cwd: dir, from: BOTH, collections: ["site"] });
+    expect(relocateFailed(result)).toBe(false);
+    expect(read(dir, "manni.config.yaml")).toBe(before.replace(ENTRIES, ""));
+    const { results } = await runValidate({ cwd: dir, inputs: [], collections: ["site"] });
+    expect(results.flatMap((r) => r.errors)).toEqual([]);
+  });
+
+  it("keeps a sidecar whose comment sits inside a list item, says so, and does not count it deleted", async () => {
+    const dir = copy(SHAPED);
+    const dry = await runRelocate({ inputs: [], cwd: dir, from: BOTH, collections: ["site"], dryRun: true });
+    expect(dry.deleted).toEqual(["docs/site/guide.citations.yaml", "docs/site/plain.meta.yaml"]);
+    const result = await runRelocate({ inputs: [], cwd: dir, from: BOTH, collections: ["site"] });
+    expect(result.deleted).toEqual(dry.deleted);
+    expect(existsSync(join(dir, "docs/site/guide.meta.yaml"))).toBe(true);
+    expect(existsSync(join(dir, "docs/site/plain.meta.yaml"))).toBe(false);
+    expect(stderr).toContain(
+      "manni: docs/site/guide.meta.yaml holds comments relocate does not carry; it is kept, emptied of entries.\n",
+    );
+    expect(yamlOf(dir, "metadata/guide.yaml")).toEqual({
+      guide: { evals: [{ id: "has-title", expect: "title" }], reviewer: "ada", citations: ["https://example.com/guide"] },
+    });
+  });
+});
+
 describe("relocate --from: an undeclared file", () => {
   it("is read with a path join, emptied into the manifest that owns each key, and deleted", async () => {
     const dir = copy();
@@ -253,6 +340,27 @@ describe("relocate --from: an undeclared file", () => {
     expect(existsSync(join(dir, "legacy.yaml"))).toBe(false);
     expect(read(dir, "docs/site/guide.meta.yaml")).toBe(read(FIXTURE, "docs/site/guide.meta.yaml"));
     expect(read(dir, "manni.config.yaml")).toBe(read(FIXTURE, "manni.config.yaml"));
+  });
+
+  it("is kept with a value that differs where its key lives, while the rest move, and exits 1", async () => {
+    const dir = copy();
+    writeFileSync(join(dir, "legacy.yaml"), "docs/site/guide.md:\n  reviewer: zed\ndocs/site/fresh.md:\n  reviewer: eve\n");
+    const result = await runRelocate({ inputs: [], cwd: dir, from: ["legacy.yaml"], collections: ["site"] });
+    expect(pretty(result)).toBe(
+      [
+        "docs/site/fresh.md",
+        "    reviewer  → docs/site/fresh.meta.yaml:4  (from legacy.yaml)",
+        "docs/site/guide.md",
+        "    reviewer  stays: legacy.yaml and docs/site/guide.meta.yaml hold different values",
+        "2 files, 1 value moved to 1 manifest, 1 stayed",
+      ].join("\n"),
+    );
+    expect(relocateFailed(result)).toBe(true);
+    expect(yamlOf(dir, "legacy.yaml")).toEqual({ "docs/site/guide.md": { reviewer: "zed" } });
+    expect(yamlOf(dir, "docs/site/fresh.meta.yaml")).toEqual({
+      "docs/site/fresh.md": { personas: ["devin"], reviewer: "eve" },
+    });
+    expect(read(dir, "docs/site/guide.meta.yaml")).toBe(read(FIXTURE, "docs/site/guide.meta.yaml"));
   });
 });
 
