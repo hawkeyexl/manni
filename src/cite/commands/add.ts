@@ -16,9 +16,18 @@
  */
 import { existsSync } from "node:fs";
 import { readFile } from "node:fs/promises";
-import { relative, resolve } from "node:path";
-import { locateFrontmatter, writeFileAtomic } from "../../meta/index.js";
-import { STDIN_LABEL, STDIN_TOKEN } from "../../meta/internal.js";
+import { posix, relative, resolve } from "node:path";
+import { DocmetaError, locateFrontmatter, writeFileAtomic } from "../../meta/index.js";
+import {
+  mintedNotice,
+  mintStayNotice,
+  STDIN_LABEL,
+  STDIN_TOKEN,
+  unsafeIdMessage,
+  withMintedId,
+  type MintedId,
+} from "../../meta/internal.js";
+import { warn } from "../../shared/warn.js";
 import { ensureEncryptionKey } from "../../shared/prompt.js";
 import { isEncryptedValue } from "../../shared/encryption.js";
 import {
@@ -33,7 +42,7 @@ import { resolveCiteRun } from "../core/config.js";
 import { GIT_UNAVAILABLE_COMMIT, checkoutNotice, gitClient } from "../core/git.js";
 import { sliceLines, splitLines } from "../core/hash.js";
 import { mintSource } from "../core/mint.js";
-import { bodyLineOf, isStrategyRecord, pickExtractor, readPage } from "../core/page.js";
+import { bodyLineOf, citationInputs, isStrategyRecord, pickExtractor, readPage } from "../core/page.js";
 import { isPointer, pointerAtLine, underCitations, valueAt } from "../core/pointer.js";
 import { valuePin } from "../../shared/pin.js";
 import {
@@ -50,7 +59,7 @@ import { shiftedEntries, withClaimLines, type Shifted } from "../core/shift.js";
 import { readSource, resolveSourcePath, sourceIndexFor } from "../core/sources.js";
 import { listOf, shortSrc, spellAt } from "../core/spell.js";
 import { ManifestSet } from "../core/manifest.js";
-import { sidecarsFor, type PageSidecar } from "../core/sidecar.js";
+import { CITATIONS_KEY, sidecarsFor, type PageSidecar } from "../core/sidecar.js";
 import {
   ANY_FENCE,
   MAX_IDS_PER_MARKER,
@@ -321,7 +330,13 @@ export async function runAdd(opts: AddOptions): Promise<AddResult> {
   const sidecar: PageSidecar | undefined = usingStdin
     ? undefined
     : await sidecars?.forPage(label, content, opts.as);
-  const owner = sidecar?.owner;
+  let owner = sidecar?.owner;
+  // A page an `{id}` manifest would find by an id that cannot name a file
+  // (proposal 0126) has nowhere for its citations to go.
+  const idless = sidecar?.idless;
+  if (idless?.refused !== undefined) {
+    throw new CiteError(`${label}: ${unsafeIdMessage(idless.refused, posix.dirname(idless.manifest.file))}`);
+  }
 
   const page = readPage(label, content, {
     ...(opts.as === undefined ? {} : { format: opts.as }),
@@ -623,6 +638,25 @@ export async function runAdd(opts: AddOptions): Promise<AddResult> {
     if (read.kind === "ok") sourceLine = splitLines(read.text)[srcRange.start - 1];
   }
 
+  // A page with no id, in a collection whose `{id}` manifest owns its
+  // citations (proposal 0126), is minted one first. Its citations were its
+  // frontmatter's, so they move into the file with the write and the page
+  // keeps the id instead. A page no id can be minted for keeps them all.
+  let entry = sidecar?.entry;
+  let minting: MintedId | undefined;
+  let stay: string | undefined;
+  if (idless !== undefined && sidecars !== null) {
+    const outcome = await sidecars.mint(label, idless, page.metadata.data);
+    if ("stay" in outcome) {
+      stay = outcome.stay;
+    } else {
+      minting = outcome.mint;
+      owner = outcome.owner;
+      entry = outcome.id;
+    }
+  }
+  const minted = minting?.id;
+
   // Where the entry goes follows the config, not a flag: a collection whose
   // manifest owns `citations` keeps them there, and the page is left alone
   // but for a marker.
@@ -631,18 +665,26 @@ export async function runAdd(opts: AddOptions): Promise<AddResult> {
   /** Which item of the entry's `citations` this run added, for the line report. */
   let index = 0;
   if (owner !== undefined) {
-    if (sidecar?.entry === undefined) {
+    if (entry === undefined) {
       throw new CiteError(
         `${label} carries no ${owner.join}: value, so its citations cannot be keyed in ${owner.file}.`,
       );
     }
-    const existing = (sidecar.citations ?? []).map((input, index) => {
-      const moved = shifted.manifest.get(index);
-      return moved === undefined ? input.entry : withClaimLines(input.entry, moved);
-    });
+    // A minted page's own entries, read after the marker shift spliced their lines.
+    const existing =
+      minted !== undefined
+        ? citationInputs(label, pickExtractor(label, format).extract(body, label), undefined).map((i) => i.entry)
+        : (sidecar?.citations ?? []).map((input, index) => {
+            const moved = shifted.manifest.get(index);
+            return moved === undefined ? input.entry : withClaimLines(input.entry, moved);
+          });
     const list = [...existing, entryObject(citation)];
     index = list.length - 1;
-    const at = await manifests.write(owner, sidecar.entry, list, index);
+    const at = await manifests.write(owner, entry, list, index);
+    // The page's other values its file owns move with the id too.
+    for (const [key, value] of Object.entries(minting?.moved ?? {})) {
+      if (key !== CITATIONS_KEY) await manifests.put(owner, entry, key, value);
+    }
     const [changed] = manifests.changed();
     placed = {
       file: at.file,
@@ -651,6 +693,15 @@ export async function runAdd(opts: AddOptions): Promise<AddResult> {
       diff: changed?.diff ?? "",
       written: false,
     };
+    // The page takes the minted id, and gives up what its file now holds.
+    if (minting !== undefined) {
+      try {
+        body = withMintedId(label, body, minting, format);
+      } catch (e) {
+        if (e instanceof DocmetaError) throw new CiteError(e.message);
+        throw e;
+      }
+    }
   }
 
   const after = owner === undefined ? appendFrontmatterCitation(body, format, citation, label) : body;
@@ -676,25 +727,31 @@ export async function runAdd(opts: AddOptions): Promise<AddResult> {
     result.claimLines = { start: claimSpan.start + shift, end: claimSpan.end + shift };
   }
 
-  // A manifest entry leaves the page byte for byte as it was, unless a
-  // marker went into the body; there is then nothing to write.
-  result.written = path !== undefined && opts.dryRun !== true && after !== content;
-  if (result.written && path !== undefined) await writeFileAtomic(path, after);
   // The entry goes in under compare-and-swap, so what lands may be a replay
   // onto a manifest another command wrote while this one was running. The
   // report names the bytes and the line that actually landed, not the ones
   // this run spliced from.
-  if (result.manifest !== undefined && opts.dryRun !== true) {
+  const commit = async (): Promise<void> => {
+    if (result.manifest === undefined || opts.dryRun === true) return;
     const [settled] = await manifests.commit();
-    if (owner !== undefined && sidecar?.entry !== undefined) {
-      result.manifest.line = manifests.lineOf(owner, sidecar.entry, index) ?? result.manifest.line;
+    if (owner !== undefined && entry !== undefined) {
+      result.manifest.line = manifests.lineOf(owner, entry, index) ?? result.manifest.line;
     }
     if (settled !== undefined) {
       result.manifest.content = settled.text;
       result.manifest.diff = settled.diff;
     }
     result.manifest.written = true;
-  }
+  };
+  // Citations moving out of the page land in its file before the page loses them.
+  if (minted !== undefined) await commit();
+  // A manifest entry leaves the page byte for byte as it was, unless a
+  // marker went into the body; there is then nothing to write.
+  result.written = path !== undefined && opts.dryRun !== true && after !== content;
+  if (result.written && path !== undefined) await writeFileAtomic(path, after);
+  if (minted === undefined) await commit();
+  if (result.written && minted !== undefined && owner !== undefined) warn(mintedNotice(label, minted, owner.file));
+  if (result.written && stay !== undefined) warn(mintStayNotice(label, CITATIONS_KEY, stay));
   // The claim's text repeats, so a later move of it could not be told apart
   // from its copies. Said once the entry is written: it is not a refusal, and
   // the lines it names are the page's own after the write.

@@ -911,9 +911,35 @@ export async function runDerive(opts: DeriveOptions): Promise<DeriveRun> {
     return held;
   };
   const results: DeriveFileResult[] = [];
+  /**
+   * Pages written with the values a minted id moved out of them (proposal
+   * 0126), by the manifest that is to hold those values, each with its text
+   * before the write. The manifests are saved after every page is written,
+   * so one that fails to save puts its pages back rather than lose them.
+   */
+  const mintedPages = new Map<string, { label: string; absPath: string; before: string }[]>();
   /** Save every held manifest a committed edit changed, compare-and-swap. */
   const saveManifests = async (): Promise<void> => {
-    for (const held of heldManifests.values()) await settleManifest(held);
+    try {
+      for (const held of heldManifests.values()) await settleManifest(held);
+    } catch (err) {
+      // A manifest saved before the failure was rebaselined; the rest still differ.
+      const notes: string[] = [];
+      for (const [path, pages] of mintedPages) {
+        const held = heldManifests.get(path);
+        if (held === undefined || held.text === held.before) continue;
+        for (const page of pages) {
+          try {
+            await writeFileAtomic(page.absPath, page.before);
+            notes.push(`${page.label} was restored.`);
+          } catch (restore) {
+            notes.push(`${page.label} could not be restored: ${errorMessage(restore)}. Restore it from version control.`);
+          }
+        }
+      }
+      if (notes.length > 0) throw new DocmetaError(`${errorMessage(err)} ${notes.join(" ")}`);
+      throw err;
+    }
   };
   // A run that aborts part-way (a declined key prompt on a later file) still
   // saves the manifest edits of the pages it already wrote; a dry run saves
@@ -1120,6 +1146,17 @@ export async function runDerive(opts: DeriveOptions): Promise<DeriveRun> {
             entryWritten.push(f);
           }
         }
+        // Every value the page held that the `{id}` manifest owns moves with
+        // the id minted for it (proposal 0126), beside the fields written there.
+        if (minting !== undefined) {
+          const written = new Set([...toEntries.map((t) => t.f.field), ...(toManifest === undefined ? [] : [PROVENANCE_FIELD])]);
+          for (const [key, value] of Object.entries(minting.mint.moved)) {
+            if (written.has(key)) continue;
+            if (await stage(minting, { kind: "splice", entry: minting.mint.id, key, value, join: minting.join, file: minting.file })) {
+              changed = true;
+            }
+          }
+        }
       } catch (err) {
         if (err instanceof EncryptionRefusal || !(err instanceof DocmetaError)) throw err;
         results.push(errorResult(label, doc.format, err.message, check, shown()));
@@ -1150,7 +1187,8 @@ export async function runDerive(opts: DeriveOptions): Promise<DeriveRun> {
           changed = true;
         } else {
           const patch: MetadataPatch = mintsHere && minting !== undefined ? { [ID_JOIN]: minting.mint.id } : {};
-          const deletions: string[] = [];
+          // The values that moved to the `{id}` manifest leave the page.
+          const deletions: string[] = mintsHere && minting !== undefined ? Object.keys(minting.mint.moved) : [];
           for (const f of pending) {
             if (f.field === PROVENANCE_FIELD) {
               // An empty record is no record: `provenance` has `minItems: 1`.
@@ -1188,7 +1226,12 @@ export async function runDerive(opts: DeriveOptions): Promise<DeriveRun> {
           if (next !== doc.content && !dryRun) {
             await writeFileAtomic(doc.absPath, next);
             for (const f of pending) markWritten(f);
-            if (mintsHere && minting !== undefined) warn(mintedNotice(label, minting.mint.id, minting.file));
+            if (mintsHere && minting !== undefined) {
+              const pages = mintedPages.get(minting.absPath) ?? [];
+              pages.push({ label, absPath: doc.absPath, before: doc.content });
+              mintedPages.set(minting.absPath, pages);
+              warn(mintedNotice(label, minting.mint.id, minting.file));
+            }
             for (const s of stays) {
               if (pending.some((f) => f.field === s.key)) warn(mintStayNotice(label, s.key, s.reason));
             }

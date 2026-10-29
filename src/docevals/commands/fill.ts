@@ -29,7 +29,6 @@ import {
   EVALS_KEY,
   EvalWriter,
   META_PROVENANCE_KEY,
-  manifestEvalList,
   markupRefusal,
   type WriteHome,
 } from "../core/write-location.js";
@@ -58,6 +57,9 @@ import { warn } from "../../shared/warn.js";
 import type { Confirm } from "../../shared/prompt.js";
 import {
   mergeMetaProvenance,
+  mintedNotice,
+  mintStayNotice,
+  withMintedId,
   type ExternalWrite,
   type RelocateResult,
 } from "../../meta/internal.js";
@@ -544,33 +546,61 @@ export async function runFill(
     const pageEntries = manifest === undefined ? written.map(toEntry) : [];
     const pageMeta =
       metaProvenance.written && metaManifest === undefined ? merged?.list : undefined;
+    // Proposal 0126: a page with no id is minted one for its `{id}` manifest,
+    // and the keys it carried move there with the write.
+    const minting =
+      manifest?.mint !== undefined
+        ? { ...manifest, mint: manifest.mint }
+        : metaManifest?.mint !== undefined
+          ? { ...metaManifest, mint: metaManifest.mint }
+          : undefined;
+    // The keys this write puts in the minting file itself, built on the page's values.
+    const ownKeys = [
+      ...(manifest?.mint !== undefined ? [EVALS_KEY] : []),
+      ...(metaManifest?.mint !== undefined && merged !== undefined ? [META_PROVENANCE_KEY] : []),
+    ];
     try {
-      // The page first, as `meta fill` writes it, so a refused manifest leaves
-      // no entry pointing at a page that was never changed.
+      // The page's text is settled before any file is written, so a page that
+      // refuses its minted id or its evals leaves no file holding its values.
+      let updated = plan.page.content;
+      if (minting !== undefined) updated = withMintedId(label, updated, minting.mint);
       if (pageEntries.length > 0 || pageMeta !== undefined) {
-        const updated = appendPageEvals(
-          plan.page.content,
-          label,
-          pageEntries,
-          pageMeta,
-        );
+        updated = appendPageEvals(updated, label, pageEntries, pageMeta);
+      }
+      const writePage = (): void => {
         if (!options.dryRun && updated !== plan.page.content) {
           writeFileSync(plan.page.absPath, updated);
+          if (minting !== undefined) warn(mintedNotice(label, minting.mint.id, minting.file));
+          if (evalsHome.kind === "page" && evalsHome.stay !== undefined && pageEntries.length > 0) {
+            warn(mintStayNotice(label, EVALS_KEY, evalsHome.stay));
+          }
+          if (metaHome.kind === "page" && metaHome.stay !== undefined && pageMeta !== undefined) {
+            warn(mintStayNotice(label, META_PROVENANCE_KEY, metaHome.stay));
+          }
         }
-      }
-      if (!options.dryRun && manifest !== undefined) {
-        const held = manifestEvalList(
-          await writer.readManifest(manifest, EVALS_KEY),
-          manifest.file,
-          manifest.entry,
-        );
-        await writer.writeManifest(manifest, EVALS_KEY, [
-          ...held,
-          ...written.map((p) => entryObject(toEntry(p))),
-        ]);
-      }
-      if (!options.dryRun && metaManifest !== undefined && merged !== undefined) {
-        await writer.writeManifest(metaManifest, META_PROVENANCE_KEY, merged.list);
+      };
+      const writeManifests = async (): Promise<void> => {
+        if (!options.dryRun && manifest !== undefined) {
+          const held = await writer.currentEvals(manifest, data[EVALS_KEY]);
+          await writer.writeManifest(manifest, EVALS_KEY, [
+            ...held,
+            ...written.map((p) => entryObject(toEntry(p))),
+          ]);
+        }
+        if (!options.dryRun && metaManifest !== undefined && merged !== undefined) {
+          await writer.writeManifest(metaManifest, META_PROVENANCE_KEY, merged.list);
+        }
+        if (!options.dryRun && minting !== undefined) await writer.moveMinted(minting, ownKeys);
+      };
+      // The page first, as `meta fill` writes it, so a refused manifest leaves
+      // no entry pointing at a page that was never changed. Keys moving out
+      // of a page land in its file before the page loses them.
+      if (minting === undefined) {
+        writePage();
+        await writeManifests();
+      } else {
+        await writeManifests();
+        writePage();
       }
     } catch (e) {
       return {

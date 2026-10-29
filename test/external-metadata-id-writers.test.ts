@@ -13,16 +13,19 @@
  *    `api` declares an empty list.
  *  - `mint-stay`: a Docusaurus page no id is minted for.
  *  - `missing-dir`: `externalMetadataDir:` names a directory that is not there.
+ *  - `mint-moves`: `guide.md` carries no id and keeps `personas`, external,
+ *    in the page, so the write that mints its id moves it too.
  * Each case runs on a private copy.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cpSync, existsSync, mkdtempSync, readFileSync, rmSync, statSync } from "node:fs";
+import { cpSync, existsSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parse as parseYaml } from "yaml";
 import { MockProvider, type InferenceProvider } from "@hawkeyexl/inference";
 import { runFill } from "../src/meta/commands/fill.js";
+import { runValidate } from "../src/meta/commands/validate.js";
 import { runDerive } from "../src/meta/commands/derive.js";
 import { runQuery } from "../src/meta/commands/query.js";
 import { runRelocate } from "../src/meta/commands/relocate.js";
@@ -326,5 +329,42 @@ describe("relocate: the metadata directory as a collection's created home", () =
       "Created nope-meta/; it owns what each page's schemas mark external, one <id>.yaml per page.",
     );
     expect(statSync(join(dir, "nope-meta")).isDirectory()).toBe(true);
+  });
+});
+
+describe("a write that mints an id moves every value the directory owns", () => {
+  /** `guide.md` reads `personas` and `key` from its new file, and validates clean. */
+  async function movedClean(dir: string, key: string, value: unknown): Promise<void> {
+    expect(yamlOf(dir, "metadata/guide.yaml")).toMatchObject({ guide: { personas: ["maya", "devin"], [key]: value } });
+    expect(pageData(dir, "docs/guide.md")).toMatchObject({ title: "Guide", id: "guide" });
+    expect(pageData(dir, "docs/guide.md")).not.toHaveProperty("personas");
+    expect(pageData(dir, "docs/guide.md")).not.toHaveProperty(key);
+    const { results } = await runValidate({ cwd: dir, inputs: [] });
+    expect(results.find((r) => r.file === "docs/guide.md")?.errors).toEqual([]);
+    const [got] = await runGet({ cwd: dir, inputs: ["docs/guide.md"], fields: ["personas", key] });
+    expect(got?.values).toEqual({ personas: ["maya", "devin"], [key]: value });
+  }
+
+  it("fill writing reviewer takes the page's personas into the file too", async () => {
+    const dir = copy("mint-moves");
+    await runFill({ cache: false, concurrency: 1, cwd: dir, inputs: ["docs/guide.md"], inferenceProvider: reviewers(["ada"]) });
+    await movedClean(dir, "reviewer", "ada");
+  });
+
+  it("relocate moving one field moves the rest a minted page holds", async () => {
+    const dir = copy("mint-moves");
+    writeFileSync(join(dir, "docs/guide.md"), "---\ntitle: Guide\nreviewer: ada\npersonas: [maya, devin]\n---\n# Guide\n");
+    await runRelocate({ inputs: ["docs/guide.md"], fields: ["reviewer"], cwd: dir });
+    await movedClean(dir, "reviewer", "ada");
+  });
+
+  it("mints none for a page whose writer cannot take a value out, which keeps the write", async () => {
+    const dir = copy("mint-moves");
+    await runQuery({ cwd: dir, inputs: [], sql: "UPDATE docs SET reviewer = 'ada' WHERE _path = 'docs/legacy.html'" });
+    expect(read(dir, "docs/legacy.html")).toContain('<meta name="reviewer" content="ada">');
+    expect(existsSync(join(dir, "metadata", "legacy.yaml"))).toBe(false);
+    expect(stderr.filter((l) => l.includes("no id could be minted"))).toEqual([
+      "manni: docs/legacy.html: no id could be minted (the page cannot be written: the html writer cannot take personas out of it), so reviewer stays in the page.\n",
+    ]);
   });
 });

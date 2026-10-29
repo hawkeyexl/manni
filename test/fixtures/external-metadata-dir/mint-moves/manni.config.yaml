@@ -1,0 +1,16 @@
+# Proposal 0126: a write that mints an id moves every value the page holds
+# that metadata/<id>.yaml owns, not only the key it writes. guide.md carries
+# no id and keeps personas, which page.schema.json marks external, in the
+# page. Writing reviewer, citations or evals mints it an id, and personas
+# goes with it. HTML's writer takes no key out, so legacy.html, which holds
+# personas too, is minted no id, and a write leaves its value in the page.
+# known.md and metadata/known.yaml put the directory in play.
+collections:
+  - name: site
+    paths: ["docs/**/*.{md,html}"]
+meta:
+  defaults: false
+  schemas: [./page.schema.json, manni:citations:1.2.0, manni:evals:1.0.0]
+cite:
+  # The sources sit beside the pages in this fixture.
+  root: .

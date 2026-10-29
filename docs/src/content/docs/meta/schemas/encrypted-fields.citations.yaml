@@ -56,9 +56,9 @@ docs/src/content/docs/meta/schemas/encrypted-fields.mdx:
         integrity: sha256-6e002a60cfaaef2d6b30ab0938e3c882386ead1ddb46b38633634b97f1eac674
       source:
         file: src/meta/commands/query.ts
-        lines: 3690-3695
+        lines: 3709-3714
         integrity: sha256-983a738ccc84d8cd3a7f08b068c28f14291829e60f5ed3d247cfda0c90401ac8
-        commit-sha: 46ea4718fa7ee7e2ec7ed135a7a646d421ff3fb8
+        commit-sha: fefd408f2da5a18b6c6a613e12c5f5dcc2ac782e
     - id: equal-ciphertexts-make-joins-work
       claim:
         integrity: sha256-3548ae43b085633b0a627b4ddd898c9a7c1a7392285ca7e90e53787df800a505
@@ -72,9 +72,9 @@ docs/src/content/docs/meta/schemas/encrypted-fields.mdx:
         integrity: sha256-d42dd91be35640aadfeb6e6bc4a6eac10bc3fc55280cb23f7e4e3b6faa7abda7
       source:
         file: src/meta/commands/query.ts
-        lines: 3690-3695
+        lines: 3709-3714
         integrity: sha256-983a738ccc84d8cd3a7f08b068c28f14291829e60f5ed3d247cfda0c90401ac8
-        commit-sha: 46ea4718fa7ee7e2ec7ed135a7a646d421ff3fb8
+        commit-sha: fefd408f2da5a18b6c6a613e12c5f5dcc2ac782e
     - id: encrypted-plain-fires-without-a-key
       claim:
         lines: 120-121
@@ -105,9 +105,9 @@ docs/src/content/docs/meta/schemas/encrypted-fields.mdx:
         integrity: sha256-145f4f58c93b8182e60f8b04e27de2a31b1590e799b772287f2243f09de1b2fc
       source:
         file: src/meta/commands/fill.ts
-        lines: 740-746
+        lines: 739-745
         integrity: sha256-c2dc89be0e81f96d389d7bcf9f11b2289d63bfdb73eaa79b74d1d9b8fd361f9a
-        commit-sha: 46ea4718fa7ee7e2ec7ed135a7a646d421ff3fb8
+        commit-sha: fefd408f2da5a18b6c6a613e12c5f5dcc2ac782e
     - id: reads-do-not-decrypt
       claim:
         integrity: sha256-01182f60c58cc3372d664f673964b422969595a876eb743a8bebd502cd67fd86

@@ -1,0 +1,21 @@
+# The metadata directory (proposal 0126): neither collection declares
+# externalMetadata, so each artifact's `metadata` block lives in
+# metadata/<id>.yaml, and metadata/known.yaml puts the directory in play.
+# known carries an id. fresh carries none and keeps its block in the page, so
+# fill mints it one and moves the block. agentskills allows no property it
+# does not name, so no id is minted for strict and its block stays in the page.
+collections:
+  - name: agents
+    paths: [".claude/skills/{known,fresh}/SKILL.md"]
+  - name: strict
+    paths: [".claude/skills/strict/SKILL.md"]
+
+meta:
+  overrides:
+    - collection: agents
+      schemas: ["manni:artifact-evals:1.0.0"]
+    - collection: strict
+      schemas: ["agentskills:skill:1.0", "manni:artifact-evals:1.0.0"]
+
+tracevals:
+  failOnReview: false

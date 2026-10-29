@@ -1,0 +1,22 @@
+# Each page's graph block and fill record live in meta/<id>.yaml, found by the
+# page's id (proposal 0126). known.md carries an id. fresh.md carries none and
+# keeps a graph block in the page, so fill mints it one and moves the block.
+# Docusaurus reads id as the doc id, so none is minted for docusaurus.md and
+# its block stays in the page.
+collections:
+  - name: pages
+    paths: ["docs/**/*.md"]
+    externalMetadata:
+      - file: "meta/{id}.yaml"
+        keys: [graph, meta-provenance]
+
+meta:
+  overrides:
+    - files: "docs/docusaurus.md"
+      schemas: [docusaurus:docs:3.10, manni:graph:1.0.0]
+
+graph:
+  baseIri: https://example.com/graph/
+  out: graph.ttl
+  fill:
+    fields: [label, alt-labels, related-concepts, concepts]

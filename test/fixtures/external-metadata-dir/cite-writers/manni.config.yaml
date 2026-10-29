@@ -1,0 +1,14 @@
+# Proposal 0126 for cite's writers. limits.md carries id: limits, and
+# metadata/limits.yaml, its file, puts the directory in play. fresh.md
+# carries no id, so add mints it one. Docusaurus reads id as the doc id, so
+# none is minted for docusaurus.md, and unsafe.md's id cannot name a file.
+collections:
+  - name: site
+    paths: ["docs/**/*.md"]
+meta:
+  overrides:
+    - files: "docs/docusaurus.md"
+      schemas: [docusaurus:docs:3.10, manni:citations:1.2.0]
+cite:
+  # The sources sit beside the pages in this fixture.
+  root: .

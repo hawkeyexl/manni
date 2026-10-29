@@ -55,7 +55,19 @@ const ID = "id";
 /** A minted id, and the page's text with it written in. */
 export interface MintedId {
   id: string;
+  /** The page with the id written in and every `moved` key taken out. */
   text: string;
+  /**
+   * What the page holds for each key its `{id}` manifest owns once it has
+   * the id. A page with no id reads nothing from the directory, so these
+   * are its values there, and they move into the file with the write that
+   * mints the id: left in the page, each would be an `external:owned`
+   * collision on the next read. A writer splices each one into the page's
+   * entry beside its own key, whose value it built on the page's.
+   */
+  moved: Readonly<Record<string, unknown>>;
+  /** The page's `elements:` paths (proposal 0018), for its format's writer. */
+  elements: readonly string[];
 }
 
 /** What minting gives a writer: an id, or why there is none. */
@@ -82,6 +94,49 @@ export function mintedNotice(label: string, id: string, file: string): string {
 /** The notice for a value that stays in the page because no id could be minted. Without the prefix. */
 export function mintStayNotice(label: string, key: string, reason: string): string {
   return `${label}: no id could be minted (${reason}), so ${key} stays in the page.`;
+}
+
+/**
+ * `content` with a minted id written in and every key it moves taken out
+ * (`MintedId.moved`), through the format's own writer and the page's
+ * `elements:` paths, so the id lands where minting checked it, read back.
+ * `as` names the format, else the extension does. Or why the writer cannot:
+ * a format whose writer takes no key out (HTML, XML) cannot move a value, so
+ * a page of one holding any is no page an id is minted for.
+ */
+export function mintedText(
+  label: string,
+  content: string,
+  mint: Pick<MintedId, "id" | "moved" | "elements">,
+  as?: string,
+): { text: string } | { why: string } {
+  const extractor = (as !== undefined ? extractorByName(as) : undefined) ?? extractorForExtension(extname(label));
+  if (extractor?.apply === undefined) {
+    return { why: `the ${extractor?.name ?? extname(label)} format cannot write this document's metadata` };
+  }
+  const elements = [...mint.elements];
+  const text = extractor.apply(content, { [ID]: mint.id }, { filePath: label, elements, deletions: Object.keys(mint.moved) });
+  const data = extractor.extract(text, label, { elements }).data;
+  const kept = Object.keys(mint.moved).find((key) => Object.hasOwn(data, key));
+  if (kept !== undefined) return { why: `the ${extractor.name} writer cannot take ${kept} out of it` };
+  if (!deepEqual(data[ID], mint.id)) return { why: `the ${extractor.name} writer did not keep the id` };
+  return { text };
+}
+
+/**
+ * `mintedText`, refused in meta's error class when the writer cannot. One
+ * rule for every writer: a page's values move with the id, never only the
+ * key being written.
+ */
+export function withMintedId(
+  label: string,
+  content: string,
+  mint: Pick<MintedId, "id" | "moved" | "elements">,
+  as?: string,
+): string {
+  const out = mintedText(label, content, mint, as);
+  if ("why" in out) throw new DocmetaError(`${label}: ${out.why}.`);
+  return out.text;
 }
 
 const toPosix = (p: string): string => p.split(sep).join("/");

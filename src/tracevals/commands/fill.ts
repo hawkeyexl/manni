@@ -13,10 +13,14 @@ import { palette } from "../../shared/color.js";
 import { extractFrontmatter } from "../../meta/index.js";
 import {
   externalWriteWarnings,
+  mintedNotice,
+  mintStayNotice,
+  withMintedId,
   type ExternalWrite,
   type RelocateResult,
 } from "../../meta/internal.js";
 import type { Confirm } from "../../shared/prompt.js";
+import { warn } from "../../shared/warn.js";
 import { discoverArtifacts, type DiscoveredArtifact } from "../artifacts/discover.js";
 import {
   appendArtifactEvals,
@@ -285,7 +289,7 @@ export async function runFill(options: FillOptions = {}): Promise<FillRun> {
     for (const { artifact, status, skip } of discovery.artifacts) {
       if (status !== "ok" || skip || artifact.type === "project-rules") continue;
       const home = await writer.homeFor(artifact.path, ownData(artifact.content));
-      if (home.kind === "page") {
+      if (home.kind === "page" && home.stay === undefined) {
         flagged.push({ label: artifact.path, key: METADATA_KEY, home: home.proposed });
       }
     }
@@ -493,18 +497,31 @@ export async function runFill(options: FillOptions = {}): Promise<FillRun> {
       ),
     };
 
+    // Proposal 0126's notices name the artifact as the manifest is named, from the config directory.
+    const shown = relative(configDir, artifact.path).split("\\").join("/");
     try {
       if (home.kind === "manifest") {
         // Through meta's own splice writer: one value of one entry is replaced
-        // and no other byte of the manifest moves, comments included.
+        // and no other byte of the manifest moves, comments included. An
+        // artifact an id is minted for reads nothing from the directory, so
+        // the block it carries is the one appended to, and it moves.
+        const own = home.mint === undefined ? undefined : ownData(artifact.content)[METADATA_KEY];
         await writer.write(home, (current) =>
           appendMetadataEvals(
-            current,
+            current === undefined ? own : current,
             artifact.path,
             gated.accepted.map(toEvalEntry),
             provenance,
           ),
         );
+        if (home.mint !== undefined) {
+          // The artifact's other values its file owns move with the id too.
+          for (const [key, value] of Object.entries(home.mint.moved)) {
+            if (key !== METADATA_KEY) await writer.write(home, () => value, key);
+          }
+          await writeFile(artifact.path, withMintedId(artifact.path, artifact.content, home.mint));
+          warn(mintedNotice(shown, home.mint.id, home.file));
+        }
       } else {
         const updated = appendArtifactEvals(
           artifact.content,
@@ -513,7 +530,8 @@ export async function runFill(options: FillOptions = {}): Promise<FillRun> {
           provenance,
         );
         await writeFile(artifact.path, updated);
-        if (home.kind === "page") noteHomeless(artifact.path, home);
+        if (home.kind === "page" && home.stay !== undefined) warn(mintStayNotice(shown, METADATA_KEY, home.stay));
+        else if (home.kind === "page") noteHomeless(artifact.path, home);
       }
     } catch (err) {
       return {

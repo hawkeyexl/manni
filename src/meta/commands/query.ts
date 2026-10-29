@@ -3241,10 +3241,13 @@ async function planManifestEdits(
     if (!lines.includes(line)) lines.push(line);
     mintNotices.set(change, lines);
   };
+  /** The home each change minted its page an id for (0126), for `moveMinted` once the change is planned. */
+  const mintedBy = new Map<QueryChange, Owned>();
   /** The id a write mints into its page (0126), put in the page's own keys. */
   const minted = (change: QueryChange, file: string, home: Owned, into: Record<string, unknown>): void => {
     if (home.mint === undefined) return;
     into[ID_JOIN] = home.mint.id;
+    mintedBy.set(change, home);
     notify(change, mintedNotice(file, home.mint.id, home.file));
   };
   const where = (home: Owned): { entry: string; join: string; file: string } => ({
@@ -3252,6 +3255,19 @@ async function planManifestEdits(
     join: home.join,
     file: home.file,
   });
+  /**
+   * Every other value the page held that its `{id}` manifest owns once the
+   * id minted for it exists (0126) moves there with the write, and leaves
+   * the page: `key` is the caller's own write.
+   */
+  const moveMinted = async (home: Owned, key: string, ops: PageOps, own: Readonly<Record<string, unknown>>): Promise<void> => {
+    if (home.mint === undefined) return;
+    for (const [k, value] of Object.entries(home.mint.moved)) {
+      if (k === key) continue;
+      await edit(home, (t) => spliceManifestValue(t, { ...where(home), key: k, value }).text);
+      if (Object.hasOwn(own, k)) ops.deletions.push(k);
+    }
+  };
 
   // The local manifests of the collections `--collection` left out. The rows
   // were merged without them, so the rename and DELETE handling below never
@@ -3429,6 +3445,9 @@ async function planManifestEdits(
         dropFromPage(c.key);
       }
     }
+    // A write that minted the page an id moves its other values with it.
+    const minting = mintedBy.get(c);
+    if (minting !== undefined) await moveMinted(minting, c.key, ops, own);
     pageRoutes.set(c, ops);
   }
   // A manifest that does not exist yet is written only when it gains text.

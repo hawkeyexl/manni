@@ -1,0 +1,9 @@
+known:
+  metadata:
+    evals:
+      - id: used-read
+        assertion: The session read at least one source file before editing.
+        grader: tool-usage
+        options:
+          tool: Read
+          expect: used

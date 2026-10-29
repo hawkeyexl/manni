@@ -77,9 +77,9 @@ docs/src/content/docs/meta/set-up/external-metadata.mdx:
         integrity: sha256-e1e5e6733f3dc268dc7e19642e3e40a85f57d20f26f3b0b720611eddf1a5be00
       source:
         file: src/meta/core/relocation.ts
-        lines: 1972-1973
+        lines: 2008-2009
         integrity: sha256-e81353bad7ffd750242382621ca95525d779ef75116cda6da0dea62dd19fa126
-        commit-sha: 46ea4718fa7ee7e2ec7ed135a7a646d421ff3fb8
+        commit-sha: fefd408f2da5a18b6c6a613e12c5f5dcc2ac782e
     - id: x-manni-location-decides-key-direction
       claim:
         integrity: sha256-e1e5e6733f3dc268dc7e19642e3e40a85f57d20f26f3b0b720611eddf1a5be00
@@ -110,9 +110,9 @@ docs/src/content/docs/meta/set-up/external-metadata.mdx:
         integrity: sha256-3fd43bd1e1c2b880733c027690fbb5f7b62b5fa54dde2248d5959f9df8baff72
       source:
         file: src/meta/commands/query.ts
-        lines: 3387-3394
+        lines: 3403-3410
         integrity: sha256-42c75dbbc97be83f6fd16d09d9379e3a636755457cd29fdae71ff6df23ae5e15
-        commit-sha: 46ea4718fa7ee7e2ec7ed135a7a646d421ff3fb8
+        commit-sha: fefd408f2da5a18b6c6a613e12c5f5dcc2ac782e
     - id: join-field-write-refused-when-entry-matched
       claim:
         lines: 854
@@ -144,17 +144,17 @@ docs/src/content/docs/meta/set-up/external-metadata.mdx:
         integrity: sha256-756a1eb87c6a14d7fbd92fc09a0b513c213db34ea64626596c3884017ef52bec
       source:
         file: src/meta/commands/derive.ts
-        lines: 1019-1030
+        lines: 1045-1056
         integrity: sha256-43a0a0e28d521e0aba91ab9503a341f91f85327043069308d90e722698cabaee
-        commit-sha: d03514bdfa434eba44147e1a6f4e928a6f0f644b
+        commit-sha: fefd408f2da5a18b6c6a613e12c5f5dcc2ac782e
     - id: fill-writes-owned-key-into-manifest
       claim:
         integrity: sha256-756a1eb87c6a14d7fbd92fc09a0b513c213db34ea64626596c3884017ef52bec
       source:
         file: src/meta/commands/fill.ts
-        lines: 901-913
+        lines: 900-912
         integrity: sha256-90abfe8ace05d1e4f82d787d203073fe3583bb2065cae56023b75d7ce6999b39
-        commit-sha: d03514bdfa434eba44147e1a6f4e928a6f0f644b
+        commit-sha: fefd408f2da5a18b6c6a613e12c5f5dcc2ac782e
     - id: query-change-line-names-manifest
       claim:
         integrity: sha256-756a1eb87c6a14d7fbd92fc09a0b513c213db34ea64626596c3884017ef52bec

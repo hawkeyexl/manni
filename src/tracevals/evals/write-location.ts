@@ -12,6 +12,9 @@
  *    when the artifact's schemas mark it external;
  *  - the manifest **joins on a field the artifact lacks**: there is no entry
  *    to hold the block, and the write is refused for that artifact;
+ *  - an **`{id}` manifest** (proposal 0126) owns it and the artifact carries
+ *    no id: one is minted, and the block moves into the file with the write.
+ *    An artifact none can be minted for keeps the block, and says why;
  *  - a **URL manifest** owns it: nothing fetched can be written;
  *  - **no manifest owns it**: the artifact keeps it, with the offer (P1) and
  *    the warnings (W1, W2) meta's writers use.
@@ -32,6 +35,7 @@ import {
   readManifestValue,
   spliceManifestValue,
   type ExternalWrite,
+  type MintedId,
   type ProposedHome,
   type RelocateResult,
   type RelocationContext,
@@ -47,8 +51,12 @@ import { METADATA_KEY } from "./external.js";
 
 /** Where one artifact's `metadata` block goes. */
 export type MetadataHome =
-  /** The artifact's own front matter. `proposed` is the home relocation would give it. */
-  | { kind: "page"; proposed: ProposedHome }
+  /**
+   * The artifact's own front matter. `proposed` is the home relocation would
+   * give it. `stay` is why no id could be minted for an artifact an `{id}`
+   * manifest would otherwise hold the block for (proposal 0126).
+   */
+  | { kind: "page"; proposed: ProposedHome; stay?: string }
   /** The artifact's entry in a local manifest. */
   | {
       kind: "manifest";
@@ -60,6 +68,12 @@ export type MetadataHome =
       entry: string;
       /** A `{page}` manifest, which may not exist yet. */
       perPage: boolean;
+      /**
+       * The artifact carries no id, and this one is minted for it (proposal
+       * 0126). The block it carries is the one the write builds on, and it
+       * moves into the manifest: the artifact gets the id instead.
+       */
+      mint?: MintedId;
     }
   /** A manifest joins on a field this artifact does not carry. */
   | { kind: "no-entry"; file: string; join: string }
@@ -120,9 +134,8 @@ export class MetadataWriter {
   async homeFor(label: string, data: Readonly<Record<string, unknown>>): Promise<MetadataHome> {
     const home = await keyHome(this.ctx, label, data, METADATA_KEY);
     if (home.kind === "url") return { kind: "url", file: home.file };
-    // ponytail: until this writer mints (0126), a page with no id is refused
-    // as before, and a page none can be minted for keeps the block, as an
-    // unowned one did. C2 replaces both.
+    // An `{id}` manifest owns the block, and no id can be minted for the
+    // artifact (proposal 0126): the artifact keeps it, and fill says why.
     if (home.kind === "stay") {
       return {
         kind: "page",
@@ -133,10 +146,11 @@ export class MetadataWriter {
           createsManifest: true,
           createsCollection: false,
         },
+        stay: home.reason,
       };
     }
     if (home.kind === "manifest") {
-      if (home.entry === undefined || home.mint !== undefined) {
+      if (home.entry === undefined) {
         return { kind: "no-entry", file: home.file, join: home.join };
       }
       return {
@@ -146,6 +160,7 @@ export class MetadataWriter {
         join: home.join,
         entry: home.entry,
         perPage: home.perPage,
+        ...(home.mint === undefined ? {} : { mint: home.mint }),
       };
     }
     return { kind: "page", proposed: home.home };
@@ -166,11 +181,14 @@ export class MetadataWriter {
    * Replace this artifact's `metadata` block in its manifest entry with what
    * `update` makes of the block the file holds now. The file is read just
    * before the write, so a block another run wrote meanwhile is extended
-   * rather than lost, and no other byte of the file changes.
+   * rather than lost, and no other byte of the file changes. `key` is
+   * another of the artifact's keys, for a value that moves with an id
+   * minted for it (proposal 0126).
    */
   async write(
     home: Extract<MetadataHome, { kind: "manifest" }>,
     update: (current: unknown) => unknown,
+    key: string = METADATA_KEY,
   ): Promise<void> {
     let text: string;
     try {
@@ -178,7 +196,7 @@ export class MetadataWriter {
     } catch (e) {
       throw new TracevalsError(`${home.file} could not be read: ${errorMessage(e)}`);
     }
-    const at = { entry: home.entry, key: METADATA_KEY, join: home.join };
+    const at = { entry: home.entry, key, join: home.join };
     let spliced: string;
     try {
       spliced = spliceManifestValue(text, {

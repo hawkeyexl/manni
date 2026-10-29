@@ -1,0 +1,4 @@
+known:
+  evals:
+    - id: has-example
+      assertion: The page shows at least one worked example.

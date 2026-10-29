@@ -38,10 +38,14 @@ import { writeFileAtomic } from "../../meta/index.js";
 import { DocmetaError } from "../../meta/types.js";
 import {
   mergeMetaProvenance,
+  mintedNotice,
+  mintStayNotice,
   spliceManifestValue,
   urlManifestMessage,
+  withMintedId,
   type KeyHome,
   type MetaPageView,
+  type MintedId,
 } from "../../meta/internal.js";
 import { isMissing } from "../../shared/manifest-cas.js";
 import { mergePage, openMetaView } from "../core/external.js";
@@ -812,11 +816,14 @@ export async function runFill(opts: FillOptions = {}): Promise<FillReport> {
     // A page that carries `graph:` while a manifest owns it is meta's
     // collision. meta's merge keeps the page's block, so a fill written to
     // the manifest would never reach `build`. Refused before any turn is spent.
+    // A page an id is minted for (proposal 0126) reads nothing from its
+    // `{id}` manifest, so its block is the one there is, and it moves there
+    // with the fill. One none can be minted for keeps it.
     if (absPath !== undefined) {
       const own = metadataOf(content, path, pageFormat).data;
       if (GRAPH_KEY in own) {
         const home = await view.home(path, own, GRAPH_KEY);
-        if (home.kind !== "unowned") {
+        if (home.kind === "url" || (home.kind === "manifest" && home.mint === undefined)) {
           throw new GraphError(
             `"${GRAPH_KEY}" is owned by manifest ${home.file} (collection ${home.collection}); remove it from the document`,
           );
@@ -1157,13 +1164,23 @@ export async function runFill(opts: FillOptions = {}): Promise<FillReport> {
     if (provenanceList !== undefined && provenanceTarget === null) {
       pageKeys[META_PROVENANCE_KEY] = provenanceList;
     }
-    const pageContent = writeGraphFields(
+    let pageContent = writeGraphFields(
       content,
       path,
       pageFormat,
       graphTarget === null ? narrowed : {},
       { force: opts.force, page: pageKeys },
     ).content;
+    // Proposal 0126: a page with no id is minted one for its `{id}`
+    // manifest, and every value it held that the manifest owns moves there.
+    const minting = graphTarget?.mint !== undefined ? graphTarget : provenanceTarget?.mint !== undefined ? provenanceTarget : null;
+    if (minting?.mint !== undefined) {
+      try {
+        pageContent = withMintedId(path, pageContent, minting.mint, pageFormat);
+      } catch (e) {
+        throw new GraphError(errorMessage(e));
+      }
+    }
 
     const manifestWrites: ManifestWrite[] = [];
     // A manifest that owns `graph:` gets the whole block as meta reads it,
@@ -1183,16 +1200,33 @@ export async function runFill(opts: FillOptions = {}): Promise<FillReport> {
         value: provenanceList,
       });
     }
+    // The page's other values its file owns, beside the keys fill wrote there.
+    for (const [key, value] of Object.entries(minting?.mint?.moved ?? {})) {
+      if (minting === null || manifestWrites.some((w) => w.home.absPath === minting.absPath && w.key === key)) continue;
+      manifestWrites.push({ home: minting, key, value });
+    }
     // Every splice is made before anything is written, so a manifest meta
     // refuses leaves the page untouched too.
     const manifests = await spliceAll(manifestWrites);
 
     if (!opts.dryRun && absPath !== undefined) {
-      if (pageContent !== content) writeFileSync(absPath, pageContent, "utf8");
-      for (const m of manifests) {
-        if (m.text !== m.before) {
-          await writeFileAtomic(m.absPath, m.text, { createParents: true });
+      const writeManifests = async (): Promise<void> => {
+        for (const m of manifests) {
+          if (m.text !== m.before) {
+            await writeFileAtomic(m.absPath, m.text, { createParents: true });
+          }
         }
+      };
+      // Keys moving out of a page land in its file before the page loses them.
+      if (minting !== null) await writeManifests();
+      if (pageContent !== content) writeFileSync(absPath, pageContent, "utf8");
+      if (minting === null) await writeManifests();
+      if (minting?.mint !== undefined) warn(mintedNotice(path, minting.mint.id, minting.file));
+      if (graphHome?.kind === "stay" && Object.keys(narrowed).length > 0) {
+        warn(mintStayNotice(path, GRAPH_KEY, graphHome.reason));
+      }
+      if (provenanceHome?.kind === "stay" && Object.hasOwn(pageKeys, META_PROVENANCE_KEY)) {
+        warn(mintStayNotice(path, META_PROVENANCE_KEY, provenanceHome.reason));
       }
     }
     // Fold the accepted result into the guard even on --dry-run, so the dry
@@ -1226,6 +1260,8 @@ interface ManifestTarget {
   join: string;
   entry: string;
   perPage: boolean;
+  /** The id minted for a page with none, for its `{id}` manifest (proposal 0126). */
+  mint?: MintedId;
 }
 
 /** One value written into one manifest entry. */
@@ -1238,20 +1274,17 @@ interface ManifestWrite {
 /**
  * Where `key` goes: `null` for the page, the manifest entry, or meta's
  * sentence for a manifest that cannot take it, which is a fetched one or one
- * that joins on a field the page lacks.
+ * that joins on a field the page lacks. An `{id}` manifest's page none can be
+ * minted for (proposal 0126) keeps the key, and `fill` says why.
  */
 function writeTarget(
   path: string,
   home: KeyHome | undefined,
   key: string,
 ): ManifestTarget | string | null {
-  if (home === undefined || home.kind === "unowned") return null;
+  if (home === undefined || home.kind === "unowned" || home.kind === "stay") return null;
   if (home.kind === "url") return urlManifestMessage(key, home.file);
-  // ponytail: until this writer mints (0126), a page with no id is refused
-  // as before, and a page none can be minted for keeps the key, as an
-  // unowned one did. C2 replaces both.
-  if (home.kind === "stay") return null;
-  if (home.entry === undefined || home.mint !== undefined) {
+  if (home.entry === undefined) {
     return `${path} carries no ${home.join}, which ${home.file} joins on, so its ${key} has no entry there.`;
   }
   return {
@@ -1260,6 +1293,7 @@ function writeTarget(
     join: home.join,
     entry: home.entry,
     perPage: home.perPage,
+    ...(home.mint === undefined ? {} : { mint: home.mint }),
   };
 }
 
