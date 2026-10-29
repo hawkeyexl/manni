@@ -15,6 +15,9 @@
  *  - the manifest **joins on a field the page lacks**: there is no entry to
  *    hold the value, and the write is refused for that file, in meta's own
  *    sentence;
+ *  - an **`{id}` manifest** (proposal 0126) owns it and the page carries no
+ *    id: one is minted, and the page's own value moves into the file with
+ *    the write. A page none can be minted for keeps the key, and says why;
  *  - a **URL manifest** owns it: nothing can be written to a fetched file,
  *    and for an eval key that is the refusal chunk 1 already makes at load;
  *  - **no manifest owns it**: the page keeps it, with the offer (P1) and the
@@ -28,19 +31,25 @@
  * the vocabulary this tool implements marks its three keys, so the answer is
  * in the schema docevals already bundles.
  */
+import { readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import {
+  DocmetaError,
   LOCATION_KEYWORD,
-  Validator,
   writeFileAtomic,
 } from "../../meta/index.js";
 import {
   externalWriteWarnings,
   keyHome,
+  marksValidator,
+  metaSection,
+  mintedNotice,
   offerExternalHomes,
   readManifestValue,
   spliceManifestValue,
+  withMintedId,
   type ExternalWrite,
+  type MintedId,
   type ProposedHome,
   type RelocateResult,
   type RelocationContext,
@@ -48,6 +57,7 @@ import {
 import { readManifestOrEmpty } from "../../shared/manifest-cas.js";
 import type { Confirm } from "../../shared/prompt.js";
 import { errorMessage } from "../../shared/errors.js";
+import { warn } from "../../shared/warn.js";
 import { DocevalsError } from "../types.js";
 import { frontmatterSchema } from "../schema.js";
 import type { DocevalsConfig } from "./config.js";
@@ -79,8 +89,12 @@ export function prefersExternal(key: string): boolean {
 
 /** Where one key of one page goes. */
 export type WriteHome =
-  /** The page's own frontmatter. `proposed` is the home relocation would give it. */
-  | { kind: "page"; prefersExternal: boolean; proposed: ProposedHome }
+  /**
+   * The page's own frontmatter. `proposed` is the home relocation would give
+   * it. `stay` is why no id could be minted for a page an `{id}` manifest
+   * would otherwise hold the key for (proposal 0126), for `mintStayNotice`.
+   */
+  | { kind: "page"; prefersExternal: boolean; proposed: ProposedHome; stay?: string }
   /** The page's entry in a local manifest. */
   | {
       kind: "manifest";
@@ -96,11 +110,21 @@ export type WriteHome =
        * and a read of it before then holds nothing.
        */
       perPage: boolean;
+      /**
+       * The page carries no id, and this one is minted for it (proposal
+       * 0126). The page's own value of the key is the one the write builds
+       * on, and it moves into the manifest: `mintInto` writes the id in and
+       * takes the key out once the manifest holds it.
+       */
+      mint?: MintedId;
     }
   /** A manifest joins on a field this page does not carry. */
   | { kind: "no-entry"; message: string }
   /** A URL manifest owns the key; nothing fetched can be written. */
   | { kind: "url"; collection: string; file: string };
+
+/** A manifest home whose page carries no id, with the one minted for it (proposal 0126). */
+export type MintingHome = Extract<WriteHome, { kind: "manifest" }> & { mint: MintedId };
 
 /** meta's sentence for a page a joined manifest has no entry for. */
 export function noEntryMessage(
@@ -141,10 +165,18 @@ export interface OfferHooks {
 export class EvalWriter {
   private readonly landed: ExternalWrite[] = [];
 
+  /** The relocation context, built on first use. One object a run, so meta's minting reads each page once. */
+  private context: Promise<RelocationContext> | undefined;
+
   private constructor(
-    private readonly ctx: RelocationContext,
+    private readonly build: () => Promise<RelocationContext>,
     private readonly configSource: string,
   ) {}
+
+  private ctx(): Promise<RelocationContext> {
+    this.context ??= this.build();
+    return this.context;
+  }
 
   /**
    * Build the writer for a run. `targets` are the positional paths as typed,
@@ -157,9 +189,10 @@ export class EvalWriter {
    * it; docevals reads it every run, and where its own evals go cannot depend
    * on whether a sibling can read the same file. The collections are the
    * declared ones, since a page named by path is still a member of whatever
-   * contains it. `config: null` leaves the page's schema set to the page,
-   * which is enough: the keys this writer homes are named outright in the
-   * relocation it plans.
+   * contains it. Meta's own section of that file is read for the page's
+   * schema set, as the reader's marks read it, and meta's default set
+   * decides when there is none meta can read: an id is minted (proposal
+   * 0126) only where the page's schemas give it no meaning of their own.
    */
   static for(
     config: DocevalsConfig,
@@ -168,23 +201,28 @@ export class EvalWriter {
   ): EvalWriter {
     const noConfig = config.configSource === null;
     const collections = config.collections;
-    return new EvalWriter(
-      {
+    const build = async (): Promise<RelocationContext> => {
+      const meta = noConfig ? null : await metaConfig(config.configPath, cwd);
+      return {
         cwd,
         // Page labels are relative to the run's discovery root, so a manifest
         // path this writer reports is spelled against the same directory
         // `core/external.ts` reports a merged value's source against.
         base: cwd,
         noConfig,
-        config: null,
+        config: meta,
         ...(noConfig ? {} : { configDir: config.configDir, configPath: config.configPath }),
         collections,
         declaredCollections: collections,
         targets,
-        validator: new Validator(),
-      },
-      config.configSource ?? cwd,
-    );
+        validator: marksValidator({
+          config: meta,
+          cwd,
+          ...(noConfig ? {} : { configDir: config.configDir }),
+        })(),
+      };
+    };
+    return new EvalWriter(build, config.configSource ?? cwd);
   }
 
   /** Where `key` of the page labelled `label` goes. `data` is its metadata. */
@@ -193,13 +231,12 @@ export class EvalWriter {
     data: Readonly<Record<string, unknown>>,
     key: string,
   ): Promise<WriteHome> {
-    const home = await keyHome(this.ctx, label, data, key);
+    const home = await keyHome(await this.ctx(), label, data, key);
     if (home.kind === "url") {
       return { kind: "url", collection: home.collection, file: home.file };
     }
-    // ponytail: until this writer mints (0126), a page with no id is refused
-    // as before, and a page none can be minted for keeps the key, as an
-    // unowned one did. C2 replaces both.
+    // An `{id}` manifest owns the key, and no id can be minted for the page
+    // (proposal 0126): the page keeps it, and the writer says why.
     if (home.kind === "stay") {
       const proposed: ProposedHome = {
         kind: "collection",
@@ -208,10 +245,10 @@ export class EvalWriter {
         createsManifest: true,
         createsCollection: false,
       };
-      return { kind: "page", prefersExternal: prefersExternal(key), proposed };
+      return { kind: "page", prefersExternal: false, proposed, stay: home.reason };
     }
     if (home.kind === "manifest") {
-      if (home.entry === undefined || home.mint !== undefined) {
+      if (home.entry === undefined) {
         return {
           kind: "no-entry",
           message: noEntryMessage(label, home.join, home.file, key),
@@ -224,9 +261,53 @@ export class EvalWriter {
         join: home.join,
         entry: home.entry,
         perPage: home.perPage,
+        ...(home.mint === undefined ? {} : { mint: home.mint }),
       };
     }
     return { kind: "page", prefersExternal: prefersExternal(key), proposed: home.home };
+  }
+
+  /**
+   * Proposal 0126: every value a page an id is minted for held that its file
+   * owns, written there beside `written`, the keys this write puts there
+   * itself and built on the page's values.
+   */
+  async moveMinted(home: MintingHome, written: readonly string[]): Promise<void> {
+    for (const [key, value] of Object.entries(home.mint.moved)) {
+      if (!written.includes(key)) await this.writeManifest(home, key, value);
+    }
+  }
+
+  /**
+   * `moveMinted`, then the page: the id written in and the moved values
+   * taken out, said once. A page already carrying the id, as a second write
+   * of one run leaves it, is not written again.
+   */
+  async mintInto(page: Pick<PageFile, "file" | "absPath">, home: MintingHome, written: readonly string[]): Promise<void> {
+    await this.moveMinted(home, written);
+    const content = readFileSync(page.absPath, "utf8");
+    let next: string;
+    try {
+      next = withMintedId(page.file, content, home.mint);
+    } catch (e) {
+      throw new DocevalsError(errorMessage(e));
+    }
+    if (next === content) return;
+    writeFileSync(page.absPath, next);
+    warn(mintedNotice(page.file, home.mint.id, home.file));
+  }
+
+  /**
+   * The eval list a write to `home` builds on. A page an id is minted for
+   * (proposal 0126) reads nothing from the directory, so `own`, the list it
+   * carries, is the one there is until this run has written its file.
+   */
+  async currentEvals(
+    home: Extract<WriteHome, { kind: "manifest" }>,
+    own: unknown,
+  ): Promise<unknown[]> {
+    const held = await this.readManifest(home, EVALS_KEY);
+    return manifestEvalList(held === undefined && home.mint !== undefined ? own : held, home.file, home.entry);
   }
 
   /**
@@ -255,7 +336,7 @@ export class EvalWriter {
    */
   async offer(writes: readonly ExternalWrite[], hooks: OfferHooks): Promise<boolean> {
     if (writes.length === 0) return false;
-    const applied = await offerExternalHomes(this.ctx, writes, hooks);
+    const applied = await offerExternalHomes(await this.ctx(), writes, hooks);
     return applied.size > 0;
   }
 
@@ -311,6 +392,19 @@ export class EvalWriter {
         `${resolve(absPath)} could not be read: ${errorMessage(e)}`,
       );
     }
+  }
+}
+
+/**
+ * Meta's section of the family file. A file meta cannot read as its own is
+ * still docevals' file, and meta's default set decides the schemas then.
+ */
+async function metaConfig(configPath: string, cwd: string): Promise<RelocationContext["config"]> {
+  try {
+    return await metaSection(configPath, cwd);
+  } catch (err) {
+    if (err instanceof DocmetaError) return null;
+    throw err;
   }
 }
 

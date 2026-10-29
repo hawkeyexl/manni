@@ -1,0 +1,18 @@
+# Proposal 0126 on the write side. site declares no externalMetadata, so it
+# reads metadata/<id>.yaml, and metadata/known.yaml puts the directory in
+# play. known.md carries an id. fresh.md carries none and keeps its evals in
+# the page, so a write mints it one and moves them. Docusaurus reads id as the
+# doc id, so none is minted for docusaurus.md and its evals stay in the page.
+collections:
+  - name: site
+    paths:
+      - "docs/**/*.md"
+
+meta:
+  overrides:
+    - files: "docs/docusaurus.md"
+      schemas: [docusaurus:docs:3.10, manni:evals:1.0.0]
+
+docevals:
+  fill:
+    confidenceThreshold: 0.5

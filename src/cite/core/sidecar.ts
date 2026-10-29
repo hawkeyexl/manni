@@ -31,9 +31,21 @@
  */
 import { existsSync } from "node:fs";
 import { dirname, isAbsolute, relative, resolve, sep } from "node:path";
-import { configMarks, gitIgnored, mergeWithMarks, type PageMarks } from "../../meta/internal.js";
+import {
+  configMarks,
+  gitIgnored,
+  keyHome,
+  manifestIdOf,
+  marksValidator,
+  mergeWithMarks,
+  metaSection,
+  type MintedId,
+  type PageMarks,
+  type RelocationContext,
+} from "../../meta/internal.js";
 import {
   classifyRef,
+  DocmetaError,
   externalMetadataJoin,
   loadExternalMetadata,
   memberOf,
@@ -52,6 +64,7 @@ import {
 import {
   hasIdPlaceholder,
   hasPagePlaceholder,
+  idManifestPath,
   listIdManifests,
   pageManifestPath,
 } from "../../shared/page-manifest.js";
@@ -62,6 +75,9 @@ import { pickExtractor } from "./page.js";
 
 /** The one key cite keeps in a manifest. */
 export const CITATIONS_KEY = "citations";
+
+/** The page field an `{id}` manifest (proposal 0126) is named by. */
+const ID_JOIN = "id";
 
 const toPosix = (path: string): string => path.split(sep).join("/");
 
@@ -120,7 +136,27 @@ export interface PageSidecar {
    * duplicate-join check when the page has an `owner`.
    */
   joins: readonly ExternalMetadataJoin[];
+  /**
+   * The `{id}` manifest (proposal 0126) that owns this page's citations, when
+   * the page carries no id it can be found by. Such a page reads nothing from
+   * the directory, so it has no `owner` and its citations are its
+   * frontmatter's. A writer adding one mints the page an id first
+   * (`CitationSidecars.mint`); `refused` is an id that cannot name a file,
+   * which a write refuses.
+   */
+  idless?: {
+    manifest: CitationManifest;
+    /** Its `{id}` pattern, as the config writes it. */
+    pattern: string;
+    refused?: { value: string; encrypted: boolean };
+  };
 }
+
+/**
+ * What minting gives `add`: the page's new id, the file it names, and what
+ * moves there with it (`MintedId.moved`), or why none was minted.
+ */
+export type CitationMint = { id: string; owner: CitationManifest; mint: MintedId } | { stay: string };
 
 export interface CitationSidecars {
   /** The manifests that own `citations`, by collection. */
@@ -147,6 +183,16 @@ export interface CitationSidecars {
    * none of them, so CI would read those pages as citing nothing.
    */
   ignoredManifests(loaded: readonly string[]): Promise<string[]>;
+  /**
+   * Mint an id for an `idless` page (proposal 0126) through meta's minting,
+   * which reads the id of every page of the collections that read the
+   * directory first. `data` is the page's own metadata. Writes nothing.
+   */
+  mint(
+    label: string,
+    idless: NonNullable<PageSidecar["idless"]>,
+    data: Readonly<Record<string, unknown>>,
+  ): Promise<CitationMint>;
 }
 
 export interface LoadSidecarOptions {
@@ -158,6 +204,8 @@ export interface LoadSidecarOptions {
   base: string;
   /** The config file as the user would name it, for the URL refusal. */
   configSource: string;
+  /** The config file, whose `meta:` section decides what a minted id must satisfy (proposal 0126). */
+  configPath?: string;
   /**
    * The run's pages, as absolute paths. A `{page}` manifest (proposal 0058)
    * is read for exactly these; without them it reads nothing.
@@ -274,10 +322,16 @@ function sidecars(
    * The manifest a page's citations live in. A concrete `file` is the one
    * manifest the collection declares. A `{page}` pattern (proposal 0058) is
    * a rule, so the page's own file is resolved from its path, and reported
-   * relative to the run's base like every other manifest. Everything else
+   * relative to the run's base like every other manifest. An `{id}` pattern
+   * (proposal 0126) names the page's file by `id`, its id. Everything else
    * about the owner carries through the spread.
    */
-  const pageOwner = (owner: CitationManifest, label: string): CitationManifest | undefined => {
+  const idOwner = (owner: CitationManifest, idPattern: string, id: string): CitationManifest => {
+    const { abs } = idManifestPath(idPattern, configDir, id);
+    return { ...owner, path: abs, file: reportedPath(abs, base) };
+  };
+  const pageOwner = (owner: CitationManifest, label: string, id?: string): CitationManifest | undefined => {
+    if (owner.idPattern !== undefined) return id === undefined ? undefined : idOwner(owner, owner.idPattern, id);
     if (owner.pattern === undefined) return owner;
     const resolved = pageManifestPath(owner.pattern, configDir, resolve(base, label));
     // A page above the config directory is a member of nothing, so this is
@@ -333,7 +387,15 @@ function sidecars(
     if (second !== undefined) {
       throw toError(twoManifestsRefusal(label, declared.collection, second.collection));
     }
-    const owner = pageOwner(declared, label);
+    // A page with no id an `{id}` manifest can find it by reads nothing
+    // there (proposal 0126): its citations are its frontmatter's until a
+    // writer mints it one.
+    const own = declared.idPattern === undefined ? undefined : manifestIdOf(extract().data[ID_JOIN]);
+    if (declared.idPattern !== undefined && (own === undefined || "refused" in own)) {
+      const idless = { manifest: declared, pattern: declared.idPattern };
+      return { joins: matchOnly(), idless: own === undefined ? idless : { ...idless, refused: own.refused } };
+    }
+    const owner = pageOwner(declared, label, own !== undefined && "id" in own ? own.id : undefined);
     if (owner === undefined) return { joins: [] };
 
     // The merge judges every field a keyless manifest holds, not only
@@ -415,6 +477,27 @@ function sidecars(
     return out;
   };
 
+  // Minting is meta's (proposal 0126), through `keyHome`, over a context
+  // built once, on first use, from meta's section of the same file: what a
+  // minted id must satisfy is the page's schema set, as `meta validate`
+  // resolves it, and what moves with it is what meta's merge would own.
+  let minting: Promise<RelocationContext> | undefined;
+  const mint = async (
+    label: string,
+    idless: NonNullable<PageSidecar["idless"]>,
+    data: Readonly<Record<string, unknown>>,
+  ): Promise<CitationMint> => {
+    minting ??= mintContext(opts);
+    const home = await keyHome(await minting, label, data, CITATIONS_KEY);
+    if (home.kind === "stay") return { stay: home.reason };
+    // cite found the `{id}` manifest owning this page's citations by the
+    // rule meta applies, so meta's answer is that manifest, minting.
+    if (home.kind !== "manifest" || home.mint === undefined) {
+      throw new Error(`cite: ${label}: meta homes its citations in ${home.kind === "unowned" ? "no manifest" : home.file}, not ${idless.manifest.file}.`);
+    }
+    return { id: home.mint.id, owner: idOwner(idless.manifest, idless.pattern, home.mint.id), mint: home.mint };
+  };
+
   return {
     manifests,
     configDir,
@@ -423,6 +506,35 @@ function sidecars(
     orphans: (loaded, covered) => orphanEntries(index, loaded, base, covered),
     orphanJoins: (matched, covered) => orphanJoins(index, matched, covered),
     ignoredManifests,
+    mint,
+  };
+}
+
+/**
+ * The context meta's minting reads: meta's section of the family file, or
+ * meta's default set when the file has none meta can read, as `configMarks`
+ * falls back. Every declared collection, labelled from the run's base.
+ */
+async function mintContext(opts: LoadSidecarOptions): Promise<RelocationContext> {
+  let config: RelocationContext["config"] = null;
+  if (opts.configPath !== undefined) {
+    try {
+      config = await metaSection(opts.configPath, opts.base);
+    } catch (err) {
+      if (!(err instanceof DocmetaError)) throw err;
+    }
+  }
+  return {
+    cwd: opts.base,
+    base: opts.base,
+    noConfig: false,
+    config,
+    configDir: opts.configDir,
+    ...(opts.configPath === undefined ? {} : { configPath: opts.configPath }),
+    collections: [...opts.collections],
+    declaredCollections: [...opts.collections],
+    targets: [],
+    validator: marksValidator({ config, cwd: opts.base, configDir: opts.configDir })(),
   };
 }
 
@@ -484,6 +596,7 @@ export function sidecarsFor(
     configDir: run.configDir,
     base: over.base ?? run.base,
     configSource: run.configSource ?? run.configPath ?? "the config",
+    ...(configPath === undefined ? {} : { configPath }),
     ...(run.key === undefined ? {} : { key: run.key }),
     ...(over.toError === undefined ? {} : { toError: over.toError }),
     ...(over.pages === undefined ? {} : { pages: over.pages }),

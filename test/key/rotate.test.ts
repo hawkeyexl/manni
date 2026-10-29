@@ -919,6 +919,86 @@ describe("runKeyRotate: a manifest per page", () => {
   });
 });
 
+// ---------------------------------------------------------------------------
+// A manifest per id (proposal 0126). Each page's file is named by its id, so a
+// rotation re-encrypts every file in the directory, whether or not a loaded
+// page carries the id that names it.
+// ---------------------------------------------------------------------------
+
+describe("runKeyRotate: a manifest per id", () => {
+  const PER_ID = [
+    "collections:",
+    "  - name: site",
+    '    paths: ["docs/**/*.md"]',
+    "    externalMetadata:",
+    '      - file: "metadata/{id}.yaml"',
+    "        keys: [team, citations]",
+    "",
+  ].join("\n");
+
+  const withId = (title: string, id: string): string => `---\ntitle: ${title}\nid: ${id}\n---\n\n${CLAIM}\n`;
+  const team = (id: string, value: string): string => `${id}:\n  team: ${encryptValue(value, OLD, "meta")}\n`;
+  const cited = (id: string): string =>
+    [
+      `${id}:`,
+      "  citations:",
+      "    - id: fetch-timeout",
+      "      claim:",
+      "        lines: 2",
+      `        integrity: ${CLAIM_PIN}`,
+      "      source:",
+      `        file: ${encryptSourcePath("src/limits.ts", OLD)}`,
+      "        lines: 2",
+      `        integrity: ${hashRange(SOURCE, LINE_2, OLD)}`,
+      "",
+    ].join("\n");
+
+  function teamIn(manifest: string, id: string): string {
+    const value = (parse(read(manifest)) as Record<string, { team?: unknown }>)[id]?.team;
+    if (typeof value !== "string") throw new Error(`no team for ${id} in ${manifest}`);
+    return value;
+  }
+
+  it("re-encrypts the file each page's id names, and one no loaded page names", async () => {
+    family({
+      collections: PER_ID,
+      extra: {
+        "docs/handbook.md": withId("Handbook", "handbook"),
+        "metadata/handbook.yaml": team("handbook", "platform"),
+        "metadata/gone.yaml": team("gone", "support"),
+      },
+    });
+
+    const result = await rotate({ to: NEW });
+
+    expect(result).toMatchObject({ skipped: 0, exitCode: 0 });
+    expect(decryptValue(teamIn("metadata/handbook.yaml", "handbook"), NEW, "meta")).toEqual({ ok: true, value: "platform" });
+    expect(decryptValue(teamIn("metadata/gone.yaml", "gone"), NEW, "meta")).toEqual({ ok: true, value: "support" });
+    expect(result.manifests.map((m) => [m.file, m.rewritten.length, m.written]).sort()).toEqual([
+      ["metadata/gone.yaml", 1, true],
+      ["metadata/handbook.yaml", 1, true],
+    ]);
+    expect(existsSync(join(tree(), "metadata", "{id}.yaml"))).toBe(false);
+  });
+
+  it("re-encrypts the citations a page's file holds, and their pins still hold", async () => {
+    family({
+      collections: PER_ID,
+      extra: { "docs/guide.md": withId("Guide", "guide"), "metadata/guide.yaml": cited("guide") },
+    });
+
+    const result = await rotate({ to: NEW });
+
+    expect(result).toMatchObject({ skipped: 0, exitCode: 0 });
+    const doc = parse(read("metadata/guide.yaml")) as Record<string, { citations: { source: { file: string; integrity: string } }[] }>;
+    const source = doc["guide"]?.citations[0]?.source;
+    expect(source === undefined ? null : decryptValue(source.file, NEW, "cite-src").ok).toBe(true);
+    expect(source?.integrity).toBe(hashRange(SOURCE, LINE_2, NEW));
+    const check = await runCheck({ cwd: tree(), inputs: ["docs/guide.md"], gitClient: noGit(), env: {} });
+    expect(check.pages[0]?.citations[0]?.source.status).toBe("current");
+  });
+});
+
 describe("runKeyRotate: the citation baseline", () => {
   it("a writing run says the baseline needs re-recording when .manni-cite-baseline.json exists", async () => {
     family({ extra: { ".manni-cite-baseline.json": "{}\n" } });

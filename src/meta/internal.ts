@@ -98,10 +98,11 @@ export type { ExternalWrite } from "./core/location-writes.js";
 // Proposal 0126: a key an `{id}` manifest owns lives in the file the page's
 // id names. `keyHome` mints a page with no id one first (`mint`), or says the
 // key stays in the page (`stay`); a writer prints these lines for each, and
-// `mintId` is the minting itself, for a writer that asks without `keyHome`.
-// `manifestIdOf` reads a page's id as a manifest is named by it, and
-// `unsafeIdMessage` says why one cannot be.
-export { mintId, mintedNotice, mintStayNotice } from "./core/mint-id.js";
+// `mintId` is the minting itself, for a writer that asks without `keyHome`,
+// and `withMintedId` writes a minted id into a page, taking out the keys the
+// write moved to the page's file. `manifestIdOf` reads a page's id as a
+// manifest is named by it, and `unsafeIdMessage` says why one cannot be.
+export { mintId, mintedNotice, mintStayNotice, withMintedId } from "./core/mint-id.js";
 export type { MintedId, MintOutcome, MintRequest } from "./core/mint-id.js";
 export { manifestIdOf, unsafeIdMessage } from "./core/external-metadata.js";
 // `manni key rotate` re-encrypts the values a manifest supplies as well as

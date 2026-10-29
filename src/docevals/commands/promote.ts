@@ -24,10 +24,11 @@ import {
 import {
   EVALS_KEY,
   EvalWriter,
-  manifestEvalList,
   markupRefusal,
   updateManifestEval,
 } from "../core/write-location.js";
+import { mintStayNotice } from "../../meta/internal.js";
+import { warn } from "../../shared/warn.js";
 import { sha256 } from "../judge/cache.js";
 import {
   assertProviderSelection,
@@ -226,16 +227,14 @@ export async function runPromote(
           proposal.error = home.message;
         } else if (home?.kind === "manifest") {
           const at = getWriter();
-          const list = manifestEvalList(
-            await at.readManifest(home, EVALS_KEY),
-            home.file,
-            home.entry,
-          );
+          const list = await at.currentEvals(home, plan.page.frontmatter.data[EVALS_KEY]);
           const next = updateManifestEval(list, ev.name, updates);
           if (next === undefined) {
             proposal.error = `${home.file}: eval "${ev.name}" not found in the entry for ${home.entry}`;
           } else {
             await at.writeManifest(home, EVALS_KEY, next);
+            // A page with no id is minted one (proposal 0126), and its evals have moved.
+            if (home.mint !== undefined) await at.mintInto(plan.page, { ...home, mint: home.mint }, [EVALS_KEY]);
             proposal.applied = true;
           }
         } else if (
@@ -249,6 +248,9 @@ export async function runPromote(
             updates,
           );
           writeFileSync(plan.page.absPath, updated);
+          if (home?.kind === "page" && home.stay !== undefined) {
+            warn(mintStayNotice(plan.page.file, EVALS_KEY, home.stay));
+          }
           proposal.applied = true;
         } else if (ev.source === "config") {
           const updated = updateConfigEval(

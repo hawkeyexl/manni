@@ -18,11 +18,12 @@ import { updateConfigEval, updatePageEval } from "../core/frontmatter-edit.js";
 import {
   EVALS_KEY,
   EvalWriter,
-  manifestEvalList,
   markupRefusal,
   updateManifestEval,
   type WriteHome,
 } from "../core/write-location.js";
+import { mintStayNotice } from "../../meta/internal.js";
+import { warn } from "../../shared/warn.js";
 import { sha256 } from "../judge/cache.js";
 import type { InferenceProvider } from "@hawkeyexl/inference";
 import type { GraderTarget } from "./types.js";
@@ -237,11 +238,7 @@ export function makeGenerateScripts(deps: ScriptgenDeps): GenerateFn {
         // The evals live in the manifest, so the command reference does too:
         // the one entry is rewritten and no other byte of the file changes.
         const at = getWriter();
-        const list = manifestEvalList(
-          await at.readManifest(home, EVALS_KEY),
-          home.file,
-          home.entry,
-        );
+        const list = await at.currentEvals(home, page.frontmatter.data[EVALS_KEY]);
         const next = updateManifestEval(list, ev.name, updates);
         if (next === undefined) {
           throw new DocevalsError(
@@ -249,6 +246,8 @@ export function makeGenerateScripts(deps: ScriptgenDeps): GenerateFn {
           );
         }
         await at.writeManifest(home, EVALS_KEY, next);
+        // A page with no id is minted one (proposal 0126), and its evals have moved.
+        if (home.mint !== undefined) await at.mintInto(page, { ...home, mint: home.mint }, [EVALS_KEY]);
       } else if (ev.source === "page") {
         const abs = page.absPath;
         const updated = updatePageEval(
@@ -258,6 +257,9 @@ export function makeGenerateScripts(deps: ScriptgenDeps): GenerateFn {
           updates,
         );
         writeFileSync(abs, updated);
+        if (home?.kind === "page" && home.stay !== undefined) {
+          warn(mintStayNotice(page.file, EVALS_KEY, home.stay));
+        }
       } else {
         const updated = updateConfigEval(
           readFileSync(config.configPath, "utf8"),

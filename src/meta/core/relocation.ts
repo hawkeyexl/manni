@@ -97,7 +97,7 @@ import { extractorByName, extractorForExtension } from "../extractors/index.js";
 import { deepEqual } from "../extractors/patch-util.js";
 import type { FieldLocation } from "./location.js";
 import { pageMarks } from "./page-marks.js";
-import { mintId, type MintedId, type MintRequest } from "./mint-id.js";
+import { mintedText, mintId, type MintedId, type MintRequest } from "./mint-id.js";
 
 // ---------------------------------------------------------------------------
 // The result: what `manni meta relocate` reports.
@@ -879,7 +879,7 @@ export async function keyHome(
       )
     : undefined;
   const owner = model.ownerOf(key, members, marked);
-  if (owner?.perId === true) return idHome(ctx, model, owner, label, data);
+  if (owner?.perId === true) return idHome(ctx, model, owner, label, data, marked);
   if (owner !== undefined) {
     // A `{page}` manifest (proposal 0058) resolves to the page's own file.
     const at = model.fileFor(owner, resolve(ctx.base, label));
@@ -926,13 +926,18 @@ function unsafeIdRefusal(label: string, refused: { value: string; encrypted: boo
   return new DocmetaError(`${label}: ${unsafeIdMessage(refused, dir)}`);
 }
 
-/** `keyHome` for a key an `{id}` manifest owns (proposal 0126). */
+/**
+ * `keyHome` for a key an `{id}` manifest owns (proposal 0126). A page that
+ * carries no id is minted one, and every value it holds for a key that
+ * manifest owns once the id exists goes with it (`MintedId.moved`).
+ */
 async function idHome(
   ctx: RelocationContext,
   model: Model,
   owner: ManifestRef,
   label: string,
   data: Readonly<Record<string, unknown>>,
+  marked: ReadonlySet<string> | undefined,
 ): Promise<KeyHome> {
   const own = manifestIdOf(data[ID_JOIN]);
   if (own !== undefined && "refused" in own) throw unsafeIdRefusal(label, own.refused, model.dirOf(owner));
@@ -944,7 +949,19 @@ async function idHome(
     const outcome = await mintId(ctx, model.mintRequest(owner, label));
     if ("stay" in outcome) return { kind: "stay", collection: owner.collection, file: owner.file, reason: outcome.stay };
     id = outcome.minted;
-    mint = { id, text: outcome.text };
+    const members = model.members(label);
+    const moved = Object.fromEntries(
+      Object.entries(data).filter(
+        ([k]) => k !== ID_JOIN && k !== FILE_SCHEMA_KEY && model.ownerOf(k, members, marked)?.file === owner.file,
+      ),
+    );
+    const elements = resolveElements(label, ctx.config, memberOf(ctx.declaredCollections, ctx.configDir ?? ctx.cwd, ctx.base, label));
+    // A writer that cannot take a moved value out would leave it in two places.
+    const written = mintedText(label, outcome.text, { id, moved, elements }, ctx.as);
+    if ("why" in written) {
+      return { kind: "stay", collection: owner.collection, file: owner.file, reason: `the page cannot be written: ${written.why}` };
+    }
+    mint = { id, moved, elements, text: written.text };
   }
   const at = model.idFile(owner, id);
   return {
@@ -1506,6 +1523,25 @@ export async function planRelocation(
           await planOut(page, ref, key, "preferred");
         }
       }
+    }
+  }
+
+  // ---- A page this plan mints an id for reads its `{id}` manifest after -----
+  // So every value it holds that the manifest owns goes there too, whatever
+  // --fields named, or the next read would find each in both places (0126).
+  for (const page of pages.values()) {
+    if (page.mint === undefined) continue;
+    const external = await externalOf(page);
+    if (external === undefined) continue;
+    const members = model.members(page.label);
+    // The `{id}` manifests a value of the page is already on its way out to.
+    const into = new Set(
+      [...page.intents.values()].flatMap((i) => (i.kind === "out" && i.manifest.perId ? [i.manifest.file] : [])),
+    );
+    for (const key of Object.keys(page.own)) {
+      if (key === FILE_SCHEMA_KEY || key === ID_JOIN) continue;
+      const owner = model.ownerOf(key, members, external);
+      if (owner !== undefined && into.has(owner.file)) await planOut(page, owner, key, "preferred");
     }
   }
 

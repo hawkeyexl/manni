@@ -23,13 +23,12 @@
  */
 import { readFile } from "node:fs/promises";
 import {
-  ID_JOIN,
   loadExternalMetadata,
   mergeWithMarks,
   pageOwners,
   type MergedMetadata,
 } from "../core/external-metadata.js";
-import { mintedNotice, mintStayNotice } from "../core/mint-id.js";
+import { mintedNotice, mintStayNotice, withMintedId } from "../core/mint-id.js";
 import { pageMarks } from "../core/page-marks.js";
 import { keyHome, relocationContext, type KeyHome } from "../core/relocation.js";
 import {
@@ -1449,9 +1448,14 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
       Object.entries(patch).filter(([key]) => !destinations.has(key)),
     );
     // A page an `{id}` manifest names by an id minted for it carries the id
-    // (proposal 0126), written with the page's own fields.
+    // (proposal 0126), written with the page's own fields, and every value
+    // it held that the manifest owns moves there with this write.
     const minting = entryWrites.find((w) => w.home.mint !== undefined)?.home;
-    if (minting?.mint !== undefined) pagePatch[ID_JOIN] = minting.mint.id;
+    if (minting?.mint !== undefined) {
+      for (const [key, value] of Object.entries(minting.mint.moved)) {
+        if (!entryWrites.some((w) => w.key === key)) entryWrites.push({ key, value, home: minting });
+      }
+    }
 
     let next: string;
     try {
@@ -1459,6 +1463,7 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
         filePath: label,
         elements,
       });
+      if (minting?.mint !== undefined) next = withMintedId(label, next, minting.mint, extractor.name);
     } catch (err) {
       // A page whose writer refuses the entry still gets its fields. An HTML
       // or XML attribute holds the list on one line, but not a newline in it.
@@ -1477,7 +1482,7 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
           fields,
         );
       }
-      next = withoutEntry;
+      next = minting?.mint !== undefined ? withMintedId(label, withoutEntry, minting.mint, extractor.name) : withoutEntry;
       metaProvenance = { written: false, skipReason: "unwritable" };
     }
 

@@ -76,6 +76,7 @@ import {
   configMarks,
   extractorByName,
   gitignoreOptions,
+  idManifestValues,
   reencryptData,
   resolveTargetSet,
   spliceManifestValue,
@@ -87,7 +88,9 @@ import { generateEncryptionKey, isValidEncryptionKey } from "../../shared/encryp
 import { findGitRoot } from "../../shared/git-root.js";
 import {
   findPageManifests,
+  hasIdPlaceholder,
   hasPagePlaceholder,
+  listIdManifests,
   pageManifestPath,
 } from "../../shared/page-manifest.js";
 import { readRotateConfig, toKeyError, unfinishedRotation } from "../core/config.js";
@@ -295,12 +298,17 @@ function manifestCollections(
   return collections.filter((c) => rels.some((rel) => isMember(c, rel)));
 }
 
-/** The owned values one manifest entry supplies, or an empty map. */
+/**
+ * The owned values one manifest entry supplies, or an empty map. An `{id}`
+ * file's (proposal 0126) are its registry's, which the indexes do not hold.
+ */
 function valuesOf(
   index: ExternalMetadataIndex,
   entry: ExternalMetadataEntry,
 ): ReadonlyMap<string, ExternalMetadataValue> {
   const empty = new Map<string, ExternalMetadataValue>();
+  const perId = idManifestValues(index, entry);
+  if (perId !== undefined) return perId;
   if (entry.join === PATH_JOIN) {
     return entry.abs === undefined ? empty : (index.byPath.get(entry.abs) ?? empty);
   }
@@ -386,6 +394,12 @@ async function planManifests(opts: {
   for (const c of local) {
     for (const m of c.externalMetadata) {
       const join = externalMetadataJoin(m);
+      // An `{id}` directory (proposal 0126) is loaded whole, so every file in
+      // it is re-encrypted, a file whose page is gone included.
+      if (hasIdPlaceholder(m.file)) {
+        for (const { abs } of listIdManifests(m.file, opts.configDir)) locate(c.name, abs, join);
+        continue;
+      }
       if (!hasPagePlaceholder(m.file)) {
         locate(c.name, isAbsolute(m.file) ? m.file : resolve(opts.configDir, m.file), join);
         continue;

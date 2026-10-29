@@ -20,7 +20,7 @@
  * `meta fill` and `meta derive` hold their manifests with too; what stays here
  * is what cite means by an edit, which is one entry's `citations`.
  */
-import { readFile } from "node:fs/promises";
+import { readFile, rm } from "node:fs/promises";
 import { posix } from "node:path";
 import { LineCounter, isMap, isNode, isScalar, isSeq, parseDocument } from "yaml";
 import { DocmetaError, writeFileAtomic } from "../../meta/index.js";
@@ -45,7 +45,7 @@ import { CITATIONS_KEY, type CitationManifest } from "./sidecar.js";
 
 /** One edit this run made, replayable onto bytes read later. */
 type ManifestOp = CasManifestOp &
-  ({ kind: "splice"; value: unknown[] } | { kind: "remove" });
+  ({ kind: "splice"; value: unknown } | { kind: "remove" });
 
 /** One manifest held for the length of a run: its text before, and now. */
 export type HeldManifest = CasHeldManifest<ManifestOp>;
@@ -73,6 +73,12 @@ export type CommitIo = CasCommitIo<ManifestChange>;
 /** Every manifest one run writes, read once and spliced in memory. */
 export class ManifestSet {
   private readonly held = new Map<string, HeldManifest>();
+  /**
+   * The paths of the `{id}` manifests held (proposal 0126). One a removal
+   * empties is deleted rather than left behind as an empty file: the
+   * directory holds a manifest per page that has one.
+   */
+  private readonly perId = new Set<string>();
 
   /** Read a manifest, or hand back the copy this run has already rewritten. */
   async hold(manifest: CitationManifest): Promise<HeldManifest> {
@@ -83,10 +89,11 @@ export class ManifestSet {
     try {
       before = await readFile(manifest.path, "utf8");
     } catch (error) {
-      // A per-page manifest (proposal 0058) that does not exist yet is a page
-      // with nothing cited: held as empty text marked absent, and created by
-      // the commit. A missing concrete manifest is refused, as it always was.
-      if (manifest.pattern === undefined || !isMissing(error)) {
+      // A per-page manifest (proposal 0058), or a page's own in an `{id}`
+      // directory (0126), that does not exist yet is a page with nothing
+      // cited: held as empty text marked absent, and created by the commit.
+      // A missing concrete manifest is refused, as it always was.
+      if ((manifest.pattern === undefined && manifest.idPattern === undefined) || !isMissing(error)) {
         const reason = error instanceof Error ? error.message : String(error);
         throw new CiteError(`Manifest ${manifest.file} could not be read: ${reason}`);
       }
@@ -95,6 +102,7 @@ export class ManifestSet {
     }
     const fresh = heldManifest<ManifestOp>(manifest.path, manifest.file, before, absent);
     this.held.set(manifest.path, fresh);
+    if (manifest.idPattern !== undefined) this.perId.add(manifest.path);
     return fresh;
   }
 
@@ -129,6 +137,18 @@ export class ManifestSet {
     held.text = spliced.text;
     held.ops.push(op);
     return { file: manifest.file, line: itemLine(spliced.text, entry, index, manifest.join) ?? spliced.line };
+  }
+
+  /**
+   * Write one other key's value into a page's entry: a value that moves with
+   * an id minted for the page (proposal 0126). Not saved until `commit`.
+   */
+  async put(manifest: CitationManifest, entry: string, key: string, value: unknown): Promise<void> {
+    const held = await this.hold(manifest);
+    const op: ManifestOp = { kind: "splice", entry, key, join: manifest.join, file: manifest.file, value };
+    rebaseable(held, op, codec);
+    held.text = apply(held.text, op);
+    held.ops.push(op);
   }
 
   /**
@@ -181,11 +201,14 @@ export class ManifestSet {
     const write =
       io.write ?? ((at: string, text: string): Promise<void> => writeFileAtomic(at, text, { createParents: true }));
     const read = io.read ?? ((at: string): Promise<string> => readFile(at, "utf8"));
+    // An `{id}` manifest left with no entry goes, as the page's last citation did.
+    const put = (at: string, text: string): Promise<void> =>
+      this.perId.has(at) && text.trim() === "" ? rm(at, { force: true }) : write(at, text);
     const landed: ManifestChange[] = [];
     for (const held of this.held.values()) {
       if (held.text === held.before) continue;
       try {
-        await settle(held, { codec, write, read, toError: (message) => new CiteError(message) });
+        await settle(held, { codec, write: put, read, toError: (message) => new CiteError(message) });
       } catch (error) {
         if (io.onError !== undefined) await io.onError(changeOf(held), error);
         throw error;
