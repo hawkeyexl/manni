@@ -639,7 +639,7 @@ docs/setup.md: owner=platform-docs
 
 `metadata/` is read once it holds a manifest, a `.yaml` file whose root key
 is its own name. Until then nothing reads it, so an unrelated folder of that
-name changes nothing. [`relocate`](#moving-keys-in-or-out) writes the first
+name changes nothing. [`relocate`](#move-an-existing-setup) writes the first
 manifest. `externalMetadata: []` keeps a collection out of the directory, and
 a collection that declares any entry keeps its own manifests instead.
 
@@ -714,6 +714,57 @@ collections:
     externalMetadata:
       - file: "../docs-meta/api/{id}.yaml"
 ```
+
+### Move an existing setup
+
+[`manni meta relocate --from`](/manni/meta/reference/cli/#meta-relocate)
+empties a manifest into wherever its keys now live. Name each manifest as the
+config's `file:` spells it. A collection left with no entries reads the
+metadata directory, so that is where the values go. Take a collection with a
+manifest per page:
+
+```yaml title="manni.config.yaml, before"
+collections:
+  - name: site
+    paths: ["docs/**/*.md"]
+    externalMetadata:
+      - file: "{page}.citations.yaml"
+        keys: [citations]
+      - file: "{page}.meta.yaml"
+```
+
+Preview the move first:
+
+```
+$ manni meta relocate --from "{page}.meta.yaml" --from "{page}.citations.yaml" --dry-run
+Would remove collections[site].externalMetadata[0] ({page}.citations.yaml) and [1] ({page}.meta.yaml); collection site would read metadata/.
+Would create metadata/; it would own what each page's schemas mark external, one <id>.yaml per page.
+docs/guides/auth.md
+    id         ← minted guides-auth
+    owner      → metadata/guides-auth.yaml  (from docs/guides/auth.meta.yaml)
+docs/guides/billing.md
+    id         ← minted guides-billing
+    owner      → metadata/guides-billing.yaml  (from docs/guides/billing.meta.yaml)
+docs/install.md
+    owner      → metadata/install.yaml  (from docs/install.meta.yaml)
+    citations  → metadata/install.yaml  (from docs/install.citations.yaml)
+3 files, 4 values would move to 3 manifests, 2 ids would be minted, 4 emptied manifests would be deleted
+```
+
+Run it again without `--dry-run` to write it. The report reads in the past
+tense. The config loses both entries, the four emptied sidecars are deleted,
+and the two pages gain an `id:` line. The move loses nothing:
+
+- **An equal value already in the target** drops the copy being moved.
+- **A different value** stays where it is, as `values-differ`. Its manifest
+  stays declared and on disk, and the run exits 1. Settle the value, then run
+  `--from` again.
+- **A file holding YAML comments** is emptied and kept, with a warning,
+  because `relocate` does not carry comments to another file:
+  `manni: docs/install.meta.yaml holds comments relocate does not carry; it is kept, emptied of entries.`
+
+`--from` empties a manifest for every page at once, so it takes no paths and
+no `--fields`. It composes with `--collection`, `--dry-run` and `-f json`.
 
 ## Survive renames with a field join
 

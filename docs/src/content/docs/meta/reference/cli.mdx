@@ -1474,6 +1474,18 @@ both hold a value and the two agree, the copy on the wrong side is dropped. If
 a write fails, relocate puts back every file it already wrote, so the run
 lands whole or not at all.
 
+`--from <file>` migrates a setup. It empties a manifest, and each value it
+holds moves to where the config, without that manifest, says its key lives.
+That is the manifest that owns the key, else the page. For a collection left
+with no entries, it is the metadata directory, and a page with no `id` gets a
+minted one. An equal value already at the target drops the copy. A different
+value stays as `values-differ`, and its manifest stays declared and on disk.
+A declared `--from` with nothing left in it is removed from
+`externalMetadata:`. With `--collection`, only that collection's entries go.
+A file left with no entries is deleted, unless it holds YAML comments, which
+relocate does not carry. Such a file is kept, emptied, with a warning:
+`manni: docs/x.meta.yaml holds comments relocate does not carry; it is kept, emptied of entries.`
+
 ### Arguments
 
 | Argument | Description |
@@ -1485,6 +1497,7 @@ lands whole or not at all.
 | Option | Argument | Default | Description |
 |---|---|---|---|
 | `--fields` | `<list>` | every field | Comma-separated fields to move. Each must carry an `x-manni-location` mark, or be manifest-owned, for some file in the run; otherwise exit 2: `"nope" has no x-manni-location mark and no owning manifest for any file in this run.` |
+| `--from` | `<file>` | n/a | Manifest to empty into where its keys now live; repeatable, one value per occurrence. A concrete manifest path or a `{page}` or `{id}` pattern, relative to the config file and spelled as `file:` spells it. An undeclared file is read with a path join. Cannot be combined with positional paths or `--fields` (exit 2). |
 | `--collection` | `<name>` | every collection | Run over a configured [collection](/manni/meta/reference/configuration/#collections). Repeatable, one name per occurrence. Cannot be combined with positional paths (exit 2). |
 | `-s, --schema` | `<ref>` | n/a | Schema whose marks decide each preference. Repeatable. When given, it overrides `$schema` and config for every file. |
 | `--dry-run` | n/a | off | Report what would move and what would be created, and write nothing. Manifest lines are omitted. |
@@ -1508,6 +1521,10 @@ reached only through a `keys:` change is counted, not listed, unless a value on
 it stays. The last line
 counts files and values, and the ids minted when there are any.
 
+A move from one manifest to another, which `--from` makes, adds
+`(from <manifest>)`. The last line adds `, N emptied manifests deleted` when
+`--from` deleted any.
+
 ```
 Using manni.config.yaml (.)
 Created metadata/; it owns what each page's schemas mark external, one <id>.yaml per page.
@@ -1526,11 +1543,14 @@ Under `--dry-run` a config line leads with `Would create`, `Would add` or
 `Would remove`, and says `would own`. The summary says `would move`, and no
 manifest line is printed. A dry `keys:` change reads
 `Would add owner to docs-meta.yaml's keys, moving it out of every page in collection site.`
-The first lines take one of these shapes:
+A dry `--from` removal ends `collection site would read metadata/.`, and the
+summary says `would be deleted`. The first lines take one of these shapes:
 
 | Config change | Line |
 |---|---|
 | The metadata directory is created | `Created metadata/; it owns what each page's schemas mark external, one <id>.yaml per page.` |
+| `--from` removes a collection's every entry | `Removed collections[site].externalMetadata[0] ({page}.citations.yaml) and [1] ({page}.meta.yaml); collection site reads metadata/.` |
+| `--from` removes an entry, and the collection keeps others | `Removed collections[site].externalMetadata[1] ({page}.meta.yaml).` |
 | A manifest is created for a collection that declares `externalMetadata:` | `Created site.metadata.yaml; collections[site].externalMetadata[0] owns owner, authors.` |
 | A collection is created (no collections before) | `Created collection default (paths: docs/**, guides/intro.md).` When the run creates the metadata directory, its line follows. |
 | A target is added to the one collection's `paths:` | `Added notes/** to collection site's paths; docs-meta.yaml now owns owner, authors.` |
@@ -1545,7 +1565,7 @@ A value that stays names its reason:
 | `no-home` | `owner    stays: this document is in none of the 2 collections, so it has no manifest` |
 | `read-only-format` | `owner    stays: the rst format cannot write this document's metadata` |
 | `no-join-value` | `owner    stays: this document has no id, which api-meta.yaml joins on`, or for the metadata directory `owner    stays: no id could be minted (its schemas do not allow id)` |
-| `values-differ` | `owner    stays: the page and docs-meta.yaml hold different values` |
+| `values-differ` | `owner    stays: the page and docs-meta.yaml hold different values`, or for a `--from` value that differs from the one at its target `owner    stays: docs/faq.meta.yaml and metadata/faq.yaml hold different values` |
 | `url-manifest` | `owner    stays: https://example.com/owners.yaml is fetched and cannot be written`, in either direction |
 | `unreadable` | `owner    stays: this document could not be parsed: Invalid YAML frontmatter: <parser message>` |
 
@@ -1562,11 +1582,12 @@ In `json` format the run is one object:
 |---|---|
 | `dryRun` | boolean |
 | `config` | `{ file, created, collectionsCreated, pathsAdded }` |
-| `manifests[]` | `{ file, collection, created, keysAdded, keysRemoved, undeclared }`. The metadata directory's `file` is its pattern, `metadata/{id}.yaml`. |
+| `manifests[]` | `{ file, collection, created, keysAdded, keysRemoved, undeclared }`. The metadata directory's `file` is its pattern, `metadata/{id}.yaml`. `undeclared` is also true for a `--from` manifest the run removed from the config. |
 | `files[].minted` | string, the id the run minted into the page. Present only when it minted one. |
-| `files[].moved[]` | `{ key, to, reason }` plus `manifest` and `line` when `to` is `manifest`, or `from` when `to` is `page`. `to` is `page` or `manifest`. `reason` is `preferred` (a mark) or `owned` (a manifest already owns the key). `line` is omitted under `--dry-run`. |
+| `files[].moved[]` | `{ key, to, reason }` plus `manifest` and `line` when `to` is `manifest`, or `from` when `to` is `page`. A move between manifests carries `from` too. `to` is `page` or `manifest`. `reason` is `preferred` (a mark) or `owned` (a manifest already owns the key). `line` is omitted under `--dry-run`. |
 | `files[].stayed[]` | `{ key, reason }`, with a reason from the table above |
-| `summary` | `{ files, moved, stayed, manifestsCreated }`, plus `minted`, the count of minted ids, when there are any |
+| `deleted` | string array, the emptied manifests `--from` deleted. Present only when there are any. |
+| `summary` | `{ files, moved, stayed, manifestsCreated }`, plus `minted`, the count of minted ids, and `deleted`, the count of deleted manifests, each when there are any |
 
 {/* cite relocate-exit-0-and-1 */}
 {/* cite relocate-exit-1-when-a-value-stayed */}
@@ -1583,6 +1604,10 @@ for an operational error:
 | An unknown `--collection` | `manni: no collection named "nope" in manni.config.yaml. Configured: site.` |
 | `--collection` with paths | `manni: --collection selects a configured collection; it cannot be combined with paths.` |
 | A format other than `pretty` or `json` | `manni: relocate --format must be pretty or json; got "sarif".` |
+| `--from` names where values would move | `manni: --from metadata/{id}.yaml is where values would move to; name the manifest to empty.` |
+| `--from` names a URL manifest | `manni: --from https://example.com/meta.yaml is fetched and cannot be emptied; move its values in that repository.` |
+| `--from` names a file that is neither declared nor on disk | `manni: --from nope.yaml is not declared and does not exist.` |
+| `--from` with paths or `--fields` | `manni: --from empties a manifest for every page at once, so it takes no paths and no --fields.` |
 | The manifest path to create exists and is not declared | `manni: site.metadata.yaml already exists and is not a manifest of collection site; declare it under externalMetadata, or move it.` |
 | A page's `id` cannot name a file in the metadata directory | `manni: docs/faq.md: id "Bad_ID" cannot name a file in metadata/; an id that names a manifest is lowercase letters, digits and "-", starting with a letter or digit.` |
 | Under `--dry-run`, the metadata directory `externalMetadataDir` or `MANNI_EXTERNAL_METADATA_DIR` names does not exist | `manni: MANNI_EXTERNAL_METADATA_DIR: nope does not exist. Create it, or check out the repository it names.` |
@@ -1599,6 +1624,8 @@ manni meta relocate --dry-run                    # what would move and be create
 manni meta relocate docs/install.md --fields owner
 manni meta relocate docs/ guides/intro.md        # no collections yet: creates collection default
 manni meta relocate -f json --dry-run            # the scripting form
+manni meta relocate --from "{page}.meta.yaml" --dry-run   # preview a migration to metadata/
+manni meta relocate --from "{page}.meta.yaml" --from "{page}.citations.yaml" --collection site
 ```
 
 ## `meta schemas`

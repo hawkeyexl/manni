@@ -672,6 +672,8 @@ interface DeriveCliOptions extends InputCliOptions {
 interface RelocateCliOptions extends InputCliOptions {
   /** `--fields <list>`; the command splits it. */
   fields?: string;
+  /** `--from <file>`, repeatable — commander's default value is `[]`. */
+  from: string[];
   /** `-s, --schema <ref>`, repeatable — commander's default value is `[]`. */
   schema: string[];
   dryRun?: boolean;
@@ -1654,6 +1656,7 @@ export function buildProgram(): Command {
       "--fields <list>",
       "comma-separated fields to move; each must be marked x-manni-location or manifest-owned",
     )
+    .option("--from <file>", "manifest to empty into where its keys now live; repeatable", collect, [])
     .option(
       "--collection <name>",
       "configured collection to run over; repeatable",
@@ -1689,6 +1692,8 @@ export function buildProgram(): Command {
         "  manni meta relocate docs/install.md --fields owner",
         "  manni meta relocate docs/ guides/intro.md        # no collections yet: creates collection default",
         "  manni meta relocate -f json --dry-run            # the scripting form",
+        '  manni meta relocate --from "{page}.meta.yaml" --dry-run   # preview a migration to metadata/',
+        '  manni meta relocate --from "{page}.meta.yaml" --from "{page}.citations.yaml" --collection site',
       ].join("\n"),
     )
     .action(async (paths: string[], options: RelocateCliOptions, command: Command) => {
@@ -1702,6 +1707,7 @@ export function buildProgram(): Command {
         const result = await runRelocate({
           inputs: paths,
           fields: options.fields ? splitList(options.fields) : undefined,
+          from: options.from,
           collections: options.collection,
           cliSchemas: options.schema,
           dryRun: Boolean(options.dryRun),

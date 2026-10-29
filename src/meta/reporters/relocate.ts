@@ -1,9 +1,10 @@
 /**
  * Reporter for `relocate` (proposal 0047).
  *
- * `pretty` leads with what the config gains or loses (a created collection or
- * manifest, an appended path, a `keys:` change and the pages it reaches), then
- * each page with a value that moved or stayed, then one summary line. A page
+ * `pretty` leads with what the config gains or loses (a manifest `--from`
+ * removed, a created collection or manifest, an appended path, a `keys:`
+ * change and the pages it reaches), then each page with a value that moved
+ * or stayed, then one summary line. A page
  * reached only through a `keys:` change, outside the paths the run named, is
  * counted rather than listed unless a value on it stayed. `json` is the
  * scripting form: the run's shape minus what only the pretty lines need.
@@ -71,6 +72,7 @@ export function relocateJson(result: RelocateResult): unknown {
       moved: f.moved,
       stayed: f.stayed.map((s) => ({ key: s.key, reason: s.reason })),
     })),
+    ...(result.deleted !== undefined ? { deleted: result.deleted } : {}),
     summary: result.summary,
   };
 }
@@ -100,6 +102,16 @@ export function renderRelocatePretty(result: RelocateResult, opts: RelocateRepor
   if (result.config.created && result.config.file !== null) {
     lines.push(dry ? `Would create ${result.config.file}.` : `Created ${result.config.file}.`);
   }
+  // A collection's `--from` manifests (0126), on one line, and the directory it reads when none is left.
+  const removed = result.manifests.filter((m) => m.removed !== undefined);
+  for (const name of [...new Set(removed.map((m) => m.collection))]) {
+    const gone = removed.filter((m) => m.collection === name);
+    const parts = gone.map((m, i) => `${i === 0 ? `collections[${name}].externalMetadata` : ""}[${String(m.index)}] (${m.file})`);
+    const entries = parts.length === 1 ? (parts[0] ?? "") : `${parts.slice(0, -1).join(", ")} and ${parts.at(-1) ?? ""}`;
+    const reads = gone.find((m) => m.removed?.reads !== undefined)?.removed?.reads;
+    const tail = reads === undefined ? "" : `; collection ${name} ${dry ? "would read" : "reads"} ${reads}`;
+    lines.push(`${dry ? "Would remove" : "Removed"} ${entries}${tail}.`);
+  }
   const pathsOf = (collection: string): string[] =>
     result.config.pathsAdded.filter((p) => p.collection === collection).map((p) => p.path);
   const said = new Set<string>();
@@ -117,6 +129,7 @@ export function renderRelocatePretty(result: RelocateResult, opts: RelocateRepor
   // A metadata directory is one manifest however many collections read it.
   const directories = new Set<string>();
   for (const m of result.manifests) {
+    if (m.removed !== undefined) continue;
     if (m.created && isDirectory(m.file)) {
       if (!directories.has(m.file)) lines.push(directoryLine(m.file, dry));
       directories.add(m.file);
@@ -190,7 +203,8 @@ export function renderRelocatePretty(result: RelocateResult, opts: RelocateRepor
       if (mv.to === "page") {
         lines.push(`    ${name}  ← ${mv.from}`);
       } else {
-        lines.push(`    ${name}  → ${mv.manifest}${mv.line !== undefined ? `:${mv.line}` : ""}`);
+        const from = mv.from !== undefined ? `  (from ${mv.from})` : "";
+        lines.push(`    ${name}  → ${mv.manifest}${mv.line !== undefined ? `:${mv.line}` : ""}${from}`);
       }
     }
     for (const st of f.stayed) {
@@ -219,6 +233,9 @@ export function renderRelocatePretty(result: RelocateResult, opts: RelocateRepor
     footer += " into pages";
   }
   if (s.minted !== undefined && s.minted > 0) footer += `, ${plural(s.minted, "id")} ${dry ? "would be minted" : "minted"}`;
+  if (s.deleted !== undefined && s.deleted > 0) {
+    footer += `, ${plural(s.deleted, "emptied manifest")} ${dry ? "would be deleted" : "deleted"}`;
+  }
   if (s.stayed > 0) footer += `, ${s.stayed} stayed`;
   lines.push(s.stayed > 0 ? c.yellow(footer) : footer);
   return lines.join("\n");
