@@ -33,18 +33,18 @@ docs/src/content/docs/cite/set-up/citations-in-a-sidecar.mdx:
         integrity: sha256-df8aa1a23de1a48818b6bb601ddbacc43696c61fc4192ba7c218a9fbf18cefc9
       source:
         file: src/cite/core/sidecar.ts
-        lines: 589-595
+        lines: 590-596
         integrity: sha256-73b7fc9bbd56ebaa6bec7a55d284fc4478257e2e30dd33034dc40ab03e9ea90c
-        commit-sha: fefd408f2da5a18b6c6a613e12c5f5dcc2ac782e
+        commit-sha: 75715494a2eef4bea95e5803dcac2d644a6076e8
     - id: no-config-frontmatter-only
       claim:
         lines: 196-197
         integrity: sha256-86c39ef0899349402579df9aa7b63e25149a37d4093ed51579ec4f8cb84b8c07
       source:
         file: src/cite/core/sidecar.ts
-        lines: 589-590
+        lines: 590-591
         integrity: sha256-dae4c906327d834b6eb32a2c2a313026a27656063640423ff509549c598aa7d3
-        commit-sha: fefd408f2da5a18b6c6a613e12c5f5dcc2ac782e
+        commit-sha: 75715494a2eef4bea95e5803dcac2d644a6076e8
     - id: entry-finding-on-manifest-line
       claim:
         integrity: sha256-ce3ca41f20885edc437fb252412f3526187520fcb91bed6f063594664bc80654

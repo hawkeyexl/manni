@@ -29,17 +29,17 @@ docs/src/content/docs/cite/reference/configuration.mdx:
         integrity: sha256-dd2b6a80de52f286db6a2841cc0045e09159192ecd68ff35c9d6fbfb3cb22972
       source:
         file: src/cite/core/sidecar.ts
-        lines: 589-595
+        lines: 590-596
         integrity: sha256-73b7fc9bbd56ebaa6bec7a55d284fc4478257e2e30dd33034dc40ab03e9ea90c
-        commit-sha: fefd408f2da5a18b6c6a613e12c5f5dcc2ac782e
+        commit-sha: 75715494a2eef4bea95e5803dcac2d644a6076e8
     - id: no-config-frontmatter-only
       claim:
         integrity: sha256-dd2b6a80de52f286db6a2841cc0045e09159192ecd68ff35c9d6fbfb3cb22972
       source:
         file: src/cite/core/sidecar.ts
-        lines: 589-590
+        lines: 590-591
         integrity: sha256-dae4c906327d834b6eb32a2c2a313026a27656063640423ff509549c598aa7d3
-        commit-sha: fefd408f2da5a18b6c6a613e12c5f5dcc2ac782e
+        commit-sha: 75715494a2eef4bea95e5803dcac2d644a6076e8
     - id: url-manifest-refused
       claim:
         integrity: sha256-dd2b6a80de52f286db6a2841cc0045e09159192ecd68ff35c9d6fbfb3cb22972
