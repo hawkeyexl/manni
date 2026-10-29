@@ -145,9 +145,10 @@ describe("loadA11yConfig", () => {
         paths: ["docs/guides"],
         exclude: [],
         externalMetadata: [],
+        declaresExternalMetadata: false,
         url: "https://docs.example.com/guides/",
       },
-      { name: "blog", paths: ["docs/blog"], exclude: [], externalMetadata: [] },
+      { name: "blog", paths: ["docs/blog"], exclude: [], externalMetadata: [], declaresExternalMetadata: false },
     ]);
   });
 

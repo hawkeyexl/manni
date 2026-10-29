@@ -389,17 +389,14 @@ describe("validate: the P2 offer", () => {
       },
       output,
     });
-    expect(asked).toEqual(["Move them (create collection default (paths: docs/**), create default.metadata.yaml)? "]);
-    expect(existsSync(join(dir, "default.metadata.yaml"))).toBe(true);
+    // The created collection reads the metadata directory (proposal 0126),
+    // and the page is minted the id its file there is named by.
+    expect(asked).toEqual(["Move them (create collection default (paths: docs/**), create metadata/<id>.yaml)? "]);
+    expect(parseYaml(read(dir, "metadata/docs-install.yaml"))).toEqual({ "docs-install": { owner: "platform" } });
+    expect(read(dir, "docs/install.md")).toContain("id: docs-install\n");
     expect(parseYaml(read(dir, "manni.config.yaml"))).toEqual({
       meta: { schemas: ["./steward.schema.json"] },
-      collections: [
-        {
-          name: "default",
-          paths: ["docs/**"],
-          externalMetadata: [{ file: "./default.metadata.yaml", keys: ["owner"] }],
-        },
-      ],
+      collections: [{ name: "default", paths: ["docs/**"] }],
     });
   });
 

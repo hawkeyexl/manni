@@ -4,7 +4,7 @@ description: Lift evals out of every page into one collection manifest with mann
 type: how-to
 audiences:
   - docs-engineers
-last-updated: 2026-10-20
+last-updated: 2026-10-29
 ---
 
 Evals are bookkeeping. They tell CI what to check, and they tell a reader of the page nothing.
@@ -40,7 +40,20 @@ One page passes, one fails. Both numbers have to survive.
 
 `manni meta relocate` moves a value to where its schema says it belongs. The
 [evals vocabulary](/manni/meta/reference/schemas/manni-evals/) marks all three eval keys
-`external`. Ask it first, and write nothing:
+`external`. The collection declares `externalMetadata: []`, so relocate gives it one manifest of
+its own:
+
+```yaml title="manni.config.yaml"
+collections:
+  - name: site
+    paths:
+      - "docs/**/*.md"
+    externalMetadata: []
+```
+
+Leave the key out, and each page's evals go to a file of its own in the
+[metadata directory](/manni/meta/set-up/external-metadata/#survive-renames-with-a-metadata-directory)
+instead. Ask relocate first, and write nothing:
 
 ```console
 $ npx @hawkeyexl/manni meta relocate --dry-run --fields evals,eval-suite -s manni:evals:1.0.0

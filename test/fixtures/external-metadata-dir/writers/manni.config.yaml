@@ -1,0 +1,14 @@
+# Proposal 0126: meta's writers on the metadata directory. site declares no
+# externalMetadata, so it reads metadata/<id>.yaml, and metadata/owned.yaml is
+# what puts the directory in play. known.md carries an id with no file yet,
+# fresh.md carries none, and unsafe.md's cannot name a file. derive manages
+# owner, so fill and query write reviewer.
+collections:
+  - name: site
+    paths: ["docs/**/*.md"]
+meta:
+  defaults: false
+  schemas: [./steward.schema.json]
+  derive:
+    fields: [owner]
+    sources: [codeowners]

@@ -1,0 +1,7 @@
+# Proposal 0126: two collections read one metadata/, and a page in each
+# carries id intro. metadata/intro.yaml does not exist; they collide anyway.
+collections:
+  - name: a
+    paths: ["docs/a/*.md"]
+  - name: b
+    paths: ["docs/b/*.md"]

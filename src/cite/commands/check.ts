@@ -23,6 +23,7 @@ import {
   assertNonEmpty,
   extractorByName,
   gitignoreOptions,
+  joinKey,
   resolveBaselineRequest,
   resolveTargetSet,
   settleBaseline,
@@ -102,7 +103,7 @@ export interface PageSetup {
  */
 export interface JoinHits {
   record: (page: PageSidecar, label: string) => void;
-  /** Field -> the values loaded pages carried. */
+  /** Field, or an `{id}` join's pattern (0126), -> the values loaded pages carried. */
   matched: Map<string, Set<string>>;
 }
 
@@ -113,12 +114,14 @@ export function joinHits(): JoinHits {
     matched,
     record(page, label) {
       for (const join of page.joins) {
-        const values = matched.get(join.field) ?? new Set<string>();
+        // An `{id}` join (0126) counts under its pattern, as meta's do.
+        const key = joinKey(join);
+        const values = matched.get(key) ?? new Set<string>();
         values.add(join.value);
-        matched.set(join.field, values);
+        matched.set(key, values);
         // cite writes only the citations a manifest keeps, so only those pages collide.
         if (page.owner === undefined) continue;
-        const id = `${join.field}\u0000${join.value}`;
+        const id = `${key}\u0000${join.value}`;
         const hit = seen.get(id) ?? { file: join.file, labels: [] };
         if (!hit.labels.includes(label)) hit.labels.push(label);
         seen.set(id, hit);

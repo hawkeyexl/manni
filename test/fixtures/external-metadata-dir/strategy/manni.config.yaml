@@ -1,0 +1,9 @@
+# Proposal 0126 for the roll-up: guide.md keeps its personas in
+# metadata/guide.yaml, and inline.md keeps them in the page. A finding in
+# either page's metadata/<id>.yaml counts on the page.
+collections:
+  - name: pages
+    paths: ["pages/*.md"]
+  - name: strategy
+    paths: ["strategy/*.md"]
+    externalMetadata: []

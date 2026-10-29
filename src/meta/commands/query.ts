@@ -11,6 +11,7 @@ import { existsSync } from "node:fs";
 import { mkdir, open, readFile, rename, rm } from "node:fs/promises";
 import type { CollectionConfig } from "../../shared/collections.js";
 import {
+  ID_JOIN,
   PATH_JOIN,
   externalMetadataJoin,
   loadExternalMetadata,
@@ -19,6 +20,7 @@ import {
   type PageMarks,
   type ExternalMetadataIndex,
 } from "../core/external-metadata.js";
+import { mintedNotice, mintStayNotice } from "../core/mint-id.js";
 import { pageMarks } from "../core/page-marks.js";
 import { dirname, isAbsolute, resolve, extname, sep } from "node:path";
 import {
@@ -1192,7 +1194,11 @@ async function runSql(
       if (offered.relocated) {
         manifestWrites = await planManifestEdits(changes, entries, ctx, renameHints);
       }
-      if (ctx.write) await applyChanges(changes, entries, ctx, schemaPlan, manifestWrites);
+      if (ctx.write) {
+        await applyChanges(changes, entries, ctx, schemaPlan, manifestWrites);
+        // 0126: an id minted into a page, and a value that stayed for want of one.
+        for (const c of changes) for (const line of mintNotices.get(c) ?? []) warn(line);
+      }
       for (const line of offered.warnings) warn(line);
       return { columns, rows, changes, ...(dbInfo ? { db: dbInfo } : {}) };
     };
@@ -3053,6 +3059,13 @@ interface PageOps {
 
 const pageRoutes = new WeakMap<QueryChange, PageOps>();
 
+/**
+ * The lines a change's write prints once its page is written (proposal
+ * 0126): an id minted for an `{id}` manifest, or a value that stays in the
+ * page because none could be. Kept off the change, as `pageRoutes` is.
+ */
+const mintNotices = new WeakMap<QueryChange, string[]>();
+
 /** One manifest a statement edits: its new text, and the text that was computed from. */
 interface ManifestWrite {
   path: string;
@@ -3133,6 +3146,7 @@ async function planManifestEdits(
   for (const c of changes) {
     delete c.manifest;
     pageRoutes.delete(c);
+    mintNotices.delete(c);
   }
   if (!ctx.declaredCollections.some((col) => col.externalMetadata.length > 0)) return [];
   const loc = ctx.location.context();
@@ -3167,10 +3181,17 @@ async function planManifestEdits(
     key: string,
     data: Readonly<Record<string, unknown>>,
     strict: boolean,
+    change?: QueryChange,
   ): Promise<Owned | undefined> => {
     if (file === STDIN_LABEL || key === FILE_SCHEMA_KEY) return undefined;
     const home = await homeOf(file, key, data);
     if (home.kind === "unowned") return undefined;
+    // An `{id}` manifest the page has no id for, and none can be minted (0126):
+    // a value written stays in the page, and a removal has no entry to touch.
+    if (home.kind === "stay") {
+      if (strict && change !== undefined) notify(change, mintStayNotice(file, key, home.reason));
+      return undefined;
+    }
     // The rows were merged from the selected collections' manifests only, so
     // a manifest of a collection `--collection` left out was never read: a
     // write there would act on a value the statement could not see.
@@ -3180,6 +3201,8 @@ async function planManifestEdits(
       );
     }
     if (home.kind === "url") return fetched(key, home.file);
+    // A page with no id has no entry yet, so there is nothing to remove there.
+    if (!strict && home.mint !== undefined) return undefined;
     if (home.entry === undefined) {
       if (!strict) return undefined;
       throw new DocmetaError(
@@ -3212,6 +3235,17 @@ async function planManifestEdits(
       texts.set(home.absPath, write);
     }
     write.text = change(write.text);
+  };
+  const notify = (change: QueryChange, line: string): void => {
+    const lines = mintNotices.get(change) ?? [];
+    if (!lines.includes(line)) lines.push(line);
+    mintNotices.set(change, lines);
+  };
+  /** The id a write mints into its page (0126), put in the page's own keys. */
+  const minted = (change: QueryChange, file: string, home: Owned, into: Record<string, unknown>): void => {
+    if (home.mint === undefined) return;
+    into[ID_JOIN] = home.mint.id;
+    notify(change, mintedNotice(file, home.mint.id, home.file));
   };
   const where = (home: Owned): { entry: string; join: string; file: string } => ({
     entry: home.entry,
@@ -3293,11 +3327,12 @@ async function planManifestEdits(
       const page: Record<string, unknown> = {};
       for (const [key, value] of Object.entries(c.to)) {
         const written = writtenValue(c, key, value);
-        const home = await owned(c.file, key, c.to, true);
+        const home = await owned(c.file, key, c.to, true, c);
         if (home === undefined) {
           page[key] = written;
           continue;
         }
+        minted(c, c.file, home, page);
         c.manifest ??= home.file;
         await edit(home, (t) => spliceManifestValue(t, { ...where(home), key, value: written }).text);
       }
@@ -3320,8 +3355,9 @@ async function planManifestEdits(
           );
         }
         // A `{page}` manifest (proposal 0058) is named after the page's path,
-        // so the entry cannot follow the page into a file of the new name.
-        if (home.kind === "manifest" && home.perPage) {
+        // so the entry cannot follow the page into a file of the new name. An
+        // `{id}` manifest (0126) is named by the page's id, so it stays put.
+        if (home.kind === "manifest" && home.perPage && home.perId !== true) {
           throw new DocmetaError(
             `${c.file} cannot move to ${c.renamed}, because its "${key}" lives in ${home.file}, a {page} manifest named after the page's path. Move the page and its manifest together, then rename the entry's key.`,
           );
@@ -3363,11 +3399,12 @@ async function planManifestEdits(
         await edit(source, (t) => removeManifestKey(t, { ...where(source), key: c.renamedFrom }).text);
       }
       dropFromPage(c.renamedFrom);
-      const target = await owned(c.file, c.key, data, true);
+      const target = await owned(c.file, c.key, data, true, c);
       const written = writtenValue(c, c.key, c.to);
       if (target === undefined) {
         ops.patch[c.key] = written;
       } else {
+        minted(c, c.file, target, ops.patch);
         await edit(target, (t) => spliceManifestValue(t, { ...where(target), key: c.key, value: written }).text);
       }
       const manifest = target?.file ?? source?.file;
@@ -3380,11 +3417,12 @@ async function planManifestEdits(
       }
       dropFromPage(c.key);
     } else {
-      const home = await owned(c.file, c.key, data, true);
+      const home = await owned(c.file, c.key, data, true, c);
       const written = writtenValue(c, c.key, c.to);
       if (home === undefined) {
         ops.patch[c.key] = written;
       } else {
+        minted(c, c.file, home, ops.patch);
         c.manifest = home.file;
         await edit(home, (t) => spliceManifestValue(t, { ...where(home), key: c.key, value: written }).text);
         // A page that carries the key too would still win at merge.

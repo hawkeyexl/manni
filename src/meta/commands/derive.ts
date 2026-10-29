@@ -94,11 +94,13 @@ import {
   type ProvenancePlace,
 } from "../core/derive/provenance-place.js";
 import {
+  ID_JOIN,
   loadExternalMetadata,
   mergeWithMarks,
   type ExternalMetadataIndex,
   type SourceLocation,
 } from "../core/external-metadata.js";
+import { mintedNotice, mintStayNotice, type MintedId } from "../core/mint-id.js";
 import { pageClaims, pageMarks } from "../core/page-marks.js";
 import { classifyRef } from "../core/schema-registry.js";
 import type { FieldLocation } from "../core/location.js";
@@ -945,7 +947,7 @@ export async function runDerive(opts: DeriveOptions): Promise<DeriveRun> {
       };
       // Proposal 0046: `provenance` is judged range by range against the
       // record wherever it lives, never by `compareDerived`.
-      const place = places.get(label);
+      let place = places.get(label);
       const managed = fieldsOf(label);
       const provenance = managed.includes(PROVENANCE_FIELD)
         ? judgeProvenance(await stampOf(doc), derived.provenance?.get(label), record?.fields[PROVENANCE_FIELD] ?? null, place)
@@ -976,6 +978,34 @@ export async function runDerive(opts: DeriveOptions): Promise<DeriveRun> {
           `${label}: no uncommitted body lines; --generated-by attributes only what is not yet committed.`,
         );
       }
+      // Proposal 0126: a page an `{id}` manifest names by no id is minted one
+      // first. The record it keeps there is placed by the minted id, and a
+      // field no id can be minted for stays in the page.
+      /** The home that mints the page's id, once a due field's write needs one. */
+      let minting: (Extract<KeyHome, { kind: "manifest" }> & { mint: MintedId }) | undefined;
+      const stays: { key: string; reason: string }[] = [];
+      if (provenance !== undefined && place === undefined && stale(provenance.field) && !check) {
+        const home = await keyHome(ctx, label, doc.extracted.data, PROVENANCE_FIELD);
+        if (home.kind === "manifest" && home.mint !== undefined && home.entry !== undefined) {
+          minting = { ...home, mint: home.mint };
+          place = {
+            manifest: {
+              collection: home.collection,
+              absPath: home.absPath,
+              file: home.file,
+              join: home.join,
+              perPage: true,
+              perId: true,
+              written: home.file,
+            },
+            absPath: home.absPath,
+            entry: home.entry,
+            join: home.join,
+          };
+        } else if (home.kind === "stay") {
+          stays.push({ key: PROVENANCE_FIELD, reason: home.reason });
+        }
+      }
       // A manifest-held record is written into the manifest, not the page.
       const toManifest =
         provenance !== undefined && place !== undefined && stale(provenance.field) ? provenance : undefined;
@@ -993,7 +1023,12 @@ export async function runDerive(opts: DeriveOptions): Promise<DeriveRun> {
           refusal = urlManifestMessage(f.field, home.file);
           break;
         }
+        if (home.kind === "stay") {
+          stays.push({ key: f.field, reason: home.reason });
+          continue;
+        }
         if (home.kind !== "manifest") continue;
+        if (home.mint !== undefined) minting ??= { ...home, mint: home.mint };
         if (home.entry === undefined) {
           refusal = `${label} carries no ${home.join}, which ${home.file} joins on, so its ${f.field} has no entry there.`;
           break;
@@ -1052,7 +1087,9 @@ export async function runDerive(opts: DeriveOptions): Promise<DeriveRun> {
       const entryWritten: DerivedField[] = [];
       if (toManifest?.judged !== undefined && place !== undefined) {
         const where = { entry: place.entry, key: PROVENANCE_FIELD, join: place.join, file: place.manifest.file };
-        const plan = toManifest.judged.plan;
+        // The minted id is a line more above the body the record's ranges name.
+        const shift = minting === undefined ? 0 : bodyShift(doc.content, minting.mint.text);
+        const plan = shift > 0 ? shiftEntries(provenanceEntries(toManifest.judged.plan), shift) : toManifest.judged.plan;
         // An empty record is no record, as on the page: `provenance` has
         // `minItems: 1`, so the key leaves the entry rather than holding `[]`.
         const edited = await stage(
@@ -1088,7 +1125,10 @@ export async function runDerive(opts: DeriveOptions): Promise<DeriveRun> {
         results.push(errorResult(label, doc.format, err.message, check, shown()));
         continue;
       }
-      if (pending.length > 0) {
+      // The minted id goes into the page with whatever else is written there.
+      const mintPath = minting?.absPath;
+      const mintsHere = mintPath !== undefined && stagedOps.some((s) => s.held.path === mintPath);
+      if (pending.length > 0 || mintsHere) {
         // Same writer `fill` and `query` use, so a format they cannot write is
         // refused here the same way — and refused loudly, as this file's error,
         // rather than by leaving a stale stamp in place with exit 0. Under
@@ -1109,7 +1149,7 @@ export async function runDerive(opts: DeriveOptions): Promise<DeriveRun> {
           }
           changed = true;
         } else {
-          const patch: MetadataPatch = {};
+          const patch: MetadataPatch = mintsHere && minting !== undefined ? { [ID_JOIN]: minting.mint.id } : {};
           const deletions: string[] = [];
           for (const f of pending) {
             if (f.field === PROVENANCE_FIELD) {
@@ -1148,6 +1188,10 @@ export async function runDerive(opts: DeriveOptions): Promise<DeriveRun> {
           if (next !== doc.content && !dryRun) {
             await writeFileAtomic(doc.absPath, next);
             for (const f of pending) markWritten(f);
+            if (mintsHere && minting !== undefined) warn(mintedNotice(label, minting.mint.id, minting.file));
+            for (const s of stays) {
+              if (pending.some((f) => f.field === s.key)) warn(mintStayNotice(label, s.key, s.reason));
+            }
           }
         }
       }

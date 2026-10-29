@@ -156,6 +156,9 @@ export async function runRelocate(opts: RelocateOptions): Promise<RelocateResult
   const plan = await planRelocation(ctx, {
     files,
     ...(opts.fields !== undefined ? { fields: opts.fields } : {}),
+    // A metadata directory the key or the environment names that is not
+    // there is created by a run that writes, and refused by a preview (0126).
+    ...(opts.dryRun === true ? {} : { createDirectory: true }),
   });
   if (opts.dryRun === true) return plan.result;
   return applyRelocation(ctx, plan);

@@ -1,0 +1,7 @@
+# Proposal 0126: an explicit {id} entry, in a directory of its own. new.md
+# has no manifest there, and reads as keeping nothing.
+collections:
+  - name: api
+    paths: ["docs/*.md"]
+    externalMetadata:
+      - file: "api-meta/{id}.yaml"

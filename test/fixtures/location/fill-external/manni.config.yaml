@@ -4,6 +4,9 @@
 collections:
   - name: site
     paths: ["docs/**/*.md"]
+    # An empty list opts out of the metadata directory (proposal 0126), so
+    # the offer is a manifest of the collection's own (0047 section 3).
+    externalMetadata: []
 meta:
   defaults: false
   schemas: [./steward.schema.json]

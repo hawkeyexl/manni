@@ -35,6 +35,7 @@
  */
 import { resolve } from "node:path";
 import { ownsKey } from "../../shared/collections.js";
+import { hasIdPlaceholder, normalizeManifestPattern } from "../../shared/page-manifest.js";
 import { familyMarks, mergeWithMarks, type PageMarks } from "../../meta/internal.js";
 import {
   classifyRef,
@@ -210,18 +211,28 @@ function marksFor(config: DocevalsConfig, base: string): () => Promise<PageMarks
  * Which collections of `members` keep `key` in a manifest. Ownership, not
  * supply: a writer has to know which file to write to before either manifest
  * has an entry, so two owners is a refusal even while both are empty.
+ *
+ * Two collections reading one `{id}` directory (proposal 0126) read one
+ * manifest, so only the first of them counts.
  */
 function ownersOf(
   collections: readonly CollectionConfig[],
   members: readonly string[],
   key: string,
+  configDir: string,
 ): string[] {
+  const directories = new Set<string>();
   return collections
-    .filter(
-      (c) =>
-        members.includes(c.name) &&
-        c.externalMetadata.some((m) => owns(c, m, key)),
-    )
+    .filter((c) => {
+      if (!members.includes(c.name)) return false;
+      const manifest = c.externalMetadata.find((m) => owns(c, m, key));
+      if (manifest === undefined) return false;
+      if (!hasIdPlaceholder(manifest.file)) return true;
+      const at = resolve(configDir, normalizeManifestPattern(manifest.file));
+      if (directories.has(at)) return false;
+      directories.add(at);
+      return true;
+    })
     .map((c) => c.name);
 }
 
@@ -239,7 +250,7 @@ function reader(
       if (members.length === 0) return page;
 
       for (const key of EVAL_KEYS) {
-        const [a, b] = ownersOf(collections, members, key);
+        const [a, b] = ownersOf(collections, members, key, configDir);
         if (a !== undefined && b !== undefined) {
           throw new DocevalsError(twoManifestsRefusal(page.file, a, b, key));
         }

@@ -74,6 +74,15 @@ describe.skipIf(!gitAvailable())("manni check, by hand", () => {
     expect(r.stdout.trimEnd()).toMatch(/\d+ checks over 1 file: 0 failed, \d+ skipped$/);
   });
 
+  it("says a missing metadata directory once, and exits 2 (0126)", () => {
+    dir = fixtureRepo("missing-metadata-dir");
+    const r = run(["check"], dir);
+    expect(r.status).toBe(2);
+    expect(r.stderr.split("\n").filter((line) => line.includes("does not exist"))).toEqual([
+      "manni: externalMetadataDir: nope-meta does not exist. Create it, or check out the repository it names.",
+    ]);
+  });
+
   it("exits 1 on errors", () => {
     dir = fixtureRepo("only-docevals");
     edit(dir, "docs/page.md", addTodo);
@@ -531,6 +540,15 @@ describe.skipIf(!gitAvailable())("manni status", () => {
     expect(r.status).toBe(2);
     expect(r.stderr.split("\n")[0]).toBe(
       "error: option '-f, --format <format>' argument 'sarif' is invalid. Allowed choices are pretty, json.",
+    );
+  });
+
+  it("a missing metadata directory: exit 2, the line check prints (0126)", () => {
+    dir = fixtureRepo("missing-metadata-dir");
+    const r = run(["status"], dir);
+    expect(r.status).toBe(2);
+    expect(r.stderr).toBe(
+      "manni: externalMetadataDir: nope-meta does not exist. Create it, or check out the repository it names.\n",
     );
   });
 

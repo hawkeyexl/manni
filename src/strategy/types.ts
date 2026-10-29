@@ -130,6 +130,8 @@ export interface StrategySet {
   references: StrategyReference[];
   /** The labels of the run's inputs that are not records: what a step's `doc` may name. Absent reads as none. */
   pages?: string[];
+  /** Each input's plain `id`, by label: what names its `{id}` manifest (proposal 0126). Absent reads as none. */
+  ids?: Map<string, string>;
 }
 
 export interface StrategyFinding {

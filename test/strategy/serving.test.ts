@@ -54,6 +54,15 @@ describe("loadServing", () => {
     expect(serving?.manifests.has(join(FIXTURE, "strategy", "m5.md"))).toBe(false);
   });
 
+  it("maps each named page's metadata/<id>.yaml to the page, wherever its personas live (0126)", async () => {
+    const dir = resolve(import.meta.dirname, "..", "fixtures", "external-metadata-dir", "strategy");
+    const serving = await loadServing({ cwd: dir, configPath: join(dir, "manni.config.yaml") });
+    // guide.md's personas come from its manifest; inline.md keeps them in the page.
+    expect(ids(serving?.pages.get(join(dir, "pages", "guide.md")))).toEqual(["maya"]);
+    expect(serving?.manifests.get(join(dir, "metadata", "guide.yaml"))).toBe(join(dir, "pages", "guide.md"));
+    expect(serving?.manifests.get(join(dir, "metadata", "inline.yaml"))).toBe(join(dir, "pages", "inline.md"));
+  });
+
   it("counts journeys: only when a journey record exists", async () => {
     const serving = await loadServing({ cwd: FIXTURE, configPath: join(FIXTURE, "manni.personas-only.yaml") });
     expect(ids(serving?.pages.get(join(FIXTURE, "pages", "stale.md")))).toEqual(["maya"]);

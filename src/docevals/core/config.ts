@@ -13,6 +13,7 @@ import {
   type ConfigFileOptions,
 } from "../../shared/config-file.js";
 import { parseCollections, type CollectionConfig } from "../../shared/collections.js";
+import { applyMetadataDirectory } from "../../shared/external-metadata-dir.js";
 import { parseTools, type ToolsConfig } from "../../shared/tools.js";
 import { parse as parseYaml } from "yaml";
 import { Ajv2020 } from "ajv/dist/2020.js";
@@ -425,7 +426,11 @@ export function parseConfig(text: string, configPath: string): DocevalsConfig {
   // built from text selects from the same collections, and the same
   // providers, a discovered file would.
   const collections = Object.hasOwn(doc, COLLECTIONS_KEY)
-    ? parseCollections(doc[COLLECTIONS_KEY], configPath, toError)
+    ? applyMetadataDirectory(parseCollections(doc[COLLECTIONS_KEY], configPath, toError), doc, {
+        source: configPath,
+        configDir: dirname(resolve(configPath)),
+        toError,
+      })
     : [];
   const providers = Object.hasOwn(doc, PROVIDERS_KEY)
     ? parseProviders(doc[PROVIDERS_KEY], configPath, dirname(resolve(configPath)), toError)

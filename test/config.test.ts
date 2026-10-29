@@ -852,6 +852,7 @@ describe("the repository's own manni.config.yaml", () => {
           { file: "{page}.citations.yaml", keys: ["citations"] },
           { file: "{page}.meta.yaml" },
         ],
+        declaresExternalMetadata: true,
         // Where the site is published, so `manni a11y check` needs no `urls:`
         // of its own (0041 rule 12). The local preview, not the deployed site.
         url: "http://127.0.0.1:4321/manni/",
@@ -864,6 +865,7 @@ describe("the repository's own manni.config.yaml", () => {
         paths: ["docs/content-strategy/{audiences,personas,journeys}/*.md"],
         exclude: [],
         externalMetadata: [{ file: "{page}.citations.yaml", keys: ["citations"] }],
+        declaresExternalMetadata: true,
       },
     ]);
 

@@ -108,11 +108,17 @@ describe("fill offers a home when no manifest owns metadata", () => {
     project = await mkdtemp(join(tmpdir(), "manni-tracevals-offer-"));
     await cp(relocated, project, { recursive: true });
     await rm(join(project, "artifact-evals.yaml"));
+    // `externalMetadata: []` opts out of the metadata directory (proposal
+    // 0126), so the offer is a manifest of the collection's own (0047 §3).
     await writeFile(
       join(project, "manni.config.yaml"),
-      ["collections:", "  - name: agents", '    paths: [".claude/skills/**/SKILL.md"]', ""].join(
-        "\n",
-      ),
+      [
+        "collections:",
+        "  - name: agents",
+        '    paths: [".claude/skills/**/SKILL.md"]',
+        "    externalMetadata: []",
+        "",
+      ].join("\n"),
     );
     skill = join(project, ".claude", "skills", "fix-bug", "SKILL.md");
   });

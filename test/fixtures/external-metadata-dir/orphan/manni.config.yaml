@@ -1,0 +1,4 @@
+# Proposal 0126: metadata/old-page.yaml names an id no page carries.
+collections:
+  - name: site
+    paths: ["docs/*.md"]

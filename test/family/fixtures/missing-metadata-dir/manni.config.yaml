@@ -1,0 +1,13 @@
+# Proposal 0126: externalMetadataDir names a directory that is not checked
+# out, so every check refuses, and manni check says so once.
+externalMetadataDir: nope-meta
+collections:
+  - name: site
+    paths:
+      - "docs/**/*.md"
+
+meta:
+  overrides:
+    - files: "docs/*.md"
+      schemas:
+        - manni:core:1.0.0

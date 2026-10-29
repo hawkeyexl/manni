@@ -20,7 +20,9 @@ import picomatch from "picomatch";
 import { matchesFileGlob } from "./globs.js";
 import { posix, win32 } from "node:path";
 import {
+  ID_PLACEHOLDER,
   PAGE_PLACEHOLDER,
+  hasIdPlaceholder,
   hasPagePlaceholder,
   normalizeManifestPattern,
 } from "./page-manifest.js";
@@ -36,6 +38,17 @@ export interface ExternalMetadataConfig {
   keys?: string[];
   tokenEnv?: string;
   join?: string;
+  /**
+   * The metadata directory's entry (proposal 0126), which a collection that
+   * declares no `externalMetadata:` reads through. No config file holds it,
+   * so nothing that edits one writes it back.
+   */
+  implicit?: true;
+  /**
+   * On the metadata directory's entry, when the key or the environment named
+   * a directory that is not there: the refusal a read gives (0126).
+   */
+  missing?: string;
 }
 
 /** One named document set, as declared under the top-level `collections:` key. */
@@ -44,6 +57,11 @@ export interface CollectionConfig {
   paths: string[];
   exclude: string[];
   externalMetadata: ExternalMetadataConfig[];
+  /**
+   * Whether the file writes an `externalMetadata:` key, `[]` included. One
+   * that does not reads the metadata directory (proposal 0126).
+   */
+  declaresExternalMetadata: boolean;
   /** Where the collection is published; `manni a11y check` seeds from it. */
   url?: string;
 }
@@ -65,6 +83,9 @@ const EXTERNAL_METADATA_KEYS = ["file", "keys", "tokenEnv", "join"] as const;
  */
 const PATH_JOIN = "path";
 
+/** The field an `{id}` manifest (proposal 0126) is found and keyed by. */
+const ID_JOIN = "id";
+
 /**
  * The document-level schema key. The metadata tool spells it
  * `FILE_SCHEMA_KEY` in `src/meta/core/resolve-schema.ts`; the literal is
@@ -81,7 +102,7 @@ const SCHEMA_KEY = "$schema";
 const STDIN = "<stdin>";
 
 /** Is this manifest reference a URL? The `url` branch of `classifyRef`. */
-function isUrlRef(ref: string): boolean {
+export function isUrlRef(ref: string): boolean {
   return /^https?:\/\//i.test(ref);
 }
 
@@ -250,6 +271,7 @@ export function parseCollections(
       paths,
       exclude,
       externalMetadata,
+      declaresExternalMetadata: entry.externalMetadata !== undefined,
       ...(url === undefined ? {} : { url }),
     };
   });
@@ -292,11 +314,13 @@ function parseExternalMetadata(
         `${source}: ${where}.file must be a non-empty string naming the manifest, relative to the config file.`,
       );
     }
-    const placeholderProblem = pagePlaceholderProblem(entry.file);
-    if (placeholderProblem !== null) {
-      throw toError(`${source}: ${where}.file ${placeholderProblem}`);
+    const problem = placeholderProblem(entry.file);
+    if (problem !== null) {
+      throw toError(`${source}: ${where}.file ${problem}`);
     }
     const perPage = hasPagePlaceholder(entry.file);
+    // `{id}` may be absolute: another repository's checkout is the point (0126).
+    const perId = hasIdPlaceholder(entry.file);
     if (perPage && (posix.isAbsolute(entry.file) || win32.isAbsolute(entry.file))) {
       throw toError(
         `${source}: ${where}.file uses ${PAGE_PLACEHOLDER} in an absolute path, so every manifest would sit outside the repository. Make it relative to the config file.`,
@@ -329,9 +353,9 @@ function parseExternalMetadata(
       if (problem !== null) {
         throw toError(`${source}: ${where}.file ${problem}.`);
       }
-      if (perPage) {
+      if (perPage || perId) {
         throw toError(
-          `${source}: ${where}.file uses ${PAGE_PLACEHOLDER} in a URL. A placeholder names a file this run can write, and a URL is not one.`,
+          `${source}: ${where}.file uses ${perPage ? PAGE_PLACEHOLDER : ID_PLACEHOLDER} in a URL. A placeholder names a file this run can write, and a URL is not one.`,
         );
       }
     }
@@ -348,6 +372,14 @@ function parseExternalMetadata(
       }
     }
     const keys = entry.keys === undefined ? undefined : (entry.keys as string[]);
+    // The join of an `{id}` manifest is `id`, so any written join, even
+    // `join: id`, is a second answer to a question the placeholder settled.
+    // Checked before the join's own rules, whose advice would not apply.
+    if (perId && isNonEmptyString(entry.join)) {
+      throw toError(
+        `${source}: ${where}.file uses ${ID_PLACEHOLDER}, and join is "${entry.join}". An ${ID_PLACEHOLDER} manifest is found by the page's id, so it takes no join. Remove join.`,
+      );
+    }
     if (entry.join !== undefined) {
       if (!isNonEmptyString(entry.join)) {
         throw toError(
@@ -393,7 +425,7 @@ function parseExternalMetadata(
     // Two spellings of one pattern are one manifest for every page (0058
     // stress test 10), compared once, with no page known yet. Two concrete
     // entries naming one file stay legal, as they were before placeholders.
-    if (perPage) {
+    if (perPage || perId) {
       const pattern = normalizeManifestPattern(entry.file);
       const first = patterns.get(pattern);
       if (first !== undefined) {
@@ -422,24 +454,37 @@ function parseExternalMetadata(
 }
 
 /**
- * The problem with `file`'s `{page}` placeholder grammar (0058 § 1), as the
+ * The problem with `file`'s placeholder grammar (0058 § 1, 0126), as the
  * tail of a sentence that starts with the entry's path, or `null` when there
- * is none. One token, spelled exactly, at most once; every other brace is
- * refused rather than read as a literal.
+ * is none. One token, `{page}` or `{id}`, spelled exactly, at most once;
+ * every other brace is refused rather than read as a literal. `{id}` sits in
+ * the file name, so one directory holds every manifest it names.
  */
-function pagePlaceholderProblem(file: string): string | null {
+function placeholderProblem(file: string): string | null {
   for (const match of file.matchAll(/\{[^{}]*\}/g)) {
-    if (match[0] !== PAGE_PLACEHOLDER) {
-      return `uses "${match[0]}", which is not a placeholder. The only placeholder is ${PAGE_PLACEHOLDER}.`;
+    if (match[0] !== PAGE_PLACEHOLDER && match[0] !== ID_PLACEHOLDER) {
+      return `uses "${match[0]}", which is not a placeholder. The placeholders are ${PAGE_PLACEHOLDER} and ${ID_PLACEHOLDER}.`;
     }
   }
-  const tokens = file.split(PAGE_PLACEHOLDER);
-  const stray = /[{}]/.exec(tokens.join(""));
+  // One pass, so removing a token never joins its neighbours into another.
+  const stray = /[{}]/.exec(file.replace(/\{(?:page|id)\}/g, ""));
   if (stray !== null) {
-    return `contains "${stray[0]}" outside a ${PAGE_PLACEHOLDER} placeholder. Remove it, or write ${PAGE_PLACEHOLDER}.`;
+    return `contains "${stray[0]}" outside a placeholder. Remove it, or write ${PAGE_PLACEHOLDER} or ${ID_PLACEHOLDER}.`;
   }
-  if (tokens.length > 2) {
+  const pages = file.split(PAGE_PLACEHOLDER).length - 1;
+  const ids = file.split(ID_PLACEHOLDER).length - 1;
+  if (pages > 1) {
     return `uses ${PAGE_PLACEHOLDER} twice. One manifest names one page.`;
+  }
+  if (ids > 1) {
+    return `uses ${ID_PLACEHOLDER} twice. One manifest names one page.`;
+  }
+  if (pages > 0 && ids > 0) {
+    return `uses ${PAGE_PLACEHOLDER} and ${ID_PLACEHOLDER}. A per-page manifest is named by one of them.`;
+  }
+  const normalized = normalizeManifestPattern(file);
+  if (ids > 0 && normalized.lastIndexOf("/") > normalized.indexOf(ID_PLACEHOLDER)) {
+    return `uses ${ID_PLACEHOLDER} in a directory name. Put it in the file name, such as metadata/${ID_PLACEHOLDER}.yaml.`;
   }
   return null;
 }
@@ -505,6 +550,8 @@ function neverOwnedIn(
 ): Set<string> {
   const out = new Set<string>([SCHEMA_KEY]);
   if (manifest.join !== undefined && manifest.join !== PATH_JOIN) out.add(manifest.join);
+  // An `{id}` manifest's join is `id`, which names its file (0126).
+  if (hasIdPlaceholder(manifest.file)) out.add(ID_JOIN);
   for (const other of manifests) {
     if (other === manifest) continue;
     for (const key of other.keys ?? []) out.add(key);
@@ -519,6 +566,24 @@ function neverOwnedIn(
  * key a manifest it left out names.
  */
 const declaredNever = new WeakMap<ExternalMetadataConfig, ReadonlySet<string>>();
+
+/**
+ * The entry a collection that declares no `externalMetadata:` reads the
+ * metadata directory through (proposal 0126). `file` is an `{id}` pattern.
+ * Keyless, so it owns what each page's schemas mark external, and
+ * registered as `parseExternalMetadata` registers a declared keyless entry:
+ * its origin is the path it would have had, `collectionWhere`'s first entry.
+ */
+export function implicitExternalMetadata(
+  file: string,
+  source: string,
+  collectionWhere: string,
+): ExternalMetadataConfig {
+  const entry: ExternalMetadataConfig = { file, implicit: true };
+  origins.set(entry, { source, where: `${collectionWhere}.externalMetadata[0]` });
+  declaredNever.set(entry, neverOwnedIn([entry], entry));
+  return entry;
+}
 
 /**
  * The collections a run covers: every one when `names` is undefined, else the

@@ -337,7 +337,13 @@ describe("loadCiteConfig", () => {
     expect(loaded?.source).toBe(FIXTURE);
     // The document set is the family's, parsed by the shared layer (0041).
     expect(loaded?.collections).toEqual([
-      { name: "pages", paths: ["pages/**/*.md", "guides/*.mdx"], exclude: ["**/drafts/**"], externalMetadata: [] },
+      {
+        name: "pages",
+        paths: ["pages/**/*.md", "guides/*.mdx"],
+        exclude: ["**/drafts/**"],
+        externalMetadata: [],
+        declaresExternalMetadata: false,
+      },
     ]);
     expect(loaded?.config).toEqual({
       allowEmpty: true,

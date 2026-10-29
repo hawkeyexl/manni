@@ -1,0 +1,9 @@
+---
+title: Encrypted
+description: Its id is a ciphertext.
+id: "~AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+---
+
+# Encrypted
+
+Body.

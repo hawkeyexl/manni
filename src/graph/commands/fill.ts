@@ -1247,7 +1247,11 @@ function writeTarget(
 ): ManifestTarget | string | null {
   if (home === undefined || home.kind === "unowned") return null;
   if (home.kind === "url") return urlManifestMessage(key, home.file);
-  if (home.entry === undefined) {
+  // ponytail: until this writer mints (0126), a page with no id is refused
+  // as before, and a page none can be minted for keeps the key, as an
+  // unowned one did. C2 replaces both.
+  if (home.kind === "stay") return null;
+  if (home.entry === undefined || home.mint !== undefined) {
     return `${path} carries no ${home.join}, which ${home.file} joins on, so its ${key} has no entry there.`;
   }
   return {

@@ -10,6 +10,7 @@
 import { describe, expect, it } from "vitest";
 import {
   isMember,
+  ownsKey,
   parseCollections,
   selectCollections,
   type CollectionConfig,
@@ -45,6 +46,7 @@ function collection(over: Partial<CollectionConfig>): CollectionConfig {
     paths: ["docs/guides"],
     exclude: [],
     externalMetadata: [],
+    declaresExternalMetadata: false,
     ...over,
   };
 }
@@ -355,9 +357,113 @@ describe("parseCollections (0041)", () => {
             join: "slug",
           },
         ],
+        declaresExternalMetadata: true,
       },
-      { name: "blog", paths: ["blog"], exclude: [], externalMetadata: [] },
+      { name: "blog", paths: ["blog"], exclude: [], externalMetadata: [], declaresExternalMetadata: false },
     ]);
+  });
+
+  // Whether the key was written at all, which is what decides if a collection
+  // reads the metadata directory (0126): `[]` is an opt-out, not an absence.
+  it("records whether externalMetadata: was declared, an empty list included", () => {
+    const parsed = parseCollections(
+      [
+        { name: "a", paths: ["a"] },
+        { name: "b", paths: ["b"], externalMetadata: [] },
+        { name: "c", paths: ["c"], externalMetadata: [{ file: "c.yaml" }] },
+      ],
+      SOURCE,
+      toError,
+    );
+    expect(parsed.map((c) => c.declaresExternalMetadata)).toEqual([false, true, true]);
+  });
+});
+
+describe("the {id} placeholder (0126)", () => {
+  const base = (externalMetadata: unknown[]): unknown[] => [
+    { name: "api", paths: ["api"], externalMetadata },
+  ];
+  const where = "manni.config.yaml: collections[0].externalMetadata[0].file";
+
+  it("accepts {id} in the file name, relative or absolute, keyless or keyed", () => {
+    const parsed = parseCollections(
+      base([
+        { file: "../docs-meta/api/{id}.yaml" },
+        { file: "/srv/meta/{id}.citations.yaml", keys: ["citations"] },
+        { file: "C:\\meta\\{id}.owner.yaml", keys: ["owner"] },
+      ]),
+      SOURCE,
+      toError,
+    );
+    expect(parsed[0]?.externalMetadata.map((m) => m.file)).toEqual([
+      "../docs-meta/api/{id}.yaml",
+      "/srv/meta/{id}.citations.yaml",
+      "C:\\meta\\{id}.owner.yaml",
+    ]);
+  });
+
+  it.each(["id", "path", "slug"])("refuses any join, %s included", (join) => {
+    expect(refusal(base([{ file: "meta/{id}.yaml", join }]))).toBe(
+      `${where} uses {id}, and join is "${join}". An {id} manifest is found by the page's id, so it takes no join. Remove join.`,
+    );
+  });
+
+  it("refuses {page} and {id} together", () => {
+    expect(refusal(base([{ file: "{page}.{id}.yaml" }]))).toBe(
+      `${where} uses {page} and {id}. A per-page manifest is named by one of them.`,
+    );
+  });
+
+  it("refuses {id} twice", () => {
+    expect(refusal(base([{ file: "{id}.{id}.yaml" }]))).toBe(
+      `${where} uses {id} twice. One manifest names one page.`,
+    );
+  });
+
+  it("refuses {id} in a URL", () => {
+    expect(refusal(base([{ file: "https://example.com/meta/{id}.yaml" }]))).toBe(
+      `${where} uses {id} in a URL. A placeholder names a file this run can write, and a URL is not one.`,
+    );
+  });
+
+  it("refuses {id} in a directory name", () => {
+    expect(refusal(base([{ file: "metadata/{id}/x.yaml" }]))).toBe(
+      `${where} uses {id} in a directory name. Put it in the file name, such as metadata/{id}.yaml.`,
+    );
+    expect(refusal(base([{ file: "metadata\\{id}\\x.yaml" }]))).toBe(
+      `${where} uses {id} in a directory name. Put it in the file name, such as metadata/{id}.yaml.`,
+    );
+  });
+
+  it("names both placeholders when refusing an unknown token", () => {
+    expect(refusal(base([{ file: "{slug}.yaml" }]))).toBe(
+      `${where} uses "{slug}", which is not a placeholder. The placeholders are {page} and {id}.`,
+    );
+  });
+
+  it("names both placeholders when refusing a stray brace", () => {
+    expect(refusal(base([{ file: "{id.yaml" }]))).toBe(
+      `${where} contains "{" outside a placeholder. Remove it, or write {page} or {id}.`,
+    );
+  });
+
+  it("refuses two spellings of one {id} pattern, as it does for {page}", () => {
+    expect(
+      refusal(base([{ file: "meta\\{id}.yaml", keys: ["a"] }, { file: "./meta/{id}.yaml", keys: ["b"] }])),
+    ).toBe(
+      "manni.config.yaml: collections[0].externalMetadata[1].file resolves to the same manifest as externalMetadata[0].file for every page. Give each entry its own file name.",
+    );
+  });
+
+  // The page carries `id` to name its manifest, as a field join's page
+  // carries the join field, so the manifest cannot be where `id` comes from.
+  it("never lets a keyless {id} manifest own id", () => {
+    const [api] = parseCollections(base([{ file: "meta/{id}.yaml" }]), SOURCE, toError);
+    const manifest = api?.externalMetadata[0];
+    if (api === undefined || manifest === undefined) throw new Error("expected one manifest");
+    const marked = new Set(["id", "owner"]);
+    expect(ownsKey(api, manifest, "id", marked)).toBe(false);
+    expect(ownsKey(api, manifest, "owner", marked)).toBe(true);
   });
 });
 

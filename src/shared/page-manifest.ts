@@ -15,15 +15,23 @@
  * absolute path) is enforced by the config parser in `collections.ts`, so
  * everything here may assume a `file` that passed it.
  *
+ * `{id}` (proposal 0126) is the other placeholder: each page's manifest is
+ * named by its `id` instead, so a rename leaves it where it is. It is
+ * resolved, listed and checked for a safe id at the end of this file.
+ *
  * Shared, so it imports nothing from a tool.
  */
-import { readFileSync, realpathSync } from "node:fs";
+import { readFileSync, readdirSync, realpathSync, type Dirent } from "node:fs";
 import { isAbsolute, posix, relative, resolve, sep } from "node:path";
 import fg from "fast-glob";
 import { LineCounter, isMap, isNode, isScalar, parseDocument } from "yaml";
+import { ToolError, errorMessage } from "./errors.js";
 
-/** The one placeholder `externalMetadata[].file` accepts. */
+/** The placeholder that names a page's manifest by its path. */
 export const PAGE_PLACEHOLDER = "{page}";
+
+/** The placeholder that names a page's manifest by its `id` (proposal 0126). */
+export const ID_PLACEHOLDER = "{id}";
 
 /** True when `file` contains the {page} token (assumes it already passed parse validation). */
 export function hasPagePlaceholder(file: string): boolean {
@@ -203,4 +211,82 @@ export function sameFile(a: string, b: string): boolean {
   } catch {
     return false;
   }
+}
+
+/** True when `file` contains the {id} token (assumes it already passed parse validation). */
+export function hasIdPlaceholder(file: string): boolean {
+  return file.includes(ID_PLACEHOLDER);
+}
+
+/** Names Windows gives its devices, which no file there may take. */
+const DEVICE_NAME = /^(?:con|prn|aux|nul|com[0-9]|lpt[0-9])$/;
+
+/**
+ * May `id` name a manifest file (proposal 0126)? core-strict's pattern,
+ * lowercase letters, digits and "-" starting with a letter or digit, so the
+ * name is one file on every filesystem whatever its case rules. Never a
+ * Windows device name, which opens the device rather than a file.
+ */
+export function isSafeManifestId(id: string): boolean {
+  return /^[a-z0-9][a-z0-9-]*$/.test(id) && !DEVICE_NAME.test(id);
+}
+
+/**
+ * The manifest an `{id}` pattern names for `id`, which the caller has
+ * checked with `isSafeManifestId`. Resolved from `configDir`, so an absolute
+ * pattern stays absolute; `rel` is posix and relative to `configDir`, with
+ * `../` when the manifest sits above it.
+ */
+export function idManifestPath(
+  file: string,
+  configDir: string,
+  id: string,
+): { abs: string; rel: string } {
+  const abs = resolve(configDir, normalizeManifestPattern(file).replace(ID_PLACEHOLDER, () => id));
+  return { abs, rel: slashes(relative(configDir, abs)) };
+}
+
+/**
+ * The manifests on disk an `{id}` pattern names: the files in its directory
+ * whose name is the last segment with a safe id in place of `{id}`, sorted.
+ * The parser keeps `{id}` in that segment, so one directory holds them all.
+ * A file whose name only looks like one, `Notes.yaml` or `a.b.yaml` against
+ * `{id}.yaml`, names no id, and so no manifest. A missing directory holds
+ * none. One that cannot be listed refuses the run, naming the directory
+ * relative to `base`, the directory the run reports paths from.
+ *
+ * Synchronous, like `findPageManifests`. Nothing is read but the directory.
+ */
+export function listIdManifests(
+  file: string,
+  configDir: string,
+  base: string = configDir,
+): { abs: string; id: string }[] {
+  const normalized = normalizeManifestPattern(file);
+  const cut = normalized.lastIndexOf("/");
+  const dir = resolve(configDir, normalized.slice(0, cut + 1));
+  const name = normalized.slice(cut + 1);
+  const at = name.indexOf(ID_PLACEHOLDER);
+  const prefix = name.slice(0, at);
+  const suffix = name.slice(at + ID_PLACEHOLDER.length);
+  let entries: Dirent[];
+  try {
+    entries = readdirSync(dir, { withFileTypes: true });
+  } catch (err) {
+    // ENOTDIR: a file where the directory would be, which holds no manifest either.
+    const code = typeof err === "object" && err !== null && "code" in err ? err.code : undefined;
+    if (code === "ENOENT" || code === "ENOTDIR") return [];
+    const shown = slashes(relative(base, dir)) || ".";
+    throw new ToolError(
+      `${shown}: the metadata directory cannot be read (${typeof code === "string" ? code : errorMessage(err)}).`,
+    );
+  }
+  const found: { abs: string; id: string }[] = [];
+  for (const entry of entries) {
+    if (!entry.isFile() || !entry.name.startsWith(prefix) || !entry.name.endsWith(suffix)) continue;
+    // An overlapping prefix and suffix leave an empty id, which is not safe.
+    const id = entry.name.slice(prefix.length, entry.name.length - suffix.length);
+    if (isSafeManifestId(id)) found.push({ abs: resolve(dir, entry.name), id });
+  }
+  return found.sort((a, b) => (a.abs < b.abs ? -1 : 1));
 }

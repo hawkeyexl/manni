@@ -1,0 +1,4 @@
+= Native
+:description: Attributes, not fenced front matter.
+
+Body.

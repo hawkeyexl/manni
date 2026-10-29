@@ -67,6 +67,7 @@ export function relocateJson(result: RelocateResult): unknown {
     })),
     files: result.files.map((f) => ({
       file: f.file,
+      ...(f.minted !== undefined ? { minted: f.minted } : {}),
       moved: f.moved,
       stayed: f.stayed.map((s) => ({ key: s.key, reason: s.reason })),
     })),
@@ -76,6 +77,19 @@ export function relocateJson(result: RelocateResult): unknown {
 
 const plural = (n: number, noun: string): string => `${n} ${noun}${n === 1 ? "" : "s"}`;
 const list = (xs: readonly string[]): string => xs.join(", ");
+
+/** Is `file` a metadata directory's pattern (proposal 0126), one `<id>.yaml` per page? */
+const isDirectory = (file: string): boolean => file.includes("{id}");
+
+/** The line for a metadata directory a run creates: `metadata/` and the `<id>.yaml` each page gets. */
+function directoryLine(file: string, dry: boolean): string {
+  const cut = file.lastIndexOf("/");
+  const dir = `${cut < 0 ? "." : file.slice(0, cut)}/`;
+  const name = file.slice(cut + 1).replace("{id}", "<id>");
+  return dry
+    ? `Would create ${dir}; it would own what each page's schemas mark external, one ${name} per page.`
+    : `Created ${dir}; it owns what each page's schemas mark external, one ${name} per page.`;
+}
 
 export function renderRelocatePretty(result: RelocateResult, opts: RelocateReportOptions = {}): string {
   const c = palette(opts.color ?? false);
@@ -91,7 +105,7 @@ export function renderRelocatePretty(result: RelocateResult, opts: RelocateRepor
   const said = new Set<string>();
   for (const created of result.config.collectionsCreated) {
     said.add(created.name);
-    const made = result.manifests.filter((m) => m.collection === created.name && m.created);
+    const made = result.manifests.filter((m) => m.collection === created.name && m.created && !isDirectory(m.file));
     const head = `${dry ? "Would create" : "Created"} collection ${created.name} (paths: ${list(created.paths)})`;
     if (made.length === 0) {
       lines.push(`${head}.`);
@@ -100,7 +114,14 @@ export function renderRelocatePretty(result: RelocateResult, opts: RelocateRepor
     const owns = list(made.flatMap((m) => m.keys));
     lines.push(`${head} and ${list(made.map((m) => m.file))}; it ${dry ? "would own" : "owns"} ${owns}.`);
   }
+  // A metadata directory is one manifest however many collections read it.
+  const directories = new Set<string>();
   for (const m of result.manifests) {
+    if (m.created && isDirectory(m.file)) {
+      if (!directories.has(m.file)) lines.push(directoryLine(m.file, dry));
+      directories.add(m.file);
+      continue;
+    }
     if (said.has(m.collection) && m.created) continue;
     const added = said.has(m.collection) ? [] : pathsOf(m.collection);
     if (added.length > 0) said.add(m.collection);
@@ -163,6 +184,7 @@ export function renderRelocatePretty(result: RelocateResult, opts: RelocateRepor
   const shown = result.files.filter((f) => !f.beyond || f.stayed.length > 0);
   for (const f of shown) {
     lines.push(f.file);
+    if (f.minted !== undefined) lines.push(`    ${c.cyan("id".padEnd(width))}  ← minted ${f.minted}`);
     for (const mv of f.moved) {
       const name = c.cyan(mv.key.padEnd(width));
       if (mv.to === "page") {
@@ -196,6 +218,7 @@ export function renderRelocatePretty(result: RelocateResult, opts: RelocateRepor
   } else if (toPage > 0) {
     footer += " into pages";
   }
+  if (s.minted !== undefined && s.minted > 0) footer += `, ${plural(s.minted, "id")} ${dry ? "would be minted" : "minted"}`;
   if (s.stayed > 0) footer += `, ${s.stayed} stayed`;
   lines.push(s.stayed > 0 ? c.yellow(footer) : footer);
   return lines.join("\n");

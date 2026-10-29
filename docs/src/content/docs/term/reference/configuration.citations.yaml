@@ -29,9 +29,9 @@ docs/src/content/docs/term/reference/configuration.mdx:
         integrity: sha256-de02cceeffeb5919c1b3e83fb65958d51dad9dbc7451bdc8fe37441d654d24fa
       source:
         file: src/shared/collections.ts
-        lines: 544
+        lines: 609
         integrity: sha256-4c122a9104135ababd403fb8ad12965858226a24b861d98132dbeda32b828b95
-        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
+        commit-sha: 46ea4718fa7ee7e2ec7ed135a7a646d421ff3fb8
     - id: collection-flag-narrows
       claim:
         integrity: sha256-de02cceeffeb5919c1b3e83fb65958d51dad9dbc7451bdc8fe37441d654d24fa
@@ -53,9 +53,9 @@ docs/src/content/docs/term/reference/configuration.mdx:
         integrity: sha256-4d6eb134cf839bfef2b869e0ea3ec3e503f29d4ec06dc74d8c7d2ef30c5e9090
       source:
         file: src/shared/config-file.ts
-        lines: 193-202
+        lines: 211-220
         integrity: sha256-17097bbf9c1598dfecf78bac93838a7480a094aae56c954604237e233dcb7cc8
-        commit-sha: a589e08250dee7efaee7ed0f58df01986fad8d1d
+        commit-sha: 46ea4718fa7ee7e2ec7ed135a7a646d421ff3fb8
     - id: lint-runs-vale
       claim:
         integrity: sha256-9c5cab61e3f16882afd2267e1200f1bd9637a91a3c7fb08d64925d17f8e48a07

@@ -5,12 +5,12 @@ docs/src/content/docs/family/check.mdx:
         integrity: sha256-48f5dddb5a9aa63ef574e586bede0857b8dd0ad4e6f4a680b76492d9a251211f
       source:
         file: src/family/commands/check.ts
-        lines: 578-586
+        lines: 583-591
         integrity: sha256-7a04d871f71069e98bd72ea4c9cbeb810e872bc1893c54eea73045ba402d05b2
     - id: family-check-worst-first
       claim:
         integrity: sha256-8f7640f61d966770a9970ff6a6a8b28b3e0d4dd822a3a03629dbd2878cafc587
       source:
         file: src/strategy/core/serving.ts
-        lines: 119-128
+        lines: 135-144
         integrity: sha256-8f77d4ec1bb294f730f5e848b6cee7ae8a17d83e49247dae4cc968d2d9926a5f

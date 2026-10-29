@@ -181,6 +181,7 @@ describe("derive places provenance in the page's own manifest", () => {
         paths: ["docs/**/*.md"],
         exclude: [],
         externalMetadata: [{ file: "{page}.provenance.yaml", keys: ["provenance"] }],
+        declaresExternalMetadata: true,
       },
     ];
     const manifests = provenanceManifests(collections, root, root);

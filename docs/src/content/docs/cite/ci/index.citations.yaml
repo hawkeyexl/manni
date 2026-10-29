@@ -90,18 +90,18 @@ docs/src/content/docs/cite/ci/index.mdx:
         integrity: sha256-c55fbb1fe519fc5fb5d48ebe6a8c486b2ec68a9db3b5d8c2b517a7062d625d6f
       source:
         file: src/cite/commands/check.ts
-        lines: 411-413
+        lines: 414-416
         integrity: sha256-d51b978f9fa088753d24578d22c1dbbd55f75f157ec76b756d82b78ad164740e
-        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
+        commit-sha: 46ea4718fa7ee7e2ec7ed135a7a646d421ff3fb8
     - id: exit-two-no-inputs
       claim:
         lines: 24
         integrity: sha256-7e96fbbc32f1af5b6e5f4c8ce93c492565b18a8831ae48274fad1d6842056854
       source:
         file: src/cite/commands/check.ts
-        lines: 177-181
+        lines: 180-184
         integrity: sha256-dd1fd746781a236fa50aca4af4a370c3d18e06a6eb84ceda7b7eb3eb133f10cb
-        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
+        commit-sha: 46ea4718fa7ee7e2ec7ed135a7a646d421ff3fb8
     - id: format-pretty-default
       claim:
         lines: 127
@@ -353,9 +353,9 @@ docs/src/content/docs/cite/ci/index.mdx:
         integrity: sha256-ad433870cd2d53e38a99331b652fe6f31d807ef80072915b52abaf50f68a89b4
       source:
         file: src/cite/commands/check.ts
-        lines: 385-395
+        lines: 388-398
         integrity: sha256-4d589793e1c4a7e40e0f361cc623748d0d1fced1b38afb75c895a83968581abe
-        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
+        commit-sha: 46ea4718fa7ee7e2ec7ed135a7a646d421ff3fb8
     - id: collections-fallback-no-args
       claim:
         lines: 236-237
@@ -415,9 +415,9 @@ docs/src/content/docs/cite/ci/index.mdx:
         integrity: sha256-381a44b0cd4b1692ac26d6e1407fa0009060cbc8d7bda2f4ebe0eb6f56c9a3d7
       source:
         file: src/cite/commands/check.ts
-        lines: 411-413
+        lines: 414-416
         integrity: sha256-d51b978f9fa088753d24578d22c1dbbd55f75f157ec76b756d82b78ad164740e
-        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
+        commit-sha: 46ea4718fa7ee7e2ec7ed135a7a646d421ff3fb8
     - id: baseline-optional-path
       claim:
         lines: 392
@@ -493,7 +493,7 @@ docs/src/content/docs/cite/ci/index.mdx:
         integrity: sha256-e72cd47c83679bbc631a6a71268b67c285b089594932dcbdd15eaf6f97411c55
       source:
         file: src/cite/commands/check.ts
-        lines: 457-465
+        lines: 460-468
         integrity: sha256-94dbf53cae8a0b037a1e47d96c0581e2c7500c395cc9aae4564c52ccd25c6ccc
     - id: impact-json-key
       claim:
@@ -521,5 +521,5 @@ docs/src/content/docs/cite/ci/index.mdx:
         integrity: sha256-b05dc0cd181e80c9b00eb446c4e5ef4b49905ba8b4913cc1151af479a841d266
       source:
         file: src/cite/commands/check.ts
-        lines: 454-456
+        lines: 457-459
         integrity: sha256-f30cebe73464162bdc5a7b3230884eafe098b07aa7bd6e67972674732329fcaa

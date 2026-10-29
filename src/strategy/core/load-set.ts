@@ -187,10 +187,15 @@ export async function loadStrategySet(opts: LoadStrategySetOptions): Promise<Str
   });
 
   const pages: string[] = [];
-  const set: StrategySet = { records: [], references: [], pages };
+  const ids = new Map<string, string>();
+  const set: StrategySet = { records: [], references: [], pages, ids };
   for (const { label, extracted } of inputs) {
     const merged = await view.merge(label, extracted);
     const data = merged.extracted.data;
+    const pageId = data["id"];
+    if (typeof pageId === "string" || typeof pageId === "number" || typeof pageId === "boolean") {
+      ids.set(label, String(pageId));
+    }
     const at = (pointer: string): At => declaredAt(label, pointer, { extracted: merged.extracted, locate: merged.locate });
     const declares = readRecord(data, label);
     const type = declares?.type;

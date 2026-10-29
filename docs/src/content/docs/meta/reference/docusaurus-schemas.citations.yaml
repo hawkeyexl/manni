@@ -213,6 +213,6 @@ docs/src/content/docs/meta/reference/docusaurus-schemas.mdx:
         integrity: sha256-110e3266f3420e247e48f92ef8b4bb6921b6799aa2e4c472667f2ca0a8292bf1
       source:
         file: src/shared/collections.ts
-        lines: 177-182
+        lines: 198-203
         integrity: sha256-3781873fbb89e2f45ba02bd09efd8d2d98791f7307e55cf16f19e000a57e83ed
-        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
+        commit-sha: 46ea4718fa7ee7e2ec7ed135a7a646d421ff3fb8

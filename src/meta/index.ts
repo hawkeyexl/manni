@@ -119,6 +119,7 @@ export {
   PATH_JOIN,
   EXTERNAL_DUPLICATE_SCHEMA,
   EXTERNAL_OWNED_SCHEMA,
+  EXTERNAL_UNSAFE_ID_SCHEMA,
   EXTERNAL_KEYWORD,
 } from "./core/external-metadata.js";
 export {
@@ -205,6 +206,7 @@ export type {
   MergedMetadata,
   ExternalMetadataCollision,
   ExternalMetadataJoin,
+  ExternalMetadataUnsafeId,
   SourceLocation,
   LoadExternalMetadataOptions,
 } from "./core/external-metadata.js";

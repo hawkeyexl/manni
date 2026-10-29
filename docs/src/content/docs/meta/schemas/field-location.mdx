@@ -36,7 +36,7 @@ sample-questions:
 graph:
   label: Keep maintainer metadata out of delivered pages
   type: task
-last-updated: 2026-10-22
+last-updated: 2026-10-29
 tags:
   - field-location
   - x-manni-location
@@ -118,7 +118,10 @@ owner: platform
 
 The config declares one collection, with no manifest yet. `defaults: false`
 judges the pages by the house schema alone, so the example shows its marks and
-nothing else:
+nothing else. `externalMetadata: []` gives the collection a manifest of its
+own, rather than the [metadata
+directory](/manni/meta/set-up/external-metadata/#survive-renames-with-a-metadata-directory)
+a collection without the key reads:
 
 ```yaml title="manni.config.yaml"
 meta:
@@ -127,6 +130,7 @@ meta:
 collections:
   - name: site
     paths: ["docs/**/*.md"]
+    externalMetadata: []
 ```
 
 ```console
@@ -333,15 +337,17 @@ Removing a key moves it back into every member page for the same reason.
 | Your config | What `relocate` writes |
 |---|---|
 | The page's collection has a local manifest | The keys are appended to its `keys:` |
-| The collection has no manifest | `<collection>.metadata.yaml` beside the config file, declared under `externalMetadata:` |
-| No `collections:` at all | A collection named `default` whose `paths:` are the targets you typed, and `default.metadata.yaml` |
+| The collection has no `externalMetadata:` key | `metadata/<id>.yaml` for each page, with no config edit. A page with no `id` gets [a minted one](/manni/meta/set-up/external-metadata/#when-a-page-has-no-id) |
+| The collection declares `externalMetadata:` with no local manifest | `<collection>.metadata.yaml` beside the config file, declared under `externalMetadata:` |
+| No `collections:` at all | A collection named `default` whose `paths:` are the targets you typed. Its pages get `metadata/<id>.yaml` |
 | One collection, and the target is outside it | The target, appended to that collection's `paths:` |
 | Several collections, and the page is in none | Nothing. The value stays |
 
 Each change to `collections:` gets a line of its own:
 
 - With no collections, `manni meta relocate docs/ guides/intro.md` prints
-  `Created collection default (paths: docs/**, guides/intro.md) and default.metadata.yaml; it owns authors, owner.`
+  `Created collection default (paths: docs/**, guides/intro.md).`, then
+  `Created metadata/; it owns what each page's schemas mark external, one <id>.yaml per page.`
 - With one collection and a target outside it, `manni meta relocate notes/`
   prints `Added notes/** to collection site's paths; docs-meta.yaml now owns owner, authors.`
 

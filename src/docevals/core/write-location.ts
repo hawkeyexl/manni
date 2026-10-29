@@ -197,8 +197,21 @@ export class EvalWriter {
     if (home.kind === "url") {
       return { kind: "url", collection: home.collection, file: home.file };
     }
+    // ponytail: until this writer mints (0126), a page with no id is refused
+    // as before, and a page none can be minted for keeps the key, as an
+    // unowned one did. C2 replaces both.
+    if (home.kind === "stay") {
+      const proposed: ProposedHome = {
+        kind: "collection",
+        collection: home.collection,
+        manifest: home.file,
+        createsManifest: true,
+        createsCollection: false,
+      };
+      return { kind: "page", prefersExternal: prefersExternal(key), proposed };
+    }
     if (home.kind === "manifest") {
-      if (home.entry === undefined) {
+      if (home.entry === undefined || home.mint !== undefined) {
         return {
           kind: "no-entry",
           message: noEntryMessage(label, home.join, home.file, key),

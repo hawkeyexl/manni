@@ -25,7 +25,7 @@ sample-questions:
 graph:
   label: Output formats & exit codes
   type: reference
-last-updated: 2026-10-20
+last-updated: 2026-10-29
 tags:
   - exit-codes
   - output-formats
@@ -352,6 +352,13 @@ documents sharing one value of a manifest's [join field](/manni/meta/reference/c
 `external:duplicate/external`, with the shared value as the finding's subject.
 Its `rules[]` entry reads "Two documents carry the same value of a manifest's
 join field, so one manifest entry matched both."
+
+A page whose `id` cannot name a file in the [metadata
+directory](/manni/meta/reference/configuration/#the-metadata-directory) reports
+`external:unsafe-id/external`. So does a page that holds its `id` encrypted.
+The finding's subject is the id as the page holds it. Its `rules[]` entry reads
+"The page's id cannot name a file in the metadata directory, so its external
+metadata is not read."
 
 {/* cite output-encrypted-rule-ids */}
 A property its schema marks

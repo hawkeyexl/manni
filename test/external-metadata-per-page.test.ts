@@ -76,11 +76,11 @@ describe("per-page manifests: the grammar, refused at parse (exit 2)", () => {
   const cases: [fixture: string, message: string][] = [
     [
       "unknown-token",
-      'manni.config.yaml: collections[0].externalMetadata[0].file uses "{collection}", which is not a placeholder. The only placeholder is {page}.',
+      'manni.config.yaml: collections[0].externalMetadata[0].file uses "{collection}", which is not a placeholder. The placeholders are {page} and {id}.',
     ],
     [
       "stray-brace",
-      'manni.config.yaml: collections[0].externalMetadata[0].file contains "{" outside a {page} placeholder. Remove it, or write {page}.',
+      'manni.config.yaml: collections[0].externalMetadata[0].file contains "{" outside a placeholder. Remove it, or write {page} or {id}.',
     ],
     [
       "page-twice",
@@ -113,7 +113,7 @@ describe("per-page manifests: the grammar, refused at parse (exit 2)", () => {
 
   it("names a closing brace outside a token too", () => {
     expect(refusal([{ name: "site", paths: ["docs"], externalMetadata: [{ file: "a}b.yaml", keys: ["x"] }] }])).toBe(
-      'manni.config.yaml: collections[0].externalMetadata[0].file contains "}" outside a {page} placeholder. Remove it, or write {page}.',
+      'manni.config.yaml: collections[0].externalMetadata[0].file contains "}" outside a placeholder. Remove it, or write {page} or {id}.',
     );
   });
 

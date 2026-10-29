@@ -17,6 +17,7 @@ import type { Envelope } from "../core/envelope.js";
 import {
   COMMANDS,
   DOMAINS,
+  FamilyError,
   NEXT,
   NOT_CHECKED,
   NOT_SET_UP,
@@ -222,6 +223,11 @@ export function runStatus(opts: StatusOptions = {}): Promise<StatusReport> {
 async function statusUnshared(opts: StatusOptions): Promise<StatusReport> {
   const cwd = resolve(opts.cwd ?? process.cwd());
   const family = await loadFamily(cwd, opts.configPath);
+  // A metadata directory someone named and nobody checked out (proposal
+  // 0126) is the one setup status refuses, as check does: every domain would
+  // read it as pages with nothing kept.
+  const missing = family.collections.flatMap((c) => c.externalMetadata).find((m) => m.missing !== undefined);
+  if (missing?.missing !== undefined) throw new FamilyError(missing.missing);
   const members = family.collections.length === 0 ? [] : await listMembers(family, cwd);
   const domains: DomainRow[] = [];
   for (const domain of DOMAINS) {

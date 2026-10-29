@@ -30,7 +30,7 @@
  * so a page's citations are its frontmatter's.
  */
 import { existsSync } from "node:fs";
-import { isAbsolute, relative, resolve, sep } from "node:path";
+import { dirname, isAbsolute, relative, resolve, sep } from "node:path";
 import { configMarks, gitIgnored, mergeWithMarks, type PageMarks } from "../../meta/internal.js";
 import {
   classifyRef,
@@ -49,7 +49,12 @@ import {
   type ExternalMetadataJoin,
   type ExtractedMetadata,
 } from "../../meta/index.js";
-import { hasPagePlaceholder, pageManifestPath } from "../../shared/page-manifest.js";
+import {
+  hasIdPlaceholder,
+  hasPagePlaceholder,
+  listIdManifests,
+  pageManifestPath,
+} from "../../shared/page-manifest.js";
 import { ownsKey } from "../../shared/collections.js";
 import { CiteError } from "../errors.js";
 import type { CitationInput, CiteRun } from "../types.js";
@@ -83,6 +88,12 @@ export interface CitationManifest {
    * created by the first write.
    */
   pattern?: string;
+  /**
+   * The `{id}` pattern as the config writes it (proposal 0126), present only
+   * when each page's manifest is named by its id. Two collections whose
+   * patterns resolve to one `path` read one manifest.
+   */
+  idPattern?: string;
   /**
    * The manifest names no `keys` (proposal 0068), so it keeps a page's
    * citations only when the page's schemas mark `citations` external. The
@@ -226,6 +237,7 @@ export async function loadCitationSidecars(
         file: reportedPath(path, opts.base),
         join: externalMetadataJoin(manifest),
         ...(hasPagePlaceholder(manifest.file) ? { pattern: manifest.file } : {}),
+        ...(hasIdPlaceholder(manifest.file) ? { idPattern: manifest.file } : {}),
         ...implied,
       });
     }
@@ -312,7 +324,10 @@ function sidecars(
 
     // The owning manifest is the page's, decided before any entry is read:
     // two of them is a refusal even when only one has an entry today.
-    const mine = manifests.filter((m) => members.includes(m.collection) && keeps(m));
+    const owning = manifests.filter((m) => members.includes(m.collection) && keeps(m));
+    // Two collections reading one `{id}` directory (proposal 0126) read one
+    // manifest, so the page has one owner.
+    const mine = owning.filter((m, i) => m.idPattern === undefined || owning.findIndex((o) => o.path === m.path) === i);
     const [declared, second] = mine;
     if (declared === undefined) return { joins: matchOnly() };
     if (second !== undefined) {
@@ -375,9 +390,29 @@ function sidecars(
         if (owner !== undefined && existsSync(owner.path)) existing.add(owner.file);
       }
     }
-    if (existing.size === 0) return [];
-    const { ignored } = await gitIgnored([...existing], base);
-    return [...existing].filter((file) => ignored.has(file));
+    // An `{id}` directory (proposal 0126) read by a loaded page's collection:
+    // every manifest in it, named once as the directory when git ignores all
+    // of them, which is what ignoring the directory does.
+    const dirs = new Map<string, string[]>();
+    for (const declared of manifests) {
+      if (declared.idPattern === undefined || dirs.has(declared.path)) continue;
+      const reads = loaded.some((label) => memberOf(collections, configDir, base, label).includes(declared.collection));
+      if (!reads) continue;
+      dirs.set(
+        declared.path,
+        listIdManifests(declared.idPattern, configDir, base).map(({ abs }) => reportedPath(abs, base)),
+      );
+    }
+    const asked = [...existing, ...[...dirs.values()].flat()];
+    if (asked.length === 0) return [];
+    const { ignored } = await gitIgnored(asked, base);
+    const out = [...existing].filter((file) => ignored.has(file));
+    for (const [path, files] of dirs) {
+      const covered = files.filter((file) => ignored.has(file));
+      if (covered.length > 0 && covered.length === files.length) out.push(`${reportedPath(dirname(path), base)}/`);
+      else out.push(...covered);
+    }
+    return out;
   };
 
   return {
@@ -391,9 +426,13 @@ function sidecars(
   };
 }
 
-/** `<manifest> is covered by .gitignore, so CI checks out a page with no citations.` */
+/**
+ * `<manifest> is covered by .gitignore, so CI checks out a page with no
+ * citations.` A directory, named with its trailing `/`, holds every page's
+ * manifest (proposal 0126), so it says `pages`.
+ */
 export function ignoredManifestWarning(file: string): string {
-  return `${file} is covered by .gitignore, so CI checks out a page with no citations.`;
+  return `${file} is covered by .gitignore, so CI checks out ${file.endsWith("/") ? "pages" : "a page"} with no citations.`;
 }
 
 /** The refusal a whole-corpus run raises for a manifest entry naming nothing. */
