@@ -644,8 +644,8 @@ MANNI_EXTERNAL_METADATA_DIR: ../docs-meta does not exist. Create it, or check ou
 
 A page reads `<directory>/<id>.yaml` when its `id` is safe. A safe id matches
 `^[a-z0-9][a-z0-9-]*$`, the pattern `manni:core-strict` gives `id`. It is also
-not a Windows device name: `con`, `prn`, `aux`, `nul`, `com1` to `com9` or
-`lpt1` to `lpt9`. A missing file reads as empty.
+not a Windows device name: `con`, `prn`, `aux`, `nul`, `com0` to `com9` or
+`lpt0` to `lpt9`. A missing file reads as empty.
 
 | The page | What it reads | Finding |
 |---|---|---|

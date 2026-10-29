@@ -232,7 +232,7 @@ const strayEntries = new WeakSet<ExternalMetadataEntry>();
  * and a page in two of them reads its file once.
  */
 interface IdRegistry {
-  /** The pattern resolved from the config directory: the registry's identity. */
+  /** `patternKey` of the pattern from the config directory: the registry's identity. */
   key: string;
   /** The pattern as the run reports it (`metadata/{id}.yaml`), which an owner or a refusal names. */
   file: string;
@@ -250,8 +250,19 @@ interface IdRegistry {
   files: Set<string>;
 }
 
-/** The `{id}` registries each index was loaded with, kept beside it as `perPageRules` is. */
-const idRegistries = new WeakMap<ExternalMetadataIndex, readonly IdRegistry[]>();
+/**
+ * The `{id}` registries each index was loaded with, kept beside it as
+ * `perPageRules` is: by key, with the base the run reports paths from.
+ */
+const idRegistries = new WeakMap<
+  ExternalMetadataIndex,
+  { base: string; byKey: ReadonlyMap<string, IdRegistry> }
+>();
+
+/** `pattern`, absolute or relative to `from`, resolved and in forward slashes. */
+function patternKey(from: string, pattern: string): string {
+  return posix(resolve(from, normalizeManifestPattern(pattern)));
+}
 
 /**
  * Entries read from an `{id}` manifest, to their registry's reported
@@ -573,7 +584,7 @@ export async function loadExternalMetadata(
   const index: ExternalMetadataIndex = { owners, byPath, byField, entries };
   if (rules.length > 0) perPageRules.set(index, rules);
   if (implied.length > 0) impliedOwners.set(index, implied);
-  if (registries.size > 0) idRegistries.set(index, [...registries.values()]);
+  if (registries.size > 0) idRegistries.set(index, { base: opts.base, byKey: registries });
   return index;
 }
 
@@ -757,7 +768,7 @@ async function loadPerId(
   into: IndexUnderConstruction,
 ): Promise<ImpliedOwner | undefined> {
   const collection = declared.name;
-  const key = resolve(opts.configDir, normalizeManifestPattern(manifest.file));
+  const key = patternKey(opts.configDir, manifest.file);
   let registry = registries.get(key);
   if (registry === undefined) {
     registry = {
@@ -773,7 +784,7 @@ async function loadPerId(
     };
     registries.set(key, registry);
     // ponytail: every file in the directory is read each run; index by page if that ever measures slow.
-    for (const { abs, id } of listIdManifests(manifest.file, opts.configDir)) {
+    for (const { abs, id } of listIdManifests(manifest.file, opts.configDir, opts.base)) {
       const label = reportedPath(abs, opts.base);
       // Parsed under the first reader's ownership. Every implicit entry's is
       // the same; explicit entries that differ on one directory are an edge
@@ -1111,7 +1122,9 @@ function mergeWith(
   // the page's id as they read it. A page with no usable id reads nothing
   // from them, so they own nothing for it: a value it keeps is the
   // location:external warning's, not a collision.
-  const registries = (idRegistries.get(index) ?? []).filter((r) => memberOf.some((c) => r.readers.has(c)));
+  const registries = [...(idRegistries.get(index)?.byKey.values() ?? [])].filter((r) =>
+    memberOf.some((c) => r.readers.has(c)),
+  );
   const pageId = registries.length === 0 ? undefined : manifestIdOf(extracted.data[ID_JOIN]);
   const unread = new Set(pageId !== undefined && "id" in pageId ? [] : registries.map((r) => r.file));
   /** Every manifest of this file's collections that owns `key` for it. Not asked while probing. */
@@ -1528,16 +1541,20 @@ export function orphanJoins(
  * What an `{id}` manifest (proposal 0126) holds for one id: the owned keys
  * of the entry keyed by it, as loaded, or `undefined` when the file has none
  * or `ref` names no registry. `ref` is an entry of `index.entries` read from
- * one, or a registry's reported pattern (`pageOwners`' `file`, a join's
- * `pattern`) and an id.
+ * one, or a registry's pattern and an id. The pattern is absolute, or
+ * relative to the base the index was loaded with, as the run reports it
+ * (`pageOwners`' `file`, a join's `pattern`). A caller reporting from
+ * another base passes it absolute.
  */
 export function idManifestValues(
   index: ExternalMetadataIndex | null,
   ref: ExternalMetadataEntry | { pattern: string; id: string },
 ): ReadonlyMap<string, ExternalMetadataValue> | undefined {
   if (index === null) return undefined;
+  const loaded = idRegistries.get(index);
   const [pattern, id] = "pattern" in ref ? [ref.pattern, ref.id] : [idEntries.get(ref), ref.spelled];
-  return (idRegistries.get(index) ?? []).find((r) => r.file === pattern)?.values.get(id);
+  if (loaded === undefined || pattern === undefined) return undefined;
+  return loaded.byKey.get(patternKey(loaded.base, pattern))?.values.get(id);
 }
 
 /** The operational error an orphan check raises, naming the first entry. */
@@ -1578,6 +1595,6 @@ export function pageOwners(
   ];
   // Two collections reading one `{id}` registry (proposal 0126) are one
   // manifest, so it is named once, by the first of them that owns the key.
-  const shared = new Set((idRegistries.get(index) ?? []).map((r) => r.file));
+  const shared = new Set([...(idRegistries.get(index)?.byKey.values() ?? [])].map((r) => r.file));
   return owners.filter((o, i) => !shared.has(o.file) || owners.findIndex((p) => p.file === o.file) === i);
 }

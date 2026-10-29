@@ -400,7 +400,7 @@ function sidecars(
       if (!reads) continue;
       dirs.set(
         declared.path,
-        listIdManifests(declared.idPattern, configDir).map(({ abs }) => reportedPath(abs, base)),
+        listIdManifests(declared.idPattern, configDir, base).map(({ abs }) => reportedPath(abs, base)),
       );
     }
     const asked = [...existing, ...[...dirs.values()].flat()];

@@ -156,8 +156,8 @@ function cacheOf(ctx: RelocationContext): MintCache {
   return cache;
 }
 
-/** The next free slug for `rel`: step 4 over what `scan` already holds. */
-function assign(scan: IdScan, abs: string, rel: string): string {
+/** The next free slug for `rel`: step 4 over what `scan` already holds. Held in `scan` when `claim`. */
+function assign(scan: IdScan, abs: string, rel: string, claim = true): string {
   const have = scan.assigned.get(abs);
   if (have !== undefined) return have;
   const slug = frozenSlug(rel, slugBase(scan.collections, rel));
@@ -169,8 +169,10 @@ function assign(scan: IdScan, abs: string, rel: string): string {
     existsSync(idManifestPath(scan.pattern, scan.configDir, s).abs);
   let candidate = slug;
   for (let n = 2; taken(candidate); n++) candidate = `${slug}-${String(n)}`;
-  scan.assigned.set(abs, candidate);
-  scan.minted.add(candidate);
+  if (claim) {
+    scan.assigned.set(abs, candidate);
+    scan.minted.add(candidate);
+  }
   return candidate;
 }
 
@@ -302,7 +304,11 @@ async function decide(ctx: RelocationContext, request: MintRequest, cache: MintC
     scanning = scanIds(ctx, request);
     cache.scans.set(scanKey, scanning);
   }
-  const slug = assign(await scanning, abs, toPosix(relative(configDir, abs)));
+  // Claimed only once every check below passes, so a page the scan skipped
+  // that stays holds no slug from the page after it.
+  const scan = await scanning;
+  const rel = toPosix(relative(configDir, abs));
+  const slug = assign(scan, abs, rel, false);
 
   // (a) and (b): what the page's schemas make of an id.
   const refs = resolveSchemaSetWithSource({
@@ -339,5 +345,8 @@ async function decide(ctx: RelocationContext, request: MintRequest, cache: MintC
     if (!(err instanceof DocmetaError)) throw err;
     return unwritable(reasonOf(err));
   }
+  // Another page minted while this one was checked, and took the slug: check again.
+  if (assign(scan, abs, rel, false) !== slug) return decide(ctx, request, cache);
+  assign(scan, abs, rel);
   return { minted: slug, text };
 }

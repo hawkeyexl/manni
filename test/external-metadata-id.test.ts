@@ -240,6 +240,19 @@ describe("two directories whose pages share an id (0126)", () => {
     expect(idManifestValues(index, entry)?.get("personas")?.value).toEqual(["maya"]);
     expect(idManifestValues(index, { pattern: "metadata/{id}.yaml", id: "nope" })).toBeUndefined();
   });
+
+  it("finds an id's entry for a caller whose paths start from another base", async () => {
+    const dir = at("two-directories");
+    const index = await loadExternalMetadata(readsDir(dir, [{ name: "site", paths: ["docs/site/*.md"] }]), {
+      configDir: dir,
+      base: resolve(dir, "docs"),
+    });
+    const personas = (pattern: string): unknown =>
+      idManifestValues(index, { pattern, id: "index" })?.get("personas")?.value;
+    // The index reports `../metadata/{id}.yaml`; this caller names it absolute, native separators and all.
+    expect(personas(join(dir, "metadata", "{id}.yaml"))).toEqual(["maya"]);
+    expect(personas("../metadata/{id}.yaml")).toEqual(["maya"]);
+  });
 });
 
 describe("an entry no page carries (0126)", () => {
