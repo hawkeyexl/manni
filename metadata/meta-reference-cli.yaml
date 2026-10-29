@@ -1858,27 +1858,27 @@ meta-reference-cli:
         integrity: sha256-abe8dd1bd2286c5707d779d9c96870720d1aee6639285620850d867a1dffd965
       source:
         file: src/meta/core/relocation.ts
-        lines: 2937-2941
+        lines: 2938-2942
         integrity: sha256-38be29b43855b7914dfdefbaa0493a4777ab494432e70892b5c0761b2b5f81ee
-        commit-sha: af75db2aa4909e9e36ecd00e8b21c2ee02488a3c
+        commit-sha: e92562d161945fca56cc7aa97c56eb42dd71f60b
     - id: relocate-write-failure-restores
       claim:
         lines: 1561
         integrity: sha256-501ddd4e2152651592de9aa6feb856c66f8b04b03ff8cbfe205a67eb064e88fc
       source:
         file: src/meta/core/relocation.ts
-        lines: 2956-2959
+        lines: 2957-2960
         integrity: sha256-6e63aa5c67a0831a3cb445422ff7899e20059cacd182610f15e2d91163d95ef3
-        commit-sha: af75db2aa4909e9e36ecd00e8b21c2ee02488a3c
+        commit-sha: e92562d161945fca56cc7aa97c56eb42dd71f60b
     - id: relocate-rollback-failure-names-the-file
       claim:
         lines: 1562
         integrity: sha256-24c12472e4c1fe81d554b91a6883f88a9859c827abb7ca8e65ca9bf607228147
       source:
         file: src/meta/core/relocation.ts
-        lines: 2961-2964
+        lines: 2962-2965
         integrity: sha256-deedf55697346cfdd6fc9f93a525fb723d993b8679448d7fcf32ff8d287f39a8
-        commit-sha: af75db2aa4909e9e36ecd00e8b21c2ee02488a3c
+        commit-sha: e92562d161945fca56cc7aa97c56eb42dd71f60b
     - id: relocate-exit-0-and-1
       claim:
         integrity: sha256-0a6bba8789427623b26dc7dd6ca5c56490bb746f5fd2fa41feaab11e21ea2858
@@ -2034,9 +2034,9 @@ meta-reference-cli:
         integrity: sha256-eabf75fe175181dbce33b6e36c298daff60056f8d03ce035e7cf86b557460a13
       source:
         file: src/meta/core/relocation.ts
-        lines: 2977-2984
+        lines: 2978-2985
         integrity: sha256-7ec4e16381f0b8d73809a83ad836c3abbc7efdd5a38f2f2c0669f5d042a2b653
-        commit-sha: af75db2aa4909e9e36ecd00e8b21c2ee02488a3c
+        commit-sha: e92562d161945fca56cc7aa97c56eb42dd71f60b
     - id: manifest-is-the-first-collection-the-page-is-in
       claim:
         integrity: sha256-67e67889eaa2f042f7b72ed49f532faed837edcaf40353d1bd3b357c117c1846
@@ -2090,9 +2090,9 @@ meta-reference-cli:
         integrity: sha256-67e67889eaa2f042f7b72ed49f532faed837edcaf40353d1bd3b357c117c1846
       source:
         file: src/meta/core/relocation.ts
-        lines: 2491-2492
+        lines: 2492-2493
         integrity: sha256-e8176752502730749f3043fc8637570f0b5a6ea2bed93a5b0fc472ba9179112e
-        commit-sha: af75db2aa4909e9e36ecd00e8b21c2ee02488a3c
+        commit-sha: e92562d161945fca56cc7aa97c56eb42dd71f60b
     - id: relocate-writes-by-default
       claim:
         lines: 1381-1382
@@ -3728,9 +3728,9 @@ meta-reference-cli:
         integrity: sha256-cd7824ba26efe486a7e9a18ac1202f5106e6c2493200d5615f1ff03f157a7714
       source:
         file: src/meta/core/relocation.ts
-        lines: 2810
+        lines: 2811
         integrity: sha256-5dc3cf189a71e3c632046f0b17587ed14bf254fedecd12abb33aa148cf54ee30
-        commit-sha: af75db2aa4909e9e36ecd00e8b21c2ee02488a3c
+        commit-sha: e92562d161945fca56cc7aa97c56eb42dd71f60b
     - id: relocate-undeclared-manifest-left-on-disk
       claim:
         lines: 1504

@@ -2088,7 +2088,7 @@ async function planOnce(
     if (left) continue;
     // A manifest is never kept for nothing: a value that does not leave it stays, with its reason.
     if (intent?.kind !== "stay") {
-      throw new Error(`relocate: ${source.file} holds ${source.key} for ${page.label}, which neither leaves nor stays.`);
+      throw new DocmetaError(`relocate: ${source.file} holds ${source.key} for ${page.label}, which neither leaves nor stays.`);
     }
     // A file the config does not declare keeps what stays, and nothing reads it.
     if (m.loose === true) continue;
@@ -2269,6 +2269,7 @@ function holdsComments(text: string): boolean {
   const doc = parseDocument(text);
   if (doc.commentBefore || doc.comment) return true;
   let found = false;
+  // Pairs are not Nodes; yaml v2 keeps a block key's comment on its key Scalar.
   visit(doc, (_, node) => {
     if (!isNode(node) || !(node.commentBefore || node.comment)) return undefined;
     found = true;
