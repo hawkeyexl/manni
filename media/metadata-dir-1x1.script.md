@@ -182,14 +182,19 @@ manni: MANNI_EXTERNAL_METADATA_DIR: ../elsewhere does not exist. Create it, or c
   compressed.
 - Output appears after the command's measured latency. That comes from the
   capture run plus three timing runs (`media/capture-metadata-dir/latency.txt`),
-  each line stamped with its millisecond after Enter. Every manni run prints
-  `Using manni.config.yaml (.)` first, at 301-456 ms. The orphan error lands
-  41-48 ms after it, and the refusal 41-47 ms. The relocate report lands at
-  556-635 ms. The validate pass follows the config line by 22-83 ms, and the
-  `get` value by 33-36 ms. `git mv` takes 58-106 ms and `cat` 37-90 ms. The
-  replay uses the first whole frame inside each range, or the first after it
-  when none falls inside: 10 or 11 frames for the config line, then 2, 7, 1, 1
-  and 2. `git mv` and `cat` get 2.
+  each line stamped with its millisecond after Enter. The measured ranges:
+  - the config line `Using manni.config.yaml (.)`, first in every manni run: 301 to 456
+  - the orphan error, after the config line: 41 to 48
+  - the missing-directory refusal, after the config line: 41 to 47
+  - the relocate report, after Enter: 556 to 635
+  - the validate pass, after the config line: 22 to 83
+  - the `get` value, after the config line: 33 to 36
+  - `git mv`: 58 to 106, and `cat`: 37 to 90
+
+  The replay uses the first whole frame inside each range. When none falls
+  inside, it uses the first frame after the range. That gives the config line
+  10 or 11 frames, and the next five outputs 2, 7, 1, 1 and 2 frames. Each
+  `git mv` and each `cat` gets 2 frames.
 - Lines of one chunk land together. The stamps put them about 20 ms apart, and
   that gap is the stamping loop's own `date` process per line, not the CLI.
 - Beats run 4.0-11.5 s. Each holds 2.2-3.9 s after its main output, and the
