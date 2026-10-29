@@ -444,9 +444,9 @@ docs/src/content/docs/meta/set-up/config.mdx:
         integrity: sha256-c8582f6e12318df472d23f80e7d5f77f47d454263a2d4468908546419b4fddf7
       source:
         file: src/meta/cli.ts
-        lines: 763-764
-        integrity: sha256-9610c35fd394038b93a4e731325748a2728483d7c051fb4d4f8b3e9a127caf94
-        commit-sha: 0d3d8a74bd17fce503520bb2313a412ca60aeeca
+        lines: 765-767
+        integrity: sha256-40b936597f2e13929db65362f5625e86ad173b93929d37549dcf2058f77fe6ef
+        commit-sha: 77715cb1faddbd601238d5b6b1a36827cfcebb03
     - id: explicit-config-missing-is-an-error
       claim:
         lines: 28

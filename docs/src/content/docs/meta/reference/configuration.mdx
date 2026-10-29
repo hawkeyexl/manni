@@ -1196,7 +1196,7 @@ the run first met them.
 | No collections are defined | A collection named `default` is added. Its `paths:` are the run's targets as typed: `docs/` becomes `docs/**`, and a file or glob stays itself. |
 | Exactly one collection, and the page is outside it | The run's target is appended to that collection's `paths:`. What `manni a11y` and `manni cite` see for the collection grows with it. |
 | Several collections, and the page is in none | Nothing is edited. The value stays and is named. |
-| A key moves back into the pages | It is removed from `keys:`. An entry left with no keys is removed, and so is an empty `externalMetadata:`. The manifest file stays on disk. |
+| A key moves back into the pages | It is removed from `keys:`. An entry left with no keys is removed, and so is an empty `externalMetadata:`. The manifest file stays on disk. A `--from` manifest left with no entries is deleted, unless it holds YAML comments. |
 | No config file | `manni.config.yaml` is created at the git root, else the working directory. `--no-config` is refused. |
 
 One collection with no `externalMetadata:`, `manni meta relocate`. The config

@@ -42,27 +42,27 @@ docs/src/content/docs/meta/ci/consume-results.mdx:
         integrity: sha256-d3ac227998131854e26a4e7ab9a5e3dbdb2972655ef9d58316016f6b16596488
       source:
         file: src/meta/cli.ts
-        lines: 975-978
+        lines: 977-980
         integrity: sha256-3bc74074c8952636df5c6f68b9d559a92e1dda00b46dfa186f5723f16364efa5
-        commit-sha: 0d3d8a74bd17fce503520bb2313a412ca60aeeca
+        commit-sha: 77715cb1faddbd601238d5b6b1a36827cfcebb03
     - id: get-takes-pretty-and-json-only
       claim:
         lines: 227-228
         integrity: sha256-8c64ec05ab7cee4c39c4835c4c6ecbf48d537dbe1d019bc67ccb41e567f4669f
       source:
         file: src/meta/cli.ts
-        lines: 962-966
-        integrity: sha256-b503ccf2d5faf492d3e8eb42a02c2193e9002da4890c9c8dde4774435125333c
-        commit-sha: 0d3d8a74bd17fce503520bb2313a412ca60aeeca
+        lines: 960-968
+        integrity: sha256-052b26918cc751813175d40cc6d2e0445cab364c55b545d70679914e70e21aa5
+        commit-sha: 77715cb1faddbd601238d5b6b1a36827cfcebb03
     - id: get-unsupported-format-exits-2
       claim:
         lines: 231
         integrity: sha256-79056c424982b4bf4902984fcea150da19d76356cdb633aab3affbfdaec0350c
       source:
         file: src/meta/cli.ts
-        lines: 1054-1059
+        lines: 1056-1061
         integrity: sha256-ed88e062b2f25e5f5d7be02a925046a075dc66df7cf3d1e6243ba690642c9961
-        commit-sha: 0d3d8a74bd17fce503520bb2313a412ca60aeeca
+        commit-sha: 77715cb1faddbd601238d5b6b1a36827cfcebb03
     - id: dot-notation-or-json-pointer
       claim:
         lines: 200-202
@@ -96,9 +96,9 @@ docs/src/content/docs/meta/ci/consume-results.mdx:
         integrity: sha256-3c2434351e0c235257b42b727932a3407933256153739c52ad3cf5d8f63e0212
       source:
         file: src/meta/cli.ts
-        lines: 967-972
-        integrity: sha256-74320011f15b4a953c0496f55ff3d7e3c02bfa5bf49c03a7c8cdcc5568d67630
-        commit-sha: 0d3d8a74bd17fce503520bb2313a412ca60aeeca
+        lines: 969-979
+        integrity: sha256-30ac3501375ce28504bee27a757ab619da4822c35d46f36a4bcb3d1d5b57e339
+        commit-sha: 77715cb1faddbd601238d5b6b1a36827cfcebb03
     - id: json-output-is-never-colorized
       claim:
         lines: 109-110

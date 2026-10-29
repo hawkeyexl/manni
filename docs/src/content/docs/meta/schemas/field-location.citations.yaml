@@ -31,25 +31,25 @@ docs/src/content/docs/meta/schemas/field-location.mdx:
         integrity: sha256-001f21f041c4d3ad321e799d00ed5ba864afedfea1bc46f3a55595ec3e62f829
       source:
         file: src/meta/commands/relocate.ts
-        lines: 80-83
+        lines: 88-91
         integrity: sha256-cb438f51b9802958ffccdc39bc49d8db367ab8e057ff9f47f64fdcc7ff79580e
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: 77715cb1faddbd601238d5b6b1a36827cfcebb03
     - id: a-value-that-stays-exits-1
       claim:
         integrity: sha256-17527dfc7a5041e193437b538b86d9d82d1cb1d63e920236c88d410cab33dd59
       source:
         file: src/meta/core/relocation.ts
-        lines: 197-199
+        lines: 212-214
         integrity: sha256-7a696206a70ac73d552cbdd045807425eb62dce4386440c38ece54ccbc8549ef
-        commit-sha: 46ea4718fa7ee7e2ec7ed135a7a646d421ff3fb8
+        commit-sha: 77715cb1faddbd601238d5b6b1a36827cfcebb03
     - id: relocate-moves-values-to-their-mark
       claim:
         integrity: sha256-dceab7481b0a784d6b82d7a3872734c62f96ee035efa4ee64a69386e670a3e2c
       source:
         file: src/meta/commands/relocate.ts
-        lines: 73-79
+        lines: 81-87
         integrity: sha256-92ebc8193a5308eff25ce77e02581e5c252fb8cd7ca5e39fef0dd2d3221add0b
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: 77715cb1faddbd601238d5b6b1a36827cfcebb03
     - id: sarif-rule-id-for-location-external
       claim:
         lines: 146
