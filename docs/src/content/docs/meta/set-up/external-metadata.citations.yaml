@@ -77,9 +77,9 @@ docs/src/content/docs/meta/set-up/external-metadata.mdx:
         integrity: sha256-e1e5e6733f3dc268dc7e19642e3e40a85f57d20f26f3b0b720611eddf1a5be00
       source:
         file: src/meta/core/relocation.ts
-        lines: 2485-2487
+        lines: 2486-2488
         integrity: sha256-5048a55252ae3036a788a98568319faf26252b7b59f4470041cc40d258d73dff
-        commit-sha: af75db2aa4909e9e36ecd00e8b21c2ee02488a3c
+        commit-sha: e92562d161945fca56cc7aa97c56eb42dd71f60b
     - id: x-manni-location-decides-key-direction
       claim:
         integrity: sha256-e1e5e6733f3dc268dc7e19642e3e40a85f57d20f26f3b0b720611eddf1a5be00
