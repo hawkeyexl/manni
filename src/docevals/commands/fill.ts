@@ -560,12 +560,14 @@ export async function runFill(
       ...(metaManifest?.mint !== undefined && merged !== undefined ? [META_PROVENANCE_KEY] : []),
     ];
     try {
+      // The page's text is settled before any file is written, so a page that
+      // refuses its minted id or its evals leaves no file holding its values.
+      let updated = plan.page.content;
+      if (minting !== undefined) updated = withMintedId(label, updated, minting.mint);
+      if (pageEntries.length > 0 || pageMeta !== undefined) {
+        updated = appendPageEvals(updated, label, pageEntries, pageMeta);
+      }
       const writePage = (): void => {
-        let updated = plan.page.content;
-        if (minting !== undefined) updated = withMintedId(label, updated, minting.mint);
-        if (pageEntries.length > 0 || pageMeta !== undefined) {
-          updated = appendPageEvals(updated, label, pageEntries, pageMeta);
-        }
         if (!options.dryRun && updated !== plan.page.content) {
           writeFileSync(plan.page.absPath, updated);
           if (minting !== undefined) warn(mintedNotice(label, minting.mint.id, minting.file));

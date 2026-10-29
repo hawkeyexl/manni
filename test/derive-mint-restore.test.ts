@@ -14,6 +14,7 @@ import { cpSync, existsSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { runDerive } from "../src/meta/commands/derive.js";
+import { DocmetaError } from "../src/meta/types.js";
 import { commit, makeTempRepo, removeTempRepo } from "./helpers/temp-repo.js";
 
 const refused = vi.hoisted(() => ({ suffix: undefined as string | undefined }));
@@ -49,7 +50,10 @@ describe("derive, when a minted page's manifest fails to save", () => {
     commit(repo, "add", { authorDate: "2026-08-20T10:00:00+00:00" });
     refused.suffix = "fresh.yaml";
 
-    await expect(runDerive({ inputs: ["docs/fresh.md"], cwd: repo })).rejects.toThrow("docs/fresh.md was restored.");
+    const failure = runDerive({ inputs: ["docs/fresh.md"], cwd: repo });
+    // DocmetaError is the run's operational error, exit 2.
+    await expect(failure).rejects.toBeInstanceOf(DocmetaError);
+    await expect(failure).rejects.toThrow("docs/fresh.md was restored.");
     expect(readFileSync(join(repo, "docs/fresh.md"), "utf8")).toBe(FRESH);
     expect(existsSync(join(repo, "metadata", "fresh.yaml"))).toBe(false);
   });

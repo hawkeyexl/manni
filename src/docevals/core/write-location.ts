@@ -279,12 +279,13 @@ export class EvalWriter {
   }
 
   /**
-   * `moveMinted`, then the page: the id written in and the moved values
-   * taken out, said once. A page already carrying the id, as a second write
-   * of one run leaves it, is not written again.
+   * `value` written as `key` of the page's entry, with `moveMinted`, then
+   * the page: the id written in and the moved values taken out, said once.
+   * The page's text is settled first, so a page that refuses the id leaves
+   * the file without its values. A page already carrying the id, as a second
+   * write of one run leaves it, is not written again.
    */
-  async mintInto(page: Pick<PageFile, "file" | "absPath">, home: MintingHome, written: readonly string[]): Promise<void> {
-    await this.moveMinted(home, written);
+  async mintInto(page: Pick<PageFile, "file" | "absPath">, home: MintingHome, key: string, value: unknown): Promise<void> {
     const content = readFileSync(page.absPath, "utf8");
     let next: string;
     try {
@@ -292,6 +293,8 @@ export class EvalWriter {
     } catch (e) {
       throw new DocevalsError(errorMessage(e));
     }
+    await this.writeManifest(home, key, value);
+    await this.moveMinted(home, [key]);
     if (next === content) return;
     writeFileSync(page.absPath, next);
     warn(mintedNotice(page.file, home.mint.id, home.file));

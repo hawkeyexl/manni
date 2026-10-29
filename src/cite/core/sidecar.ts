@@ -493,6 +493,7 @@ function sidecars(
     // cite found the `{id}` manifest owning this page's citations by the
     // rule meta applies, so meta's answer is that manifest, minting.
     if (home.kind !== "manifest" || home.mint === undefined) {
+      // A plain `Error`, not a `CiteError`: the two rules disagreeing is a bug, so it keeps its stack.
       throw new Error(`cite: ${label}: meta homes its citations in ${home.kind === "unowned" ? "no manifest" : home.file}, not ${idless.manifest.file}.`);
     }
     return { id: home.mint.id, owner: idOwner(idless.manifest, idless.pattern, home.mint.id), mint: home.mint };
