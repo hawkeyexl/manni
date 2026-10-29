@@ -142,7 +142,7 @@ These came out of a review of the shipped product against the intent recorded in
 | [0123](0123-whole-graph-start-and-random-node.md) | Open the whole graph by default and discover nodes with a dice button | Maya · M18 / Sara · S17 | Implemented (worktree) |
 | [0124](0124-random-node-searches-the-whole-graph.md) | Let random-node discovery jump beyond the current neighborhood | Maya · M18 / Sara · S17 | Implemented (worktree) |
 | [0125](0125-madcap-flare-projects.md) | Read and write MadCap Flare projects across meta, lint, graph, term, docevals and site | Maya · M1, M10, M18 / Devin · D16 / Sara · S6 | Implemented (#257, #258, #259, #260, #261) |
-| [0126](0126-id-keyed-external-metadata.md) | Id-keyed external metadata. Each page's external values live in `metadata/<id>.yaml`, found by the page's `id`, so a rename or an edit never strands them. `externalMetadataDir` and `MANNI_EXTERNAL_METADATA_DIR` move the directory, writers mint an id, and `manni meta relocate --from` migrates a `{page}` setup | Maya · M16, M6, M1 | Implemented (#264, #265, #266, #PR4) |
+| [0126](0126-id-keyed-external-metadata.md) | Id-keyed external metadata. Each page's external values live in `metadata/<id>.yaml`, found by the page's `id`, so a rename or an edit never strands them. `externalMetadataDir` and `MANNI_EXTERNAL_METADATA_DIR` move the directory, writers mint an id, and `manni meta relocate --from` migrates a `{page}` setup | Maya · M16, M6, M1 | Implemented (#264, #265, #266, #267) |
 
 0014 was not in the original review. It surfaced while stress-testing 0004, and is the most severe item in the set. **docmeta currently exits `0` when it validates nothing at all**, including when an explicitly named file does not exist.
 

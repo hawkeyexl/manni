@@ -1,6 +1,6 @@
 # 0126: id-keyed external metadata, in a metadata directory
 
-- **Status:** Implemented (#264, #265, #266, #PR4)
+- **Status:** Implemented (#264, #265, #266, #267)
 - **Serves:** Three journeys, each for a page whose bookkeeping lives outside
   it.
   - Maya · M16, "Keep evals out of the delivered page". A page's evals stay in
