@@ -168,6 +168,63 @@ describe("cite writes each page's own manifest", () => {
     expect(run.summary.failed).toBe(0);
   });
 
+  describe("a marker written ahead of its entry", () => {
+    const PAGE = ["---", "title: Ahead", "---", "# Ahead", "", "<!-- cite first second -->", "Some claim.", ""].join("\n");
+    const adopt = (cwd: string, id: string, over = {}): ReturnType<typeof runAdd> =>
+      runAdd({
+        cwd,
+        page: "docs/ahead.md",
+        pageLines: { start: 7, end: 7 },
+        src: "src/limits.ts:2",
+        id,
+        marker: true,
+        commitSha: false,
+        gitClient: noGit(),
+        env: {},
+        ...over,
+      });
+
+    it("add adopts it, writes the manifest and leaves the page byte for byte", async () => {
+      const cwd = copyOf();
+      writeFileSync(join(cwd, "docs/ahead.md"), PAGE);
+      const result = await adopt(cwd, "first");
+      expect(result.markerAdopted).toBe(true);
+      expect(result.placed).toBe("manifest");
+      expect(result.written).toBe(false);
+      expect(result.markerLine).toBe(6);
+      expect(result.claimLines).toEqual({ start: 7, end: 7 });
+      expect(read(cwd, "docs/ahead.md")).toBe(PAGE);
+      expect(manifestOf(cwd, "docs/ahead.citations.yaml")["docs/ahead.md"]?.citations).toHaveLength(1);
+      expect(pageOf(await check(cwd), "docs/ahead.md").findings.map((f) => f.rule)).toEqual(["marker-orphan"]);
+      await adopt(cwd, "second", { marker: undefined });
+      expect(read(cwd, "docs/ahead.md")).toBe(PAGE);
+      const run = await check(cwd);
+      expect(pageOf(run, "docs/ahead.md").findings).toEqual([]);
+      expect(pageOf(run, "docs/ahead.md").citations.map((c) => c.claim?.status)).toEqual(["current", "current"]);
+    });
+
+    it("add --dry-run creates no manifest and touches no page", async () => {
+      const cwd = copyOf();
+      writeFileSync(join(cwd, "docs/ahead.md"), PAGE);
+      const result = await adopt(cwd, "first", { dryRun: true });
+      expect(result.markerAdopted).toBe(true);
+      expect(result.manifest?.diff).toContain("id: first");
+      expect(result.diff).toBe("");
+      expect(read(cwd, "docs/ahead.md")).toBe(PAGE);
+      expect(filesUnder(cwd)).not.toContain("docs/ahead.citations.yaml");
+    });
+
+    it("add refuses a line the marker does not anchor, and writes no manifest", async () => {
+      const cwd = copyOf();
+      writeFileSync(join(cwd, "docs/ahead.md"), PAGE);
+      const refused = await refusal(adopt(cwd, "first", { pageLines: { start: 4, end: 4 } }));
+      expect(refused.message).toBe(
+        "docs/ahead.md already has a marker first at line 6, which anchors line 7. Cite a line there, or move the marker.",
+      );
+      expect(filesUnder(cwd)).not.toContain("docs/ahead.citations.yaml");
+    });
+  });
+
   it("add appends to the page's manifest, and to no other file", async () => {
     const cwd = copyOf();
     const timeout = read(cwd, "docs/timeout.citations.yaml");

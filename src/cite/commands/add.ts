@@ -7,7 +7,9 @@
  * frontmatter never moves them. `--marker` writes a `cite <id>` comment above
  * those lines instead, and pins the text it anchors; `--quote` says the lines
  * are a fenced block that reproduces the source. No lines at all is a bare
- * pin: this page rests on these lines, say so when they change.
+ * pin: this page rests on these lines, say so when they change. A marker
+ * written ahead of its entry is adopted, with or without the flag: the entry
+ * pins the text it anchors, and the body does not change.
  *
  * Every refusal is a `CiteError` (exit 2) with the page and the source
  * spelled as the caller spelled them, and nothing is written. Among them are
@@ -367,19 +369,35 @@ export async function runAdd(opts: AddOptions): Promise<AddResult> {
   if (opts.id !== undefined && page.citations.some((c) => c.citation.id === opts.id)) {
     throw new CiteError(`${label} already has an entry ${opts.id}.`);
   }
-  if (marker && opts.id !== undefined) {
-    // Joining an id a marker already names would write it twice into one
-    // list, which is `marker-invalid`. The entry check above catches the
-    // ordinary case; this one is left by a marker whose entry went away.
-    const already = page.statements.find(
-      (s) => s.payload.kind === "ref" && s.payload.ids.includes(opts.id ?? ""),
+  // A marker naming this id, and the entry check above says no entry has it:
+  // it was written ahead of its entry, or its entry went away. The first one
+  // is the one a check anchors the id to. An entry with claim lines or a
+  // pointer beside it is `anchor-invalid`, so with or without `--marker` a
+  // claim on this id can only be the marker's (proposal 0127). A bare pin
+  // asks for no claim, and an entry with none beside a marker is legal.
+  const waiting =
+    opts.id === undefined || (pageLines === undefined && pointer === undefined)
+      ? undefined
+      : page.statements.find((s) => s.payload.kind === "ref" && s.payload.ids.includes(opts.id ?? ""));
+  if (waiting !== undefined) {
+    const named = `${label} already has a marker ${opts.id ?? ""} at line ${String(waiting.line)}`;
+    const anchor = anchoredLines(content, waiting.end, format, quote);
+    if (anchor === undefined) {
+      throw new CiteError(`${named}, which anchors nothing. Move it above the text it cites.`);
+    }
+    if (pageLines === undefined || pageLines.start < anchor.start || pageLines.end > anchor.end) {
+      throw new CiteError(`${named}, which anchors ${spellAt(anchor)}. Cite a line there, or move the marker.`);
+    }
+    const mixed = page.citations.find(
+      (entry) => entry.marker === waiting && (entry.citation.quote === true) !== quote,
     );
-    if (already !== undefined) {
+    if (mixed !== undefined) {
       throw new CiteError(
-        `${label} already has a marker ${opts.id} at line ${String(already.line)}.`,
+        `The marker at line ${String(waiting.line)} also names ${mixed.citation.id ?? ""}, and a quote entry cannot share a marker with a non-quote entry. Give the quote its own marker.`,
       );
     }
   }
+  const marked = marker || waiting !== undefined;
   const lines = splitLines(content);
   if (pageLines !== undefined) {
     if (pageLines.end > lines.length) {
@@ -400,15 +418,17 @@ export async function runAdd(opts: AddOptions): Promise<AddResult> {
       if (span === undefined || span.end !== pageLines.end) {
         throw new CiteError(`${at} is not a fenced block, so it cannot be a quote.`);
       }
-    } else if (!marker) {
+    } else if (!marked) {
       // A pin over a fence or a blank line holds for as long as the page has
       // one, so a check would call it `current` whatever the prose does.
       const empty = emptyClaimRefusal(lines, pageLines, at);
       if (empty !== undefined) throw new CiteError(empty);
     }
     // `add` does not move a marker it did not write, so it refuses to write
-    // where a misplaced one would make its entry wrong (proposal 0054).
-    const split = misplacedMarkers(page, lines);
+    // where a misplaced one would make its entry wrong (proposal 0054). The
+    // marker being adopted is the exception: `update` moves a marker only once
+    // it names an entry, and this run is what gives it one.
+    const split = misplacedMarkers(page, lines).filter((found) => found.line !== waiting?.line);
     const held = split.find(
       (found) => found.line >= pageLines.start && found.line <= pageLines.end,
     );
@@ -417,7 +437,7 @@ export async function runAdd(opts: AddOptions): Promise<AddResult> {
         `${at} holds the marker at line ${String(held.line)}, which splits its paragraph. Run manni cite update first.`,
       );
     }
-    const inside = marker
+    const inside = marked
       ? split.find(
           (found) => pageLines.start >= found.unit.start && pageLines.start <= found.unit.end,
         )
@@ -445,7 +465,7 @@ export async function runAdd(opts: AddOptions): Promise<AddResult> {
 
   // The same claim on the same source twice is one citation reported twice,
   // and the second is what a re-run of a script writes.
-  const duplicate = marker ? undefined : duplicateOf(page, srcRange, pageLines, pointer);
+  const duplicate = marked ? undefined : duplicateOf(page, srcRange, pageLines, pointer);
   if (duplicate !== undefined) {
     const src = shortSrc(spellSource(duplicate.citation.source));
     const what =
@@ -464,13 +484,15 @@ export async function runAdd(opts: AddOptions): Promise<AddResult> {
   let markerAt: number | undefined;
   /** Whether the id joined a marker already there, rather than getting a line. */
   let markerJoined = false;
+  /** Whether the marker was there already and named the id, so the body is unchanged. */
+  let markerAdopted = false;
   let claimSpan: PageLines | undefined;
   let claim: CitationClaim | undefined;
   // Where else the claim's text sits, for the notice at the end of the run.
   let elsewhere: PageLines[] = [];
   // Entries whose claim lines sit below a marker move down with the text.
   let shifted: Shifted = { frontmatter: [], manifest: new Map() };
-  if (marker && pageLines !== undefined) {
+  if (marked && pageLines !== undefined) {
     // The marker goes above the paragraph or block holding the lines, below
     // any markers already stacked there, at its indentation, and the lines
     // must stay inside it.
@@ -524,7 +546,13 @@ export async function runAdd(opts: AddOptions): Promise<AddResult> {
         : undefined;
     /** Where the marker ends in `body`, so what follows it can be anchored. */
     let after: number;
-    if (nearest !== undefined && held !== undefined) {
+    if (waiting !== undefined) {
+      // The marker already says everything the page has to, so no line changes
+      // and nothing below it moves.
+      after = waiting.end;
+      markerAt = waiting.line;
+      markerAdopted = true;
+    } else if (nearest !== undefined && held !== undefined) {
       body = respellStatement(content, nearest, [...held, opts.id ?? ""]);
       // Joining changes one line in place, so nothing below it moves and no
       // claim on the page is re-spelled.
@@ -672,6 +700,7 @@ export async function runAdd(opts: AddOptions): Promise<AddResult> {
   };
   if (markerAt !== undefined) result.markerLine = markerAt + shift;
   if (markerJoined) result.markerJoined = true;
+  if (markerAdopted) result.markerAdopted = true;
   if (claimSpan !== undefined) {
     result.claimLines = { start: claimSpan.start + shift, end: claimSpan.end + shift };
   }

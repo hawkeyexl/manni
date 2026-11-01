@@ -235,7 +235,12 @@ export function addMessage(result: AddResult): string {
   if (result.markerLine !== undefined) {
     const at =
       claimLines === undefined ? "" : `, claim pinned at ${spellAt(claimLines)}`;
-    const wrote = result.markerJoined === true ? "joined the marker at line" : "marker at line";
+    const wrote =
+      result.markerAdopted === true
+        ? "adopted the marker at line"
+        : result.markerJoined === true
+          ? "joined the marker at line"
+          : "marker at line";
     const marked = `${head}; ${wrote} ${String(result.markerLine)}${at}`;
     if (claim === undefined) return marked;
     if (citation.quote === true) return `${marked} (a block that reproduces ${src})`;
@@ -422,7 +427,7 @@ export function buildProgram(): Command {
       "path, path:L or path:L1-L2 relative to --root, or repo:path with the same line forms for a checkout in cite.repos, or an encrypted ~source",
     )
     .option("--id <id>", "kebab-case id, unique on the page; required with --marker")
-    .option("--marker", "write a cite <id> marker above the paragraph holding the page lines and pin the text it anchors")
+    .option("--marker", "write a cite <id> marker above the paragraph holding the page lines and pin the text it anchors; a marker already naming the id is adopted without this flag")
     .option("--quote", "the page lines are a fenced block that reproduces the source")
     .option(
       "--encrypt",
