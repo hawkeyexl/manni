@@ -481,6 +481,12 @@ already nearest the text. Markers stacked above one paragraph all anchor that
 paragraph, and no marker line is ever part of a pin. So joining an id into a
 marker changes no claim hash anywhere on the page.
 
+{/* cite marker-comes-first */}
+A marker can also come before its entry. Write it by hand, and `check` reports
+`marker-orphan` until an entry has that id. `cite add` with that `--id` then
+[adopts the marker](/manni/cite/reference/cli/#a-marker-can-come-first) and pins
+the text it anchors. A marker naming several ids takes them one run at a time.
+
 When the nearest marker already holds 25 ids, `cite add --marker` writes a
 second marker line instead of joining. Two markers over one paragraph are
 legal, and each anchors it.
