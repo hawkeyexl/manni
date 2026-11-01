@@ -369,12 +369,12 @@ export async function runAdd(opts: AddOptions): Promise<AddResult> {
   if (opts.id !== undefined && page.citations.some((c) => c.citation.id === opts.id)) {
     throw new CiteError(`${label} already has an entry ${opts.id}.`);
   }
-  // A marker naming this id, and the entry check above says no entry has it:
-  // it was written ahead of its entry, or its entry went away. The first one
-  // is the one a check anchors the id to. An entry with claim lines or a
-  // pointer beside it is `anchor-invalid`, so with or without `--marker` a
-  // claim on this id can only be the marker's (proposal 0127). A bare pin
-  // asks for no claim, and an entry with none beside a marker is legal.
+  // A marker naming this id, with no entry for it: written ahead of its entry,
+  // or its entry went away. The first one is the one a check anchors the id to.
+  // Claim lines or a pointer beside it are `anchor-invalid`, so with or without
+  // `--marker` a claim on this id can only be the marker's (proposal 0127). A
+  // bare pin asks for no claim, which is legal beside a marker. Each `?? ""`
+  // below is for the compiler: a marker names only ids, so none ever fires.
   const waiting =
     opts.id === undefined || (pageLines === undefined && pointer === undefined)
       ? undefined

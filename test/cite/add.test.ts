@@ -621,6 +621,7 @@ ${CLAIM}`);
         expect(result.markerAdopted).toBe(true);
         expect(result.citation.claim?.lines).toBeUndefined();
         expect(onDisk(plain)).toBe(onDisk(flagged));
+        // "second" still awaits its entry, so one marker-orphan finding remains.
         expect(await recheck(plain)).toEqual({ ends: ["current/current"], findings: ["marker-orphan"] });
       });
 
