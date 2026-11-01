@@ -1,0 +1,5 @@
+[32m✓[39m docs/design/retry.md
+    [32m✓[39m [36mretry-default[39m        marker :23 current   lib/limits.ts:2 current
+    [32m✓[39m [36mretry-default-test[39m   marker :23 current   lib/limits.test.ts:1 current
+
+[32m1 file checked, 1 passed, 0 failed, 0 findings[39m

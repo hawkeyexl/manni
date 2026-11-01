@@ -1,0 +1,1 @@
+docs/design/retry.md: added retry-default to frontmatter; adopted the marker at line 15, claim pinned at line 16 (sha256-615b564b…; source lib/limits.ts:2 "export const RETRIES = 3;", sha256-e9f5bdf9…, bd41a58)

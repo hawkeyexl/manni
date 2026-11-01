@@ -1,0 +1,6 @@
+b1-cat exit 0 91 ms  cat -n docs/design/retry.md
+b2-check exit 1 624 ms  manni cite check docs/design/retry.md
+b3-add exit 0 695 ms  manni cite add docs/design/retry.md:7 lib/limits.ts:2 --id retry-default
+b4-add exit 0 744 ms  manni cite add docs/design/retry.md:16 lib/limits.test.ts:1 --id retry-default-test
+b5-check exit 0 568 ms  manni cite check docs/design/retry.md
+b5-diff exit 0 66 ms  git -c color.ui=always diff --stat docs/design/retry.md

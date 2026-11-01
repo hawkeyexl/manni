@@ -1,0 +1,1 @@
+docs/design/retry.md: added retry-default-test to frontmatter; adopted the marker at line 23, claim pinned at line 24 (sha256-615b564b…; source lib/limits.test.ts:1 "test("retries 3 times", () => expect(RETRIES).toBe(3));", sha256-2bc2ac2f…, bd41a58)

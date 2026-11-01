@@ -1,0 +1,7 @@
+     1	---
+     2	title: Retry spec
+     3	---
+     4	# Retry spec
+     5	
+     6	<!-- cite retry-default retry-default-test -->
+     7	Failed requests retry 3 times by default.

@@ -1,0 +1,12 @@
+{
+    "b1": "     1\t---\n     2\ttitle: Retry spec\n     3\t---\n     4\t# Retry spec\n     5\t\n     6\t<!-- cite retry-default retry-default-test -->\n     7\tFailed requests retry 3 times by default.\n",
+    "b2": "\u001b[31m✗\u001b[39m docs/design/retry.md\n    \u001b[31m✗\u001b[39m \u001b[36mretry-default\u001b[39m   no entry has id \"retry-default\". Fix the marker's id, or add the entry with manni cite add.\u001b[2m   (line 6)\u001b[22m\n      \u001b[2mmanni:cite marker-orphan: A marker names an id no entry has.\u001b[22m\n      \u001b[2mGuide: https://hawkeyexl.github.io/manni/cite/fix/#marker-orphan\u001b[22m\n    \u001b[31m✗\u001b[39m \u001b[36mretry-default-test\u001b[39m   no entry has id \"retry-default-test\". Fix the marker's id, or add the entry with manni cite add.\u001b[2m   (line 6)\u001b[22m\n      \u001b[2mmanni:cite marker-orphan: A marker names an id no entry has.\u001b[22m\n      \u001b[2mGuide: https://hawkeyexl.github.io/manni/cite/fix/#marker-orphan\u001b[22m\n\n\u001b[31m1 file checked, 0 passed, 1 failed, 2 findings\u001b[39m\n",
+    "b3": "docs/design/retry.md: added retry-default to frontmatter; adopted the marker at line 15, claim pinned at line 16 (sha256-615b564b…; source lib/limits.ts:2 \"export const RETRIES = 3;\", sha256-e9f5bdf9…, bd41a58)\n",
+    "b4": "docs/design/retry.md: added retry-default-test to frontmatter; adopted the marker at line 23, claim pinned at line 24 (sha256-615b564b…; source lib/limits.test.ts:1 \"test(\"retries 3 times\", () => expect(RETRIES).toBe(3));\", sha256-2bc2ac2f…, bd41a58)\n",
+    "b5": "\u001b[32m✓\u001b[39m docs/design/retry.md\n    \u001b[32m✓\u001b[39m \u001b[36mretry-default\u001b[39m        marker :23 current   lib/limits.ts:2 current\n    \u001b[32m✓\u001b[39m \u001b[36mretry-default-test\u001b[39m   marker :23 current   lib/limits.test.ts:1 current\n\n\u001b[32m1 file checked, 1 passed, 0 failed, 0 findings\u001b[39m\n",
+    "b5diff": " docs/design/retry.md | 17 \u001b[32m+++++++++++++++++\u001b[m\n 1 file changed, 17 insertions(+)\n",
+    "exits": {
+        "b2": "1",
+        "b5": "0"
+    }
+}
