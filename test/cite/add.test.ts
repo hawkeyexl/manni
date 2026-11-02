@@ -894,6 +894,51 @@ ${CLAIM}`);
       expect(addMessage(result)).toContain(`; marker at line ${String(text - 1)},`);
     });
 
+    it.each([
+      { added: "a quote", nearest: "a plain entry", firstQuote: false },
+      { added: "a plain id", nearest: "a quote", firstQuote: true },
+    ])("writes $added its own marker line when the nearest one names $nearest", async ({ firstQuote }) => {
+      const label = fenced("mixed-kinds.md", ["# Limits", ""], [LINE_2], ["", "After."]);
+      const first = await add({
+        page: label,
+        src: "src/limits.ts:2",
+        pageLines: { start: 6, end: 8 },
+        marker: true,
+        id: "first",
+        ...(firstQuote ? { quote: true } : {}),
+      });
+      const result = await add({
+        page: label,
+        src: "src/limits.ts:2",
+        pageLines: first.claimLines ?? { start: 0, end: 0 },
+        marker: true,
+        id: "second",
+        ...(firstQuote ? {} : { quote: true }),
+      });
+      expect(result.markerJoined).toBeUndefined();
+      expect(onDisk(label)).toContain(`<!-- cite first -->\n<!-- cite second -->\n${OPEN}`);
+      expect(addMessage(result)).toContain(`; marker at line ${String(lineOf(label, "<!-- cite second -->"))},`);
+      expect(await recheck(label)).toEqual(both);
+      // The pair is a state `update` accepts too, not one it moves back.
+      const before = onDisk(label);
+      await runUpdate({ cwd, root: ROOT, noConfig: true, gitClient: noGit(), env: {}, inputs: [label] });
+      expect(onDisk(label)).toBe(before);
+    });
+
+    it("joins a marker whose other ids have no entry, since nothing says what kind they are", async () => {
+      const label = fenced("waiting-kind.md", ["# Limits", "", "<!-- cite waiting -->"], [LINE_2]);
+      const result = await add({
+        page: label,
+        src: "src/limits.ts:2",
+        pageLines: { start: 7, end: 9 },
+        marker: true,
+        quote: true,
+        id: "quoted",
+      });
+      expect(result.markerJoined).toBe(true);
+      expect(onDisk(label)).toContain(`<!-- cite waiting quoted -->\n${OPEN}`);
+    });
+
     it("refuses a marker line, because a marker there would change its pin", async () => {
       const label = twoParagraphs("on-marker.md");
       await add({
