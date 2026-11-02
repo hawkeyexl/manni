@@ -837,7 +837,7 @@ docs/src/content/docs/cite/reference/cli.mdx:
         file: src/cite/commands/add.ts
         lines: 503-585
         integrity: sha256-b4cfffae4a77fb8785c5b061bb9f4a27e211a8e7ca0ff82b89b9f4504ee7ba6c
-        commit-sha: 4dfc5dbd36808d5887487fd63ef304fd08ec8cf8
+        commit-sha: a83e9af974dc843c835429890c46a040a48fa531
     - id: add-marker-indent
       claim:
         lines: 604

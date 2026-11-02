@@ -1379,4 +1379,4 @@ docs/src/content/docs/cite/reference/citations.mdx:
         file: src/cite/commands/add.ts
         lines: 545-554
         integrity: sha256-c1eb12933ae8994733fc751b019757e7dac7177fdd247b0198bd949fe01ab2c8
-        commit-sha: 4dfc5dbd36808d5887487fd63ef304fd08ec8cf8
+        commit-sha: a83e9af974dc843c835429890c46a040a48fa531

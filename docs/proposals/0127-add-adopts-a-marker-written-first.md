@@ -382,9 +382,10 @@ and a pointer. No page that passes `check` today reads differently.
 - A bare `add page src --id X` still clears a `marker-orphan` without pinning the
   sentence, and `check` passes. A team using orphans as a gate could miss that. A
   later proposal can decide whether a bare pin beside a marker deserves a finding.
-- `add --marker --quote` joining a plain marker writes the same mix this proposal
-  refuses on adoption, and the next check reports `anchor-invalid`. That is 0056's
-  join path, and it is left as it was here.
+- `add --marker --quote` joining a plain marker wrote the same mix this proposal
+  refuses on adoption, and the next check reported `anchor-invalid`. That is 0056's
+  join path, which this change left alone. #277 fixes it in the same stack, by
+  writing that id a marker line of its own.
 - One `feat:` commit ships one demo video, per the house rule. It shows the repro
   above, then the two adoptions and the clean check.
 

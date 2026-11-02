@@ -683,7 +683,7 @@ docs/src/content/docs/cite/get-started/index.mdx:
         file: src/cite/commands/add.ts
         lines: 530-586
         integrity: sha256-7cd1f43217de405f01f9a8dc1348eaa2f55ca778dc30733c8e34572610f0e782
-        commit-sha: 4dfc5dbd36808d5887487fd63ef304fd08ec8cf8
+        commit-sha: a83e9af974dc843c835429890c46a040a48fa531
     - id: accept-unit-at-first-line
       claim:
         integrity: sha256-f4ade2718c97c822f58d03ec774b5df36b7a5085f3733656fc96f9dbabdcc802
