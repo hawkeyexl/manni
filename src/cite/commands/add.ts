@@ -380,7 +380,7 @@ export async function runAdd(opts: AddOptions): Promise<AddResult> {
     opts.id === undefined || (pageLines === undefined && pointer === undefined)
       ? undefined
       : page.statements.find((s) => s.payload.kind === "ref" && s.payload.ids.includes(opts.id ?? ""));
-  /** The id of an entry on the marker that a check would call a mix with this one. */
+  /** The id of an entry on the marker whose kind differs from this add's `quote`: a check calls that a mix. */
   const otherKind = (statement: InlineStatement): string | undefined =>
     page.citations.find(
       (entry) => entry.marker === statement && (entry.citation.quote === true) !== quote,
