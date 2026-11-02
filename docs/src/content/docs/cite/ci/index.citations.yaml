@@ -8,7 +8,7 @@ docs/src/content/docs/cite/ci/index.mdx:
         file: src/cite/cli.ts
         lines: 410-412
         integrity: sha256-42f037380b39026477e3aefbac0ae3d2c2c9313cf89892466286592059657b49
-        commit-sha: 34c7c9470a3411d20a30e5baf088a558624e89c3
+        commit-sha: debc3dea5aaf60801ff49aecaac43d26630fbb65
     - id: exit-two-stderr-prefix
       claim:
         lines: 24
@@ -26,7 +26,7 @@ docs/src/content/docs/cite/ci/index.mdx:
         file: src/cite/cli.ts
         lines: 350-354
         integrity: sha256-21210a9c7359a4df4d8ef15e68c05ac5b080775c547873ba0eadd2ac63a668be
-        commit-sha: 34c7c9470a3411d20a30e5baf088a558624e89c3
+        commit-sha: debc3dea5aaf60801ff49aecaac43d26630fbb65
     - id: default-severity-moved-changed
       claim:
         integrity: sha256-08320cb811bad4f7bd945b17c9d2f5829383051044120d2042ddecd28de41ca4
@@ -110,7 +110,7 @@ docs/src/content/docs/cite/ci/index.mdx:
         file: src/cite/cli.ts
         lines: 296-300
         integrity: sha256-d9459f031fc83234358aaa2e641df4733c5699d2b056031ac59e5f00f9384e98
-        commit-sha: 34c7c9470a3411d20a30e5baf088a558624e89c3
+        commit-sha: debc3dea5aaf60801ff49aecaac43d26630fbb65
     - id: format-pretty-quiet
       claim:
         lines: 127
@@ -426,7 +426,7 @@ docs/src/content/docs/cite/ci/index.mdx:
         file: src/cite/cli.ts
         lines: 306-320
         integrity: sha256-e4f3cd5a02728f401d7cef25a206fecd9ffcb39c763807a1cc02dd8d2831aa9e
-        commit-sha: 34c7c9470a3411d20a30e5baf088a558624e89c3
+        commit-sha: debc3dea5aaf60801ff49aecaac43d26630fbb65
     - id: baseline-config-key
       claim:
         lines: 396
