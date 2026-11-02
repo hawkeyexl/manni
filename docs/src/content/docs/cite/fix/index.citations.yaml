@@ -553,17 +553,17 @@ docs/src/content/docs/cite/fix/index.mdx:
         integrity: sha256-c42d16b7dad8d6348cd4554188a1aa2d9cf2060610e8b2def0b350d891e9b42f
       source:
         file: src/cite/commands/add.ts
-        lines: 406-414
+        lines: 410-418
         integrity: sha256-ba16a2e2063d0fbf9215cca117c5539bf9a2223ace142312c5841267bd216074
-        commit-sha: 34c7c9470a3411d20a30e5baf088a558624e89c3
+        commit-sha: f320ae76f3aec9f1d4540ab5c054b4931e0e3586
     - id: add-refuses-frontmatter
       claim:
         integrity: sha256-4b2ebb1c7c0fe58d00f5201b6821c60d0d96f957ef0567ee76278f58093053b1
       source:
         file: src/cite/commands/add.ts
-        lines: 406-414
+        lines: 410-418
         integrity: sha256-ba16a2e2063d0fbf9215cca117c5539bf9a2223ace142312c5841267bd216074
-        commit-sha: 34c7c9470a3411d20a30e5baf088a558624e89c3
+        commit-sha: f320ae76f3aec9f1d4540ab5c054b4931e0e3586
     - id: entry-invalid-duplicate-sample
       claim:
         lines: 632
@@ -797,6 +797,6 @@ docs/src/content/docs/cite/fix/index.mdx:
         integrity: sha256-a587e01a0a75061c9cde76cf580bc74b90f3c51d78c628ceebac641e79040cbb
       source:
         file: src/cite/commands/add.ts
-        lines: 549-554
+        lines: 557-562
         integrity: sha256-a21f276d9a65d2c2450ac627478bf3ea7dbfba12e173cd912dc06e1d246e5eeb
-        commit-sha: 34c7c9470a3411d20a30e5baf088a558624e89c3
+        commit-sha: f320ae76f3aec9f1d4540ab5c054b4931e0e3586

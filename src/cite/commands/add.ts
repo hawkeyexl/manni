@@ -81,6 +81,7 @@ import type {
   CitationClaim,
   Checkout,
   CheckoutResolver,
+  InlineStatement,
   PageCitation,
   PageCitations,
   PageLines,
@@ -379,6 +380,11 @@ export async function runAdd(opts: AddOptions): Promise<AddResult> {
     opts.id === undefined || (pageLines === undefined && pointer === undefined)
       ? undefined
       : page.statements.find((s) => s.payload.kind === "ref" && s.payload.ids.includes(opts.id ?? ""));
+  /** The id of an entry on the marker whose kind differs from this add's `quote`: a check calls that a mix. */
+  const otherKind = (statement: InlineStatement): string | undefined =>
+    page.citations.find(
+      (entry) => entry.marker === statement && (entry.citation.quote === true) !== quote,
+    )?.citation.id;
   if (waiting !== undefined) {
     const named = `${label} already has a marker ${opts.id ?? ""} at line ${String(waiting.line)}`;
     const anchor = anchoredLines(content, waiting.end, format, quote);
@@ -388,12 +394,10 @@ export async function runAdd(opts: AddOptions): Promise<AddResult> {
     if (pageLines === undefined || pageLines.start < anchor.start || pageLines.end > anchor.end) {
       throw new CiteError(`${named}, which anchors ${spellAt(anchor)}. Cite a line there, or move the marker.`);
     }
-    const mixed = page.citations.find(
-      (entry) => entry.marker === waiting && (entry.citation.quote === true) !== quote,
-    );
+    const mixed = otherKind(waiting);
     if (mixed !== undefined) {
       throw new CiteError(
-        `The marker at line ${String(waiting.line)} also names ${mixed.citation.id ?? ""}, and a quote entry cannot share a marker with a non-quote entry. Give the quote its own marker.`,
+        `The marker at line ${String(waiting.line)} also names ${mixed}, and a quote entry cannot share a marker with a non-quote entry. Give the quote its own marker.`,
       );
     }
   }
@@ -537,11 +541,15 @@ export async function runAdd(opts: AddOptions): Promise<AddResult> {
     // So is one whose delimiters sit on different lines. That parses, but
     // respelling it folds it onto one line, and the claims below it would
     // then all be one line out while this path shifts nothing.
+    //
+    // And so is one naming an entry of the other kind, since a quote and a
+    // plain entry on one marker are `anchor-invalid`, and two markers are not.
     const held =
       nearest !== undefined &&
       nearest.payload.kind === "ref" &&
       nearest.payload.ids.length < MAX_IDS_PER_MARKER &&
-      !/[\r\n]/.test(nearest.raw)
+      !/[\r\n]/.test(nearest.raw) &&
+      otherKind(nearest) === undefined
         ? nearest.payload.ids
         : undefined;
     /** Where the marker ends in `body`, so what follows it can be anchored. */
