@@ -740,6 +740,11 @@ export interface AddResult {
    */
   markerJoined?: boolean;
   /**
+   * Whether a marker already there named the id before this run, with no entry
+   * for it, so the entry pins what it anchors and the page body is unchanged.
+   */
+  markerAdopted?: boolean;
+  /**
    * The first pinned source line, as the file holds it, so a mis-typed range
    * is visible at write time. Absent for a whole file, which has no first
    * line worth naming, and for an encrypted source, which no output reveals.

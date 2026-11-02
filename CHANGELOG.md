@@ -4,6 +4,13 @@
 4.13.1. Entries below that version are docmeta releases; the repository
 history is the same one.
 
+## [4.27.2](https://github.com/hawkeyexl/manni/compare/v4.27.1...v4.27.2) (2026-10-28)
+
+
+### Bug Fixes
+
+* **term:** fill follows .htm, .markdown and .asciidoc pages ([#263](https://github.com/hawkeyexl/manni/issues/263)) ([34b1b7a](https://github.com/hawkeyexl/manni/commit/34b1b7a9c3ccdb1c30c50e46c4da26fe67520e05))
+
 ## [4.27.1](https://github.com/hawkeyexl/manni/compare/v4.27.0...v4.27.1) (2026-10-28)
 
 

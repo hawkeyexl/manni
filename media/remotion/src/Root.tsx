@@ -24,6 +24,7 @@ import { beats as conceptsBeats, totalFrames as conceptsTotalFrames, TYPING_MS a
 import { beats as graphFormatsBeats, totalFrames as graphFormatsTotalFrames, TYPING_MS as graphFormatsTypingMs } from "./graph-formats/beats";
 import { beats as findingsBeats, totalFrames as findingsTotalFrames, TYPING_MS as findingsTypingMs } from "./findings/beats";
 import { beats as citeReposBeats, totalFrames as citeReposTotalFrames, TYPING_MS as citeReposTypingMs } from "./cite-repos/beats";
+import { beats as citeAddAdoptsBeats, totalFrames as citeAddAdoptsTotalFrames, TYPING_MS as citeAddAdoptsTypingMs } from "./cite-add-adopts/beats";
 import { beats as pluginMetadataBeats, totalFrames as pluginMetadataTotalFrames, TYPING_MS as pluginMetadataTypingMs } from "./plugin-metadata/beats";
 import { beats as tasksBeats, totalFrames as tasksTotalFrames, TYPING_MS as tasksTypingMs } from "./tasks/beats";
 import { beats as strategyStepsBeats, totalFrames as strategyStepsTotalFrames, TYPING_MS as strategyStepsTypingMs } from "./strategy-steps/beats";
@@ -179,6 +180,12 @@ const DemoConcepts: React.FC = () => <DemoView beats={conceptsBeats} fontPx={23}
  * (media/capture-repos/cols.mjs). Ligatures off: a terminal prints `--`, `../` and `@@` as characters.
  */
 const DemoCiteRepos: React.FC = () => <DemoView beats={citeReposBeats} fontPx={21} linePx={30} cols={82} typingMs={citeReposTypingMs} ligatures={false} />;
+
+/**
+ * cite-add-adopts-1x1: 26 px / 66 columns, derived in media/cite-add-adopts-1x1.script.md
+ * (media/capture-cite-adopts/cols.mjs). Ligatures off: a terminal prints `--` and `=>` as characters.
+ */
+const DemoCiteAddAdopts: React.FC = () => <DemoView beats={citeAddAdoptsBeats} fontPx={26} linePx={36} cols={66} typingMs={citeAddAdoptsTypingMs} ligatures={false} />;
 
 /**
  * plugin-metadata-1x1: 28 px / 61 columns, derived in media/plugin-metadata/plugin-metadata-1x1.script.md
@@ -478,6 +485,14 @@ export const Root: React.FC = () => (
       height={1080}
       fps={FPS}
       durationInFrames={citeReposTotalFrames}
+    />
+    <Composition
+      id="CiteAddAdoptsDemo"
+      component={DemoCiteAddAdopts}
+      width={1080}
+      height={1080}
+      fps={FPS}
+      durationInFrames={citeAddAdoptsTotalFrames}
     />
     <Composition
       id="PluginMetadataDemo"

@@ -1,0 +1,11 @@
+You can write a spec page before the code exists. Pinning it later used to fail.
+
+`manni cite` pins a sentence to the source lines it rests on. A team can name each checkable claim with a marker first. The check lists every one as an orphan and fails, which is the to-do list.
+
+Once the code lands and a reviewer confirms the claim, `manni cite add` now adopts the marker. It pins what the marker anchors and leaves the sentence alone. Before, the same command wrote an entry that the next check rejected.
+
+Two claims, two adds, one clean check. The git diff shows insertions only.
+
+Real output from a real repository. Only the input is staged.
+
+npm i -g @hawkeyexl/manni · manni cite add

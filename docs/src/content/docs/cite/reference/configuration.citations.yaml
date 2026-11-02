@@ -222,9 +222,9 @@ docs/src/content/docs/cite/reference/configuration.mdx:
         integrity: sha256-32e04d8b6c6640a44eca79f44945bfed9c60f4e4e25705ee6d4fb419f238661a
       source:
         file: src/cite/commands/add.ts
-        lines: 708-712
+        lines: 745-749
         integrity: sha256-2e9e155a78a4e1571809ecb97cd125a13925a661c01306bd947a9c93cb8d8c4f
-        commit-sha: e9388316c721185044c2c16f35a31b957c3e1d41
+        commit-sha: f320ae76f3aec9f1d4540ab5c054b4931e0e3586
     - id: unknown-keys-error
       claim:
         integrity: sha256-37ca0fb41356b8c08b12aeb6216c5c73b58c1fd289843f4eb28a415aafbb0910
@@ -321,9 +321,9 @@ docs/src/content/docs/cite/reference/configuration.mdx:
         integrity: sha256-f69b4affd25ede614ddd795a6624864016e7ad9eb1fd889099e5b3036d630f19
       source:
         file: src/cite/cli.ts
-        lines: 361
+        lines: 366
         integrity: sha256-69b334a1f042cccb2050c6fd91eb383ed6c01f4f3ad2fbf47557f707eaa8eb8c
-        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
+        commit-sha: 34c7c9470a3411d20a30e5baf088a558624e89c3
     - id: machine-formats
       claim:
         integrity: sha256-f69b4affd25ede614ddd795a6624864016e7ad9eb1fd889099e5b3036d630f19
@@ -407,9 +407,9 @@ docs/src/content/docs/cite/reference/configuration.mdx:
         integrity: sha256-8a44e634704e00d6e35a37b49441f79c1912905e7d55e2b5012677a067c8cab8
       source:
         file: src/cite/commands/add.ts
-        lines: 585-591
+        lines: 621-627
         integrity: sha256-38e382c7d00ac5ed995437d77ccd64b63eef323ddaef18f95486cd4537a6ef31
-        commit-sha: e9388316c721185044c2c16f35a31b957c3e1d41
+        commit-sha: f320ae76f3aec9f1d4540ab5c054b4931e0e3586
     - id: check-decrypts
       claim:
         integrity: sha256-8a44e634704e00d6e35a37b49441f79c1912905e7d55e2b5012677a067c8cab8
@@ -439,9 +439,9 @@ docs/src/content/docs/cite/reference/configuration.mdx:
         integrity: sha256-f095ba949ddf8352526dd7989dcc22ba76c78e63804ad82f33f8df0d90073b4a
       source:
         file: src/cite/cli.ts
-        lines: 405-407
+        lines: 410-412
         integrity: sha256-42f037380b39026477e3aefbac0ae3d2c2c9313cf89892466286592059657b49
-        commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
+        commit-sha: 34c7c9470a3411d20a30e5baf088a558624e89c3
     - id: severity-off-dropped
       claim:
         integrity: sha256-f095ba949ddf8352526dd7989dcc22ba76c78e63804ad82f33f8df0d90073b4a
