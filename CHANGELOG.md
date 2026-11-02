@@ -4,6 +4,13 @@
 4.13.1. Entries below that version are docmeta releases; the repository
 history is the same one.
 
+# [4.28.0](https://github.com/hawkeyexl/manni/compare/v4.27.2...v4.28.0) (2026-11-02)
+
+
+### Features
+
+* **cite:** add adopts a marker written ahead of its entry ([#276](https://github.com/hawkeyexl/manni/issues/276)) ([debc3de](https://github.com/hawkeyexl/manni/commit/debc3dea5aaf60801ff49aecaac43d26630fbb65))
+
 ## [4.27.2](https://github.com/hawkeyexl/manni/compare/v4.27.1...v4.27.2) (2026-10-28)
 
 

@@ -485,7 +485,7 @@ docs/src/content/docs/cite/fix/index.mdx:
         file: src/cite/cli.ts
         lines: 429-430
         integrity: sha256-6f5f61bbd2a83ea02a82cc23534be3875444a5a9851c8c2e8406d6a05297d4f1
-        commit-sha: 34c7c9470a3411d20a30e5baf088a558624e89c3
+        commit-sha: debc3dea5aaf60801ff49aecaac43d26630fbb65
     - id: marker-repeated-sample
       claim:
         lines: 554
@@ -555,7 +555,7 @@ docs/src/content/docs/cite/fix/index.mdx:
         file: src/cite/commands/add.ts
         lines: 410-418
         integrity: sha256-ba16a2e2063d0fbf9215cca117c5539bf9a2223ace142312c5841267bd216074
-        commit-sha: f320ae76f3aec9f1d4540ab5c054b4931e0e3586
+        commit-sha: debc3dea5aaf60801ff49aecaac43d26630fbb65
     - id: add-refuses-frontmatter
       claim:
         integrity: sha256-4b2ebb1c7c0fe58d00f5201b6821c60d0d96f957ef0567ee76278f58093053b1
@@ -563,7 +563,7 @@ docs/src/content/docs/cite/fix/index.mdx:
         file: src/cite/commands/add.ts
         lines: 410-418
         integrity: sha256-ba16a2e2063d0fbf9215cca117c5539bf9a2223ace142312c5841267bd216074
-        commit-sha: f320ae76f3aec9f1d4540ab5c054b4931e0e3586
+        commit-sha: debc3dea5aaf60801ff49aecaac43d26630fbb65
     - id: entry-invalid-duplicate-sample
       claim:
         lines: 632
@@ -667,7 +667,7 @@ docs/src/content/docs/cite/fix/index.mdx:
         file: src/cite/cli.ts
         lines: 410-412
         integrity: sha256-42f037380b39026477e3aefbac0ae3d2c2c9313cf89892466286592059657b49
-        commit-sha: 34c7c9470a3411d20a30e5baf088a558624e89c3
+        commit-sha: debc3dea5aaf60801ff49aecaac43d26630fbb65
     - id: exit-table-one-check
       claim:
         lines: 731
@@ -712,7 +712,7 @@ docs/src/content/docs/cite/fix/index.mdx:
         file: src/cite/cli.ts
         lines: 350-354
         integrity: sha256-21210a9c7359a4df4d8ef15e68c05ac5b080775c547873ba0eadd2ac63a668be
-        commit-sha: 34c7c9470a3411d20a30e5baf088a558624e89c3
+        commit-sha: debc3dea5aaf60801ff49aecaac43d26630fbb65
     - id: exit-table-two-update-no-check-sources
       claim:
         lines: 732
@@ -721,7 +721,7 @@ docs/src/content/docs/cite/fix/index.mdx:
         file: src/cite/cli.ts
         lines: 575-579
         integrity: sha256-02ef0a00b5e7384ebd83f6896396ed517e5bfd5fbe6002090012ba5aec6cf2ea
-        commit-sha: 34c7c9470a3411d20a30e5baf088a558624e89c3
+        commit-sha: debc3dea5aaf60801ff49aecaac43d26630fbb65
     - id: exit-table-two-url-manifest
       claim:
         lines: 732
@@ -799,4 +799,4 @@ docs/src/content/docs/cite/fix/index.mdx:
         file: src/cite/commands/add.ts
         lines: 557-562
         integrity: sha256-a21f276d9a65d2c2450ac627478bf3ea7dbfba12e173cd912dc06e1d246e5eeb
-        commit-sha: f320ae76f3aec9f1d4540ab5c054b4931e0e3586
+        commit-sha: debc3dea5aaf60801ff49aecaac43d26630fbb65
