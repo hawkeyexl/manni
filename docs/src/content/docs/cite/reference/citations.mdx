@@ -569,8 +569,10 @@ mean two spans. That mix is `anchor-invalid`:
 quoted-limits: a quote entry shares a marker with a non-quote entry. Give the quote its own marker.
 ```
 
+{/* cite quote-plain-stacked-markers */}
 A marker whose ids are all quotes is legal, and so is one whose ids are all
-plain.
+plain. Two markers stacked above one block are legal too, one for each kind, and
+`cite add --marker` writes the second one instead of joining the first.
 
 ### Quotes
 
