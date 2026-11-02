@@ -1,0 +1,29 @@
+WEBVTT
+
+NOTE Captions are burned into cite-add-adopts-1x1.mp4 (LinkedIn autoplays muted). This sidecar carries the same text for players and for hosts that accept a caption track. Silent video: there is no narration and no sound, and the terminal text is in the transcript.
+
+1
+00:00:00.000 --> 00:00:05.167
+Spec before code
+The spec comes first. A marker names two claims that no entry pins yet.
+
+2
+00:00:05.167 --> 00:00:13.433
+The to-do list
+check lists a marker-orphan for each id. Exit 1 is the to-do list.
+
+3
+00:00:13.433 --> 00:00:22.567
+Pin the first claim
+add adopts the marker. No --marker flag, and the sentence is untouched.
+
+4
+00:00:22.567 --> 00:00:31.733
+Pin the second claim
+The sentence sits at line 16 now. The first entry grew the frontmatter.
+
+5
+00:00:31.733 --> 00:00:42.667
+Nothing left to fix
+Both rows current, exit 0. The diff holds insertions only, no edits.
+

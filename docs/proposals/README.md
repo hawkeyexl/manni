@@ -142,6 +142,7 @@ These came out of a review of the shipped product against the intent recorded in
 | [0123](0123-whole-graph-start-and-random-node.md) | Open the whole graph by default and discover nodes with a dice button | Maya · M18 / Sara · S17 | Implemented (worktree) |
 | [0124](0124-random-node-searches-the-whole-graph.md) | Let random-node discovery jump beyond the current neighborhood | Maya · M18 / Sara · S17 | Implemented (worktree) |
 | [0125](0125-madcap-flare-projects.md) | Read and write MadCap Flare projects across meta, lint, graph, term, docevals and site | Maya · M1, M10, M18 / Devin · D16 / Sara · S6 | Implemented (#257, #258, #259, #260, #261) |
+| [0127](0127-add-adopts-a-marker-written-first.md) | `cite add` adopts a marker written ahead of its entry, with or without `--marker`. The entry pins the text the marker anchors, and the body does not change | Maya · M5 / Theo · T2 | Implemented (#276) |
 
 0014 was not in the original review. It surfaced while stress-testing 0004, and is the most severe item in the set. **docmeta currently exits `0` when it validates nothing at all**, including when an explicitly named file does not exist.
 

@@ -27,6 +27,7 @@ import { parse as parseYaml } from "yaml";
 import { addMessage } from "../../src/cite/cli.js";
 import { runAdd } from "../../src/cite/commands/add.js";
 import { runCheck } from "../../src/cite/commands/check.js";
+import { runUpdate } from "../../src/cite/commands/update.js";
 import { noGit } from "../../src/cite/core/git.js";
 import { hashRange } from "../../src/cite/core/hash.js";
 import { readPage } from "../../src/cite/core/page.js";
@@ -362,21 +363,6 @@ describe("runAdd", () => {
       ).toBe("--marker needs --id: the marker names the entry.");
     });
 
-    it("refuses an id the page already marks, naming the marker's line", async () => {
-      workspace("marker-orphan.md");
-      expect(
-        await refusal(
-          add({
-            page: "pages/marker-orphan.md",
-            src: "src/limits.ts:3",
-            pageLines: { start: 13, end: 13 },
-            marker: true,
-            id: "nope",
-          }),
-        ),
-      ).toBe("pages/marker-orphan.md already has a marker nope at line 12.");
-    });
-
     it("refuses lines with nothing for a marker to anchor", async () => {
       const label = write("blank.md", ["---", "title: Limits", "---", "# Limits", "", "", ""]);
       expect(
@@ -449,6 +435,224 @@ describe("runAdd", () => {
         `${label}:7 is in a block at lines 6-5007 that spans 5002 lines, more than 5000. A marker anchors the whole block.`,
       );
       expect(onDisk(label)).toBe(before);
+    });
+  });
+
+  describe("a marker written ahead of its entry", () => {
+    const MARKER = "<!-- cite first second -->";
+    /** A page whose marker names two ids no entry has yet, over one sentence at line 7. */
+    const ahead = (name = "ahead.md"): string =>
+      write(name, ["---", "title: Limits", "---", "# Limits", "", MARKER, CLAIM, "", "Another sentence."]);
+    const pin = (label: string, id: string, over: Partial<AddOptions> = {}): Promise<AddResult> =>
+      add({ page: label, src: "src/limits.ts:2", pageLines: { start: 7, end: 7 }, marker: true, id, ...over });
+    /** The page below its frontmatter, which is the part adoption must leave alone. */
+    const bodyOf = (label: string): string => onDisk(label).slice(onDisk(label).indexOf("# Limits"));
+    const refused = (label: string, id: string): string =>
+      `${label} already has a marker ${id} at line 6, which anchors line 7. Cite a line there, or move the marker.`;
+    const lineHolding = (label: string, text: string): number =>
+      onDisk(label).split("\n").findIndex((line) => line.includes(text)) + 1;
+
+    it("writes the entry over the text it anchors and leaves the body alone", async () => {
+      const label = ahead();
+      const before = bodyOf(label);
+      const result = await pin(label, "first");
+      expect(result.markerAdopted).toBe(true);
+      expect(result.markerJoined).toBeUndefined();
+      expect(result.citation.claim).toEqual({ integrity: CLAIM_PIN });
+      expect(bodyOf(label)).toBe(before);
+      const now = lineHolding(label, CLAIM);
+      expect(result.markerLine).toBe(now - 1);
+      expect(result.claimLines).toEqual({ start: now, end: now });
+      expect(addMessage(result)).toBe(
+        `${label}: added first to frontmatter; adopted the marker at line ${String(now - 1)}, claim pinned at line ${String(now)} (sha256-921b21cc…; source src/limits.ts:2 "${LINE_2}", sha256-78af1d33…, no commit)`,
+      );
+    });
+
+    it("pins each id of a list one at a time, and the orphans clear one by one", async () => {
+      const label = ahead();
+      await pin(label, "first");
+      expect(await recheck(label)).toEqual({ ends: ["current/current"], findings: ["marker-orphan"] });
+      const now = lineHolding(label, CLAIM);
+      await pin(label, "second", { src: "src/limits.ts:3", pageLines: { start: now, end: now } });
+      expect(await recheck(label)).toEqual({ ends: ["current/current", "current/current"], findings: [] });
+      expect(bodyOf(label)).toContain(`${MARKER}\n${CLAIM}`);
+    });
+
+    it("takes any line of the paragraph it anchors, and pins the whole paragraph", async () => {
+      const label = write("wrapped.md", ["---", "title: Limits", "---", "# Limits", "", "<!-- cite first -->", "The fetch timeout is", "10 seconds."]);
+      const result = await pin(label, "first", { pageLines: { start: 8, end: 8 } });
+      expect(result.markerAdopted).toBe(true);
+      const now = lineHolding(label, "The fetch timeout is");
+      expect(result.claimLines).toEqual({ start: now, end: now + 1 });
+      expect(await recheck(label)).toEqual(CURRENT);
+    });
+
+    it.each([
+      ["an html comment", "form.md", "<!-- cite first -->"],
+      ["a link reference comment", "form.md", "[comment]: # (cite first)"],
+      ["a jsx comment", "form.mdx", "{/* cite first */}"],
+      ["an html comment read as mdx", "form.mdx", "<!-- cite first -->"],
+      ["an asciidoc comment", "form.adoc", "// (cite first)"],
+      ["an rst comment", "form.rst", ".. (cite first)"],
+    ])("adopts %s in %s", async (_name, file, marker) => {
+      const label = write(file, ["---", "title: Limits", "---", "", marker, CLAIM]);
+      const before = onDisk(label).slice(onDisk(label).indexOf(marker));
+      const result = await add({ page: label, src: "src/limits.ts:2", pageLines: { start: 6, end: 6 }, marker: true, id: "first" });
+      expect(result.markerAdopted).toBe(true);
+      expect(onDisk(label).endsWith(before)).toBe(true);
+      expect(await recheck(label)).toEqual(CURRENT);
+    });
+
+    it("adopts a marker on the text's own line, and pins that line", async () => {
+      const label = write("own-line.md", ["---", "title: Limits", "---", "# Limits", "", `<!-- cite first --> ${CLAIM}`]);
+      const result = await add({ page: label, src: "src/limits.ts:2", pageLines: { start: 6, end: 6 }, marker: true, id: "first" });
+      expect(result.markerAdopted).toBe(true);
+      expect(onDisk(label)).toContain(`<!-- cite first --> ${CLAIM}`);
+      expect(await recheck(label)).toEqual(CURRENT);
+    });
+
+    it("adopts a marker in a stack, and keeps every marker where it was", async () => {
+      const label = write("stack.md", ["---", "title: Limits", "---", "# Limits", "", "<!-- cite first -->", "<!-- cite second -->", CLAIM]);
+      const result = await add({ page: label, src: "src/limits.ts:2", pageLines: { start: 8, end: 8 }, marker: true, id: "first" });
+      expect(result.markerAdopted).toBe(true);
+      expect(onDisk(label)).toContain(`<!-- cite first -->\n<!-- cite second -->\n${CLAIM}`);
+      expect(await recheck(label)).toEqual({ ends: ["current/current"], findings: ["marker-orphan"] });
+    });
+
+    it("adopts a marker whose delimiters span lines, without folding it", async () => {
+      const label = write("wrapped-marker.md", ["---", "title: Limits", "---", "# Limits", "", "<!-- cite", "  first", "-->", CLAIM]);
+      const result = await add({ page: label, src: "src/limits.ts:2", pageLines: { start: 9, end: 9 }, marker: true, id: "first" });
+      expect(result.markerAdopted).toBe(true);
+      expect(onDisk(label)).toContain(`<!-- cite\n  first\n-->\n${CLAIM}`);
+      expect(await recheck(label)).toEqual(CURRENT);
+    });
+
+    it("adopts the first of two markers naming the id, which is the one a check anchors", async () => {
+      const label = write("repeated.md", ["---", "title: Limits", "---", "# Limits", "", "<!-- cite first -->", CLAIM, "", "<!-- cite first -->", "Another sentence."]);
+      expect(await refusal(pin(label, "first", { pageLines: { start: 10, end: 10 } }))).toBe(refused(label, "first"));
+      await pin(label, "first");
+      expect(await recheck(label)).toEqual({ ends: ["current/current"], findings: ["marker-repeated"] });
+    });
+
+    it("adopts a marker above a block with --quote, and checks the block against the source", async () => {
+      const label = fenced("quote.md", ["# Limits", "", "<!-- cite first -->"], LINES_1_3);
+      const result = await add({ page: label, src: "src/limits.ts:1-3", pageLines: { start: 7, end: 11 }, marker: true, quote: true, id: "first" });
+      expect(result.markerAdopted).toBe(true);
+      expect(result.citation.quote).toBe(true);
+      expect(await recheck(label)).toEqual(CURRENT);
+    });
+
+    it("refuses a quote beside a plain entry on one marker, which a check would reject", async () => {
+      const label = fenced("mixed.md", ["# Limits", "", "<!-- cite first second -->", CLAIM, ""], LINES_1_3);
+      await add({ page: label, src: "src/limits.ts:2", pageLines: { start: 7, end: 7 }, marker: true, id: "first" });
+      const before = onDisk(label);
+      const open = lineHolding(label, OPEN);
+      expect(
+        await refusal(add({ page: label, src: "src/limits.ts:1-3", pageLines: { start: open, end: open + 4 }, marker: true, quote: true, id: "second" })),
+      ).toBe(
+        `The marker at line ${String(lineHolding(label, "<!-- cite"))} also names first, and a quote entry cannot share a marker with a non-quote entry. Give the quote its own marker.`,
+      );
+      expect(onDisk(label)).toBe(before);
+    });
+
+    it("adopts a marker splitting its paragraph, and update can then move it", async () => {
+      const label = write("split-ahead.md", ["---", "title: Limits", "---", "# Limits", "", "Pages are checked one at a time.", "<!-- cite first -->", CLAIM]);
+      const result = await add({ page: label, src: "src/limits.ts:2", pageLines: { start: 8, end: 8 }, marker: true, id: "first" });
+      expect(result.markerAdopted).toBe(true);
+      expect((await recheck(label)).findings).toEqual(["marker-misplaced", "claim-moved"]);
+      await runUpdate({ cwd, root: ROOT, noConfig: true, gitClient: noGit(), env: {}, inputs: [label] });
+      expect(onDisk(label)).toContain(`<!-- cite first -->
+Pages are checked one at a time.
+${CLAIM}`);
+      expect(await recheck(label)).toEqual(CURRENT);
+    });
+
+    it("refuses lines outside what it anchors, naming the marker and the line it anchors", async () => {
+      const label = ahead();
+      const before = onDisk(label);
+      expect(await refusal(pin(label, "first", { pageLines: { start: 9, end: 9 } }))).toBe(refused(label, "first"));
+      expect(await refusal(pin(label, "first", { pageLines: { start: 7, end: 9 } }))).toBe(refused(label, "first"));
+      expect(await refusal(pin(label, "first", { pageLines: { start: 6, end: 6 } }))).toBe(refused(label, "first"));
+      expect(onDisk(label)).toBe(before);
+    });
+
+    it("spells a paragraph it anchors as a range in the refusal", async () => {
+      const label = write("range.md", ["---", "title: Limits", "---", "# Limits", "", "<!-- cite first -->", "The fetch timeout is", "10 seconds.", "", "Another sentence."]);
+      expect(await refusal(pin(label, "first", { pageLines: { start: 10, end: 10 } }))).toBe(
+        `${label} already has a marker first at line 6, which anchors lines 7-8. Cite a line there, or move the marker.`,
+      );
+    });
+
+    it("refuses a marker that anchors nothing", async () => {
+      const label = write("nothing.md", ["---", "title: Limits", "---", "# Limits", "", CLAIM, "", "<!-- cite first -->"]);
+      expect(await refusal(pin(label, "first", { pageLines: { start: 6, end: 6 } }))).toBe(
+        `${label} already has a marker first at line 8, which anchors nothing. Move it above the text it cites.`,
+      );
+    });
+
+    it("leaves an id that already has an entry refused as before", async () => {
+      const label = ahead();
+      await pin(label, "first");
+      const before = onDisk(label);
+      const now = lineHolding(label, CLAIM);
+      expect(await refusal(pin(label, "first", { pageLines: { start: now, end: now } }))).toBe(
+        `${label} already has an entry first.`,
+      );
+      expect(onDisk(label)).toBe(before);
+    });
+
+    it("writes nothing under --dry-run, and the diff holds only the entry", async () => {
+      const label = ahead();
+      const before = onDisk(label);
+      const result = await pin(label, "first", { dryRun: true });
+      expect(result.written).toBe(false);
+      expect(result.markerAdopted).toBe(true);
+      expect(onDisk(label)).toBe(before);
+      expect(result.diff).toContain("+  - id: first");
+      expect(result.diff).not.toContain(MARKER);
+    });
+
+    describe("with no --marker", () => {
+      it("adopts it, and writes the bytes --marker writes", async () => {
+        const flagged = ahead("flagged.md");
+        const plain = ahead("plain.md");
+        await pin(flagged, "first");
+        const result = await pin(plain, "first", { marker: undefined });
+        expect(result.markerAdopted).toBe(true);
+        expect(result.citation.claim?.lines).toBeUndefined();
+        expect(onDisk(plain)).toBe(onDisk(flagged));
+        // "second" still awaits its entry, so one marker-orphan finding remains.
+        expect(await recheck(plain)).toEqual({ ends: ["current/current"], findings: ["marker-orphan"] });
+      });
+
+      it("refuses lines outside what it anchors, rather than write lines and a marker", async () => {
+        const label = ahead();
+        const before = onDisk(label);
+        expect(await refusal(pin(label, "first", { marker: undefined, pageLines: { start: 9, end: 9 } }))).toBe(refused(label, "first"));
+        expect(onDisk(label)).toBe(before);
+      });
+
+      it("leaves a bare pin as it was, since an entry with no claim beside a marker is legal", async () => {
+        const label = ahead();
+        const result = await pin(label, "first", { marker: undefined, pageLines: undefined });
+        expect(result.markerAdopted).toBeUndefined();
+        expect(result.citation.claim).toBeUndefined();
+        expect(await recheck(label)).toEqual({ ends: ["none/current"], findings: ["marker-orphan"] });
+      });
+
+      it("refuses a metadata value, which cannot share an entry with a marker", async () => {
+        const label = write("record.md", ["---", "type: persona", "id: theo", "title: Theo", "pains:", "  - Too slow.", "---", "# Theo", "", "<!-- cite first -->", CLAIM]);
+        expect(await refusal(add({ page: `${label}#/pains/0`, src: "src/limits.ts:2", id: "first" }))).toBe(
+          `${label} already has a marker first at line 10, which anchors line 11. Cite a line there, or move the marker.`,
+        );
+      });
+
+      it("still writes claim lines for an id no marker names", async () => {
+        const label = ahead();
+        const result = await pin(label, "third", { marker: undefined });
+        expect(result.markerAdopted).toBeUndefined();
+        expect(result.citation.claim?.lines).toBe(4);
+      });
     });
   });
 
@@ -688,6 +892,51 @@ describe("runAdd", () => {
       expect(after[text - 2]).toBe("<!-- cite twenty-sixth -->");
       expect(after[text - 3]).toBe(`<!-- cite ${held.join(" ")} -->`);
       expect(addMessage(result)).toContain(`; marker at line ${String(text - 1)},`);
+    });
+
+    it.each([
+      { added: "a quote", nearest: "a plain entry", firstQuote: false },
+      { added: "a plain id", nearest: "a quote", firstQuote: true },
+    ])("writes $added its own marker line when the nearest one names $nearest", async ({ firstQuote }) => {
+      const label = fenced("mixed-kinds.md", ["# Limits", ""], [LINE_2], ["", "After."]);
+      const first = await add({
+        page: label,
+        src: "src/limits.ts:2",
+        pageLines: { start: 6, end: 8 },
+        marker: true,
+        id: "first",
+        ...(firstQuote ? { quote: true } : {}),
+      });
+      const result = await add({
+        page: label,
+        src: "src/limits.ts:2",
+        pageLines: first.claimLines ?? { start: 0, end: 0 },
+        marker: true,
+        id: "second",
+        ...(firstQuote ? {} : { quote: true }),
+      });
+      expect(result.markerJoined).toBeUndefined();
+      expect(onDisk(label)).toContain(`<!-- cite first -->\n<!-- cite second -->\n${OPEN}`);
+      expect(addMessage(result)).toContain(`; marker at line ${String(lineOf(label, "<!-- cite second -->"))},`);
+      expect(await recheck(label)).toEqual(both);
+      // The pair is a state `update` accepts too, not one it moves back.
+      const before = onDisk(label);
+      await runUpdate({ cwd, root: ROOT, noConfig: true, gitClient: noGit(), env: {}, inputs: [label] });
+      expect(onDisk(label)).toBe(before);
+    });
+
+    it("joins a marker whose other ids have no entry, since nothing says what kind they are", async () => {
+      const label = fenced("waiting-kind.md", ["# Limits", "", "<!-- cite waiting -->"], [LINE_2]);
+      const result = await add({
+        page: label,
+        src: "src/limits.ts:2",
+        pageLines: { start: 7, end: 9 },
+        marker: true,
+        quote: true,
+        id: "quoted",
+      });
+      expect(result.markerJoined).toBe(true);
+      expect(onDisk(label)).toContain(`<!-- cite waiting quoted -->\n${OPEN}`);
     });
 
     it("refuses a marker line, because a marker there would change its pin", async () => {

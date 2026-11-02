@@ -417,7 +417,7 @@ describe("manni cite (usage errors)", () => {
   it("add a marker id the page already carries", () => {
     usage(
       ["add", "pages/marker-orphan.md:15", "src/limits.ts:2", "--id", "nope", "--marker", "--root", "."],
-      "pages/marker-orphan.md already has a marker nope at line 12.",
+      "pages/marker-orphan.md already has a marker nope at line 12, which anchors line 13. Cite a line there, or move the marker.",
     );
   });
 
@@ -1119,6 +1119,28 @@ describe("manni cite add", () => {
     expect(page).toContain("      lines: 3-7\n");
     expect(page).toContain("    quote: true\n");
     expect(cite(["check", "--root", ".", "pages/plain-quote.md"]).status).toBe(0);
+  });
+
+  it("adopts a marker written ahead of its entry, and the orphan clears", () => {
+    const r = cite(["add", "pages/marker-orphan.md:13", "src/limits.ts:2", "--id", "nope", "--marker", "--no-commit-sha", "--root", "."]);
+    expect(r.status).toBe(0);
+    expect(r.stdout).toMatch(/^pages\/marker-orphan\.md: added nope to frontmatter; adopted the marker at line \d+, claim pinned at line \d+/);
+    expect(readFileSync(join(work, "pages", "marker-orphan.md"), "utf8")).toContain("<!-- cite nope -->\nSome claim.");
+    expect(cite(["check", "pages/marker-orphan.md", "--root", "."]).status).toBe(0);
+  });
+
+  it("adopts one with no --marker too, and a dry run writes nothing", () => {
+    const path = join(work, "pages", "marker-orphan.md");
+    const before = readFileSync(path, "utf8");
+    const dry = cite(["add", "pages/marker-orphan.md:13", "src/limits.ts:2", "--id", "nope", "--no-commit-sha", "--dry-run", "--root", "."]);
+    expect(dry.status).toBe(0);
+    expect(dry.stdout).toContain("+  - id: nope");
+    expect(dry.stderr).toContain("adopted the marker at line");
+    expect(readFileSync(path, "utf8")).toBe(before);
+    const r = cite(["add", "pages/marker-orphan.md:13", "src/limits.ts:2", "--id", "nope", "--no-commit-sha", "--root", "."]);
+    expect(r.status).toBe(0);
+    expect(r.stdout).toContain("adopted the marker at line");
+    expect(cite(["check", "pages/marker-orphan.md", "--root", "."]).status).toBe(0);
   });
 
   it("--dry-run prints the diff to stdout, the message to stderr, and writes nothing", () => {

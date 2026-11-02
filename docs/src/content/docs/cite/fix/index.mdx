@@ -31,7 +31,7 @@ sample-questions:
 graph:
   label: Fix a failing check
   type: troubleshooting
-last-updated: 2026-10-23
+last-updated: 2026-11-01
 tags:
   - troubleshooting
   - citations
@@ -562,7 +562,7 @@ now with `cite add`.
 ```
 
 A marker, `<!-- cite nope -->`, names an id and no entry has it. A typo in the
-marker, or an entry that was deleted.
+marker, an entry that was deleted, or a claim written ahead of its citation.
 
 {/* cite cite-true-names-id-true */}
 **Fix.** Correct the id in the marker, or add the entry it refers to. Note
@@ -570,6 +570,14 @@ that `cite true` names the id `true`. To delete the stray marker instead:
 
 ```sh
 manni cite remove docs/limits.md --only nope
+```
+
+{/* cite orphan-fix-adopts */}
+To add the entry, name a line the marker anchors. `add` adopts the marker, pins
+the text it anchors, and leaves the page body as it was:
+
+```sh
+manni cite add docs/limits.md:13 lib/limits.ts:2 --id nope
 ```
 
 ### marker-invalid

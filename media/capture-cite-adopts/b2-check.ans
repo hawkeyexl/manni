@@ -1,0 +1,9 @@
+[31m✗[39m docs/design/retry.md
+    [31m✗[39m [36mretry-default[39m   no entry has id "retry-default". Fix the marker's id, or add the entry with manni cite add.[2m   (line 6)[22m
+      [2mmanni:cite marker-orphan: A marker names an id no entry has.[22m
+      [2mGuide: https://hawkeyexl.github.io/manni/cite/fix/#marker-orphan[22m
+    [31m✗[39m [36mretry-default-test[39m   no entry has id "retry-default-test". Fix the marker's id, or add the entry with manni cite add.[2m   (line 6)[22m
+      [2mmanni:cite marker-orphan: A marker names an id no entry has.[22m
+      [2mGuide: https://hawkeyexl.github.io/manni/cite/fix/#marker-orphan[22m
+
+[31m1 file checked, 0 passed, 1 failed, 2 findings[39m
