@@ -1,6 +1,6 @@
 ---
 title: Get started
-description: "Install a browser, crawl a local build with manni a11y check, read the score and the findings, fix one, and re-run until the command exits 0."
+description: "Find the accessibility failures in your own build before they ship. Install a browser, crawl a local build with manni a11y check, read the score and the findings, fix one, and re-run until the command exits 0."
 id: "a11y-get-started"
 type: "tutorial"
 keywords: ["accessibility", "browser", "crawl", "score", "seeds"]
@@ -12,7 +12,7 @@ applies-to: ["domain:a11y"]
 next-steps: ["a11y-ci", "a11y-fix", "a11y", "a11y-reference-cli"]
 sample-questions: ["How do I run my first accessibility check on a local build?", "Which browser does manni a11y need, and how do I install it?", "How do I read the score and the findings?"]
 graph: { label: "Get started", type: learning }
-last-updated: 2026-10-20
+last-updated: 2026-11-06
 tags:
   - tutorial
   - getting-started
@@ -28,6 +28,9 @@ related-pages:
 ---
 
 import { Aside, CardGrid, LinkCard } from '@astrojs/starlight/components';
+
+An image with no alt text looks fine on screen, so it ships unless something
+checks the rendered page.
 
 This page takes a site you can serve locally and makes it pass its own
 accessibility check. You install a browser once, crawl the build, read the score

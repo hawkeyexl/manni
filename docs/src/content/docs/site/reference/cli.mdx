@@ -12,7 +12,7 @@ applies-to: ["domain:site"]
 risks: ["idempotent"]
 sample-questions: ["What flags do manni site start and manni site preview accept?", "Which frameworks does manni site detect, and what does it run for each?", "Why did manni site exit 2?"]
 graph: { label: "CLI reference", type: reference }
-last-updated: 2026-10-28
+last-updated: 2026-11-06
 tags:
   - cli
   - reference
@@ -33,6 +33,10 @@ related-pages:
     against src/site/cli.ts by scripts/check-cli-reference.mjs (npm run
     docs:check-cli), enforced in CI. Keep flags, arguments, and defaults in
     sync with the code; descriptions are free-form. */}
+
+Reach for this page when `manni site` runs in the wrong directory or on the
+wrong port, or when your framework is missing from the
+[framework table](#frameworks).
 
 manni site exposes four verbs. [`start`](#site-start), [`build`](#site-build)
 and [`preview`](#site-preview) find the site, detect its framework, and run

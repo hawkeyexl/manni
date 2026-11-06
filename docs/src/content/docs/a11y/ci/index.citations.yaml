@@ -26,7 +26,7 @@ docs/src/content/docs/a11y/ci/index.mdx:
         commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
     - id: github-one-annotation-per-rule
       claim:
-        lines: 102-103
+        lines: 106-107
         integrity: sha256-52b5ce7a890dca4a07a346524a41652ed7bb9dfec6bd927dcc1fcc17b2d0beeb
       source:
         file: src/a11y/reporters/github.ts
@@ -35,7 +35,7 @@ docs/src/content/docs/a11y/ci/index.mdx:
         commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: github-clean-prints-nothing
       claim:
-        lines: 102-103
+        lines: 106-107
         integrity: sha256-52b5ce7a890dca4a07a346524a41652ed7bb9dfec6bd927dcc1fcc17b2d0beeb
       source:
         file: src/a11y/cli.ts
@@ -44,7 +44,7 @@ docs/src/content/docs/a11y/ci/index.mdx:
         commit-sha: 8116e443d96187971e6f417b92952362a3f1219b
     - id: exit-1-on-failed-page
       claim:
-        lines: 107-108
+        lines: 111-112
         integrity: sha256-266e8f940502652f77b94d996e3dc75a7a03d6e204680e5a208c0ba1314cdacb
       source:
         file: src/a11y/cli.ts
@@ -53,7 +53,7 @@ docs/src/content/docs/a11y/ci/index.mdx:
         commit-sha: 8116e443d96187971e6f417b92952362a3f1219b
     - id: exit-2-on-operational-error
       claim:
-        lines: 107-108
+        lines: 111-112
         integrity: sha256-266e8f940502652f77b94d996e3dc75a7a03d6e204680e5a208c0ba1314cdacb
       source:
         file: src/shared/run.ts
@@ -62,7 +62,7 @@ docs/src/content/docs/a11y/ci/index.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: browser-launch-order
       claim:
-        lines: 109-111
+        lines: 113-115
         integrity: sha256-8ce9bca8b39eba63e3e033c0d051b30e464c9ecd59535d23aec617532a227b32
       source:
         file: src/a11y/core/analyzer.ts
@@ -71,7 +71,7 @@ docs/src/content/docs/a11y/ci/index.mdx:
         commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: config-urls-as-seeds
       claim:
-        lines: 112-113
+        lines: 116-117
         integrity: sha256-905d0ceabf3b07d5abcd5caa24b4d05d7973bc6d9662d285ec9329ed26d3554b
       source:
         file: src/a11y/core/seeds.ts
@@ -80,7 +80,7 @@ docs/src/content/docs/a11y/ci/index.mdx:
         commit-sha: 8116e443d96187971e6f417b92952362a3f1219b
     - id: config-keys-urls-severity
       claim:
-        lines: 112-113
+        lines: 116-117
         integrity: sha256-905d0ceabf3b07d5abcd5caa24b4d05d7973bc6d9662d285ec9329ed26d3554b
       source:
         file: src/a11y/core/config.ts
@@ -97,7 +97,7 @@ docs/src/content/docs/a11y/ci/index.mdx:
         commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: annotation-line-shape
       claim:
-        lines: 130
+        lines: 134
         integrity: sha256-6c39d4e242f44d3c3fa00afa9a7f67ed54f357f04364a1a10ec54957a7137f3e
       source:
         file: src/a11y/reporters/github.ts
@@ -154,7 +154,7 @@ docs/src/content/docs/a11y/ci/index.mdx:
         commit-sha: a47a74489105e77a82f35af1613faddc7a0670d9
     - id: exit-0-severity-floor
       claim:
-        lines: 175
+        lines: 179
         integrity: sha256-3f2f5f2fe842f6e2c2357e938e858f3c60fdf52877b5d67768c6405d4fe37d13
       source:
         file: src/a11y/commands/check.ts
@@ -163,7 +163,7 @@ docs/src/content/docs/a11y/ci/index.mdx:
         commit-sha: f0c617a65230e141b73778b3dd2ac2687caf4fc3
     - id: exit-0-no-failed-page
       claim:
-        lines: 175
+        lines: 179
         integrity: sha256-3f2f5f2fe842f6e2c2357e938e858f3c60fdf52877b5d67768c6405d4fe37d13
       source:
         file: src/a11y/commands/check.ts
@@ -172,7 +172,7 @@ docs/src/content/docs/a11y/ci/index.mdx:
         commit-sha: a47a74489105e77a82f35af1613faddc7a0670d9
     - id: exit-1-failed-pages
       claim:
-        lines: 176
+        lines: 180
         integrity: sha256-c084db593ad89bf1b76ec062f43a718513218734e7652878286ec71495e34ba1
       source:
         file: src/a11y/commands/check.ts
@@ -181,7 +181,7 @@ docs/src/content/docs/a11y/ci/index.mdx:
         commit-sha: a47a74489105e77a82f35af1613faddc7a0670d9
     - id: exit-2-bad-flag-value
       claim:
-        lines: 177
+        lines: 181
         integrity: sha256-3121a1f433f8614d58ff3ca89b5f5f22dabd8b141e83e361eff79efdcd86e8d3
       source:
         file: src/a11y/cli.ts
@@ -190,7 +190,7 @@ docs/src/content/docs/a11y/ci/index.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: exit-2-not-http
       claim:
-        lines: 177
+        lines: 181
         integrity: sha256-3121a1f433f8614d58ff3ca89b5f5f22dabd8b141e83e361eff79efdcd86e8d3
       source:
         file: src/a11y/commands/check.ts
@@ -199,7 +199,7 @@ docs/src/content/docs/a11y/ci/index.mdx:
         commit-sha: 8116e443d96187971e6f417b92952362a3f1219b
     - id: exit-2-no-urls
       claim:
-        lines: 177
+        lines: 181
         integrity: sha256-3121a1f433f8614d58ff3ca89b5f5f22dabd8b141e83e361eff79efdcd86e8d3
       source:
         file: src/a11y/core/seeds.ts
@@ -208,7 +208,7 @@ docs/src/content/docs/a11y/ci/index.mdx:
         commit-sha: 8116e443d96187971e6f417b92952362a3f1219b
     - id: exit-2-seed-load
       claim:
-        lines: 177
+        lines: 181
         integrity: sha256-3121a1f433f8614d58ff3ca89b5f5f22dabd8b141e83e361eff79efdcd86e8d3
       source:
         file: src/a11y/core/crawl.ts
@@ -217,7 +217,7 @@ docs/src/content/docs/a11y/ci/index.mdx:
         commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
     - id: exit-2-no-browser
       claim:
-        lines: 177
+        lines: 181
         integrity: sha256-3121a1f433f8614d58ff3ca89b5f5f22dabd8b141e83e361eff79efdcd86e8d3
       source:
         file: src/a11y/core/analyzer.ts
@@ -266,7 +266,7 @@ docs/src/content/docs/a11y/ci/index.mdx:
         commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
     - id: pretty-checked-header
       claim:
-        lines: 226
+        lines: 230
         integrity: sha256-8579fe177ba8ce7537a494c69872bec296f8e6da16dc3271ebcd281e9c8017be
       source:
         file: src/a11y/reporters/pretty.ts
@@ -275,7 +275,7 @@ docs/src/content/docs/a11y/ci/index.mdx:
         commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: pretty-footer-skipped
       claim:
-        lines: 249
+        lines: 253
         integrity: sha256-803b723be8262d192f85557f56cd0a4011b1b6d8b0a6bd9c901a0c03e84a10ea
       source:
         file: src/a11y/reporters/pretty.ts
@@ -348,7 +348,7 @@ docs/src/content/docs/a11y/ci/index.mdx:
         commit-sha: 8116e443d96187971e6f417b92952362a3f1219b
     - id: config-example-keys
       claim:
-        lines: 291-295
+        lines: 295-299
         integrity: sha256-9b51750042b3afa3673abcc7db9843d988188b5b5bfe8ee55fcc83375bc316bb
       source:
         file: src/a11y/core/config.ts
@@ -373,7 +373,7 @@ docs/src/content/docs/a11y/ci/index.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: severity-error-critical-serious
       claim:
-        lines: 309-311
+        lines: 313-315
         integrity: sha256-29e748175b07edaefab52f7c6d32c81da375c08b96a07e6436c0708d9c3369f2
       source:
         file: src/a11y/core/analyzer.ts
@@ -382,7 +382,7 @@ docs/src/content/docs/a11y/ci/index.mdx:
         commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: severity-floor-before-score
       claim:
-        lines: 309-311
+        lines: 313-315
         integrity: sha256-29e748175b07edaefab52f7c6d32c81da375c08b96a07e6436c0708d9c3369f2
       source:
         file: src/a11y/commands/check.ts
@@ -399,7 +399,7 @@ docs/src/content/docs/a11y/ci/index.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: progress-default-terminal-only
       claim:
-        lines: 104-106
+        lines: 108-110
         integrity: sha256-b901eada3a3741950e0fdacfd25aacf80ad0207b7b34044857c7d73f38a9241e
       source:
         file: src/a11y/cli.ts
@@ -408,7 +408,7 @@ docs/src/content/docs/a11y/ci/index.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: progress-line-per-page-start-finish
       claim:
-        lines: 104-105
+        lines: 108-109
         integrity: sha256-0faf128b4b8b38a82d01b63139fc4ee0c0f89eefaa2722becfcc40fb48f33258
       source:
         file: src/a11y/reporters/progress.ts

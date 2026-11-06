@@ -13,7 +13,7 @@ next-steps: ["a11y-get-started", "a11y", "a11y-reference-cli"]
 related-pages: ["meta-fix"]
 sample-questions: ["How do I read a manni a11y annotation?", "How do I reproduce an accessibility failure locally?", "Why does manni a11y have no --fix?"]
 graph: { label: "Fix a failing check", type: troubleshooting }
-last-updated: 2026-10-20
+last-updated: 2026-11-06
 tags:
   - accessibility
   - troubleshooting
@@ -29,7 +29,9 @@ prerequisites:
 import { Aside, CardGrid, LinkCard } from '@astrojs/starlight/components';
 
 Your pull request carries an accessibility annotation and you would like it
-gone. This page takes one violation from the annotation to a green local run.
+gone. The check exists because a page can look fine to its author and still
+shut out a screen-reader or low-vision user. This page takes one violation from
+the annotation to a green local run.
 You do not need to learn axe, and you do not need to know how the check was set
 up. You need the rule it names and the element it fired on.
 
