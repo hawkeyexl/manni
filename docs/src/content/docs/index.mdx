@@ -1,9 +1,9 @@
 ---
 title: manni
-description: One command line for documentation that is meant to be checked. It validates metadata and page structure, checks citations against their source, runs evals over documentation pages, grades an agent session against the instructions it ran on, runs the procedure tests in the docs, and checks sites for accessibility.
+description: A toolkit for managing and checking documentation. It validates and fills page metadata, keeps terms consistent, ties sentences to the code they describe, tests procedures and runs evals, in CI and in agent sessions.
 tableOfContents: false
 hero:
-  tagline: One command line for documentation that is meant to be checked.
+  tagline: A toolkit for managing and checking documentation.
   actions:
     - text: Validate metadata
       link: /manni/meta/
@@ -18,13 +18,13 @@ type: "overview"
 keywords: ["manni", "tools", "docmeta", "command line"]
 language: en
 audiences: ["docs-engineers", "ci-engineers", "schema-authors", "contributors"]
-intent: "Pick the manni tool for the job, install the package once, and run the first command."
+intent: "Find the failure manni catches in your docset, pick the tool that catches it, install the package once, and run the first command."
 lifecycle: published
 applies-to: ["domain:manni"]
 next-steps: ["meta", "a11y", "cite", "key", "term"]
-sample-questions: ["What tools does manni include?", "How do I install manni and run my first command?", "What changed when docmeta became manni meta?"]
+sample-questions: ["What problem does manni solve?", "What tools does manni include?", "How do I install manni and run my first command?", "What changed when docmeta became manni meta?"]
 graph: { label: "manni", type: concept }
-last-updated: 2026-10-22
+last-updated: 2026-11-06
 tags:
   - overview
   - installation
@@ -40,6 +40,139 @@ risks: read-only
 ---
 
 import { Card, CardGrid, LinkCard } from '@astrojs/starlight/components';
+
+manni validates, queries and fills page metadata. It keeps terminology
+consistent and tracks which sentences rest on which source lines. It builds a
+knowledge graph of the docset and tests the procedures in it. It runs evals
+over the pages and over the agent sessions that write them. Every check runs
+the same way in CI, by hand, and in an agent session.
+
+## Why check documentation
+
+Documentation decays quietly. Code has tests, so a change that breaks it goes
+red before it ships. A docs page has no such check. When it breaks, a reader
+finds out first.
+
+It breaks in a handful of familiar ways, and each manni tool catches one.
+
+| What goes wrong | What catches it |
+|---|---|
+| A required field goes missing, and search, the site nav or a docs bot drops the page. | [`meta`](/manni/meta/) |
+| A sentence describes code that has since changed. | [`cite`](/manni/cite/) |
+| A procedure stops working when someone follows it. | [`test`](/manni/test/) |
+| Two pages call one thing by different names, so search and translation split it. | [`term`](/manni/term/) |
+| A how-to loses the steps a how-to needs. | [`lint`](/manni/lint/) |
+| A page falls below the quality bar the team wrote down. | [`docevals`](/manni/docevals/) |
+| A page nothing links to, or one concept spelled two ways. | [`graph`](/manni/graph/) |
+| A page shuts out a reader who uses a screen reader or has low vision. | [`a11y`](/manni/a11y/) |
+| An agent writing the docs stops following its instructions. | [`tracevals`](/manni/tracevals/) |
+| A page claims a persona or journey nobody keeps a record of. | [`strategy`](/manni/strategy/) |
+
+Each check fails on the pull request that caused the problem, with the file,
+the line and the rule. A reviewer's eye stops being the only gate.
+
+manni does not grade prose style. Linters such as Vale do that, and
+`manni term` writes your glossary into a Vale style so the two agree on names.
+manni checks what a page claims about itself, about the code it describes, and
+about the other pages.
+
+## Who it's for
+
+- **You own a docs repository** and review is the only thing enforcing your
+  standard. Start with [meta](/manni/meta/).
+- **You run CI for many repositories** and want one gate that reads the same
+  in each. Start with [manni check](/manni/family/check/).
+- **You define what pages must carry** and need the standard to change
+  without breaking every repo at once. Start with
+  [Author a schema](/manni/meta/schemas/).
+- **You generate or edit docs with an agent** and want deterministic checks to
+  steer it. Start with [the Claude Code plugin](/manni/family/claude-code/).
+- **Your pull request is red** and you did not set up the check. Each tool's
+  section has a *Fix a failing check* page, such as
+  [the one for meta](/manni/meta/fix/).
+
+## The tools
+
+<CardGrid>
+  <LinkCard
+    title="meta"
+    href="/manni/meta/"
+    description="Catch a page missing the metadata your search, nav or docs bot depends on. Validate it against JSON Schema, then query it and fill the gaps. Formerly docmeta."
+  />
+  <LinkCard
+    title="a11y"
+    href="/manni/a11y/"
+    description="Find the pages a screen-reader or low-vision user cannot use, before a reader does. Crawl the site and check every page with axe-core."
+  />
+  <LinkCard
+    title="cite"
+    href="/manni/cite/"
+    description="Find out when the code a sentence describes changes under it. Pin the sentence to its source lines, from git alone, with no model and no network."
+  />
+  <LinkCard
+    title="lint"
+    href="/manni/lint/"
+    description="Keep a how-to from losing the sections, steps and code blocks a how-to needs. Check every page against the shape its doctype promises."
+  />
+  <LinkCard
+    title="docevals"
+    href="/manni/docevals/"
+    description="Hold every page to the quality bar your team wrote down. Code checks first, an AI judge second, a human last."
+  />
+  <LinkCard
+    title="tracevals"
+    href="/manni/tracevals/"
+    description="Find out whether an agent followed the instructions you gave it, in a session that already happened or the turn that just ended."
+  />
+  <LinkCard
+    title="graph"
+    href="/manni/graph/"
+    description="Catch what no single file shows, such as orphan pages and a concept spelled two ways. Derive a knowledge graph from the docs, check it, and publish it for retrieval."
+  />
+  <LinkCard
+    title="site"
+    href="/manni/site/"
+    description="Start, build, preview and annotate any docs site with the same commands, whatever its framework, so a check that needs the running site can reach it."
+  />
+  <LinkCard
+    title="key"
+    href="/manni/key/"
+    description="Require a field on every page without publishing its value. Set and rotate the one key meta and cite encrypt with."
+  />
+  <LinkCard
+    title="term"
+    href="/manni/term/"
+    description="Keep one name for one thing across the docset, so search, translation and Vale agree. Define terms and check every page that names one."
+  />
+  <LinkCard
+    title="strategy"
+    href="/manni/strategy/"
+    description="Keep the audiences, personas and journeys the docset serves as records, and catch a page that claims one nobody keeps."
+  />
+  <LinkCard
+    title="test"
+    href="/manni/test/"
+    description="Find the procedure that stopped working before a reader follows it. Run the Doc Detective tests embedded in the docs, and have a synthetic user attempt a task."
+  />
+</CardGrid>
+
+## How the tools fit together
+
+`meta` checks what a page says about itself. `lint` checks whether it is shaped
+like what it says it is. `cite` checks that what a page says about the code is
+still true. `docevals` checks that a page still meets the quality bar its team
+wrote down. `tracevals` checks that an agent session followed the instructions
+it ran on. `term` checks that the terms a page names are defined, and carries
+those terms into Vale and translation. `strategy` checks that the audiences,
+personas and journeys a page names are ones the docset keeps records of. `graph` checks what the pages say about
+each other, which is the only question no single file can answer. `key` sets and
+rotates the one encryption key that `meta` and `cite` encrypt values with.
+`test` checks that a procedure still works when someone follows it.
+`site` runs the docs site itself, the one `a11y` crawls, through its
+framework's own commands.
+`manni --help` lists exactly the tools the package carries.
+
+## Install and run
 
 Almost every command reads `manni <domain> <subcommand> [<subcommand>] [<arguments>]`,
 and the domain is the tool. The two exceptions run across the tools, and the
@@ -79,85 +212,6 @@ npx @hawkeyexl/manni check
     description="Install the manni plugin, and an agent gets each error at the edit that caused it and can't finish with one outstanding."
   />
 </CardGrid>
-
-## The tools
-
-<CardGrid>
-  <LinkCard
-    title="meta"
-    href="/manni/meta/"
-    description="Validate the presence and format of document metadata against JSON Schema, built for CI. Read, query and fill it too. Formerly published as docmeta."
-  />
-  <LinkCard
-    title="a11y"
-    href="/manni/a11y/"
-    description="Crawl a site and check every page for accessibility violations with axe-core, built for CI."
-  />
-  <LinkCard
-    title="cite"
-    href="/manni/cite/"
-    description="Pin a sentence to the source lines it rests on, and find out when those lines move or change. From git alone, no model, no network."
-  />
-  <LinkCard
-    title="lint"
-    href="/manni/lint/"
-    description="Check that every page has the shape its doctype promises: the sections a how-to needs, in order, with the steps and code blocks inside them."
-  />
-  <LinkCard
-    title="docevals"
-    href="/manni/docevals/"
-    description="Deterministic and LLM-as-judge evals for documentation pages, driven by frontmatter. Code first, an AI judge second, a human last."
-  />
-  <LinkCard
-    title="tracevals"
-    href="/manni/tracevals/"
-    description="Adherence evals for AI agent session traces. You wrote the instructions; point it at a session that already happened and find out whether the agent followed them."
-  />
-  <LinkCard
-    title="graph"
-    href="/manni/graph/"
-    description="Derive a knowledge graph from documentation frontmatter and formatting, check it against SHACL shapes, and publish it for retrieval. Deterministic, with no model in the loop."
-  />
-  <LinkCard
-    title="site"
-    href="/manni/site/"
-    description="Start, build and preview the docs site with one command per job, whatever framework it runs on, on the port the collection url names."
-  />
-  <LinkCard
-    title="key"
-    href="/manni/key/"
-    description="Set and rotate the family encryption key, so a required field or a private source path is on the page without being readable there."
-  />
-  <LinkCard
-    title="term"
-    href="/manni/term/"
-    description="Define a docset's terms, check every concepts: reference against them, generate a Vale style from them, and move the set between glossary formats, TBX and CSV."
-  />
-  <LinkCard
-    title="strategy"
-    href="/manni/strategy/"
-    description="Keep the audiences, personas and journeys a docset serves as records, and check that every page naming one names a record that exists."
-  />
-  <LinkCard
-    title="test"
-    href="/manni/test/"
-    description="Run the Doc Detective tests embedded in the docs, and gate on them with the same exit codes and annotations as every other manni check."
-  />
-</CardGrid>
-
-`meta` checks what a page says about itself. `lint` checks whether it is shaped
-like what it says it is. `cite` checks that what a page says about the code is
-still true. `docevals` checks that a page still meets the quality bar its team
-wrote down. `tracevals` checks that an agent session followed the instructions
-it ran on. `term` checks that the terms a page names are defined, and carries
-those terms into Vale and translation. `strategy` checks that the audiences,
-personas and journeys a page names are ones the docset keeps records of. `graph` checks what the pages say about
-each other, which is the only question no single file can answer. `key` sets and
-rotates the one encryption key that `meta` and `cite` encrypt values with.
-`test` checks that a procedure still works when someone follows it.
-`site` runs the docs site itself, the one `a11y` crawls, through its
-framework's own commands.
-`manni --help` lists exactly the tools the package carries.
 
 `cite`, `docevals`, `tracevals`, `key`, `site`, `term`, `strategy`, `lint`,
 `graph` and `test` are in beta.

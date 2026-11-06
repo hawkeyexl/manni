@@ -3,6 +3,7 @@ docs/src/content/docs/meta/get-started/index.mdx:
     - maya
   journeys:
     - m1
+    - m34
   visibility: public
   review-interval: P180D
   eval-suite: meta

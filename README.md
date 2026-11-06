@@ -1,19 +1,36 @@
 # manni
 
-One command line for documentation that is meant to be checked. `manni meta`
-validates the **presence and format** of document metadata against **JSON
-Schema**, built for CI. It was published as `docmeta` up to 4.13.1; see
-[Coming from docmeta](#coming-from-docmeta).
+A toolkit for managing and checking documentation. manni validates, queries
+and fills page metadata. It keeps terminology consistent and tracks which
+sentences rest on which source lines. It builds a knowledge graph of the
+docset and tests the procedures in it. It runs evals over the pages and over
+the agent sessions that write them.
 
 [![npm](https://img.shields.io/npm/v/@hawkeyexl/manni?color=cb3837&logo=npm&logoColor=white)](https://www.npmjs.com/package/@hawkeyexl/manni)
 [![CI](https://github.com/hawkeyexl/manni/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/hawkeyexl/manni/actions/workflows/ci.yml)
 [![node](https://img.shields.io/node/v/@hawkeyexl/manni?color=5fa04e&logo=node.js&logoColor=white)](https://nodejs.org)
 [![license](https://img.shields.io/npm/l/@hawkeyexl/manni?color=blue)](LICENSE)
 
+## Why check documentation
+
+Documentation decays quietly. Code has tests, so a change that breaks it goes
+red before it ships. A docs page has no such check, so a reader finds the
+stale sentence, the missing field or the broken procedure first. Each manni
+tool turns one of those failures into a check that fails on the pull request
+that caused it. The [home page](https://hawkeyexl.github.io/manni/) maps each
+failure to the tool that catches it.
+
+## The metadata tool
+
+Search indexes, site navigation, catalogs and docs bots all read a page's
+metadata. When a field goes missing or malformed, the page drops out of them,
+and nothing fails. `manni meta` makes it fail. It was published as `docmeta`
+up to 4.13.1; see [Coming from docmeta](#coming-from-docmeta).
+
 `manni meta` checks the metadata in your documents (Markdown frontmatter and more)
 against one or more JSON Schemas. It verifies that required fields are present
 and correctly formatted: a `type`, an ISO 8601 `timestamp`, a URI `resource`. It
-does not judge prose quality. It ships with 45 [built-in
+does not judge prose quality. It ships with [built-in
 schemas](https://hawkeyexl.github.io/manni/meta/reference/schemas/). They
 cover content vocabularies such as the [Open Knowledge Format
 (OKF)](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md),
@@ -22,8 +39,8 @@ Project](https://www.thegooddocsproject.dev/template), and the [Seven-Action
 model](https://passo.uno/seven-action-model/). They also cover the front matter
 contracts of site generators such as
 [Docusaurus](https://docusaurus.io/docs/api/plugins/@docusaurus/plugin-content-docs#markdown-front-matter)
-3.10, Hugo, Jekyll, and MkDocs Material. Twenty-six are manni's own metadata
-vocabularies and their strict overlays. Run `manni meta schemas` for the full
+3.10, Hugo, Jekyll, and MkDocs Material. manni's own metadata vocabularies
+and their strict overlays are built in too. Run `manni meta schemas` for the full
 list. It follows [clig.dev](https://clig.dev) conventions and returns a nonzero
 exit code (plus optional GitHub annotations) when validation fails.
 
@@ -183,7 +200,7 @@ Full guides, recipes, and reference live on the documentation site:
 | [Get started](https://hawkeyexl.github.io/manni/meta/get-started/) | Install and run your first validation. |
 | [Set up validation](https://hawkeyexl.github.io/manni/meta/set-up/) | Stand up validation for a repo: `manni.config.yaml`, per-folder schema overrides. |
 | [Run it in CI](https://hawkeyexl.github.io/manni/meta/ci/) | GitHub Actions and other CI recipes, exit codes, and PR annotations. |
-| [Define & evolve schemas](https://hawkeyexl.github.io/manni/schemas/) | Author a schema, wire up resolution, and version it without breaking the build. |
+| [Define & evolve schemas](https://hawkeyexl.github.io/manni/meta/schemas/) | Author a schema, wire up resolution, and version it without breaking the build. |
 | [Reference](https://hawkeyexl.github.io/manni/meta/reference/cli/) | Every CLI flag, Action input, config key, the schema-resolution precedence chain, and output formats. |
 
 ## Contributing
