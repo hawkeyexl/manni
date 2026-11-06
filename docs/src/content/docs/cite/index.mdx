@@ -1,6 +1,6 @@
 ---
 title: manni cite
-description: Pin a sentence to the source lines it rests on, and find out when those lines move or change. A drift check for docs that runs from git alone, built for CI.
+description: Find out when the code a sentence describes changes under it. Pin the sentence to its source lines, from git alone, with no model and no network.
 tableOfContents: false
 hero:
   tagline: Pin a sentence to the source lines it rests on, and find out when those lines change.
@@ -41,7 +41,7 @@ sample-questions:
 graph:
   label: manni cite
   type: concept
-last-updated: 2026-10-22
+last-updated: 2026-11-06
 action: appraise
 next-steps:
   - /manni/cite/get-started/
@@ -59,6 +59,10 @@ verified-by:
 ---
 
 import { Aside, Card, CardGrid, LinkCard } from '@astrojs/starlight/components';
+
+Docs that explain code go stale when the code changes, and nothing tells the
+writer. A reviewer catches it only by knowing both sides. `manni cite` names
+the sentence that may no longer be true.
 
 <Aside type="note" title="Beta">
 `manni cite` is in beta. Its commands, config keys and output can change in
@@ -87,6 +91,24 @@ decides whether the prose or the pin is wrong. Nothing on the page repeats the
 sentence. Under claim lines, a copy edit on a line beside it raises nothing.
 Under a marker, an edit anywhere in the anchored paragraph is a
 `claim-changed` warning by default.
+
+## With the other domains
+
+{/* cite own-config-key */}
+{/* cite one-config-file */}
+{/* cite bundles-citations-schema */}
+Citations are written in the `manni:citations:1.2.0` vocabulary. It is one of
+manni meta's [built-in schemas](/manni/meta/reference/schemas/manni-citations/),
+and manni cite checks entries against the same file. With the vocabulary in its
+set, `manni meta validate` checks that an entry is well-formed. Only
+`manni cite check` can say whether it still holds. Both tools ship in one
+package and read one `manni.config.yaml`, under their own keys.
+
+[manni key](/manni/key/) holds the key that encrypts a private source path, so
+a public page can cite private code. [manni strategy](/manni/strategy/) records
+pin each persona's goals and pains the same way, and a citation finding names
+the personas and journeys its page serves. `manni check` runs `cite check`
+beside the other domains once any page carries a citation.
 
 ## Four commands
 
@@ -195,16 +217,6 @@ the file grammar, the hashing rule, markers and the sidecar manifest.
     than a whole page.
   </Card>
 </CardGrid>
-
-{/* cite own-config-key */}
-{/* cite one-config-file */}
-{/* cite bundles-citations-schema */}
-Citations are written in the `manni:citations:1.2.0` vocabulary. It is one of
-manni meta's [built-in schemas](/manni/meta/reference/schemas/manni-citations/),
-and manni cite checks entries against the same file. With the vocabulary in its
-set, `manni meta validate` checks that an entry is well-formed. Only
-`manni cite check` can say whether it still holds. Both tools ship in one
-package and read one `manni.config.yaml`, under their own keys.
 
 {/* Doc Detective inline tests: verify this page's documented manni cite behavior
     against the local build, exposed as `manni cite` / `npx @hawkeyexl/manni cite` via `npm link`

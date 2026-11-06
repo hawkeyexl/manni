@@ -1,6 +1,6 @@
 ---
 title: manni lint
-description: "Check that every page has the shape its doctype promises: the sections a how-to needs, in order, with the steps and code blocks inside them."
+description: "Keep a how-to from losing the sections, steps and code blocks a how-to needs. Check every page against the shape its doctype promises."
 tableOfContents: false
 hero:
   tagline: Check that every page has the shape its doctype promises. Deterministic, template-driven, built for CI.
@@ -17,12 +17,13 @@ id: "lint"
 type: "overview"
 keywords: ["doctype", "page shape", "sections"]
 language: en
+audiences: ["docs-engineers"]
 intent: "Learn that manni lint checks a page has the shape its doctype promises."
 lifecycle: published
 applies-to: ["domain:lint"]
 sample-questions: ["What is manni lint?", "How does manni lint differ from manni meta?"]
 graph: { label: "manni lint", type: concept }
-last-updated: 2026-10-02
+last-updated: 2026-11-06
 action: understand
 prerequisites:
   - meta
@@ -31,6 +32,10 @@ related-pages:
 ---
 
 import { Aside, CardGrid, LinkCard } from '@astrojs/starlight/components';
+
+A reader opens a how-to expecting steps to follow and somewhere to go next.
+When a page drops one, it still renders, and nothing fails. The reader finds
+the gap partway through the task.
 
 <Aside type="note" title="Beta">
 `manni lint` is in beta. Its commands, config keys and output can change in
@@ -57,6 +62,15 @@ Checked: structure.
 
 Exit `1`, with a line and a rule id. The command you run locally is the one
 that gates the pull request.
+
+## With the other domains
+
+[manni meta](/manni/meta/) validates the `type:` a page declares, and manni
+lint routes the page to a template by that same key. Judging the prose belongs
+to [manni docevals](/manni/docevals/), and naming terms consistently to
+[manni term](/manni/term/). Both lint and meta read the family's
+`collections:`, so they check the same pages. `manni check` runs
+`lint check` once `manni.config.yaml` has a `lint:` section.
 
 ## Jobs, not tools
 

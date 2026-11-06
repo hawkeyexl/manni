@@ -1,6 +1,6 @@
 ---
 title: manni term
-description: "Define a docset's terms as records, check that every concepts: reference names one, turn the set into a Vale style, and move it between glossary formats, TBX and CSV."
+description: "Keep one name for one thing across the docset, so search, translation and Vale agree. Define terms and check every page that names one."
 tableOfContents: false
 hero:
   tagline: Define your terms once, check every reference to them, and carry the set into Vale and translation.
@@ -54,7 +54,7 @@ sample-questions:
 graph:
   label: manni term
   type: concept
-last-updated: 2026-10-28
+last-updated: 2026-11-06
 tags:
   - cli-tool
   - documentation-tools
@@ -69,6 +69,10 @@ concepts:
 ---
 
 import { Aside, Card, CardGrid, LinkCard } from '@astrojs/starlight/components';
+
+When two pages call one thing by different names, readers think there are two
+things. Search splits the results, and translators translate both. `manni term`
+keeps one record per term and checks every page that names one.
 
 <Aside type="note" title="Beta">
 `manni term` is in beta. Its commands, config keys and output can change in
@@ -95,6 +99,20 @@ A term reaches manni in one of two shapes.
   an entry per concept, and each language in it is a term. So does a SKOS
   concept scheme in Turtle or JSON-LD, read when you name it. A MadCap
   Flare glossary, a `.flglo` file, holds an entry per term.
+
+## With the other domains
+
+Term entries are written in the built-in
+[`manni:terminology:1.2.0`](/manni/meta/reference/schemas/manni-terminology/)
+vocabulary. `manni meta validate` checks one page's shape against it when the
+page's schema set includes it, as `-s manni:terminology:1.2.0` does. `manni
+term check` checks the set.
+
+Under its `terms` source, [manni graph](/manni/graph/) builds the termbase into
+its concept scheme, and a page's `concepts:` resolve through it. Vale reads
+the style `manni term write -f vale` generates, and holds the body of every
+page to the same names. `manni check` runs `term check` once a collection
+holds a term.
 
 ## Six commands
 
@@ -206,9 +224,3 @@ twenty-two checks.
     definition is correct, either.
   </Card>
 </CardGrid>
-
-Term entries are written in the built-in
-[`manni:terminology:1.2.0`](/manni/meta/reference/schemas/manni-terminology/)
-vocabulary. `manni meta validate` checks one page's shape against it when the
-page's schema set includes it, as `-s manni:terminology:1.2.0` does. `manni
-term check` checks the set.

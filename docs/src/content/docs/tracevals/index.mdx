@@ -1,6 +1,6 @@
 ---
 title: manni tracevals
-description: Adherence evals for AI agent session traces. Did the session follow the skills and instructions it used?
+description: Find out whether an agent followed the instructions you gave it, in a session that already happened or the turn that just ended.
 tableOfContents: false
 hero:
   tagline: You wrote the instructions. Did the agent follow them? Point manni tracevals at a session that already happened and find out.
@@ -29,7 +29,7 @@ tags:
   - adherence-checking
 action: understand
 risks: read-only
-last-updated: 2026-10-20
+last-updated: 2026-11-06
 ---
 
 import { Card, CardGrid, LinkCard, Aside } from '@astrojs/starlight/components';
@@ -42,6 +42,16 @@ followed.
 deterministically looks up every skill, agent definition, slash command, and project-rules file the
 session used. Then it evaluates whether the session **adhered to the instructions in those
 artifacts**.
+
+## With the other domains
+
+[manni docevals](/manni/docevals/) grades a page against the evals its frontmatter declares.
+manni tracevals grades an agent session against the instructions it ran on. An eval in a skill's
+frontmatter takes the same entry shape as one on a page. [manni meta](/manni/meta/)
+validates that frontmatter, with built-in schemas for Agent Skills and for Claude Code skills and
+subagents. On the command line, `manni check` leaves tracevals out, because it judges recorded
+sessions with a model. Under a Claude Code hook, with `tracevals.runtime` set and the hooks turned
+on, it judges the turn that just ended.
 
 ## What you want to do
 

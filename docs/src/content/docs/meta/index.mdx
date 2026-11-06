@@ -1,6 +1,6 @@
 ---
 title: manni meta
-description: Validate the presence and format of document metadata against JSON Schema, built for CI.
+description: Catch a page missing the metadata your search, nav or docs bot depends on. Validate it against JSON Schema, then query it and fill the gaps. Formerly docmeta.
 tableOfContents: false
 hero:
   tagline: Validate the presence and format of document metadata against JSON Schema, built for CI.
@@ -52,7 +52,7 @@ sample-questions:
 graph:
   label: manni meta
   type: concept
-last-updated: 2026-10-20
+last-updated: 2026-11-06
 tags:
   - overview
   - metadata
@@ -67,6 +67,10 @@ verified-by:
 
 import { Card, CardGrid, LinkCard } from '@astrojs/starlight/components';
 
+Search indexes, site navigation, catalogs and docs bots all read a page's
+metadata. When a field goes missing or malformed, the page drops out of them,
+and nothing fails.
+
 {/* cite failure-fails-the-build */}
 {/* cite default-run-requires-type */}
 manni meta checks that your documents carry the metadata your tooling depends on.
@@ -80,6 +84,17 @@ It validates the **presence and format** of metadata. It does not grade your
 prose, check your spelling, or judge your content. If your schema says every
 page needs a `title` and an ISO 8601 `timestamp`, manni meta enforces exactly that
 and nothing more.
+
+## With the other domains
+
+Most manni domains read the same frontmatter, from the same
+`manni.config.yaml` and its `collections:`. manni meta checks that the fields
+are there and well formed. [manni lint](/manni/lint/) checks that the page has
+the shape its `type:` promises, and [manni docevals](/manni/docevals/) grades
+it against the evals its frontmatter names. [manni term](/manni/term/) and
+[manni strategy](/manni/strategy/) check that `concepts:`, `personas:` and
+`journeys:` name records that exist. `manni check` runs each domain that is
+set up, `meta validate` first.
 
 ## A 30-second proof
 
@@ -148,13 +163,31 @@ vocabularies check a field only when a page carries it.
 </CardGrid>
 
 {/* cite forty-five-built-in-schemas */}
-Not sure you need to write a schema at all? manni meta ships fifty-six. They
+Not sure you need to write a schema at all? manni meta ships built-in ones. They
 run from the Hugo, Jekyll, Starlight, Docusaurus, Antora and Sphinx front matter
 contracts to the Diátaxis and Good Docs vocabularies. They also cover Dublin
-Core, Open Graph and the Agent Skills `SKILL.md` format. Twenty-eight are the
-[manni vocabularies](/manni/meta/reference/schemas/manni-vocabularies/), eleven
-families each with a strict overlay. Stewardship, artifact-evals and terminology each ship at two versions. The [built-in schema
-registry](/manni/meta/reference/schemas/) lists them all in one table.
+Core, Open Graph and the Agent Skills `SKILL.md` format. The
+[manni vocabularies](/manni/meta/reference/schemas/manni-vocabularies/) are
+eleven families, each with a strict overlay, and several ship at more than one
+version. The [built-in schema registry](/manni/meta/reference/schemas/) lists
+them all in one table, and `manni meta schemas` prints the list your installed
+version ships.
+
+## Where SEO metadata fits
+
+manni has no SEO vocabulary of its own. The fields a search engine reads, such
+as `title`, `description` or a canonical URL, live in the same frontmatter your
+site generator reads. manni checks that they are present and well formed. The
+[manni core vocabulary](/manni/meta/reference/schemas/manni-core/), on by
+default, requires `title` and `description`. The built-in schemas for
+[Open Graph](/manni/meta/reference/schemas/ogp-article/),
+[X cards](/manni/meta/reference/schemas/x-cards/) and site generators such as
+[Hugo](/manni/meta/reference/schemas/hugo-page/) and
+[Docusaurus](/manni/meta/reference/schemas/docusaurus-docs/) cover the fields
+those tools define. The Open Graph schema requires `og:url`, the canonical URL,
+as an absolute URI. For a field they leave out, such as a `canonical` key your
+theme reads, add it to [your own schema](/manni/meta/schemas/) with
+`"format": "uri"`.
 
 ## What manni meta checks, and what it doesn't
 

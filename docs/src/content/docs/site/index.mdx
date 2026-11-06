@@ -1,6 +1,6 @@
 ---
 title: manni site
-description: "Start, build, preview and annotate the docs site with one command per job, whatever framework it runs on, on the port the collection url names."
+description: "Start, build, preview and annotate any docs site with the same commands, whatever its framework, so a check that needs the running site can reach it."
 tableOfContents: false
 hero:
   tagline: Start, build and preview the docs site, whatever framework it runs on.
@@ -26,7 +26,7 @@ related-pages: ["a11y-ci", "meta-reference-configuration"]
 risks: ["idempotent"]
 sample-questions: ["How do I run the docs site locally without knowing its framework?", "Which port does manni site preview serve on?", "How do I run a framework manni does not detect?"]
 graph: { label: "manni site", type: concept }
-last-updated: 2026-10-28
+last-updated: 2026-11-06
 tags:
   - docs-site
   - dev-server
@@ -38,16 +38,16 @@ action: understand
 
 import { Aside, CardGrid, LinkCard } from '@astrojs/starlight/components';
 
-<Aside type="note" title="Beta">
-`manni site` is in beta. Its commands, config keys and output can change in
-any release, without notice.
-</Aside>
-
 Every docs framework starts its site differently. Mintlify is `mint dev`,
 Starlight is `astro dev`, MkDocs is `mkdocs serve`, and each picks its own
 port. `manni site` finds the site, detects its framework from its files, and
 runs that framework's own command. One command per job works in every docs
 repository manni detects.
+
+<Aside type="note" title="Beta">
+`manni site` is in beta. Its commands, config keys and output can change in
+any release, without notice.
+</Aside>
 
 `manni site` is not a document tool. It runs the site that every other domain
 checks. `manni a11y check` crawls the site it serves, on the URL your

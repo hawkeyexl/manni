@@ -1,6 +1,6 @@
 ---
 title: manni strategy
-description: "Keep a docset's audiences, personas and journeys as records, and check that every page naming one names a record that exists."
+description: "Keep the audiences, personas and journeys the docset serves as records, and catch a page that claims one nobody keeps."
 tableOfContents: false
 hero:
   tagline: Write down whom the docs serve, once, and hold every page to it.
@@ -25,6 +25,7 @@ language: en
 audiences:
   - schema-authors
   - contributors
+  - docs-engineers
 intent: Tell what a strategy record is, which page fields manni strategy checks, and how to set it up.
 lifecycle: published
 applies-to:
@@ -53,10 +54,14 @@ risks: read-only
 concepts:
   - validation
   - metadata
-last-updated: 2026-10-24
+last-updated: 2026-11-06
 ---
 
 import { Aside, Card, CardGrid, LinkCard } from '@astrojs/starlight/components';
+
+A docset is written for particular readers, and its pages drift from them as
+it grows. A page keeps naming a persona the team retired, and a journey loses
+the last page that served it. Nothing fails when either happens.
 
 <Aside type="note" title="Beta">
 `manni strategy` is in beta. Its commands, config keys and output can change
@@ -156,6 +161,40 @@ A field is checked only when the set holds a record of its type. A docset
 that keeps persona records and no audience records keeps a free-form
 `audiences:`, and no rule reads it. So the records can arrive one type at a
 time.
+
+## With the other domains
+
+The domain is in play once a collection holds a record. `manni status` then
+shows the strategy row, with a count of each type. `manni check` runs
+`manni strategy check` beside the other domains' checks.
+[Gate every check](/manni/family/check/) covers the family verbs, and
+the [family CLI reference](/manni/family/reference/cli/) has the in-play
+rule for each domain.
+
+{/* cite cite-names-readers */}
+`manni cite check` reads the same records. A citation finding on a page that
+names a persona or journey record says whom the page serves. Its `pretty`
+report ends with a roll-up of those records, worst first, and its `json`
+carries them as `impact`. A value with no record is left out, since
+`manni strategy check` already reports it.
+[Who a finding affects](/manni/cite/ci/#who-a-finding-affects) shows the
+output.
+
+{/* cite family-check-rolls-up */}
+`manni check` prints the same roll-up over every check's findings, so a run
+that fails several domains is ranked by the readers it reaches.
+[Fix first what your readers hit](/manni/family/check/#fix-first-what-your-readers-hit)
+walks through it.
+
+`manni meta get` names the records a page names, one
+[`record` line](/manni/meta/reference/cli/#output) each, with the record's type, id
+and file. The Claude Code plugin hands an agent the same references when it
+reads the page, as [Keep an agent's docs green](/manni/family/claude-code/)
+shows.
+
+A judged eval with `readers: personas` reads the descriptive fields of each
+persona its page names. See
+[Judge a page as its readers](/manni/docevals/judge/#judge-a-page-as-its-readers).
 
 ## Set it up
 
@@ -520,37 +559,3 @@ Records are author-facing, so `graph build --no-authoring` leaves them out.
 This repository's site publishes only its `site` collection, which holds no
 record. [How manni graph works](/manni/graph/get-started/how-graph-works/#the-content-strategy)
 lists every triple a record derives.
-
-## With the other domains
-
-The domain is in play once a collection holds a record. `manni status` then
-shows the strategy row, with a count of each type. `manni check` runs
-`manni strategy check` beside the other domains' checks.
-[Gate every check](/manni/family/check/) covers the family verbs, and
-the [family CLI reference](/manni/family/reference/cli/) has the in-play
-rule for each domain.
-
-{/* cite cite-names-readers */}
-`manni cite check` reads the same records. A citation finding on a page that
-names a persona or journey record says whom the page serves. Its `pretty`
-report ends with a roll-up of those records, worst first, and its `json`
-carries them as `impact`. A value with no record is left out, since
-`manni strategy check` already reports it.
-[Who a finding affects](/manni/cite/ci/#who-a-finding-affects) shows the
-output.
-
-{/* cite family-check-rolls-up */}
-`manni check` prints the same roll-up over every check's findings, so a run
-that fails several domains is ranked by the readers it reaches.
-[Fix first what your readers hit](/manni/family/check/#fix-first-what-your-readers-hit)
-walks through it.
-
-`manni meta get` names the records a page names, one
-[`record` line](/manni/meta/reference/cli/#output) each, with the record's type, id
-and file. The Claude Code plugin hands an agent the same references when it
-reads the page, as [Keep an agent's docs green](/manni/family/claude-code/)
-shows.
-
-A judged eval with `readers: personas` reads the descriptive fields of each
-persona its page names. See
-[Judge a page as its readers](/manni/docevals/judge/#judge-a-page-as-its-readers).

@@ -1,6 +1,6 @@
 ---
 title: manni test
-description: "Run the Doc Detective tests embedded in your docs, have a synthetic user attempt a task from them, and gate on both with exit codes 0, 1 and 2."
+description: "Find the procedure that stopped working before a reader follows it. Run the Doc Detective tests embedded in the docs, and have a synthetic user attempt a task."
 tableOfContents: false
 hero:
   tagline: Prove the procedures in your docs work, and that a reader can finish a task with them.
@@ -30,7 +30,7 @@ related-pages: ["meta-reference-configuration"]
 risks: ["open-world"]
 sample-questions: ["How do I run the Doc Detective tests in my docs with manni?", "Which files does manni test procedures test when I give it no paths?", "What does each exit code of manni test procedures mean?", "How do I find out whether a reader can finish a task with my docs?"]
 graph: { label: "manni test", type: concept }
-last-updated: 2026-10-24
+last-updated: 2026-11-06
 tags:
   - testing
   - doc-detective
@@ -44,6 +44,10 @@ verified-by:
 ---
 
 import { Aside, CardGrid, LinkCard } from '@astrojs/starlight/components';
+
+A procedure that stopped working does more harm than a missing one, because
+the reader trusts it. A code change breaks a step silently, and a reader is
+usually the next to follow it.
 
 <Aside type="note" title="Beta">
 `manni test` is in beta. Its commands, config keys and output can change in
@@ -67,6 +71,16 @@ step, and records whether it passed. `manni test procedures` starts Doc
 Detective, reads the results it writes, and reports them. The sections below
 cover procedures, and [the last one](#attempt-a-task-as-a-persona) covers
 tasks.
+
+## With the other domains
+
+manni test runs what a page tells a reader to do.
+[manni meta](/manni/meta/), [manni lint](/manni/lint/) and
+[manni cite](/manni/cite/) check the page's source, and never run a step of
+it. `manni test tasks` plays the persona and journey records
+[manni strategy](/manni/strategy/) keeps. `manni check` leaves test out,
+because it runs the pages' shell steps and synthetic users, so CI calls each
+verb itself.
 
 ## What it adds to Doc Detective
 

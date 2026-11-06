@@ -1,6 +1,6 @@
 ---
 title: manni a11y
-description: "Crawl a site and check every page for accessibility violations with axe-core, built for CI."
+description: "Find the pages a screen-reader or low-vision user cannot use, before a reader does. Crawl the site and check every page with axe-core."
 tableOfContents: false
 hero:
   tagline: Crawl a site and check every page for accessibility violations with axe-core, built for CI.
@@ -24,7 +24,7 @@ applies-to: ["domain:a11y"]
 next-steps: ["a11y-get-started", "a11y-ci", "a11y-fix", "a11y-reference-cli"]
 sample-questions: ["What does manni a11y check, and what does it leave alone?", "How does manni a11y find the pages to check?", "What does the accessibility score mean?"]
 graph: { label: "manni a11y", type: concept }
-last-updated: 2026-09-18
+last-updated: 2026-11-06
 tags:
   - cli
   - testing
@@ -42,6 +42,10 @@ risks: read-only
 ---
 
 import { CardGrid, LinkCard } from '@astrojs/starlight/components';
+
+An inaccessible page shuts out every reader who uses a keyboard, a screen
+reader or high zoom, and its author rarely sees it. Many of those failures are
+mechanical, so a crawler can find them on every pull request.
 
 {/* cite violation-shape */}
 {/* cite exit-1-on-violation */}
@@ -67,6 +71,16 @@ it hands the person who fixes the page, and what a green run does not prove.
 {/* cite no-bundled-browser */}
 axe runs inside a real browser, and installing `@hawkeyexl/manni` does not
 download one. [Get started](/manni/a11y/get-started/) has the one-time install.
+
+## With the other domains
+
+manni a11y checks the built site, not the source files most other domains
+read. [manni site](/manni/site/) builds and serves that site on the URL your
+collection names, and `manni a11y check` crawls the same URL with no flags.
+[manni meta](/manni/meta/) and [manni lint](/manni/lint/) check the source of a
+page and never see it rendered. `manni check` leaves a11y out, because it needs
+a running site and a browser, so CI runs it as a job of its own. Its findings
+use the same notice, warning and error scale as every other domain.
 
 ## How the crawl works
 

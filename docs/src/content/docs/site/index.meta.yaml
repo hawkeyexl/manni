@@ -1,6 +1,6 @@
 docs/src/content/docs/site/index.mdx:
   personas: ["maya", "devin", "theo"]
-  journeys: ["m26", "m7", "d7", "t3"]
+  journeys: ["m26", "m7", "d7", "t3", "m34"]
   visibility: public
   review-interval: P180D
   source-of-truth:
@@ -20,5 +20,8 @@ docs/src/content/docs/site/index.mdx:
   created: 2026-10-05
   provenance:
     - generated-by: Claude Opus 5.5
-      lines: 2-160
-      integrity: sha256-6e22913dd58da62050becbff2a63ed6d090ebb454d3623b7d30ef8843c4533b3
+      lines: 2-8
+      integrity: sha256-01c1a99ea5948cfd25a7740d354b08b84e116a21ce496696b11f3fd6c52f4d61
+    - generated-by: Claude Opus 5.5
+      lines: 15-160
+      integrity: sha256-508365a14770c0df8d4d1c0c2627e40b23219da75f1f72757d8f46e8153e23df

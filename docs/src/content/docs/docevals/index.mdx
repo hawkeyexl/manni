@@ -1,6 +1,6 @@
 ---
 title: manni docevals
-description: Deterministic and LLM-as-judge evals for documentation pages, driven by frontmatter.
+description: Hold every page to the quality bar your team wrote down. Code checks first, an AI judge second, a human last.
 tableOfContents: false
 hero:
   tagline: Deterministic and LLM-as-judge evals for documentation pages, driven by frontmatter.
@@ -17,12 +17,13 @@ id: "docevals"
 type: "overview"
 keywords: ["evals", "LLM-as-judge", "graders", "frontmatter"]
 language: en
+audiences: ["docs-engineers"]
 intent: "Learn that manni docevals runs evals over documentation pages, driven by their frontmatter."
 lifecycle: published
 applies-to: ["domain:docevals"]
 sample-questions: ["What is manni docevals?", "In what order do its graders run?"]
 graph: { label: "manni docevals", type: concept }
-last-updated: 2026-10-20
+last-updated: 2026-11-06
 tags:
   - evals
   - quality
@@ -41,9 +42,22 @@ related-pages:
   - tracevals
 ---
 
+Most teams have a quality bar for pages, and it lives in a style guide or a reviewer's head. It
+holds only while someone remembers it. `manni docevals` keeps the bar in each page's frontmatter
+and grades the page against it.
+
 Every quality check on a documentation page is an **eval**: a named, testable assertion with a
 **grader** that decides pass or fail. Graders run in preference order. Code first, an AI judge
 second, a human last.
+
+## With the other domains
+
+manni docevals grades a page against the bar its team set, and leaves checks with a home
+elsewhere to that domain. [manni meta](/manni/meta/) checks that frontmatter fields are present
+and well formed, and [manni lint](/manni/lint/) checks the shape a page's doctype promises.
+[manni test](/manni/test/) runs the procedures a page documents. [manni tracevals](/manni/tracevals/)
+grades an agent session rather than a page, with evals of the same shape. `manni check` runs
+docevals with no AI judge once any page has an eval.
 
 ## The 60-second version
 
