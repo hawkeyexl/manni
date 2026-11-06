@@ -1,6 +1,6 @@
 ---
 title: manni key
-description: "Set and rotate the family encryption key, the one key every manni tool encrypts values with."
+description: "Require a field on every page without publishing its value. Set and rotate the one key meta and cite encrypt with."
 tableOfContents: false
 hero:
   tagline: Set and rotate the family key that encrypted values are encrypted with.
@@ -17,7 +17,7 @@ id: "key"
 type: "overview"
 keywords: ["encryption key", "rotate", "encryptionKey", "MANNI_ENCRYPTION_KEY"]
 language: en
-audiences: ["schema-authors", "ci-engineers"]
+audiences: ["schema-authors", "ci-engineers", "docs-engineers"]
 intent: "Understand what the family encryption key is for, where it lives, and how to set and rotate it."
 lifecycle: published
 applies-to: ["domain:key"]
@@ -26,7 +26,7 @@ related-pages: ["meta-reference-configuration", "meta-reference-schema-resolutio
 risks: ["destructive", "irreversible"]
 sample-questions: ["What is the manni encryption key for?", "Where does manni look for the encryption key?", "Why should a shared repository keep the key out of manni.config.yaml?"]
 graph: { label: "manni key", type: concept }
-last-updated: 2026-09-21
+last-updated: 2026-11-06
 tags:
   - encryption
   - security
@@ -43,11 +43,6 @@ concepts:
 
 import { Aside, CardGrid, LinkCard } from '@astrojs/starlight/components';
 
-<Aside type="note" title="Beta">
-`manni key` is in beta. Its commands, config keys and output can change in
-any release, without notice.
-</Aside>
-
 {/* cite ciphertext-shape */}
 {/* cite ciphertext-bound-to-key */}
 Some values have to be on every page and must never be readable there. manni
@@ -57,6 +52,11 @@ encrypts the path of a private source. Both write the same ciphertext: `~`
 followed by at least 82 base64url characters. It decrypts under the current key
 and under no other. Anyone with the key can check which value a page holds,
 and anyone without it learns nothing from the page.
+
+<Aside type="note" title="Beta">
+`manni key` is in beta. Its commands, config keys and output can change in
+any release, without notice.
+</Aside>
 
 `manni key` makes that key and replaces it. It is not a document tool. It
 manages a resource the whole family shares, and it re-encrypts what every tool

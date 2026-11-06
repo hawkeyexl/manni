@@ -165,11 +165,6 @@ export default defineConfig({
               items: [{ autogenerate: { directory: "a11y/get-started" } }],
             },
             {
-              label: "Check each turn",
-              collapsed: true,
-              items: [{ autogenerate: { directory: "tracevals/runtime" } }],
-            },
-            {
               label: "Run it in CI",
               collapsed: true,
               items: [{ autogenerate: { directory: "a11y/ci" } }],
@@ -514,6 +509,11 @@ export default defineConfig({
               label: "Declare what to check",
               collapsed: true,
               items: [{ autogenerate: { directory: "tracevals/declare" } }],
+            },
+            {
+              label: "Check each turn",
+              collapsed: true,
+              items: [{ autogenerate: { directory: "tracevals/runtime" } }],
             },
             {
               label: "Run it in CI",

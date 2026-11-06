@@ -444,12 +444,23 @@ Before any user-facing writing or docs task, consult `docs/content-strategy/`:
 
 1. Identify the **persona** the page serves: Maya (docs engineer), Devin (CI engineer), Sara (schema author), or Theo (contributor fixing a failure). Each has a record in `docs/content-strategy/personas/`.
 2. Find the matching **CUJ** in `docs/content-strategy/journeys/`, one record per journey. `manni strategy list` prints every audience, persona and journey, and `manni strategy get <id>` shows one record and the pages that name it. Structure the content around reaching that outcome, not by document type or Diátaxis category.
-3. Link into the **Reference shelf** (`reference/`) for exhaustive detail (flag tables, config keys, precedence chain). Journey pages explain the path; they don't duplicate reference.
-4. Check `information-architecture.md` for the page's place in the content set and its ★ launch status.
-5. Every page in `docs/src/content/docs/**` needs `title` and `description` frontmatter.
-6. Anything **visual** follows `docs/content-strategy/design.md`, which governs
+3. Say **why** before **how**. Every page opens by telling its reader why the
+   page's subject matters to them. Name the failure it catches, the cost of
+   skipping it, or the situation that brings them here. Then comes what it is,
+   then how. A reference page does it in a sentence, a domain overview in a
+   paragraph. The pattern for each page type is in
+   `docs/content-strategy/README.md`, under *Say why before how*.
+4. Link into the **Reference shelf** (`reference/`) for exhaustive detail (flag tables, config keys, precedence chain). Journey pages explain the path; they don't duplicate reference.
+5. Check `information-architecture.md` for the page's place in the content set and its ★ launch status.
+6. Every page in `docs/src/content/docs/**` needs `title` and `description` frontmatter.
+7. Anything **visual** follows `docs/content-strategy/design.md`, which governs
    the docs site and the demo videos alike. That covers a screenshot, a diagram,
    a code-block style, and an embedded video.
+
+Step 3 comes from readers. In November 2026, Write the Docs members said the
+site opened with what and how, and they could not tell what problem manni
+solves. A page that only says what a tool does leaves its reader to work out
+why they would want it.
 
 ### Keep npm at 11.6.3 or newer when changing a dependency
 

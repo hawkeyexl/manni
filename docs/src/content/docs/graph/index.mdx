@@ -1,6 +1,6 @@
 ---
 title: manni graph
-description: "Deterministic knowledge graphs derived from documentation frontmatter and formatting."
+description: "Catch what no single file shows, such as orphan pages and a concept spelled two ways. Derive a knowledge graph from the docs, check it, and publish it for retrieval."
 tableOfContents: false
 hero:
   tagline: Deterministic knowledge graphs derived from documentation frontmatter and formatting.
@@ -25,6 +25,7 @@ id: "graph"
 type: "overview"
 keywords: ["knowledge graph", "frontmatter", "docset"]
 language: en
+audiences: ["docs-engineers"]
 intent: "Learn that manni graph derives a knowledge graph from a docset's frontmatter and structure."
 lifecycle: published
 applies-to: ["domain:graph"]
@@ -51,10 +52,15 @@ related-pages:
   - meta
   - cite
   - term
-last-updated: 2026-10-24
+last-updated: 2026-11-06
 ---
 
 import { Aside } from '@astrojs/starlight/components';
+
+Some failures exist only across pages. A page nothing links to is one, and a
+reader browsing the site never reaches it. A concept two pages spell two ways
+is another, and search splits it in two. No per-file check can see them, and
+`manni graph` can.
 
 <Aside type="note" title="Beta">
 `manni graph` is in beta. Its commands, config keys and output can change in
@@ -68,6 +74,16 @@ system.
 
 Nothing is inferred from prose. A triple exists because frontmatter, a link, a
 heading, a code block or git history put it there.
+
+## With the other domains
+
+manni graph reads what the other domains already keep. A page's metadata is
+what [manni meta](/manni/meta/) validates, sidecar manifests included. Under
+the `terms` source, the termbase [manni term](/manni/term/) checks becomes the
+graph's concept scheme. [manni strategy](/manni/strategy/) records become typed
+nodes, so the graph can say which pages serve a journey. Per-file checks stay
+with their own domains. `manni check` runs `graph check` once
+`manni.config.yaml` has a `graph:` section.
 
 ## The 60-second version
 

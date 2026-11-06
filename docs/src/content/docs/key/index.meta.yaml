@@ -1,6 +1,6 @@
 docs/src/content/docs/key/index.mdx:
-  personas: ["sara", "devin"]
-  journeys: ["s4", "d5"]
+  personas: ["sara", "devin", "maya"]
+  journeys: ["s4", "d5", "m34"]
   visibility: public
   review-interval: P180D
   source-of-truth:
@@ -23,11 +23,14 @@ docs/src/content/docs/key/index.mdx:
       lines: 2
       integrity: sha256-d9a2e4b98362b0fa18334c9d52fcefd24d52e22a5fec4d8ee2fc0b9bcdb577b7
     - generated-by: Claude Opus 5
-      lines: 4-10
-      integrity: sha256-b75188667349a89e01d119b0af10ae663bfa5fb7e34c34824cef71c6cd75d700
+      lines: 4-5
+      integrity: sha256-0c9b9dcda225babc6cd7bb537813c87aa7529b65a216e21aef6ef1f1e272ec24
     - generated-by: Claude Fable 5.1
-      lines: 11-36
-      integrity: sha256-10abc6150416bb3a42cb67e4978f22629e51c63d00d33da4698903486dd7ace4
+      lines: 6-12
+      integrity: sha256-335ec81c64382fe6e677da27647a39ced417f377717b80583e3d52d8f09b24e3
+    - generated-by: Claude Fable 5.1
+      lines: 19-36
+      integrity: sha256-88394c38e277fcde0a9acba2cc80c5cc3266510a738c4d954a20a721a0617f83
     - generated-by: Claude Opus 5
       lines: 38-39
       integrity: sha256-51e2357bed2783919c1cf00c2dac2c2256db9168d24a3a17cae16f5fc833153a

@@ -1,6 +1,6 @@
 docs/src/content/docs/test/index.mdx:
   personas: ["devin", "maya", "sara"]
-  journeys: ["d17", "s19"]
+  journeys: ["d17", "s19", "m34"]
   visibility: public
   review-interval: P180D
   source-of-truth:
@@ -24,8 +24,14 @@ docs/src/content/docs/test/index.mdx:
       grader: ai
   provenance:
     - generated-by: Claude Opus 5.5
-      lines: 2-189
-      integrity: sha256-490d04e008aa7fa09b42c6f2ffa560ae788f55de6f9d441571ebfa5cf7af15af
+      lines: 2
+      integrity: sha256-d9a2e4b98362b0fa18334c9d52fcefd24d52e22a5fec4d8ee2fc0b9bcdb577b7
+    - generated-by: Claude Opus 5.5
+      lines: 8-29
+      integrity: sha256-899bb51baa382cb00b179696ded8b18d3acc03db1c78b84f0a1ca81041eb8ae2
+    - generated-by: Claude Opus 5.5
+      lines: 41-203
+      integrity: sha256-903b800ac2c2070b38f91acb5303b8cb3b8e1d815b9b0e9677a9897b58e7a2da
   owner:
     - "@hawkeyexl"
   created: 2026-10-05

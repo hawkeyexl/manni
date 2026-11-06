@@ -102,13 +102,27 @@ Before drafting or editing any user-facing documentation:
 
 3. **Structure content around that journey, not by document type.** Do not impose a Diátaxis-style tutorial/how-to/explanation/reference split as the organizing principle. Ask: "What does this persona need to know, and in what order, to reach the outcome?" Let the journey sequence the content.
 
-4. **Link into the Reference shelf for lookups.** Detailed flag tables, full config-key lists, and the precedence chain belong in `reference/`. Journey pages explain the path and link into reference for exhaustive detail. They do not duplicate it.
+4. **Say why before how.** Every page states why its subject matters to its reader before it explains what the subject is or how to use it. Name the failure it catches, what skipping it costs, or the situation the reader is in. Scale it to the page.
 
-5. **Check the IA map.** `information-architecture.md` lists every planned page and whether it is a ★ launch priority. If you are adding a new page, record it there, and name the journeys it serves in the page's `journeys:` field.
+   | Page type | The why | Where it goes |
+   |---|---|---|
+   | Home page and domain overviews | A paragraph naming the failure in the reader's terms, who pays for it, and what the domain does about it. Overviews also place the domain among the others. | First body paragraph, above any Beta aside |
+   | Landing pages (`get-started`, `set-up`, `ci`, `adopt`) | The situation the reader is in, and what is better afterwards | First paragraph |
+   | How-to and concept pages | The problem the task solves, or what skipping it costs | First one or two sentences |
+   | Fix, triage and FAQ pages | Why the check exists, since Theo doesn't know why the rule that fired exists | After the opening sentence |
+   | Reference pages | Why the thing exists, or when you reach for the page | One sentence before the lookup material |
+   | Glossary terms | Why the idea matters to someone using manni, never inside `definition:` | One sentence after the rendered definition |
+   | Per-schema pages | Who adopts the schema and what it catches | One sentence after the *Published at* line |
 
-6. **Frontmatter.** Every page in `docs/src/content/docs/**` must have `title` and `description` in its frontmatter. No exceptions.
+   Make the why concrete and true today. "Search drops the page" tells a reader more than "improves quality". A landing page's `description:` says why too, because it is the card text, the search snippet and the `llms.txt` line. Vale's `Direct.Preamble` and `Voices.ColonReveal` rules catch the likeliest traps in why-prose, a preamble before the reason and a label ahead of it.
 
-7. **Anything visual goes through `design.md`.** A page that adds a screenshot, a diagram, a code-block style, or a demo video is both a design change and a content one. The palette is not decorative. manni meta's own output already assigns meaning to red, green, yellow and cyan. Chrome that reuses one of them makes a reader see a relationship that is not there.
+5. **Link into the Reference shelf for lookups.** Detailed flag tables, full config-key lists, and the precedence chain belong in `reference/`. Journey pages explain the path and link into reference for exhaustive detail. They do not duplicate it.
+
+6. **Check the IA map.** `information-architecture.md` lists every planned page and whether it is a ★ launch priority. If you are adding a new page, record it there, and name the journeys it serves in the page's `journeys:` field.
+
+7. **Frontmatter.** Every page in `docs/src/content/docs/**` must have `title` and `description` in its frontmatter. No exceptions.
+
+8. **Anything visual goes through `design.md`.** A page that adds a screenshot, a diagram, a code-block style, or a demo video is both a design change and a content one. The palette is not decorative. manni meta's own output already assigns meaning to red, green, yellow and cyan. Chrome that reuses one of them makes a reader see a relationship that is not there.
 
 ## Verifying technical claims
 
