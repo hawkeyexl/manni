@@ -14,22 +14,25 @@ docs/src/content/docs/tracevals/declare/coverage.mdx:
       grader: ai
   provenance:
     - generated-by: Claude Opus 5
-      lines: 2-276
-      integrity: sha256-0b4ca87c13e4f4adb67409b76e4bc236355893db2d30bd5610ff7508734c3406
+      lines: 2
+      integrity: sha256-7b6b4daf458544ccc09088be57fec1c4d5534d8480a5e1aa9c29a984320d7ae3
+    - generated-by: Claude Opus 5
+      lines: 7-279
+      integrity: sha256-175cbac55505ebaa9320beb520fb8992e02f30424d5cc809384f4dda6061144d
     - generated-by: Claude Opus 5.5
-      lines: 278-280
+      lines: 281-283
       integrity: sha256-c372baf322b077bc4fda0777c47a9b05c65374210ac45eb1e724b7baad5d3dc6
     - generated-by: Claude Sonnet 5.5
-      lines: 281
+      lines: 284
       integrity: sha256-57fb3b66a8f449a74b6081ff1d5fa1f56e68cf70b92af3f728d9cb87a8722edf
     - generated-by: Claude Opus 5
-      lines: 282-332
+      lines: 285-335
       integrity: sha256-a870d3acfb222c5ddf092a18e77fc560c341cef8b0f8f7c63504e73d822e1b5d
     - generated-by: Claude Opus 5.5
-      lines: 334
+      lines: 337
       integrity: sha256-061e4fc863bced9c2968c70cbb401875d7f87555cd895239a0eb0c03fbe29640
     - generated-by: Claude Opus 5
-      lines: 335-400
+      lines: 338-403
       integrity: sha256-d3e846345d42ac101cfeb14e41b8e9d76c4d0467d9ddc5599ae4337d75ef0a60
   owner:
     - "@hawkeyexl"

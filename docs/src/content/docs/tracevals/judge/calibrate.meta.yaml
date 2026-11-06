@@ -14,19 +14,22 @@ docs/src/content/docs/tracevals/judge/calibrate.mdx:
       grader: ai
   provenance:
     - generated-by: Claude Opus 5
-      lines: 2-26
-      integrity: sha256-8964d647d0bb994c540595c8522555eb4c5eb6393be7c39d7c516a69302a0a45
+      lines: 2-12
+      integrity: sha256-decfa907c9bcabc886b7246e75680e1cdfbe4d009ba8c1978d23ac3b48ea3a84
+    - generated-by: Claude Opus 5
+      lines: 16-28
+      integrity: sha256-8d2c43a21ec05137a48e7d49ce07bbf79b28952c0628f71251e6b4853a9b16ac
     - generated-by: Claude Opus 5.5
-      lines: 28-30
+      lines: 30-32
       integrity: sha256-ee4c1022e9a6c395759cdee95b8ee9f73b173a154d6d17170a213ba36d924801
     - generated-by: Claude Opus 5
-      lines: 31
+      lines: 33
       integrity: sha256-222226f112c97e44a790036b6d5130b77f7697650c106753893c77b8d90a8d1b
     - generated-by: Claude Opus 5.5
-      lines: 33-34
+      lines: 35-36
       integrity: sha256-a169732017ac663df7aaa513b4d561fc189de45193413569927fb71bcb0db964
     - generated-by: Claude Opus 5
-      lines: 36-440
+      lines: 38-442
       integrity: sha256-47ca6145de09b01fa6caa010ec40d950f4c4b1da4024cb6feeab18490a038241
   owner:
     - "@hawkeyexl"

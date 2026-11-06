@@ -1,6 +1,6 @@
 ---
 title: Build on manni tracevals
-description: "The intended entry points of the programmatic API, the injection seams that keep your own test suite offline, and where the trace-adapter seam sits."
+description: "Call tracevals from your own code instead of parsing its output. The intended entry points of the programmatic API, the injection seams that keep your own test suite offline, and where the trace-adapter seam sits."
 sidebar:
   order: 1
 id: "tracevals-extend"
@@ -13,10 +13,14 @@ lifecycle: published
 applies-to: ["domain:tracevals"]
 sample-questions: ["How do I call tracevals from TypeScript?", "How do I stub the judge in tests?"]
 graph: { label: "Build on manni tracevals", type: concept }
-last-updated: 2026-09-16
+last-updated: 2026-11-06
 ---
 
 import { Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';
+
+When tracevals runs inside your own tool or test suite, a subprocess and its stdout are one more
+thing to fake. The library hands you the `RunReport` as an object, and every call outside the
+process sits behind a seam your tests can replace.
 
 **Scope:** consuming tracevals as a library rather than a CLI. It assumes the vocabulary from the
 journey pages, because a custom grader cannot be explained before the
@@ -146,9 +150,8 @@ absent for Claude Code session files. Only stream-json transcripts carry it, whi
 
 ## The trace-adapter seam
 
-`TraceSource` is a union with one member today, `claude-code`. Support for other formats is
-**deferred rather than rejected**, and the shape a new adapter has to conform to is the normalised
-`Trace`:
+`TraceSource` is a union with one member, `claude-code`. An adapter for another format conforms to
+the normalised `Trace`:
 
 - **Required for anything to work:** `source`, `file`, `cwd`, `events`, `turnCount`, and the derived
   collections (`toolCalls`, `skillInvocations`, `agentSpawns`, `fileAccesses`, `userMessages`,

@@ -13,13 +13,16 @@ lifecycle: published
 applies-to: ["domain:tracevals"]
 sample-questions: ["Why was my eval skipped?", "What do I do about a FAIL?"]
 graph: { label: "Read a failing eval", type: troubleshooting }
-last-updated: 2026-10-20
+last-updated: 2026-11-06
 verified-by:
   - tool: doc-detective
     check: triage-fail-line
 ---
 
 import { Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';
+
+This project gives its agents written rules, and this check holds each agent session to them by
+reading what the session actually did.
 
 **Scope:** you are looking at one result and you did not set this tool up. Everything you need is on
 this page. Nothing is installed, configured, or read first. Links are here if you want them; you

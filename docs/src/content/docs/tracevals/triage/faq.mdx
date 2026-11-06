@@ -13,10 +13,13 @@ lifecycle: published
 applies-to: ["domain:tracevals"]
 sample-questions: ["Why is an artifact missing from the report?", "Who owns the fix for a failing eval?"]
 graph: { label: "Triage FAQ", type: troubleshooting }
-last-updated: 2026-10-20
+last-updated: 2026-11-06
 ---
 
 import { Aside } from '@astrojs/starlight/components';
+
+A tracevals result can turn your build red over a rule you never wrote, because this project holds
+agent sessions to its instruction files.
 
 **Scope:** the follow-up questions that survive [Read a failing eval](/manni/tracevals/triage/). If
 you have not read that page yet, start there. It decodes a result in one pass.

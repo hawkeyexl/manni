@@ -1,6 +1,6 @@
 ---
 title: How the judge decides
-description: Ensembles, consensus, and confidence zones. The arithmetic behind a judged verdict, why an errored run can never produce a silent pass, and what a judged run sends to the provider.
+description: Decide whether a judged eval is safe to block a merge on. Ensembles, consensus, and confidence zones. The arithmetic behind a judged verdict, why an errored run can never produce a silent pass, and what a judged run sends to the provider.
 sidebar:
   order: 1
 id: "tracevals-judge"
@@ -13,10 +13,14 @@ lifecycle: published
 applies-to: ["domain:tracevals"]
 sample-questions: ["How does the judge reach a verdict?", "Can an errored judge run produce a pass?"]
 graph: { label: "How the judge decides", type: concept }
-last-updated: 2026-10-20
+last-updated: 2026-11-06
 ---
 
 import { Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';
+
+A model asked once whether a session followed a rule can answer differently the next time. manni
+tracevals asks the question three times by default, and anything the runs cannot settle goes to a
+person.
 
 **Scope:** how a judged eval becomes a `pass`, `fail`, or `needs-review`, with the arithmetic. What
 an eval should assert is [Declare what to check](/manni/tracevals/declare/); every configuration key

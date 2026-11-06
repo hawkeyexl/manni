@@ -14,25 +14,28 @@ docs/src/content/docs/tracevals/judge/index.mdx:
       grader: ai
   provenance:
     - generated-by: Claude Opus 5
-      lines: 2-104
-      integrity: sha256-869c4a5329148cb2b39df3e6647e9a0467b419e03b15a9ab132bb1f1f54be575
+      lines: 2
+      integrity: sha256-7b6b4daf458544ccc09088be57fec1c4d5534d8480a5e1aa9c29a984320d7ae3
+    - generated-by: Claude Opus 5
+      lines: 8-108
+      integrity: sha256-439d4b5c78a2e56e69e858ccfea963e1cd36a2291b312ba86a446c4c777ea164
     - generated-by: Claude Opus 5.5
-      lines: 106-108
+      lines: 110-112
       integrity: sha256-4b64d9d415e5ca7b2ab519f1596e693a18ba497d1b69f66dd214c2c098b85486
     - generated-by: Claude Opus 5
-      lines: 110
+      lines: 114
       integrity: sha256-f1b901847390b0ed7e374e7c1e464ec17b46a427c487a5ad6cbd2906405083d5
     - generated-by: Claude Opus 5.5
-      lines: 111-117
+      lines: 115-121
       integrity: sha256-586d5bf9429a0a06dcc2774d3f27eedeceeb2c21ba960ac6986b9e025b34b93a
     - generated-by: Claude Opus 5
-      lines: 118
+      lines: 122
       integrity: sha256-f1b901847390b0ed7e374e7c1e464ec17b46a427c487a5ad6cbd2906405083d5
     - generated-by: Claude Opus 5.5
-      lines: 120-124
+      lines: 124-128
       integrity: sha256-de105750378423e72346ebc49456d1c19ec6fbcb846f6184a4da0be5a4e641bc
     - generated-by: Claude Opus 5
-      lines: 125-343
+      lines: 129-347
       integrity: sha256-49c7a798aeabec55a81fb00821f778871b4b8c8b53a966af48342793f174c2b8
   owner:
     - "@hawkeyexl"

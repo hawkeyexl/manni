@@ -14,8 +14,14 @@ docs/src/content/docs/tracevals/reference/traces.mdx:
       grader: ai
   provenance:
     - generated-by: Claude Opus 5
-      lines: 2-222
-      integrity: sha256-a20365167ee03546f0651d5b7763adaf18b37d355e9a7e0f92e8444f2e2d94b3
+      lines: 2
+      integrity: sha256-76b2a53f73519706f7f8e310aaf9fa64424820e3ce6b4fb1164c503e20efd9d8
+    - generated-by: Claude Opus 5
+      lines: 7-20
+      integrity: sha256-95a62e4afc0c9291c81c8421beebbc1e7cd70b42d49a22ed68759cecf1f4fdee
+    - generated-by: Claude Opus 5
+      lines: 24-226
+      integrity: sha256-79d9a7f083d45494261c5b8fab79da90ece9313f1c9cfadd1c97d6cda74e4b91
   owner:
     - "@hawkeyexl"
   created: 2026-09-16

@@ -13,7 +13,7 @@ lifecycle: published
 applies-to: ["domain:tracevals"]
 sample-questions: ["How do I read the JSON report?", "What counts as a regression?"]
 graph: { label: "Consume results programmatically", type: task }
-last-updated: 2026-10-23
+last-updated: 2026-11-06
 verified-by:
   - tool: doc-detective
     check: json-report-keys
@@ -22,6 +22,9 @@ verified-by:
 ---
 
 import { Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';
+
+An exit code tells you about one run. It cannot show an eval that passed last week and fails now,
+or one that quietly disappeared.
 
 **Scope:** everything downstream of a passing gate, meaning structured output, run history, and
 regression detection. Installing the gate is [Run it in CI](/manni/tracevals/ci/); the field-by-field

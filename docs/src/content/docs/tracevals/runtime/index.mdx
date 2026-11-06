@@ -13,7 +13,7 @@ lifecycle: published
 applies-to: ["domain:tracevals"]
 sample-questions: ["How do I make an agent follow my CLAUDE.md?", "Which files does tracevals check an agent against?", "What does the agent see when it breaks a rule?", "Does tracevals check that the agent built what I asked for?", "Are the steps of a skill checked in order?", "Does tracevals check the system prompt?"]
 graph: { label: "Catch a broken rule before the agent hands back", type: task }
-last-updated: 2026-10-24
+last-updated: 2026-11-06
 verified-by:
   - tool: doc-detective
     check: runtime-system-prompt
@@ -36,6 +36,9 @@ import { Steps, Aside, LinkCard, CardGrid } from '@astrojs/starlight/components'
     than a documented provider. It is what makes a verdict deterministic and
     offline on a runner that has neither a key nor a local model. Config:
     .doc-detective.json. */}
+
+Set this up and an agent hears about a broken rule at the end of the turn that broke it, not from
+you in review.
 
 **Scope:** judging the turn that just ended against the rules your repository declares for agents,
 and against what you asked for.

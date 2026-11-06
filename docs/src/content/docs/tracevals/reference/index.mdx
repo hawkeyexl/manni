@@ -1,6 +1,6 @@
 ---
 title: Reference
-description: Complete lookup reference for the manni tracevals CLI, configuration keys, deterministic graders, evals schema, traces, report formats, and API.
+description: Find the exact flag, config key or report field a tracevals task needs, instead of guessing it. Complete lookup reference for the manni tracevals CLI, configuration keys, deterministic graders, evals schema, traces, report formats, and API.
 sidebar:
   order: 1
 id: "tracevals-reference"
@@ -13,10 +13,14 @@ lifecycle: published
 applies-to: ["domain:tracevals"]
 sample-questions: ["Where is every tracevals flag listed?", "Where are the grader options?"]
 graph: { label: "Reference", type: reference }
-last-updated: 2026-10-06
+last-updated: 2026-11-06
 ---
 
 import { LinkCard, CardGrid } from '@astrojs/starlight/components';
+
+You are mid-task and need one exact value, such as a flag, a config key, a grader option or a
+report field. A wrong guess costs a failed run, since tracevals rejects an unknown flag or config
+key instead of ignoring it.
 
 **Scope:** exhaustive lookup. These pages answer *what are the options?* They do not explain when
 to reach for one. For that, start from a journey: [Get started](/manni/tracevals/get-started/),
@@ -36,7 +40,7 @@ to reach for one. For that, start from a journey: [Get started](/manni/tracevals
   />
   <LinkCard
     title="Graders"
-    description="Every kind: the ai, human, and command families, and the seven deterministic ones with their options and failure messages."
+    description="Every kind: the ai, human, and command families, and the eight deterministic ones with their options and failure messages."
     href="/manni/tracevals/reference/graders/"
   />
   <LinkCard

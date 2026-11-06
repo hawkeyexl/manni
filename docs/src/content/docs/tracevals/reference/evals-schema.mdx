@@ -13,10 +13,13 @@ lifecycle: published
 applies-to: ["domain:tracevals"]
 sample-questions: ["Which vocabulary does the evals block implement?", "Can evals live outside the artifact?"]
 graph: { label: "Evals schema reference", type: reference }
-last-updated: 2026-10-04
+last-updated: 2026-11-06
 ---
 
 import { Aside } from '@astrojs/starlight/components';
+
+A misspelled field in an evals block fails the run with an `error`, so check the exact shape here
+while you write one.
 
 **Scope:** the exact shape of the `metadata.evals` block. How to decide what to put in it is
 [Declare what to check](/manni/tracevals/declare/). Source of truth:

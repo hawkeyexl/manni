@@ -13,10 +13,13 @@ lifecycle: published
 applies-to: ["domain:tracevals"]
 sample-questions: ["What does the JSON report contain?", "How does SARIF name its rules?"]
 graph: { label: "Reports & exit codes", type: reference }
-last-updated: 2026-10-20
+last-updated: 2026-11-06
 ---
 
 import { Aside } from '@astrojs/starlight/components';
+
+Anything that reads tracevals output, from a CI step to a `jq` query, depends on the fields and
+codes listed here.
 
 **Scope:** everything `run`, `calibrate` and `check` emit. The policy discussion, meaning what to do about
 `needs-review` in a pipeline, is in [Add tracevals to CI](/manni/tracevals/ci/). Source of truth:

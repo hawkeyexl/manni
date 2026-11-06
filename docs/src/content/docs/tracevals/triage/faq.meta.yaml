@@ -13,16 +13,19 @@ docs/src/content/docs/tracevals/triage/faq.mdx:
       grader: ai
   provenance:
     - generated-by: Claude Opus 5
-      lines: 2-40
-      integrity: sha256-328c63de7701efe16fcab0db36068b00e103e4b05874b0f68d1be7abeb7f5132
+      lines: 2
+      integrity: sha256-76b2a53f73519706f7f8e310aaf9fa64424820e3ce6b4fb1164c503e20efd9d8
     - generated-by: Claude Opus 5
-      lines: 42-101
+      lines: 7-43
+      integrity: sha256-ed3c4fab8985204690fd7f4d15b37e56e660bea97187cd766860c10d506b676a
+    - generated-by: Claude Opus 5
+      lines: 45-104
       integrity: sha256-d60421959b7ca3037eb3265082b24a824ee186a38024f6a22c3783faa2507e87
     - generated-by: Claude Opus 5.5
-      lines: 102
+      lines: 105
       integrity: sha256-65abad057a6ade817cb3a213e37f4f0dd9895107c51834a7ad28bd956df0c7ba
     - generated-by: Claude Opus 5
-      lines: 103-109
+      lines: 106-112
       integrity: sha256-80f71442c1b6ae87cb73d2b228680c5a14ddf51f090a8bf4b36c07864bc098eb
   owner:
     - "@hawkeyexl"

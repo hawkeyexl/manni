@@ -13,10 +13,13 @@ lifecycle: published
 applies-to: ["domain:tracevals"]
 sample-questions: ["Which artifact-evals version does tracevals read?", "How do I roll out a new eval convention?"]
 graph: { label: "Evolve the eval standard", type: concept }
-last-updated: 2026-10-04
+last-updated: 2026-11-06
 ---
 
 import { Steps, Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';
+
+The evals block is read by more than one tool, and a convention you add to it can span many
+repositories. Switch it on at `error` everywhere and those builds can all go red at once.
 
 **Scope:** the evals block as a shared contract, and changing it safely. The block's fields are in
 the [evals schema reference](/manni/tracevals/reference/evals-schema/); tuning how a judged eval is
