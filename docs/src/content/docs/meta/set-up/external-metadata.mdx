@@ -31,7 +31,7 @@ sample-questions:
 graph:
   label: Keep metadata outside the document
   type: task
-last-updated: 2026-10-21
+last-updated: 2026-11-06
 tags:
   - external-metadata
   - manifest
@@ -54,6 +54,10 @@ verified-by:
 ---
 
 import { Steps, Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';
+
+Some fields your schema requires are bookkeeping a reader does not need, values
+you cannot publish, or facts another repository owns. Keeping them in the page
+shows them to every reader, and dropping them fails validation.
 
 {/* cite external-metadata-merged-before-schema-resolution */}
 **External metadata** is a YAML **manifest** that supplies the frontmatter

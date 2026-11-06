@@ -2,7 +2,7 @@ docs/src/content/docs/meta/fix/faq.mdx:
   citations:
     - id: collection-exclude-does-not-filter-typed-path
       claim:
-        lines: 166-169
+        lines: 169-172
         integrity: sha256-f440f8b42570c5d3bd7279d08964942f75cede46980d7b3d9d98e6a1277eb57e
       source:
         file: src/meta/commands/validate.ts
@@ -59,7 +59,7 @@ docs/src/content/docs/meta/fix/faq.mdx:
         commit-sha: cb74827009894c38f8646504ae9eb4a2745761a9
     - id: faq-exit-2-operational
       claim:
-        lines: 116
+        lines: 119
         integrity: sha256-e5237420f05891b1a7fceccd23a481062672dd6a749fd09f486c68f121eb43ca
       source:
         file: src/shared/run.ts
@@ -68,7 +68,7 @@ docs/src/content/docs/meta/fix/faq.mdx:
         commit-sha: 1f2128e838c0dbefac9878def5e544ab59058e13
     - id: faq-exit-2-stderr-prefixed
       claim:
-        lines: 116
+        lines: 119
         integrity: sha256-e5237420f05891b1a7fceccd23a481062672dd6a749fd09f486c68f121eb43ca
       source:
         file: src/shared/run.ts
@@ -77,7 +77,7 @@ docs/src/content/docs/meta/fix/faq.mdx:
         commit-sha: 1f2128e838c0dbefac9878def5e544ab59058e13
     - id: faq-exit-1-validation-failure
       claim:
-        lines: 115
+        lines: 118
         integrity: sha256-369a3d5d29f0b671abcebf9249d4b33a9ae1b6894780f14db6c3650acf01432e
       source:
         file: src/meta/cli.ts
@@ -86,7 +86,7 @@ docs/src/content/docs/meta/fix/faq.mdx:
         commit-sha: 0d3d8a74bd17fce503520bb2313a412ca60aeeca
     - id: faq-exit-0-all-passed
       claim:
-        lines: 114
+        lines: 117
         integrity: sha256-e7bbf58b0b32d5100b6d2f2e7609a14ba25e57d27688ee56d0977e065da017fd
       source:
         file: src/meta/cli.ts
@@ -95,7 +95,7 @@ docs/src/content/docs/meta/fix/faq.mdx:
         commit-sha: 0d3d8a74bd17fce503520bb2313a412ca60aeeca
     - id: explicit-file-always-validated
       claim:
-        lines: 104-105
+        lines: 107-108
         integrity: sha256-e47e06fea24a0166666e42eb15dc76ff5161ebb9efc105750af1a9cbea73ce39
       source:
         file: src/meta/core/load-files.ts
@@ -104,7 +104,7 @@ docs/src/content/docs/meta/fix/faq.mdx:
         commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e
     - id: ext-filters-glob-walk-results
       claim:
-        lines: 104
+        lines: 107
         integrity: sha256-1df8d2cdfec8275bdef23caa9e4af4cdbe728cb51333c56a770089e46c305805
       source:
         file: src/meta/core/load-files.ts

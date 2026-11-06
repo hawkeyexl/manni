@@ -35,7 +35,7 @@ sample-questions:
 graph:
   label: Stamp stewardship fields from evidence
   type: task
-last-updated: 2026-10-23
+last-updated: 2026-11-06
 tags:
   - automation
   - git
@@ -58,6 +58,10 @@ verified-by:
 ---
 
 import { Steps, Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';
+
+A hand-typed `last-updated` date or `owner` goes stale the first time someone
+forgets to change it. The field is still present and well formed, so the build
+stays green while the value is wrong.
 
 {/* cite derive-sources-are-git-codeowners-and-host-reviews */}
 {/* cite review-record-read-through-gh-or-glab */}

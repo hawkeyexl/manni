@@ -28,7 +28,7 @@ sample-questions:
 graph:
   label: Built-in Docusaurus schemas
   type: concept
-last-updated: 2026-10-20
+last-updated: 2026-11-06
 tags:
   - docusaurus
   - schemas
@@ -53,6 +53,9 @@ verified-by:
 ---
 
 import { Aside } from '@astrojs/starlight/components';
+
+A Docusaurus build stops at the first page whose front matter it rejects. These
+schemas report every such page in one run, before the build starts.
 
 manni meta ships the front matter contract of **Docusaurus 3.10** as three built-in
 schemas, one per content plugin:

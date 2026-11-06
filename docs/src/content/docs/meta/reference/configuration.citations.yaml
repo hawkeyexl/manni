@@ -26,7 +26,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
     - id: meta-paths-refusal
       claim:
-        lines: 62
+        lines: 65
         integrity: sha256-3dd7fe2799f926e58b77900af0ddaead08fc3be814f94f783859d4af329b456c
       source:
         file: src/meta/core/config.ts
@@ -35,7 +35,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
     - id: meta-exclude-refusal
       claim:
-        lines: 63
+        lines: 66
         integrity: sha256-b5ac82a7723c6ea8a37fd1cfa761a7631b214b77be5869989ccb7c3175813bf9
       source:
         file: src/meta/core/config.ts
@@ -44,7 +44,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
     - id: meta-sidecars-refusal
       claim:
-        lines: 64
+        lines: 67
         integrity: sha256-ebd8c230e0dc5ee59fc3ede0a1f47b94161e1bfa99d057bb9356476a62961254
       source:
         file: src/meta/core/config.ts
@@ -53,7 +53,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
     - id: overrides-name-refusal
       claim:
-        lines: 65
+        lines: 68
         integrity: sha256-ecae98c6b33ffc7216e58215c27cdf56b06cdac12a42982d3761918be06644d3
       source:
         file: src/meta/core/config.ts
@@ -70,7 +70,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
     - id: operational-error-is-exit-2
       claim:
-        lines: 69
+        lines: 72
         integrity: sha256-ec782fd5566edcd3ea3b7ff9073107a053a28210918753540e96fb37b22be9e2
       source:
         file: src/shared/run.ts
@@ -79,7 +79,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: legacy-warning-names-externalmetadata
       claim:
-        lines: 75-77
+        lines: 78-80
         integrity: sha256-e4da48d9116e1823c8dc8bdd4711dd67525c8c24d8b359444f17e5b5d1689b3f
       source:
         file: src/shared/config-file.ts
@@ -88,7 +88,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: a589e08250dee7efaee7ed0f58df01986fad8d1d
     - id: external-finding-schema-refs
       claim:
-        lines: 78-82
+        lines: 81-85
         integrity: sha256-b69fc57d08243fdbd1cff7e30002783b91b6de97676806bbc3c252f4c08adf01
       source:
         file: src/meta/core/external-metadata.ts
@@ -97,7 +97,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: collection-exclude-is-membership-only
       claim:
-        lines: 83-85
+        lines: 86-88
         integrity: sha256-80138bc786b550d3527cc2daa5161d99940698a346457ab95f20a22420a0f727
       source:
         file: src/shared/collections.ts
@@ -114,7 +114,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: collection-name-rules
       claim:
-        lines: 112
+        lines: 115
         integrity: sha256-98e37a44ec2dd0c4c76b78d2e8f96d1d91632a60ac0771f143a811b07b441ab9
       source:
         file: src/shared/collections.ts
@@ -123,7 +123,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: collection-paths-required
       claim:
-        lines: 113
+        lines: 116
         integrity: sha256-38997b632cad64d98c733b28ccdc48e7be94497e183dbfcbbcde569f960ea957
       source:
         file: src/shared/collections.ts
@@ -132,7 +132,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: collection-exclude-defaults-empty
       claim:
-        lines: 114
+        lines: 117
         integrity: sha256-125843ab58b19cf07f611d2881cbcdba7de97d0178ecbc2a7ed48b4ee490bc82
       source:
         file: src/shared/collections.ts
@@ -141,7 +141,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: collection-url-must-be-http
       claim:
-        lines: 115
+        lines: 118
         integrity: sha256-b48d0a0d2bc1fdd8808d1be309950bf0910d68271d367c37881860b24fe61b24
       source:
         file: src/shared/collections.ts
@@ -150,7 +150,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: collection-externalmetadata-defaults-empty
       claim:
-        lines: 116
+        lines: 119
         integrity: sha256-48ff80982fcc87cb5170e5ec06589eca00b11a717903e67c2a12366e41224712
       source:
         file: src/shared/collections.ts
@@ -159,7 +159,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: a11y-seeds-from-declared-collection-urls
       claim:
-        lines: 115
+        lines: 118
         integrity: sha256-b48d0a0d2bc1fdd8808d1be309950bf0910d68271d367c37881860b24fe61b24
       source:
         file: src/a11y/core/seeds.ts
@@ -240,7 +240,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: positional-path-loaded-whatever-its-membership
       claim:
-        lines: 220-224
+        lines: 223-227
         integrity: sha256-aefc4d8397447d57eaa6e81e6fe7368a6d2203582e836bf729b662a0174b3d0f
       source:
         file: src/meta/core/config.ts
@@ -249,7 +249,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
     - id: membership-is-the-collections-own-globs
       claim:
-        lines: 225-228
+        lines: 228-231
         integrity: sha256-19ec8c9d933dbabd93c6d09656d2b9566d84351d2ffed31484beabecc2c08aa2
       source:
         file: src/shared/collections.ts
@@ -258,7 +258,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: membership-is-path-arithmetic
       claim:
-        lines: 229-234
+        lines: 232-237
         integrity: sha256-001b9fbd47ce2855cd6f99b896c2eccfa1fd5a991d38d3c4e55faa88b1489125
       source:
         file: src/shared/collections.ts
@@ -267,7 +267,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: one-file-two-collections-one-key-is-exit-2
       claim:
-        lines: 235-239
+        lines: 238-242
         integrity: sha256-71ea105b1a55922f39d9a9e1f2af9b725d35581545111906858bfc7f745b159e
       source:
         file: src/meta/core/external-metadata.ts
@@ -276,7 +276,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: only-cli-exclude-reshapes-a-run
       claim:
-        lines: 240-243
+        lines: 243-246
         integrity: sha256-82b3d6a2e48d5f7c499791ba2d8bf2937c01a040643546fa5ae0e4e88e7ae8c7
       source:
         file: src/meta/core/load-files.ts
@@ -285,7 +285,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e
     - id: excluded-file-is-not-read
       claim:
-        lines: 246-249
+        lines: 249-252
         integrity: sha256-0509e81c2cf236c6309b0dde853655079e940b73e4cb076c3b86ba31d00c2b22
       source:
         file: src/shared/collections.ts
@@ -294,7 +294,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: family-wide-default-ignores
       claim:
-        lines: 259-260
+        lines: 262-263
         integrity: sha256-873ee3a93423139ba3bba3c32679753a77db3fbb74eca1465721871aba5eea9a
       source:
         file: src/meta/core/load-files.ts
@@ -319,7 +319,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: seeds-positional-urls
       claim:
-        lines: 281
+        lines: 284
         integrity: sha256-bec5644a46274bb09a60c3015296207c43f43e7a35673b568e24d87b65ec7f0c
       source:
         file: src/a11y/core/seeds.ts
@@ -328,7 +328,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: seeds-named-collection-urls
       claim:
-        lines: 282
+        lines: 285
         integrity: sha256-f6bae4a77bbb56eb561c5c0ffd5be12a546eaf8d44bdeea3308948ee788a1f2e
       source:
         file: src/a11y/core/seeds.ts
@@ -337,7 +337,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: seeds-a11y-urls-key
       claim:
-        lines: 283
+        lines: 286
         integrity: sha256-0c1e82600cdf92e1186d8271882dae4818d879a846fd07ea5765b7704ad4831b
       source:
         file: src/a11y/core/seeds.ts
@@ -346,7 +346,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: seeds-every-declared-collection-url
       claim:
-        lines: 284
+        lines: 287
         integrity: sha256-e3193d8e46f5ddf8353a44561560f52597e6482e23d900c31d967141d17258c2
       source:
         file: src/a11y/core/seeds.ts
@@ -379,7 +379,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: cb74827009894c38f8646504ae9eb4a2745761a9
     - id: manifest-keys-are-required-and-disjoint
       claim:
-        lines: 336
+        lines: 339
         integrity: sha256-71ea8d347d912631f2287c1245068649023d2547749b7b6406531370ff4055b3
       source:
         file: src/shared/collections.ts
@@ -388,7 +388,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: tokenenv-only-on-a-url
       claim:
-        lines: 337
+        lines: 340
         integrity: sha256-a2a0070a0627ae5e68992b44ab6379190d16c61cd58f82d47346f3c4cbcff60d
       source:
         file: src/shared/collections.ts
@@ -397,7 +397,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: join-defaults-to-path
       claim:
-        lines: 338
+        lines: 341
         integrity: sha256-d71a2ab3d5c74c2db42ea14e4a9c3570daa7ab21bbc5b29b024a7963bed7930b
       source:
         file: src/shared/collections.ts
@@ -430,7 +430,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: manifest-top-level-must-be-a-mapping
       claim:
-        lines: 411
+        lines: 414
         integrity: sha256-770e4ab0cf662c7f0a2971e0016c6220d2bc4f057ac13b5c82c453d54fc27e2c
       source:
         file: src/meta/core/external-metadata.ts
@@ -439,7 +439,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: manifest-entry-must-be-a-mapping
       claim:
-        lines: 412
+        lines: 415
         integrity: sha256-fa7e69599815ca407b779b2b36ae493523f03ed46fe7a682ac2aa95b67cd514e
       source:
         file: src/meta/core/external-metadata.ts
@@ -448,7 +448,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: manifest-duplicate-document-refused
       claim:
-        lines: 413
+        lines: 416
         integrity: sha256-3a223c7920773046a0369a0592a1988e7c133a4edc55295fb56e3c04887dc991
       source:
         file: src/meta/core/external-metadata.ts
@@ -457,7 +457,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: manifest-unowned-key-refused
       claim:
-        lines: 414
+        lines: 417
         integrity: sha256-040deb6d12b8e8ad4e7c24461ce14cd63271cb493a6ce11213b288927fb2a2f3
       source:
         file: src/meta/core/external-metadata.ts
@@ -466,7 +466,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: manifest-schema-key-refused
       claim:
-        lines: 415
+        lines: 418
         integrity: sha256-3747bbc829c269adbade4a985cc29c8fec2c237f4c7bdeeb46ec8f04caf7432a
       source:
         file: src/meta/core/external-metadata.ts
@@ -499,7 +499,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: c4c8820ad03b39bd78625127e699a02af7e46588
     - id: url-manifest-may-not-own-citations
       claim:
-        lines: 577-579
+        lines: 580-582
         integrity: sha256-a0acafceccd3463330e81fb7eb329980a391f22578eafd0a3b985c6e79fdf442
       source:
         file: src/cite/core/sidecar.ts
@@ -508,7 +508,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: c4c8820ad03b39bd78625127e699a02af7e46588
     - id: citation-finding-sits-on-the-manifest
       claim:
-        lines: 580-584
+        lines: 583-587
         integrity: sha256-dbbc615fad3976bd0457a6300aabd973a03c5150c10b7f3968b41be34d087d18
       source:
         file: src/cite/core/sidecar.ts
@@ -541,7 +541,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: duplicate-join-value-is-a-finding-on-both
       claim:
-        lines: 644-651
+        lines: 647-654
         integrity: sha256-5e2ca4f3a12fc08b98de5cb9451f83e0fd18eefcb303ad9a1cd94b0831ad1464
       source:
         file: src/meta/commands/validate.ts
@@ -550,7 +550,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: cb74827009894c38f8646504ae9eb4a2745761a9
     - id: unmatched-join-entry-is-exit-2
       claim:
-        lines: 652-655
+        lines: 655-658
         integrity: sha256-c0fdce65674a87a0fbdc6c8ba53e56bdf906f446ca69b892632b01f6f3d92ffc
       source:
         file: src/meta/commands/validate.ts
@@ -559,7 +559,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: cb74827009894c38f8646504ae9eb4a2745761a9
     - id: join-field-is-never-an-owned-key
       claim:
-        lines: 656-659
+        lines: 659-662
         integrity: sha256-06bb5d3bd2ada141cd73828847d3df40c6ebd3f7d0dd3313076ee1b505b400c3
       source:
         file: src/shared/collections.ts
@@ -568,7 +568,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: path-is-the-join-not-a-field
       claim:
-        lines: 660-661
+        lines: 663-664
         integrity: sha256-2c205f0888b8d5787d865ef23a1441b0409432857d5b7c942ca282df309a84df
       source:
         file: src/meta/core/external-metadata.ts
@@ -577,7 +577,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: query-update-of-a-join-field-is-refused
       claim:
-        lines: 662-664
+        lines: 665-667
         integrity: sha256-296384efd3866b0b4efd9b3da10e41ce6f1b632287989bae124ec6a42ec0a1b9
       source:
         file: src/meta/commands/query.ts
@@ -586,7 +586,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: c72a188d455b54a739b4ef728a55b4adac510f0a
     - id: remote-manifest-never-cached
       claim:
-        lines: 764-767
+        lines: 767-770
         integrity: sha256-36729f7db786f0fd719032458004ee74ab4df6ee7387d13f8548199e1bad6a34
       source:
         file: src/meta/core/external-metadata.ts
@@ -595,7 +595,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: fetch-failure-names-url-and-status
       claim:
-        lines: 768-771
+        lines: 771-774
         integrity: sha256-7c97cb5d1067d089dc9c434dffb6ae2592ac586767635deb1da48050975b893e
       source:
         file: src/meta/core/external-metadata-fetch.ts
@@ -604,7 +604,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: offline-refuses-a-remote-manifest
       claim:
-        lines: 772-774
+        lines: 775-777
         integrity: sha256-1d84ab8502883f08cd3c2cd3ab9072e758f91468778b590f76a1b26d5c165ffc
       source:
         file: src/meta/core/external-metadata-fetch.ts
@@ -613,7 +613,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: url-credential-must-live-in-the-environment
       claim:
-        lines: 775-778
+        lines: 778-781
         integrity: sha256-25da926317b67770aa3a09208c0e212fcecf2be568a27fd628956a3867904362
       source:
         file: src/shared/collections.ts
@@ -622,7 +622,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: http-refused-except-on-loopback
       claim:
-        lines: 779-781
+        lines: 782-784
         integrity: sha256-3fcb698b233d0f39eacc56bf9946e2a59c5e2dcb7b754ae8d4c0f9b14a54a9c5
       source:
         file: src/shared/collections.ts
@@ -631,7 +631,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: cross-origin-redirect-drops-the-token
       claim:
-        lines: 782-785
+        lines: 785-788
         integrity: sha256-315b28184df75a00ff86185a6b3ca63f72f496108845c7175d817f06d9b4176e
       source:
         file: src/meta/core/external-metadata-fetch.ts
@@ -640,7 +640,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: manifest-url-has-no-host-allowlist
       claim:
-        lines: 786-788
+        lines: 789-791
         integrity: sha256-86dff532ea3e976dab215c8427d7e71adec200d4654488f961be23757f0d30ee
       source:
         file: src/shared/collections.ts
@@ -649,7 +649,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: remote-manifest-fetch-bounds
       claim:
-        lines: 795-797
+        lines: 798-800
         integrity: sha256-e4fc7e23c700c124b034b203516d6f3455fad22aaa8e39386a0bac0d5a629ed9
       source:
         file: src/meta/core/external-metadata-fetch.ts
@@ -658,7 +658,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: tokenenv-on-a-path-message
       claim:
-        lines: 819
+        lines: 822
         integrity: sha256-f95d010b99dfc6023ded8c6d4d73f00f6928d48b0a956b0218606a2d3b934643
       source:
         file: src/shared/collections.ts
@@ -667,7 +667,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: plain-http-manifest-message
       claim:
-        lines: 820
+        lines: 823
         integrity: sha256-53964d53c2c203ca14d4f5bae8ba8c1b27ea524d67e7a4633af71abf36e7e20a
       source:
         file: src/shared/collections.ts
@@ -676,7 +676,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: userinfo-in-manifest-url-message
       claim:
-        lines: 821
+        lines: 824
         integrity: sha256-46182e23cc1d0acc238ca4e1995ad1efef8acbb92aa78d08c6df04869f22a619
       source:
         file: src/shared/collections.ts
@@ -701,7 +701,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: fetched-finding-names-the-url
       claim:
-        lines: 789-794
+        lines: 792-797
         integrity: sha256-6f89704ba239bf02dbb75bef8d75884ddd19aad58dd5da50a17b8b3285dc4f8f
       source:
         file: src/meta/core/external-metadata.ts
@@ -710,7 +710,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: tokenenv-variable-unset-message
       claim:
-        lines: 812
+        lines: 815
         integrity: sha256-933d56901b4b19c2f29c3d0d84653206cf5000613384dd692f7bcd449b0c8d21
       source:
         file: src/meta/core/external-metadata-fetch.ts
@@ -719,7 +719,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: anonymous-404-hint
       claim:
-        lines: 813
+        lines: 816
         integrity: sha256-d5e2e29b765a242ba14820ec8625bea21a544321d6c9888949e740ad698e81c7
       source:
         file: src/meta/core/external-metadata-fetch.ts
@@ -728,7 +728,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: authenticated-404-hint
       claim:
-        lines: 814
+        lines: 817
         integrity: sha256-8c0b54c201b65cfac50cfed820910446a8f9d09b3657e157e15dbf644d5b11c6
       source:
         file: src/meta/core/external-metadata-fetch.ts
@@ -737,7 +737,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: other-non-2xx-status-message
       claim:
-        lines: 815
+        lines: 818
         integrity: sha256-27017997c42cdef202be22e30a47518ff1193d8db8795013053c2968683b77f2
       source:
         file: src/meta/core/external-metadata-fetch.ts
@@ -746,7 +746,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: manifest-fetch-timeout-message
       claim:
-        lines: 816
+        lines: 819
         integrity: sha256-8080f58b9c4bc4e7a2422781b43bb79a468899bbd06483534b79568f22a69405
       source:
         file: src/meta/core/external-metadata-fetch.ts
@@ -755,7 +755,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: manifest-body-cap-message
       claim:
-        lines: 817
+        lines: 820
         integrity: sha256-d6eb4ec6fa6e674cbae1442e36dee11815344f22ffa4051e1797625cc30dd1ab
       source:
         file: src/meta/core/external-metadata-fetch.ts
@@ -764,7 +764,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: offline-manifest-message
       claim:
-        lines: 818
+        lines: 821
         integrity: sha256-076ce677a64985c081e1a2a3e6344140005a974e3f45443e4584e5993f821319
       source:
         file: src/meta/core/external-metadata-fetch.ts
@@ -773,7 +773,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: keys-are-owned-per-collection
       claim:
-        lines: 825-834
+        lines: 828-837
         integrity: sha256-b2d427d0d88ad0a233e3dbe301418caa73b19193b2ed8848118164f6f9fa0a26
       source:
         file: src/shared/collections.ts
@@ -782,7 +782,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: document-carrying-an-owned-key-is-a-finding
       claim:
-        lines: 835-840
+        lines: 838-843
         integrity: sha256-bd900aba67ebc3105718780cc9ecbbafd3826b7719b55f933b96d459fd92eac3
       source:
         file: src/meta/commands/validate.ts
@@ -791,7 +791,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: cb74827009894c38f8646504ae9eb4a2745761a9
     - id: manifest-keys-name-documents-by-path-or-field
       claim:
-        lines: 841-847
+        lines: 844-850
         integrity: sha256-d308e4863be8e7ab7e2cabd4954ac22022629e0a19cf8ba1043241fa2bd36cdb
       source:
         file: src/meta/core/external-metadata.ts
@@ -800,7 +800,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: two-collections-may-own-one-key
       claim:
-        lines: 851-856
+        lines: 854-859
         integrity: sha256-9f233762be5cd4ce489ab1297b97598bbcafd3886f434714100a5c12bff8c0f6
       source:
         file: src/meta/core/external-metadata.ts
@@ -809,7 +809,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: supplied-value-finding-names-the-manifest
       claim:
-        lines: 863-866
+        lines: 866-869
         integrity: sha256-4aebff5863d065a8f0a59d1948a7e47670b468a15a096c6c095c3cdbbd1f79ae
       source:
         file: src/meta/core/validator.ts
@@ -818,7 +818,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
     - id: owned-key-written-into-the-manifest
       claim:
-        lines: 867-875
+        lines: 870-878
         integrity: sha256-15d8d346b41b99f6e6432cf635868114a4c247bc1c774d825f92294bcf25865d
       source:
         file: src/meta/commands/query.ts
@@ -827,7 +827,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: c72a188d455b54a739b4ef728a55b4adac510f0a
     - id: relocate-edits-manifest-keys
       claim:
-        lines: 876-882
+        lines: 879-885
         integrity: sha256-bbb0f7a51e16666d91abdfc5a796cf3b28af7290b8b276d5c8239b34bb7d82a2
       source:
         file: src/meta/core/relocation.ts
@@ -836,7 +836,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: validate-runs-the-orphan-check-on-a-corpus
       claim:
-        lines: 888
+        lines: 891
         integrity: sha256-3d8c721d35411f2a706310012cc0839cae4f472bbe7a8e2fe10fcec6534e3fd5
       source:
         file: src/meta/commands/validate.ts
@@ -845,7 +845,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: cb74827009894c38f8646504ae9eb4a2745761a9
     - id: get-reads-the-merged-value
       claim:
-        lines: 889
+        lines: 892
         integrity: sha256-b05cb3bf654ae6b277ec9280f724d2077b98cee9b7e446ab2ef496aeb1454aae
       source:
         file: src/meta/commands/get.ts
@@ -854,7 +854,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: e9388316c721185044c2c16f35a31b957c3e1d41
     - id: query-rows-hold-the-merged-values
       claim:
-        lines: 890
+        lines: 893
         integrity: sha256-1186e9d13ea41f7ed7561b0b280840b3e56e71d33877e40334e6d90fc3954ca7
       source:
         file: src/meta/commands/query.ts
@@ -863,7 +863,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: c72a188d455b54a739b4ef728a55b4adac510f0a
     - id: fill-writes-an-owned-candidate-to-the-manifest
       claim:
-        lines: 891
+        lines: 894
         integrity: sha256-e1825e65cb9fa335d584c7dce8dff48817c66a167aaa2b2664e63d2fff394d2e
       source:
         file: src/meta/commands/fill.ts
@@ -872,7 +872,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
     - id: derive-stamps-an-owned-field-in-the-manifest
       claim:
-        lines: 892
+        lines: 895
         integrity: sha256-94ce3fb976c1ad5855fa17c353559ec0f0e259716a991bde9d7685d7cd94032c
       source:
         file: src/meta/commands/derive.ts
@@ -881,7 +881,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: cb74827009894c38f8646504ae9eb4a2745761a9
     - id: relocate-moves-values-between-page-and-manifest
       claim:
-        lines: 893
+        lines: 896
         integrity: sha256-adaff5d22482dad8cd42f94ca47f4aa4a68b15575431c3f5a049fde72828615e
       source:
         file: src/meta/core/relocation.ts
@@ -898,7 +898,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: keys-appended-to-the-existing-local-manifest
       claim:
-        lines: 953
+        lines: 956
         integrity: sha256-7400e46e113b48419956557342da1d9a991836fd0ecc2a1059856820079e845d
       source:
         file: src/meta/core/relocation.ts
@@ -907,7 +907,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: collection-metadata-yaml-created
       claim:
-        lines: 954
+        lines: 957
         integrity: sha256-0f2e76d167423e97e5324f427edae9589ae1e0eda5c253eb092c85f835c04b5b
       source:
         file: src/meta/core/relocation.ts
@@ -916,7 +916,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: default-collection-added
       claim:
-        lines: 955
+        lines: 958
         integrity: sha256-ae4b41644186957cf474c6a8aaf3b689161f1e6dc26774806572e92d68e97b16
       source:
         file: src/meta/core/relocation.ts
@@ -925,7 +925,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: target-appended-to-the-only-collection
       claim:
-        lines: 956
+        lines: 959
         integrity: sha256-16637574c24bbf8fc51fa6344f6e62a43ce72f2f0c12792ad1380bb96180b846
       source:
         file: src/meta/core/relocation.ts
@@ -934,7 +934,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: several-collections-and-no-membership-edits-nothing
       claim:
-        lines: 957
+        lines: 960
         integrity: sha256-120931012905831776bdf3542ad778aac24a7f4a52474add369ebbf092aa24fd
       source:
         file: src/meta/core/relocation.ts
@@ -943,7 +943,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: emptied-manifest-entry-removed
       claim:
-        lines: 958
+        lines: 961
         integrity: sha256-920b01dbb52a6aeed33a42466d1a487651d0eec9dc8dc2604254819f8399af19
       source:
         file: src/meta/core/relocation.ts
@@ -952,7 +952,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: relocate-refuses-no-config
       claim:
-        lines: 959
+        lines: 962
         integrity: sha256-8c8a045d81f675a33abeaed933d97dd69b98a902a439e00f9f9984a916584602
       source:
         file: src/meta/core/relocation.ts
@@ -985,7 +985,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
     - id: external-metadata-exit-1-cases
       claim:
-        lines: 1046
+        lines: 1049
         integrity: sha256-c8bc9ddad558003457e3a99bd7154da497e95f6fe95e27961bbaf51b9448947c
       source:
         file: src/meta/cli.ts
@@ -1002,7 +1002,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: external-metadata-exit-2-cases
       claim:
-        lines: 1045
+        lines: 1048
         integrity: sha256-5bdc8c4e929e91b2af8803b10139ab6a395a8e491905548af4f827da0e79de83
       source:
         file: src/shared/run.ts
@@ -1067,7 +1067,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: a589e08250dee7efaee7ed0f58df01986fad8d1d
     - id: encryption-key-shape-and-generated-length
       claim:
-        lines: 1172
+        lines: 1175
         integrity: sha256-d25788ac4b023f2e4da99098e9ab7dfd5138731d0534cd707265247ff8722fb2
       source:
         file: src/shared/encryption.ts
@@ -1076,7 +1076,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: env-key-wins-over-config
       claim:
-        lines: 1174-1176
+        lines: 1177-1179
         integrity: sha256-dcaf0327b31f53fffe6d5263ae44f1a33548c28aa9a1cc7872d8aff014914656
       source:
         file: src/shared/encryption-key.ts
@@ -1085,7 +1085,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: a589e08250dee7efaee7ed0f58df01986fad8d1d
     - id: explicit-c-file-with-encryptionkey-is-a-family-file
       claim:
-        lines: 1181-1183
+        lines: 1184-1186
         integrity: sha256-741b3fd508eb6d704bfa36b354c3072a88cd9db8e9d52a34971438744dff1862
       source:
         file: src/shared/config-file.ts
@@ -1094,7 +1094,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: a589e08250dee7efaee7ed0f58df01986fad8d1d
     - id: encryptionkey-stops-config-discovery
       claim:
-        lines: 1178-1180
+        lines: 1181-1183
         integrity: sha256-1c1c38043eb4e5ae8447cc323c4fdab5bf82c733060e94ada734a2db3b09a19a
       source:
         file: src/shared/config-file.ts
@@ -1111,7 +1111,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: a589e08250dee7efaee7ed0f58df01986fad8d1d
     - id: committed-key-warning-on-a-tracked-file
       claim:
-        lines: 1196-1199
+        lines: 1199-1202
         integrity: sha256-d3d126f4ed1b6c27d7db1ef8ddbfacf8506a88d74122479d2b8fdda2b5a41d53
       source:
         file: src/shared/encryption-key.ts
@@ -1168,7 +1168,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
     - id: vale-config-is-resolved-from-the-config-file
       claim:
-        lines: 1416
+        lines: 1419
         integrity: sha256-37884aceebadf79a78d801577742cd7f54ce5064943a7ebbd08ae3a192df6e20
       source:
         file: src/shared/tools.ts
@@ -1177,7 +1177,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: c72a188d455b54a739b4ef728a55b4adac510f0a
     - id: term-starts-vale-with-the-configured-file
       claim:
-        lines: 1425-1440
+        lines: 1428-1443
         integrity: sha256-405550c11eb8d8a19b094675160fc7c334a6c1e3daf48ecec3e05403b17ab1b0
       source:
         file: src/term/commands/run.ts
@@ -1186,7 +1186,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
     - id: tools-key-counts-for-discovery
       claim:
-        lines: 1435-1437
+        lines: 1438-1440
         integrity: sha256-07a016893ba958c1d699a5924cc6b55ef6e5b77f104f5c3d60cbee2a61b131c2
       source:
         file: src/shared/config-file.ts
@@ -1195,7 +1195,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: a589e08250dee7efaee7ed0f58df01986fad8d1d
     - id: meta-schemas-key
       claim:
-        lines: 1476
+        lines: 1479
         integrity: sha256-993d43583d2cadd67607e0e51043f4e03882684ee30386e20da4ab7fd0dfd54a
       source:
         file: src/meta/core/config.ts
@@ -1204,7 +1204,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
     - id: meta-overrides-key
       claim:
-        lines: 1480
+        lines: 1483
         integrity: sha256-8e24bde4ac5006c0888a18a1e27d630ca7707de95897c02f48ec40017fab1293
       source:
         file: src/meta/core/config.ts
@@ -1213,7 +1213,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
     - id: meta-checks-key
       claim:
-        lines: 1481
+        lines: 1484
         integrity: sha256-143ed32f76012d3fcc643a72bbfd57747f087465023df64d24e8cadea1b0b99e
       source:
         file: src/meta/core/config.ts
@@ -1222,7 +1222,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
     - id: meta-derive-key
       claim:
-        lines: 1482
+        lines: 1485
         integrity: sha256-ee6cfdb30f6a746c1799e96804e9e64f5393e1f9a464e27dd64201c4dd7658b5
       source:
         file: src/meta/core/config.ts
@@ -1231,7 +1231,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
     - id: meta-baseline-key
       claim:
-        lines: 1483
+        lines: 1486
         integrity: sha256-3eb97b9f6e7737e99a8aa820c803df15b401dfe8b271d84ce42c8ac0069579c4
       source:
         file: src/meta/core/config.ts
@@ -1240,7 +1240,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
     - id: meta-allowempty-key
       claim:
-        lines: 1484
+        lines: 1487
         integrity: sha256-55d09e22e3e265c844737df68cd6a06e3fdccf053fba757571b8f8450d62fbd9
       source:
         file: src/meta/core/config.ts
@@ -1249,7 +1249,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
     - id: meta-respectgitignore-key
       claim:
-        lines: 1485
+        lines: 1488
         integrity: sha256-f2d66d70ef515ba92a434dad4987bd0581ab7548c45886d0b799f068a37d7ebe
       source:
         file: src/meta/core/config.ts
@@ -1258,7 +1258,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
     - id: meta-offline-key
       claim:
-        lines: 1483
+        lines: 1486
         integrity: sha256-3eb97b9f6e7737e99a8aa820c803df15b401dfe8b271d84ce42c8ac0069579c4
       source:
         file: src/meta/core/config.ts
@@ -1267,7 +1267,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
     - id: meta-schemacache-key
       claim:
-        lines: 1487
+        lines: 1490
         integrity: sha256-01e0ff21623198b05a8ca09ea86b6b5dc322f25d2264bebf79121bd609839bae
       source:
         file: src/meta/core/config.ts
@@ -1276,7 +1276,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
     - id: meta-schematrust-key
       claim:
-        lines: 1488
+        lines: 1491
         integrity: sha256-0d375f3614a0d1caf6739d0461e04cb887b268e5a3fc6d1d41a07c309f2f59dd
       source:
         file: src/meta/core/config.ts
@@ -1285,7 +1285,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
     - id: meta-fill-key
       claim:
-        lines: 1489
+        lines: 1492
         integrity: sha256-8b283df95cd23970188b0ac6d1810f465c06b34f44e769c0241fec557ad21336
       source:
         file: src/meta/core/config.ts
@@ -1302,7 +1302,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
     - id: allowempty-disables-the-empty-input-check
       claim:
-        lines: 1505-1507
+        lines: 1508-1510
         integrity: sha256-0a0e1eb42907b7b80b9c2ca95fe19c949eeb3255f49fd3387bcfa881291b3fb4
       source:
         file: src/meta/core/load-files.ts
@@ -1327,7 +1327,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
     - id: schema-entry-ref-required
       claim:
-        lines: 1551
+        lines: 1554
         integrity: sha256-f66d1515f9f0088dce6d775941d361252767ad37ea74af9d0cc3ef0bd1a2e82c
       source:
         file: src/meta/core/config.ts
@@ -1336,7 +1336,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
     - id: schema-entry-source-optional
       claim:
-        lines: 1552
+        lines: 1555
         integrity: sha256-ae9e31657ec30e2c753702df7bbcf537614ed1b4185c8ead66beae50d146cb44
       source:
         file: src/meta/core/config.ts
@@ -1345,7 +1345,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
     - id: schema-entry-integrity-optional
       claim:
-        lines: 1553
+        lines: 1556
         integrity: sha256-b1b74f804d32c1fb2b502c72320251530d0994dc20eff73756a4389330a56be4
       source:
         file: src/meta/core/config.ts
@@ -1354,7 +1354,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
     - id: unknown-schema-entry-key-is-an-error
       claim:
-        lines: 1565-1567
+        lines: 1568-1570
         integrity: sha256-ab7efa73768dd458bdff9090baae3ee51ba2f5d9059928b6c83305d1a10c6cfe
       source:
         file: src/meta/core/config.ts
@@ -1363,7 +1363,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
     - id: integrity-must-be-sha256-64-hex
       claim:
-        lines: 1568-1570
+        lines: 1571-1573
         integrity: sha256-6fd7813d84998d1ceb0031599291ff76953e2b553f913e5599d0eeb2897f8604
       source:
         file: src/meta/core/integrity.ts
@@ -1372,7 +1372,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: integrity-only-on-a-local-file-ref
       claim:
-        lines: 1571-1574
+        lines: 1574-1577
         integrity: sha256-439e023d13085c4d78d981a59a90ff99737dc50d8d43c35c7bfdcccc3c588d18
       source:
         file: src/meta/core/config.ts
@@ -1389,7 +1389,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
     - id: local-refs-resolve-from-the-config-file
       claim:
-        lines: 1582-1584
+        lines: 1585-1587
         integrity: sha256-75423d859f98a0193985ed523c0ee52b3d3edd46d4a4cd19ac85c1dff090cf1d
       source:
         file: src/meta/core/resolve-schema.ts
@@ -1438,7 +1438,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
     - id: ttlhours-default-and-bounds
       claim:
-        lines: 1771
+        lines: 1774
         integrity: sha256-22b67dfa43b087fc3f375ba35aed5e3d25aa4761aaba37644bd1c07a1b56020b
       source:
         file: src/meta/core/schema-cache.ts
@@ -1455,7 +1455,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
     - id: schema-cache-lives-under-dot-manni
       claim:
-        lines: 1789-1791
+        lines: 1792-1794
         integrity: sha256-b745d175843e09d2e34e4a9526f6713ac3f2b44e26181f759b317dc7b7a4cf1f
       source:
         file: src/meta/core/schema-cache.ts
@@ -1472,7 +1472,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: documentrefs-values-and-default
       claim:
-        lines: 1805
+        lines: 1808
         integrity: sha256-7a47c489cf30839cc624c49e00fac7a9ef7a50d9ff69a03a29e90f71170ddaa0
       source:
         file: src/meta/core/config.ts
@@ -1481,7 +1481,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
     - id: hosts-consulted-only-under-any
       claim:
-        lines: 1806
+        lines: 1809
         integrity: sha256-7c91d9a7ce69455f2e275dc397311734d7fa6ce78e99b95005d95d27cea6775f
       source:
         file: src/meta/core/config.ts
@@ -1490,7 +1490,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
     - id: documentrefs-any-allows-builtin-file-or-url
       claim:
-        lines: 1816
+        lines: 1819
         integrity: sha256-1aff37399701009fd66f482a4207a93552d355a116318cf48a73744c2595df42
       source:
         file: src/meta/core/resolve-schema.ts
@@ -1499,7 +1499,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: documentrefs-local-refuses-a-url
       claim:
-        lines: 1817
+        lines: 1820
         integrity: sha256-5a9d341e128c8774bcc8c26bc108be609bb9edd4f16039f65efbc513045c55c7
       source:
         file: src/meta/core/resolve-schema.ts
@@ -1508,7 +1508,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: documentrefs-none-ignores-the-key
       claim:
-        lines: 1818
+        lines: 1821
         integrity: sha256-d260d7d93f5da7e049b042456bb7dbefb4003aaddfd0e48106095438381cfc02
       source:
         file: src/meta/core/resolve-schema.ts
@@ -1565,7 +1565,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
     - id: hosts-is-checked-once-not-per-redirect
       claim:
-        lines: 1857-1860
+        lines: 1860-1863
         integrity: sha256-facf1da0d80fabb4ab3fc3d4d5d93d4ed64ab2e1feedf762619587ad1139a7a8
       source:
         file: src/meta/core/resolve-schema.ts
@@ -1574,7 +1574,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
     - id: misspelled-schematrust-is-an-error
       claim:
-        lines: 1879-1882
+        lines: 1882-1885
         integrity: sha256-3b0d61e2b00b1a01426aeb827da33ee335804b48001e005ceaff08f0a526555d
       source:
         file: src/meta/core/config.ts
@@ -1591,7 +1591,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
     - id: fill-provider-values
       claim:
-        lines: 1894
+        lines: 1897
         integrity: sha256-acb9a4ecd367863131d6ee29d64b3ffc9cd546c60959adcec9b4ea981f08835f
       source:
         file: src/meta/cli.ts
@@ -1600,7 +1600,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: 0d3d8a74bd17fce503520bb2313a412ca60aeeca
     - id: fill-model-needs-an-explicit-provider
       claim:
-        lines: 1895
+        lines: 1898
         integrity: sha256-0b9505ad3de029d149a50f886873689a5369a2889e22563fd9770e8fd333b797
       source:
         file: src/shared/providers.ts
@@ -1609,7 +1609,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
     - id: fill-confidence-threshold-default
       claim:
-        lines: 1896
+        lines: 1899
         integrity: sha256-66a21bae45df7251cf73a0fd61f453c3198444802e1bcd58fce6f403f95a48ac
       source:
         file: src/meta/commands/fill.ts
@@ -1618,7 +1618,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
     - id: fill-chunk-chars-default
       claim:
-        lines: 1898
+        lines: 1901
         integrity: sha256-ee96e26880baf67f7529927f679483dd9d3902ddeac1303923ac1cfab9669b47
       source:
         file: src/meta/commands/fill-prompt.ts
@@ -1627,7 +1627,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: fill-concurrency-default-and-range
       claim:
-        lines: 1899
+        lines: 1902
         integrity: sha256-8564941c96c839abf9a842f8e7be2f393cb2098f9eb8d049c5c769b2bf01498c
       source:
         file: src/meta/core/config.ts
@@ -1668,7 +1668,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
     - id: override-collection-field
       claim:
-        lines: 1954
+        lines: 1957
         integrity: sha256-2a4620db55227e0657571ad7454fb8f85d9be82e53acf5e2a90aaba647e32475
       source:
         file: src/meta/core/config.ts
@@ -1677,7 +1677,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
     - id: override-files-field
       claim:
-        lines: 1955
+        lines: 1958
         integrity: sha256-b6d5d7c0d51d1de845f8befeb57141c50589cc3f3c15281c0a184c4b3f57468d
       source:
         file: src/meta/core/config.ts
@@ -1686,7 +1686,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
     - id: override-schemas-field
       claim:
-        lines: 1956
+        lines: 1959
         integrity: sha256-c0aecaea26195b1a3d0776f76b977a009c24428d1b70aa4ea05940b17b7b78e5
       source:
         file: src/meta/core/config.ts
@@ -1695,7 +1695,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
     - id: override-elements-field
       claim:
-        lines: 1959
+        lines: 1962
         integrity: sha256-1e432d16727f69374912f75bb00ad1d56df76174d255157ca5d17fae105629cb
       source:
         file: src/meta/core/config.ts
@@ -1768,7 +1768,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: check-path-column-required
       claim:
-        lines: 2114
+        lines: 2117
         integrity: sha256-f334f0db846e5777dbbf47f16ba1d0f4455b14b4b2474a795beeba9744d1ff65
       source:
         file: src/meta/core/checks.ts
@@ -1777,7 +1777,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: check-line-column-optional
       claim:
-        lines: 2115
+        lines: 2118
         integrity: sha256-31d3b5b4edaa02c396a95dca68788c6a22a7d7162c0f3cfd817bf34283acf4f5
       source:
         file: src/meta/core/checks.ts
@@ -1786,7 +1786,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: check-key-column-optional
       claim:
-        lines: 2116
+        lines: 2119
         integrity: sha256-92d77c694ea05586614ae86d7f60d0a7b2d9f5932040e2f5ea6ddf9d62838347
       source:
         file: src/meta/core/checks.ts
@@ -1795,7 +1795,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: check-message-column-optional
       claim:
-        lines: 2117
+        lines: 2120
         integrity: sha256-0547717d86820fbbd2546dbf6f0bc2d9bc980209c790a1f3993699f67e0326ca
       source:
         file: src/meta/core/checks.ts
@@ -1844,7 +1844,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: e9388316c721185044c2c16f35a31b957c3e1d41
     - id: derive-fields-rules
       claim:
-        lines: 2193
+        lines: 2196
         integrity: sha256-aee59ee10753ab149e0ef4151fece4dbadb85bac498b67c347db00e54d2d12fa
       source:
         file: src/meta/core/config.ts
@@ -1853,7 +1853,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
     - id: derive-sources-default-all-five
       claim:
-        lines: 2194
+        lines: 2197
         integrity: sha256-b82fda2bf76b854b9808779927cbfe0437feea4a885a7b1cf5c1a1357273679e
       source:
         file: src/meta/core/config.ts
@@ -1862,7 +1862,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
     - id: derive-codeowners-search-order
       claim:
-        lines: 2195
+        lines: 2198
         integrity: sha256-430238fc3faca9bbd8c3385bc0fad572987b890c05e042cf1fdb91f5ae8a9870
       source:
         file: src/meta/core/derive/codeowners.ts
@@ -1871,7 +1871,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: derive-commands-key-rules
       claim:
-        lines: 2196
+        lines: 2199
         integrity: sha256-2122873e487b1bab39d45276c15b4424f809a914eeb0bd36076350358327db62
       source:
         file: src/meta/core/config.ts
@@ -1880,7 +1880,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
     - id: derive-machines-default
       claim:
-        lines: 2197
+        lines: 2200
         integrity: sha256-c568fd8bf24210471d0493eb9e6b6a5d4c615432ea2b61c925f866f6fce25752
       source:
         file: src/meta/core/config.ts
@@ -1913,7 +1913,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
     - id: provenance-url-manifest-refused
       claim:
-        lines: 2274
+        lines: 2277
         integrity: sha256-693a1c6497308620635b148b2918c55e060fafab065db52196e0686c9446fc48
       source:
         file: src/meta/core/derive/provenance-place.ts
@@ -1930,7 +1930,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: provenance-missing-join-field-refused
       claim:
-        lines: 2276
+        lines: 2279
         integrity: sha256-ef1f5ec80d88285f7c1528cca48f7da700eb7872c22842a86aabf610779f39c1
       source:
         file: src/meta/core/derive/provenance-place.ts
@@ -1939,7 +1939,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: created-derived-from-the-adding-commit
       claim:
-        lines: 2284-2292
+        lines: 2287-2295
         integrity: sha256-3c5ca06c9ec4c1ace46f783308b96255a313a25acbf627342163190bb6dc051b
       source:
         file: src/meta/core/derive/git.ts
@@ -1948,7 +1948,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: df75e58da9c2ffb383db63ef9e4f7aeb6c30d0ad
     - id: last-updated-derived-from-the-newest-body-change
       claim:
-        lines: 2285-2292
+        lines: 2288-2295
         integrity: sha256-5200b84a526697cce2c030823b1abbf61e993aee44a39afb4ff5dc48d4d00993
       source:
         file: src/meta/core/derive/git.ts
@@ -1957,7 +1957,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: df75e58da9c2ffb383db63ef9e4f7aeb6c30d0ad
     - id: authors-derived-from-body-changing-commits
       claim:
-        lines: 2298
+        lines: 2301
         integrity: sha256-ad819ff5c808457278ed6a373c15ffcdccde68c2d57d46e9cf86567d9cc41c0c
       source:
         file: src/meta/core/derive/git.ts
@@ -1966,7 +1966,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: df75e58da9c2ffb383db63ef9e4f7aeb6c30d0ad
     - id: owner-derived-from-codeowners
       claim:
-        lines: 2299
+        lines: 2302
         integrity: sha256-3f4fe68953a9db32daa3d4e24164ba9ba601fee9ce256f45e8758bfa09879164
       source:
         file: src/meta/core/derive/codeowners.ts
@@ -1975,7 +1975,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: reviewed-by-derived-from-approvals
       claim:
-        lines: 2300
+        lines: 2303
         integrity: sha256-1abb6bf57f1550f2a0091bb41cfc114a760a322c9e1815814bac13df5d31e1ae
       source:
         file: src/meta/core/derive/reviews.ts
@@ -1984,7 +1984,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: last-reviewed-derived-from-the-latest-approval
       claim:
-        lines: 2301
+        lines: 2304
         integrity: sha256-049c3159294979a7c3dd370b8936838c4bd3aee89ed4829ef6eb3c0d179b216d
       source:
         file: src/meta/core/derive/reviews.ts
@@ -1993,7 +1993,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: provenance-derived-from-blame
       claim:
-        lines: 2302
+        lines: 2305
         integrity: sha256-24e0cbeafe0b1bee0b4d5add4a208acd736bdea68402de022694653277910afd
       source:
         file: src/meta/core/derive/provenance.ts
@@ -2034,7 +2034,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: provenance-evidence-order
       claim:
-        lines: 2356-2359
+        lines: 2359-2362
         integrity: sha256-17206efaf861ccdc81b89e8013ec0f9c0cf2cc6b2f2bb9ba1b7cacd9ba692a99
       source:
         file: src/meta/core/derive/provenance.ts
@@ -2067,7 +2067,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e
     - id: provenance-status-current
       claim:
-        lines: 2390
+        lines: 2393
         integrity: sha256-97b246f01b842c6220751f93183f2b28bd719bff5406a9267a0c8608055beacf
       source:
         file: src/meta/core/derive/provenance.ts
@@ -2076,7 +2076,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e
     - id: provenance-status-moved
       claim:
-        lines: 2391
+        lines: 2394
         integrity: sha256-92fa89da7eac89e8156937f4c0ce706f65780381045af726a5de54b2f3abb146
       source:
         file: src/meta/core/derive/provenance.ts
@@ -2085,7 +2085,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e
     - id: provenance-status-changed
       claim:
-        lines: 2392
+        lines: 2395
         integrity: sha256-bd0635123cbd8422cf936a05872edd1388ece7e14b5e122903406e2108ab345b
       source:
         file: src/meta/core/derive/provenance.ts
@@ -2094,7 +2094,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e
     - id: provenance-status-stale
       claim:
-        lines: 2393
+        lines: 2396
         integrity: sha256-0e951f71fa921b84fbcf4334c991ed92afaa973c5be1e5be91c7f4171c0ab131
       source:
         file: src/meta/core/derive/provenance.ts
@@ -2103,7 +2103,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e
     - id: provenance-status-unset
       claim:
-        lines: 2394
+        lines: 2397
         integrity: sha256-961697f1afd147e599294a20a3309af54bf646f4c05a77e624e5849e807fee4f
       source:
         file: src/meta/core/derive/provenance.ts
@@ -2136,7 +2136,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: command-run-is-an-argv-list
       claim:
-        lines: 2456
+        lines: 2459
         integrity: sha256-81d3ea57541c248ae1b5ba2239a938baa0f73e4de7baa5747de4fdee1dd71c1e
       source:
         file: src/meta/core/config.ts
@@ -2145,7 +2145,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
     - id: command-timeout-default-60s
       claim:
-        lines: 2457
+        lines: 2460
         integrity: sha256-04fe6c6a91102ad99056fb58043b70ab228dac515bd86540c3a6e9963280041b
       source:
         file: src/meta/core/derive/config.ts
@@ -2154,7 +2154,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: command-stdout-parsed-only-for-json
       claim:
-        lines: 2461
+        lines: 2464
         integrity: sha256-f7f80ac12dd3f4fcb2a3dd085673bca458dadcbff2a88d2af39589df0c55852c
       source:
         file: src/meta/core/derive/command.ts
@@ -2163,7 +2163,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: command-output-cap-8-mib
       claim:
-        lines: 2462
+        lines: 2465
         integrity: sha256-98a20dd2f899f7d03db6703f664bdd8e3a9c83a6a09e157ecf0250b0dba309c5
       source:
         file: src/meta/core/derive/spawn.ts
@@ -2172,7 +2172,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: path-placeholder-chooses-per-file
       claim:
-        lines: 2463-2466
+        lines: 2466-2469
         integrity: sha256-169096c810d2fe4c4989652d06edb67dc71a5d822a13492f20b385ec61cba251
       source:
         file: src/meta/core/derive/command.ts
@@ -2181,7 +2181,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: command-may-not-target-a-builtin-field
       claim:
-        lines: 2467-2471
+        lines: 2470-2474
         integrity: sha256-e112d50291992850c2f304aa12027bc466cb1dbe85de6b85c51017723fb660fd
       source:
         file: src/meta/core/config.ts
@@ -2190,7 +2190,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
     - id: command-source-is-listed-once
       claim:
-        lines: 2472-2475
+        lines: 2475-2478
         integrity: sha256-ec19af9dea962bf506e227faf5c482bfbdcded03f34fd56af4b33004b4f266d7
       source:
         file: src/meta/core/derive/types.ts
@@ -2199,7 +2199,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: commands-run-in-the-config-directory
       claim:
-        lines: 2476-2478
+        lines: 2479-2481
         integrity: sha256-803ccd6f8cc935ea9648d763a742a9debe3dad3abec22283e2d16e9c28294cfb
       source:
         file: src/meta/core/derive/index.ts
@@ -2208,7 +2208,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: failing-command-stops-the-run
       claim:
-        lines: 2479-2481
+        lines: 2482-2484
         integrity: sha256-72545ae9cb2177a6b5238294aba66f81689a8e050712360ffd2b275fd35f9aa6
       source:
         file: src/meta/core/derive/command.ts
@@ -2217,7 +2217,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: the-commit-that-made-the-fact-is-the-authority
       claim:
-        lines: 2501-2506
+        lines: 2504-2509
         integrity: sha256-6bc50ed815358ee528a7600c44530892a1a1708391ed00521c39cb556a9fb3e9
       source:
         file: src/meta/core/derive/git.ts
@@ -2226,7 +2226,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: df75e58da9c2ffb383db63ef9e4f7aeb6c30d0ad
     - id: body-is-everything-outside-the-metadata-block
       claim:
-        lines: 2507-2511
+        lines: 2510-2514
         integrity: sha256-cfd5d18b7574078c3256fc627aabfb17dcc15fa586bb097dafd80c2f975e1ae5
       source:
         file: src/meta/core/derive/git.ts
@@ -2235,7 +2235,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: df75e58da9c2ffb383db63ef9e4f7aeb6c30d0ad
     - id: stale-is-a-finding-unknown-is-not
       claim:
-        lines: 2512-2517
+        lines: 2515-2520
         integrity: sha256-5272935d4efb13548af01f0d4dfe2643a80db4e669463bcf84106bae2243e787
       source:
         file: src/meta/core/derive/types.ts
@@ -2244,7 +2244,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: a-source-that-cannot-answer-stops-the-run
       claim:
-        lines: 2518-2534
+        lines: 2521-2537
         integrity: sha256-7b67db3688187f8f4e3c26de64c8025f46e3cf9fc4bac72e671da0d42bb2f950
       source:
         file: src/meta/core/derive/index.ts
@@ -2253,7 +2253,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: only-derive-writes-a-managed-field
       claim:
-        lines: 2535-2537
+        lines: 2538-2540
         integrity: sha256-c08c70a96d1c2666beaf505834ad04e048ca6ef7db71023d1dc47b9e4d372dd4
       source:
         file: src/meta/commands/query.ts
@@ -2262,7 +2262,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: c72a188d455b54a739b4ef728a55b4adac510f0a
     - id: derive-comparison-runs-on-every-validate
       claim:
-        lines: 2538-2541
+        lines: 2541-2544
         integrity: sha256-b8b15508fa09003dd4c093418a000d93bc0f218a1dd4e1eb4ad868f049b22a84
       source:
         file: src/meta/commands/validate.ts
@@ -2271,7 +2271,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: cb74827009894c38f8646504ae9eb4a2745761a9
     - id: provenance-needs-a-fenced-metadata-block
       claim:
-        lines: 2542-2548
+        lines: 2545-2551
         integrity: sha256-4eb521321521d2cb1a84bae55d4e529e73f08c214e168dba3614b4b67c01c126
       source:
         file: src/meta/commands/derive.ts
@@ -2280,7 +2280,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: cb74827009894c38f8646504ae9eb4a2745761a9
     - id: emptied-provenance-record-is-removed
       claim:
-        lines: 2549-2552
+        lines: 2552-2555
         integrity: sha256-438a6b6da74653ed7e80b361ebfb95cc999f9037e2c8f6700f8ba1c9a52b88f3
       source:
         file: src/meta/commands/derive.ts
@@ -2289,7 +2289,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: cb74827009894c38f8646504ae9eb4a2745761a9
     - id: validate-compares-managed-fields
       claim:
-        lines: 2558
+        lines: 2561
         integrity: sha256-3315d5f40d866f925ceeb718eee52711f799bdf56bc97d85ad7f7bf6e292495d
       source:
         file: src/meta/core/derive/types.ts
@@ -2298,7 +2298,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: derive-stamps-every-managed-field
       claim:
-        lines: 2559
+        lines: 2562
         integrity: sha256-81b24dc882d29844e448a34fcc439024350eda7b3ada6ed496b11d49de7e97b6
       source:
         file: src/meta/commands/derive.ts
@@ -2307,7 +2307,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: cb74827009894c38f8646504ae9eb4a2745761a9
     - id: get-shows-origin-on-the-same-line
       claim:
-        lines: 2560
+        lines: 2563
         integrity: sha256-ee83f90664cef25796f161435c8fef50da5efacb5d233530ae9141eb5512a645
       source:
         file: src/meta/reporters/get.ts
@@ -2316,7 +2316,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: query-builds-derived-and-resolved-tables
       claim:
-        lines: 2561
+        lines: 2564
         integrity: sha256-928f77fdc419d372500822545eef8d191beed9cdc7c34f60dadd3910b22e90b3
       source:
         file: src/meta/commands/query.ts
@@ -2325,7 +2325,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: c72a188d455b54a739b4ef728a55b4adac510f0a
     - id: fill-reports-a-managed-skip
       claim:
-        lines: 2562
+        lines: 2565
         integrity: sha256-0aad4ffe31ae4d66d225c46a0dc8cc2b1bc43cefcca0256411bdac1dcf9e8ef4
       source:
         file: src/meta/commands/fill.ts
@@ -2350,7 +2350,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e
     - id: derive-exit-2-cases
       claim:
-        lines: 2639
+        lines: 2642
         integrity: sha256-50cc76e38a51e5d325933aec4828e5ccc0ae296231340b07d4f95f4d37377bfd
       source:
         file: src/shared/run.ts
@@ -2359,7 +2359,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: derive-exit-1-cases
       claim:
-        lines: 2640
+        lines: 2643
         integrity: sha256-472af5cef90b3e952fb5719621c3d0a6d5c889f28a0d165fbc0d4d558fb29bb4
       source:
         file: src/meta/cli.ts
@@ -2392,7 +2392,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: a589e08250dee7efaee7ed0f58df01986fad8d1d
     - id: family-file-names-and-family-keys
       claim:
-        lines: 2712-2724
+        lines: 2715-2727
         integrity: sha256-0fc94c1b2bd901aeeb1f5ef8d7d1fd86f2a9794639a1acbe954b87115fd0be0b
       source:
         file: src/shared/config-file.ts
@@ -2401,7 +2401,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: a589e08250dee7efaee7ed0f58df01986fad8d1d
     - id: legacy-docmeta-config-whole-document
       claim:
-        lines: 2719-2724
+        lines: 2722-2727
         integrity: sha256-81179a0a6ae8a7e0f187ae4a750c7e77904da50c6b433cd37178451f8ed77f05
       source:
         file: src/shared/config-file.ts
@@ -2474,7 +2474,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
     - id: collection-globs-resolve-from-the-config-directory
       claim:
-        lines: 2789-2791
+        lines: 2792-2794
         integrity: sha256-ce80fd2df37bf543e66318bd54d3db68aebcdf164f00f3c41368964203afb190
       source:
         file: src/meta/core/config.ts
@@ -2483,7 +2483,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
     - id: manifest-document-paths-resolve-from-the-config-directory
       claim:
-        lines: 2792-2793
+        lines: 2795-2796
         integrity: sha256-e4067f4da6e55d6a79a621b2e333522a72ec66c5f8d17545ddb8ae2feebb6e8f
       source:
         file: src/meta/core/external-metadata.ts
@@ -2492,7 +2492,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: vale-config-path-resolves-from-the-config-file
       claim:
-        lines: 2782
+        lines: 2785
         integrity: sha256-ddbe3e4b13538d4722912c9fc9c8aab7c81099106ce48bcf7b93b06c9f03df54
       source:
         file: src/shared/tools.ts
@@ -2501,7 +2501,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: c72a188d455b54a739b4ef728a55b4adac510f0a
     - id: override-globs-match-the-config-relative-path
       claim:
-        lines: 2796
+        lines: 2799
         integrity: sha256-80a7cc4f74ff72dab995cd006db41b2a74d8108ece25abb48dd6fe8a5901d79f
       source:
         file: src/meta/core/resolve-schema.ts
@@ -2518,7 +2518,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: cb74827009894c38f8646504ae9eb4a2745761a9
     - id: positional-paths-stay-relative-to-cwd
       claim:
-        lines: 2814
+        lines: 2817
         integrity: sha256-29b3ae2f9df00629bd2d7d861a530897dd11e978eac775f6c521ad2a62906597
       source:
         file: src/meta/core/config.ts
@@ -2535,7 +2535,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
     - id: collection-flag-narrows-in-declaration-order
       claim:
-        lines: 2831
+        lines: 2834
         integrity: sha256-fb019df934141a41f8af8325729cd54dea9d8d67dfce12e3285b3e5cf6eb70e9
       source:
         file: src/shared/collections.ts
@@ -2544,7 +2544,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: cli-schema-overrides-every-file
       claim:
-        lines: 2833
+        lines: 2836
         integrity: sha256-7d3be27da815855bd3544edf64065a40c58e7e7bb0944dff9191a1b25e761e32
       source:
         file: src/meta/core/resolve-schema.ts
@@ -2553,7 +2553,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: no-config-skips-discovery
       claim:
-        lines: 2834
+        lines: 2837
         integrity: sha256-b5e82cc1cb892ad333fdcc286ce67ac2037db6b77a7c54a6ec4898825fcb1d13
       source:
         file: src/meta/core/config.ts
@@ -2562,7 +2562,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
     - id: fill-flags-override-fill-config
       claim:
-        lines: 2836
+        lines: 2839
         integrity: sha256-464014aca3a48525236e761c222f9c7ecfc851aacd99a0f05a6fd1cb633b1ac2
       source:
         file: src/meta/commands/fill.ts
@@ -2571,7 +2571,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
     - id: offline-flag-overrides-config-restrictively
       claim:
-        lines: 2818-2821
+        lines: 2821-2824
         integrity: sha256-80a9199b1affc308f4e732c9334b1f8606b0a169aa1d5471ac68ff5c5fa66809
       source:
         file: src/meta/commands/validate.ts
@@ -2580,7 +2580,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: cb74827009894c38f8646504ae9eb4a2745761a9
     - id: schema-flag-bypasses-overrides-and-file-schema
       claim:
-        lines: 2840-2842
+        lines: 2843-2845
         integrity: sha256-af51817b9287b472ed8d2107dec70ed730da36a2fc8f2ef7f26b186eed521d4e
       source:
         file: src/meta/core/resolve-schema.ts
@@ -2589,7 +2589,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: cli-paths-override-the-collections
       claim:
-        lines: 2830
+        lines: 2833
         integrity: sha256-b77eb5e6acba2de3c3f78e3994ee7d0608dad4228010d29ece25cba50125db54
       source:
         file: src/meta/core/config.ts
@@ -2598,7 +2598,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
     - id: cli-exclude-and-collection-exclude-do-different-jobs
       claim:
-        lines: 2832
+        lines: 2835
         integrity: sha256-b2354f18808b0855ea46daac7ca4360a230a60ae278a6d95df12faf727ac57e1
       source:
         file: src/meta/core/load-files.ts
@@ -2607,7 +2607,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e
     - id: allow-empty-flag-overrides-config
       claim:
-        lines: 2835
+        lines: 2838
         integrity: sha256-84d7c8fcb1fe06c11cbae99f0d48d547ec8a404411bcad82f28acccb177f75e1
       source:
         file: src/meta/core/load-files.ts
@@ -2616,7 +2616,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: unknown-tools-key-is-exit-2
       claim:
-        lines: 1438-1440
+        lines: 1441-1443
         integrity: sha256-ad1c128084b2d0f18b8e003dc5ae3ed76d559d1d21e8310d7c466dad1ef847b6
       source:
         file: src/shared/tools.ts
@@ -2625,7 +2625,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: c72a188d455b54a739b4ef728a55b4adac510f0a
     - id: missing-vale-config-refused-when-vale-runs
       claim:
-        lines: 1437-1440
+        lines: 1440-1443
         integrity: sha256-76fa2d179aab7c1edd60f1f3d72756b2eded132a4cc1fc2ad491e608d854634b
       source:
         file: src/term/commands/run.ts
@@ -2634,7 +2634,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
     - id: check-query-is-read-only
       claim:
-        lines: 2088
+        lines: 2091
         integrity: sha256-b631b95e30862fc3b59f722172c5843f44f6a4ddfd8502595165819f613ea693
       source:
         file: src/meta/core/config.ts
@@ -2643,7 +2643,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
     - id: fill-maxturns-counts-calls
       claim:
-        lines: 1897
+        lines: 1900
         integrity: sha256-e80ef7184f6fe9998ea6d0f945240ca322c0168e89c9dbd3a101ca4274df1b08
       source:
         file: src/meta/core/config.ts
@@ -2652,7 +2652,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
     - id: unloaded-manifest-entry-is-exit-2
       claim:
-        lines: 848-850
+        lines: 851-853
         integrity: sha256-1e585217f7108ae740e15f0804ddfc142f68846ff9878eb0affb498d1269e5f9
       source:
         file: src/meta/core/external-metadata.ts
@@ -2701,7 +2701,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: file-row-page-placeholder
       claim:
-        lines: 335
+        lines: 338
         integrity: sha256-4314e63f8accea06d73250a395cb5fc808a7af0f2adc6b6227d195f59a583c32
       source:
         file: src/meta/core/external-metadata.ts
@@ -2710,7 +2710,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: placeholder-unknown-token
       claim:
-        lines: 372
+        lines: 375
         integrity: sha256-223e28b199885627391ba138c71b44b5f99300a45cc6d1e2e95cfa6dab690104
       source:
         file: src/shared/collections.ts
@@ -2719,7 +2719,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: placeholder-stray-brace
       claim:
-        lines: 373
+        lines: 376
         integrity: sha256-7960dcb25b1872d3966b52b00808bb6677b2eeb7b05a682da89aa146b1ca6ebf
       source:
         file: src/shared/collections.ts
@@ -2728,7 +2728,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: placeholder-twice
       claim:
-        lines: 374
+        lines: 377
         integrity: sha256-68171f6453c586aeea723762ea1d8ebf99205d491033dda20fd5274b0d3c3233
       source:
         file: src/shared/collections.ts
@@ -2737,7 +2737,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: placeholder-absolute-refused
       claim:
-        lines: 375
+        lines: 378
         integrity: sha256-602b1497fdf062ce5f343071a147f4fd8639a32d9f01ef27e5f003a1d0d6a88d
       source:
         file: src/shared/collections.ts
@@ -2746,7 +2746,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: placeholder-url-refused
       claim:
-        lines: 376
+        lines: 379
         integrity: sha256-5c76842fd8882498d3e11c7761ed7480aaaacf2025459c076ce0ba9039c20aee
       source:
         file: src/shared/collections.ts
@@ -2755,7 +2755,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: placeholder-field-join-refused
       claim:
-        lines: 377
+        lines: 380
         integrity: sha256-1c6ad4a689dfee952b45b293aa457c49d0ce731fcf0752b1d5f05b9f42cae7cb
       source:
         file: src/shared/collections.ts
@@ -2764,7 +2764,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: placeholder-pattern-twice-refused
       claim:
-        lines: 378
+        lines: 381
         integrity: sha256-02967b42193f8d40b9c10ff315a05db9fa50ba328c56a3f61f935c6ad32f9521
       source:
         file: src/shared/collections.ts
@@ -2773,7 +2773,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: page-manifest-directory-created
       claim:
-        lines: 472-473
+        lines: 475-476
         integrity: sha256-70b4c7f27e7da21f034f9cd4d2accbbe37b03f5b55c28255f5e0497d21019f9a
       source:
         file: src/meta/core/write-file.ts
@@ -2782,7 +2782,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: page-manifest-outside-refused
       claim:
-        lines: 483
+        lines: 486
         integrity: sha256-246102b63aaf80f426a01c3f58c85a77874dae229bedc6e82989281cc798bef3
       source:
         file: src/meta/core/external-metadata.ts
@@ -2791,7 +2791,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: two-pages-one-manifest-refused
       claim:
-        lines: 484
+        lines: 487
         integrity: sha256-bf2a4292022689335b9c71f83d23706abba18d6136506e5fa660934298cd2d14
       source:
         file: src/meta/core/external-metadata.ts
@@ -2800,7 +2800,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: stray-manifest-refused
       claim:
-        lines: 486
+        lines: 489
         integrity: sha256-58b6fd590ad70af6853fc17b3e70530536136903c5b398590a7f6ecbd7767abd
       source:
         file: src/meta/core/external-metadata.ts
@@ -2809,7 +2809,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e
     - id: manifest-file-is-required
       claim:
-        lines: 335
+        lines: 338
         integrity: sha256-4314e63f8accea06d73250a395cb5fc808a7af0f2adc6b6227d195f59a583c32
       source:
         file: src/shared/collections.ts
@@ -2818,7 +2818,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: missing-manifest-is-an-operational-error
       claim:
-        lines: 416
+        lines: 419
         integrity: sha256-95753dc5d9819ce815a356f29c33a18eeb24fe148221f3f96a28454b9178e8a9
       source:
         file: src/meta/core/external-metadata.ts
@@ -2835,7 +2835,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: copied-manifest-refused
       claim:
-        lines: 485
+        lines: 488
         integrity: sha256-0a5cf6705968822471be91aae16c0c1c819bd7046cdbe9b3efc7ad406e0e92a5
       source:
         file: src/meta/core/external-metadata.ts
@@ -2852,7 +2852,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: c4c8820ad03b39bd78625127e699a02af7e46588
     - id: meta-defaults-key
       claim:
-        lines: 1477
+        lines: 1480
         integrity: sha256-0aef6fb990a072062b794b3260f10c22295d31d78e9e5a612e71b40217e9965d
       source:
         file: src/meta/core/resolve-schema.ts
@@ -2861,7 +2861,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: meta-strict-key
       claim:
-        lines: 1478
+        lines: 1481
         integrity: sha256-e865f2aa2a3d73c2931c8a988e9eb8dfe3daa1c0f119ebffd179654c99c7e911
       source:
         file: src/meta/core/resolve-schema.ts
@@ -2870,7 +2870,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: meta-register-key
       claim:
-        lines: 1479
+        lines: 1482
         integrity: sha256-2df8dee892c4d12fa505fd0a5be6c1c1c987d2860a0934a99c632677f4763cae
       source:
         file: src/meta/core/register.ts
@@ -2879,7 +2879,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: derive-collections-key
       claim:
-        lines: 2198
+        lines: 2201
         integrity: sha256-548444205a715c31a47d308081c86044fe12f4cdfeb4029713f4a4124c6e1c12
       source:
         file: src/meta/core/config.ts

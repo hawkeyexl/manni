@@ -28,7 +28,7 @@ sample-questions:
 graph:
   label: CI recipes for code scanning, GitLab CI, Jenkins, and pre-commit
   type: task
-last-updated: 2026-11-02
+last-updated: 2026-11-06
 tags:
   - ci
   - gitlab-ci
@@ -51,6 +51,10 @@ verified-by:
 ---
 
 import { Tabs, TabItem, Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';
+
+A gate catches a bad page only where that page passes through it. When your
+docs merge through GitLab or Jenkins, or you want the failure before a commit
+exists, these recipes put the gate there.
 
 manni meta is a plain CLI with a stable exit-code contract. It drops into any CI
 system that can run a Node.js command and read its exit code. This page gives

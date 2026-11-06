@@ -30,7 +30,7 @@ sample-questions:
 graph:
   label: query command reference
   type: reference
-last-updated: 2026-10-28
+last-updated: 2026-11-06
 tags:
   - sql
   - database
@@ -55,6 +55,9 @@ verified-by:
 ---
 
 import { Aside } from '@astrojs/starlight/components';
+
+Two pages can each pass their schema and still claim the same slug. Rules like
+that span files, and this page is the contract of the command that checks them.
 
 `manni meta query` builds a SQLite database from the metadata of the files you
 point it at. It runs **one** SQL statement over that database, and judges what

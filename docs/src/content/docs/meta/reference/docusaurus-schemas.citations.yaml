@@ -2,7 +2,7 @@ docs/src/content/docs/meta/reference/docusaurus-schemas.mdx:
   citations:
     - id: docusaurus-toml-dates-fail-the-string-check
       claim:
-        lines: 236-239
+        lines: 239-242
         integrity: sha256-5677bfb8c7f1c890afe35baf148f2066f7cc59380e66024d4a62fd8a7a55d098
       source:
         file: src/meta/extractors/frontmatter.ts
@@ -19,7 +19,7 @@ docs/src/content/docs/meta/reference/docusaurus-schemas.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: docusaurus-no-required-field-so-fill-exits-0
       claim:
-        lines: 221-222
+        lines: 224-225
         integrity: sha256-6d8c859c5707165f7d730abc8ffe6b1f415c1d0f5ae89459a9a363c9b37fe463
       source:
         file: src/meta/schemas/docusaurus-docs/3.10.json
@@ -36,7 +36,7 @@ docs/src/content/docs/meta/reference/docusaurus-schemas.mdx:
         commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: docusaurus-each-schema-in-a-set-applies-in-full
       claim:
-        lines: 146-151
+        lines: 149-154
         integrity: sha256-8172fafffc6de7f79aa21fb094ec19b183be3bceccf52f81f00bde1efb7f6ec9
       source:
         file: src/meta/core/validator.ts
@@ -45,7 +45,7 @@ docs/src/content/docs/meta/reference/docusaurus-schemas.mdx:
         commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
     - id: docusaurus-misspelled-key-passes
       claim:
-        lines: 120-123
+        lines: 123-126
         integrity: sha256-472a59cb0ac54bf68fa52087572c655d94ac931b8ff844a32c0491512d77afab
       source:
         file: src/meta/schemas/docusaurus-docs/3.10.json
@@ -54,7 +54,7 @@ docs/src/content/docs/meta/reference/docusaurus-schemas.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: docusaurus-references-are-not-resolved
       claim:
-        lines: 115-117
+        lines: 118-120
         integrity: sha256-e4f88e32a9a470e9eef96b421fa4fb2134263d24c24ccece835836a9ad748ef4
       source:
         file: src/meta/schemas/docusaurus-blog/3.10.json
@@ -63,7 +63,7 @@ docs/src/content/docs/meta/reference/docusaurus-schemas.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: docusaurus-unknown-keys-allowed
       claim:
-        lines: 112-114
+        lines: 115-117
         integrity: sha256-0023067e6a4503e2a79944a52da6a9df5a1db6a3590d66fdc697ae1f58415ad9
       source:
         file: src/meta/schemas/docusaurus-docs/3.10.json
@@ -72,7 +72,7 @@ docs/src/content/docs/meta/reference/docusaurus-schemas.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: docusaurus-toc-levels-checked-independently
       claim:
-        lines: 108-111
+        lines: 111-114
         integrity: sha256-bccee8a6218f9117f3bb8cf63c3869955959e77991eaf682bc33e332b0a58f42
       source:
         file: src/meta/schemas/docusaurus-docs/3.10.json
@@ -113,7 +113,7 @@ docs/src/content/docs/meta/reference/docusaurus-schemas.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: docusaurus-composes-except-with-okf
       claim:
-        lines: 63-70
+        lines: 66-73
         integrity: sha256-379d59f9ba0097025a388e4cb082e05400fd73bf544dd34cef948457abc886ab
       source:
         file: src/meta/schemas/docusaurus-docs/3.10.json
@@ -130,7 +130,7 @@ docs/src/content/docs/meta/reference/docusaurus-schemas.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: docusaurus-not-on-by-default
       claim:
-        lines: 25
+        lines: 28
         integrity: sha256-59eed64d69ad7c2760088e7ca3dae3b9411dfb7737bf2eb16d78c4750e01889a
       source:
         file: src/meta/core/resolve-schema.ts
@@ -139,7 +139,7 @@ docs/src/content/docs/meta/reference/docusaurus-schemas.mdx:
         commit-sha: ddba7252337859626421b6060ae8952f93f61653
     - id: docusaurus-reference-kind-builtin
       claim:
-        lines: 24
+        lines: 27
         integrity: sha256-532bd9663597e021387396a0d71bc4ba7d4d902e8235e18167ce466f6bd8fbfa
       source:
         file: src/meta/core/schema-registry.ts
@@ -148,7 +148,7 @@ docs/src/content/docs/meta/reference/docusaurus-schemas.mdx:
         commit-sha: c72a188d455b54a739b4ef728a55b4adac510f0a
     - id: docusaurus-no-required-fields-row
       claim:
-        lines: 23
+        lines: 26
         integrity: sha256-ccf01e1a46132de9bc0580c228351f276a14b427368c2407d0bfdb525219c6fa
       source:
         file: src/meta/schemas/docusaurus-docs/3.10.json
@@ -157,7 +157,7 @@ docs/src/content/docs/meta/reference/docusaurus-schemas.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: docusaurus-additional-properties-allowed
       claim:
-        lines: 22
+        lines: 25
         integrity: sha256-e2e966752eb94cb730537df05021e9f7d97550c0cd20ef0effa9ab5597839566
       source:
         file: src/meta/schemas/docusaurus-docs/3.10.json
@@ -166,7 +166,7 @@ docs/src/content/docs/meta/reference/docusaurus-schemas.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: docusaurus-dialect-2020-12
       claim:
-        lines: 21
+        lines: 24
         integrity: sha256-7f3c20ca8da2f79b6a59121a4c14d31173abfcd94150593301f3040c94e1ce26
       source:
         file: src/meta/schemas/docusaurus-docs/3.10.json
@@ -183,7 +183,7 @@ docs/src/content/docs/meta/reference/docusaurus-schemas.mdx:
         commit-sha: c72a188d455b54a739b4ef728a55b4adac510f0a
     - id: docusaurus-row-pages
       claim:
-        lines: 11
+        lines: 14
         integrity: sha256-42e64b741854486b17fd3e78aa7330eb97e3ab015519e64a90590a134fe73cf5
       source:
         file: src/meta/schemas/docusaurus-pages/3.10.json
@@ -192,7 +192,7 @@ docs/src/content/docs/meta/reference/docusaurus-schemas.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: docusaurus-row-blog
       claim:
-        lines: 10
+        lines: 13
         integrity: sha256-fad62c24b7ba5e3855182198a75101f5637d34c4cdb19d0f9b72db06d1f5479a
       source:
         file: src/meta/schemas/docusaurus-blog/3.10.json
@@ -201,7 +201,7 @@ docs/src/content/docs/meta/reference/docusaurus-schemas.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: docusaurus-row-docs
       claim:
-        lines: 9
+        lines: 12
         integrity: sha256-d930c278b8afbc6b66dac396165e3a9d442bd5a6247a15e661213b97c95b6ea6
       source:
         file: src/meta/schemas/docusaurus-docs/3.10.json

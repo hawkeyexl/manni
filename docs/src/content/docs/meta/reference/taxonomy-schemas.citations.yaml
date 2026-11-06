@@ -34,7 +34,7 @@ docs/src/content/docs/meta/reference/taxonomy-schemas.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: taxonomy-diataxis-and-tgdp-pick-one
       claim:
-        lines: 114
+        lines: 117
         integrity: sha256-1ba2d075f3e912b6192d591d510fddaf33df40432f26a83b212807a04a27e777
       source:
         file: src/meta/schemas/diataxis/1.0.json
@@ -43,7 +43,7 @@ docs/src/content/docs/meta/reference/taxonomy-schemas.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: taxonomy-tgdp-composes-with-seven-action
       claim:
-        lines: 113
+        lines: 116
         integrity: sha256-026bfdc402cf0ee845a3eefe34dbc7d137c292b5b60ad2f1a0557a4eeac3d244
       source:
         file: src/meta/schemas/tgdp/1.0.json
@@ -52,7 +52,7 @@ docs/src/content/docs/meta/reference/taxonomy-schemas.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: taxonomy-diataxis-composes-with-seven-action
       claim:
-        lines: 112
+        lines: 115
         integrity: sha256-68084ee2a2d290145f2c5593e26abc6c297cea3df85841f010d3521ce0a09bf2
       source:
         file: src/meta/schemas/diataxis/1.0.json
@@ -69,7 +69,7 @@ docs/src/content/docs/meta/reference/taxonomy-schemas.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: taxonomy-schema-order-does-not-matter
       claim:
-        lines: 71-75
+        lines: 74-78
         integrity: sha256-8b14d8b84f3e0254a5e59d6e381abc6b840eaa20ae28c71ed7bc84bbb0ebde21
       source:
         file: src/meta/core/validator.ts
@@ -78,7 +78,7 @@ docs/src/content/docs/meta/reference/taxonomy-schemas.mdx:
         commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
     - id: taxonomy-turning-one-on-reports-every-untyped-page
       claim:
-        lines: 66-69
+        lines: 69-72
         integrity: sha256-685c9bd9c7f6d174fd219834a7d9cd32a058cad6363d80875f67696b84ed34c2
       source:
         file: src/meta/schemas/diataxis/1.0.json
@@ -135,7 +135,7 @@ docs/src/content/docs/meta/reference/taxonomy-schemas.mdx:
         commit-sha: c72a188d455b54a739b4ef728a55b4adac510f0a
     - id: taxonomy-row-diataxis
       claim:
-        lines: 13
+        lines: 16
         integrity: sha256-53d8aa5d25bf8ec71fddb70174491131a06b67e4737e9e8fb2ce998aa6eb53b2
       source:
         file: src/meta/schemas/diataxis/1.0.json
@@ -144,7 +144,7 @@ docs/src/content/docs/meta/reference/taxonomy-schemas.mdx:
         commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: taxonomy-row-seven-action
       claim:
-        lines: 15
+        lines: 18
         integrity: sha256-b09619bb0646bd6a437cbf142056961b3fc69620c5c80bcf3e9b41de2b1f89f1
       source:
         file: src/meta/schemas/seven-action/1.0.json
@@ -161,7 +161,7 @@ docs/src/content/docs/meta/reference/taxonomy-schemas.mdx:
         commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: taxonomy-row-tgdp
       claim:
-        lines: 14
+        lines: 17
         integrity: sha256-2679decdbce30380e4ab6556291fa00656a57d07f4cedb71208b44d7b7592b3d
       source:
         file: src/meta/schemas/tgdp/1.1.json
