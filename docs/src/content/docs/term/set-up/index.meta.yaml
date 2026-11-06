@@ -23,43 +23,46 @@ docs/src/content/docs/term/set-up/index.mdx:
       grader: ai
   provenance:
     - generated-by: Claude Opus 5
-      lines: 2-218
-      integrity: sha256-2a2dd9f929745f92cba2f30137ab4b132fd291e63918c99086c838c4108508ba
+      lines: 2
+      integrity: sha256-62d0b6539cb0b3a3bb5ac68c9209513cb4133fd220b837f25049ee7dfe76c1d5
+    - generated-by: Claude Opus 5
+      lines: 8-222
+      integrity: sha256-c32c6457fe73b217b6b214207f04dbf47310d361f93910c624aacb297e02b6f5
     - generated-by: Claude Opus 5.5
-      lines: 219
+      lines: 223
       integrity: sha256-985bb07f3f538af97f6e625812cc963b43fb9d28c56f302b36663bb9cced4b8a
     - generated-by: Claude Opus 5
-      lines: 220-221
+      lines: 224-225
       integrity: sha256-d8866bf1cfb7e2941038f10d0acc8d1f9ba1258faf1b134398f0161147f828ff
     - generated-by: Claude Opus 5.5
-      lines: 222
+      lines: 226
       integrity: sha256-985bb07f3f538af97f6e625812cc963b43fb9d28c56f302b36663bb9cced4b8a
-    - generated-by: Claude Opus 5
-      lines: 223-224
-      integrity: sha256-5b3dd3e50f002b70cbac4b1f9581bede5c52d6bf11e903b649be0b24377b4855
-    - generated-by: Claude Opus 5.5
-      lines: 225
-      integrity: sha256-cb3a04297b59c4e3147d448d021418b53a7ab33fd20af21cc3fc82e2502609f9
     - generated-by: Claude Opus 5
       lines: 227-228
+      integrity: sha256-5b3dd3e50f002b70cbac4b1f9581bede5c52d6bf11e903b649be0b24377b4855
+    - generated-by: Claude Opus 5.5
+      lines: 229
+      integrity: sha256-cb3a04297b59c4e3147d448d021418b53a7ab33fd20af21cc3fc82e2502609f9
+    - generated-by: Claude Opus 5
+      lines: 231-232
       integrity: sha256-4dd0d9cf21151972588a17c5c27a38ea0798dfcce27b91370c86621ad6755632
     - generated-by: Claude Opus 5.5
-      lines: 230-232
+      lines: 234-236
       integrity: sha256-4cff9f364b43da325db9f3d14998440ea7c689c24871587b23626a5a07efd549
     - generated-by: Claude Opus 5
-      lines: 234-260
+      lines: 238-264
       integrity: sha256-32d705fe3088893ee4017991c011debd7c366f949a9d74a8552ce72e70b01385
     - generated-by: Claude Opus 5.5
-      lines: 261
+      lines: 265
       integrity: sha256-985bb07f3f538af97f6e625812cc963b43fb9d28c56f302b36663bb9cced4b8a
     - generated-by: Claude Opus 5
-      lines: 262-263
+      lines: 266-267
       integrity: sha256-d8866bf1cfb7e2941038f10d0acc8d1f9ba1258faf1b134398f0161147f828ff
     - generated-by: Claude Opus 5.5
-      lines: 264
+      lines: 268
       integrity: sha256-985bb07f3f538af97f6e625812cc963b43fb9d28c56f302b36663bb9cced4b8a
     - generated-by: Claude Opus 5
-      lines: 266-317
+      lines: 270-321
       integrity: sha256-f513bd2d5728e28ef23e229e3346dd63f8e460ca4ba9118dae5bbc925907d812
   owner:
     - "@hawkeyexl"

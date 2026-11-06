@@ -9,10 +9,13 @@ audiences:
   - ci-engineers
 lifecycle: published
 action: remember
-last-updated: 2026-10-28
+last-updated: 2026-11-06
 ---
 
 import { Aside } from '@astrojs/starlight/components';
+
+Config is how a repository routes pages to its own templates, so a laptop and
+CI hold each page to the same one.
 
 manni lint reads one file, the shared `manni.config.yaml`, and one key of it,
 `lint:`. Sibling tools' keys cost it nothing: it neither reads nor validates

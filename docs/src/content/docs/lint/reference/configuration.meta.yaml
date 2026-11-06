@@ -7,22 +7,25 @@ docs/src/content/docs/lint/reference/configuration.mdx:
     - d9
   provenance:
     - generated-by: Claude Opus 5
-      lines: 2-65
-      integrity: sha256-b2f5b98981b9028aadddf6531ad850414400e8efecf446a3302713e64a827dfa
+      lines: 2
+      integrity: sha256-76b2a53f73519706f7f8e310aaf9fa64424820e3ce6b4fb1164c503e20efd9d8
+    - generated-by: Claude Opus 5
+      lines: 7-68
+      integrity: sha256-f993518d9ec005402352226325a4236708a51c904b36d7f1438d1ea8648ccf2e
     - generated-by: Claude Opus 5.5
-      lines: 66-67
+      lines: 69-70
       integrity: sha256-abaa28c3823f550cb9a506bac0716c61a2fb4211bc881f9a1d30a8f1cccf79ff
     - generated-by: Claude Opus 5
-      lines: 69-115
+      lines: 72-118
       integrity: sha256-6e425df57c8b53eb9360016720b7d7c8346168fef2d64984f60390ef961492c8
     - generated-by: Claude Opus 5
-      lines: 117-146
+      lines: 120-149
       integrity: sha256-1a4fb6ec83825d33a3c07c90495be2b17455242ba1982ae937b08e86dcbce03d
     - generated-by: Claude Opus 5
-      lines: 150-221
+      lines: 153-224
       integrity: sha256-67008b6af51abe0e84e22ea5ded0720281e8d4e90ce902d6bdfb19479b9afbe8
     - generated-by: Claude Opus 5
-      lines: 223-280
+      lines: 226-283
       integrity: sha256-66384d50d1b5593ce46b4a9d3069d25ec44988e746d14b5103f9de92d29e00e1
   owner:
     - "@hawkeyexl"

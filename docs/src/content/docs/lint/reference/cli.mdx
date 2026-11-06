@@ -6,7 +6,7 @@ id: lint-reference-cli
 language: en
 lifecycle: published
 action: remember
-last-updated: 2026-10-28
+last-updated: 2026-11-06
 ---
 
 import { Aside } from '@astrojs/starlight/components';
@@ -15,6 +15,9 @@ import { Aside } from '@astrojs/starlight/components';
     against src/lint/cli.ts by scripts/check-cli-reference.mjs (npm run docs:check-cli),
     enforced in CI. Keep flags, arguments, and defaults in sync with the code;
     descriptions are free-form. */}
+
+Reach for this page for the exact flag, output format or exit code when you
+script a lint run or wire it into CI.
 
 manni lint has four subcommands. Two of them lint.
 [`check`](#lint-check) runs every configured job, and

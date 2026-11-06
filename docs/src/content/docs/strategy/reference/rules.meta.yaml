@@ -23,16 +23,16 @@ docs/src/content/docs/strategy/reference/rules.mdx:
       grader: ai
   provenance:
     - generated-by: Claude Opus 5.5
-      lines: 2-18
+      lines: 5-21
       integrity: sha256-77f79c23a9d9ac8c8271b7cb19f31ba45328ab1505ca9d1444761c1ef35f22a8
     - generated-by: Claude Opus 5.5
-      lines: 24-60
+      lines: 27-63
       integrity: sha256-38a9e2bf05bb73b8fa9b97c5f71b7d333d68ed015ed55db45e2ea14ada93bd35
     - generated-by: Claude Opus 5.5
-      lines: 103-147
+      lines: 106-150
       integrity: sha256-96277068747d59cc5dbdf3601ddc59498f187f33e85c33ffd86ab4c83ee3a345
     - generated-by: Claude Opus 5.5
-      lines: 183-288
+      lines: 186-291
       integrity: sha256-3d1d0a480042b0036203de57e1d2da92ede4c16086a75adef51c02cd1f147c82
   owner:
     - "@hawkeyexl"

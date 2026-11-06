@@ -32,7 +32,7 @@ sample-questions:
 graph:
   label: Keep the terms and the docs in step
   type: task
-last-updated: 2026-10-20
+last-updated: 2026-11-06
 tags:
   - vale
   - terminology
@@ -48,6 +48,10 @@ related-pages:
 ---
 
 import { Steps, Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';
+
+`manni term check` reads records and `concepts:` values, never prose. A
+sentence can still use a deprecated name or a term in the wrong case, and
+nothing flags it.
 
 {/* cite vale-style-named-terms */}
 {/* cite lint-same-vale-config */}
