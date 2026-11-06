@@ -14,8 +14,11 @@ docs/src/content/docs/meta/reference/glossary/coverage.mdx:
       grader: ai
   provenance:
     - generated-by: Claude Opus 5.5
-      lines: 2-5
-      integrity: sha256-f63b0e21cef91c2ada8dab6d41e58b90cdadad4058fb044f012180397f5be407
+      lines: 2
+      integrity: sha256-b067a19351b83031d15ae5632b05f78f96ab7ee153524d42a63ad1960ffc1448
+    - generated-by: Claude Opus 5.5
+      lines: 7-8
+      integrity: sha256-a6e9859b821738bda6243abc2bb2e0a8f7be7e407c262acfee490382924b257f
   owner:
     - "@hawkeyexl"
   created: 2026-10-04

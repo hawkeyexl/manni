@@ -2,7 +2,7 @@ docs/src/content/docs/meta/reference/schemas/astro-starlight.mdx:
   citations:
     - id: platform-starlight-pin-moves-faster
       claim:
-        lines: 81-86
+        lines: 84-89
         integrity: sha256-848676a22a40a6594c3b1fd21254de47fbb82658c3f193618686854a026f873c
       source:
         file: src/meta/schemas/starlight/0.41.json
@@ -19,7 +19,7 @@ docs/src/content/docs/meta/reference/schemas/astro-starlight.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: platform-starlight-field-table
       claim:
-        lines: 51-64
+        lines: 54-67
         integrity: sha256-ec03f8ae8bf4b877d9a26a84f95ed0c4fa4e371161e7fefe931610a77b990785
       source:
         file: src/meta/schemas/starlight/0.41.json

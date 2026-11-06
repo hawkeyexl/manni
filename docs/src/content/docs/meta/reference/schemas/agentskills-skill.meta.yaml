@@ -18,8 +18,11 @@ docs/src/content/docs/meta/reference/schemas/agentskills-skill.mdx:
       grader: ai
   provenance:
     - generated-by: Claude Opus 5.5
-      lines: 2-109
-      integrity: sha256-ce7252fccad53a2abe9b4b3970a57bfb78be01b276e4013df2769d0e86f7c3ee
+      lines: 2-4
+      integrity: sha256-a46f9f485dbc8b5464b56d83c1503dc3965ef227beca8dd2943da7516144b3ba
+    - generated-by: Claude Opus 5.5
+      lines: 9-112
+      integrity: sha256-844777403427b7e8540a9d5b40fdf56b4ceea3f69336882f5eb3c2de12649ac4
   owner:
     - "@hawkeyexl"
   created: 2026-09-26

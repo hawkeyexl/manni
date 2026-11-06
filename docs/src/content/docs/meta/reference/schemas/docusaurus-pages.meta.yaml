@@ -18,8 +18,11 @@ docs/src/content/docs/meta/reference/schemas/docusaurus-pages.mdx:
       grader: ai
   provenance:
     - generated-by: Claude Opus 5.5
-      lines: 2-127
-      integrity: sha256-ec82c4cfa7631af9995ccef686f0bec017e663561f2b88c4d2d6b17a7dc9a17a
+      lines: 2-6
+      integrity: sha256-cfc8caf3b386f8ea928263bf5d18eaaea87f746d7bcfd314e23e0fe910b9513c
+    - generated-by: Claude Opus 5.5
+      lines: 11-130
+      integrity: sha256-fc2f47a0c4c78b963e907a377a7b82632cdc1ad702804054c490b6c851b4d750
   owner:
     - "@hawkeyexl"
   created: 2026-09-26

@@ -17,7 +17,7 @@ docs/src/content/docs/meta/reference/schemas/tgdp-templates.mdx:
         integrity: sha256-5acec354272d40b1bfc249b74597ea6d469a8785c94a871571eb77e1d6fe16c7
     - id: taxonomy-requiring-type-is-mannis-choice
       claim:
-        lines: 65-73
+        lines: 68-76
         integrity: sha256-7cc34dcf6a1889e3f880faf9fb8d0645eb03416a05c20ac3a5629b077a74ded0
       source:
         file: src/meta/schemas/tgdp/1.1.json
@@ -25,7 +25,7 @@ docs/src/content/docs/meta/reference/schemas/tgdp-templates.mdx:
         integrity: sha256-9e0b0ad69b56d222a1b7597338bfb5f3c163d9aa1cc00ab9d406cb20f9ba1c2c
     - id: taxonomy-tgdp-values-by-pack
       claim:
-        lines: 60-62
+        lines: 63-65
         integrity: sha256-4d49645b6d5907ad196f0b13ecaed9e53accd51efa95fc1bad19ff449affd693
       source:
         file: src/meta/schemas/tgdp/1.1.json

@@ -14,8 +14,11 @@ docs/src/content/docs/meta/reference/glossary/vector-sidecar.mdx:
       grader: ai
   provenance:
     - generated-by: Claude Opus 5.5
-      lines: 2-4
-      integrity: sha256-5fe7adc03b269f87a84d51eca9aa19f63bdadc0f95b56705609e19df09026b3e
+      lines: 2
+      integrity: sha256-b067a19351b83031d15ae5632b05f78f96ab7ee153524d42a63ad1960ffc1448
+    - generated-by: Claude Opus 5.5
+      lines: 7
+      integrity: sha256-91ebdd1c409cda817e688a239c47b5e065e2aa39525cb5af8c8992af53d71926
   owner:
     - "@hawkeyexl"
   created: 2026-10-04

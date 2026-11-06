@@ -14,8 +14,11 @@ docs/src/content/docs/meta/reference/glossary/hub.mdx:
       grader: ai
   provenance:
     - generated-by: Claude Opus 5.5
-      lines: 2-4
-      integrity: sha256-9190b91818b619bd893528ba9f9930bdd509aa94b5b0cca10cc9b67587ed5109
+      lines: 2
+      integrity: sha256-b067a19351b83031d15ae5632b05f78f96ab7ee153524d42a63ad1960ffc1448
+    - generated-by: Claude Opus 5.5
+      lines: 7
+      integrity: sha256-bb0cc761244a73d640d79999fc7170046d22a77a362180b29428deb148b44560
   owner:
     - "@hawkeyexl"
   created: 2026-10-04

@@ -29,7 +29,7 @@ sample-questions:
 graph:
   label: meta-schema URI
   type: concept
-last-updated: 2026-09-21
+last-updated: 2026-11-06
 tags:
   - json-schema
   - validation
@@ -51,6 +51,9 @@ scope-note: In manni meta, meta-schema URI refers specifically to the $schema ke
 ---
 
 <p>{frontmatter.definition}</p>
+
+Leave it out or misspell it and manni meta reads the schema as 2020-12,
+whatever draft it was written for.
 
 {/* cite meta-schema-uri-picks-the-validator */}
 It is a different use of the same key a document carries, found **inside a

@@ -14,8 +14,11 @@ docs/src/content/docs/meta/reference/glossary/curie.mdx:
       grader: ai
   provenance:
     - generated-by: Claude Opus 5.5
-      lines: 2-5
-      integrity: sha256-1ddef049d51fcb7f3237e86df5b9647c4a639c9237880a04184fccacdc69dcd5
+      lines: 2
+      integrity: sha256-b067a19351b83031d15ae5632b05f78f96ab7ee153524d42a63ad1960ffc1448
+    - generated-by: Claude Opus 5.5
+      lines: 7-8
+      integrity: sha256-75ca857fa76765334fe210d8207c221752536359d6ff41f9e01fa9d0eea58d20
   owner:
     - "@hawkeyexl"
   created: 2026-10-04

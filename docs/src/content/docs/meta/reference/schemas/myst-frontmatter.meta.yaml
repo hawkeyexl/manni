@@ -18,8 +18,11 @@ docs/src/content/docs/meta/reference/schemas/myst-frontmatter.mdx:
       grader: ai
   provenance:
     - generated-by: Claude Opus 5.5
-      lines: 2-159
-      integrity: sha256-f58e6bd4aef34c0d81552b934661afb75fbb8e8a474123f0d0d39459c036e884
+      lines: 2-6
+      integrity: sha256-2547a62b79f595982d2eba19e62eb703807d94b64528ccc9cd9ea62105c76cac
+    - generated-by: Claude Opus 5.5
+      lines: 11-162
+      integrity: sha256-85022344c1944a7a5c7419cbc500e641d431006261080a6edbe331ec7065a985
   owner:
     - "@hawkeyexl"
   created: 2026-09-26

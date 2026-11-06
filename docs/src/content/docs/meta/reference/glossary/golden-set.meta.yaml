@@ -17,5 +17,8 @@ docs/src/content/docs/meta/reference/glossary/golden-set.mdx:
   created: 2026-10-18
   provenance:
     - generated-by: Claude Opus 5.5
-      lines: 2-8
-      integrity: sha256-477de00cef1d135b426ae922f843563c49e7cc29d9215dd49c05a577d27a5381
+      lines: 2
+      integrity: sha256-b067a19351b83031d15ae5632b05f78f96ab7ee153524d42a63ad1960ffc1448
+    - generated-by: Claude Opus 5.5
+      lines: 7-11
+      integrity: sha256-af266a07404f985e3f939702d61bb18a102ebf1a647f08d05f5cb39761884896

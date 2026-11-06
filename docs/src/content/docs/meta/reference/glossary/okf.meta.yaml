@@ -14,10 +14,13 @@ docs/src/content/docs/meta/reference/glossary/okf.mdx:
       grader: ai
   provenance:
     - generated-by: Claude Opus 5
-      lines: 2-7
-      integrity: sha256-920ea334410ae49440fed2a8b39de4848cd83c67491483cf24cb1b94a1336247
+      lines: 2
+      integrity: sha256-b067a19351b83031d15ae5632b05f78f96ab7ee153524d42a63ad1960ffc1448
+    - generated-by: Claude Opus 5
+      lines: 7-10
+      integrity: sha256-b3c60b622b8f8684ccd3e09707c197d4d66fa8bb5ebe9fbfea49525607fce258
     - generated-by: Claude Opus 5.5
-      lines: 10
+      lines: 13
       integrity: sha256-5661ef35877d747bba425cacd84e3e491dfa9f86f484f6a00994aeaa7703b73e
   owner:
     - "@hawkeyexl"

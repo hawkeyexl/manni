@@ -14,8 +14,11 @@ docs/src/content/docs/meta/reference/glossary/schema-key.mdx:
       grader: ai
   provenance:
     - generated-by: Claude Opus 5
-      lines: 2-13
-      integrity: sha256-415e9628eb9a66351f9f27d1c2cd0848410dddbe9c6431421b496a41f452d501
+      lines: 2
+      integrity: sha256-b067a19351b83031d15ae5632b05f78f96ab7ee153524d42a63ad1960ffc1448
+    - generated-by: Claude Opus 5
+      lines: 7-16
+      integrity: sha256-a02e0882242aa0674b62beac01e327e6c6c8666453ced8959c98a6623337e1fb
   owner:
     - "@hawkeyexl"
   created: 2026-09-17

@@ -10,7 +10,7 @@ docs/src/content/docs/meta/reference/schemas/docusaurus-pages.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: docusaurus-pages-field-table
       claim:
-        lines: 53-61
+        lines: 56-64
         integrity: sha256-25403ffba7bdbda8fcaf1331a3ce906ab31c090ee9a2c731ca9697b3b7bfcb6d
       source:
         file: src/meta/schemas/docusaurus-pages/3.10.json

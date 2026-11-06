@@ -2,7 +2,7 @@ docs/src/content/docs/meta/reference/schemas/myst-frontmatter.mdx:
   citations:
     - id: platform-myst-vocabularies-not-transcribed
       claim:
-        lines: 94-100
+        lines: 97-103
         integrity: sha256-237fc1461b7e6b001b68033d6fc7625e6be0f80c3b01793f84c10f9f6a543431
       source:
         file: src/meta/schemas/myst/1.10.json
@@ -27,7 +27,7 @@ docs/src/content/docs/meta/reference/schemas/myst-frontmatter.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: platform-myst-length-caps
       claim:
-        lines: 59-60
+        lines: 62-63
         integrity: sha256-04dd5ac56a7bd3a4be0422b60970f5672a9384b94f95167447e396d7e25de50d
       source:
         file: src/meta/schemas/myst/1.10.json

@@ -14,8 +14,11 @@ docs/src/content/docs/meta/reference/glossary/quad.mdx:
       grader: ai
   provenance:
     - generated-by: Claude Opus 5.5
-      lines: 2-5
-      integrity: sha256-0f4fa84111d8ddfa400e5a2bc2eb859191e85cd0a460894e3431de8107788b78
+      lines: 2
+      integrity: sha256-b067a19351b83031d15ae5632b05f78f96ab7ee153524d42a63ad1960ffc1448
+    - generated-by: Claude Opus 5.5
+      lines: 7-8
+      integrity: sha256-3b82ec565a35d0d1d8bc512855a710ef102f9cc5e58a4724f3cdd959095c6bb5
   owner:
     - "@hawkeyexl"
   created: 2026-10-04

@@ -14,8 +14,11 @@ docs/src/content/docs/meta/reference/glossary/json-ld.mdx:
       grader: ai
   provenance:
     - generated-by: Claude Opus 5.5
-      lines: 2-6
-      integrity: sha256-bb2c34f76b7e46b1e70e8c41614a4e84ae30d226e8166c2c46d0c994ffe2f53a
+      lines: 2
+      integrity: sha256-b067a19351b83031d15ae5632b05f78f96ab7ee153524d42a63ad1960ffc1448
+    - generated-by: Claude Opus 5.5
+      lines: 7-9
+      integrity: sha256-a614a5b1b571d7d08084db19f41a04627ad33a1484d6b242e567cf5ef309cf22
   owner:
     - "@hawkeyexl"
   created: 2026-10-04

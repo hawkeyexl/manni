@@ -14,8 +14,11 @@ docs/src/content/docs/meta/reference/glossary/confidence.mdx:
       grader: ai
   provenance:
     - generated-by: Claude Opus 5.5
-      lines: 2-5
-      integrity: sha256-a765437f2ac9abc838582203d0784c7b728dc68f5284737c78b4cf6705b5d7ee
+      lines: 2
+      integrity: sha256-b067a19351b83031d15ae5632b05f78f96ab7ee153524d42a63ad1960ffc1448
+    - generated-by: Claude Opus 5.5
+      lines: 7-8
+      integrity: sha256-ed1a4784a8734cd7e0f397adf50c1dad21bdb0416226bf1fbad1eac7782689b4
   owner:
     - "@hawkeyexl"
   created: 2026-10-04

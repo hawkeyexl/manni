@@ -18,7 +18,7 @@ sample-questions:
 graph:
   label: "Sphinx docinfo schema"
   type: reference
-last-updated: 2026-10-20
+last-updated: 2026-11-06
 resource: https://hawkeyexl.github.io/manni/schemas/sphinx/9.1.json
 tags:
   - restructuredtext
@@ -44,6 +44,9 @@ prerequisites:
 Published at `https://hawkeyexl.github.io/manni/schemas/sphinx/9.1.json`. A
 `$schema` that names this URL resolves to the bundled copy, with no network
 call.
+
+In a Sphinx project it catches a field-list value of the wrong type, such as
+`:tocdepth: deep` where Sphinx expects a number.
 
 import { Aside } from '@astrojs/starlight/components';
 

@@ -26,7 +26,7 @@ docs/src/content/docs/meta/reference/schemas/passo-uno-seven-action.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: taxonomy-config-schemas-replace-the-default-set
       claim:
-        lines: 92-94
+        lines: 95-97
         integrity: sha256-2fd82390cabe03949264c38c51c5f7ff1d3900e0ab72763956e520d450328fe5
       source:
         file: src/meta/core/resolve-schema.ts
@@ -35,7 +35,7 @@ docs/src/content/docs/meta/reference/schemas/passo-uno-seven-action.mdx:
         commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: taxonomy-a-foreign-action-value-fails
       claim:
-        lines: 85-86
+        lines: 88-89
         integrity: sha256-e6b29afabc5d2f1b8711e5edaf0aca27ccddecc3595c171f3ebb5c53cb06ac28
       source:
         file: src/meta/schemas/seven-action/1.0.json
@@ -44,7 +44,7 @@ docs/src/content/docs/meta/reference/schemas/passo-uno-seven-action.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: taxonomy-action-troubleshoot
       claim:
-        lines: 51
+        lines: 54
         integrity: sha256-b88716757944342309e06abb67c8744883e0dd9b16dfb9610da7c5487d2630ba
       source:
         file: src/meta/schemas/seven-action/1.0.json
@@ -53,7 +53,7 @@ docs/src/content/docs/meta/reference/schemas/passo-uno-seven-action.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: taxonomy-action-develop
       claim:
-        lines: 50
+        lines: 53
         integrity: sha256-7c479ac281dfd6817e909b39c3fb291b286e14215fb3fedfcb753c6899fdfefc
       source:
         file: src/meta/schemas/seven-action/1.0.json
@@ -62,7 +62,7 @@ docs/src/content/docs/meta/reference/schemas/passo-uno-seven-action.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: taxonomy-action-remember
       claim:
-        lines: 49
+        lines: 52
         integrity: sha256-7bc8e59d31262ce9174f81bd91897626d74a4145c96ad9bddd10579a15d6e400
       source:
         file: src/meta/schemas/seven-action/1.0.json
@@ -71,7 +71,7 @@ docs/src/content/docs/meta/reference/schemas/passo-uno-seven-action.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: taxonomy-action-practice
       claim:
-        lines: 48
+        lines: 51
         integrity: sha256-0bd1b32063e473a631ac2b9d42b5adcdfd549b6d0d7988cf560c4319375d17be
       source:
         file: src/meta/schemas/seven-action/1.0.json
@@ -80,7 +80,7 @@ docs/src/content/docs/meta/reference/schemas/passo-uno-seven-action.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: taxonomy-action-explore
       claim:
-        lines: 47
+        lines: 50
         integrity: sha256-281b3d0401bb6ac77f45556e6483360dc0664b6543ae259c6add1f911c278dec
       source:
         file: src/meta/schemas/seven-action/1.0.json
@@ -89,7 +89,7 @@ docs/src/content/docs/meta/reference/schemas/passo-uno-seven-action.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: taxonomy-action-understand
       claim:
-        lines: 46
+        lines: 49
         integrity: sha256-dc8774dc41edb4308dd8779a1c0a63c89bc15fab2f3232da14eeb36e6763b7e8
       source:
         file: src/meta/schemas/seven-action/1.0.json
@@ -98,7 +98,7 @@ docs/src/content/docs/meta/reference/schemas/passo-uno-seven-action.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: taxonomy-action-appraise
       claim:
-        lines: 45
+        lines: 48
         integrity: sha256-94c4a1ea86552d8ed60aefbd2ded4016de68cf4d0db9abb1d653457eb4ac294d
       source:
         file: src/meta/schemas/seven-action/1.0.json

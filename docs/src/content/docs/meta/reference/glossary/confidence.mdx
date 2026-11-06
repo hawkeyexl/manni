@@ -32,10 +32,13 @@ related-terms:
   - "turn"
   - "guardrail"
   - "meta-provenance"
-last-updated: 2026-10-04
+last-updated: 2026-11-06
 ---
 
 <p>{frontmatter.definition}</p>
+
+It lets you decide how sure a model must be before `graph fill` writes its
+value into a page.
 
 `fill.confidenceThreshold` is the bar a proposal must clear to be written.
 Raw proposals are cached before the bar applies, so changing it costs nothing.

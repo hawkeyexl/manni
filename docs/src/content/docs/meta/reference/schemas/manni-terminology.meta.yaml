@@ -23,25 +23,28 @@ docs/src/content/docs/meta/reference/schemas/manni-terminology.mdx:
       grader: ai
   provenance:
     - generated-by: Claude Opus 5.5
-      lines: 2-18
-      integrity: sha256-989cb0116f16ebe23e698ce63ed53e7bf4c85f8e019c057134ae27c7eebb91c8
+      lines: 2-16
+      integrity: sha256-ba65b428c063a507cf3a799023d3baaee6f27eb6d773623d9706e8482f9af150
     - generated-by: Claude Opus 5.5
-      lines: 28-31
+      lines: 20
+      integrity: sha256-b67c2d6daf2d2089a516a1aed44b057e3dc4206b72e822728ff5f7db856245b9
+    - generated-by: Claude Opus 5.5
+      lines: 30-33
       integrity: sha256-fcd9f3139e4d117301cb23b4288f127507c4bc9b68cd700e8d7ea1295ade8af1
     - generated-by: Claude Opus 5.5
-      lines: 33-210
+      lines: 35-212
       integrity: sha256-3a91b2a82747824912b8b3b0b024df28423673092b4638d358110db11efcda37
     - generated-by: Claude Opus 5.5
-      lines: 215-222
+      lines: 217-224
       integrity: sha256-19f64fea7239027f7646d53fcd9a944cb07b36a46f53dae9c51efb51e1b12dc5
     - generated-by: Claude Opus 5.5
-      lines: 225-296
+      lines: 227-298
       integrity: sha256-fb2e1ae51c05939e25f7a20a48247f7a8a43a9f2c29893ea1f264c575ef232cf
     - generated-by: Claude Opus 5.5
-      lines: 300-326
+      lines: 302-328
       integrity: sha256-632ada280a330ba8ca9316855d563dab496a0dab76f6a45354765cb284fa8401
     - generated-by: Claude Opus 5.5
-      lines: 330-379
+      lines: 332-381
       integrity: sha256-3ae161e70a8fbbb86515492352861cf1a6e70e3d4c7d79333611781cb33e5cd4
   owner:
     - "@hawkeyexl"

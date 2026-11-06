@@ -17,5 +17,8 @@ docs/src/content/docs/meta/reference/glossary/concept-mapping.mdx:
   created: 2026-10-18
   provenance:
     - generated-by: Claude Opus 5.5
-      lines: 2-8
-      integrity: sha256-0cb71cc9feac9b66c32b7297afe969c54c827eef751f950f8a10d1fd1143c556
+      lines: 2
+      integrity: sha256-b067a19351b83031d15ae5632b05f78f96ab7ee153524d42a63ad1960ffc1448
+    - generated-by: Claude Opus 5.5
+      lines: 7-11
+      integrity: sha256-1aab758389f52f8facb68f6e54c431e9d54f197affeba62ecb4c56f80e4d0979

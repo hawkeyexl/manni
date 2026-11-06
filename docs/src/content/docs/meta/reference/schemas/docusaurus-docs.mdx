@@ -19,7 +19,7 @@ sample-questions:
 graph:
   label: "Docusaurus docs schema"
   type: reference
-last-updated: 2026-10-20
+last-updated: 2026-11-06
 resource: https://hawkeyexl.github.io/manni/schemas/docusaurus-docs/3.10.json
 tags:
   - docusaurus
@@ -46,6 +46,9 @@ verified-by:
 Published at `https://hawkeyexl.github.io/manni/schemas/docusaurus-docs/3.10.json`.
 A `$schema` that names this URL resolves to the bundled copy, with no network
 call.
+
+Docusaurus teams reach for it to catch the most common front matter mistake,
+a quoted `sidebar_position` that Docusaurus rejects.
 
 `docusaurus:docs:3.10` checks the front matter `@docusaurus/plugin-content-docs`
 reads, as of Docusaurus 3.10. It is a format check, not a presence check. It

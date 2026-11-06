@@ -17,5 +17,8 @@ docs/src/content/docs/meta/reference/glossary/concept-scheme.mdx:
   created: 2026-10-18
   provenance:
     - generated-by: Claude Opus 5.5
-      lines: 2-7
-      integrity: sha256-30a66cf40c7fd208fc89503919f866e73488778212176e2a43feafd3b8a1242f
+      lines: 2
+      integrity: sha256-b067a19351b83031d15ae5632b05f78f96ab7ee153524d42a63ad1960ffc1448
+    - generated-by: Claude Opus 5.5
+      lines: 7-10
+      integrity: sha256-a7d45e02f477c3177a5f30f12ffde1bcae86c54d8e7ab26ec62213caec8fbfe5

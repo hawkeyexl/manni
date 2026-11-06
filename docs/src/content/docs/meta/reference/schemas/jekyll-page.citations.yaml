@@ -2,7 +2,7 @@ docs/src/content/docs/meta/reference/schemas/jekyll-page.mdx:
   citations:
     - id: platform-jekyll-theme-keys-are-unknown
       claim:
-        lines: 71-74
+        lines: 74-77
         integrity: sha256-327cef65abb1ed696b40815d8996031cd6606f0731dddbfab115cc6156d7ae8c
       source:
         file: src/meta/schemas/jekyll/4.4.json
@@ -19,7 +19,7 @@ docs/src/content/docs/meta/reference/schemas/jekyll-page.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: platform-jekyll-field-table
       claim:
-        lines: 56-60
+        lines: 59-63
         integrity: sha256-d46dfde9c589ea8900f1fd016920645f5f90d2ad21946f7c5dbbce7da0760869
       source:
         file: src/meta/schemas/jekyll/4.4.json
