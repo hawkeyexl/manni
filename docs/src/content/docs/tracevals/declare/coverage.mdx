@@ -13,7 +13,7 @@ lifecycle: published
 applies-to: ["domain:tracevals"]
 sample-questions: ["What does an unresolved coverage row mean?", "How are skills resolved from a trace?"]
 graph: { label: "Account for every artifact", type: concept }
-last-updated: 2026-10-24
+last-updated: 2026-11-06
 verified-by:
   - tool: doc-detective
     check: coverage-states
@@ -24,6 +24,9 @@ verified-by:
 ---
 
 import { Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';
+
+An artifact tracevals cannot find gets no evals, so a run can pass while some of the instructions
+behind the session went unchecked.
 
 **Scope:** the *denominator*, meaning every instruction file a session referenced, including the
 ones that could not be found. Deciding what to check on a resolved artifact is

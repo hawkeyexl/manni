@@ -13,13 +13,16 @@ lifecycle: published
 applies-to: ["domain:tracevals"]
 sample-questions: ["What do exit codes 0, 1 and 2 mean?", "How do I stop needs-review from failing the build?"]
 graph: { label: "Exit codes & reports", type: reference }
-last-updated: 2026-10-20
+last-updated: 2026-11-06
 verified-by:
   - tool: doc-detective
     check: exit-code-contract
 ---
 
 import { Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';
+
+Read this before a pipeline branches on tracevals, because a red build can mean a bad session or a
+tool that never ran.
 
 **Scope:** the contract a pipeline depends on, meaning what the process returns and what it can
 leave behind. Installing the gate is [Run it in CI](/manni/tracevals/ci/); the full field-by-field

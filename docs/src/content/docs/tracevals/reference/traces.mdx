@@ -13,10 +13,13 @@ lifecycle: published
 applies-to: ["domain:tracevals"]
 sample-questions: ["Where does tracevals look for sessions?", "What does CLAUDE_CONFIG_DIR change?"]
 graph: { label: "Traces reference", type: reference }
-last-updated: 2026-09-16
+last-updated: 2026-11-06
 ---
 
 import { Aside } from '@astrojs/starlight/components';
+
+When `list` misses a session you know exists, or `run` refuses a trace file, the answer is on this
+page.
 
 **Scope:** where traces come from and what manni tracevals reads out of them. Source of truth:
 `src/tracevals/trace/`, in `detect.ts`, `claude.ts`, and `discover.ts`.
@@ -32,7 +35,8 @@ the format:
 | `claude-stream` | `session_id` on a record | `claude -p --output-format stream-json` |
 
 Both normalise into the same `Trace` model, so everything downstream is format-agnostic. The
-`TraceSource` union is currently just `claude-code`; it is the seam for future adapters.
+`TraceSource` union has one member, `claude-code`, and an adapter for another format conforms to
+the same `Trace`.
 
 Lines that parse but identify nothing are skipped rather than treated as an error, so a leading
 metadata record does not defeat detection. `{"type":"summary"}` is one such line.

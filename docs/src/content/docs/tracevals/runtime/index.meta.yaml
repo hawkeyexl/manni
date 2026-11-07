@@ -22,5 +22,8 @@ docs/src/content/docs/tracevals/runtime/index.mdx:
   created: 2026-10-07
   provenance:
     - generated-by: Claude Opus 5.5
-      lines: 2-517
-      integrity: sha256-fbac39d043d56e832ac63ac6bbc3aef110477f5cd5c459c5606a0ec968d1c419
+      lines: 2-10
+      integrity: sha256-67446095f44471ee45fea952aa078cf25393971cbdf2cd58965a6fd2b98595ec
+    - generated-by: Claude Opus 5.5
+      lines: 15-520
+      integrity: sha256-398b5cdcf8141f1b75548d1f9a823831d57d09fdf3a6c7e1ecfe6e16f5418c19

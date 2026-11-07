@@ -13,10 +13,14 @@ lifecycle: published
 applies-to: ["domain:tracevals"]
 sample-questions: ["How do I write a custom grader?", "How do I load a grader plugin?"]
 graph: { label: "Write a custom grader", type: task }
-last-updated: 2026-09-16
+last-updated: 2026-11-06
 ---
 
 import { Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';
+
+A rule that code could decide, but no built-in grader expresses, otherwise goes to the judge at
+three model calls per eval by default. A grader of your own decides it from the trace with no model
+call, and unlike a `command` eval, `fill` can propose it.
 
 **Scope:** adding a deterministic grader kind. The deterministic built-ins and their options are in
 the [grader reference](/manni/tracevals/reference/graders/). Read one of those first, since they are

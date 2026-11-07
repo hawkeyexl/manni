@@ -13,13 +13,16 @@ lifecycle: published
 applies-to: ["domain:tracevals"]
 sample-questions: ["What options does tool-order take?", "How do I stop command evals from running?"]
 graph: { label: "Grader reference", type: reference }
-last-updated: 2026-10-20
+last-updated: 2026-11-06
 verified-by:
   - tool: doc-detective
     check: unarmed-trigger-skips
 ---
 
 import { Aside } from '@astrojs/starlight/components';
+
+Every grader kind except `ai` decides without the judge, so picking the right one here takes the
+judge's model calls off every run.
 
 **Scope:** every grader kind, its options, and what it emits. How the judged grader decides is
 [How the judge decides](/manni/tracevals/judge/). Source of truth: `src/tracevals/graders/`.

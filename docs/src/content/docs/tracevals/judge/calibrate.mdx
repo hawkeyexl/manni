@@ -13,7 +13,7 @@ lifecycle: published
 applies-to: ["domain:tracevals"]
 sample-questions: ["How do I measure false passes?", "What does calibrate --sweep do?"]
 graph: { label: "Calibrate the judge", type: task }
-last-updated: 2026-10-04
+last-updated: 2026-11-06
 verified-by:
   - tool: doc-detective
     check: calibrate
@@ -30,6 +30,8 @@ import { Steps, Aside, LinkCard, CardGrid } from '@astrojs/starlight/components'
     a runner that has neither a key nor a local model. The prose above names
     `--local`, which is the real offline answer for a reader.
     Run with `npx doc-detective`. Config: .doc-detective.json. */}
+
+A judge can pass sessions you would have failed, and no report from `run` shows it.
 
 **Scope:** measuring whether the tool agrees with you, and turning the knobs once you know. It
 assumes [How the judge decides](/manni/tracevals/judge/). You cannot tune a zone threshold before

@@ -13,10 +13,13 @@ lifecycle: published
 applies-to: ["domain:tracevals"]
 sample-questions: ["What does execution.allow do?", "Where do relocated evals live?"]
 graph: { label: "Configuration reference", type: reference }
-last-updated: 2026-10-24
+last-updated: 2026-11-06
 ---
 
 import { Aside } from '@astrojs/starlight/components';
+
+Judge zones, redaction and the runtime hook have no CLI flag, so `manni.config.yaml` is the only
+place to set them.
 
 **Scope:** every configuration key. Source of truth: `src/tracevals/core/config-schema.json` and
 `src/tracevals/core/config.ts`. The schema's `$id` is `manni:tracevals:config`.
