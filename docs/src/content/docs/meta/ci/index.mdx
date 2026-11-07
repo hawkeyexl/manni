@@ -1,6 +1,6 @@
 ---
 title: Add manni meta to CI (GitHub Actions)
-description: Add a document-metadata gate to GitHub Actions, with inline pull request annotations from the github output format.
+description: Fail the pull request that leaves a page without its metadata. Add a document-metadata gate to GitHub Actions, with inline pull request annotations from the github output format.
 type: how-to
 id: meta-ci
 keywords:
@@ -28,7 +28,7 @@ sample-questions:
 graph:
   label: Add manni meta to CI (GitHub Actions)
   type: task
-last-updated: 2026-10-27
+last-updated: 2026-11-06
 tags:
   - github-actions
   - ci-cd
@@ -52,6 +52,10 @@ verified-by:
 ---
 
 import { Steps, Tabs, TabItem, Aside, CardGrid, LinkCard } from '@astrojs/starlight/components';
+
+A check that runs only when someone remembers it lets a page with missing
+metadata merge. In CI it runs on every pull request, so the failure reaches the
+author before the merge does.
 
 This page wires manni meta into GitHub Actions. Every push and pull request then
 validates your document metadata, and fails the job when a file is

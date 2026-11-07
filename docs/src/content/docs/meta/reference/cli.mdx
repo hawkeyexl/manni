@@ -29,7 +29,7 @@ sample-questions:
 graph:
   label: CLI reference
   type: reference
-last-updated: 2026-10-24
+last-updated: 2026-11-06
 tags:
   - cli
   - command-reference
@@ -61,6 +61,9 @@ import { Tabs, TabItem, Aside } from '@astrojs/starlight/components';
     against src/cli.ts by scripts/check-cli-reference.mjs (npm run docs:check-cli),
     enforced in CI. Keep flags, arguments, and defaults in sync with the code;
     descriptions are free-form. */}
+
+Reach for this page when you need a flag's exact name, argument or default. A
+mistyped flag fails the run with exit code 2 before any file is read.
 
 manni meta exposes seven subcommands: [`validate`](#meta-validate) (the default),
 [`get`](#meta-get), [`query`](#meta-query), [`fill`](#meta-fill),

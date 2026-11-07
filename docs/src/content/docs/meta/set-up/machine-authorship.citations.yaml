@@ -242,7 +242,7 @@ docs/src/content/docs/meta/set-up/machine-authorship.mdx:
         commit-sha: cb74827009894c38f8646504ae9eb4a2745761a9
     - id: generated-by-attributes-all-uncommitted-lines
       claim:
-        lines: 168
+        lines: 171
         integrity: sha256-c977abf34b42b07cffbb41f1b7ca7b487184be50e80f61c231cdd52f0a6ba6ad
       source:
         file: src/meta/core/derive/provenance.ts
@@ -267,7 +267,7 @@ docs/src/content/docs/meta/set-up/machine-authorship.mdx:
         commit-sha: cb74827009894c38f8646504ae9eb4a2745761a9
     - id: derive-hook-ordered-before-validate-hook
       claim:
-        lines: 75
+        lines: 78
         integrity: sha256-c70e1a5400ea752a2f47035498a9d2e6094844e1029acf06fc41d81d563fbb03
       source:
         file: .pre-commit-hooks.yaml
@@ -276,7 +276,7 @@ docs/src/content/docs/meta/set-up/machine-authorship.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: machine-identity-excluded-from-authors
       claim:
-        lines: 73
+        lines: 76
         integrity: sha256-f5a22fcbc860651acfaf4f4934552be01af9ce818b01782c171d7228c0f90289
       source:
         file: src/meta/core/derive/git.ts
@@ -285,7 +285,7 @@ docs/src/content/docs/meta/set-up/machine-authorship.mdx:
         commit-sha: df75e58da9c2ffb383db63ef9e4f7aeb6c30d0ad
     - id: machines-glob-matches-trailer-name-or-email
       claim:
-        lines: 60
+        lines: 63
         integrity: sha256-e6f7326da8426413cc664bd362bcae9f2d2ffa34f2738937f348b6f77b0ea810
       source:
         file: src/meta/core/derive/provenance.ts
@@ -294,7 +294,7 @@ docs/src/content/docs/meta/set-up/machine-authorship.mdx:
         commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: derive-fields-selects-what-is-stamped
       claim:
-        lines: 44
+        lines: 47
         integrity: sha256-fbee9db97ce3be6c8e17907d789ab2a03e335aa9144a2197024a45b650d7e94d
       source:
         file: src/meta/commands/derive.ts
@@ -343,7 +343,7 @@ docs/src/content/docs/meta/set-up/machine-authorship.mdx:
         commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: no-evidence-is-not-a-contradiction
       claim:
-        lines: 304-307
+        lines: 307-310
         integrity: sha256-9f6a3599eaab1305d8f93cf5e62c5cac66236b5191c83fe894a62da1c83e9b22
       source:
         file: src/meta/core/derive/provenance.ts
@@ -352,7 +352,7 @@ docs/src/content/docs/meta/set-up/machine-authorship.mdx:
         commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e
     - id: machines-default-is-star-bot
       claim:
-        lines: 70
+        lines: 73
         integrity: sha256-86e47131f9012ee597fcaa3ae7b0d6bb822ae562aa298648be538780efdef194
       source:
         file: src/meta/core/derive/provenance.ts
@@ -361,7 +361,7 @@ docs/src/content/docs/meta/set-up/machine-authorship.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: machine-globs-use-literal-brackets
       claim:
-        lines: 70
+        lines: 73
         integrity: sha256-86e47131f9012ee597fcaa3ae7b0d6bb822ae562aa298648be538780efdef194
       source:
         file: src/meta/core/derive/provenance.ts

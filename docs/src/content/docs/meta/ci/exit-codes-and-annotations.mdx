@@ -28,7 +28,7 @@ sample-questions:
 graph:
   label: Exit codes & PR annotations
   type: task
-last-updated: 2026-10-20
+last-updated: 2026-11-06
 tags:
   - exit-codes
   - annotations
@@ -53,6 +53,10 @@ verified-by:
 ---
 
 import { Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';
+
+A pipeline that treats every failure alike sends authors to fix their pages when
+the run itself broke. The exit code tells the two apart, and the output format
+decides what the author sees.
 
 This page is the contract between manni meta and your pipeline. It covers what each
 exit code means, what each output format looks like, and when color is emitted.

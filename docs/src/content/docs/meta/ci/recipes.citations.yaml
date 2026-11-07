@@ -50,7 +50,7 @@ docs/src/content/docs/meta/ci/recipes.mdx:
         commit-sha: cb74827009894c38f8646504ae9eb4a2745761a9
     - id: recipes-operational-error-exits-2
       claim:
-        lines: 11-12
+        lines: 15-16
         integrity: sha256-260544cda490cb7a8a5090db6f469af01dde0a0cabf6ee9378fd14156911b2a1
       source:
         file: src/shared/run.ts
@@ -59,7 +59,7 @@ docs/src/content/docs/meta/ci/recipes.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: github-format-emits-workflow-commands
       claim:
-        lines: 17
+        lines: 21
         integrity: sha256-dd013d4ba2a723499cee6d883c35f02b58e50ab68483c1f208a29e70faac1e8b
       source:
         file: src/meta/reporters/index.ts
@@ -68,7 +68,7 @@ docs/src/content/docs/meta/ci/recipes.mdx:
         commit-sha: cb74827009894c38f8646504ae9eb4a2745761a9
     - id: manni-rebases-paths-onto-the-git-root
       claim:
-        lines: 86-87
+        lines: 90-91
         integrity: sha256-d282f4cbf8469be18a1a73ed4ebe064be9a07d6caee82ecc9931dade000f1fd9
       source:
         file: src/meta/reporters/sarif.ts
@@ -77,7 +77,7 @@ docs/src/content/docs/meta/ci/recipes.mdx:
         commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: no-git-root-warns-on-stderr
       claim:
-        lines: 88-89
+        lines: 92-93
         integrity: sha256-033b570bbbbd80687dd0bd6c5cfd3a499b18eb3d7d9f629f077297a04ac7c7de
       source:
         file: src/meta/reporters/sarif.ts
@@ -86,7 +86,7 @@ docs/src/content/docs/meta/ci/recipes.mdx:
         commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: hook-needs-node-24
       claim:
-        lines: 306-307
+        lines: 310-311
         integrity: sha256-7586e9ec2cbcc07983fac21ddfb24918a8b187dc1fd1297d476a9100ca3e83cd
       source:
         file: package.json
