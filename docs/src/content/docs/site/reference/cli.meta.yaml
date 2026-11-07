@@ -20,5 +20,8 @@ docs/src/content/docs/site/reference/cli.mdx:
   created: 2026-10-05
   provenance:
     - generated-by: Claude Opus 5.5
-      lines: 2-541
-      integrity: sha256-a801f2699d1927356a57d2a8b807709796cfe1a89095f6ee31af3dfde6c68fe0
+      lines: 2-5
+      integrity: sha256-9624aa49bf0805b28b8ba9a9ae06f0d023412e54147c1a7306b91a306ebf6d37
+    - generated-by: Claude Opus 5.5
+      lines: 11-545
+      integrity: sha256-35b3adcbaf25d3d766b789fc77249fa7cc6c7106033d04e270b8c5045ae65af9

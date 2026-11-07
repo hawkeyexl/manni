@@ -14,7 +14,7 @@ applies-to: ["domain:family"]
 next-steps: ["family-check", "family-claude-code"]
 sample-questions: ["What does manni check run when I name files?", "What exit code does manni check use under a Claude Code hook?", "What does the manni check JSON report look like?"]
 graph: { label: "CLI reference", type: reference }
-last-updated: 2026-10-24
+last-updated: 2026-11-06
 tags:
   - cli
   - exit-codes
@@ -36,6 +36,9 @@ import { Aside } from '@astrojs/starlight/components';
     against src/family/cli.ts by scripts/check-cli-reference.mjs (npm run
     docs:check-cli), enforced in CI. Keep flags, arguments, and defaults in
     sync with the code; descriptions are free-form. */}
+
+Reach for this page when you wire `manni check` into CI or a Claude Code hook,
+and need its exact scopes, exit codes and messages.
 
 `manni check` and `manni status` are the two verbs of the umbrella that belong
 to no single domain. Both call other domains' command cores in process and own

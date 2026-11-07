@@ -1,6 +1,6 @@
 ---
 title: Gate accessibility in CI
-description: "Run manni a11y check on a schedule against the live site, and on every pull request against the build the branch produces, with GitHub annotations."
+description: "Catch an accessibility regression on the pull request that causes it. Run manni a11y check on a schedule against the live site, and on every pull request against the build the branch produces, with GitHub annotations."
 id: "a11y-ci"
 type: "how-to"
 keywords: ["accessibility", "CI", "annotations", "exit codes", "pull request"]
@@ -13,7 +13,7 @@ next-steps: ["a11y-get-started", "a11y-fix", "a11y-reference-cli"]
 related-pages: ["meta-ci"]
 sample-questions: ["How do I check the deployed site for accessibility on a schedule?", "How do I gate a pull request on accessibility before it deploys?", "What exit codes does manni a11y check return?"]
 graph: { label: "Gate accessibility in CI", type: task }
-last-updated: 2026-10-23
+last-updated: 2026-11-06
 tags:
   - github-actions
   - ci-cd
@@ -30,6 +30,10 @@ risks:
 ---
 
 import { Aside, CardGrid, LinkCard } from '@astrojs/starlight/components';
+
+A page that passed its accessibility check last week can fail it after one theme
+update, or one image added without alt text. In CI, the check catches that on
+the pull request that caused it, or on the next scheduled run.
 
 The check needs a URL that answers, so where it runs depends on when the site
 exists. A deployed site is there all the time. The site a pull request builds

@@ -1,6 +1,6 @@
 ---
 title: Get started
-description: Pin your first claim to a source line, watch each end move and change, and fix it with one command. Then anchor with a marker and pin a code block.
+description: Make the code change that breaks a sentence fail a check. Pin your first claim to a source line, watch each end move and change, and fix it with one command. Then anchor with a marker and pin a code block.
 type: tutorial
 id: cite-get-started
 keywords:
@@ -31,7 +31,7 @@ sample-questions:
 graph:
   label: Get started
   type: learning
-last-updated: 2026-11-01
+last-updated: 2026-11-06
 tags:
   - citation
   - tutorial
@@ -51,6 +51,11 @@ verified-by:
 ---
 
 import { Steps, Tabs, TabItem, Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';
+
+You have a sentence that states a timeout, a limit or a default. Sooner or
+later, someone changes the line of code that sets it. By the end of this page,
+that change fails a check that points at the sentence, before a reader trusts
+the old value.
 
 This page takes you from a sentence to a citation CI can check. You'll pin one
 claim, read what got written, and run the check. Then you'll make the source

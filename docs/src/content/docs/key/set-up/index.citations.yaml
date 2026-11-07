@@ -2,7 +2,7 @@ docs/src/content/docs/key/set-up/index.mdx:
   citations:
     - id: where-config-row
       claim:
-        lines: 18
+        lines: 23
         integrity: sha256-53afbd821b492f879eb29ddece181d5bc5fcad3a4df34057cc6babae470dbf99
       source:
         file: src/shared/encryption-key.ts
@@ -11,7 +11,7 @@ docs/src/content/docs/key/set-up/index.mdx:
         commit-sha: a589e08250dee7efaee7ed0f58df01986fad8d1d
     - id: where-env-row
       claim:
-        lines: 19
+        lines: 24
         integrity: sha256-7275547658600c0544a86827fca1aa874698196fa4741ac0a89dc0d4314438cf
       source:
         file: src/shared/encryption-key.ts
@@ -76,7 +76,7 @@ docs/src/content/docs/key/set-up/index.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: dry-run-git-warning
       claim:
-        lines: 51
+        lines: 56
         integrity: sha256-d9abebdbbce59e2fd3f919ff1c1dc2f63869455b7ada0cb59a19bdf9910bfdd8
       source:
         file: src/shared/encryption-key.ts
@@ -85,7 +85,7 @@ docs/src/content/docs/key/set-up/index.mdx:
         commit-sha: a589e08250dee7efaee7ed0f58df01986fad8d1d
     - id: warning-not-refusal
       claim:
-        lines: 56-58
+        lines: 61-63
         integrity: sha256-57ea70c6d4e7396ddf1d59120ea939421c99a6abdbe42526e441f019e7ca6fe8
       source:
         file: src/key/commands/set.ts
@@ -94,7 +94,7 @@ docs/src/content/docs/key/set-up/index.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: dry-run-message
       claim:
-        lines: 52
+        lines: 57
         integrity: sha256-299c85036401970e50bef03d7b7d4d780dba011ef22602c119edb19116e89363
       source:
         file: src/key/reporters/pretty.ts
@@ -103,7 +103,7 @@ docs/src/content/docs/key/set-up/index.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: set-written-message
       claim:
-        lines: 66
+        lines: 71
         integrity: sha256-d376505e1367604dbb823edade70ee049243bb76223cf010eb7268291c4a793f
       source:
         file: src/key/reporters/pretty.ts
@@ -120,7 +120,7 @@ docs/src/content/docs/key/set-up/index.mdx:
         commit-sha: a589e08250dee7efaee7ed0f58df01986fad8d1d
     - id: set-refuses-env
       claim:
-        lines: 107
+        lines: 112
         integrity: sha256-7a74953b1d105269b1d02049dd359b391c32ab679c56ea6d60f526577f91ab96
       source:
         file: src/key/commands/set.ts
@@ -129,7 +129,7 @@ docs/src/content/docs/key/set-up/index.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: set-refuses-env-message
       claim:
-        lines: 111
+        lines: 116
         integrity: sha256-b5de6183cbdcc5158a18d22febfdc5795d9f7cd94dbcc1cf3161ee71ce7e791b
       source:
         file: src/key/commands/set.ts
@@ -154,7 +154,7 @@ docs/src/content/docs/key/set-up/index.mdx:
         commit-sha: ddba7252337859626421b6060ae8952f93f61653
     - id: maya-no-key-nothing-fails
       claim:
-        lines: 131
+        lines: 136
         integrity: sha256-fbeb9ddb2e039a42356e1a2b1292ea0343dbda7a72457e2a09ac8747e1971419
       source:
         file: src/meta/commands/validate.ts
@@ -163,7 +163,7 @@ docs/src/content/docs/key/set-up/index.mdx:
         commit-sha: cb74827009894c38f8646504ae9eb4a2745761a9
     - id: rotation-needs-key
       claim:
-        lines: 134
+        lines: 139
         integrity: sha256-51c0a7e6864fb35b61948b1aba9d2133c6383cb2cc42a7533dabd9754cdb68e8
       source:
         file: src/key/commands/rotate.ts
@@ -172,7 +172,7 @@ docs/src/content/docs/key/set-up/index.mdx:
         commit-sha: ddba7252337859626421b6060ae8952f93f61653
     - id: no-key-validate-row
       claim:
-        lines: 147
+        lines: 152
         integrity: sha256-458eddbe3a56cb469cba12206aa9f0c92a454f818fee184c8c048a77a3860901
       source:
         file: src/meta/commands/validate.ts
@@ -181,7 +181,7 @@ docs/src/content/docs/key/set-up/index.mdx:
         commit-sha: cb74827009894c38f8646504ae9eb4a2745761a9
     - id: no-key-write-row-terminal
       claim:
-        lines: 149
+        lines: 154
         integrity: sha256-a450c80a7054f85863ceeebe000bea0545d27fffcc997e90ec7f73ad0fd6bfe5
       source:
         file: src/shared/prompt.ts
@@ -190,7 +190,7 @@ docs/src/content/docs/key/set-up/index.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: no-key-write-row-refusal
       claim:
-        lines: 149
+        lines: 154
         integrity: sha256-a450c80a7054f85863ceeebe000bea0545d27fffcc997e90ec7f73ad0fd6bfe5
       source:
         file: src/shared/prompt.ts
@@ -199,7 +199,7 @@ docs/src/content/docs/key/set-up/index.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: no-key-cite-check-row
       claim:
-        lines: 150
+        lines: 155
         integrity: sha256-89c39b8a6e53c0d82da49502577c776499284b268c34967c95ed10a259f4a2cb
       source:
         file: src/cite/core/adapt.ts
@@ -208,7 +208,7 @@ docs/src/content/docs/key/set-up/index.mdx:
         commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
     - id: no-key-rotate-row
       claim:
-        lines: 151
+        lines: 156
         integrity: sha256-1e4d5dc51de09f4c9af3b85874ec53c736205ae21eff8c328fc4047f0926ee1d
       source:
         file: src/key/commands/rotate.ts
@@ -217,7 +217,7 @@ docs/src/content/docs/key/set-up/index.mdx:
         commit-sha: ddba7252337859626421b6060ae8952f93f61653
     - id: no-key-rotate-row-check
       claim:
-        lines: 151
+        lines: 156
         integrity: sha256-1e4d5dc51de09f4c9af3b85874ec53c736205ae21eff8c328fc4047f0926ee1d
       source:
         file: src/key/commands/rotate.ts
@@ -234,7 +234,7 @@ docs/src/content/docs/key/set-up/index.mdx:
         commit-sha: cb74827009894c38f8646504ae9eb4a2745761a9
     - id: unverified-warning-message
       claim:
-        lines: 160
+        lines: 165
         integrity: sha256-992dcfe33a6699c316eb9e3730da965a08d421632b26e1c96e81561dd0d2e646
       source:
         file: src/meta/core/encrypted.ts
@@ -243,7 +243,7 @@ docs/src/content/docs/key/set-up/index.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: unreadable-message
       claim:
-        lines: 175
+        lines: 180
         integrity: sha256-cc87160d2f5a9cb2b75f4038563046443db76d39c480653c6b11c200672ff685
       source:
         file: src/meta/core/encrypted.ts
@@ -252,7 +252,7 @@ docs/src/content/docs/key/set-up/index.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: cite-no-key-missing-message
       claim:
-        lines: 196
+        lines: 201
         integrity: sha256-6ec47af4d60676c67c0f0c15b1158d0190a3e084b43283d6de9bb319c10746c4
       source:
         file: src/cite/core/adapt.ts
@@ -261,7 +261,7 @@ docs/src/content/docs/key/set-up/index.mdx:
         commit-sha: 74e30a3fef91f66c8c437dd5871e44d47477b5fb
     - id: query-refusal-message
       claim:
-        lines: 228
+        lines: 233
         integrity: sha256-e4ae30277bf7ae278060dc536ea89469741c0f1ae348c63e77713b678058fa30
       source:
         file: src/shared/prompt.ts
@@ -270,7 +270,7 @@ docs/src/content/docs/key/set-up/index.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: cite-add-refusal-message
       claim:
-        lines: 232
+        lines: 237
         integrity: sha256-9818f7fb87e2fc9af44a54e97b1f07514445a6fd72848624dc83250edf3ac433
       source:
         file: src/cite/core/mint.ts

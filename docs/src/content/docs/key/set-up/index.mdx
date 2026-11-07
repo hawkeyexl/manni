@@ -1,6 +1,6 @@
 ---
 title: Put the key where every tool finds it
-description: "Choose between the config key and MANNI_ENCRYPTION_KEY, keep a key out of a shared repository, decide who on the team needs it, and learn what each command does without one."
+description: "A committed key lets every reader decrypt every value, and a missing one lets validation pass unchecked. Choose between the config key and MANNI_ENCRYPTION_KEY, keep a key out of a shared repository, decide who on the team needs it, and learn what each command does without one."
 sidebar:
   order: 1
 id: "key-set-up"
@@ -15,7 +15,7 @@ next-steps: ["meta-schemas-encrypted-fields", "key-ci", "key-reference-cli", "me
 risks: ["destructive"]
 sample-questions: ["Should the key live in manni.config.yaml or in MANNI_ENCRYPTION_KEY?", "Who on the team needs the encryption key?", "What does each manni tool do when no key is available?"]
 graph: { label: "Put the key where every tool finds it", type: task }
-last-updated: 2026-10-20
+last-updated: 2026-11-06
 tags:
   - encryption
   - configuration
@@ -33,6 +33,11 @@ verified-by:
 ---
 
 import { Steps, Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';
+
+A key in the wrong place fails one of two ways. Committed to a repository
+others can read, it lets every reader decrypt every value it protects. Missing
+from the CI job, it lets `manni meta validate` pass without verifying any
+encrypted value.
 
 One key covers the whole family. `manni meta` encrypts a frontmatter value
 whose schema marks it `x-manni-encrypt`. `manni cite` encrypts the path of a

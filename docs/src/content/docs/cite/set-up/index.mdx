@@ -1,6 +1,6 @@
 ---
 title: Set up citations in one repository
-description: "Wire manni cite into a repository whose pages and code sit together: declare the pages as a collection, let the root default to the git root, mint the first citation, and run the first check."
+description: "Make a bare manni cite check read every page, so none ships a stale sentence unchecked. Wire manni cite into a repository whose pages and code sit together: declare the pages as a collection, let the root default to the git root, mint the first citation, and run the first check."
 sidebar:
   order: 1
 type: how-to
@@ -28,7 +28,7 @@ sample-questions:
 graph:
   label: Set up citations in one repository
   type: task
-last-updated: 2026-10-23
+last-updated: 2026-11-06
 tags:
   - setup
   - configuration
@@ -54,6 +54,9 @@ verified-by:
 ---
 
 import { Steps, Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';
+
+A citation is checked only when a run reads its page. A page the run leaves
+out ships its stale sentences with a green build.
 
 Your pages and the code they describe live in one repository. This page wires
 `manni cite` into it once, so that a bare `manni cite check` covers the right

@@ -31,7 +31,7 @@ sample-questions:
 graph:
   label: Fix a failing check
   type: troubleshooting
-last-updated: 2026-11-01
+last-updated: 2026-11-06
 tags:
   - troubleshooting
   - citations
@@ -53,10 +53,12 @@ verified-by:
 
 import { Steps, Aside, LinkCard } from '@astrojs/starlight/components';
 
-Your PR's citation check is red, or it carries a warning you'd like gone. This
-page decodes the finding and tells you, rule by rule, what happened and which
-command clears it. You don't need to know how the citations were set up, only
-what the output is telling you.
+Your PR's citation check is red, or it carries a warning you'd like gone. The
+check exists because a sentence about code stops being true when the code
+changes, and nothing in a pull request says so. This page decodes the finding
+and tells you, rule by rule, what happened and which command clears it. You
+don't need to know how the citations were set up, only what the output is
+telling you.
 
 <Aside type="tip" title="The fastest path">
   Find the rule in the [table](#every-rule-at-a-glance), do the one thing in
