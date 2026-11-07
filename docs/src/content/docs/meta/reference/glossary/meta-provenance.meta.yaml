@@ -14,8 +14,11 @@ docs/src/content/docs/meta/reference/glossary/meta-provenance.mdx:
       grader: ai
   provenance:
     - generated-by: Claude Opus 5.5
-      lines: 2-6
-      integrity: sha256-f9d3d4428a1abeb61cf61debe3dc326611a0979f285f8635078cd5bd150ada7f
+      lines: 2
+      integrity: sha256-b067a19351b83031d15ae5632b05f78f96ab7ee153524d42a63ad1960ffc1448
+    - generated-by: Claude Opus 5.5
+      lines: 7-9
+      integrity: sha256-8a437456ff5fe235a67532037efcc5d8337d6968e0f8b88589df062bfece7992
   owner:
     - "@hawkeyexl"
   created: 2026-10-04

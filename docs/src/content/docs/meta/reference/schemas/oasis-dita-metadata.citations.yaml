@@ -2,7 +2,7 @@ docs/src/content/docs/meta/reference/schemas/oasis-dita-metadata.mdx:
   citations:
     - id: dita-model-check-excludes-attribute-types
       claim:
-        lines: 198-201
+        lines: 201-204
         integrity: sha256-c53a51011d31ac38b0046c970d0b1b4e6c19393ba9c3a3a399b922dfb7aff3b0
       source:
         file: test/dita-content-model.test.ts
@@ -11,7 +11,7 @@ docs/src/content/docs/meta/reference/schemas/oasis-dita-metadata.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: dita-models-transcribed-by-hand
       claim:
-        lines: 194-196
+        lines: 197-199
         integrity: sha256-266ec438266c5e10e50213ca3ffb66f76b47483460d99e4862c281b8a2a33256
       source:
         file: test/dita-content-model.test.ts
@@ -20,7 +20,7 @@ docs/src/content/docs/meta/reference/schemas/oasis-dita-metadata.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: dita-attribute-values-are-yaml-scalars
       claim:
-        lines: 179-183
+        lines: 182-186
         integrity: sha256-ee7ba56f6f5e8b0dab10d7789a7d13ad82cfeef7686023a2a756ea26b644fd92
       source:
         file: src/meta/schemas/dita/1.3.json
@@ -29,7 +29,7 @@ docs/src/content/docs/meta/reference/schemas/oasis-dita-metadata.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: dita-fill-refuses-to-create-a-vrm
       claim:
-        lines: 173-175
+        lines: 176-178
         integrity: sha256-6ece46f25d5a8351d7c009cd703996cbcf2fbfa00e847a91682fadb98b29815f
       source:
         file: src/meta/extractors/dita-write.ts
@@ -38,7 +38,7 @@ docs/src/content/docs/meta/reference/schemas/oasis-dita-metadata.mdx:
         commit-sha: 0a2483616fe8f79ac5f7ab88244a74e8c4e34759
     - id: dita-naming-rule-applies-one-level-down
       claim:
-        lines: 167-171
+        lines: 170-174
         integrity: sha256-bd8c28a2b86a88708f9d61f7261efa6ee4db2fe61022f6561c762b434eeab0b8
       source:
         file: src/meta/extractors/element-key.ts
@@ -47,7 +47,7 @@ docs/src/content/docs/meta/reference/schemas/oasis-dita-metadata.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: dita-vrm-is-keyed-for-the-element
       claim:
-        lines: 163-165
+        lines: 166-168
         integrity: sha256-4b15ff4ff5c2bf392df493da6bfbdd9ee604ed86d0d1ef4576a3f5419c4f81b5
       source:
         file: src/meta/schemas/dita/1.3.json
@@ -56,7 +56,7 @@ docs/src/content/docs/meta/reference/schemas/oasis-dita-metadata.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: dita-fill-refuses-to-add-or-remove-a-repeated-element
       claim:
-        lines: 158-160
+        lines: 161-163
         integrity: sha256-0ba62f327a468ad04ad9092de5a4c19df5e749607489f1dd6a2c1e42e92246c5
       source:
         file: src/meta/extractors/element-write.ts
@@ -65,7 +65,7 @@ docs/src/content/docs/meta/reference/schemas/oasis-dita-metadata.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: dita-modelless-key-goes-to-othermeta
       claim:
-        lines: 156-157
+        lines: 159-160
         integrity: sha256-66e8803fb6ad1a8c2c8d1df50722d0fb6b607495159d44c8e4cf53843809adef
       source:
         file: src/meta/extractors/dita-write.ts
@@ -74,7 +74,7 @@ docs/src/content/docs/meta/reference/schemas/oasis-dita-metadata.mdx:
         commit-sha: 0a2483616fe8f79ac5f7ab88244a74e8c4e34759
     - id: dita-missing-element-created-in-model-order
       claim:
-        lines: 153-155
+        lines: 156-158
         integrity: sha256-0bdf8d34d38c8770beea329ef59639aa73ce7097ec18df122d2dbc90cbc564a7
       source:
         file: src/meta/extractors/dita-write.ts
@@ -83,7 +83,7 @@ docs/src/content/docs/meta/reference/schemas/oasis-dita-metadata.mdx:
         commit-sha: 0a2483616fe8f79ac5f7ab88244a74e8c4e34759
     - id: dita-existing-element-has-its-value-replaced
       claim:
-        lines: 150-152
+        lines: 153-155
         integrity: sha256-c7d866b013d0f2970559bb65be6c509c1dc26d502a5991b20ddec3f460b4dbe3
       source:
         file: src/meta/extractors/dita-write.ts
@@ -92,7 +92,7 @@ docs/src/content/docs/meta/reference/schemas/oasis-dita-metadata.mdx:
         commit-sha: 0a2483616fe8f79ac5f7ab88244a74e8c4e34759
     - id: dita-othermeta-names-are-not-described-here
       claim:
-        lines: 141-142
+        lines: 144-145
         integrity: sha256-be3c9e8f881ae81da87ed465bea11da93814cd2bf06c31a53ef18365e14bcd4a
       source:
         file: src/meta/schemas/dita/1.3.json
@@ -101,7 +101,7 @@ docs/src/content/docs/meta/reference/schemas/oasis-dita-metadata.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: dita-both-channels-validated-neither-wins
       claim:
-        lines: 137-139
+        lines: 140-142
         integrity: sha256-ea0cbb049e730c590bcb551b2f89a17046f0858c1c921c28ab36f00b61dec1e7
       source:
         file: src/meta/extractors/element-key.ts
@@ -126,7 +126,7 @@ docs/src/content/docs/meta/reference/schemas/oasis-dita-metadata.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: dita-critdates-named-once-for-both
       claim:
-        lines: 72-74
+        lines: 75-77
         integrity: sha256-190c6094b7845f7ef4818f0aa0d96d8fd7f64bcd1f3914c8b95e9e048e5320b7
       source:
         file: src/meta/schemas/dita/1.3.json
@@ -135,7 +135,7 @@ docs/src/content/docs/meta/reference/schemas/oasis-dita-metadata.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: dita-topicmeta-holds-them-as-direct-children
       claim:
-        lines: 67-70
+        lines: 70-73
         integrity: sha256-7d1a87e4770237aca2155e864676f4cc8ca007ad267a35294557d5b73b4f3852
       source:
         file: src/meta/extractors/dita.ts
@@ -144,7 +144,7 @@ docs/src/content/docs/meta/reference/schemas/oasis-dita-metadata.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: dita-key-vrm-version-release-modification
       claim:
-        lines: 59
+        lines: 62
         integrity: sha256-fee0795118ab5ceb2a15eff304a339e180246231c11d303edf5e1d6b5b6c653b
       source:
         file: src/meta/schemas/dita/1.3.json
@@ -153,7 +153,7 @@ docs/src/content/docs/meta/reference/schemas/oasis-dita-metadata.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: dita-key-prodinfo-choice-group
       claim:
-        lines: 58
+        lines: 61
         integrity: sha256-a9c3cb172fa11c96de285d55d3dfc031939f8c1a3ee25fabb228041fb3dd5e64
       source:
         file: src/meta/schemas/dita/1.3.json
@@ -162,7 +162,7 @@ docs/src/content/docs/meta/reference/schemas/oasis-dita-metadata.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: dita-key-prodinfo-prodname
       claim:
-        lines: 57
+        lines: 60
         integrity: sha256-9dbb6b70ece6f7f808689191bdfd05c66a033063aa1142e1cfa3f32401bbee4c
       source:
         file: src/meta/schemas/dita/1.3.json
@@ -171,7 +171,7 @@ docs/src/content/docs/meta/reference/schemas/oasis-dita-metadata.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: dita-key-keywords-indexterm
       claim:
-        lines: 56
+        lines: 59
         integrity: sha256-b67bdf8dda5eea2685647f2b50ba3db89a6f89d3b31101c6f3aafdf6df15de4c
       source:
         file: src/meta/schemas/dita/1.3.json
@@ -180,7 +180,7 @@ docs/src/content/docs/meta/reference/schemas/oasis-dita-metadata.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: dita-key-keywords-keyword
       claim:
-        lines: 55
+        lines: 58
         integrity: sha256-967fdd37744ac962c655f54691a29947a6c693883cff9b28f24af86f383ff077
       source:
         file: src/meta/schemas/dita/1.3.json
@@ -189,7 +189,7 @@ docs/src/content/docs/meta/reference/schemas/oasis-dita-metadata.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: dita-key-copyright-copyrholder
       claim:
-        lines: 54
+        lines: 57
         integrity: sha256-6e87d6d41406cf451ba0e81f3e1abaf89c7cf91435660d9678783f2a698a3698
       source:
         file: src/meta/schemas/dita/1.3.json
@@ -198,7 +198,7 @@ docs/src/content/docs/meta/reference/schemas/oasis-dita-metadata.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: dita-key-copyright-copyryear
       claim:
-        lines: 53
+        lines: 56
         integrity: sha256-f2329a84b86125fd563a78d0ae57417c90dc0b0d2e450e8034a48920c144c21d
       source:
         file: src/meta/schemas/dita/1.3.json
@@ -207,7 +207,7 @@ docs/src/content/docs/meta/reference/schemas/oasis-dita-metadata.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: dita-key-metadata-category
       claim:
-        lines: 52
+        lines: 55
         integrity: sha256-44e1221dbdbe79f3d63e400de00f106fac1008f990f5dcd3f65b47c68c8605d1
       source:
         file: src/meta/schemas/dita/1.3.json
@@ -216,7 +216,7 @@ docs/src/content/docs/meta/reference/schemas/oasis-dita-metadata.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: dita-key-metadata-audience
       claim:
-        lines: 51
+        lines: 54
         integrity: sha256-66941334f473e8ca1312fb1dbc40c2f48ab867c4abcd75ad5a5075404f126916
       source:
         file: src/meta/schemas/dita/1.3.json
@@ -225,7 +225,7 @@ docs/src/content/docs/meta/reference/schemas/oasis-dita-metadata.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: dita-key-critdates-revised
       claim:
-        lines: 50
+        lines: 53
         integrity: sha256-1e6890f3b2063bd1a494a38402e70413b6f36883fedf3ff7df42ab7ef8917405
       source:
         file: src/meta/schemas/dita/1.3.json
@@ -234,7 +234,7 @@ docs/src/content/docs/meta/reference/schemas/oasis-dita-metadata.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: dita-key-critdates-created
       claim:
-        lines: 49
+        lines: 52
         integrity: sha256-4c33256231ecccd7a6f0a058f2dfefdf9dfb0136a8509cbcac8a3883aa5fe363
       source:
         file: src/meta/schemas/dita/1.3.json
@@ -243,7 +243,7 @@ docs/src/content/docs/meta/reference/schemas/oasis-dita-metadata.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: dita-key-prolog-resourceid
       claim:
-        lines: 48
+        lines: 51
         integrity: sha256-fba4d72a11a183680ba520d6e8ec0399a2e86a4a0bf5cd12d14cc6bcddf9c5c3
       source:
         file: src/meta/schemas/dita/1.3.json
@@ -252,7 +252,7 @@ docs/src/content/docs/meta/reference/schemas/oasis-dita-metadata.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: dita-key-prolog-permissions
       claim:
-        lines: 47
+        lines: 50
         integrity: sha256-de4ec65f26420a0af680d94975fcafb4b19d0938fadd67af169e63f63417f43a
       source:
         file: src/meta/schemas/dita/1.3.json
@@ -261,7 +261,7 @@ docs/src/content/docs/meta/reference/schemas/oasis-dita-metadata.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: dita-key-prolog-publisher
       claim:
-        lines: 46
+        lines: 49
         integrity: sha256-aa5a144853abb7c0b8bfdf9e42e6f5867709fd9d73bb580a52476ba3f82ab48e
       source:
         file: src/meta/schemas/dita/1.3.json
@@ -270,7 +270,7 @@ docs/src/content/docs/meta/reference/schemas/oasis-dita-metadata.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: dita-key-prolog-source
       claim:
-        lines: 45
+        lines: 48
         integrity: sha256-3b41d5131fe8d75e7e2bc6923d7fba69998c2077eec6a43ad4188e180584f64e
       source:
         file: src/meta/schemas/dita/1.3.json
@@ -279,7 +279,7 @@ docs/src/content/docs/meta/reference/schemas/oasis-dita-metadata.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: dita-key-prolog-author
       claim:
-        lines: 44
+        lines: 47
         integrity: sha256-fee016909acd2fc516bebb9c8585cd6114a08bf3067e493bdf435b47e6f62810
       source:
         file: src/meta/schemas/dita/1.3.json
@@ -320,7 +320,7 @@ docs/src/content/docs/meta/reference/schemas/oasis-dita-metadata.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: dita-written-output-checked-against-content-models
       claim:
-        lines: 188-192
+        lines: 191-195
         integrity: sha256-c70c6678a646f3115a3cc4ca94256135b49a8bfdb5e142d5d89d35e35917799c
       source:
         file: test/dita-content-model.test.ts

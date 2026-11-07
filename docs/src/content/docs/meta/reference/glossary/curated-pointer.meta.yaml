@@ -14,8 +14,11 @@ docs/src/content/docs/meta/reference/glossary/curated-pointer.mdx:
       grader: ai
   provenance:
     - generated-by: Claude Opus 5.5
-      lines: 2-5
-      integrity: sha256-e172633a400f5fb6046e672479f53f1400356d4e566411e2c2ead061123cdfaf
+      lines: 2
+      integrity: sha256-b067a19351b83031d15ae5632b05f78f96ab7ee153524d42a63ad1960ffc1448
+    - generated-by: Claude Opus 5.5
+      lines: 7-8
+      integrity: sha256-1a4e29b8d28ee3cddc5214aa97b7f19563e7a8ff559db53879910f4dde245d64
   owner:
     - "@hawkeyexl"
   created: 2026-10-04

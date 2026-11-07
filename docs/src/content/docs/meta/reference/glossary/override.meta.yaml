@@ -14,10 +14,13 @@ docs/src/content/docs/meta/reference/glossary/override.mdx:
       grader: ai
   provenance:
     - generated-by: Claude Opus 5
-      lines: 2-11
-      integrity: sha256-30cd8250a620d5a9be7ef7fed03b96e0bcd2ee2ba057ec8c75667c14d6c4e55f
+      lines: 2
+      integrity: sha256-b067a19351b83031d15ae5632b05f78f96ab7ee153524d42a63ad1960ffc1448
     - generated-by: Claude Opus 5
-      lines: 16
+      lines: 7-14
+      integrity: sha256-f66c04c611e173a7ecb718b18b4388aa4109bde1880c96cdb59bba7ecf85cfcf
+    - generated-by: Claude Opus 5
+      lines: 19
       integrity: sha256-98fbf68ff4090ac9529db81efbce3892c04beec6d1fd5306f972a068c4177156
   owner:
     - "@hawkeyexl"

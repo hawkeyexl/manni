@@ -19,7 +19,7 @@ sample-questions:
 graph:
   label: "Antora page schema"
   type: reference
-last-updated: 2026-10-20
+last-updated: 2026-11-06
 resource: https://hawkeyexl.github.io/manni/schemas/antora/3.1.json
 tags:
   - schema
@@ -43,6 +43,9 @@ prerequisites:
 Published at `https://hawkeyexl.github.io/manni/schemas/antora/3.1.json`. A
 `$schema` that names this URL resolves to the bundled copy, with no network
 call.
+
+An Antora page with attribute entries and no `= Title` line does not build,
+and this schema fails it before the site build runs.
 
 `antora:page:3.1` checks the AsciiDoc document header of an Antora 3.1 page. It
 requires `title`, because the page title is the only mandatory header element in

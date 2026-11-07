@@ -17,5 +17,8 @@ docs/src/content/docs/meta/reference/glossary/x-manni-term.mdx:
   created: 2026-10-18
   provenance:
     - generated-by: Claude Opus 5.5
-      lines: 2-7
-      integrity: sha256-98598988a22ec524505d6242571507fe3f94f0cfe09a0d561e7695c26e91e512
+      lines: 2
+      integrity: sha256-b067a19351b83031d15ae5632b05f78f96ab7ee153524d42a63ad1960ffc1448
+    - generated-by: Claude Opus 5.5
+      lines: 7-10
+      integrity: sha256-ddb636376d54616466ff17a78e724c9cb219e7aa1a4bfb3979ab01f6b4ced9cf

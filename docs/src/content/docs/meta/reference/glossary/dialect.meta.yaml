@@ -14,8 +14,11 @@ docs/src/content/docs/meta/reference/glossary/dialect.mdx:
       grader: ai
   provenance:
     - generated-by: Claude Opus 5
-      lines: 2-10
-      integrity: sha256-3e283f91e521c677878fedded0c8221f2ebefab885e6be32e48437e653035470
+      lines: 2
+      integrity: sha256-b067a19351b83031d15ae5632b05f78f96ab7ee153524d42a63ad1960ffc1448
+    - generated-by: Claude Opus 5
+      lines: 7-13
+      integrity: sha256-47bb9ace9c9b165c08985119e8f4ce297dbe3f6c09580115b0b2690fac90a85d
   owner:
     - "@hawkeyexl"
   created: 2026-09-17

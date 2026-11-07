@@ -19,7 +19,7 @@ sample-questions:
 graph:
   label: "MyST frontmatter schema"
   type: reference
-last-updated: 2026-10-20
+last-updated: 2026-11-06
 resource: https://hawkeyexl.github.io/manni/schemas/myst/1.10.json
 tags:
   - validation
@@ -41,6 +41,9 @@ prerequisites:
 Published at `https://hawkeyexl.github.io/manni/schemas/myst/1.10.json`. A
 `$schema` that names this URL resolves to the bundled copy, with no network
 call.
+
+MyST projects use it to catch a value mystmd does not document, such as a
+`short_title` longer than 40 characters.
 
 import { Aside } from '@astrojs/starlight/components';
 

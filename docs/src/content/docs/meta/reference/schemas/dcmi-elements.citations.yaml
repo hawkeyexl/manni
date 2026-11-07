@@ -2,7 +2,7 @@ docs/src/content/docs/meta/reference/schemas/dcmi-elements.mdx:
   citations:
     - id: vocab-dcmi-names-are-unprefixed
       claim:
-        lines: 68-71
+        lines: 71-74
         integrity: sha256-9dadef676abc48dba91ab3d7eae79088e3cd4c512027b050558b7c611f3f2670
       source:
         file: src/meta/schemas/dcmi/1.1.json
@@ -11,7 +11,7 @@ docs/src/content/docs/meta/reference/schemas/dcmi-elements.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: vocab-dcmi-type-is-not-enumerated
       claim:
-        lines: 58-64
+        lines: 61-67
         integrity: sha256-8118bf23b6950359c616dc7c94ddceac14ecea3e58c37148de633947c1a82e8b
       source:
         file: src/meta/schemas/dcmi/1.1.json
@@ -36,7 +36,7 @@ docs/src/content/docs/meta/reference/schemas/dcmi-elements.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: vocab-dcmi-fifteen-elements
       claim:
-        lines: 43-45
+        lines: 46-48
         integrity: sha256-d17c46a0342c92441b7d2881fd471917d405100dfcaed72d6778c5afa68dcf7f
       source:
         file: src/meta/schemas/dcmi/1.1.json

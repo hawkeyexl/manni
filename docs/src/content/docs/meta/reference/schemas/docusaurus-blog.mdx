@@ -19,7 +19,7 @@ sample-questions:
 graph:
   label: "Docusaurus blog schema"
   type: reference
-last-updated: 2026-10-20
+last-updated: 2026-11-06
 resource: https://hawkeyexl.github.io/manni/schemas/docusaurus-blog/3.10.json
 tags:
   - docusaurus
@@ -51,6 +51,9 @@ verified-by:
 Published at `https://hawkeyexl.github.io/manni/schemas/docusaurus-blog/3.10.json`.
 A `$schema` that names this URL resolves to the bundled copy, with no network
 call.
+
+For a Docusaurus blog, it catches a post field in a shape the plugin does not
+document, such as `authors: 42`.
 
 As of Docusaurus 3.10, `docusaurus:blog:3.10` checks the front matter
 `@docusaurus/plugin-content-blog` reads on a post. Like the docs schema, it

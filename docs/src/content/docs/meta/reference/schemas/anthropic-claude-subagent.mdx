@@ -19,7 +19,7 @@ sample-questions:
 graph:
   label: "Claude Code subagent schema"
   type: reference
-last-updated: 2026-10-20
+last-updated: 2026-11-06
 resource: https://hawkeyexl.github.io/manni/schemas/claude-subagent/2.1.json
 tags:
   - schema
@@ -44,6 +44,9 @@ import { Aside } from '@astrojs/starlight/components';
 **Built-in id:** `anthropic:claude-subagent:2.1`
 
 **Published at:** [`https://hawkeyexl.github.io/manni/schemas/claude-subagent/2.1.json`](/manni/schemas/claude-subagent/2.1.json)
+
+It catches the agent file Claude Code would skip or refuse, one missing its
+`name` or its `description`.
 
 {/* cite subagent-schema-id-and-scope */}
 A subagent is a markdown file under `.claude/agents/`: YAML front matter that

@@ -18,7 +18,7 @@ docs/src/content/docs/meta/reference/schemas/diataxis.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: taxonomy-diataxis-four-forms
       claim:
-        lines: 46-49
+        lines: 49-52
         integrity: sha256-c7965ad03d78f749c06dcf09664a098fce99532ecf9378400e484c070cddf84f
       source:
         file: src/meta/schemas/diataxis/1.0.json

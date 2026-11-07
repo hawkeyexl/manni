@@ -18,7 +18,7 @@ docs/src/content/docs/meta/reference/schemas/agentskills-skill.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: skills-spec-allowed-tools
       claim:
-        lines: 43
+        lines: 46
         integrity: sha256-5bf20ad254df67f0185b0edd9c876d3afc9c8dc44cedb2afb9beb5ac7dade4d7
       source:
         file: src/meta/schemas/agent-skills/1.0.json
@@ -27,7 +27,7 @@ docs/src/content/docs/meta/reference/schemas/agentskills-skill.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: skills-spec-metadata
       claim:
-        lines: 42
+        lines: 45
         integrity: sha256-66544b6de3de0cf24270c868f0b906aad30fd34c3996e6f726bb0d1ecdfecd4b
       source:
         file: src/meta/schemas/agent-skills/1.0.json
@@ -36,7 +36,7 @@ docs/src/content/docs/meta/reference/schemas/agentskills-skill.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: skills-spec-compatibility
       claim:
-        lines: 41
+        lines: 44
         integrity: sha256-19889dfa2cd2a0e0d735bf622c8876c9d2491df69803c6c4728852573debddb3
       source:
         file: src/meta/schemas/agent-skills/1.0.json
@@ -45,7 +45,7 @@ docs/src/content/docs/meta/reference/schemas/agentskills-skill.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: skills-spec-license
       claim:
-        lines: 40
+        lines: 43
         integrity: sha256-aa3d121141e0d48e5be562d5d350ca0a9d7098613fba5c774f55a6d0761388e9
       source:
         file: src/meta/schemas/agent-skills/1.0.json
@@ -54,7 +54,7 @@ docs/src/content/docs/meta/reference/schemas/agentskills-skill.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: skills-spec-description
       claim:
-        lines: 39
+        lines: 42
         integrity: sha256-c8fb6c6e71c77a76f0292d7a0eae5a8a505e95b1a61aa71537a7c61a8a14f2bb
       source:
         file: src/meta/schemas/agent-skills/1.0.json
@@ -63,7 +63,7 @@ docs/src/content/docs/meta/reference/schemas/agentskills-skill.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: skills-spec-name
       claim:
-        lines: 38
+        lines: 41
         integrity: sha256-0c5ad8d686baa181cad4609d40958bb2347d6a1e5fb953b49f279ba8b9e6846f
       source:
         file: src/meta/schemas/agent-skills/1.0.json
@@ -72,7 +72,7 @@ docs/src/content/docs/meta/reference/schemas/agentskills-skill.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: skills-six-fields-two-required
       claim:
-        lines: 34
+        lines: 37
         integrity: sha256-d5a98beb01ec355a6e2caba9f99c36f1b487ff2ed0e36e64796485db250b5700
       source:
         file: src/meta/schemas/agent-skills/1.0.json

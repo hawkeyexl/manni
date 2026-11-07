@@ -122,7 +122,7 @@ docs/src/content/docs/meta/reference/schemas/anthropic-claude-subagent.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: subagent-field-observermessage
       claim:
-        lines: 84
+        lines: 87
         integrity: sha256-d3471ca68ce65680ed26c2dd2f9e96598ff42759b8b1651178435fcd95a6533c
       source:
         file: src/meta/schemas/claude-subagent/2.1.json
@@ -131,7 +131,7 @@ docs/src/content/docs/meta/reference/schemas/anthropic-claude-subagent.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: subagent-field-observer
       claim:
-        lines: 83
+        lines: 86
         integrity: sha256-78d3adfc7a4894d7fb98473c66d534b69bf75ef7d03214bd74fc727515d16d29
       source:
         file: src/meta/schemas/claude-subagent/2.1.json
@@ -140,7 +140,7 @@ docs/src/content/docs/meta/reference/schemas/anthropic-claude-subagent.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: subagent-field-initialprompt
       claim:
-        lines: 82
+        lines: 85
         integrity: sha256-8a06d24af36eda1b0689486ddfa6e97798d671e3bfb45e4fd2c3ca6f2d2d002b
       source:
         file: src/meta/schemas/claude-subagent/2.1.json
@@ -149,7 +149,7 @@ docs/src/content/docs/meta/reference/schemas/anthropic-claude-subagent.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: subagent-field-isolation
       claim:
-        lines: 81
+        lines: 84
         integrity: sha256-cc84de28eb40829735cb1b8c9aade6000da3b27a5d6620698aaf0e4eb030ec5d
       source:
         file: src/meta/schemas/claude-subagent/2.1.json
@@ -158,7 +158,7 @@ docs/src/content/docs/meta/reference/schemas/anthropic-claude-subagent.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: subagent-field-background
       claim:
-        lines: 80
+        lines: 83
         integrity: sha256-f0ce336765e597bc9c36c1f1d22cafd982dd621764e374df6051fa252b42c210
       source:
         file: src/meta/schemas/claude-subagent/2.1.json
@@ -167,7 +167,7 @@ docs/src/content/docs/meta/reference/schemas/anthropic-claude-subagent.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: subagent-field-memory
       claim:
-        lines: 79
+        lines: 82
         integrity: sha256-b17d89582642690ae6a7fcdf1b7e471d6f0924ed0075de028b84ff0ad1529566
       source:
         file: src/meta/schemas/claude-subagent/2.1.json
@@ -176,7 +176,7 @@ docs/src/content/docs/meta/reference/schemas/anthropic-claude-subagent.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: subagent-field-hooks
       claim:
-        lines: 78
+        lines: 81
         integrity: sha256-29e5310c20344a174eb388931324d3cd35b2829ec43678c3a48118589d0ba703
       source:
         file: src/meta/schemas/claude-subagent/2.1.json
@@ -185,7 +185,7 @@ docs/src/content/docs/meta/reference/schemas/anthropic-claude-subagent.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: subagent-field-mcpservers
       claim:
-        lines: 77
+        lines: 80
         integrity: sha256-8334cfb9ee771c01ef42ae540a0eca99ad542cc840dac30546867f1d3897f571
       source:
         file: src/meta/schemas/claude-subagent/2.1.json
@@ -194,7 +194,7 @@ docs/src/content/docs/meta/reference/schemas/anthropic-claude-subagent.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: subagent-field-skills
       claim:
-        lines: 76
+        lines: 79
         integrity: sha256-8532eb2f52119f04d7cb9642fd8555c98342ae70b267b8cb0f68382b2d2e59a2
       source:
         file: src/meta/schemas/claude-subagent/2.1.json
@@ -203,7 +203,7 @@ docs/src/content/docs/meta/reference/schemas/anthropic-claude-subagent.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: subagent-field-maxturns
       claim:
-        lines: 75
+        lines: 78
         integrity: sha256-79d5150fc9486e061040e6182925c55576880ebe01f9ec1d9b9f68526a4be5fb
       source:
         file: src/meta/schemas/claude-subagent/2.1.json
@@ -212,7 +212,7 @@ docs/src/content/docs/meta/reference/schemas/anthropic-claude-subagent.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: subagent-field-permissionmode
       claim:
-        lines: 74
+        lines: 77
         integrity: sha256-a15d8c97c571ad985847802075dbc158d76328c0ee9f9feb6a0493c7a7559a11
       source:
         file: src/meta/schemas/claude-subagent/2.1.json
@@ -221,7 +221,7 @@ docs/src/content/docs/meta/reference/schemas/anthropic-claude-subagent.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: subagent-field-effort
       claim:
-        lines: 73
+        lines: 76
         integrity: sha256-19917db97106cd66adaf537d243566c3d004bcaf852ee5da9a85ab7e1a43bfd8
       source:
         file: src/meta/schemas/claude-subagent/2.1.json
@@ -230,7 +230,7 @@ docs/src/content/docs/meta/reference/schemas/anthropic-claude-subagent.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: subagent-field-color
       claim:
-        lines: 72
+        lines: 75
         integrity: sha256-fc3ee3ee5fad1b8b0dfbd1c228d2d8b1748b93e4ca30b2ef5846159244de0445
       source:
         file: src/meta/schemas/claude-subagent/2.1.json
@@ -239,7 +239,7 @@ docs/src/content/docs/meta/reference/schemas/anthropic-claude-subagent.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: subagent-field-disallowedtools
       claim:
-        lines: 71
+        lines: 74
         integrity: sha256-f0097643e05c47397c5266bbb615813d4466f8f92b37ea2bcbec99b0f6c74be9
       source:
         file: src/meta/schemas/claude-subagent/2.1.json
@@ -248,7 +248,7 @@ docs/src/content/docs/meta/reference/schemas/anthropic-claude-subagent.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: subagent-field-tools
       claim:
-        lines: 70
+        lines: 73
         integrity: sha256-054b7543a33d51e02fb016968e71a7aa29446340d540a39ec730f5c6e2062985
       source:
         file: src/meta/schemas/claude-subagent/2.1.json
@@ -257,7 +257,7 @@ docs/src/content/docs/meta/reference/schemas/anthropic-claude-subagent.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: subagent-field-model
       claim:
-        lines: 69
+        lines: 72
         integrity: sha256-c1d9343ebd1364a92f66574634d004a849ed8616ba63ff5ea818052314f76bce
       source:
         file: src/meta/schemas/claude-subagent/2.1.json
@@ -266,7 +266,7 @@ docs/src/content/docs/meta/reference/schemas/anthropic-claude-subagent.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: subagent-field-description
       claim:
-        lines: 68
+        lines: 71
         integrity: sha256-d49f3d7569ed96a6d4e6c1e4e41663073dffcefd653725e279251d223c0f11de
       source:
         file: src/meta/schemas/claude-subagent/2.1.json
@@ -275,7 +275,7 @@ docs/src/content/docs/meta/reference/schemas/anthropic-claude-subagent.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: subagent-field-name
       claim:
-        lines: 67
+        lines: 70
         integrity: sha256-a507f12cefe05fb84d6798dde3773c82d56e4aafe631432609e37e084742b0aa
       source:
         file: src/meta/schemas/claude-subagent/2.1.json
@@ -284,7 +284,7 @@ docs/src/content/docs/meta/reference/schemas/anthropic-claude-subagent.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: subagent-tool-grants-are-spelled-differently
       claim:
-        lines: 43-48
+        lines: 46-51
         integrity: sha256-41038acb65e770b38ce2cfb9c2ca66e79e783af7a59c3d2b2c392456b116c242
       source:
         file: src/meta/schemas/claude-subagent/2.1.json

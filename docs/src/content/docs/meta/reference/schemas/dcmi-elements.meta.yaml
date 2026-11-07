@@ -18,8 +18,11 @@ docs/src/content/docs/meta/reference/schemas/dcmi-elements.mdx:
       grader: ai
   provenance:
     - generated-by: Claude Opus 5.5
-      lines: 2-102
-      integrity: sha256-18b53e20ad590664cb6967c73ff7d70de014c72bafee62c1e9226fe95e6c7d01
+      lines: 2-6
+      integrity: sha256-e6b8e0e061f3f250fb95f7f5da8b5bc18b38d68c1579117885e117e2cdacb3f2
+    - generated-by: Claude Opus 5.5
+      lines: 11-105
+      integrity: sha256-67973a01583720dc31362883a5734dc8596dd5f5a1dfafa8960bb3e7b24bcd10
   owner:
     - "@hawkeyexl"
   created: 2026-09-26

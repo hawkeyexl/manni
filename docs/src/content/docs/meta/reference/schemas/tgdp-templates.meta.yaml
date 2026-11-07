@@ -19,8 +19,11 @@ docs/src/content/docs/meta/reference/schemas/tgdp-templates.mdx:
       grader: ai
   provenance:
     - generated-by: Claude Opus 5.5
-      lines: 2-158
-      integrity: sha256-b899701f1ee77b198a3a5af6add46d43e8bcb8f42c2e6ab6565eb68a89ac9cb2
+      lines: 2-6
+      integrity: sha256-601db743657a089bb174ca28dedb8e2b24ff984c3c07098ebcc7553d03bb0c02
+    - generated-by: Claude Opus 5.5
+      lines: 11-161
+      integrity: sha256-a1263c63a4ae315492c4c2e1cc6804fd61ce426f077bf9a9077843a570d4edb3
   owner:
     - "@hawkeyexl"
   created: 2026-09-26

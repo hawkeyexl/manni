@@ -19,7 +19,7 @@ sample-questions:
 graph:
   label: "Astro Starlight schema"
   type: reference
-last-updated: 2026-10-20
+last-updated: 2026-11-06
 resource: https://hawkeyexl.github.io/manni/schemas/starlight/0.41.json
 tags:
   - schema
@@ -46,6 +46,9 @@ risks: read-only
 Published at `https://hawkeyexl.github.io/manni/schemas/starlight/0.41.json`. A
 `$schema` that names this URL resolves to the bundled copy, with no network
 call.
+
+Run it on a Starlight site to fail a page in review that `astro build` would
+stop on later, such as one with no `title`.
 
 import { Aside } from '@astrojs/starlight/components';
 

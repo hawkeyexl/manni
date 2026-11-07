@@ -14,8 +14,11 @@ docs/src/content/docs/meta/reference/glossary/shacl.mdx:
       grader: ai
   provenance:
     - generated-by: Claude Opus 5.5
-      lines: 2-6
-      integrity: sha256-c9573b415010477d4d69b1a4e11c251aeba3af6e1bf6b0288237d22db91e11cd
+      lines: 2
+      integrity: sha256-b067a19351b83031d15ae5632b05f78f96ab7ee153524d42a63ad1960ffc1448
+    - generated-by: Claude Opus 5.5
+      lines: 7-9
+      integrity: sha256-4dd5bea469064e495d194b4c2b2dd8d038634f9055e9738958eada93f0f73ef5
   owner:
     - "@hawkeyexl"
   created: 2026-10-04

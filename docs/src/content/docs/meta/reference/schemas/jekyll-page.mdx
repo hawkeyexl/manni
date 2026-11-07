@@ -18,7 +18,7 @@ sample-questions:
 graph:
   label: "Jekyll page schema"
   type: reference
-last-updated: 2026-10-20
+last-updated: 2026-11-06
 resource: https://hawkeyexl.github.io/manni/schemas/jekyll/4.4.json
 tags:
   - jekyll
@@ -43,6 +43,9 @@ risks: read-only
 Published at `https://hawkeyexl.github.io/manni/schemas/jekyll/4.4.json`. A
 `$schema` that names this URL resolves to the bundled copy, with no network
 call.
+
+On a Jekyll site it catches `published: "false"`, a string rather than a
+boolean, so Jekyll publishes the post anyway.
 
 import { Aside } from '@astrojs/starlight/components';
 

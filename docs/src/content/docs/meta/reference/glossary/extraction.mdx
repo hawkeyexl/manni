@@ -30,7 +30,7 @@ sample-questions:
 graph:
   label: extraction
   type: concept
-last-updated: 2026-09-21
+last-updated: 2026-11-06
 tags:
   - extraction
   - metadata
@@ -52,6 +52,9 @@ prerequisites:
 ---
 
 <p>{frontmatter.definition}</p>
+
+Keeping it apart from validation lets a script read a field out of a page
+that would fail its schema.
 
 {/* cite get-validates-nothing */}
 The `get` command prints named field values and validates nothing. Extraction

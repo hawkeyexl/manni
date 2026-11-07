@@ -14,8 +14,11 @@ docs/src/content/docs/meta/reference/glossary/base-iri.mdx:
       grader: ai
   provenance:
     - generated-by: Claude Opus 5.5
-      lines: 2-7
-      integrity: sha256-8d8906d7d08ec0f8c92e69705e70d61c987e85f43180f10592f3c8970e061d5b
+      lines: 2
+      integrity: sha256-b067a19351b83031d15ae5632b05f78f96ab7ee153524d42a63ad1960ffc1448
+    - generated-by: Claude Opus 5.5
+      lines: 7-10
+      integrity: sha256-94682300827b9ae33c7e4fbee813d686356d7ad6ede61763a4292207f0e4bced
   owner:
     - "@hawkeyexl"
   created: 2026-10-04

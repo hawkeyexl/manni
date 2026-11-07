@@ -2,7 +2,7 @@ docs/src/content/docs/meta/reference/schemas/mkdocs-material.mdx:
   citations:
     - id: platform-mkdocs-pinned-to-9-7
       claim:
-        lines: 147-153
+        lines: 150-156
         integrity: sha256-01c2b4dd6f65c27e0e0b9b07433b7b02edd31857c36b7aab24addcc6c10cdb56
       source:
         file: src/meta/schemas/mkdocs-material/9.7.json
@@ -11,7 +11,7 @@ docs/src/content/docs/meta/reference/schemas/mkdocs-material.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: platform-mkdocs-dates-are-strings
       claim:
-        lines: 120-124
+        lines: 123-127
         integrity: sha256-cfa8d09f6caee8e775bfc1e218d26295c784b11f3e910dde5a3d24c26bb57a33
       source:
         file: src/meta/schemas/mkdocs-material/9.7.json
@@ -20,7 +20,7 @@ docs/src/content/docs/meta/reference/schemas/mkdocs-material.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: platform-mkdocs-date-mapping-needs-created
       claim:
-        lines: 99-102
+        lines: 102-105
         integrity: sha256-ec7a5a4a9d5f70034f78ee517bc80684e221ca3c69c177ac9644aa25328efb63
       source:
         file: src/meta/schemas/mkdocs-material/9.7.json
@@ -29,7 +29,7 @@ docs/src/content/docs/meta/reference/schemas/mkdocs-material.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: platform-mkdocs-does-not-require-date
       claim:
-        lines: 92-97
+        lines: 95-100
         integrity: sha256-a06453964c98c38720f4db6e5c852a08c70cd68b90918ca7d32b1c196164aa86
       source:
         file: src/meta/schemas/mkdocs-material/9.7.json
@@ -54,7 +54,7 @@ docs/src/content/docs/meta/reference/schemas/mkdocs-material.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: platform-mkdocs-post-fields
       claim:
-        lines: 69-74
+        lines: 72-77
         integrity: sha256-9fdf0aed6e143f0809c5b59b4a52044bb5bac1651e0061fadb1912e8f7eb171e
       source:
         file: src/meta/schemas/mkdocs-material/9.7.json
@@ -63,7 +63,7 @@ docs/src/content/docs/meta/reference/schemas/mkdocs-material.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: platform-mkdocs-field-table
       claim:
-        lines: 57-68
+        lines: 60-71
         integrity: sha256-3b3b6caa45132548e0680a5e0b3959b5477ff032134858e93d98ee3e52a3e15b
       source:
         file: src/meta/schemas/mkdocs-material/9.7.json

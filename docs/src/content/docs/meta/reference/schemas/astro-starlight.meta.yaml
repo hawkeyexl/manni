@@ -18,8 +18,11 @@ docs/src/content/docs/meta/reference/schemas/astro-starlight.mdx:
       grader: ai
   provenance:
     - generated-by: Claude Opus 5.5
-      lines: 2-146
-      integrity: sha256-a74bb896a7495d3e559928d49e266a586a5f55478209ada9b052c16e297b7a96
+      lines: 2-6
+      integrity: sha256-2a427fda8c502c0a1223500e3970457252138e7e8d71170311f35c11bbafb52b
+    - generated-by: Claude Opus 5.5
+      lines: 11-149
+      integrity: sha256-b5bc896eb56e52e39eee28a4f4e3ec75c5b34b478a4806f54647844001de8f87
   owner:
     - "@hawkeyexl"
   created: 2026-09-26

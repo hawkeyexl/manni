@@ -42,7 +42,7 @@ docs/src/content/docs/meta/reference/schemas/anthropic-claude-skill.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: skills-claude-compatibility
       claim:
-        lines: 57
+        lines: 60
         integrity: sha256-fcbf5890ee5138d17e8bcdb6ed5c8bbab13b5767875b1d25a71c3d874a241a9c
       source:
         file: src/meta/schemas/claude-skill/2.1.json
@@ -51,7 +51,7 @@ docs/src/content/docs/meta/reference/schemas/anthropic-claude-skill.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: skills-claude-license
       claim:
-        lines: 56
+        lines: 59
         integrity: sha256-0f8cc0927043ce87173bfa2db7baa7cafa3f2e70adaf3416e7e2b740b2709700
       source:
         file: src/meta/schemas/claude-skill/2.1.json
@@ -60,7 +60,7 @@ docs/src/content/docs/meta/reference/schemas/anthropic-claude-skill.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: skills-claude-metadata-is-free-form
       claim:
-        lines: 55
+        lines: 58
         integrity: sha256-12397be6868494f5277cacb9d8bb47414956e4530f4513d852712916bd6bfcbe
       source:
         file: src/meta/schemas/claude-skill/2.1.json
@@ -69,7 +69,7 @@ docs/src/content/docs/meta/reference/schemas/anthropic-claude-skill.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: skills-claude-shell
       claim:
-        lines: 54
+        lines: 57
         integrity: sha256-4353782d564a6434cae49195a672d92983c814f20e3c3a413da3be3bdb0f87b5
       source:
         file: src/meta/schemas/claude-skill/2.1.json
@@ -78,7 +78,7 @@ docs/src/content/docs/meta/reference/schemas/anthropic-claude-skill.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: skills-claude-paths
       claim:
-        lines: 53
+        lines: 56
         integrity: sha256-c77e6a565fcebe2331500b5e1b4a56638dedbb585bfc64cb8c95fa2393d84847
       source:
         file: src/meta/schemas/claude-skill/2.1.json
@@ -87,7 +87,7 @@ docs/src/content/docs/meta/reference/schemas/anthropic-claude-skill.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: skills-claude-hooks
       claim:
-        lines: 52
+        lines: 55
         integrity: sha256-4bc80571b7cf0081fe4475d13b271f57c62f35c019ff9a6a7cc82307978f9e40
       source:
         file: src/meta/schemas/claude-skill/2.1.json
@@ -96,7 +96,7 @@ docs/src/content/docs/meta/reference/schemas/anthropic-claude-skill.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: skills-claude-background
       claim:
-        lines: 51
+        lines: 54
         integrity: sha256-d0164f3e100f1172f950ea915b539d980dfd6df17a3ec463766e10fcd7ac92fb
       source:
         file: src/meta/schemas/claude-skill/2.1.json
@@ -105,7 +105,7 @@ docs/src/content/docs/meta/reference/schemas/anthropic-claude-skill.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: skills-claude-agent
       claim:
-        lines: 50
+        lines: 53
         integrity: sha256-1203e63a7370e7852af1b7880ab6b9027f5980f2953670139e7d98cc566637b5
       source:
         file: src/meta/schemas/claude-skill/2.1.json
@@ -114,7 +114,7 @@ docs/src/content/docs/meta/reference/schemas/anthropic-claude-skill.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: skills-claude-context
       claim:
-        lines: 49
+        lines: 52
         integrity: sha256-793516d066e22d1d573b369e6a58144a6251d98c884ab377e09005ad5cf6421a
       source:
         file: src/meta/schemas/claude-skill/2.1.json
@@ -123,7 +123,7 @@ docs/src/content/docs/meta/reference/schemas/anthropic-claude-skill.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: skills-claude-effort
       claim:
-        lines: 48
+        lines: 51
         integrity: sha256-ac37acd802c458818de7cd536892bc8e7a439c12012b039995e17ef18593ac63
       source:
         file: src/meta/schemas/claude-skill/2.1.json
@@ -132,7 +132,7 @@ docs/src/content/docs/meta/reference/schemas/anthropic-claude-skill.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: skills-claude-model
       claim:
-        lines: 47
+        lines: 50
         integrity: sha256-5bfa0ee77ff741aa4a40d849847c1daae25984c92b0c76064195cbbca4b71fa8
       source:
         file: src/meta/schemas/claude-skill/2.1.json
@@ -141,7 +141,7 @@ docs/src/content/docs/meta/reference/schemas/anthropic-claude-skill.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: skills-claude-disallowed-tools
       claim:
-        lines: 46
+        lines: 49
         integrity: sha256-35e4bb6ebdefb31f0256db65e903411b2f70905b97df7c95ffc78623ef7b674f
       source:
         file: src/meta/schemas/claude-skill/2.1.json
@@ -150,7 +150,7 @@ docs/src/content/docs/meta/reference/schemas/anthropic-claude-skill.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: skills-claude-allowed-tools
       claim:
-        lines: 45
+        lines: 48
         integrity: sha256-a24277fc48b6c600f02e25d1a7904e4a7959302ad904439561ee524eb38e24f9
       source:
         file: src/meta/schemas/claude-skill/2.1.json
@@ -159,7 +159,7 @@ docs/src/content/docs/meta/reference/schemas/anthropic-claude-skill.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: skills-claude-user-invocable
       claim:
-        lines: 44
+        lines: 47
         integrity: sha256-f0c5731b205bcd0e26cd9f16984cce9ee387016a58b37ec9c937669187e3b4c8
       source:
         file: src/meta/schemas/claude-skill/2.1.json
@@ -168,7 +168,7 @@ docs/src/content/docs/meta/reference/schemas/anthropic-claude-skill.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: skills-claude-disable-model-invocation
       claim:
-        lines: 43
+        lines: 46
         integrity: sha256-0510b04a574c17ea2f1c99c30bad2a65144a015467bf4390291c11822f396bbb
       source:
         file: src/meta/schemas/claude-skill/2.1.json
@@ -177,7 +177,7 @@ docs/src/content/docs/meta/reference/schemas/anthropic-claude-skill.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: skills-claude-arguments
       claim:
-        lines: 42
+        lines: 45
         integrity: sha256-08ee2ce685555ffeea2db07ea45389d321a2b0fb13b3f91f8bba163c0a288ff5
       source:
         file: src/meta/schemas/claude-skill/2.1.json
@@ -186,7 +186,7 @@ docs/src/content/docs/meta/reference/schemas/anthropic-claude-skill.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: skills-claude-argument-hint
       claim:
-        lines: 41
+        lines: 44
         integrity: sha256-c07eda5a45dd32111bb1b9966cde20d041668fc09cafd57179e8fe6cb8a3ff16
       source:
         file: src/meta/schemas/claude-skill/2.1.json
@@ -195,7 +195,7 @@ docs/src/content/docs/meta/reference/schemas/anthropic-claude-skill.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: skills-claude-when-to-use
       claim:
-        lines: 40
+        lines: 43
         integrity: sha256-5fa66883efd753bed36d7212e9492951a453fca8c2607faf8b08425765656577
       source:
         file: src/meta/schemas/claude-skill/2.1.json
@@ -204,7 +204,7 @@ docs/src/content/docs/meta/reference/schemas/anthropic-claude-skill.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: skills-claude-description
       claim:
-        lines: 39
+        lines: 42
         integrity: sha256-cd788f31387dd17d3c50699323296ef0f51497f9677a3ef4b1dd6b9937e6a28a
       source:
         file: src/meta/schemas/claude-skill/2.1.json
@@ -213,7 +213,7 @@ docs/src/content/docs/meta/reference/schemas/anthropic-claude-skill.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: skills-claude-name
       claim:
-        lines: 38
+        lines: 41
         integrity: sha256-ec212959c9311856ceecfcd4a3376145ee365b1a4ecf710017af2f1171b9a091
       source:
         file: src/meta/schemas/claude-skill/2.1.json

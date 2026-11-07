@@ -17,5 +17,8 @@ docs/src/content/docs/meta/reference/glossary/sample-question.mdx:
   created: 2026-10-18
   provenance:
     - generated-by: Claude Opus 5.5
-      lines: 2-7
-      integrity: sha256-bc2a48be3603a692aa879208607c803acfe2a6a81003d3b0c0c12c59123c2403
+      lines: 2
+      integrity: sha256-b067a19351b83031d15ae5632b05f78f96ab7ee153524d42a63ad1960ffc1448
+    - generated-by: Claude Opus 5.5
+      lines: 7-10
+      integrity: sha256-af763e68b9ce069f7b4599f462e5753e55b43b9af30a7977daab7fbf2619d0fb

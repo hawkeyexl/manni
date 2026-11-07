@@ -14,8 +14,11 @@ docs/src/content/docs/meta/reference/glossary/frontmatter.mdx:
       grader: ai
   provenance:
     - generated-by: Claude Opus 5
-      lines: 2-17
-      integrity: sha256-9432a198830d968f0806fdc4c16c45f58d2c92e67e1e8314158834c094719e6b
+      lines: 2
+      integrity: sha256-b067a19351b83031d15ae5632b05f78f96ab7ee153524d42a63ad1960ffc1448
+    - generated-by: Claude Opus 5
+      lines: 7-20
+      integrity: sha256-fb43c70ae3c7856e0a83d8c67763596dfaa15996250ae633076f9cf0ea92b65d
   owner:
     - "@hawkeyexl"
   created: 2026-09-17

@@ -30,7 +30,7 @@ sample-questions:
 graph:
   label: schema reference
   type: concept
-last-updated: 2026-09-17
+last-updated: 2026-11-06
 tags:
   - schema
   - metadata
@@ -50,6 +50,9 @@ scope-note: "In manni meta, a schema reference is classified into exactly one of
 ---
 
 <p>{frontmatter.definition}</p>
+
+Its shape alone tells manni meta where to look, so one `-s` flag takes a
+built-in id, a file path or a URL.
 
 It is what appears in a `--schema` flag, a document's
 [`$schema`](/manni/meta/reference/glossary/schema-key/) key, or config. manni

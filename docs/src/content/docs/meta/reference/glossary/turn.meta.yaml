@@ -14,8 +14,11 @@ docs/src/content/docs/meta/reference/glossary/turn.mdx:
       grader: ai
   provenance:
     - generated-by: Claude Opus 5.5
-      lines: 2-6
-      integrity: sha256-56bc17bf6ac9188b573e2c964183267d1418e6260b8c06247e053c0274c51e87
+      lines: 2
+      integrity: sha256-b067a19351b83031d15ae5632b05f78f96ab7ee153524d42a63ad1960ffc1448
+    - generated-by: Claude Opus 5.5
+      lines: 7-9
+      integrity: sha256-c1ce3ca622b8b52d566fca4a08dfddc33d702e963e207ee6a79812c6d97ce51d
   owner:
     - "@hawkeyexl"
   created: 2026-10-04

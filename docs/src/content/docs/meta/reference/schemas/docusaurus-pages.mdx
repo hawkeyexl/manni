@@ -19,7 +19,7 @@ sample-questions:
 graph:
   label: "Docusaurus pages schema"
   type: reference
-last-updated: 2026-10-20
+last-updated: 2026-11-06
 resource: https://hawkeyexl.github.io/manni/schemas/docusaurus-pages/3.10.json
 tags:
   - docusaurus
@@ -47,6 +47,9 @@ verified-by:
 Published at `https://hawkeyexl.github.io/manni/schemas/docusaurus-pages/3.10.json`.
 A `$schema` that names this URL resolves to the bundled copy, with no network
 call.
+
+Use it on the standalone pages under `src/pages`, where it catches a field of
+the wrong type, such as a boolean `wrapperClassName`.
 
 `docusaurus:pages:3.10` checks the front matter
 `@docusaurus/plugin-content-pages` reads on a Markdown page under `src/pages`,

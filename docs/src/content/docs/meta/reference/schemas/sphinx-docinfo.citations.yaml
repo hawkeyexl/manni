@@ -2,7 +2,7 @@ docs/src/content/docs/meta/reference/schemas/sphinx-docinfo.mdx:
   citations:
     - id: platform-sphinx-nosearch-is-deprecated
       claim:
-        lines: 73-76
+        lines: 76-79
         integrity: sha256-17c11d4fb0ccb96a9aedc31b51c74aaa132b53901daafe2ebb228aaf0409046f
       source:
         file: src/meta/schemas/sphinx/9.1.json
@@ -19,7 +19,7 @@ docs/src/content/docs/meta/reference/schemas/sphinx-docinfo.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: platform-sphinx-field-table
       claim:
-        lines: 61-65
+        lines: 64-68
         integrity: sha256-6ba844bdb03a0027a1074b351a99bb0b15eb0519ef2d0ed4cd0a1a1f58efac93
       source:
         file: src/meta/schemas/sphinx/9.1.json

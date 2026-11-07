@@ -30,7 +30,7 @@ sample-questions:
 graph:
   label: validation
   type: concept
-last-updated: 2026-09-21
+last-updated: 2026-11-06
 tags:
   - validation
   - schema
@@ -50,6 +50,9 @@ scope-note: In manni meta, validation specifically means checking extracted meta
 ---
 
 <p>{frontmatter.definition}</p>
+
+It catches a missing or malformed field in the pull request that caused
+it, before a reader trips over it.
 
 {/* cite validation-begins-with-extraction */}
 That is the `validate` command, the one CI gates on. Validation and

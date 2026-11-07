@@ -14,8 +14,11 @@ docs/src/content/docs/meta/reference/glossary/focus-node.mdx:
       grader: ai
   provenance:
     - generated-by: Claude Opus 5.5
-      lines: 2-6
-      integrity: sha256-72d52efc3d629915d9c9f150b42b0ab9f8c506297a667f4347a16bd307f2a5a9
+      lines: 2
+      integrity: sha256-b067a19351b83031d15ae5632b05f78f96ab7ee153524d42a63ad1960ffc1448
+    - generated-by: Claude Opus 5.5
+      lines: 7-9
+      integrity: sha256-539a6700cec3e908e64f67a66985645cf0b969ecdbdb2d4e0380401d2dcafc4d
   owner:
     - "@hawkeyexl"
   created: 2026-10-04
