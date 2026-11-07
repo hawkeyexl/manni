@@ -4,7 +4,7 @@ description: Recurring questions from contributors who hit a manni docevals chec
 type: faq
 audiences:
   - contributors
-last-updated: 2026-11-06
+last-updated: 2026-11-07
 ---
 
 Short answers for people who just want their pull request green. The triage table is on
@@ -92,16 +92,18 @@ That needs no credential. To get AI verdicts without a key, name `claude-cli` or
 
 ## The build is red but every eval says `pass`
 
-Look at the **Suites** section:
+Look above the **Suites** section for a line that starts with `error`. It names a problem with a
+page or the config rather than an eval, and it fails the run while every eval passes:
 
 ```console
-Suites
-  tutorial: 7/10 passed — 70% vs target 100% below target
+error docs/how-to/install.md:4 Unknown suite "how-to" (not defined in /work/docs/manni.config.yaml)
 ```
 
-A suite below its target pass rate fails the run even when no individual eval errored. That usually
-means a capability suite is set to an unrealistic target, which is a config problem rather than a
-page problem.
+The other cause is `--fail-on-review`. Under it, an eval awaiting human review exits `1`, and its
+annotation reads `AI judge: no confident verdict` or `Awaiting human review`.
+
+A suite marked `below target` is never the cause on its own. A suite falls below its target only
+when one of its evals failed or errored, so find that eval and fix it.
 
 ## What is the difference between `warning` and `error`?
 

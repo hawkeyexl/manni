@@ -35,13 +35,22 @@ docs/src/content/docs/docevals/fix/faq.mdx:
       lines: 83
       integrity: sha256-f37bc4e0c3ae5e76b0dbc25a49b240961046877070d313b34f2ab158577a2f53
     - generated-by: Claude Fable 5.1
-      lines: 85-98
-      integrity: sha256-a52a328a407fca6e72ab579415ffd4e91e2e7175e438b37af9750b14a1498642
-    - generated-by: Claude Opus 5
+      lines: 85
+      integrity: sha256-2486dc12e75320a35d0a70eceb8f9a5ba6637005296778442d55d74b2eede3bb
+    - generated-by: Claude Fable 5.1
+      lines: 90
+      integrity: sha256-f4626b09b8995c7769298a68b95fbe31d4cd282b9750c28cf538adee257597d2
+    - generated-by: Claude Fable 5.1
+      lines: 92
+      integrity: sha256-f1b901847390b0ed7e374e7c1e464ec17b46a427c487a5ad6cbd2906405083d5
+    - generated-by: Claude Fable 5.1
       lines: 100
+      integrity: sha256-72f2665abd21a61498da04f8320c50b4c1f516a2ce97ef8117c29197cce62635
+    - generated-by: Claude Opus 5
+      lines: 102
       integrity: sha256-0059e3de53e4375415351af1c703acb6658964f54fb83a8850b2d938a067791a
     - generated-by: Claude Fable 5.1
-      lines: 101-119
+      lines: 103-121
       integrity: sha256-713b4887d828a8ff71d18c08a391cf4ef86f96a9b7988a08db9eb4b89d6fcac7
   owner:
     - "@hawkeyexl"

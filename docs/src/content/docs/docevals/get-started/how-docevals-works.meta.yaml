@@ -41,8 +41,11 @@ docs/src/content/docs/docevals/get-started/how-docevals-works.mdx:
       lines: 69-70
       integrity: sha256-cf1a83273b853a015b12c22cf4d7aafde2d686099097edc3aa150ddf20937298
     - generated-by: Claude Fable 5.1
-      lines: 71-111
-      integrity: sha256-e4925b54a1bf8faa52b4e44cb9f3adaf72868d1dd98b9be1804542d0c2efe7ba
+      lines: 71-87
+      integrity: sha256-2fc89fcfd15adedb97a30abfe4d24108922ecfc9c0bc3ca170f793b5af7697ea
+    - generated-by: Claude Fable 5.1
+      lines: 91-113
+      integrity: sha256-8e8e2745b98839a29ed3305f0176ac24817076088d1520b9f23dc700a19b0529
   owner:
     - "@hawkeyexl"
   created: 2026-09-06

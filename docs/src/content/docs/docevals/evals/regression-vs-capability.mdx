@@ -5,14 +5,15 @@ type: concept
 audiences:
   - schema-authors
   - docs-engineers
-last-updated: 2026-11-06
+last-updated: 2026-11-07
 ---
 
 A failing eval means either something that worked has broken, or a page has not yet reached a goal
 your team is working toward.
 
-Every eval has a `type`. It changes how strictly to phrase the assertion, what target pass rate the
-suite carries, and how you should read a failure.
+Every eval has a `type`, which records which of those two jobs it does. That decides how strictly to
+phrase the assertion, what target its suite carries, and how to read a failure. The run itself does
+not read `type`, so a failing capability eval fails the run like any other.
 
 | Aspect | Regression | Capability |
 |---|---|---|
@@ -20,6 +21,7 @@ suite carries, and how you should read a failure.
 | Target pass rate | `1.0` | ~`0.7` |
 | A failure means | Something broke | This page has not got there yet |
 | Phrase it | Strictly | For the good case |
+| Where it runs | In the merge gate | Outside the merge gate |
 | Example | "The install command matches the CLI." | "The page explains why before how." |
 
 `type` defaults to **`regression`**, because most evals guard something. Reach for `capability`
@@ -34,10 +36,12 @@ CLI, no promises are made about unreleased features, and frontmatter validates.
 Capability evals answer a different question: *how far has this quality goal spread?* "Do our
 tutorials explain why before how?" has a useful answer of 70%, and a useless answer of pass/fail.
 
-## Capability evals in a 1.0 suite are the trap
+## A suite's target does not excuse a failure
 
-An eval's `type` is documentation of intent. **The target that actually gates your build is the
-suite's.**
+Every failing eval exits `1`, whatever its `type` and whatever its suite's target. The target sets the
+verdict on the suite's line under **Suites**, `ok` or `below target`. A suite falls below its target
+only when one of its evals failed or errored, and that eval already fails the run. So a lower target
+changes what the suite reports, never the exit code.
 
 ```yaml
 docevals:
@@ -50,13 +54,17 @@ docevals:
       evals: [no-future-promises, names-an-action, no-todo-markers]
 ```
 
-Put a capability eval in a suite left at the default `1.0` and every page short of the goal fails the
-build. The usual response is to weaken the assertion until things go green. That permanently
+Put a capability eval in the job that gates pull requests and every page short of the goal blocks a
+merge. The tempting response is to weaken the assertion until things go green. That permanently
 encodes the corpus's current state as the standard.
 
-Keep the assertion honest. Move the eval to a suite with an appropriate target, or lower the
-severity if it is deterministic. See
-[Retrofit a legacy corpus](/manni/docevals/adopt/retrofit-a-legacy-corpus/).
+Keep the assertion honest, and run the eval where a failure reports instead of blocking:
+
+- **A judged capability eval.** Gate pull requests with `--deterministic-only`, which reports every
+  `ai` eval as skipped. Run the judged suites on a schedule or by hand, and read their pass rates.
+- **A deterministic capability eval.** Set `severity: warning`, so its findings report and the eval
+  passes. Or record today's findings in a baseline, so only a new one fails. See
+  [Retrofit a legacy corpus](/manni/docevals/adopt/retrofit-a-legacy-corpus/).
 
 ## Reading a capability result
 
@@ -65,14 +73,15 @@ Suites
   tutorial: 7/10 passed — 70% vs target 70% ok
 ```
 
-Three pages do not explain why before how. That is not a build break; it is a backlog with a number
-on it, and next quarter the number should be higher. Raising the target is how you ratchet.
+Three pages do not explain why before how. The suite meets its target, and those three evals still
+fail, so the run exits `1`. In a run that gates no merge, that is a backlog with a number on it.
+Next quarter the number should be higher, and raising the target is how you ratchet.
 
 ## Moving between types
 
 An eval can graduate. A capability goal that reaches 100% and should never regress becomes a
-regression eval in a 1.0 suite. That is the ratchet completing, and it is worth doing deliberately
-rather than leaving the corpus permanently "measured".
+regression eval in a 1.0 suite, inside the merge gate. That is the ratchet completing, and it is
+worth doing deliberately rather than leaving the corpus permanently "measured".
 
 Override the type per page when one page genuinely differs:
 

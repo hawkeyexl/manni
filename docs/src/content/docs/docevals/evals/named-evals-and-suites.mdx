@@ -4,7 +4,7 @@ description: Turn per-page assertions into a shared library, and measure page ty
 type: how-to
 audiences:
   - docs-engineers
-last-updated: 2026-10-20
+last-updated: 2026-11-07
 ---
 
 The gate worked on one page, so it got copied. Now the same assertion exists in twelve pages with
@@ -69,21 +69,24 @@ when they need something specific.
 
 ## `target-pass-rate` is a suite property
 
-This is the piece people miss, and missing it makes manni docevals look far too strict.
+This is the piece people miss.
 
 Individual verdicts are binary. The nuance lives in the **rate across a suite**:
 
 - **1.0** for a regression suite. These checks must all hold.
 - **~0.7** for a capability suite. This measures how far a quality goal has spread, and a corpus
-  partway there is the expected state, not a failure.
+  partway there is the expected state. Its failing evals still exit `1`, so it runs outside the
+  merge gate.
 
 ```console
 Suites
   reference: 1/2 passed — 0% vs target 100% below target (1 skipped)
 ```
 
-A suite below target fails the run. Leaving a capability suite at the default 1.0 turns every
-capability finding into a build break. That is the most common way to conclude the tool is unusable.
+A suite below target fails the run, and so does every failing eval in it, whatever the target. A
+target below 1.0 changes the suite's verdict, not the exit code. To keep a capability suite from
+blocking merges, run it outside the merge gate. See
+[Regression vs capability](/manni/docevals/evals/regression-vs-capability/).
 
 Skipped evals are excluded from the rate entirely, and so are evals awaiting human review. The
 rate is computed over the **graded** set, which is pass, fail, and error. The rate is weighted and

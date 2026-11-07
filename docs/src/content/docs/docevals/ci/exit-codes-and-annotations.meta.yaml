@@ -67,19 +67,22 @@ docs/src/content/docs/docevals/ci/exit-codes-and-annotations.mdx:
       lines: 148-151
       integrity: sha256-59727b3e30eb577d7c7b2ea00a8f33a7700c3c337643327fb1c709053d19f700
     - generated-by: Claude Fable 5.1
-      lines: 153-165
-      integrity: sha256-59c51e60b8ef4129c0929b0d8252b4cd88cd2df9a49f32abc30f7c1b633c7fdf
-    - generated-by: Claude Fable 5.1
-      lines: 167-184
-      integrity: sha256-5a69ca0c6096cef1aa1dbcef036404caa84c9dcdf5dec6ee831fd1c5ccf86236
-    - generated-by: Claude Fable 5.1
-      lines: 186
+      lines: 153
       integrity: sha256-f1b901847390b0ed7e374e7c1e464ec17b46a427c487a5ad6cbd2906405083d5
     - generated-by: Claude Fable 5.1
-      lines: 191
+      lines: 158-166
+      integrity: sha256-eb472d67229b3d2daa49d98026148880cd20552552ea353962c42d5ad463bc18
+    - generated-by: Claude Fable 5.1
+      lines: 168-185
+      integrity: sha256-5a69ca0c6096cef1aa1dbcef036404caa84c9dcdf5dec6ee831fd1c5ccf86236
+    - generated-by: Claude Fable 5.1
+      lines: 187
+      integrity: sha256-f1b901847390b0ed7e374e7c1e464ec17b46a427c487a5ad6cbd2906405083d5
+    - generated-by: Claude Fable 5.1
+      lines: 192
       integrity: sha256-f179759bf80e5b426540fedfc135fd1514cd82b1421945d2e8e454b4a5e30fa7
     - generated-by: Claude Fable 5.1
-      lines: 197
+      lines: 198
       integrity: sha256-30b7ad4d273ef165c204160bda42503f671a85fece8f8d0690a41ccc651ba603
   owner:
     - "@hawkeyexl"

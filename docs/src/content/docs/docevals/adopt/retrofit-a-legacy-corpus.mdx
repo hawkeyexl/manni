@@ -4,7 +4,7 @@ description: Get thousands of unmeasured pages onto a ratchet without a day-one 
 type: how-to
 audiences:
   - docs-engineers
-last-updated: 2026-10-02
+last-updated: 2026-11-07
 ---
 
 Point an honest quality bar at a corpus that has never been measured and nearly everything fails at
@@ -110,9 +110,9 @@ Two more things a baseline does not touch:
 - **An eval that errored.** `error` is "the check could not run", not "the page is bad", and there is
   no finding to record. It still exits `1`.
 - **A suite below its `target-pass-rate`.** Suppressed findings do raise the pass rate, because
-  suppressing the last error-severity finding makes the eval pass. The target itself is a
-  separate lever. See [Set capability targets near
-  reality](#7-set-capability-targets-near-reality) below.
+  suppressing the last error-severity finding makes the eval pass. The target itself only sets the
+  suite's reported verdict. For judged evals, see [Keep judged evals out of the merge
+  gate](#7-keep-judged-evals-out-of-the-merge-gate) below.
 
 ### Renaming an eval invalidates its fingerprints
 
@@ -196,20 +196,29 @@ npx @hawkeyexl/manni docevals fill --dry-run --max-turns 40 docs/how-to/
 Batching keeps the review reviewable and the work bounded. See
 [Bootstrap a corpus](/manni/docevals/adopt/).
 
-### 7. Set capability targets near reality
+### 7. Keep judged evals out of the merge gate
 
-A baseline forgives findings. Suites are the judged analog, and their lever is the target pass rate:
+A baseline forgives findings, and a judged eval has none to record. It fails the run whatever its
+suite's target. So gate pull requests on the deterministic graders, which report every `ai` eval as
+skipped:
+
+```bash
+npx @hawkeyexl/manni docevals run --deterministic-only
+```
+
+Run the judged suites on a schedule instead, each with a target near where the corpus is today:
 
 ```yaml
 docevals:
   suites:
     how-to-adopting:
       target-pass-rate: 0.6      # where the corpus is today
-      evals: [explains-why-before-how, no-future-promises]
+      evals: [explains-why-before-how]
 ```
 
-Set the target near the current rate, then raise it as pages improve. "60% of how-to pages explain
-why before how, and last quarter it was 45%" is a real report. See
+The scheduled run exits `1` while any page falls short, and it blocks no merge. Its pass rate is the
+report, and the target rises as pages improve. "60% of how-to pages explain why before how, and last
+quarter it was 45%" is a real report. See
 [Regression vs capability](/manni/docevals/evals/regression-vs-capability/).
 
 ### 8. Burn down, and let the baseline shrink
@@ -264,7 +273,7 @@ evals:
 
 - Every eval on at `error`, gating new work from day one.
 - A committed baseline whose recorded count is visibly falling.
-- Capability targets set near reality and rising.
+- Judged evals on a schedule, outside the merge gate, with targets near reality and rising.
 - **No assertion weakened to get there.**
 
 ## The anti-pattern, stated plainly

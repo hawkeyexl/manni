@@ -54,8 +54,11 @@ docs/src/content/docs/docevals/evals/severity-and-findings.mdx:
       lines: 109
       integrity: sha256-a294df850f4c2b5ab606e74bc78c0774631b47e3503e6b5732c2a24d5f04de91
     - generated-by: Claude Fable 5.1
-      lines: 110-119
-      integrity: sha256-2c1a9e5347be7174034109d380a3c658366e79b77a39e23081df96c166860768
+      lines: 110-114
+      integrity: sha256-764557ff89da46104fc1b8f36709bf323655f9a7613b1cc4f7a63e90945d7e57
+    - generated-by: Claude Fable 5.1
+      lines: 117-119
+      integrity: sha256-51ed78938dd1304122486f97cc3570f1e5c6fbf46891d36fc52b73cb5efd45be
   owner:
     - "@hawkeyexl"
   created: 2026-09-06
