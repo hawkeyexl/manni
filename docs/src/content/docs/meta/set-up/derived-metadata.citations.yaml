@@ -146,7 +146,7 @@ docs/src/content/docs/meta/set-up/derived-metadata.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: derive-source-hint-is-narrow-sources-or-fields
       claim:
-        lines: 486
+        lines: 490
         integrity: sha256-7cb7a136d5181a06b0a3cf1b7f07dd6b2d63da94b0f32fcd1df1518e8e8e593f
       source:
         file: src/meta/commands/derive.ts
@@ -155,7 +155,7 @@ docs/src/content/docs/meta/set-up/derived-metadata.mdx:
         commit-sha: cb74827009894c38f8646504ae9eb4a2745761a9
     - id: no-half-derived-source
       claim:
-        lines: 484
+        lines: 488
         integrity: sha256-52ff3b2094bf1a7ec1e02cab5bc4bdec0ac550f1d9a05b0d569dfa41eba866b4
       source:
         file: src/meta/core/derive/command.ts
@@ -164,7 +164,7 @@ docs/src/content/docs/meta/set-up/derived-metadata.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: explicit-codeowners-path-missing-is-unavailable
       claim:
-        lines: 483
+        lines: 487
         integrity: sha256-fbcce9dbeb53c0bd1f1361adc82403a8faaf31813bc5654502e46dd1bc0bff86
       source:
         file: src/meta/core/derive/codeowners.ts
@@ -173,7 +173,7 @@ docs/src/content/docs/meta/set-up/derived-metadata.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: unavailable-source-throws-exit-two
       claim:
-        lines: 482
+        lines: 486
         integrity: sha256-5aa659ad74bf9a7d7ff20675ef32ae9d0c2a481b34b851ec15fa724035a8b884
       source:
         file: src/meta/core/derive/index.ts
@@ -230,7 +230,7 @@ docs/src/content/docs/meta/set-up/derived-metadata.mdx:
         commit-sha: df75e58da9c2ffb383db63ef9e4f7aeb6c30d0ad
     - id: unfenced-format-counts-every-change
       claim:
-        lines: 422
+        lines: 426
         integrity: sha256-36e2781853812a123f0d9b6595b52ae2302f4e060b77ad3b88d0218509e4af2b
       source:
         file: src/meta/core/derive/git.ts
@@ -239,7 +239,7 @@ docs/src/content/docs/meta/set-up/derived-metadata.mdx:
         commit-sha: df75e58da9c2ffb383db63ef9e4f7aeb6c30d0ad
     - id: body-change-excludes-the-metadata-block
       claim:
-        lines: 420
+        lines: 424
         integrity: sha256-ce4c9fe028874b1d2d9cdd50b3985806582f867cbeca39944c6c39a86eb19fa2
       source:
         file: src/meta/core/derive/git.ts
@@ -248,7 +248,7 @@ docs/src/content/docs/meta/set-up/derived-metadata.mdx:
         commit-sha: df75e58da9c2ffb383db63ef9e4f7aeb6c30d0ad
     - id: document-content-never-reaches-command-argv
       claim:
-        lines: 413
+        lines: 417
         integrity: sha256-77c0d9420ed1fc5dbae15f7c4768465de306f499408e2bdf92594946c8b935d2
       source:
         file: src/meta/core/derive/command.ts
@@ -529,7 +529,7 @@ docs/src/content/docs/meta/set-up/derived-metadata.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: codeowners-default-search-locations
       claim:
-        lines: 96
+        lines: 100
         integrity: sha256-f78a1694c10f5642fbeaedba5743a6f5bddf9c3a2ca4db4885655d6d6ad8a698
       source:
         file: src/meta/core/derive/codeowners.ts
@@ -538,7 +538,7 @@ docs/src/content/docs/meta/set-up/derived-metadata.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: derive-codeowners-key-is-a-config-relative-path
       claim:
-        lines: 96
+        lines: 100
         integrity: sha256-f78a1694c10f5642fbeaedba5743a6f5bddf9c3a2ca4db4885655d6d6ad8a698
       source:
         file: src/meta/core/config.ts
@@ -547,7 +547,7 @@ docs/src/content/docs/meta/set-up/derived-metadata.mdx:
         commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
     - id: excluded-source-leaves-field-unknown
       claim:
-        lines: 87
+        lines: 91
         integrity: sha256-7fd5e72ac5926803faf0d53b8b143cf9b0b0d4c2499404354073246a671b3ad0
       source:
         file: src/meta/core/derive/index.ts
@@ -556,7 +556,7 @@ docs/src/content/docs/meta/set-up/derived-metadata.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: unknown-status-files-are-no-finding
       claim:
-        lines: 87
+        lines: 91
         integrity: sha256-7fd5e72ac5926803faf0d53b8b143cf9b0b0d4c2499404354073246a671b3ad0
       source:
         file: src/meta/core/derive/types.ts
@@ -565,7 +565,7 @@ docs/src/content/docs/meta/set-up/derived-metadata.mdx:
         commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: origin-remote-picks-review-source
       claim:
-        lines: 85
+        lines: 89
         integrity: sha256-d5d7e36f2e02689f33fae49baa03a529f3a480d884d7583411254a62120afb2b
       source:
         file: src/meta/core/derive/index.ts
@@ -574,7 +574,7 @@ docs/src/content/docs/meta/set-up/derived-metadata.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: sources-default-to-all-five
       claim:
-        lines: 84
+        lines: 88
         integrity: sha256-5b8f6210b52cc11242e76894f76835f862b64f897ebe868593719a15bcdb29d7
       source:
         file: src/meta/commands/derive.ts
@@ -583,7 +583,7 @@ docs/src/content/docs/meta/set-up/derived-metadata.mdx:
         commit-sha: cb74827009894c38f8646504ae9eb4a2745761a9
     - id: only-derive-fields-are-stamped-and-compared
       claim:
-        lines: 70
+        lines: 74
         integrity: sha256-01c0b7bef606afa56806640cb36f46add8878e31821cd7973d49b2d3ea45ebf1
       source:
         file: src/meta/core/derive/index.ts

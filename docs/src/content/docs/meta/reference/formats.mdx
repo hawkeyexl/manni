@@ -26,7 +26,7 @@ sample-questions:
 graph:
   label: Supported formats reference
   type: reference
-last-updated: 2026-10-28
+last-updated: 2026-11-06
 tags:
   - formats
   - extractors
@@ -50,6 +50,10 @@ prerequisites:
 ---
 
 import { Aside } from '@astrojs/starlight/components';
+
+By default, a directory or glob walk reads only the extensions listed below and
+skips every other file without a message. Check this table when a file you
+expected to be checked never appears in the output.
 
 {/* cite formats-extractor-chosen-by-extension-or-as */}
 manni meta reads metadata from a document using a per-format **extractor**. The

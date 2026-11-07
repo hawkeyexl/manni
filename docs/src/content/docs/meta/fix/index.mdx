@@ -32,7 +32,7 @@ sample-questions:
 graph:
   label: Fix a failing check
   type: troubleshooting
-last-updated: 2026-10-23
+last-updated: 2026-11-06
 tags:
   - validation
   - error-messages
@@ -53,7 +53,9 @@ verified-by:
 
 import { Steps, Aside, LinkCard } from '@astrojs/starlight/components';
 
-Your PR's manni meta check is red and you'd like it green again. You're in the
+Your PR's manni meta check is red and you'd like it green again. The check
+exists because search, the site nav and other tools read the fields it checks.
+A page without them can vanish from search or the nav. You're in the
 right place. This page decodes the error, and points you at the exact field and
 line to change. It also shows you how to confirm the fix locally before you
 re-push. You don't need to know how manni meta was set up, only what its output is

@@ -1,6 +1,6 @@
 ---
 title: Get started
-description: Install manni meta and validate your first file in under a minute. Read a passing and a failing result.
+description: Catch a page missing its metadata before a reader does. Install manni meta and validate your first file in under a minute, then read a passing and a failing result.
 type: quickstart
 id: meta-get-started
 keywords:
@@ -30,7 +30,7 @@ sample-questions:
 graph:
   label: Get started
   type: learning
-last-updated: 2026-10-23
+last-updated: 2026-11-06
 tags:
   - quickstart
   - installation
@@ -45,6 +45,10 @@ verified-by:
 ---
 
 import { Steps, Tabs, TabItem, Aside, LinkCard } from '@astrojs/starlight/components';
+
+A page without the metadata your site reads drops out of search and navigation,
+and nobody notices until a reader looks for it. Once manni meta runs, the next
+missing field fails a check instead.
 
 This page takes you from nothing to a validated file. You'll install manni meta, or
 skip install entirely, then validate one document. You'll also learn to read

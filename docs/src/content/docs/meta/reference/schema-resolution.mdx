@@ -24,7 +24,7 @@ sample-questions:
 graph:
   label: Schema resolution reference
   type: reference
-last-updated: 2026-10-28
+last-updated: 2026-11-06
 tags:
   - schema-resolution
   - json-schema
@@ -46,6 +46,9 @@ risks: read-only
 ---
 
 import { Aside } from '@astrojs/starlight/components';
+
+Reach for this page when a file is checked against a schema you did not expect,
+or skips one you meant to apply.
 
 For each file, manni meta resolves a **schema set** of one or more schema
 references. It then validates the file's metadata against every schema in that

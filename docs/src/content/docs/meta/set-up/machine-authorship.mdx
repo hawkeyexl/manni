@@ -31,7 +31,7 @@ sample-questions:
 graph:
   label: See which lines a machine wrote
   type: task
-last-updated: 2026-11-02
+last-updated: 2026-11-06
 tags:
   - provenance
   - git
@@ -50,6 +50,9 @@ verified-by:
 ---
 
 import { Steps, Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';
+
+Once an agent's change merges, the page no longer says which lines a machine
+wrote. A later review re-reads the whole page to find them, or misses them.
 
 {/* cite changed-pin-fails-the-build */}
 {/* cite changed-pin-finding-at-first-file-line */}

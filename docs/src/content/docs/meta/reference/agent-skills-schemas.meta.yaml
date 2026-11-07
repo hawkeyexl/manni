@@ -17,40 +17,43 @@ docs/src/content/docs/meta/reference/agent-skills-schemas.mdx:
       grader: ai
   provenance:
     - generated-by: Claude Opus 5
-      lines: 2-9
-      integrity: sha256-e706923edc8ef7fdcd19148994326f675d5bac128efc202d7bac06b308004faa
+      lines: 2
+      integrity: sha256-76b2a53f73519706f7f8e310aaf9fa64424820e3ce6b4fb1164c503e20efd9d8
+    - generated-by: Claude Opus 5
+      lines: 7-12
+      integrity: sha256-83816f6fbdb86f6fccfaea7f56b17e8e2080472d56d870676a266178e28aa551
     - generated-by: Claude Opus 5.5
-      lines: 10-11
+      lines: 13-14
       integrity: sha256-2599a2baab5dffe8a8c5d92bebe066fe7965dbd45503ad4c5697d07e2d2a2bd6
     - generated-by: Claude Opus 5
-      lines: 13-17
+      lines: 16-20
       integrity: sha256-f2e9e3ee2516c0ee211e09d9b63eec95b9a2de140cd2d2a49087ef9a0ecbcf0b
     - generated-by: Claude Fable 5.1
-      lines: 18-19
+      lines: 21-22
       integrity: sha256-6be2a8757095124edc835f76bae21bb14ab41a7b4163510c1061341b05f18d72
     - generated-by: Claude Opus 5
-      lines: 20-22
+      lines: 23-25
       integrity: sha256-179488e4f1fdffda8654a4efc6be062711df7fbf1bc61a3949a8487968e8569d
     - generated-by: Claude Opus 5.5
-      lines: 24-28
+      lines: 27-31
       integrity: sha256-f32e8b69f86e100ecf3371f9d26246557aea245a29a1b2da7f8f94f9735e9342
     - generated-by: Claude Opus 5
-      lines: 30-36
+      lines: 33-39
       integrity: sha256-46971310e7d4f750d30b45cdc42121dc03f431f32a34d859289c22ef0b2b71e1
     - generated-by: Claude Opus 5.5
-      lines: 38-46
+      lines: 41-49
       integrity: sha256-1bd6d80b6c652a234363708b3445ac90e3ea708faae02f284831d6777bd99e13
     - generated-by: Claude Opus 5
-      lines: 48-55
+      lines: 51-58
       integrity: sha256-38aaf74303d0a48f57a21bf4693b8cced9fa457b71dbc6cd5c8b8ad4648de747
     - generated-by: Claude Fable 5.1
-      lines: 56
+      lines: 59
       integrity: sha256-af4c90a40ba302906980a43ccae64769298486515cd0fd0001af6b68ac3bef9d
     - generated-by: Claude Opus 5
-      lines: 57-73
+      lines: 60-76
       integrity: sha256-6859d04b1d359bfb671104021a10b3c9f05d77ba6c49023f82e18ef58dcfdd98
     - generated-by: Claude Opus 5.5
-      lines: 74
+      lines: 77
       integrity: sha256-4a265bc0a0296c7be08853a9c14e1f9b22f18a35f0eb362fcf788f67243a2d64
   owner:
     - "@hawkeyexl"
