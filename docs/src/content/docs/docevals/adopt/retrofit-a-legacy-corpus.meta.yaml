@@ -21,8 +21,11 @@ docs/src/content/docs/docevals/adopt/retrofit-a-legacy-corpus.mdx:
       lines: 88-93
       integrity: sha256-b0ce2607d936ee2a5c83e5eb0d2635c1b39154c9fe8cfcae6f95a5086eab9537
     - generated-by: Claude Fable 5.1
-      lines: 96-109
-      integrity: sha256-3d273fd242034f681fe5de9f27cf53a13cf400688f1e8f642862c8781b3095aa
+      lines: 96-104
+      integrity: sha256-6c584f37b43c28dc3b9fe2dce3b8eb6dc922749d4270f379875be1cfe200a959
+    - generated-by: Claude Fable 5.1
+      lines: 109
+      integrity: sha256-14d45595615e1c1d3a23715bee8044c122dff892435aed5687fb4d03c24f0038
     - generated-by: Claude Fable 5.1
       lines: 113-126
       integrity: sha256-e1092d0e53fb382484884ae96827ee34197f0bdcaa40e6f96c36fbf383369768
@@ -48,23 +51,35 @@ docs/src/content/docs/docevals/adopt/retrofit-a-legacy-corpus.mdx:
       lines: 159-161
       integrity: sha256-2132587a0defefd9fe5e97d35adf1ed45955e3bdf0500e4ab8d0c84bafb52527
     - generated-by: Claude Fable 5.1
-      lines: 162-228
-      integrity: sha256-d6392e4e3b3b8206a6db3a720375647143d22ef3805d6f39df0c6137a1d9185b
+      lines: 162-189
+      integrity: sha256-bd417a9fa4a65c5992dbb23aa6cdc025cc2418b448dab7cb33b904b17b719ac6
     - generated-by: Claude Fable 5.1
-      lines: 233
+      lines: 203-207
+      integrity: sha256-fe9342e5094282fc4ab84ec35c9c49b560dbe14a0edada2d00599b33f269033f
+    - generated-by: Claude Fable 5.1
+      lines: 209
+      integrity: sha256-f1b901847390b0ed7e374e7c1e464ec17b46a427c487a5ad6cbd2906405083d5
+    - generated-by: Claude Fable 5.1
+      lines: 214-237
+      integrity: sha256-b31b1ad935b86ee5903a3a4ad3837ea2de66e61887d4e840a83776cb1c407cba
+    - generated-by: Claude Fable 5.1
+      lines: 242
       integrity: sha256-a33fa8a8b606bb9f7ec673f5d7fa85f1969ea94d22264d3ee7b708f93f46b8bd
     - generated-by: Claude Fable 5.1
-      lines: 236-242
+      lines: 245-251
       integrity: sha256-7647cea9e697791da6e69dcf6d05cb9b218c459b5989aa3c70889076372399be
     - generated-by: Claude Opus 5
-      lines: 243
+      lines: 252
       integrity: sha256-262e8f8fde0a8cdeabf685dd7a76dc7e66e86b7a40aa1b065f0f68948170e294
     - generated-by: Claude Fable 5.1
-      lines: 244-250
+      lines: 253-259
       integrity: sha256-58ffb8d79843342bf45521b2d97e6750fe5ba6b3696230c344bdc85a19803cb2
     - generated-by: Claude Fable 5.1
-      lines: 252-273
-      integrity: sha256-a5a26b459997b62f9c248cd1013c813df24fe660866c6cfe15efb9e49d981158
+      lines: 261-267
+      integrity: sha256-df522b10459bb2ea33c2b0f1d854e83dfd63c82877632346e7e06483b33304cc
+    - generated-by: Claude Fable 5.1
+      lines: 269-282
+      integrity: sha256-c44655e1423d145082049ec2b1e33574e4e7c3ea631db63c529d10077f41ec5d
   owner:
     - "@hawkeyexl"
   created: 2026-09-06

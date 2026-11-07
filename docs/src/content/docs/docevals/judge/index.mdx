@@ -1,10 +1,10 @@
 ---
 title: Trust the judge
-description: What makes a verdict reproducible, how the ensemble reaches consensus, and where human review begins.
+description: Answer the reviewer who asks why a model may block the build. What makes a verdict reproducible, how the ensemble reaches consensus, and where human review begins.
 type: concept
 audiences:
   - schema-authors
-last-updated: 2026-10-23
+last-updated: 2026-11-07
 ---
 
 Sooner or later someone senior asks the real question: **why should a model be allowed to block our
@@ -64,7 +64,8 @@ by feel. [Calibrate](/manni/docevals/judge/calibrate/) tells you what the trade 
 
 Every eval is pass or fail. The nuance lives in the **suite pass rate**, where a regression suite
 targets 1.0 and a capability suite targets about 0.7 instead. That makes "70% of our tutorials
-explain why before how" expressible, without any eval returning a mushy score. See
+explain why before how" expressible, without any eval returning a mushy score. Every failing eval
+still exits `1`, so a capability suite runs outside the merge gate. See
 [Regression vs capability](/manni/docevals/evals/regression-vs-capability/).
 
 ## When the judge looks wrong

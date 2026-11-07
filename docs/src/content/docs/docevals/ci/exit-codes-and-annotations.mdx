@@ -6,7 +6,7 @@ audiences:
   - ci-engineers
   - schema-authors
   - docs-engineers
-last-updated: 2026-10-27
+last-updated: 2026-11-07
 ---
 
 Three exit codes, and the distinction between two of them is the difference between a check people
@@ -162,8 +162,9 @@ Suites
   reference: 1/2 passed — 0% vs target 100% below target (1 skipped)
 ```
 
-Exit `1`, even if no individual eval errored. A capability suite left at the default target of `1.0`
-is the most common cause of a surprising red build. See
+Exit `1`. A suite falls below its target only when one of its evals failed or errored, and that eval
+exits `1` on its own. Lowering the target changes the suite's line, not the exit code. To keep a
+capability suite from blocking merges, run it outside the merge gate. See
 [Regression vs capability](/manni/docevals/evals/regression-vs-capability/).
 
 ### A filtered run is not a gate

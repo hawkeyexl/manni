@@ -5,7 +5,7 @@ type: how-to
 audiences:
   - schema-authors
   - docs-engineers
-last-updated: 2026-10-23
+last-updated: 2026-11-07
 ---
 
 If an eval keeps flipping between pass and fail, or fails pages your team considers fine, the grader
@@ -135,7 +135,8 @@ It changes how strictly to phrase the assertion.
 
 - **Regression** guards behavior that must keep working. Target 1.0. Phrase strictly.
 - **Capability** measures reach across a corpus. Target ~0.7. Phrase for the good case; some
-  pages will not meet it yet, and that is the measurement.
+  pages will not meet it yet, and that is the measurement. Each failure still exits `1`, so it runs
+  outside the merge gate.
 
 `type` defaults to `regression`. See [Regression vs capability](/manni/docevals/evals/regression-vs-capability/).
 

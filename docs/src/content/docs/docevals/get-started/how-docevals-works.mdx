@@ -4,8 +4,11 @@ description: The eval, the grader hierarchy, and how a verdict is reached.
 type: concept
 audiences:
   - docs-engineers
-last-updated: 2026-10-02
+last-updated: 2026-11-07
 ---
+
+When an eval fails, you need to know what decided it before you can tell whether to fix the page or
+the assertion.
 
 One concept, one preference order, one kind of verdict. Everything else in these docs is a
 consequence of the three ideas on this page.
@@ -90,7 +93,9 @@ Every eval is pass or fail. That looks crude for prose until you see where the n
 - A **capability** suite measures reach, at target ~0.7.
 
 So "70% of our how-to pages explain why before how" is expressible. No individual eval has to
-return a mushy 0.7. `type` defaults to `regression`, because most evals guard something. See
+return a mushy 0.7. The target sets the suite's reported verdict, and every failing eval still exits
+`1`. So a capability suite runs where a failure reports instead of blocking a merge. `type` defaults
+to `regression`, because most evals guard something. See
 [Regression vs capability](/manni/docevals/evals/regression-vs-capability/).
 
 ## The pipeline

@@ -2,13 +2,16 @@
 title: CLI reference
 description: Every manni docevals command, argument, and flag, with the exit code each produces.
 type: reference
-last-updated: 2026-10-23
+last-updated: 2026-11-06
 ---
 
 {/* The command, argument, and option tables on this page are drift-checked
     against src/docevals/cli.ts by scripts/check-cli-reference.mjs (npm run
     docs:check-cli), enforced in CI. Keep flags, arguments, and defaults in
     sync with the code; descriptions are free-form. */}
+
+Reach for this page when a CI step or script needs a flag's exact name and default, or a command's
+exit code.
 
 Eight commands under one subcommand. Every flag below is verified against
 `src/docevals/cli.ts`, and the exit codes are exercised by the inline tests at

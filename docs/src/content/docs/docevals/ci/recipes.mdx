@@ -4,8 +4,11 @@ description: GitLab CI, Jenkins, and pre-commit, running the same gate on other 
 type: how-to
 audiences:
   - ci-engineers
-last-updated: 2026-10-04
+last-updated: 2026-11-06
 ---
+
+A gate catches a regression only where it runs, and not every team reviews its changes on GitHub.
+Some want the check on a laptop too, before a change is committed.
 
 The shape is the same everywhere. Install, restore the cache, run, and route on the exit code. The
 GitHub Actions version and the reasoning behind each piece are in

@@ -7,18 +7,33 @@ docs/src/content/docs/docevals/evals/regression-vs-capability.mdx:
     - m12
     - m15
   provenance:
-    - generated-by: Claude Fable 5.1
-      lines: 2-3
-      integrity: sha256-bcf7b25fc272ee5d27e3049c9e2832cf583a1f7d9888f4ef1efdb8d009a8b257
     - generated-by: Claude Opus 5
-      lines: 5
+      lines: 9
       integrity: sha256-7e100e7162cfac9fc1a4425cf94021b195fd2d009223733f30ef6ef32000c741
     - generated-by: Claude Fable 5.1
-      lines: 6-37
-      integrity: sha256-32e92b6a2a4df61a07bce05fd7be84e3e2f8ffdda8eb1c5d5bfae55625003f11
+      lines: 10-14
+      integrity: sha256-6d5cc38c5e6501c766128ad253d6b58600ba2469559f6ee0d9b97af6772df1cb
     - generated-by: Claude Fable 5.1
-      lines: 39-77
-      integrity: sha256-af43797356de50cfa22ee2ff7482b5ae7f5ca60eeb741b3feeb18b9650c8439c
+      lines: 16-28
+      integrity: sha256-9f8d3523686cecba0eddf66db7d8b20ca793b6ea19847da0a2bc7bbf825695a6
+    - generated-by: Claude Fable 5.1
+      lines: 37-44
+      integrity: sha256-f19efd97beb0440098c7ce644d4f7a6ea91883016c7982b33a32d22d63abd00f
+    - generated-by: Claude Fable 5.1
+      lines: 46
+      integrity: sha256-f1b901847390b0ed7e374e7c1e464ec17b46a427c487a5ad6cbd2906405083d5
+    - generated-by: Claude Fable 5.1
+      lines: 50
+      integrity: sha256-3b092dd7337c30b43aceb3a6bf20532be6e6f033bafdc0fc76c6fcdcbf0779c0
+    - generated-by: Claude Fable 5.1
+      lines: 60-65
+      integrity: sha256-ffae14f37f044adedb5aa6654edba1933cabda1bdb0f7fecf4bbff90ac1915d6
+    - generated-by: Claude Fable 5.1
+      lines: 71-73
+      integrity: sha256-d3fde5faa8d8189fff3a612b1ebb78c14c612016278dc3fa0138432428b2b2c5
+    - generated-by: Claude Fable 5.1
+      lines: 77-89
+      integrity: sha256-116d689c621573a1a7b786ba6401e7b8166ed746a287c6bbf8b1b2f02961021b
   owner:
     - "@hawkeyexl"
   created: 2026-09-06

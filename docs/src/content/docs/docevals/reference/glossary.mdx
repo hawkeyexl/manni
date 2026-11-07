@@ -2,8 +2,11 @@
 title: Glossary
 description: The terms that recur across every section of these docs.
 type: glossary
-last-updated: 2026-10-02
+last-updated: 2026-11-07
 ---
+
+Words like assertion, suite and confidence zone have a narrow meaning in these docs. Look one up here
+when a report or a page uses it.
 
 **Assertion**
 : The claim an eval makes about a page, true or false, not an aspiration. "The page states its
@@ -12,7 +15,8 @@ last-updated: 2026-10-02
 
 **Capability suite**
 : A suite that measures reach rather than correctness, so its `target-pass-rate` sits below 1.0
-  (~0.7 is typical). Contrast *regression suite*.
+  (~0.7 is typical). The target sets the suite's reported verdict, and each failing eval in it
+  still exits `1`. Contrast *regression suite*.
 
 **Confidence zone**
 : Which of three bands a judged eval lands in. At or above `judge.zones.autoPass` a passing
