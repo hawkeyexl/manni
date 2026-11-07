@@ -1,6 +1,6 @@
 ---
 title: Run it in CI
-description: "Gate a pull request on manni term check with inline annotations, ramp in with a baseline, keep the generated Vale style current with write --check, and lint definitions, all under the 0/1/2 exit-code contract."
+description: "Stop a pull request that names an undefined term or leaves the Vale style behind the term set. Gate a pull request on manni term check with inline annotations, ramp in with a baseline, keep the generated Vale style current with write --check, and lint definitions, all under the 0/1/2 exit-code contract."
 type: how-to
 id: term-ci
 keywords:
@@ -30,7 +30,7 @@ sample-questions:
 graph:
   label: Run it in CI
   type: task
-last-updated: 2026-10-23
+last-updated: 2026-11-06
 tags:
   - ci
   - github-actions
@@ -48,6 +48,10 @@ prerequisites:
 ---
 
 import { Steps, Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';
+
+A pull request can name a term the set never defines, or change the set and
+leave the committed Vale style behind it. Each one merges quietly unless CI
+fails it.
 
 {/* cite write-check-exit-one */}
 This page runs three term jobs on every pull request. `check` fails on a

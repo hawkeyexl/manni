@@ -34,7 +34,7 @@ docs/src/content/docs/term/reference/rules.mdx:
         commit-sha: b429d35469a6d2e511f3be0b04ed51277e1fb917
     - id: default-severities
       claim:
-        lines: 15-26
+        lines: 18-29
         integrity: sha256-431edfd63606146326d206e8d9dffcb6194f6c1423256047246ff319c930098c
       source:
         file: src/term/core/severity.ts
@@ -43,7 +43,7 @@ docs/src/content/docs/term/reference/rules.mdx:
         commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: undefined-term-fires
       claim:
-        lines: 15
+        lines: 18
         integrity: sha256-c6efacbcd8db2b0b9df69001bfeddea247450e1687e2fb56b00f75587cc6a893
       source:
         file: src/term/core/check.ts
@@ -52,7 +52,7 @@ docs/src/content/docs/term/reference/rules.mdx:
         commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: label-collision-fires
       claim:
-        lines: 17
+        lines: 20
         integrity: sha256-43924b09a2a09dcf1294f82dc0ef16d1dcd03129a18623c279d4739d8c44d334
       source:
         file: src/term/core/check.ts
@@ -61,7 +61,7 @@ docs/src/content/docs/term/reference/rules.mdx:
         commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: alt-label-collision-fires
       claim:
-        lines: 18
+        lines: 21
         integrity: sha256-38158b0d84658b22ff5bc7067e90b3a38d33e8deb0d0efb0d8b7b7b3ab45842c
       source:
         file: src/term/core/check.ts
@@ -70,7 +70,7 @@ docs/src/content/docs/term/reference/rules.mdx:
         commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: dangling-reference-fires
       claim:
-        lines: 20
+        lines: 23
         integrity: sha256-4e5914498e1846bb7c581e64be20912b70e519a4b01e929ec566b684651f6b53
       source:
         file: src/term/core/check.ts
@@ -79,7 +79,7 @@ docs/src/content/docs/term/reference/rules.mdx:
         commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: broader-cycle-fires
       claim:
-        lines: 21
+        lines: 24
         integrity: sha256-b516e8fc8d9d7b3d8c13939f49a984baa8034f4eb91a56d1df1acaae65e0a050
       source:
         file: src/term/core/check.ts
@@ -88,7 +88,7 @@ docs/src/content/docs/term/reference/rules.mdx:
         commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: see-not-empty-fires
       claim:
-        lines: 22
+        lines: 25
         integrity: sha256-ed45c7c02a315d143b3e6dff72214a817eaa76b8448814b2dc08aa296eb46cd6
       source:
         file: src/term/core/check.ts
@@ -97,7 +97,7 @@ docs/src/content/docs/term/reference/rules.mdx:
         commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: asymmetric-hierarchy-fires
       claim:
-        lines: 25
+        lines: 28
         integrity: sha256-07c110682311a9953473bf43915a5a1cd524c0ba7717d225de974dfbe59d22d7
       source:
         file: src/term/core/check.ts
@@ -106,7 +106,7 @@ docs/src/content/docs/term/reference/rules.mdx:
         commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: abstract-too-long-fires
       claim:
-        lines: 31
+        lines: 34
         integrity: sha256-f00c071dbe73c034dbd7da0cfddd1da385b9a538acaa2cc8a2f30990ef6a84c1
       source:
         file: src/term/core/check.ts
@@ -115,7 +115,7 @@ docs/src/content/docs/term/reference/rules.mdx:
         commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: abstract-max-length-default
       claim:
-        lines: 31
+        lines: 34
         integrity: sha256-f00c071dbe73c034dbd7da0cfddd1da385b9a538acaa2cc8a2f30990ef6a84c1
       source:
         file: src/term/core/config.ts
@@ -252,7 +252,7 @@ docs/src/content/docs/term/reference/rules.mdx:
         commit-sha: 544bb2afeed952d29440ecbcf3628ee4d33eee54
     - id: duplicate-id-fires
       claim:
-        lines: 16
+        lines: 19
         integrity: sha256-d9f0428a8f21244f2bb70c991bcfec2aa061b799513dd1a282569621430bb799
       source:
         file: src/term/core/check.ts
@@ -349,7 +349,7 @@ docs/src/content/docs/term/reference/rules.mdx:
         commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: hierarchy-outside-termbase-fires
       claim:
-        lines: 33
+        lines: 36
         integrity: sha256-cd3cb1d5a4c2c3182acf86969eea12b76c0f63a4fd3a54d4c0af0d77d0549bb2
       source:
         file: src/term/core/check.ts
@@ -358,7 +358,7 @@ docs/src/content/docs/term/reference/rules.mdx:
         commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: unused-term-fires
       claim:
-        lines: 32
+        lines: 35
         integrity: sha256-151242e60f923f7168316d8b0e0e101201797b670e53914334eb5eca98ee7597
       source:
         file: src/term/core/check.ts
@@ -367,7 +367,7 @@ docs/src/content/docs/term/reference/rules.mdx:
         commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: alt-label-reference-fires
       claim:
-        lines: 28
+        lines: 31
         integrity: sha256-d2478889b7d5733a523a92b2fac8ca2bce5da178e595a9246fe5957560238629
       source:
         file: src/term/core/check.ts
@@ -392,7 +392,7 @@ docs/src/content/docs/term/reference/rules.mdx:
         commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: sample-finding-layout
       claim:
-        lines: 87
+        lines: 90
         integrity: sha256-b4e1e524d51dc6fee3e86ba17377f5a421e07bd59bfc14e48695f3265e01aee8
       source:
         file: src/term/reporters/pretty.ts
@@ -401,7 +401,7 @@ docs/src/content/docs/term/reference/rules.mdx:
         commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: sample-summary-line
       claim:
-        lines: 191
+        lines: 194
         integrity: sha256-ef5db0db9b047075f79aab703c7e02cc328ace89960b160aea3098eff705d08f
       source:
         file: src/term/reporters/pretty.ts

@@ -1,6 +1,6 @@
 ---
 title: Get started
-description: Lint one how-to page against its doctype template, read the finding, fix the page, and watch the run go green. Then let the config supply the paths.
+description: Catch a how-to that has lost a section. Lint one how-to page against its doctype template, read the finding, fix the page, and watch the run go green. Then let the config supply the paths.
 type: tutorial
 id: lint-get-started
 language: en
@@ -8,13 +8,16 @@ audiences:
   - docs-engineers
 lifecycle: published
 action: practice
-last-updated: 2026-09-20
+last-updated: 2026-11-06
 verified-by:
   - tool: doc-detective
     check: lint-get-started
 ---
 
 import { Steps, Tabs, TabItem, Aside, CardGrid, LinkCard } from '@astrojs/starlight/components';
+
+Without a check, only a reviewer's memory says whether a how-to still has the
+sections a how-to needs.
 
 This page takes you from one Markdown file to a structure check you can put in
 CI. You will lint a how-to that is missing a section, read what the finding

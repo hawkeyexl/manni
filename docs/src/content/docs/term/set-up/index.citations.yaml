@@ -18,7 +18,7 @@ docs/src/content/docs/term/set-up/index.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: vale-config-needs-stylespath
       claim:
-        lines: 21-22
+        lines: 25-26
         integrity: sha256-e91a0583dc7ea721f478d2e8f626e6b30dae356826ae8da31a33e3ad0867b30e
       source:
         file: src/term/core/vale.ts
@@ -27,7 +27,7 @@ docs/src/content/docs/term/set-up/index.mdx:
         commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: tools-top-level-key
       claim:
-        lines: 33-35
+        lines: 37-39
         integrity: sha256-a3a6fe110a24469b15c1c320a475de94a333ea351ecdf5f2979c81f8a76bcf99
       source:
         file: src/shared/tools.ts
@@ -36,7 +36,7 @@ docs/src/content/docs/term/set-up/index.mdx:
         commit-sha: c72a188d455b54a739b4ef728a55b4adac510f0a
     - id: no-tools-vale-config-vale-finds-own
       claim:
-        lines: 56-57
+        lines: 60-61
         integrity: sha256-6fd6e0343f14cf4c389fe0e6975610db2e14cca6d6b6b708a4f2649973352c8b
       source:
         file: src/shared/tools.ts
@@ -45,7 +45,7 @@ docs/src/content/docs/term/set-up/index.mdx:
         commit-sha: c72a188d455b54a739b4ef728a55b4adac510f0a
     - id: no-o-asks-vale-styles-path
       claim:
-        lines: 59-60
+        lines: 63-64
         integrity: sha256-6306cae03b4e24f95b952df46a0a50ae5a0cf5ba9460c22ba5c4d44af02d26e3
       source:
         file: src/term/commands/write.ts
@@ -54,7 +54,7 @@ docs/src/content/docs/term/set-up/index.mdx:
         commit-sha: df75e58da9c2ffb383db63ef9e4f7aeb6c30d0ad
     - id: write-vale-summary-lines
       claim:
-        lines: 67-72
+        lines: 71-76
         integrity: sha256-d03dd3a24badbe6ac9b2c3126d4e98ac5013313f7fe2d68ef5f4a1d957baa3bd
       source:
         file: src/term/reporters/pretty.ts
@@ -63,7 +63,7 @@ docs/src/content/docs/term/set-up/index.mdx:
         commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: vale-wiring-notice
       claim:
-        lines: 72-74
+        lines: 76-78
         integrity: sha256-b95220aecca978b8affba69435094a6e8fa41109441c5b2f284d18d9584dff6f
       source:
         file: src/term/reporters/pretty.ts
@@ -72,7 +72,7 @@ docs/src/content/docs/term/set-up/index.mdx:
         commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: wiring-notice-names-line-and-file
       claim:
-        lines: 77-78
+        lines: 81-82
         integrity: sha256-68970bf2fd53eec79100a8406318ed05703d940731287ffd9443d39d6c0eee10
       source:
         file: src/term/commands/write.ts
@@ -81,7 +81,7 @@ docs/src/content/docs/term/set-up/index.mdx:
         commit-sha: df75e58da9c2ffb383db63ef9e4f7aeb6c30d0ad
     - id: notice-gone-once-wired
       claim:
-        lines: 90
+        lines: 94
         integrity: sha256-62f7c31d7cf671c8010bc420216651c854a2a5f454ec5451df8a48bf7b49fc91
       source:
         file: src/term/commands/write.ts
@@ -90,7 +90,7 @@ docs/src/content/docs/term/set-up/index.mdx:
         commit-sha: df75e58da9c2ffb383db63ef9e4f7aeb6c30d0ad
     - id: acronym-expansion-satisfies-rule
       claim:
-        lines: 123
+        lines: 127
         integrity: sha256-136e18316d5bf39cce8c3ba3cc72acc04e88d482b36358795d1a15566af26935
       source:
         file: src/term/core/writers/vale.ts
@@ -107,7 +107,7 @@ docs/src/content/docs/term/set-up/index.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: lowercase-row
       claim:
-        lines: 135
+        lines: 139
         integrity: sha256-343026964c70283ba6bb88ba77ef57dee1752227e349b5f7a41d07a4e7cc84f2
       source:
         file: src/term/core/writers/vale.ts
@@ -116,7 +116,7 @@ docs/src/content/docs/term/set-up/index.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: sentencestart-row
       claim:
-        lines: 136
+        lines: 140
         integrity: sha256-319725858fe0a96db884a7788de1c171756bf543ed00fc634f91d7fd3c77ee63
       source:
         file: src/term/core/writers/vale.ts
@@ -125,7 +125,7 @@ docs/src/content/docs/term/set-up/index.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: deprecated-row-built-from
       claim:
-        lines: 137
+        lines: 141
         integrity: sha256-d0cb35fc10126c121537225d8b365acc970c59d0a170645a3618afd75b1db93e
       source:
         file: src/term/core/writers/vale.ts
@@ -134,7 +134,7 @@ docs/src/content/docs/term/set-up/index.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: deprecated-row-file-level
       claim:
-        lines: 137
+        lines: 141
         integrity: sha256-d0cb35fc10126c121537225d8b365acc970c59d0a170645a3618afd75b1db93e
       source:
         file: src/term/core/writers/vale.ts
@@ -159,7 +159,7 @@ docs/src/content/docs/term/set-up/index.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: lowercase-sample-message-level
       claim:
-        lines: 148-149
+        lines: 152-153
         integrity: sha256-c899b3249e6fb0b05624d3eee77e56059405d65e931b012a5cd4c0ef0f0efef8
       source:
         file: src/term/core/writers/vale.ts
@@ -184,7 +184,7 @@ docs/src/content/docs/term/set-up/index.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: sentencestart-sample-message-level
       claim:
-        lines: 169-170
+        lines: 173-174
         integrity: sha256-ad68cfda28a1a4bd7b29d0b22dae57144730e308adfcb17c0d3b3a20c2724cd2
       source:
         file: src/term/core/writers/vale.ts
@@ -193,7 +193,7 @@ docs/src/content/docs/term/set-up/index.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: acronym-sample-rule
       claim:
-        lines: 184-185
+        lines: 188-189
         integrity: sha256-b2009dbb451a34567f02dccbcb31f7657324a0d5511020751acdbae803723031
       source:
         file: src/term/core/writers/vale.ts
@@ -202,7 +202,7 @@ docs/src/content/docs/term/set-up/index.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: foreign-file-in-terms-refused
       claim:
-        lines: 190-191
+        lines: 194-195
         integrity: sha256-7423dc92203c843f040bbb651f0a76a1cb8523fa7fc935620a28509fb76c4631
       source:
         file: src/term/core/writers/vale.ts
@@ -211,7 +211,7 @@ docs/src/content/docs/term/set-up/index.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: stale-marked-file-removed
       claim:
-        lines: 192-193
+        lines: 196-197
         integrity: sha256-53d7596507190f0cea9626b85f7c571ff8faecf8bc16c64120435d3fa9d4d45d
       source:
         file: src/term/core/writers/vale.ts
@@ -220,7 +220,7 @@ docs/src/content/docs/term/set-up/index.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: stale-marked-file-deleted-on-write
       claim:
-        lines: 192-193
+        lines: 196-197
         integrity: sha256-53d7596507190f0cea9626b85f7c571ff8faecf8bc16c64120435d3fa9d4d45d
       source:
         file: src/term/commands/write.ts
@@ -229,7 +229,7 @@ docs/src/content/docs/term/set-up/index.mdx:
         commit-sha: df75e58da9c2ffb383db63ef9e4f7aeb6c30d0ad
     - id: no-vocabulary-file
       claim:
-        lines: 196-197
+        lines: 200-201
         integrity: sha256-1b7c48baaead5d2e42bde9867e427aa9c7271236e1666b2969082ff1618dd81a
       source:
         file: src/term/core/writers/vale.ts
@@ -294,7 +294,7 @@ docs/src/content/docs/term/set-up/index.mdx:
         commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: lint-output-shape
       claim:
-        lines: 217-227
+        lines: 221-231
         integrity: sha256-41dd85425b37492223707eb7473401478c6852f826818a42bd09fba365be4c47
       source:
         file: src/term/reporters/pretty.ts
@@ -303,7 +303,7 @@ docs/src/content/docs/term/set-up/index.mdx:
         commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: lint-prose-rule-id
       claim:
-        lines: 217-227
+        lines: 221-231
         integrity: sha256-41dd85425b37492223707eb7473401478c6852f826818a42bd09fba365be4c47
       source:
         file: src/term/core/severity.ts
@@ -328,7 +328,7 @@ docs/src/content/docs/term/set-up/index.mdx:
         commit-sha: 544bb2afeed952d29440ecbcf3628ee4d33eee54
     - id: check-would-change-line
       claim:
-        lines: 285
+        lines: 289
         integrity: sha256-220c369e7d6d8cd86ad22e8f44da711ac6b9aa3e6e9160422e96cfc4f14b56de
       source:
         file: src/term/reporters/pretty.ts
@@ -337,7 +337,7 @@ docs/src/content/docs/term/set-up/index.mdx:
         commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: check-up-to-date-line
       claim:
-        lines: 294
+        lines: 298
         integrity: sha256-d62369d9663550232c28774a6a98274eb7cd407f62bed280b71bb27c22a83165
       source:
         file: src/term/reporters/pretty.ts
@@ -370,7 +370,7 @@ docs/src/content/docs/term/set-up/index.mdx:
         commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: vale-started-as-process
       claim:
-        lines: 18-19
+        lines: 22-23
         integrity: sha256-e976180b0f599e944902b35a6a05ecd50c1e262078f647dd1a6c285d0f4888de
       source:
         file: src/term/core/vale.ts
@@ -379,7 +379,7 @@ docs/src/content/docs/term/set-up/index.mdx:
         commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: write-o-runs-without-vale
       claim:
-        lines: 18-19
+        lines: 22-23
         integrity: sha256-e976180b0f599e944902b35a6a05ecd50c1e262078f647dd1a6c285d0f4888de
       source:
         file: src/term/commands/write.ts
@@ -388,7 +388,7 @@ docs/src/content/docs/term/set-up/index.mdx:
         commit-sha: df75e58da9c2ffb383db63ef9e4f7aeb6c30d0ad
     - id: lint-no-prose-skips-vale
       claim:
-        lines: 19-20
+        lines: 23-24
         integrity: sha256-5ae2d57360028f823976311c8097974cb2cac1ac3dcb327bf82e6ad7e6518345
       source:
         file: src/term/core/lint.ts
@@ -397,7 +397,7 @@ docs/src/content/docs/term/set-up/index.mdx:
         commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: casing-row-built-from
       claim:
-        lines: 134
+        lines: 138
         integrity: sha256-b82ad3075bd5f1bbb0196f3193edd4fad6cfec2a0f5de3fff3cd97a5f9c80079
       source:
         file: src/term/core/writers/vale.ts
@@ -406,7 +406,7 @@ docs/src/content/docs/term/set-up/index.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: casing-row-mixed-casing
       claim:
-        lines: 134
+        lines: 138
         integrity: sha256-b82ad3075bd5f1bbb0196f3193edd4fad6cfec2a0f5de3fff3cd97a5f9c80079
       source:
         file: src/term/core/writers/vale.ts
@@ -415,7 +415,7 @@ docs/src/content/docs/term/set-up/index.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: casing-row-file-level
       claim:
-        lines: 134
+        lines: 138
         integrity: sha256-b82ad3075bd5f1bbb0196f3193edd4fad6cfec2a0f5de3fff3cd97a5f9c80079
       source:
         file: src/term/core/writers/vale.ts
@@ -424,7 +424,7 @@ docs/src/content/docs/term/set-up/index.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: acronym-row-built-from
       claim:
-        lines: 138
+        lines: 142
         integrity: sha256-841cbc79a3f0f4293a85a8dc05221f409703f7cc8cd784ab887a8665e5ca78cf
       source:
         file: src/term/core/writers/vale.ts

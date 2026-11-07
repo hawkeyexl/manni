@@ -5,8 +5,11 @@ docs/src/content/docs/lint/get-started/index.mdx:
     - m10
   provenance:
     - generated-by: Claude Opus 5
-      lines: 2-312
-      integrity: sha256-9e70f37598a2c7fb1d304a3a369753639ec6c1ce5311117e63326f1444d4ceb9
+      lines: 2
+      integrity: sha256-c61ca7023b31992c03e88ae251e4dca756c12c2e4bc4b6415c475ad1fd642c70
+    - generated-by: Claude Opus 5
+      lines: 7-315
+      integrity: sha256-e308cba1a83d3728a6ca7f695e7cc34171549061c5021e664bb91d86a5751689
   owner:
     - "@hawkeyexl"
   created: 2026-09-15

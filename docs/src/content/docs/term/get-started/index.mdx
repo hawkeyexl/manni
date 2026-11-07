@@ -1,6 +1,6 @@
 ---
 title: Get started
-description: "Write two term pages, point a guide's concepts: at them, run manni term check, and fix the finding it reports."
+description: "Catch a term a page names that no one defined. Write two term pages, point a guide's concepts: at them, run manni term check, and fix the finding it reports."
 type: tutorial
 id: term-get-started
 keywords:
@@ -28,7 +28,7 @@ sample-questions:
 graph:
   label: Get started
   type: learning
-last-updated: 2026-10-20
+last-updated: 2026-11-06
 tags:
   - tutorial
   - getting-started
@@ -46,6 +46,9 @@ related-pages:
 ---
 
 import { Steps, Tabs, TabItem, Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';
+
+`concepts:` takes any string, so a misspelled or retired term passes schema
+validation and points at nothing.
 
 This page takes a docset from a `concepts:` field that can say anything to one
 whose every value names a defined term. You'll write two term pages, list

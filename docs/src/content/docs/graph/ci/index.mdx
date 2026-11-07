@@ -1,6 +1,6 @@
 ---
 title: Run it in CI
-description: Gate the docset's structure on every pull request with one build step and one check step.
+description: Fail the pull request that closes a broader cycle or strands a link, though every file passes on its own. Gate the docset's structure on every pull request with one build step and one check step.
 type: how-to
 id: graph-ci
 language: en
@@ -12,9 +12,11 @@ concepts:
   - severity
   - focus node
   - coverage
-last-updated: 2026-10-24
+last-updated: 2026-11-06
 ---
 
+Three pages can close a `broader` cycle, and a rename can strand a link, while
+each file passes its own check.
 A pull request that breaks the docset's structure should be red before review.
 Two commands do it, over the same collection the metadata gate already uses.
 There is no second tool to install and no second config to keep.

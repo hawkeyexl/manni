@@ -5,13 +5,13 @@ docs/src/content/docs/graph/serve/index.mdx:
     - d19
   provenance:
     - generated-by: Claude Opus 5.5
-      lines: 2-23
+      lines: 5-26
       integrity: sha256-5ac615ebd07b47285615d80a8daa2f69ebfcdde46656884a26d190685fbe7d68
     - generated-by: Claude Opus 5.5
-      lines: 28-86
+      lines: 31-89
       integrity: sha256-f9218d9b465e091a3b24ffb2bcb4762de4e98885a9d9c3a64da7569303beb55f
     - generated-by: Claude Opus 5.5
-      lines: 91-177
+      lines: 94-180
       integrity: sha256-48547d25e0ba49ef70421288ac6c387d30e1dfb71e5d773455bee0d93dca39d7
   owner:
     - "@hawkeyexl"

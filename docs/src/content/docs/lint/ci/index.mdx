@@ -1,6 +1,6 @@
 ---
 title: Gate document structure in CI
-description: Run manni lint check on every pull request with inline annotations, wire the 0/1/2 exit codes to the gate, upload SARIF to code scanning, and publish JUnit to the tests tab.
+description: Catch the missing section a reviewer reads past. Run manni lint check on every pull request with inline annotations, wire the 0/1/2 exit codes to the gate, upload SARIF to code scanning, and publish JUnit to the tests tab.
 type: how-to
 id: lint-ci
 language: en
@@ -8,13 +8,16 @@ audiences:
   - ci-engineers
 lifecycle: published
 action: develop
-last-updated: 2026-10-23
+last-updated: 2026-11-06
 verified-by:
   - tool: doc-detective
     check: lint-ci
 ---
 
 import { Steps, Aside, CardGrid, LinkCard } from '@astrojs/starlight/components';
+
+A reviewer reads what a new page says, and a section it leaves out is easy to
+miss. A failing check catches it before merge, with an annotation on the page.
 
 You already run `manni meta validate` over these pages. Structure is the other
 half of the same question. Metadata says what a page *is*, and structure says
