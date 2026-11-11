@@ -131,6 +131,11 @@ Key layers:
     cores and the output formats.
   - `src/tracevals/cli.ts`: thin commander wrapper exported as
     `buildProgram()` and mounted by `src/cli.ts`. No entry point of its own.
+- `src/vector/`: the embedding domain, `manni vector build` and `search`
+  (proposal 0128). `build` runs graph's build and search index in memory,
+  then embeds each language's index into a sidecar beside it. `search` is
+  graph's search core under its vector leg alone. It reads its own `vector:`
+  section, and the codec and embedder stay in `src/graph/`.
 - `src/key/`: the family key's domain, `manni key set` and `manni key rotate`
   (proposal 0045). It owns no cryptography. `rotate` orchestrates meta's and
   cite's re-encryption, and the one ciphertext format lives in

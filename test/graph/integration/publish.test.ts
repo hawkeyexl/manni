@@ -32,10 +32,8 @@ function fixtureFiles(): Record<string, string> {
   return out;
 }
 
-/** Every optional section `graph publish` runs a step for. */
+/** Every optional section of `graph:` that `graph publish` runs a step for. */
 const EVERY_STEP = [
-  "  embed:",
-  "    model: mock",
   "  export:",
   "    iirds:",
   "      title: Example",
@@ -51,13 +49,15 @@ afterEach(() => {
   dirs = [];
 });
 
-function fixture(extra = ""): string {
+/** The fixture, `extra` inserted at the top of its `graph:` section and `top` appended at the top level. */
+function fixture(extra = "", top = ""): string {
   const dir = makeTempRepo({ files: fixtureFiles(), init: false });
   dirs.push(dir);
+  const path = join(dir, "manni.config.yaml");
   if (extra !== "") {
-    const path = join(dir, "manni.config.yaml");
     writeFileSync(path, readFileSync(path, "utf8").replace("graph:\n", `graph:\n${extra}`), "utf8");
   }
+  if (top !== "") writeFileSync(path, `${readFileSync(path, "utf8")}\n${top}`, "utf8");
   return dir;
 }
 
@@ -76,7 +76,7 @@ describe("graph publish", () => {
     expect(steps(report)).toEqual([
       ["build", "ran"],
       ["export:search", "ran"],
-      ["embed", "skipped"],
+      ["vector", "skipped"],
       ["export:jsonld", "ran"],
       ["export:chunks", "ran"],
       ["export:llms", "skipped"],
@@ -84,7 +84,7 @@ describe("graph publish", () => {
     ]);
     const skipped = report.steps.filter((s) => s.status === "skipped");
     expect(skipped.map((s) => s.detail)).toEqual([
-      "no graph.embed section",
+      "no vector section",
       "no graph.export.llms section",
       "no graph.export.iirds section",
     ]);
@@ -97,8 +97,8 @@ describe("graph publish", () => {
     expect(new Set(files).size).toBe(files.length);
   });
 
-  it("puts every artifact in --out, embeds when graph.embed exists, and writes llms.txt and the iiRDS package", async () => {
-    const dir = fixture(EVERY_STEP);
+  it("puts every artifact in --out, builds vectors when vector: exists, and writes llms.txt and the iiRDS package", async () => {
+    const dir = fixture(EVERY_STEP, "vector:\n  model: mock\n");
     const report = await runPublish({ cwd: dir, out: "site/graph", say });
     expect(report.out).toBe("site/graph");
     expect(report.steps.every((s) => s.status === "ran")).toBe(true);
@@ -121,7 +121,7 @@ describe("graph publish", () => {
       ].sort(),
     );
     expect(new Set(report.steps.flatMap((s) => s.files)).size).toBe(written.length);
-    // The rows carry the vectors the embed step wrote beside them.
+    // The rows carry the vectors the vector step wrote beside them.
     const row = JSON.parse(readFileSync(join(out, "chunks.en.jsonl"), "utf8").split("\n")[0] ?? "{}") as ChunkRow;
     expect(Array.isArray(row.vector)).toBe(true);
     expect(existsSync(join(dir, ".manni/graph/graph.ttl"))).toBe(false);
@@ -166,7 +166,7 @@ describe("graph publish", () => {
     const report = await runPublish({ cwd: dir, say });
     const pretty = renderPublish(report, "pretty").split("\n");
     expect(pretty[0]).toMatch(/^build {5}graph\.ttl: 7 pages, \d+ triples$/);
-    expect(pretty).toContain("skipped   embed: no graph.embed section");
+    expect(pretty).toContain("skipped   vector: no vector section");
     expect(pretty).toContain("skipped   iirds: no graph.export.iirds section");
     expect(pretty.at(-1)).toBe(`Published ${String(new Set(report.steps.flatMap((s) => s.files)).size)} files to .manni/graph/.`);
     const json = JSON.parse(renderPublish(report, "json")) as Record<string, unknown>;

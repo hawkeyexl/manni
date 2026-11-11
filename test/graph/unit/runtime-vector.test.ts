@@ -134,7 +134,7 @@ describe("createVectorIndex — standalone search", () => {
 });
 
 describe("searchIndexDigest", () => {
-  it("computes exactly the digest `manni graph embed` records as `source`", async () => {
+  it("computes exactly the digest `manni vector build` records as `source`", async () => {
     // The whole point of exporting this: a browser host that hand-rolled the
     // recipe would get a digest that never matches, turning the staleness
     // check into a permanent refusal. Pinned against the Node recipe in
@@ -168,14 +168,14 @@ describe("check — refuse rather than rank against the wrong vectors", () => {
   it("reports a model mismatch", () => {
     const m = INDEX().check({ model: "other/model" });
     expect(m?.reason).toBe("model");
-    expect(m?.detail).toContain("manni graph embed");
+    expect(m?.detail).toContain("manni vector build");
   });
 
   it("reports a dtype mismatch", () => {
     // Same model at a different quantization is still a different function.
     const m = INDEX().check({ model: "test/model", dtype: "fp32" });
     expect(m?.reason).toBe("dtype");
-    expect(m?.detail).toContain("manni graph embed");
+    expect(m?.detail).toContain("manni vector build");
   });
 
   it("reports a dimension mismatch", () => {

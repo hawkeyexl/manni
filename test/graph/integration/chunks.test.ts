@@ -12,7 +12,7 @@ import { readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { join, relative } from "node:path";
 import { afterEach, beforeAll, describe, expect, it } from "vitest";
 import { runBuild } from "../../../src/graph/commands/build.js";
-import { runEmbed } from "../../../src/graph/commands/embed.js";
+import { runBuild as runVectorBuild } from "../../../src/vector/commands/build.js";
 import { runExport } from "../../../src/graph/commands/export.js";
 import { runDerive, integrityOf } from "../../../src/meta/index.js";
 import { sliceSection } from "../../../src/graph/runtime/resolve.js";
@@ -243,7 +243,7 @@ describe.skipIf(!hasGit)("graph export chunks", () => {
         `1 page differs from ${second.slice(0, 8)}, so their records describe uncommitted text.`,
         "1 page changed since evals.json was written, so their verdicts read stale.",
         "1 page in evals.json is not in the graph, so their verdicts are left out.",
-        "no vector sidecar, so chunks carry no vectors and retrieval is lexical only; configure graph.embed to add them.",
+        "no vector sidecar, so chunks carry no vectors and retrieval is lexical only; add a top-level vector: section to add them.",
       ]),
     );
     expect(result.notices).toEqual([]);
@@ -304,8 +304,7 @@ describe.skipIf(!hasGit)("graph export chunks", () => {
   });
 
   it("attaches each node's vector when a sidecar holds one", async () => {
-    await runExport({ cwd: dir, format: "search" });
-    await runEmbed({ cwd: dir, model: "mock", noCache: true });
+    await runVectorBuild({ cwd: dir, model: "mock", noCache: true });
     const withVectors = await runExport({ cwd: dir, format: "chunks" });
     const manifest = manifestOf(dir);
     const model = manifest.languages.und?.model;

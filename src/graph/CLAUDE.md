@@ -50,6 +50,13 @@ One graph, built from documents, with a deterministic IRI for every node.
 - `src/graph/core/emit.ts`, `emit-jsonld.ts` and `emit-rdfxml.ts` serialize those
   quads. `src/graph/core/search-index.ts` and `vector-index.ts` build the search
   artifacts; `iirds-package.ts` and `zip.ts` build the iiRDS container.
+- **Embeddings are the vector domain's** (proposal 0128). `src/vector/` owns
+  `manni vector build` and `vector search`, the `vector:` config section and
+  the vector cache. It runs `buildGraph` and `writeSearchIndex` from here in
+  memory, so its rows carry this tool's node IRIs. The sidecar codec, the
+  embedder seam (`src/graph/embed/`, the `graph/embed` export) and the
+  runtime's vector index stay here, because the browser bundle pairs them.
+  `graph publish` runs vector's `embedIndex` when a `vector:` section exists.
 - `src/graph/core/git.ts` adds revision history and commit agents.
 
 **The harvest rule is: deeper wins, and the page level is the fallback, per
@@ -173,9 +180,10 @@ language therefore adds two goldens. It also invalidates the document and
 triple counts asserted across the build, query, stats and runtime suites.
 
 All of them regenerate from the built CLI: `manni graph build`, then
-`manni graph export search` for the indexes and the manifest, then
-`manni graph embed --embedding-model mock --no-cache` for the sidecars and the manifest's
-`vectors` blocks. The mock embedder is why the optional
+`manni vector build --embedding-model mock --no-cache` for the indexes, the
+manifest with its `vectors` blocks, and the sidecars. `vector build` runs this
+tool's build and search index in memory, so it writes the bytes
+`manni graph export search` would. The mock embedder is why the optional
 `@huggingface/transformers` peer is not needed to regenerate them. Update a
 golden only deliberately, and read the diff line by line first. Golden
 comparison normalizes the tool version literal, so a release does not invalidate

@@ -43,7 +43,7 @@ export type EmbedRole = "query" | "passage";
 
 /**
  * Models dockg has been tested against. This is the *tested* set, not the
- * permitted set: `embed.model` accepts any id, and an unknown one is used
+ * permitted set: `vector.model` accepts any id, and an unknown one is used
  * as-is with no prefixes.
  */
 /**
