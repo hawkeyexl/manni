@@ -2393,7 +2393,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
     - id: family-file-names-and-family-keys
       claim:
         lines: 2715-2727
-        integrity: sha256-0fc94c1b2bd901aeeb1f5ef8d7d1fd86f2a9794639a1acbe954b87115fd0be0b
+        integrity: sha256-fd727d6cc45659d124aaa5b636968c4c7962a022d57dade6f3aba9157b237e4b
       source:
         file: src/shared/config-file.ts
         lines: 53-56
@@ -2434,7 +2434,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: 99ba4b5a814756e6128e04857976d798ac6e3560
     - id: explicit-config-must-exist
       claim:
-        integrity: sha256-ebd441e04d5ac087a565cf686a0b1820cb5b54ec7d1b49b8a5a21b43b90a9472
+        integrity: sha256-3255d33cb960a392462ef4289ed096fe32a35f16094e41bfc7a47c33bdd19f8d
       source:
         file: src/shared/config-file.ts
         lines: 380-394
