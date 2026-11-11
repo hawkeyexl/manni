@@ -1,0 +1,6 @@
+embed 2 606ms
+build 0 201853ms
+search 0 1615ms
+timing1 search 1536ms
+timing2 search 1790ms
+timing3 search 1592ms

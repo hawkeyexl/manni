@@ -41,6 +41,7 @@ import { beats as flareTargetsBeats, totalFrames as flareTargetsTotalFrames, TYP
 import { beats as flareResourcesBeats, totalFrames as flareResourcesTotalFrames, TYPING_MS as flareResourcesTypingMs } from "./flare-resources/beats";
 import { beats as docevalsFormatsBeats, totalFrames as docevalsFormatsTotalFrames, TYPING_MS as docevalsFormatsTypingMs } from "./docevals-formats/beats";
 import { beats as flareSiteBeats, totalFrames as flareSiteTotalFrames, TYPING_MS as flareSiteTypingMs } from "./flare-site/beats";
+import { beats as vectorBeats, totalFrames as vectorTotalFrames, TYPING_MS as vectorTypingMs } from "./vector/beats";
 
 /** sidecar-url-1x1: 23 px / 75 columns, derived in media/sidecar-url-1x1.script.md. */
 const DemoUrl: React.FC = () => <DemoView beats={urlBeats} fontPx={23} linePx={32} cols={75} />;
@@ -76,6 +77,16 @@ const DemoLint: React.FC = () => <DemoView beats={lintBeats} fontPx={22} linePx=
  * (media/graph/capture/cols.mjs). Ligatures off: the frontmatter fences are `---`.
  */
 const DemoGraph: React.FC = () => <DemoView beats={graphBeats} fontPx={22} linePx={31} cols={78} typingMs={graphTypingMs} ligatures={false} />;
+
+/**
+ * vector-1x1: 30 px / 57 columns, derived in media/vector-1x1.script.md
+ * (media/capture-vector/cols.mjs). The search beats carry their own 26 px / 66
+ * columns and hang under the score gutter. IRIs break after a `/`, never mid-token.
+ * Ligatures off: `->` and `--` are typed characters.
+ */
+const DemoVector: React.FC = () => (
+  <DemoView beats={vectorBeats} fontPx={30} linePx={42} cols={57} typingMs={vectorTypingMs} ligatures={false} breakAfter="/" />
+);
 
 /** tracevals-1x1: 26 px / 66 columns, derived in media/tracevals-1x1.script.md (media/capture-tracevals/cols.mjs). */
 const DemoTracevals: React.FC = () => <DemoView beats={tracevalsBeats} fontPx={26} linePx={36} cols={66} typingMs={tracevalsTypingMs} />;
@@ -605,6 +616,14 @@ export const Root: React.FC = () => (
       height={1080}
       fps={FPS}
       durationInFrames={flareSiteTotalFrames}
+    />
+    <Composition
+      id="VectorDemo"
+      component={DemoVector}
+      width={1080}
+      height={1080}
+      fps={FPS}
+      durationInFrames={vectorTotalFrames}
     />
   </>
 );

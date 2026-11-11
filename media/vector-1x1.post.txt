@@ -1,0 +1,18 @@
+Semantic search over your docs used to start with learning a knowledge graph.
+
+In manni, vectors were the fourth artifact of the graph tool. You built the graph, exported a search index, then embedded it. Three commands, each a graph verb.
+
+manni vector makes it one step. Two commands, build and search.
+
+  manni vector build --collection site
+  manni vector search "pin a sentence to its source"
+
+Build reads the pages and writes the index and vectors. No graph file. On our own docs site that is 268 pages and 3174 vectors, computed locally with an open embedding model.
+
+The search found the concept and the page on pinning a fact to the sentence it is about. The query never said "fact".
+
+Every hit keeps its graph node IRI. So the graph, its chunks and the vectors still join on one id, and the graph is there when you want it.
+
+The video is real output, with the build's 3m22s wait shortened and the real time on screen.
+
+#DocsAsCode #TechnicalWriting #SemanticSearch #RAG #DevTools
