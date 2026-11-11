@@ -17,8 +17,8 @@ docs/src/content/docs/meta/reference/glossary/vector-sidecar.mdx:
       lines: 2
       integrity: sha256-b067a19351b83031d15ae5632b05f78f96ab7ee153524d42a63ad1960ffc1448
     - generated-by: Claude Opus 5.5
-      lines: 7
-      integrity: sha256-91ebdd1c409cda817e688a239c47b5e065e2aa39525cb5af8c8992af53d71926
+      lines: 7-8
+      integrity: sha256-d61584174f1029dcba9205999bd6e32215aa9a5381f7986080ee7fcffe452e42
   owner:
     - "@hawkeyexl"
   created: 2026-10-04

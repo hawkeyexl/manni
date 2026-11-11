@@ -1,0 +1,19 @@
+docs/src/content/docs/vector/index.mdx:
+  personas: ["devin", "maya"]
+  journeys: ["d13", "m18", "m29"]
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: "src/vector/"
+  eval-suite: vector
+  evals:
+    - id: what-it-does
+      assertion: "A reader can say what manni vector build writes, where it writes it, and why its rows use graph node IRIs."
+      type: capability
+      grader: ai
+  provenance:
+    - generated-by: Claude Opus 5.5
+      lines: 2-134
+      integrity: sha256-68851d3f4f032d353df14beb19b31c4b976ec72ed5fd6e4afff482250d3b3d03
+  owner:
+    - "@hawkeyexl"

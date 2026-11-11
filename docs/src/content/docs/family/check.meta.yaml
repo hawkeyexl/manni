@@ -50,67 +50,73 @@ docs/src/content/docs/family/check.mdx:
       lines: 37-38
       integrity: sha256-ee0aa16c702822d5fdd66acecb5c35b86d7a4c0df829cbc752de86987cf64260
     - generated-by: Claude Opus 5.5
-      lines: 39-40
-      integrity: sha256-85a03f1d159ceac45a97ab08c731a9c5de24fb1d22a395cf85bb39a4071448a3
+      lines: 39-42
+      integrity: sha256-04b41be3bbb2941ce237692d2c942248f3d1d804f4257014b136cf518baedac0
     - generated-by: Claude Sonnet 5.5
-      lines: 41-46
+      lines: 43-48
       integrity: sha256-ae884ef6fc1b031da99860e121aa5a6ad6e051735563a6fb761b792215701e0a
     - generated-by: Claude Opus 5.5
-      lines: 47-48
+      lines: 49-50
       integrity: sha256-8dd1d7aca605798b263ed3f68ff1eb83187262a147d6f5f7a6809844e478cabe
     - generated-by: Claude Sonnet 5.5
-      lines: 50-62
+      lines: 52-64
       integrity: sha256-d5bfe0d59c2bb7a91fc420cb3c1047deb91174437fb55eb8dc77e8f63df5a148
     - generated-by: Claude Sonnet 5.5
-      lines: 64
+      lines: 66
       integrity: sha256-f0c1340a7bcdcfb4b8c0dc80e4eeb93831619d9d0e7175cb6b17dc698c6e54fe
     - generated-by: Claude Opus 5.5
-      lines: 65
+      lines: 67
       integrity: sha256-086ce836b3579cd79c6fc9d36da43714ed995fc38e7f6fe99126479e9af542d5
     - generated-by: Claude Sonnet 5.5
-      lines: 67-82
+      lines: 69-84
       integrity: sha256-f8080bce531f019c80d8bf313e83e0f390f1f574e65bb1ba5642d1f154971ec8
     - generated-by: Claude Sonnet 5.5
-      lines: 92-132
+      lines: 94-134
       integrity: sha256-b1b8c88f7b07cd245fe6cd4394afbf72acdc7086e44b097b344b6a436048037d
     - generated-by: Claude Opus 5.5
-      lines: 134-136
+      lines: 136-138
       integrity: sha256-c6ab45496386cfb41d15cf9e57a1efdd56f4ca75dd49dc49affa31b89e5e4419
     - generated-by: Claude Sonnet 5.5
-      lines: 138
+      lines: 140
       integrity: sha256-96d6bd0d043d8b57fb8a0fea8f860f2ee20895d964c49c7dfee715bfe09e1821
     - generated-by: Claude Sonnet 5.5
-      lines: 143-152
+      lines: 145-154
       integrity: sha256-4fa1fa960a09bc5381c84fe9281d17bcbf0662e3f0add9cf36370c73ee5dc338
     - generated-by: Claude Sonnet 5.5
-      lines: 163-166
+      lines: 165-168
       integrity: sha256-0a4b586336e3db7c14d1420c7c107cde25b93ff5b876372341ea1f6fcceabbe9
     - generated-by: Claude Sonnet 5.5
-      lines: 168-191
+      lines: 170-193
       integrity: sha256-66d55893f3aad86ed64bf9613829469f2ab5bb395bbd497f4db74e9e89dc6e0c
     - generated-by: Claude Opus 5.5
-      lines: 193-197
+      lines: 195-199
       integrity: sha256-3b436da20455e81b331b816b06aa17feeebef8d437a05fa08bd2a21735dbf8f7
     - generated-by: Claude Opus 5.5
-      lines: 201
+      lines: 203
       integrity: sha256-f9d150a75b81bb4029648130a347f1d7372c4aff37c7a85a6171d88060cd4c30
     - generated-by: Claude Opus 5.5
-      lines: 219-221
+      lines: 221-223
       integrity: sha256-531e51133261540f89f643bcdcf81d4fbf7fe167d91f107789324f22f0a82114
     - generated-by: Claude Opus 5.5
-      lines: 228-285
+      lines: 230-287
       integrity: sha256-4dada64290185df01e85ba58ebdae83dbe87f7a0c8a27cde088620278f09fd0f
     - generated-by: Claude Sonnet 5.5
-      lines: 287-308
+      lines: 289-310
       integrity: sha256-29867978854d5ea4918cd7febc7c49b9e295a9b14ec02b8de679e0a445471430
     - generated-by: Claude Sonnet 5.5
-      lines: 314-325
-      integrity: sha256-4af35e73d4035d91ee25b60960e5cba1e60d14e874b1b2b08a81bf91600baf6a
+      lines: 316-324
+      integrity: sha256-80f611a6960c638fdf5f7acc2ae88ea1f8fb2bdb34faa6970298bc39dd3ada43
     - generated-by: Claude Opus 5.5
-      lines: 326-331
+      lines: 326-328
+      integrity: sha256-35a306e7987cf0343de37c41a2f09b918c5e59abcda938d88603146b9b09c6c1
+    - generated-by: Claude Sonnet 5.5
+      lines: 330-331
+      integrity: sha256-faa9fd4dd9cdadee941fb668b45f2b5c59b36dd9774b4753adf861a44f44d23e
+    - generated-by: Claude Opus 5.5
+      lines: 332-337
       integrity: sha256-bb8f7a6406de70398d252a02935c26f09739b853213b07e5e4e5af7e0189158c
     - generated-by: Claude Sonnet 5.5
-      lines: 333-349
+      lines: 339-355
       integrity: sha256-f14b8533b400cc54c454f8348c1096d3d39b693b0fcf61e9e4a24c59a1543e9c
   owner:
     - "@hawkeyexl"

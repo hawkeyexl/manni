@@ -561,6 +561,22 @@ export default defineConfig({
             },
           ],
         },
+        // `vector` builds and searches embeddings of the pages, keyed by graph
+        // node IRIs (proposal 0128). Two verbs, so an overview and a
+        // reference shelf, the same shape as `site`.
+        {
+          label: "vector",
+          collapsed: true,
+          badge: BETA,
+          items: [
+            { label: "Overview", link: "/vector/" },
+            {
+              label: "Reference",
+              collapsed: true,
+              items: [{ autogenerate: { directory: "vector/reference" } }],
+            },
+          ],
+        },
         // `family` is not a domain. It documents the two verbs the umbrella
         // carries, `manni check` and `manni status`, and the Claude Code
         // plugin that runs them (proposal 0078). It also holds two walks

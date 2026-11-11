@@ -1,0 +1,332 @@
+---
+title: CLI reference
+description: Every manni vector command, argument, and flag, with each message and the exit code it produces.
+id: "vector-reference-cli"
+type: "reference"
+keywords: ["vector flags", "vector exit codes", "--embedding-model"]
+language: en
+audiences: ["ci-engineers", "docs-engineers"]
+intent: "Look up every argument, flag, message and exit code of manni vector build and manni vector search."
+lifecycle: published
+applies-to: ["domain:vector"]
+risks: ["idempotent"]
+sample-questions: ["What flags does manni vector build accept?", "Where does manni vector build write by default?", "Why did manni vector search exit 2?"]
+graph: { label: "CLI reference", type: reference }
+tags:
+  - cli
+  - reference
+  - vector
+action: remember
+prerequisites:
+  - /manni/vector/
+related-pages:
+  - vector
+  - vector-reference-configuration
+  - graph-reference-cli
+last-updated: 2026-11-11
+---
+
+{/* The command, argument, and option tables on this page are drift-checked
+    against src/vector/cli.ts by scripts/check-cli-reference.mjs (npm run
+    docs:check-cli), enforced in CI. Keep flags, arguments, and defaults in
+    sync with the code; descriptions are free-form. */}
+
+Reach for this page when a CI step needs an exact flag, or when a run exits
+with a code you did not expect.
+
+Two commands under one domain. Every flag below is verified against
+`src/vector/cli.ts`.
+
+```sh
+manni vector <command> [command options] [arguments]
+```
+
+There is no default subcommand. `manni vector docs/` is a usage error, because a
+domain owns verbs and `build` is the verb.
+
+## Common conventions
+
+Both commands work in one directory, the one that holds
+[`graph.out`](/manni/graph/reference/configuration/). With no config, that is
+`graph/`. `build -o` and `search -i` name another directory for one run.
+
+The model comes from the [`vector:` section](/manni/vector/reference/configuration/)
+of `manni.config.yaml`, and `--embedding-model` overrides it for a build. A
+search embeds the query with the model each sidecar names, so the two always
+match.
+
+Flags override config; they do not bypass it. An unset flag falls through to
+the resolved value, so a config file and the command line reach the same code.
+
+One separator per list. A positional variadic is space-separated because argv
+is. `--ext` is written `<list>`, comma-separated and given once.
+`--collection` and `--exclude` are repeatable and never split on commas.
+
+## Global options
+
+Global options are accepted before the subcommand.
+
+| Option | Description |
+|---|---|
+| `-V, --version` | Print the manni version and exit. |
+| `-h, --help` | Print help for the program or a subcommand. |
+
+## `vector`
+
+The vector tool. Every command on this page lives under it. `vector` accepts
+its own `-V, --version`, which reports the manni version, and `-h, --help`.
+
+```sh
+manni vector <command> [command options] [arguments]
+```
+
+## `vector build`
+
+Reads the pages and writes the search index, the localization manifest and one
+vector sidecar per language. It writes no `graph.ttl`.
+
+```sh
+manni vector build [paths...] [options]
+```
+
+```console
+$ manni vector build -c test/graph/fixtures/dd/docs.config.yaml --embedding-model mock --no-cache
+Indexed 3 pages: 14 entries in 1 language
+Wrote 1 sidecar, recorded in .tmp/dd/localizations.json
+  und: 14 vectors (8-d, mock) -> .tmp/dd/vectors.und.bin
+  14 embedded, 0 from cache
+```
+
+It reads pages as [`graph build`](/manni/graph/reference/cli/#graph-build)
+does, and runs that build in memory. The same pages, `graph:` settings and
+[`baseIri`](/manni/meta/reference/configuration/#base-iri) give the same node
+IRIs. With no positional paths, it reads every collection the config declares,
+or the ones `--collection` names.
+
+A path in the report is relative when it is inside the working directory, and
+absolute otherwise. A path in an error message is always absolute.
+
+Any model but `mock` needs the optional `@huggingface/transformers` package.
+The first run with a model downloads its weights. Each computed vector is
+cached in [`vector.cacheDir`](/manni/vector/reference/configuration/), keyed on
+the text, the model and the quantization.
+
+Warnings go to stderr, so stdout stays the report. A repository git cannot
+read warns once and builds the rest, as `graph build` does.
+
+### Arguments
+
+| Argument | Description |
+|---|---|
+| `[paths...]` | Files, directories, or globs to build from, relative to the working directory. `-` reads stdin as well. Optional; without them, the configured collections. |
+
+### Options
+
+| Option | Argument | Default | Description |
+|---|---|---|---|
+| `--collection` | `<name>` | every collection | Read only this configured collection. Repeatable. It cannot be combined with positional paths. |
+| `--exclude` | `<glob>` | n/a | Glob to exclude. Repeatable. |
+| `--as` | `<format>` | by extension | Parse every input as `asciidoc`, `html`, `markdown`, `mdx`, `rst` or `xml`. Required with `-`. |
+| `--ext` | `<list>` | `.md,.markdown,.mdx,.html,.htm,.flsnp,.adoc,.asciidoc,.rst,.dita,.ditamap,.fltoc,.flbrs` | Extensions for directory walks and globs, comma-separated. |
+| `--allow-empty` | n/a | off | Zero matched files writes an empty manifest and exits 0. |
+| `-c, --config` | `<path>` | discovered | Path to `manni.config.yaml`. |
+| `--no-config` | n/a | off | Ignore any discovered config file. |
+| `--no-authoring` | n/a | config `graph.authoring`, else on | Leave out author-facing content: strategy records, and every value a page's schemas mark `x-manni-location: external`. |
+| `-o, --out` | `<dir>` | the directory of `graph.out` | The directory for every file. It is created if it does not exist. |
+| `--embedding-model` | `<id>` | config `vector.model` | Embedding model id. Any id is accepted. `mock` embeds offline, from a hash of the text. |
+| `--dtype` | `<dtype>` | config `vector.dtype`, else `q8` | Weight quantization. |
+| `--no-cache` | n/a | off | Ignore the vector cache for this run. |
+| `-f, --format` | `<pretty\|json>` | `pretty` | Output format. |
+
+### Output
+
+With `-f json` it prints the report:
+
+```json
+{
+  "manifestPath": ".tmp/dd/localizations.json",
+  "documents": 3,
+  "entries": 14,
+  "languages": [
+    {
+      "language": "und",
+      "searchPath": ".tmp/dd/search.und.json",
+      "entries": 14,
+      "outPath": ".tmp/dd/vectors.und.bin",
+      "model": "mock",
+      "dims": 8,
+      "embedded": 14,
+      "cached": 0,
+      "total": 14
+    }
+  ],
+  "embedded": 14,
+  "cached": 0,
+  "total": 14
+}
+```
+
+`embedded` counts the vectors computed on this run, and `cached` the ones read
+from the cache. Each language carries its own counts, and the top level sums
+them.
+
+### From the minimum to every option
+
+```sh
+# Every collection, every default.
+manni vector build
+
+# One collection.
+manni vector build --collection site
+
+# One directory, labelled from the working directory.
+manni vector build docs/src/content/docs/cite
+
+# Offline and scriptable.
+manni vector build --collection site --embedding-model mock --no-cache -f json
+
+# Every option at once. Stdin joins the named paths.
+cat draft.md | manni vector build docs/src/content/docs - --as markdown --exclude "**/proposals/**" --ext md,mdx --no-authoring --embedding-model Xenova/gte-small --dtype fp32 --no-cache -o /tmp/vectors -c manni.config.yaml -f pretty
+```
+
+### Usage errors
+
+Each is **exit 2**, on stderr.
+
+| Case | Message |
+|---|---|
+| No paths and no collections | `` manni: No files to build. Pass paths/globs, or declare a collection under `collections:` in manni.config.yaml. `` |
+| Paths that match nothing | `manni: No input files matched: nothing (cwd: /repo). Fix the globs, or pass --allow-empty if matching nothing is expected.` |
+| `-` without `--as` | `` manni: Reading from stdin (`-`) requires --as <format> to choose an extractor. `` |
+| `--collection` with paths | `manni: --collection selects a configured collection; it cannot be combined with paths.` |
+| An unknown `--as` | `manni: Unknown format "foo". Known formats: asciidoc, html, markdown, mdx, rst, xml.` |
+| No `@huggingface/transformers` | `manni: Local embeddings need @huggingface/transformers, which is an optional peer dependency.`, then the install command. |
+| A model that does not load | `manni: Failed to load embedding model <id>: <reason>` |
+| A `vector:` key unknown or mistyped | `manni: Invalid config in manni.config.yaml:`, then one line per error, such as `/vector: unknown key "modle"`. |
+| An unknown flag | `error: unknown option '--model'`, then `(add --help for usage)`. |
+
+## `vector search`
+
+Ranks one language's nodes by meaning alone. It reads the manifest, the
+language's search index and its sidecar, and embeds the query with the model
+the sidecar names.
+
+```sh
+manni vector search <query> [options]
+```
+
+```console
+$ manni vector search "install the sdk" -c test/graph/fixtures/dd/docs.config.yaml --limit 3
+0.6653  https://example.com/dd/doc/docs/getting-started.md#getting-started [graph:Section] — Getting started
+0.4490  https://example.com/dd/doc/docs/configuration.md#advanced [graph:Section] — Advanced
+0.3089  https://example.com/dd/doc/docs/getting-started.md#install-the-sdk [graph:Section] — Install the SDK
+
+3 results (vector)
+```
+
+Each line is a score, a node IRI, its type and its title. For lexical and
+vector ranking together, run
+[`manni graph search`](/manni/graph/reference/cli/#graph-search) over the same
+directory.
+
+### Arguments
+
+| Argument | Description |
+|---|---|
+| `<query>` | The text to rank nodes against. Required. |
+
+### Options
+
+| Option | Argument | Default | Description |
+|---|---|---|---|
+| `-i, --index` | `<dir>` | the directory of `graph.out` | Directory holding the indexes, the manifest and the sidecars. |
+| `--lang` | `<tag>` | the only localization | Which localization to search, matched in any case. Required when the corpus has more than one. |
+| `--limit` | `<n>` | 10 | Maximum results. A whole number, at least 1. |
+| `-c, --config` | `<path>` | discovered | Path to `manni.config.yaml`. |
+| `--no-config` | n/a | off | Ignore any discovered config file. |
+| `-f, --format` | `<pretty\|json>` | `pretty` | Output format. |
+
+### Output
+
+With `-f json` it prints the report `graph search` prints. `mode` is always
+`"vector"`, and `lexical` is always empty:
+
+```json
+{
+  "query": "install the sdk",
+  "mode": "vector",
+  "results": [
+    {
+      "iri": "https://example.com/dd/doc/docs/getting-started.md#getting-started",
+      "score": 0.6652934291239052,
+      "via": "vector",
+      "type": "graph:Section",
+      "title": "Getting started"
+    }
+  ],
+  "lexical": [],
+  "vector": [ "…the same hits…" ],
+  "trace": { "entry": [ "…" ], "hops": [], "exclusions": [], "resolutions": [] }
+}
+```
+
+### From the minimum to every option
+
+```sh
+# Ten results, the only language.
+manni vector search "pin a sentence to its source"
+
+# One language of several.
+manni vector search "Zitat prüfen" --lang de --limit 5
+
+# Scriptable.
+manni vector search "pin a sentence" -f json
+
+# Every option at once.
+manni vector search "pin a sentence" -i /tmp/vectors --lang en --limit 3 -c manni.config.yaml -f pretty
+```
+
+### Usage errors
+
+Each is **exit 2**, on stderr.
+
+| Case | Message |
+|---|---|
+| Nothing built | `` manni: Localization manifest not found: /repo/graph/localizations.json — run `manni vector build` first. `` |
+| An index without vectors, written by `graph export search` alone | `` manni: Vector index not found: no sidecar recorded for "en" — run `manni vector build` first. `` |
+| The pages changed after the vectors were built | `` manni: Vector index was built from a different search index — the corpus changed. Re-run `manni vector build`. `` |
+| Several localizations, no `--lang` | `manni: This corpus has more than one localization (de, en) — pass --lang to choose one.` |
+| A `--lang` the corpus lacks | `manni: No index for language "fr" — this corpus has de, en.` |
+| A `--limit` below 1 | `manni: --limit must be >= 1, got 0.` |
+| An unknown `--format` | `manni: Unknown --format "xml". Use pretty \| json.` |
+
+## Exit codes
+
+| Code | Meaning |
+|---|---|
+| `0` | The build wrote its files, or the search ranked. A warning is still `0`. |
+| `2` | Operational or usage error. No input files matched, a bad config, an unknown flag value, a model that does not load, or nothing to search. |
+
+Neither command has findings, so neither exits `1`.
+
+{/* Verified by Doc Detective in docs-as-tests, against test/graph/fixtures/dd/
+    with the offline mock model. The steps write to .tmp/dd-vector so they
+    never add sidecars beside the graph pages' own fixture output. */}
+
+{/* step {"description":"The CLI lists both commands.","runShell":{"command":"manni vector --help","exitCodes":[0],"stdio":"/build[\\s\\S]*search/"}} */}
+
+{/* step {"description":"There is no default subcommand: the domain owns verbs.","runShell":{"command":"manni vector test/graph/fixtures/dd/docs","exitCodes":[2]}} */}
+
+{/* step {"description":"Searching before anything is built names the command that builds it.","runShell":{"command":"manni vector search installation -c test/graph/fixtures/dd/docs.config.yaml -i .tmp/dd-vector-none","exitCodes":[2],"stdio":"run `manni vector build` first."}} */}
+
+{/* step {"description":"build writes the index and its sidecars with the offline model.","runShell":{"command":"manni vector build -c test/graph/fixtures/dd/docs.config.yaml --embedding-model mock --no-cache -o .tmp/dd-vector","exitCodes":[0],"stdio":"/Wrote 1 sidecar, recorded in /"}} */}
+
+{/* step {"description":"-f json prints the build report.","runShell":{"command":"manni vector build -c test/graph/fixtures/dd/docs.config.yaml --embedding-model mock --no-cache -o .tmp/dd-vector -f json","exitCodes":[0],"stdio":"\"manifestPath\""}} */}
+
+{/* step {"description":"search ranks by the vector leg alone.","runShell":{"command":"manni vector search installation -c test/graph/fixtures/dd/docs.config.yaml -i .tmp/dd-vector --limit 2","exitCodes":[0],"stdio":"2 results (vector)"}} */}
+
+{/* step {"description":"--collection cannot be combined with positional paths.","runShell":{"command":"manni vector build -c test/graph/fixtures/dd/docs.config.yaml --collection dd test/graph/fixtures/dd/docs","exitCodes":[2],"stdio":"cannot be combined with paths"}} */}
+
+{/* step {"description":"--model is not a vector flag.","runShell":{"command":"manni vector build --model gte","exitCodes":[2],"stdio":"unknown option '--model'"}} */}
+
+{/* step {"description":"An unknown --format is refused while the options are parsed.","runShell":{"command":"manni vector search installation -c test/graph/fixtures/dd/docs.config.yaml -i .tmp/dd-vector -f xml","exitCodes":[2],"stdio":"Unknown --format \"xml\". Use pretty | json."}} */}

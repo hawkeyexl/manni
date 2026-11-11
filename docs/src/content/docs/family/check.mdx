@@ -15,7 +15,7 @@ prerequisites: ["meta-reference-configuration"]
 next-steps: ["family-claude-code", "family-reference-cli"]
 sample-questions: ["How do I run every manni check in one CI step?", "What does a skipped line in the manni check report mean?", "Why did manni check skip meta in my repository?"]
 graph: { label: "Gate every check a repo has set up", type: task }
-last-updated: 2026-10-24
+last-updated: 2026-11-11
 tags:
   - ci-cd
   - cli
@@ -65,6 +65,8 @@ a11y       not checked   needs a running site and a browser
                          Run manni site preview, then manni a11y check.
 test       not checked   runs the pages' shell steps and synthetic users
                          Run manni test procedures or manni test tasks.
+vector     not checked   downloads and runs an embedding model
+                         Run manni vector build, or add a vector: section so manni graph publish builds it.
 tracevals  not checked   judges recorded sessions with a model
                          Run manni tracevals run over sessions, or add tracevals.runtime to judge each turn.
 # exit 0
@@ -349,6 +351,10 @@ It checks the named pages, or every page with citations on a bare run.
 
 `manni check` never runs `test` either. Doc Detective runs the pages' shell steps and synthetic users, and
 `check` also runs from Claude Code hooks. Run [`manni test procedures`](/manni/test/) as its own step.
+
+`manni check` never runs `vector` either. A build downloads and runs an embedding model, so run
+[`manni vector build`](/manni/vector/) as its own step. A `vector:` section makes `manni graph publish`
+run it instead.
 
 `tracevals` needs recorded sessions and a model, so a bare `manni check` does not run it either.
 Run `manni tracevals run` over recorded sessions as its own step. Inside a Claude Code session the
