@@ -4,7 +4,7 @@
  * and the two graph surfaces the domain replaced.
  */
 import { spawnSync } from "node:child_process";
-import { cpSync, existsSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdtempSync, readFileSync, realpathSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
@@ -177,7 +177,7 @@ describe("vector search ladder", () => {
     const r = manni(["vector", "search", "x"], bare);
     expect(r.status).toBe(2);
     expect(r.stderr).toBe(
-      `manni: Localization manifest not found: ${join(bare, "graph", "localizations.json")} — run \`manni vector build\` first.\n`,
+      `manni: Localization manifest not found: ${join(realpathSync(bare), "graph", "localizations.json")} — run \`manni vector build\` first.\n`,
     );
   });
 
