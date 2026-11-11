@@ -23,8 +23,9 @@ const fixture = join(root, "test", "graph", "fixtures", "sample-questions");
 function run(
   args: string[],
   cwd: string,
+  domain = "graph",
 ): { stdout: string; stderr: string; status: number } {
-  const r = spawnSync(process.execPath, [cli, "graph", ...args], {
+  const r = spawnSync(process.execPath, [cli, domain, ...args], {
     encoding: "utf8",
     cwd,
   });
@@ -184,10 +185,10 @@ describe("sample questions", () => {
 
   it("uses the vector sidecar beside the graph, and says when it is stale", () => {
     const hybrid = built();
-    expect(run(["export", "search"], hybrid).status).toBe(0);
     const embed = run(
-      ["embed", "--embedding-model", "mock", "--no-cache"],
+      ["build", "--embedding-model", "mock", "--no-cache"],
       hybrid,
+      "vector",
     );
     expect(embed.status, embed.stdout + embed.stderr).toBe(0);
     const fresh = run(["check"], hybrid);

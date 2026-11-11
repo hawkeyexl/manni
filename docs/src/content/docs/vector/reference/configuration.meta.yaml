@@ -1,0 +1,20 @@
+docs/src/content/docs/vector/reference/configuration.mdx:
+  personas: ["devin", "maya"]
+  journeys: ["d13"]
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: "src/vector/core/config-schema.json"
+  eval-suite: vector
+  evals:
+    - id: migrate-graph-embed
+      assertion: "A reader can move a graph.embed section to a top-level vector: section, and say what happens to its out key."
+      type: capability
+      grader: ai
+  provenance:
+    - generated-by: Claude Opus 5.5
+      lines: 2-131
+      integrity: sha256-4c68539a74517b517e086907e9ebfa1b77bbba1a9b0285dd24a8d220e37fb733
+  owner:
+    - "@hawkeyexl"
+  created: 2026-11-11

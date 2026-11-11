@@ -1,14 +1,14 @@
 /**
  * The retrieval fixture (`test/graph/fixtures/retrieve/`), copied outside git
- * and published the way `graph publish` does: build, the search indexes, mock
- * vectors, the chunks and `graph.jsonld`, all in `.manni/graph/`.
+ * and published the way `graph publish` does: build, the search indexes and mock
+ * vectors (through `vector build`), the chunks and `graph.jsonld`, all in `.manni/graph/`.
  *
  * Not collected as a suite: vitest's `include` is `test/**\/*.test.ts`.
  */
 import { readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { join, relative } from "node:path";
 import { runBuild } from "../../../src/graph/commands/build.js";
-import { runEmbed } from "../../../src/graph/commands/embed.js";
+import { runBuild as runVectorBuild } from "../../../src/vector/commands/build.js";
 import { runExport } from "../../../src/graph/commands/export.js";
 import {
   emitLocalizations,
@@ -45,8 +45,7 @@ function fixtureFiles(root = FIXTURE): Record<string, string> {
 export async function retrieveArtifact(): Promise<string> {
   const dir = makeTempRepo({ files: fixtureFiles(), init: false });
   await runBuild({ cwd: dir });
-  await runExport({ cwd: dir, format: "search" });
-  await runEmbed({ cwd: dir, model: "mock", noCache: true });
+  await runVectorBuild({ cwd: dir, model: "mock", noCache: true });
   await runExport({ cwd: dir, format: "chunks" });
   await runExport({ cwd: dir, format: "jsonld" });
   return dir;

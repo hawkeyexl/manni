@@ -162,7 +162,7 @@ async function openRetriever(
     vectors = createVectorIndex(readFileSync(path));
   } catch (e) {
     if (e instanceof VectorIndexError) {
-      throw new GraphError(`${e.message} (${path}) — re-run \`manni graph embed\`.`);
+      throw new GraphError(`${e.message} (${path}) — re-run \`manni vector build\`.`);
     }
     throw e;
   }
@@ -186,7 +186,7 @@ async function rankNodes(question: string, r: Retriever): Promise<string[]> {
     limit: r.lexical.size(),
   }).catch((e: unknown) => {
     if (e instanceof VectorMismatchError) {
-      throw new GraphError(`${e.message} Re-run \`manni graph embed\`.`);
+      throw new GraphError(`${e.message} Re-run \`manni vector build\`.`);
     }
     throw e;
   });

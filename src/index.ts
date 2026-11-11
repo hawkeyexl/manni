@@ -14,6 +14,9 @@ export * as lint from "./lint/index.js";
 // package subpaths: those are the browser build, and reaching them through
 // this entry point would pull the Node half in with them.
 export * as graph from "./graph/index.js";
+// The vector domain (proposal 0128): build and search embeddings keyed by
+// graph node IRIs. `import { vector } from "@hawkeyexl/manni"`.
+export * as vector from "./vector/index.js";
 // The family encryption key's domain (proposal 0045): its command cores and
 // the encryption primitives. `import { key } from "@hawkeyexl/manni"`.
 export * as key from "./key/index.js";

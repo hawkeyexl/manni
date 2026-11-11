@@ -35,7 +35,7 @@ into one directory:
 $ manni graph publish -c test/graph/fixtures/dd/docs.config.yaml
 build     graph.ttl: 3 pages, 137 triples
 export    search.und.json, localizations.json: 14 entries
-skipped   embed: no graph.embed section
+skipped   vector: no vector section
 export    graph.jsonld: 25 nodes
 export    chunks.json, chunks.und.jsonl: 11 chunks, 0 withheld
 skipped   llms: no graph.export.llms section
@@ -43,7 +43,7 @@ skipped   iirds: no graph.export.iirds section
 Published 6 files to .tmp/dd/.
 ```
 
-It builds, then embeds when `graph.embed` is configured. It always exports
+It builds, then adds vectors when a top-level `vector:` section exists. It always exports
 the search index, the linked data and the chunks. It writes `llms.txt` and
 the iiRDS package when their sections exist. A step that is not set up prints
 `skipped` and never fails the run.
@@ -188,35 +188,41 @@ index against it too, and an index edited since the export is exit 2.
 
 ## Semantic search
 
-`manni graph embed` adds a vector sidecar per language, which turns
-`manni graph search` and the browser runtime from lexical matching into hybrid
-retrieval:
+A vector sidecar per language turns `manni graph search` and the browser
+runtime from lexical matching into hybrid retrieval.
+[`manni vector build`](/manni/vector/) writes the sidecars into the same
+directory, with no graph build first:
 
 ```sh
-manni graph export search
-manni graph embed
+manni vector build
 manni graph search "how do I install this"
 ```
 
+`graph publish` runs the same step on every run, once `manni.config.yaml` has a
+top-level `vector:` section. An empty one takes every default:
+
+```yaml
+vector: {}
+```
+
 It needs the optional `@huggingface/transformers` peer, and it runs on your
-machine: no text leaves it. `--embedding-model mock` runs offline and produces
-deterministic fixtures.
+machine: no text leaves it. `vector build --embedding-model mock` runs offline
+and produces deterministic fixtures.
 
 Embed **per language**. An English-only model over a German corpus returns
 confident, meaningless vectors and fails nothing, which is the failure mode
-`embed.byLanguage` exists to prevent:
+`vector.byLanguage` exists to prevent:
 
 ```yaml
-graph:
-  embed:
-    model: onnx-community/granite-embedding-small-english-r2-ONNX
-    byLanguage:
-      de:
-        model: Xenova/bge-small-en-v1.5
+vector:
+  model: onnx-community/granite-embedding-small-english-r2-ONNX
+  byLanguage:
+    de:
+      model: Xenova/multilingual-e5-small
 ```
 
-The [configuration reference](/manni/graph/reference/configuration/#embed) lists
-the tested models with what each costs in size and context.
+The [vector configuration reference](/manni/vector/reference/configuration/#tested-models)
+lists the tested models with what each costs in size and context.
 
 ## Retrieval, in the page
 
@@ -326,7 +332,7 @@ retrieval service outside the team, leaves them out.
 $ manni graph publish --collection site --no-authoring -o .manni/graph/readers
 build     graph.ttl: 262 pages, 20997 triples
 export    search.en.json, localizations.json: 3023 entries
-skipped   embed: no graph.embed section
+skipped   vector: no vector section
 export    graph.jsonld: 3107 nodes
 export    chunks.json, chunks.en.jsonl: 2458 chunks, 0 withheld
 export    llms.txt: 262 pages

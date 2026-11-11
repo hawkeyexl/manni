@@ -58,7 +58,7 @@ export class VectorMismatchError extends Error {
 }
 
 /**
- * The digest `manni graph embed` records as a sidecar's `source`, computed the same
+ * The digest `manni vector build` records as a sidecar's `source`, computed the same
  * way in a browser — SHA-256 over the **raw bytes of `search.json` exactly as
  * fetched**, hex, prefixed `sha256:`.
  *
@@ -141,13 +141,13 @@ export function createVectorIndex(bytes: Uint8Array): VectorIndex {
       if (expected.model !== undefined && expected.model !== header.model) {
         return {
           reason: "model",
-          detail: `Vector index was built with ${header.model}, but the embedder is ${expected.model}. Re-run \`manni graph embed\`.`,
+          detail: `Vector index was built with ${header.model}, but the embedder is ${expected.model}. Re-run \`manni vector build\`.`,
         };
       }
       if (expected.dtype !== undefined && expected.dtype !== header.dtype) {
         return {
           reason: "dtype",
-          detail: `Vector index was built at dtype ${header.dtype}, but the embedder is at ${expected.dtype} — different weights are a different function. Re-run \`manni graph embed\`.`,
+          detail: `Vector index was built at dtype ${header.dtype}, but the embedder is at ${expected.dtype} — different weights are a different function. Re-run \`manni vector build\`.`,
         };
       }
       if (expected.dims !== undefined && expected.dims !== dims) {
@@ -160,7 +160,7 @@ export function createVectorIndex(bytes: Uint8Array): VectorIndex {
         return {
           reason: "stale-source",
           detail:
-            "Vector index was built from a different search index — the corpus changed. Re-run `manni graph embed`.",
+            "Vector index was built from a different search index — the corpus changed. Re-run `manni vector build`.",
         };
       }
       return undefined;

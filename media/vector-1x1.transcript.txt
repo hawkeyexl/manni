@@ -1,0 +1,48 @@
+manni vector, demo video transcript (silent video; text describes what is on screen)
+
+Frame: 1080x1080, 30 fps, 39.9 s. Every terminal line is real output of
+`node dist/cli.js` (typed as manni), run at the root of this repository with its own
+manni.config.yaml and its `site` collection, captured by media/capture-vector/capture.sh.
+The build's wait is shortened in the edit; bash's own `time` output shows the real 3m21.828s.
+
+[0:00-0:09] Title: Vectors used to need a graph (1 / 4)
+$ manni graph embed
+manni: graph embed moved to manni vector build.
+$ echo $?
+2
+Highlighted rows: lines containing "moved to manni vector build"
+Caption: It took three graph commands, build, export search and embed. The last one now says where it went.
+
+[0:09-0:25] Title: Pages to vectors, one step (2 / 4)
+$ time manni vector build --collection site --no-cache -o media/scratch-vector/out
+[201.8 s run; the wait is cut to 2 s]   (on-screen note from the edit, not output)
+Indexed 268 pages: 3174 entries in 1 language
+Wrote 1 sidecar, recorded in media/scratch-vector/out/localizations.json
+  en: 3174 vectors (384-d, onnx-community/granite-embedding-small-english-r2-ONNX) -> media/scratch-vector/out/vectors.en.bin
+  3174 embedded, 0 from cache
+
+real    3m21.828s
+user    0m0.000s
+sys     0m0.015s
+$ ls -1 media/scratch-vector/out
+localizations.json
+search.en.json
+vectors.en.bin
+Highlighted rows: lines containing "3174 embedded, 0 from cache", "3m21.828s"
+Caption: The site's 268 pages become 3174 vectors, every one computed fresh. No graph.ttl is written.
+
+[0:25-0:35] Title: Search by meaning (3 / 4)
+$ manni vector search "pin a sentence to its source" --limit 3 -i media/scratch-vector/out
+0.8817  https://hawkeyexl.github.io/manni/id/concept/pin-a-fact-to-the-sentence-it-is-about [skos:Concept] — Pin a fact to the sentence it is about
+0.8448  https://hawkeyexl.github.io/manni/id/concept/pin [skos:Concept] — pin
+0.8303  https://hawkeyexl.github.io/manni/id/doc/docs/src/content/docs/meta/set-up/inline-statements.mdx [graph:Document] — Pin a fact to the sentence it is about
+
+3 results (vector)
+Highlighted rows: lines containing "Pin a fact to the sentence"
+Caption: The top hits are the concept of pinning a fact to a sentence and the page that teaches it.
+
+[0:35-0:40] Title: Same ids as the graph (4 / 4)
+(The previous screen stays in frame.)
+Highlighted rows: lines containing "https://hawkeyexl.github.io/manni/id/"
+Caption: Every hit is a graph node IRI, so the graph, its chunks and the vectors join on one id.
+

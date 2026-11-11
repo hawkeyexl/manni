@@ -11,7 +11,7 @@ action: remember
 concepts:
   - search index
   - vector sidecar
-last-updated: 2026-11-06
+last-updated: 2026-11-11
 ---
 
 Reach for the library when the graph has to answer inside your own code. A
@@ -59,7 +59,6 @@ directly.
 | `runStats` | Counts, orphans, broken links, hubs, and coverage. |
 | `runSearch` | Rank nodes for a text query, with `renderSearch` for the report. |
 | `runTraverse` | Walk the graph from a node, with `renderTraverse` for the report. |
-| `runEmbed` | Compute vector sidecars, with `renderEmbed` and the lower-level `embedText`. |
 | `runExport` | Reserialize into `jsonld`, `iirds`, or `search`. |
 
 `runBuild` takes a `BuildOptions` and returns a `BuildResult`. Two of their
@@ -74,6 +73,10 @@ fields carry the [content strategy](/manni/strategy/#the-strategy-in-the-graph):
 const readers = await graph.runBuild({ collection: ["site"], authoring: false });
 console.log(readers.strategyRecords); // 0
 ```
+
+The vector sidecars come from the `vector` namespace instead. Its own `runBuild`
+is what `manni vector build` runs, and the
+[package API reference](/manni/meta/reference/api/#sibling-tools) lists it.
 
 `GraphError` is the operational failure the CLI maps to exit `2`. Catch it to tell
 "manni graph could not run" from "the graph did not pass".

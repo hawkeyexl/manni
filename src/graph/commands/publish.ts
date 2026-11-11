@@ -4,10 +4,11 @@
  * embeds or exports on its own.
  *
  * The steps run in the order each one's input exists: `build`, the search
- * index, `embed` (which reads the index), `graph.jsonld`, the chunks (which
- * read the vectors), then `llms.txt` and the iiRDS package. `embed`, `llms`
+ * index, `vector` (which reads the index), `graph.jsonld`, the chunks (which
+ * read the vectors), then `llms.txt` and the iiRDS package. `vector`, `llms`
  * and `iirds` run only when their config section exists, and are otherwise
- * reported as skipped. The first step that fails stops the run with its own
+ * reported as skipped. The vectors come from the vector domain's own core,
+ * over the index this run exported (proposal 0128). The first step that fails stops the run with its own
  * message. It does not gate: `graph check` gates.
  */
 import { basename, dirname, join, relative, resolve } from "node:path";
@@ -16,9 +17,10 @@ import { loadRunConfig } from "../core/config.js";
 import { EVALS_ARE_AUTHOR_FACING } from "../core/graph-output.js";
 import { GraphError } from "../types.js";
 import { runBuild } from "./build.js";
-import { runEmbed } from "./embed.js";
 import { runExport, type ExportFormat, type ExportResult } from "./export.js";
 import { LLMS_FILENAME } from "./llms.js";
+import { embedIndex } from "../../vector/commands/build.js";
+import { loadVectorConfig } from "../../vector/core/config.js";
 
 export interface PublishOptions {
   config?: string;
@@ -37,7 +39,7 @@ export interface PublishOptions {
   say?: (kind: "warning" | "notice", message: string) => void;
 }
 
-export type PublishStepName = "build" | "embed" | `export:${ExportFormat}`;
+export type PublishStepName = "build" | "vector" | `export:${ExportFormat}`;
 
 export interface PublishStep {
   step: PublishStepName;
@@ -62,13 +64,13 @@ export async function runPublish(opts: PublishOptions = {}): Promise<PublishRepo
     ...(opts.noConfig === undefined ? {} : { noConfig: opts.noConfig }),
     cwd,
   };
-  const config = loadRunConfig(
-    {
-      ...(opts.config === undefined ? {} : { configPath: opts.config }),
-      ...(opts.noConfig === undefined ? {} : { noConfig: opts.noConfig }),
-    },
-    cwd,
-  );
+  const configFile = {
+    ...(opts.config === undefined ? {} : { configPath: opts.config }),
+    ...(opts.noConfig === undefined ? {} : { noConfig: opts.noConfig }),
+  };
+  const config = loadRunConfig(configFile, cwd);
+  // Read before the build, so a bad `vector:` section costs no build.
+  const vector = loadVectorConfig(configFile, cwd);
   const authoring = opts.authoring ?? config.authoring;
   if (!authoring && opts.evals !== undefined) throw new GraphError(EVALS_ARE_AUTHOR_FACING);
   const configured = resolve(cwd, config.out);
@@ -126,15 +128,16 @@ export async function runPublish(opts: PublishOptions = {}): Promise<PublishRepo
     };
   });
   await exported("search", (r) => `${names(r)}: ${String(r.nodes)} ${r.nodes === 1 ? "entry" : "entries"}`, outDir);
-  if (config.declared.embed) {
-    await run("embed", async () => {
-      const r = await runEmbed({ ...source, graph, index: outDir, out: outDir });
+  if (vector.declared) {
+    await run("vector", async () => {
+      const r = await embedIndex(outDir, vector, { cwd });
       const models = [...new Set(r.languages.map((l) => l.model))].join(", ");
-      const files = r.languages.map((l) => l.outPath);
-      return { detail: `${files.map(shown).join(", ")}: ${plural(r.total, "vector")}, ${models}`, files, warnings: [] };
+      const files = [...r.languages.map((l) => l.outPath), r.manifestPath];
+      const total = r.languages.reduce((n, l) => n + l.total, 0);
+      return { detail: `${files.map(shown).join(", ")}: ${plural(total, "vector")}, ${models}`, files, warnings: [] };
     });
   } else {
-    skip("embed", "graph.embed");
+    skip("vector", "vector");
   }
   await exported("jsonld", (r) => `${names(r)}: ${plural(r.nodes, "node")}`);
   await exported("chunks", (r) => `${names(r)}: ${plural(r.nodes, "chunk")}, ${String(r.withheld ?? 0)} withheld`, outDir);

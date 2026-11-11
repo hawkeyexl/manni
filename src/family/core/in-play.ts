@@ -17,6 +17,7 @@
  * | tracevals | `tracevals.runtime` exists and `MANNI_TRACEVALS_HOOKS` is 1; it judges the turn a Stop or SubagentStop hook ends |
  * | a11y | never run by `check`: it needs a running site |
  * | test | never run by `check`: it runs the pages' shell steps and synthetic users |
+ * | vector | never run by `check`: it downloads and runs an embedding model |
  *
  * Only members of a declared collection are file-checked. tracevals judges a
  * turn, not files, so it needs no collection.
@@ -116,6 +117,11 @@ export const NOT_CHECKED: ReadonlyArray<readonly [name: string, reason: string, 
   ["a11y", "needs a running site and a browser", "Run manni site preview, then manni a11y check."],
   // Doc Detective runs the shell steps pages carry, so a hook never starts it.
   ["test", "runs the pages' shell steps and synthetic users", "Run manni test procedures or manni test tasks."],
+  [
+    "vector",
+    "downloads and runs an embedding model",
+    "Run manni vector build, or add a vector: section so manni graph publish builds it.",
+  ],
   [
     "tracevals",
     "judges recorded sessions with a model",

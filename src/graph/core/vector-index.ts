@@ -158,7 +158,7 @@ export function decodeVectorIndex(bytes: Uint8Array): VectorIndexDoc {
   const version = view.getUint32(4, true);
   if (version !== FORMAT_VERSION) {
     throw new VectorIndexError(
-      `Unsupported vector index version ${version} (this build reads ${FORMAT_VERSION}) — re-run \`manni graph embed\`.`,
+      `Unsupported vector index version ${version} (this build reads ${FORMAT_VERSION}) — re-run \`manni vector build\`.`,
     );
   }
 

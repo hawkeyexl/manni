@@ -189,7 +189,7 @@ export async function exportChunks(opts: ChunksOptions): Promise<ChunksResult> {
   const vectors = readVectors(opts.outDir);
   if (vectors === undefined) {
     warnings.push(
-      "no vector sidecar, so chunks carry no vectors and retrieval is lexical only; configure graph.embed to add them.",
+      "no vector sidecar, so chunks carry no vectors and retrieval is lexical only; add a top-level vector: section to add them.",
     );
   }
 
@@ -723,7 +723,7 @@ function readEvals(
 
 /**
  * Every node's vector from the sidecars the search manifest names, and each
- * language's model from its own sidecar header, since `graph.embed.byLanguage`
+ * language's model from its own sidecar header, since `vector.byLanguage`
  * can embed each language with a different one. `undefined` when there are none.
  */
 function readVectors(
