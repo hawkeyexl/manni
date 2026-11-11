@@ -1,6 +1,6 @@
 # 0128: the `vector` domain builds and queries embeddings without a graph
 
-- **Status:** Proposed
+- **Status:** Implemented (#291, #292)
 - **Serves:** Three journeys.
   - Devin · D13, "Publish the graph for retrieval". Vectors become one command
     he can run, gate and publish on their own.
