@@ -33,7 +33,7 @@ const OUT = "media/scratch-vector/out";
 exports.beats = [
     {
         title: "Vectors used to need a graph",
-        caption: "It took three graph commands: build, export search, embed. The last one now says where it went.",
+        caption: "It took three graph commands, build, export search and embed. The last one now says where it went.",
         highlight: ["moved to manni vector build"],
         commands: [
             { typed: "manni graph embed", output: captures_json_1.default.embed, latencyFrames: exports.latency.embed, holdFrames: 3.0 * beats_1.FPS },
@@ -57,7 +57,7 @@ exports.beats = [
     },
     {
         title: "Search by meaning",
-        caption: "Top hits: the concept of pinning a fact to a sentence, and the page that teaches it.",
+        caption: "The top hits are the concept of pinning a fact to a sentence and the page that teaches it.",
         highlight: ["Pin a fact to the sentence"],
         // Search hits are long: a 26 px beat keeps each hit's title whole on one row,
         // and continuation rows hang under the score gutter the CLI prints.

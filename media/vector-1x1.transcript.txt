@@ -11,7 +11,7 @@ manni: graph embed moved to manni vector build.
 $ echo $?
 2
 Highlighted rows: lines containing "moved to manni vector build"
-Caption: It took three graph commands: build, export search, embed. The last one now says where it went.
+Caption: It took three graph commands, build, export search and embed. The last one now says where it went.
 
 [0:09-0:25] Title: Pages to vectors, one step (2 / 4)
 $ time manni vector build --collection site --no-cache -o media/scratch-vector/out
@@ -39,7 +39,7 @@ $ manni vector search "pin a sentence to its source" --limit 3 -i media/scratch-
 
 3 results (vector)
 Highlighted rows: lines containing "Pin a fact to the sentence"
-Caption: Top hits: the concept of pinning a fact to a sentence, and the page that teaches it.
+Caption: The top hits are the concept of pinning a fact to a sentence and the page that teaches it.
 
 [0:35-0:40] Title: Same ids as the graph (4 / 4)
 (The previous screen stays in frame.)

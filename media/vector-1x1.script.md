@@ -97,9 +97,9 @@ title and caption.
 
 | # | Title (band) | Terminal | Caption (band) | Time |
 |---|---|---|---|---|
-| 1 | Vectors used to need a graph | `manni graph embed`, `echo $?` | It took three graph commands: build, export search, embed. The last one now says where it went. | 0:00.0-0:09.4 |
+| 1 | Vectors used to need a graph | `manni graph embed`, `echo $?` | It took three graph commands, build, export search and embed. The last one now says where it went. | 0:00.0-0:09.4 |
 | 2 | Pages to vectors, one step | `time manni vector build --collection site --no-cache -o media/scratch-vector/out`, `ls -1 media/scratch-vector/out` | The site's 268 pages become 3174 vectors, every one computed fresh. No graph.ttl is written. | 0:09.4-0:25.2 |
-| 3 | Search by meaning | `manni vector search "pin a sentence to its source" --limit 3 -i media/scratch-vector/out` | Top hits: the concept of pinning a fact to a sentence, and the page that teaches it. | 0:25.2-0:35.4 |
+| 3 | Search by meaning | `manni vector search "pin a sentence to its source" --limit 3 -i media/scratch-vector/out` | The top hits are the concept of pinning a fact to a sentence and the page that teaches it. | 0:25.2-0:35.4 |
 | 4 | Same ids as the graph | (no new command; the same screen, re-captioned) | Every hit is a graph node IRI, so the graph, its chunks and the vectors join on one id. | 0:35.4-0:39.9 |
 
 Beat 1 highlights the refusal. Beat 2 highlights `3174 embedded, 0 from cache`
