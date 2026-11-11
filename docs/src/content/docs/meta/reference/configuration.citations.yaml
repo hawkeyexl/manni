@@ -2379,9 +2379,9 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         integrity: sha256-227d469717074df0d22e7e892365d7af3c2e68bea2fa60ba7aa9e226e289e5d1
       source:
         file: src/shared/config-file.ts
-        lines: 185-203
-        integrity: sha256-66aaedd2523da490068aec2cbb4619bbe49199c0483e838b44099984ddbd8652
-        commit-sha: a589e08250dee7efaee7ed0f58df01986fad8d1d
+        lines: 192-211
+        integrity: sha256-f04207aebe1c0170b63062ab3c38539db8161f307633792d88e7fb91189c4b24
+        commit-sha: 64705e196871f74ac3836c68a759b93a9442ad8a
     - id: discovery-walks-cwd-then-parents
       claim:
         integrity: sha256-b12945f576615b1641cc24e16f86af45798335ee5e714e2b47c14ae8c1fc054f
