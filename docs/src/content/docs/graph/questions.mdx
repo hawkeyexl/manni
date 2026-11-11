@@ -14,7 +14,7 @@ next-steps: ["graph-reference-cli", "graph-reference-configuration", "graph-ci"]
 concepts: ["golden set", "sample question", "meta-provenance"]
 sample-questions: ["How do I draft sample questions for pages that have none?", "How do I gate CI on how many sample questions find their answers?", "What do I do when a pinned answer moves?"]
 graph: { label: "Keep a golden set of reader questions", type: task }
-last-updated: 2026-10-21
+last-updated: 2026-11-11
 tags:
   - knowledge-graph
   - retrieval
@@ -78,8 +78,9 @@ providers:
   provider: llama-cpp
   model: granite-4.1-3b-q2
 
+baseIri: https://example.com/graph/
+
 graph:
-  baseIri: https://example.com/graph/
   out: graph.ttl
   build:
     derive: [frontmatter, sections]

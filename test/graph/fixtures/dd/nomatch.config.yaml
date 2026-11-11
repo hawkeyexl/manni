@@ -7,6 +7,7 @@ collections:
     paths:
       - "docs/**/*.rst"
 
+baseIri: https://example.com/dd/
+
 graph:
-  baseIri: https://example.com/dd/
   out: .tmp/dd/nomatch.ttl

@@ -411,7 +411,7 @@ describe("manni graph search — artifact resolution (review fixes)", () => {
     const dir = mkdtempSync(join(tmpdir(), "manni-graph-search-badlang-"));
     writeFileSync(
       join(dir, "manni.config.yaml"),
-      'collections:\n  - name: c\n    paths: ["*.md"]\ngraph:\n  baseIri: https://example.com/graph/\n',
+      'baseIri: https://example.com/graph/\ncollections:\n  - name: c\n    paths: ["*.md"]\ngraph:\n',
     );
     writeFileSync(
       join(dir, "a.md"),

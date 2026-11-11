@@ -281,6 +281,45 @@ describe("family config discovery", () => {
     expect((await findConfigFile(root, META))?.tools).toEqual({});
   });
 
+  it("parses the top-level baseIri once, for every tool (0128)", async () => {
+    const root = await tree({
+      "manni.config.yaml": "baseIri: https://example.com/id/\nmeta:\n  allowEmpty: true\n",
+    });
+    const found = await findConfigFile(root, META);
+    expect(found?.baseIri).toBe("https://example.com/id/");
+    expect(found?.value).toEqual({ allowEmpty: true });
+  });
+
+  it("a family file with baseIri: and no section is still the tool's config (0128)", async () => {
+    const root = await tree({ "manni.config.yaml": "baseIri: https://example.com/id/\n" });
+    const found = await findConfigFile(root, CITE);
+    expect(found?.kind).toBe("manni");
+    expect(found?.value).toBeNull();
+    expect(found?.baseIri).toBe("https://example.com/id/");
+  });
+
+  it("a file with no baseIri carries none", async () => {
+    const root = await tree({ "manni.config.yaml": "meta:\n  allowEmpty: true\n" });
+    expect((await findConfigFile(root, META))?.baseIri).toBeUndefined();
+  });
+
+  it("a bad baseIri: is an error in the tool's own class", async () => {
+    class MyError extends Error {}
+    const root = await tree({ "manni.config.yaml": 'baseIri: ""\nmeta: {}\n' });
+    const run = findConfigFile(root, { ...META, toError: (m) => new MyError(m) });
+    await expect(run).rejects.toBeInstanceOf(MyError);
+    await expect(run).rejects.toThrow(
+      'manni.config.yaml: "baseIri" must be a non-empty string.',
+    );
+  });
+
+  it("an explicit path reads the top-level baseIri", async () => {
+    const root = await tree({
+      "custom.yaml": 'baseIri: "urn:acme:"\ncite: {}\n',
+    });
+    expect((await readConfigFile("custom.yaml", root, CITE)).baseIri).toBe("urn:acme:");
+  });
+
   it("a file with no encryptionKey carries none", async () => {
     const root = await tree({ "manni.config.yaml": "meta:\n  allowEmpty: true\n" });
     expect((await findConfigFile(root, META))?.encryptionKey).toBeUndefined();

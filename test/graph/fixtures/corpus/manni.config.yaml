@@ -6,8 +6,9 @@ collections:
     paths:
       - "docs/**/*.md"
 
+baseIri: https://example.com/graph/
+
 graph:
-  baseIri: https://example.com/graph/
   out: graph.ttl
   routes:
     # Inert for link resolution — no corpus document writes a root-absolute

@@ -185,9 +185,9 @@ docs/src/content/docs/key/index.mdx:
         integrity: sha256-64c7c6e98b34c581ffb7e0b6b1f47d5024dda26d1308795df5cbcab63b6da352
       source:
         file: src/shared/config-file.ts
-        lines: 253-260
+        lines: 261-268
         integrity: sha256-638ee344aaa62fb7b43eeb937589be88dac17f49d213a48e5eb37fe46fee679a
-        commit-sha: a589e08250dee7efaee7ed0f58df01986fad8d1d
+        commit-sha: 1ba62bd39356e1c1505ad32b4db43b534ba894bc
     - id: key-shape-env
       claim:
         lines: 140-142
@@ -203,9 +203,9 @@ docs/src/content/docs/key/index.mdx:
         integrity: sha256-1d7ca7f09d867b4969a1d2772ce2f5939a88b263ef07ef9ea4f1fb85b00bf9f6
       source:
         file: src/shared/config-file.ts
-        lines: 255-258
+        lines: 263-266
         integrity: sha256-4c64498f39288a7c9fb6e2e525da2101ac16dff316efd4c56ffbb2a0ecd99306
-        commit-sha: a589e08250dee7efaee7ed0f58df01986fad8d1d
+        commit-sha: 1ba62bd39356e1c1505ad32b4db43b534ba894bc
     - id: key-shape-env-message
       claim:
         lines: 146
@@ -335,18 +335,18 @@ docs/src/content/docs/key/index.mdx:
     - id: key-only-file-is-config
       claim:
         lines: 149-156
-        integrity: sha256-0bdd2ef929e8741481d465080f28b9aaa2af07eafba99686896acf4eeebb1305
+        integrity: sha256-6b12a466591ab7ee570986440f75cc229f269df2f00f78254e8d8dbe83ed6821
       source:
         file: src/shared/config-file.ts
         lines: 187-212
-        integrity: sha256-0a8fc75efc94aa7bb472f6e0b571e0c247ef9f1d6aeafe5948d7c4e07899d8b1
-        commit-sha: a589e08250dee7efaee7ed0f58df01986fad8d1d
+        integrity: sha256-15d08b63635f4efc7f1b579e6ab4c7357aa0189357321cf14f5b7b4404df8cce
+        commit-sha: 64705e196871f74ac3836c68a759b93a9442ad8a
     - id: key-set-exception
       claim:
         lines: 141-142
         integrity: sha256-2ddbbbe772521f5ae4a7ae0dc6f798a65214d0066eafe83d5ebc9954b911ff39
       source:
         file: src/shared/config-file.ts
-        lines: 292-306
+        lines: 311-325
         integrity: sha256-2c6970bb7b86e4eef02c6c906bdafdcfe1aff8931d4f0d78760320620c622f50
-        commit-sha: a589e08250dee7efaee7ed0f58df01986fad8d1d
+        commit-sha: 1ba62bd39356e1c1505ad32b4db43b534ba894bc

@@ -280,7 +280,7 @@ Corpus-defining settings such as routes and derive sources may be config-only.
   through the inference library's `MockProvider`, and the git and CLI subprocess
   seams are injectable.
 - **Section keys are camelCase; the vocabulary's own entries are kebab-case.**
-  `baseIri`, `maxTurns` and `confidenceThreshold` in the config; `alt-labels`
+  `maxTurns` and `confidenceThreshold` in the config; `alt-labels`
   and `applies-to` on a page.
 - The page vocabulary is **`manni:graph:1.0.0`**, a built-in schema of the
   metadata tool (proposals 0023 and 0067) implemented here. `src/graph/schema.ts`

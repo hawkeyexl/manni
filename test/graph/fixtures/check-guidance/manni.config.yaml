@@ -4,6 +4,7 @@ collections:
   - name: guidance
     paths: ["docs/**/*.md"]
 
+baseIri: https://example.com/graph/
+
 graph:
-  baseIri: https://example.com/graph/
   out: .tmp/graph.ttl

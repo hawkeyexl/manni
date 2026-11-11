@@ -246,6 +246,7 @@ describe("graph fill writes each format through meta", () => {
     // manifest, as `keyHome` decides for any format.
     const dir = copy({
       "manni.config.yaml": [
+        "baseIri: https://example.com/formats/",
         "collections:",
         "  - name: formats",
         '    paths: ["*.adoc"]',
@@ -253,7 +254,6 @@ describe("graph fill writes each format through meta", () => {
         '      - file: "{page}.meta.yaml"',
         "        keys: [graph, meta-provenance]",
         "graph:",
-        "  baseIri: https://example.com/formats/",
         "",
       ].join("\n"),
       "notes.meta.yaml": "notes.adoc:\n  graph:\n    label: Notes\n",
@@ -278,6 +278,7 @@ describe("graph fill writes each format through meta", () => {
     const page = "---\ngraph: 5\n---\n= Notes\n\nBody.\n";
     const dir = copy({
       "manni.config.yaml": [
+        "baseIri: https://example.com/formats/",
         "collections:",
         "  - name: formats",
         '    paths: ["*.adoc"]',
@@ -285,7 +286,6 @@ describe("graph fill writes each format through meta", () => {
         '      - file: "{page}.meta.yaml"',
         "        keys: [meta-provenance]",
         "graph:",
-        "  baseIri: https://example.com/formats/",
         "",
       ].join("\n"),
       "fenced.adoc": page,

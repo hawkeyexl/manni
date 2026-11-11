@@ -256,9 +256,9 @@ docs/src/content/docs/a11y/reference/cli.mdx:
         integrity: sha256-0b48364247fc2a4bb4cf83d724cdc64c50970395942c867cc13e29ac523e4eb9
       source:
         file: src/shared/config-file.ts
-        lines: 377-382
+        lines: 397-402
         integrity: sha256-385abcd79702ff04016086391cb2c38ab007fef93c6fbbbe1f200eab26662f8a
-        commit-sha: a589e08250dee7efaee7ed0f58df01986fad8d1d
+        commit-sha: 1ba62bd39356e1c1505ad32b4db43b534ba894bc
     - id: no-config-same-option
       claim:
         lines: 84
@@ -1068,9 +1068,9 @@ docs/src/content/docs/a11y/reference/cli.mdx:
         integrity: sha256-29d5bc17af955399250282a978488d3d9daa2c35b4904591cebebb63c6dd1525
       source:
         file: src/shared/config-file.ts
-        lines: 315-320
+        lines: 334-339
         integrity: sha256-f4faec34c0d49f7cb56d6e9f798afd3f6d922a3d8fb41d6b52403e84f1ccab40
-        commit-sha: a589e08250dee7efaee7ed0f58df01986fad8d1d
+        commit-sha: 1ba62bd39356e1c1505ad32b4db43b534ba894bc
     - id: config-flag-wins
       claim:
         lines: 658-662
@@ -1192,9 +1192,9 @@ docs/src/content/docs/a11y/reference/cli.mdx:
         integrity: sha256-16c1e9a638ab18413dc336067bc172a7ad26699335feed38fd55cb55b583a950
       source:
         file: src/shared/config-file.ts
-        lines: 203-212
+        lines: 211-220
         integrity: sha256-90ad68f7f4ab347973183c055efa9413e9c71cf8a84301e9a0bfda90c4079d9b
-        commit-sha: a589e08250dee7efaee7ed0f58df01986fad8d1d
+        commit-sha: 1ba62bd39356e1c1505ad32b4db43b534ba894bc
     - id: crawl-scope-any-seed
       claim:
         lines: 131-132

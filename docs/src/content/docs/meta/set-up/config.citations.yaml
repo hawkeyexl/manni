@@ -196,9 +196,9 @@ docs/src/content/docs/meta/set-up/config.mdx:
         integrity: sha256-971df716fe18bbab3896dec2f55a90701ce4e0c49689ed3d0b2688d9889e3f7f
       source:
         file: src/shared/config-file.ts
-        lines: 182-183
+        lines: 189-190
         integrity: sha256-af94ed52dbb272ac789ea321e4aa9fb971f14cff43bbeceb14f2b9e2c597c806
-        commit-sha: a589e08250dee7efaee7ed0f58df01986fad8d1d
+        commit-sha: 1ba62bd39356e1c1505ad32b4db43b534ba894bc
     - id: collection-flag-needs-a-config
       claim:
         integrity: sha256-733c0b2524ed1903bd3560cdcfd64a88195eabb411d4f725708cc91cfbf30146
@@ -360,9 +360,9 @@ docs/src/content/docs/meta/set-up/config.mdx:
         integrity: sha256-9528311aab85a1e51dea15091fdae06a6d82b172cd843a87c87d76d133ea3167
       source:
         file: src/shared/config-file.ts
-        lines: 220-228
+        lines: 228-236
         integrity: sha256-6f57c384d5a5a8f84e8747112f0507f2229f11653725cac6c04b850059427be1
-        commit-sha: a589e08250dee7efaee7ed0f58df01986fad8d1d
+        commit-sha: 1ba62bd39356e1c1505ad32b4db43b534ba894bc
     - id: collection-paths-resolve-from-config-dir
       claim:
         lines: 46
@@ -427,17 +427,17 @@ docs/src/content/docs/meta/set-up/config.mdx:
         integrity: sha256-d8198c5f9fa42e52a97c7781d08119589544c1b5c7391c5547fcdcada176b2ca
       source:
         file: src/shared/config-file.ts
-        lines: 358-359
+        lines: 378-379
         integrity: sha256-986539f40464f4e109d5c33931d4476a5208993e8572e799980ded3ff15b48c5
-        commit-sha: a589e08250dee7efaee7ed0f58df01986fad8d1d
+        commit-sha: 1ba62bd39356e1c1505ad32b4db43b534ba894bc
     - id: collections-only-file-is-metas-config
       claim:
         integrity: sha256-1fd2da588ebc850d336b70d59570375cb29bb737955af0e8033d4350b932b944
       source:
         file: src/shared/config-file.ts
-        lines: 210-212
+        lines: 218-220
         integrity: sha256-f02b1b061de7040599d1723484857e099dc7c606fc60c91f303ee092abead242
-        commit-sha: a589e08250dee7efaee7ed0f58df01986fad8d1d
+        commit-sha: 1ba62bd39356e1c1505ad32b4db43b534ba894bc
     - id: config-flag-spellings
       claim:
         lines: 31
@@ -453,36 +453,36 @@ docs/src/content/docs/meta/set-up/config.mdx:
         integrity: sha256-c8582f6e12318df472d23f80e7d5f77f47d454263a2d4468908546419b4fddf7
       source:
         file: src/shared/config-file.ts
-        lines: 367-369
+        lines: 387-389
         integrity: sha256-5e17e4ff25b3a8ee58a5bd0454614f01c22883f4c08539bb949156a08a2025e2
-        commit-sha: a589e08250dee7efaee7ed0f58df01986fad8d1d
+        commit-sha: 1ba62bd39356e1c1505ad32b4db43b534ba894bc
     - id: discovery-walks-cwd-then-parents
       claim:
         lines: 30
         integrity: sha256-a44cf51b6f4e74f08cb47187c9ab85dff6875aca6b56e8d42de9ecf109411bae
       source:
         file: src/shared/config-file.ts
-        lines: 306-312
+        lines: 325-331
         integrity: sha256-9bc2ff2b7c6670f3861b09fd3fc6412ffc60e2bac57fa156889d9c1919eac384
-        commit-sha: a589e08250dee7efaee7ed0f58df01986fad8d1d
+        commit-sha: 1ba62bd39356e1c1505ad32b4db43b534ba894bc
     - id: manni-yaml-tried-before-yml
       claim:
         lines: 30
         integrity: sha256-a44cf51b6f4e74f08cb47187c9ab85dff6875aca6b56e8d42de9ecf109411bae
       source:
         file: src/shared/config-file.ts
-        lines: 51-55
+        lines: 52-56
         integrity: sha256-6667b3b66a8f9f4789df5eb19546fa2f212465ab532996ae90ec45f8ed02eb71
-        commit-sha: a589e08250dee7efaee7ed0f58df01986fad8d1d
+        commit-sha: 1ba62bd39356e1c1505ad32b4db43b534ba894bc
     - id: family-key-or-section-ends-discovery
       claim:
         lines: 30
         integrity: sha256-a44cf51b6f4e74f08cb47187c9ab85dff6875aca6b56e8d42de9ecf109411bae
       source:
         file: src/shared/config-file.ts
-        lines: 200-211
+        lines: 208-219
         integrity: sha256-77661ff026a9c0ea64d8292d964fa2576feed70843c186dc9e17472a60dd6dd5
-        commit-sha: a589e08250dee7efaee7ed0f58df01986fad8d1d
+        commit-sha: 1ba62bd39356e1c1505ad32b4db43b534ba894bc
     - id: discovery-stops-at-the-repo-root
       claim:
         lines: 30
@@ -523,6 +523,6 @@ docs/src/content/docs/meta/set-up/config.mdx:
         integrity: sha256-6223f513312c70f1b2021b26bc3c91394b43b8f8786e79e4cd4f16bf1a35663c
       source:
         file: src/shared/config-file.ts
-        lines: 290-296
+        lines: 309-315
         integrity: sha256-e5ad51dc293c20aaeb79c2fc64603212c43ad5bc7dae984ab1cb9f37e4a1e63b
-        commit-sha: a589e08250dee7efaee7ed0f58df01986fad8d1d
+        commit-sha: 1ba62bd39356e1c1505ad32b4db43b534ba894bc

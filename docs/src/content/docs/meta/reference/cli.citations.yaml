@@ -2435,9 +2435,9 @@ docs/src/content/docs/meta/reference/cli.mdx:
         integrity: sha256-09dfa9041423771459fc0ff5b62e539eae4277f561202b508a8b5a01e93b1f27
       source:
         file: src/shared/config-file.ts
-        lines: 380-382
+        lines: 400-402
         integrity: sha256-93f531b04c37b874a3558be21947d9f2f221e59c8e412fe7206542e70c4c46d8
-        commit-sha: a589e08250dee7efaee7ed0f58df01986fad8d1d
+        commit-sha: 1ba62bd39356e1c1505ad32b4db43b534ba894bc
     - id: validate-config-and-no-config-share-an-option
       claim:
         lines: 83-85

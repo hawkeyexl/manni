@@ -13,8 +13,9 @@ meta:
     - files: "docs/hidden.md"
       schemas: ["./no-questions-in-the-graph.schema.json"]
 
+baseIri: https://example.com/graph/
+
 graph:
-  baseIri: https://example.com/graph/
   out: graph.ttl
   build:
     derive: [frontmatter, sections]

@@ -12,7 +12,7 @@ concepts:
   - triple
   - orphan
   - concept
-last-updated: 2026-11-06
+last-updated: 2026-11-11
 ---
 
 Rename a heading, and the links to its old anchor break, though no file you
@@ -132,13 +132,14 @@ Then declare the documents once, at the **top level**, where every tool reads
 them:
 
 ```yaml
+baseIri: https://docs.example.com/graph/
+
 collections:
   - name: site
     paths:
       - "docs/**/*.{md,mdx}"
 
 graph:
-  baseIri: https://docs.example.com/graph/
   out: graph/graph.ttl
 ```
 
@@ -146,7 +147,8 @@ With that in place, `manni graph build` with no paths reads the collection. The
 same collection feeds `manni meta validate` and `manni cite check`, which is
 the point of declaring it once.
 
-Set `baseIri` to a namespace you control. Without it, node IRIs fall back to
+Set the top-level [`baseIri`](/manni/meta/reference/configuration/#base-iri)
+to a namespace you control. Without it, node IRIs fall back to
 `urn:manni:graph:`, which identifies without promising to resolve. That is fine
 for a graph that stays in CI. It is unhelpful for one you hand to someone
 else.

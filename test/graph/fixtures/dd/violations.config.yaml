@@ -5,6 +5,7 @@ collections:
     paths:
       - "violations/**/*.md"
 
+baseIri: https://example.com/dd/
+
 graph:
-  baseIri: https://example.com/dd/
   out: .tmp/dd/violations.ttl

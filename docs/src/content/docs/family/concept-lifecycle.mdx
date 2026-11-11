@@ -16,7 +16,7 @@ next-steps: ["term-reference-rules", "meta-schemas-term-values", "graph-question
 concepts: ["concept scheme", "meta-provenance", "x-manni-term", "concept mapping", "sample question", "golden set"]
 sample-questions: ["How do I turn the concepts my pages name into a termbase?", "How do the termbase and the knowledge graph share one set of concepts?", "In what order do I build a vocabulary, a taxonomy and a graph with manni?"]
 graph: { label: "From tags to a knowledge graph", type: learning }
-last-updated: 2026-10-23
+last-updated: 2026-11-11
 tags:
   - terminology
   - knowledge-graph
@@ -87,12 +87,13 @@ alt-label, and `Jitter` has no definition yet. The config declares one
 collection and a `graph:` section:
 
 ```yaml title="manni.config.yaml"
+baseIri: https://example.com/graph/
+
 collections:
   - name: pages
     paths: ["docs/**/*.md"]
 
 graph:
-  baseIri: https://example.com/graph/
   out: graph.ttl
 ```
 
@@ -480,8 +481,9 @@ own question. `top: 1` keeps this small docset honest, because a page must be
 the first one found. `perPage` comes into play when `graph fill` drafts:
 
 ```yaml title="manni.config.yaml"
+baseIri: https://example.com/graph/
+
 graph:
-  baseIri: https://example.com/graph/
   out: graph.ttl
   check:
     questions:

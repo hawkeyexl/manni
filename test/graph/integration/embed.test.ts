@@ -184,7 +184,7 @@ describe("manni graph embed (integration)", () => {
     const cfg = join(cacheHome, "dockg.config.yaml");
     writeFileSync(
       cfg,
-      `baseIri: https://example.com/graph/\nembed:\n  cacheDir: ${JSON.stringify(join(cacheHome, "cache"))}\n`,
+      `baseIri: https://example.com/graph/\ngraph:\n  embed:\n    cacheDir: ${JSON.stringify(join(cacheHome, "cache"))}\n`,
     );
     const args = [
       "embed",
@@ -420,7 +420,7 @@ describe("manni graph search with vectors (integration)", () => {
     const cfg = join(dirname(vectors), "dockg.config.yaml");
     writeFileSync(
       cfg,
-      `baseIri: https://example.com/graph/\nembed:\n  out: ${JSON.stringify(dirname(vectors))}\n`,
+      `baseIri: https://example.com/graph/\ngraph:\n  embed:\n    out: ${JSON.stringify(dirname(vectors))}\n`,
       "utf8",
     );
 
@@ -561,7 +561,7 @@ describe("manni graph search with vectors (integration)", () => {
     const cfg = join(dir, "dockg.config.yaml");
     writeFileSync(
       cfg,
-      "baseIri: https://example.com/graph/\nembed:\n  model: some/other-model\n",
+      "baseIri: https://example.com/graph/\ngraph:\n  embed:\n    model: some/other-model\n",
     );
     const { status, stdout } = run(
       [

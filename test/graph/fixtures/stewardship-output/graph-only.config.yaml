@@ -1,4 +1,3 @@
 # A config with no family key is graph's section alone, so it has no meta:
 # section. Pages are judged by meta's default set.
-baseIri: https://example.com/graph/
 out: graph.ttl
