@@ -27,7 +27,7 @@ sample-questions:
 graph:
   label: Configuration reference
   type: reference
-last-updated: 2026-11-06
+last-updated: 2026-11-11
 tags:
   - configuration
   - yaml
@@ -1521,6 +1521,50 @@ manni: manni.config.yaml: tools.claude-cli.mcpConfig "nowhere.json" does not exi
 manni: tools.flare.target "PDF" names no target in Widget.flprj. Its targets are HTML5 and Print.
 ```
 
+## Base IRI
+
+Two outputs join on a node only when both name it with the same IRI. So
+`baseIri:` is set once, at the top level beside `collections:`, and no domain
+keeps a copy. It is the prefix of every node IRI that
+[`manni graph`](/manni/graph/reference/configuration/) mints.
+
+```yaml title="manni.config.yaml"
+baseIri: https://example.com/id/
+
+collections:
+  - name: site
+    paths: ["docs/**/*.md"]
+
+graph:
+  out: graph/graph.ttl
+```
+
+| Key | Type | Required | Default | Description |
+|---|---|---|---|---|
+| `baseIri` | `string` | no | `urn:manni:graph:` | The prefix of every minted node IRI. A value that ends in neither `/` nor `:` gets a trailing `/`. |
+
+- **Use a namespace you control.** The default is valid and deterministic, and
+  it is plainly a placeholder. A graph you publish should name a host of yours,
+  under a path such as `id/` that no page's URL uses.
+- **There is one value.** A second value would mint a second set of ids for
+  the same pages. A `graph:` section that still sets `baseIri` stops the run
+  with exit 2:
+
+```
+manni: manni.config.yaml: "baseIri" is no longer a graph key. Node IRIs start from one top-level baseIri: key. See https://hawkeyexl.github.io/manni/meta/reference/configuration/#base-iri
+```
+
+- **The value must be a non-empty string.** Anything else stops the run with
+  exit 2:
+
+```
+manni: manni.config.yaml: "baseIri" must be a non-empty string.
+```
+
+- **The key counts for discovery.** A `manni.config.yaml` carrying `baseIri:`
+  and no `meta:` section is still this tool's config, and stops the
+  [search](#discovery).
+
 ## Keys
 
 These are the keys of the `meta:` section: what the metadata validator does with
@@ -2767,10 +2811,11 @@ for these files, in order:
 
 1. `manni.config.yaml`, then `manni.config.yml`, read at their `meta:` key.
    A family file counts as the metadata tool's config when it carries `meta:`,
-   `collections:`, [`tools:`](#tools), [`encryptionKey:`](#encryption-key) or
-   [`providers:`](#providers). One with a family key and no `meta:` still
-   describes this repository. It stops the search and hands the tool an empty
-   section plus the family keys. A family file with none of the five belongs
+   `collections:`, [`tools:`](#tools), [`encryptionKey:`](#encryption-key),
+   [`providers:`](#providers) or [`baseIri:`](#base-iri). One with a family key
+   and no `meta:` still describes this repository. It stops the search and
+   hands the tool an empty section plus the family keys. A family file with
+   none of the six belongs
    to a sibling tool and is skipped, so the search continues.
 2. `docmeta.config.yaml`, then `docmeta.config.yml`: the metadata tool's own
    file from before the family file. Its **whole document** is the `meta:`
@@ -2818,7 +2863,7 @@ defaults.
 When you pass `-c/--config <path>` explicitly, no search happens at all and that
 file must exist; a missing config file is an error (exit 2). The file is read by
 the same rule whatever it is named. If it has a `meta:`, `collections:`,
-`tools:`, `encryptionKey:` or `providers:` key it is read as a family file. If it has none of them, the
+`tools:`, `encryptionKey:`, `providers:` or `baseIri:` key it is read as a family file. If it has none of them, the
 whole document is the `meta:` section. So `-c ./anything.yaml` works for
 both shapes without a flag, and an explicit path is never warned about.
 

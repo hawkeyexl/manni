@@ -335,7 +335,7 @@ docs/src/content/docs/key/index.mdx:
     - id: key-only-file-is-config
       claim:
         lines: 149-156
-        integrity: sha256-0bdd2ef929e8741481d465080f28b9aaa2af07eafba99686896acf4eeebb1305
+        integrity: sha256-6b12a466591ab7ee570986440f75cc229f269df2f00f78254e8d8dbe83ed6821
       source:
         file: src/shared/config-file.ts
         lines: 187-212

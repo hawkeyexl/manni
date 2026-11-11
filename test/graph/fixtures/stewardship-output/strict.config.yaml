@@ -8,6 +8,7 @@ collections:
 meta:
   strict: true
 
+baseIri: https://example.com/graph/
+
 graph:
-  baseIri: https://example.com/graph/
   out: graph.ttl

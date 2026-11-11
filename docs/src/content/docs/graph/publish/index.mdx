@@ -15,7 +15,7 @@ concepts:
   - vector sidecar
   - localization manifest
   - x-manni-graph-output
-last-updated: 2026-10-24
+last-updated: 2026-11-11
 ---
 
 The graph is worth more outside CI than inside it. Linked data for an
@@ -102,13 +102,13 @@ carries the passage's pins, dates and eval verdicts, as the
 with its IRI, and every edge a property, so a consumer needs no RDF library to
 walk it.
 
-Give the corpus an HTTP `baseIri` before you publish it. The default,
+Give the corpus an HTTP [`baseIri`](/manni/meta/reference/configuration/#base-iri)
+before you publish it. The default,
 `urn:manni:graph:`, identifies without promising to resolve. That is honest for a
 graph that stays in CI, and unhelpful for one handed to someone else:
 
 ```yaml
-graph:
-  baseIri: https://docs.example.com/graph/
+baseIri: https://docs.example.com/graph/
 ```
 
 The namespace the custom terms use, `graph:`, resolves to a vocabulary document

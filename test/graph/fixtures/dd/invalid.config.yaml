@@ -7,6 +7,7 @@ collections:
     paths:
       - "invalid/**/*.md"
 
+baseIri: https://example.com/dd/
+
 graph:
-  baseIri: https://example.com/dd/
   out: .tmp/dd/invalid.ttl

@@ -61,9 +61,9 @@ docs/src/content/docs/key/index.mdx:
     - generated-by: Claude Fable 5.1
       lines: 144-150
       integrity: sha256-80e95e73665c393887493410288825c194ec63ee5f7af36a5ecbdbd6fa32c7d4
-    - generated-by: Claude Opus 5
+    - generated-by: Claude Opus 5.5
       lines: 151-152
-      integrity: sha256-8f7eed22284b7a9c5191e8e6b8fa064f0f09f0b82b060629e7772abf13cd801a
+      integrity: sha256-ef057e68e03b26f963187a21744f526c4f0e7922ceb0d0b4c77a5975a07daf9e
     - generated-by: Claude Fable 5.1
       lines: 153-167
       integrity: sha256-4556d6feeac1fb6ccb570e1b31d3c5dfdafc6bc8b2b6328c3fb4127889b61d95

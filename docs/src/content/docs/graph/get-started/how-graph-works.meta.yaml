@@ -89,8 +89,14 @@ docs/src/content/docs/graph/get-started/how-graph-works.mdx:
       lines: 262
       integrity: sha256-93b92512dd8aae0ba9cab5a1f1c6d2cd4c55fbf599acc34821dc70867d9f0f8f
     - generated-by: Claude Opus 5
-      lines: 264-268
-      integrity: sha256-7de46e79345f6e3b278084a3f60e507f3467ce41e05b385be31421f4604faa73
+      lines: 264
+      integrity: sha256-75afdffa3e9b51564c1e4ee7a179e0dc35e4913d64332294b58f685ddf7ce0b4
+    - generated-by: Claude Opus 5.5
+      lines: 265
+      integrity: sha256-af77fd394e3694335cef423c81f7eed416c15e0350f0e19c49e8c4183bc42ca6
+    - generated-by: Claude Opus 5
+      lines: 266-268
+      integrity: sha256-d78cf561c89bd3d8292f75e2c68c4700f01302e7fa343cfe324cfc7fd3ba2e52
     - generated-by: Claude Opus 5.5
       lines: 270
       integrity: sha256-7e4ac99f3b625f742c3c2157694405bd8255eeb8f9fd33a34097ff015cf3bc94

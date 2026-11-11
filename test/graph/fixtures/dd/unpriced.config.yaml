@@ -14,8 +14,9 @@ collections:
     paths:
       - "unpriced/**/*.md"
 
+baseIri: https://example.com/dd/
+
 graph:
-  baseIri: https://example.com/dd/
   out: .tmp/dd/unpriced.ttl
   provider: mock
   model: no-such-model-in-the-price-table

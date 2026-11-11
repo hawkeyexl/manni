@@ -5,6 +5,7 @@ collections:
     paths:
       - "l10n-invalid/**/*.md"
 
+baseIri: https://example.com/dd/
+
 graph:
-  baseIri: https://example.com/dd/
   out: .tmp/dd/l10n-invalid.ttl

@@ -10,6 +10,7 @@ collections:
 meta:
   schemas: ["./no-people-in-the-graph.schema.json"]
 
+baseIri: https://example.com/graph/
+
 graph:
-  baseIri: https://example.com/graph/
   out: graph.ttl

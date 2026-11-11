@@ -6,6 +6,7 @@ collections:
     paths:
       - "."
 
+baseIri: https://example.com/formats/
+
 graph:
-  baseIri: https://example.com/formats/
   out: graph.ttl

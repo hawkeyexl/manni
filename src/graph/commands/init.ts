@@ -18,11 +18,16 @@ const HEADER = `# manni.config.yaml — shared configuration for the manni famil
 # Each tool reads its own top-level key; manni graph reads "graph:".
 `;
 
-const STARTER = `# Base IRI for every minted node. Set this to a namespace you control;
-# without it, IRIs fall back to the urn:manni:graph: placeholder.
+// The base IRI is the family's (proposal 0128), so it is a top-level line,
+// written before the section rather than inside it.
+const BASE_IRI_STARTER = `# Base IRI for every minted node, at the TOP level of this file: every
+# domain that mints node ids starts from it. Set this to a namespace you
+# control; without it, IRIs fall back to the urn:manni:graph: placeholder.
 # baseIri: https://example.com/graph/
 
-# There is no document set here. \`manni graph build\` and \`manni graph fill\` read the
+`;
+
+const STARTER = `# There is no document set here. \`manni graph build\` and \`manni graph fill\` read the
 # paths you name, or the collections declared once for every tool at the TOP
 # level of this file, beside \`graph:\` rather than inside it:
 #
@@ -129,12 +134,12 @@ fill:
 #     version: "1.3"         # iiRDS version literal: "1.2" | "1.3"
 `;
 
-/** The starter as a `graph:` section: every line nested one level. */
+/** The starter as a `graph:` section, every line nested one level, after the top-level base IRI. */
 function starterSection(): string {
   const body = STARTER.split("\n")
     .map((line) => (line === "" ? "" : `  ${line}`))
     .join("\n");
-  return `${CONFIG_SECTION}:\n${body}`;
+  return `${BASE_IRI_STARTER}${CONFIG_SECTION}:\n${body}`;
 }
 
 export async function runInit(cwd = process.cwd()): Promise<string> {

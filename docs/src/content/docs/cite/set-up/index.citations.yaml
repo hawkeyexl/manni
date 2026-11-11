@@ -42,9 +42,9 @@ docs/src/content/docs/cite/set-up/index.mdx:
         integrity: sha256-823cfca5fdedd2b0f9090796d7bbd743b26e94a8634169828fc5ac6faa107352
       source:
         file: src/shared/config-file.ts
-        lines: 324
-        integrity: sha256-718e1b331ff4627c6a86aaeb745be2e216eb6cd6acbc8b81d7a0d8674a9bfc7f
-        commit-sha: a589e08250dee7efaee7ed0f58df01986fad8d1d
+        lines: 343-345
+        integrity: sha256-6e61d546debcdab530dcb1705b1984c709634183b6117f2ab768405eb192577b
+        commit-sha: c2e0c8b6dad48772e4188b0b612c564460b886fd
     - id: collection-paths-config-relative
       claim:
         lines: 40

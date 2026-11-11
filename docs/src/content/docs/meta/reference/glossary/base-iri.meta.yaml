@@ -18,7 +18,7 @@ docs/src/content/docs/meta/reference/glossary/base-iri.mdx:
       integrity: sha256-b067a19351b83031d15ae5632b05f78f96ab7ee153524d42a63ad1960ffc1448
     - generated-by: Claude Opus 5.5
       lines: 7-10
-      integrity: sha256-94682300827b9ae33c7e4fbee813d686356d7ad6ede61763a4292207f0e4bced
+      integrity: sha256-b6e90739ce8cc72e832323ef1d4423c108a3a90aab90621bf06f82b687382be2
   owner:
     - "@hawkeyexl"
   created: 2026-10-04

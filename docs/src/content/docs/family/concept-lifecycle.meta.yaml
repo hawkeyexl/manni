@@ -26,11 +26,11 @@ docs/src/content/docs/family/concept-lifecycle.mdx:
   created: 2026-10-18
   provenance:
     - generated-by: Claude Opus 5.5
-      lines: 2-96
-      integrity: sha256-336fe10034033dbf4f41e08cad912de3bbd9f3414e734b7b9a287bc666f31b7a
+      lines: 2-97
+      integrity: sha256-b1ef2d4c34fefa1612d0ee7e1c3bff749efb7d3405feb91bde13b4a46df37733
     - generated-by: Claude Opus 5.5
-      lines: 98-507
-      integrity: sha256-d252d49e916661b167bea6026cba01ab86f088833e64a322719a0d946b145d14
+      lines: 99-509
+      integrity: sha256-f4a4230163c662beabfd1274c4e145459f3b9c95eea27d2d974988729bbb5762
     - generated-by: Claude Opus 5.5
-      lines: 509-713
+      lines: 511-715
       integrity: sha256-394f8e80a2b97fea0e6717748e3b82eecab4c95071532bd03282bb04d395a0c9

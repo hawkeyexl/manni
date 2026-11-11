@@ -10,6 +10,7 @@ meta:
   defaults: false
   schemas: ["manni:stewardship:1.0.0"]
 
+baseIri: https://example.com/graph/
+
 graph:
-  baseIri: https://example.com/graph/
   out: graph.ttl

@@ -9,11 +9,11 @@
  * This module only finds the file and hands a tool its slice. What the slice
  * may contain is the tool's business; it validates the value with its own
  * parser and its own error class, which is why `toError` is an option rather
- * than an import. Four top-level keys belong to the family rather than to a
+ * than an import. Five top-level keys belong to the family rather than to a
  * tool, and are parsed here once for every tool. They are `collections:`
- * (proposal 0041), `tools:` (proposal 0052) and `encryptionKey:` (proposal
- * 0045). The fourth is `providers:`, the inference provider settings every
- * tool that sends content to a model reads.
+ * (proposal 0041), `tools:` (proposal 0052), `encryptionKey:` (proposal 0045)
+ * and `baseIri:` (proposal 0128). The fifth is `providers:`, the inference
+ * provider settings every tool that sends content to a model reads.
  *
  * One older spelling is still read, with a warning on discovery: each tool's
  * pre-family file (`docmeta.config.yaml` for the metadata tool), whose whole
@@ -40,6 +40,7 @@
 import { readFileSync } from "node:fs";
 import { basename, dirname, join, relative, resolve } from "node:path";
 import { parse as parseYaml } from "yaml";
+import { BASE_IRI_KEY, parseBaseIri } from "./base-iri.js";
 import { parseCollections, type CollectionConfig } from "./collections.js";
 import { isValidEncryptionKey } from "./encryption.js";
 import { PROVIDERS_KEY, parseProviders, type ProvidersConfig } from "./providers.js";
@@ -131,6 +132,12 @@ export interface ConfigFile {
    * always absent for a `legacy` file, for the same reason as `collections`.
    */
   providers?: ProvidersConfig;
+  /**
+   * The document's top-level `baseIri:` (proposal 0128), validated and kept as
+   * written. Absent when the key is, and always absent for a `legacy` file,
+   * for the same reason as `collections`. Normalize it with `resolveBaseIri`.
+   */
+  baseIri?: string;
 }
 
 type ToError = (message: string) => Error;
@@ -190,6 +197,7 @@ const FAMILY_KEYS: readonly string[] = [
   TOOLS_KEY,
   ENCRYPTION_KEY_FIELD,
   PROVIDERS_KEY,
+  BASE_IRI_KEY,
 ];
 
 function slice(
@@ -289,6 +297,17 @@ function providersOf(
   return { providers: parseProviders(doc[PROVIDERS_KEY], source, dir, toError) };
 }
 
+/** The document's base IRI, as a spreadable field, parsed with the tool's own `toError`. */
+function baseIriOf(
+  document: Document,
+  source: string,
+  toError: ToError,
+): { baseIri?: string } {
+  const { doc } = document;
+  if (doc === null || !Object.hasOwn(doc, BASE_IRI_KEY)) return {};
+  return { baseIri: parseBaseIri(doc[BASE_IRI_KEY], source, toError) };
+}
+
 /**
  * The family keys as `manni key` reads them: only valid ones, and a malformed
  * one is no error, because replacing it is what the caller is for.
@@ -337,6 +356,7 @@ export function findConfigFileSync(
         tools: toolsOf(document, source, opts.toError),
         ...encryptionKeyOf(document, source, opts.toError),
         ...providersOf(document, source, dir, opts.toError),
+        ...baseIriOf(document, source, opts.toError),
         ...found,
       };
     }
@@ -396,6 +416,7 @@ export function readConfigFileSync(
     // so this only ever reads a family file's key.
     ...encryptionKeyOf(document, explicitPath, opts.toError),
     ...providersOf(document, explicitPath, dirname(path), opts.toError),
+    ...baseIriOf(document, explicitPath, opts.toError),
     ...found,
   };
 }
