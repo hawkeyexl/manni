@@ -1,6 +1,6 @@
 # 0129: Evals on lint templates, and TGDP's guidance as built-in evals
 
-- **Status:** Proposed
+- **Status:** Implemented (#299)
 - **Serves:** Two journeys.
   - Sara · S7, "Describe a doctype as a template". The template that holds a
     doctype's shape now holds its content checks too.
