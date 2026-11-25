@@ -89,3 +89,49 @@ templates:
       # names; anything else the author needs is allowed through.
       - min: 0
         description: Add any other sections the explanation needs here, after the ones above.
+    # Judged by `manni docevals` on every page routed to this template. Each
+    # assertion is one a reader of the finished page can check, drawn from
+    # upstream's guide at the same pin, vendored as
+    # test/lint/fixtures/tgdp/guide_concept.md.
+    evals:
+      # guide_concept.md:71, 77, 81-82, 207
+      - id: tgdp-opens-with-a-definition
+        assertion: The page states what the concept is near the top, before any background, use cases or comparisons.
+        examples:
+          pass: "A feature flag is a setting that turns a piece of functionality on or off at runtime, without a new deploy."
+          fail: "In 2010, teams began shipping daily, and long-lived branches became a problem. Release trains grew longer each year."
+      # guide_concept.md:193-194
+      - id: tgdp-one-concept
+        assertion: The page explains one concept, and links to other pages rather than explaining a second concept in depth.
+        examples:
+          pass: "Flags are often paired with gradual rollouts. See [Rollouts](rollouts.md)."
+          fail: |-
+            ## Canary deployments
+            A canary deployment routes a small share of traffic to a new version. It runs in four stages, described below.
+      # guide_concept.md:195
+      - id: tgdp-no-procedures
+        assertion: The page contains no numbered step-by-step instructions for performing a task.
+        examples:
+          pass: "To create your first flag, follow [Create a feature flag](../how-to/create-flag.md)."
+          fail: |-
+            1. Open **Settings**.
+            2. Click **New flag**.
+            3. Enter a name and click **Save**.
+      # guide_concept.md:98, 208
+      - id: tgdp-ties-to-the-reader
+        assertion: The page says what problem the concept solves for the reader or how it benefits them.
+        examples:
+          pass: "Flags let you merge unfinished work without exposing it, so you can release on your own schedule."
+          fail: "A feature flag is a boolean stored in the flags table and read at request time."
+      # guide_concept.md:211
+      - id: tgdp-has-an-example
+        assertion: The page includes at least one concrete example or use case that shows the concept applied.
+        examples:
+          pass: "For example, a checkout team hides a new payment form behind a flag and turns it on for 5% of users first."
+          fail: "Feature flags apply in many situations and offer a range of benefits."
+      # guide_concept.md:218
+      - id: tgdp-defines-jargon
+        assertion: Specialized terms a newcomer may not know are explained in plain words where they first appear.
+        examples:
+          pass: "Flags are evaluated at the edge, meaning on servers close to the user rather than in your data center."
+          fail: "Flags are evaluated at the edge through the PoP's KV-backed SDK shim."

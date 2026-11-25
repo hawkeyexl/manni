@@ -1,0 +1,20 @@
+WEBVTT
+
+NOTE Silent video. Cues are the on-screen step captions; the terminal text is in the transcript.
+
+1
+00:00:00.000 --> 00:00:05.267
+A page that says how-to: type: how-to, and no manni command on the page.
+
+2
+00:00:05.267 --> 00:00:12.400
+The template carries evals: It extends TGDP's how-to, skips one eval and adds one.
+
+3
+00:00:12.400 --> 00:00:21.867
+The type routes the evals: TGDP's guidance arrives as evals. One is skipped.
+
+4
+00:00:21.867 --> 00:00:32.100
+The house eval fails: FAIL at the page's type: line. Exit 1.
+

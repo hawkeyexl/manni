@@ -56,9 +56,9 @@ export function assertRegisteredGraders(
   }
   for (const plan of plans) {
     for (const ev of plan.evals) {
-      // A config eval was checked by the loop above, so only a page's own
-      // inline evals are left to check here.
-      if (ev.source === "page" && !isRegisteredGrader(ev.grader)) {
+      // A config eval was checked by the loop above, so only a page's or a
+      // template's own inline evals are left to check here.
+      if (ev.source !== "config" && !isRegisteredGrader(ev.grader)) {
         throw unregistered(plan.page.file, ev.name, ev.grader);
       }
     }

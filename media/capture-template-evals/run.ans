@@ -1,0 +1,22 @@
+[1mdocs/typed-fails.md[22m
+  [2mskip[22m tgdp-overview-names-the-task  [2mdocs/typed-fails.md:3[22m
+[2m       judge skipped (--deterministic-only)[22m
+  [2mskip[22m tgdp-steps-start-with-a-verb  [2mdocs/typed-fails.md:3[22m
+[2m       judge skipped (--deterministic-only)[22m
+  [2mskip[22m tgdp-one-action-per-step  [2mdocs/typed-fails.md:3[22m
+[2m       judge skipped (--deterministic-only)[22m
+  [2mskip[22m tgdp-shows-the-result  [2mdocs/typed-fails.md:3[22m
+[2m       judge skipped (--deterministic-only)[22m
+  [2mskip[22m tgdp-no-concept-teaching  [2mdocs/typed-fails.md:3[22m
+[2m       judge skipped (--deterministic-only)[22m
+  [2mskip[22m tgdp-one-method  [2mdocs/typed-fails.md:3[22m
+[2m       eval skipped[22m
+  [32mpass[39m has-a-heading  [2mdocs/typed-fails.md[22m
+  [31mFAIL[39m shows-the-command  [2mdocs/typed-fails.md:3[22m
+       [31merror[39m:1[2m [regex/not-found][22m Pattern /manni [a-z]+/ not found in body. Add the text the eval asks for.
+[2m       docs/typed-fails.md shows-the-command: The page shows the manni command it is about.[22m
+[2m       Guide: https://hawkeyexl.github.io/manni/docevals/fix/[22m
+  [32mpass[39m no-todo-markers  [2mdocs/typed-fails.md:3[22m
+
+[1mSuites[22m
+  site: 2/3 passed — 67% vs target 100% [31mbelow target[39m[2m (6 skipped)[22m

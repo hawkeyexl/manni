@@ -1,0 +1,11 @@
+A page that says type: how-to makes a promise. Something should hold it to that promise.
+
+manni lint templates can now carry evals. manni docevals grades them on every page lint routes to that template by its type.
+
+The built-in templates from The Good Docs Project now ship TGDP's own guidance as evals. A how-to page gets six of them: name the task, start each step with a verb, show the result, and so on.
+
+Your house template can extend the built-in, skip an eval that doesn't fit, and add its own. In the video, a house eval checks that a how-to shows the manni command it documents. The page doesn't, so it fails at its type: line, and the run exits 1.
+
+Every frame is a real run against a small test project.
+
+#techcomm #docsascode #technicalwriting #thegooddocsproject

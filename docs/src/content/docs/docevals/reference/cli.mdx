@@ -2,7 +2,7 @@
 title: CLI reference
 description: Every manni docevals command, argument, and flag, with the exit code each produces.
 type: reference
-last-updated: 2026-11-06
+last-updated: 2026-11-24
 ---
 
 {/* The command, argument, and option tables on this page are drift-checked
@@ -208,7 +208,9 @@ sidecar, such as `install.meta.yaml`, and a collection's shared manifest. An
 edit to one eval's assertion therefore grades the page it belongs to. Any
 change to such a manifest counts, including one to a key that is not an eval
 key. A changed collection manifest selects every page it supplies eval keys
-to.
+to. A page also differs when the lint template it is routed to changed, or any
+local file in that template's `extends` chain. A built-in or URL template never
+selects a page.
 
 ```console
 $ manni docevals run --since origin/main --format github
@@ -280,8 +282,9 @@ minutes, `h` hours, `d` days or `w` weeks. Anything else is **exit 2**:
 manni: --newer-than must be a duration such as 30m, 24h, 7d or 2w, got "7y"
 ```
 
-The same files count as for `--since`, meaning the page and any manifest
-that supplies its eval keys. How old they are depends on the working tree.
+The same files count as for `--since`, meaning the page, any manifest that
+supplies its eval keys, and the local template files that route it. How old
+they are depends on the working tree.
 
 - A page is clean when git tracks it and neither it nor its manifests hold
   an uncommitted change. A clean page takes the committer date of the last
@@ -332,8 +335,11 @@ docs/actions/goTo.mdx (suite: reference)
 1 pages, 3 evals resolved
 ```
 
-Each line is `name [grader, type, source]`, where source is `config` or
-`page`. The dim line under it is the eval's assertion.
+Each line is `name [grader, type, source]`, where source is `config`,
+`template` or `page`. The dim line under it is the eval's assertion. A page
+lint routes to a template carries ` (template: <ref>)` in its header, and that
+template's evals carry the source `template`. See
+[Attach evals by doctype](/manni/docevals/evals/named-evals-and-suites/#attach-evals-by-doctype).
 
 ### Arguments
 
@@ -509,7 +515,7 @@ manni docevals promote [paths...] [options]
 ```
 
 `--write` rewrites each eval where it lives, so a manifest that owns the page's evals is the file
-that changes. A promotable eval with nowhere to go carries an `error` saying why, `applied` stays
+that changes. It never edits a lint template, so a template eval keeps its proposal with an `error`. A promotable eval with nowhere to go carries an `error` saying why, `applied` stays
 false, and the pretty report prints the sentence under the proposal.
 
 ### Arguments

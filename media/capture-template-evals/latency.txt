@@ -1,0 +1,8 @@
+list 0 614ms
+run 1 1014ms
+timing1 list 1178ms
+timing1 run 1073ms
+timing2 list 1112ms
+timing2 run 1560ms
+timing3 list 1493ms
+timing3 run 1408ms

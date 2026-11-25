@@ -92,6 +92,13 @@ describe.each(manifest.templates)("$id", (entry) => {
     );
   });
 
+  // The template's `evals:` cite lines of upstream's guide, so the guide is
+  // vendored beside the template it was derived from, at the same pin.
+  it("vendors upstream's guide for its doctype", async () => {
+    const doctype = entry.source.split("/")[0] ?? "";
+    await expect(readFile(join(vendored, `guide_${doctype}.md`), "utf8")).resolves.not.toBe("");
+  });
+
   // Issue #202. An author reads these under each finding, so every rule says
   // what its section is for, catch-alls and `repeat` members included.
   it("describes the template and every rule in it", async () => {

@@ -14,7 +14,8 @@ import {
   type DocumentInputOptions,
 } from "../core/discover.js";
 import { withExternalMetadata } from "../core/external.js";
-import { resolvePages } from "../core/resolve.js";
+import { withTemplateEvals } from "../core/templates.js";
+import { resolvePages, type EvalSource } from "../core/resolve.js";
 import { assertRegisteredGraders } from "../core/feasibility.js";
 import {
   hasEditableEval,
@@ -87,7 +88,7 @@ export interface PromoteOptions extends DocumentInputOptions {
 export interface PromoteProposal {
   file: string;
   evalName: string;
-  source: "page" | "config";
+  source: EvalSource;
   promotable: boolean;
   rationale: string;
   scriptPath?: string;
@@ -143,8 +144,12 @@ export async function runPromote(
   const flags = { provider: options.provider, model: options.model, local: options.local };
   // Checked before discovery, and even when nothing is ai-graded.
   assertProviderSelection(selectProvider(config, flags));
-  const pages = await withExternalMetadata(
-    discoverPages(config, documentSet(paths, options, "read"), cwd),
+  const pages = await withTemplateEvals(
+    await withExternalMetadata(
+      discoverPages(config, documentSet(paths, options, "read"), cwd),
+      config,
+      cwd,
+    ),
     config,
     cwd,
   );
@@ -185,7 +190,14 @@ export async function runPromote(
         applied: false,
       };
 
-      if (assessment.promotable && assessment.code && options.write) {
+      if (assessment.promotable && assessment.code && options.write && ev.source === "template") {
+        // A template eval is declared once for every page it routes, in a
+        // file this command does not own.
+        proposal.error =
+          `eval "${ev.name}" is declared in ${plan.template ?? "its template"}; ` +
+          `promote --write does not edit templates. ` +
+          `Apply the proposal in the template or in one that extends it.`;
+      } else if (assessment.promotable && assessment.code && options.write) {
         // Where the eval lives decides where the rewrite goes. The page's own
         // text is only consulted for a page-owned eval: a page whose evals a
         // manifest owns carries none of them, so `hasEditableEval` is false

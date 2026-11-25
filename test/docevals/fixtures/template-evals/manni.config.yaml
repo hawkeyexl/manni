@@ -1,0 +1,36 @@
+# Pages routed to lint templates that carry evals. `templates/how-to.yaml`
+# replaces the built-in how-to and extends it, so a `type: how-to` page gets
+# the built-in's tgdp-* evals, minus the one it skips, plus its own two.
+# `overrides` routes `overridden.md`, which declares no type.
+collections:
+  - name: site
+    paths:
+      - "docs/**/*.md"
+
+lint:
+  templates:
+    - templates/how-to.yaml
+  overrides:
+    - files: "docs/overridden.md"
+      template: templates/how-to.yaml#how-to
+
+docevals:
+  defaults:
+    suite: site
+  evals:
+    has-a-heading:
+      assertion: The page has a level-one heading.
+      grader: tool:regex
+      options:
+        pattern: '# [A-Z]'
+        match: contains
+      severity: error
+    no-todo-markers:
+      assertion: The page carries no TODO, TBD or FIXME markers.
+      grader: tool:regex
+      options:
+        pattern: '\b(TODO|TBD|FIXME)\b'
+        match: not-contains
+      severity: error
+  suites:
+    site: { target-pass-rate: 1.0, evals: [has-a-heading] }

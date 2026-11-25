@@ -114,6 +114,12 @@
           "type": "string",
           "pattern": "^https?://"
         },
+        "evals": {
+          "description": "Evals that manni docevals grades on every page this template routes. manni lint never grades them. Each entry is an entry of the manni:evals:1.0.0 vocabulary: a bare assertion, a `use:` reference to an eval under docevals.evals, or an inline definition with an `id`. An inline entry may not use grader command. A template that `extends` another inherits its evals: an inline entry replaces the inherited entry with its `id`, a `use:` entry narrows the inherited entry it names, and anything else is appended.",
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "manni:evals:1.0.0#/$defs/evalEntry" }
+        },
         "extends": {
           "description": "Template reference (built-in id, path, or URL, optionally with a `#name` fragment) whose rules this template inherits.",
           "type": "string",

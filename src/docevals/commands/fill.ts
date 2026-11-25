@@ -19,6 +19,7 @@ import {
   type DocumentInputOptions,
 } from "../core/discover.js";
 import { withExternalMetadata } from "../core/external.js";
+import { withTemplateEvals } from "../core/templates.js";
 import { resolvePages, type ResolvedPagePlan } from "../core/resolve.js";
 import {
   appendPageEvals,
@@ -207,8 +208,12 @@ export async function runFill(
   assertProviderSelection(selectProvider(config, flags));
   const load = async (): Promise<ResolvedPagePlan[]> =>
     resolvePages(
-      await withExternalMetadata(
-        discoverPages(config, documentSet(paths, options, "fill"), cwd),
+      await withTemplateEvals(
+        await withExternalMetadata(
+          discoverPages(config, documentSet(paths, options, "fill"), cwd),
+          config,
+          cwd,
+        ),
         config,
         cwd,
       ),

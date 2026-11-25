@@ -21,6 +21,7 @@ import {
 } from "../../shared/execution.js";
 import { discoverPages } from "./discover.js";
 import { withExternalMetadata } from "./external.js";
+import { withTemplateEvals } from "./templates.js";
 import { resolvePages, type EvalLocation, type ResolvedPagePlan } from "./resolve.js";
 import { resolveReaders } from "./readers.js";
 import {
@@ -540,13 +541,18 @@ export function applySinceScope(
 
 /**
  * The files whose change counts as the page's: its own, then every manifest
- * that supplied one of its eval keys, and, in a judged run, the persona
+ * that supplied one of its eval keys, the local files of the template lint
+ * routes it to and its `extends` chain, and, in a judged run, the persona
  * records an opted-in eval reads the page as (proposal 0111). `external` is
  * absent when the run loaded no manifest at all (`withExternalMetadata`
  * returns such pages untouched).
  */
 function scopeManifests(plan: ResolvedPagePlan): readonly string[] {
-  const manifests = plan.page.external?.evalManifests ?? [];
+  // The routed template's local files, its `extends` chain included.
+  const manifests = [
+    ...(plan.page.external?.evalManifests ?? []),
+    ...(plan.page.template?.sources ?? []),
+  ];
   // The persona records an opted-in eval reads the page as (proposal 0111).
   // Set only in a judged run, so every other page's scope is today's.
   const records = [...new Set(plan.evals.flatMap((ev) => ev.readers?.files ?? []))];
@@ -749,7 +755,7 @@ export async function runEvals(options: RunOptions = {}): Promise<EngineReport> 
   // Read the way `meta validate` reads: the frontmatter block, plus whatever
   // an owning manifest of one of the page's collections supplies. A corpus
   // that relocated its evals resolves the same plan it did before the move.
-  const pages = await withExternalMetadata(
+  const external = await withExternalMetadata(
     discoverPages(
       config,
       {
@@ -763,6 +769,9 @@ export async function runEvals(options: RunOptions = {}): Promise<EngineReport> 
     config,
     cwd,
   );
+  // And each page carries the evals of the template `manni lint` routes it
+  // to, so a template that fails to load is exit 2 before anything is graded.
+  const pages = await withTemplateEvals(external, config, cwd);
   // Refused up front, not at the end: a re-record rebuilds the file from this
   // run's findings, so recording from a filtered run would drop every
   // fingerprint the filter excluded. Deciding it here costs nothing; deciding
@@ -969,9 +978,10 @@ export async function runEvals(options: RunOptions = {}): Promise<EngineReport> 
       // shell ungated, which made the grant decorative — a page that cannot
       // say `grader: command` could name such a grader with the same argv.
       // Config-authored argv is the operator's own and is not content, so the
-      // gate is on `source === "page"` rather than on the key's presence.
+      // gate is on `source !== "config"` rather than on the key's presence:
+      // a template is content too.
       const pageAuthoredArgv =
-        ev.source === "page" &&
+        ev.source !== "config" &&
         (ev.grader === "command" || Array.isArray(ev.options.command));
       if (pageAuthoredArgv && !allowFrontmatterCommands) {
         results.push(
