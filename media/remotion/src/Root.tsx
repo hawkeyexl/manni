@@ -41,7 +41,6 @@ import { beats as flareTargetsBeats, totalFrames as flareTargetsTotalFrames, TYP
 import { beats as flareResourcesBeats, totalFrames as flareResourcesTotalFrames, TYPING_MS as flareResourcesTypingMs } from "./flare-resources/beats";
 import { beats as docevalsFormatsBeats, totalFrames as docevalsFormatsTotalFrames, TYPING_MS as docevalsFormatsTypingMs } from "./docevals-formats/beats";
 import { beats as flareSiteBeats, totalFrames as flareSiteTotalFrames, TYPING_MS as flareSiteTypingMs } from "./flare-site/beats";
-import { beats as templateEvalsBeats, totalFrames as templateEvalsTotalFrames, TYPING_MS as templateEvalsTypingMs } from "./template-evals/beats";
 
 /** sidecar-url-1x1: 23 px / 75 columns, derived in media/sidecar-url-1x1.script.md. */
 const DemoUrl: React.FC = () => <DemoView beats={urlBeats} fontPx={23} linePx={32} cols={75} />;
@@ -168,15 +167,6 @@ const DemoDocevalsFormats: React.FC = () => (
  */
 const DemoFlareSite: React.FC = () => (
   <DemoView beats={flareSiteBeats} fontPx={24} linePx={34} cols={72} typingMs={flareSiteTypingMs} ligatures={false} />
-);
-
-/**
- * template-evals-1x1: 26 px / 66 columns, beats 3-4 at 20 px / 86, derived in
- * media/template-evals-1x1.script.md (media/capture-template-evals/cols.mjs).
- * Ligatures off: a terminal prints `---`, `--`, `//` and `$?` as characters.
- */
-const DemoTemplateEvals: React.FC = () => (
-  <DemoView beats={templateEvalsBeats} fontPx={26} linePx={36} cols={66} typingMs={templateEvalsTypingMs} ligatures={false} />
 );
 
 /**
@@ -615,14 +605,6 @@ export const Root: React.FC = () => (
       height={1080}
       fps={FPS}
       durationInFrames={flareSiteTotalFrames}
-    />
-    <Composition
-      id="TemplateEvalsDemo"
-      component={DemoTemplateEvals}
-      width={1080}
-      height={1080}
-      fps={FPS}
-      durationInFrames={templateEvalsTotalFrames}
     />
   </>
 );
