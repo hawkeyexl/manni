@@ -221,12 +221,15 @@ export async function runProcedures(opts: RunProceduresOptions = {}): Promise<Pr
     ];
     const run = await (opts.spawn ?? realSpawn)(args, { cwd, progress: opts.progress ?? false });
     if (run.spawnError !== undefined) throw new TestError(NOT_ON_PATH);
-    if (run.code !== 0) {
+    // Doc Detective 5.x exits 1 when a test fails, and its results still carry
+    // the verdict. Exit 1 with no results file is the operational failure it was.
+    const failed = (): TestError => {
       const how = run.code === null ? "killed before exiting" : `exit ${String(run.code)}`;
-      throw new TestError(`Doc Detective failed (${how}):\n${outputTail(run)}`);
-    }
-
-    const results = await readResults(outDir);
+      return new TestError(`Doc Detective failed (${how}):\n${outputTail(run)}`);
+    };
+    if (run.code !== 0 && run.code !== 1) throw failed();
+    const results =
+      run.code === 0 ? await readResults(outDir) : await readResults(outDir).catch(() => { throw failed(); });
     const tests = testCounts(results);
     const total = tests.pass + tests.fail + tests.warning + tests.skipped;
     // A `null` results file counts as zero tests, so `total` covers it.

@@ -217,6 +217,22 @@ describe("runProcedures: the verdict", () => {
     expect(result.tests.fail).toBeGreaterThan(0);
   });
 
+  it("is 1 when Doc Detective itself exits 1 over failed tests, as 5.x does", async () => {
+    const result = await runProcedures({
+      paths: ["docs"],
+      cwd,
+      spawn: fakeSpawn("results-fail.json", calls, { code: 1 }),
+    });
+    expect(result.exitCode).toBe(1);
+    expect(result.tests.fail).toBeGreaterThan(0);
+  });
+
+  it("still refuses an exit 1 that wrote no results", async () => {
+    await expect(
+      runProcedures({ paths: ["docs"], cwd, spawn: fakeSpawn(null, calls, { code: 1 }) }),
+    ).rejects.toThrow("Doc Detective failed (exit 1):");
+  });
+
   it("is 0 when everything passed, with no findings", async () => {
     const result = await runProcedures({ paths: ["docs"], cwd, spawn: fakeSpawn("results-pass.json", calls) });
     expect(result.exitCode).toBe(0);
