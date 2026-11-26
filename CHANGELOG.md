@@ -4,6 +4,13 @@
 4.13.1. Entries below that version are docmeta releases; the repository
 history is the same one.
 
+# [4.29.0](https://github.com/hawkeyexl/manni/compare/v4.28.0...v4.29.0) (2026-11-26)
+
+
+### Features
+
+* **docevals:** grade lint templates' evals on the pages they route ([#299](https://github.com/hawkeyexl/manni/issues/299)) ([5dcd8bd](https://github.com/hawkeyexl/manni/commit/5dcd8bd3af795a01356ac6ccd1d6575ae327f43f))
+
 # [4.28.0](https://github.com/hawkeyexl/manni/compare/v4.27.2...v4.28.0) (2026-11-02)
 
 

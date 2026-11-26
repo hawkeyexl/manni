@@ -132,7 +132,7 @@ actually reads rather than hand-written:
 ```yaml
 repos:
   - repo: https://github.com/hawkeyexl/manni
-    rev: v4.28.0
+    rev: v4.29.0
     hooks:
       - id: manni-meta
 ```
