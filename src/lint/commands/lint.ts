@@ -684,12 +684,18 @@ async function lintWithManni(run: ManniRun): Promise<LintFileResult[]> {
   // A page another kept page includes is assessed there. Pages are taken in
   // order, so one page of an include cycle is still assessed.
   const kept = new Set(expansions.keys());
+  const includers = new Map<string, string[]>();
+  for (const [other, expansion] of expansions) {
+    for (const real of expansion.included) {
+      const list = includers.get(real);
+      if (list === undefined) includers.set(real, [other]);
+      else list.push(other);
+    }
+  }
   const includer = new Map<string, string>();
   for (const file of expansions.keys()) {
     const real = realpath(resolve(cwd, file));
-    const by = [...kept].find(
-      (other) => other !== file && expansions.get(other)?.included.has(real) === true,
-    );
+    const by = includers.get(real)?.find((other) => other !== file && kept.has(other));
     if (by !== undefined) {
       kept.delete(file);
       includer.set(file, by);

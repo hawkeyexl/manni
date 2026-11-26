@@ -262,6 +262,8 @@ function markdownDirectives(text: string, fileText: string): Directive[] {
   const examples: [number, number][] = [
     ...text.matchAll(/`[^`\r\n]+`|\{\/\*[\s\S]*?\*\/\}|<!--[\s\S]*?-->/g),
   ].map((m): [number, number] => [m.index, m.index + m[0].length]);
+  // ponytail: linear scan per directive; a page has few of either. Binary
+  // search over the sorted spans if a format ever yields many directives.
   const inExample = (i: number): boolean => examples.some(([s, e]) => i >= s && i < e);
   // mdBook and MkDocs expand these before Markdown is parsed, fenced code
   // included, so a fence keeps them. An inline example is manni's departure:
