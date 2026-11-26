@@ -38,7 +38,8 @@ function fakeSpawn(
         "__CWD__",
         opts.cwd.replace(/\\/g, "/"),
       );
-      writeFileSync(join(out, "testResults-2026-10-05-000000.json"), text);
+      // Doc Detective 5.6.3 reads -o as the results file itself.
+      writeFileSync(out, text);
     }
     return Promise.resolve({ code: 0, stdout: "", stderr: "", timedOut: false, ...result });
   };
@@ -81,7 +82,7 @@ describe("runProcedures: what Doc Detective is given", () => {
     await runProcedures({ paths: ["docs/fail.md"], cwd, spawn: fakeSpawn("results-fail.json", calls) });
     const out = calls[0]?.args[calls[0].args.indexOf("-o") + 1];
     expect(out).toBeDefined();
-    expect(existsSync(out ?? "")).toBe(false);
+    expect(existsSync(dirname(out ?? ""))).toBe(false);
   });
 
   it("removes it when the run fails too", async () => {
@@ -89,7 +90,7 @@ describe("runProcedures: what Doc Detective is given", () => {
       runProcedures({ paths: ["docs/fail.md"], cwd, spawn: fakeSpawn(null, calls, { code: 3 }) }),
     ).rejects.toThrow(TestError);
     const out = calls[0]?.args[calls[0].args.indexOf("-o") + 1];
-    expect(existsSync(out ?? "")).toBe(false);
+    expect(existsSync(dirname(out ?? ""))).toBe(false);
   });
 
   it("expands a glob itself and passes plain paths as typed", async () => {
@@ -216,6 +217,22 @@ describe("runProcedures: the verdict", () => {
     expect(result.tests.fail).toBeGreaterThan(0);
   });
 
+  it("is 1 when Doc Detective itself exits 1 over failed tests, as 5.x does", async () => {
+    const result = await runProcedures({
+      paths: ["docs"],
+      cwd,
+      spawn: fakeSpawn("results-fail.json", calls, { code: 1 }),
+    });
+    expect(result.exitCode).toBe(1);
+    expect(result.tests.fail).toBeGreaterThan(0);
+  });
+
+  it("still refuses an exit 1 that wrote no results", async () => {
+    await expect(
+      runProcedures({ paths: ["docs"], cwd, spawn: fakeSpawn(null, calls, { code: 1 }) }),
+    ).rejects.toThrow("Doc Detective failed (exit 1):");
+  });
+
   it("is 0 when everything passed, with no findings", async () => {
     const result = await runProcedures({ paths: ["docs"], cwd, spawn: fakeSpawn("results-pass.json", calls) });
     expect(result.exitCode).toBe(0);
@@ -325,7 +342,7 @@ describe("runProcedures: refusals", () => {
   ])("refuses %s", async (_label, text) => {
     const writeGarbage: DocDetectiveSpawn = (args, opts) => {
       const out = args[args.indexOf("-o") + 1];
-      if (text !== null && out !== undefined) writeFileSync(join(out, "testResults-1.json"), text);
+      if (text !== null && out !== undefined) writeFileSync(out, text);
       return fakeSpawn(null, calls)(args, opts);
     };
     await expect(runProcedures({ paths: ["docs"], cwd, spawn: writeGarbage })).rejects.toThrow(
