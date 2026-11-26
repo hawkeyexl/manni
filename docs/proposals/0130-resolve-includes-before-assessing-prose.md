@@ -1,6 +1,6 @@
 # 0130: Resolve includes before assessing prose
 
-- **Status:** Proposed
+- **Status:** Implemented (#302)
 - **Serves:** Two journeys, each for a docset that keeps shared text in
   partials.
   - Maya · M10, "Hold every page to the shape its doctype promises".
