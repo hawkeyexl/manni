@@ -5,11 +5,14 @@
 // `manni site` runs that framework's commands instead.
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { createServer } from "node:http";
-import { dirname, join } from "node:path";
+import { dirname, join, resolve, sep } from "node:path";
 
 if (process.argv[2] === "serve") {
+  const root = resolve("dist");
   createServer((req, res) => {
-    const path = join("dist", decodeURIComponent(new URL(req.url, "http://x").pathname), "index.html");
+    const path = join(root, decodeURIComponent(new URL(req.url, "http://x").pathname), "index.html");
+    // An encoded `..` survives URL parsing; never serve outside dist/.
+    if (!path.startsWith(root + sep)) return res.writeHead(403).end("Forbidden");
     if (!existsSync(path)) return res.writeHead(404).end("Not found");
     res.writeHead(200, { "content-type": "text/html; charset=utf-8" }).end(readFileSync(path));
   }).listen(4322, "127.0.0.1", () => console.log("Serving dist/ on http://127.0.0.1:4322/"));
