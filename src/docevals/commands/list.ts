@@ -13,6 +13,7 @@ import {
   type DocumentInputOptions,
 } from "../core/discover.js";
 import { withExternalMetadata } from "../core/external.js";
+import { withTemplateEvals } from "../core/templates.js";
 import { resolvePages, type ResolvedPagePlan } from "../core/resolve.js";
 import { applySelection } from "../core/engine.js";
 import { assertRegisteredGraders } from "../core/feasibility.js";
@@ -48,8 +49,12 @@ export async function runList(
 ): Promise<ListRun> {
   const cwd = options.cwd ?? process.cwd();
   const config = loadRunConfig(runConfigOptions(paths, options), cwd);
-  const pages = await withExternalMetadata(
-    discoverPages(config, documentSet(paths, options, "list"), cwd),
+  const pages = await withTemplateEvals(
+    await withExternalMetadata(
+      discoverPages(config, documentSet(paths, options, "list"), cwd),
+      config,
+      cwd,
+    ),
     config,
     cwd,
   );
@@ -80,6 +85,7 @@ export function renderList(
         file: p.page.file,
         skip: p.skip,
         suite: p.suite,
+        template: p.template,
         evals: p.evals.map((e) => ({
           name: e.name,
           suite: e.suite,
@@ -101,8 +107,9 @@ export function renderList(
   const lines: string[] = [];
   for (const plan of run.plans) {
     const suite = plan.suite ? pc.dim(` (suite: ${plan.suite})`) : "";
+    const template = plan.template ? pc.dim(` (template: ${plan.template})`) : "";
     const skip = plan.skip ? pc.yellow(" [skipped]") : "";
-    lines.push(`${pc.bold(plan.page.file)}${suite}${skip}`);
+    lines.push(`${pc.bold(plan.page.file)}${suite}${template}${skip}`);
     if (plan.evals.length === 0 && plan.problems.length === 0) {
       lines.push(pc.dim("  no evals"));
     }
@@ -110,7 +117,7 @@ export function renderList(
       const bits = [
         pc.cyan(e.grader),
         e.type,
-        e.source === "page" ? "page" : "config",
+        e.source,
       ];
       if (e.grader === "command" && !e.command) bits.push(pc.yellow("needs generation"));
       if (e.skip) bits.push(pc.yellow("skip"));

@@ -9,7 +9,7 @@ audiences:
   - schema-authors
 lifecycle: published
 action: remember
-last-updated: 2026-11-06
+last-updated: 2026-11-24
 ---
 
 import { Aside } from '@astrojs/starlight/components';
@@ -22,8 +22,10 @@ page of that kind has, in what order, and what has to be inside each one.
 `manni lint structure` resolves one template per page and aligns the page's
 section tree against it.
 
-Templates are data, not code. There is no language model anywhere in this, and
-no network call except fetching a template you pointed at yourself.
+Templates are data, not code. `manni lint` runs no language model, and makes
+no network call except fetching a template you pointed at yourself. A template
+can also carry [evals](#evals) about its pages' content, which
+`manni docevals` grades and lint never reads.
 
 To write your first one, follow
 [Write a template](/manni/lint/set-up/write-a-template/). This page is the
@@ -62,6 +64,100 @@ validate. A repository that already validates `type: how-to` against
 `tgdp:templates:1.0` gets structure routing for free. `meta` checks the page
 said what it is, and `lint` checks it is shaped like it.
 </Aside>
+
+### The built-in evals
+
+Each built-in also carries its doctype's content guidance as [evals](#evals).
+They come from the guide The Good Docs Project publishes beside each template
+at `v1.6.0`. Each one asks something a reader of the finished page can check.
+Heading and order rules are lint's own job, so they are left out, and so is
+advice about the writing process.
+
+Every built-in eval is graded by the `ai` judge, as a `regression` at `error`
+severity, so it blocks a judged run. A page whose `type:` routes it to a
+built-in gets these evals with no config at all. `manni docevals run
+--deterministic-only` skips them, as it skips every `ai` eval. To turn one off,
+pick one of these:
+
+- extend the built-in and narrow the eval with `use: <id>` and `skip: true`;
+- set `evals: [{ use: <id>, skip: true }]` on the page;
+- select the evals a run grades with `--eval`;
+- route the doctype to a template that does not extend the built-in.
+
+`manni lint templates show <id>` prints a built-in's evals with its sections.
+
+#### `tgdp:how-to:1.6`
+
+| Id | Assertion |
+|---|---|
+| `tgdp-overview-names-the-task` | The overview says which task the guide covers and when or why a reader would want to do it. |
+| `tgdp-steps-start-with-a-verb` | Each numbered step tells the reader what to do with an imperative verb, optionally after a short lead-in such as "To do X,". |
+| `tgdp-one-action-per-step` | Each numbered step asks the reader to do one thing, with any further actions given as separate steps or substeps. |
+| `tgdp-shows-the-result` | Where the page has the reader run commands, it shows what successful output or a successful result looks like. |
+| `tgdp-no-concept-teaching` | The page does not stop to teach concepts; background longer than a sentence or two is linked to another page instead. |
+| `tgdp-one-method` | The page documents one recommended way to complete the task and mentions other methods only briefly or by link. |
+
+#### `tgdp:tutorial:1.6`
+
+| Id | Assertion |
+|---|---|
+| `tgdp-objectives-stated` | The opening says what the reader will be able to do or know by the end of the tutorial. |
+| `tgdp-audience-and-prior-knowledge` | The opening says who the tutorial is for and what the reader should already know before starting. |
+| `tgdp-steps-start-with-a-verb` | Each numbered step starts with an imperative verb and states a complete action. |
+| `tgdp-code-is-self-contained` | Where the tutorial gives source code to copy, other than one-line shell commands, it includes needed imports and comments explaining what it does. |
+| `tgdp-summary-says-what-was-learned` | The summary names specific skills or knowledge the reader gained, rather than repeating the opening objectives word for word. |
+
+#### `tgdp:concept:1.6`
+
+| Id | Assertion |
+|---|---|
+| `tgdp-opens-with-a-definition` | The page states what the concept is near the top, before any background, use cases or comparisons. |
+| `tgdp-one-concept` | The page explains one concept, and links to other pages rather than explaining a second concept in depth. |
+| `tgdp-no-procedures` | The page contains no numbered step-by-step instructions for performing a task. |
+| `tgdp-ties-to-the-reader` | The page says what problem the concept solves for the reader or how it benefits them. |
+| `tgdp-has-an-example` | The page includes at least one concrete example or use case that shows the concept applied. |
+| `tgdp-defines-jargon` | Specialized terms a newcomer may not know are explained in plain words where they first appear. |
+
+#### `tgdp:reference:1.6`
+
+| Id | Assertion |
+|---|---|
+| `tgdp-description-states-purpose` | The opening briefly says what the page covers and what a reader uses it for. |
+| `tgdp-no-procedures` | The page describes parts of the product and does not walk the reader through a numbered procedure for a task. |
+| `tgdp-entries-in-tables-or-lists` | The entries are presented in tables, lists or another structured format rather than in running paragraphs. |
+| `tgdp-entries-are-parallel` | Entries of the same kind follow one consistent structure, giving the same kinds of details for each entry. |
+| `tgdp-commands-show-arguments-and-example` | Where the page documents a command, it shows an example invocation and says which of its arguments or options are required. |
+
+#### `tgdp:readme:1.6`
+
+| Id | Assertion |
+|---|---|
+| `tgdp-says-what-and-why` | The README says what the project does and why a reader would want to use it. |
+| `tgdp-names-the-audience` | The README says who the project is for. |
+| `tgdp-steps-start-with-a-verb` | Where the README gives numbered instructions, each step starts with a verb telling the reader what to do. |
+| `tgdp-names-license-and-help` | Where the README covers licensing it names the license, and where it covers support it names a place to get help. |
+
+#### `tgdp:release-notes:1.6`
+
+| Id | Assertion |
+|---|---|
+| `tgdp-addresses-the-reader` | The notes address the reader in the second person, as "you", rather than as "the user" or "customers". |
+| `tgdp-present-tense` | New features and improvements are described in the present tense, such as "You can now export", rather than "We added" or "will let you". |
+| `tgdp-says-why-it-matters` | Each new feature and improvement says how it benefits the reader, not only what changed. |
+| `tgdp-links-to-docs` | Each new feature and improvement links to documentation where the reader can learn more. |
+| `tgdp-fixes-say-what-changed` | Where the notes list bug fixes, each says what the software does now, not how the bug was fixed. |
+| `tgdp-known-issues-have-workarounds` | Where the notes list known issues, each describes when the problem occurs and gives a workaround where one exists. |
+| `tgdp-deprecations-are-complete` | Where the notes deprecate a feature, each names the feature, what replaces it, when it is removed, and any action the reader must take. |
+
+#### `tgdp:troubleshooting:1.6`
+
+| Id | Assertion |
+|---|---|
+| `tgdp-scope-in-the-opening` | The opening says which product, feature or task the page helps troubleshoot. |
+| `tgdp-observable-symptoms` | Each symptom is described as something the reader can see, such as an error message or a specific behavior. |
+| `tgdp-cause-per-symptom` | Each symptom is followed by at least one explanation of what causes it. |
+| `tgdp-solutions-say-what-success-looks-like` | Each solution or workaround says what the reader sees once the problem is resolved. |
+
 
 ## Template refs
 
@@ -155,7 +251,7 @@ A template describes the page, so it takes **every rule key**. Its `heading`
 constrains the page's own title, its `sequence` or `contains` describes what
 sits before the first heading, and its `sections` are the headings under it.
 
-Four keys belong to a template alone.
+Five keys belong to a template alone.
 
 | Key | Type | Default | What it does |
 |---|---|---|---|
@@ -163,6 +259,7 @@ Four keys belong to a template alone.
 | `types` | string[] | none | Doctypes this template serves, matched against a page's `type` frontmatter. This is how routing happens without a flag. |
 | `extends` | ref | none | Inherit another template's rules. See [extends](#extends). |
 | `guide` | URL | the `extends` parent's | Link to the author's guide for this doctype. Shown with every finding from the template and by `manni lint templates show`. It must start with `http://` or `https://`. |
+| `evals` | list | the `extends` parent's | Evals `manni docevals` grades on every page this template routes. lint never grades them. See [evals](#evals). |
 
 Two keys are refused on a template. `min` and `max` describe how often a rule
 occurs, and a page occurs once.
@@ -585,6 +682,94 @@ The chain resolves innermost first, and a cycle is an error naming the loop:
 manni: Template "extends" cycle: a -> b -> a.
 ```
 
+## `evals`
+
+A heading rule cannot tell whether each step asks for one action, or whether
+the overview names the task. Those are claims about content, and they belong
+to the doctype as much as its sections do. `evals` keeps them in the same file,
+and `manni docevals` grades them on every page the template routes. No suite
+and no per-page key is needed.
+
+```yaml title="templates.yaml"
+templates:
+  how-to:
+    types: [how-to]
+    extends: tgdp:how-to:1.6
+    evals:
+      - Must mention the intent of the document
+      - use: no-todo-markers
+        severity: warning
+      - use: tgdp-one-method
+        skip: true
+      - id: shows-the-command
+        assertion: The page shows the manni command it is about.
+        grader: tool:regex
+        options: { pattern: "manni [a-z]+", match: contains }
+```
+
+Each entry takes the form of one item in a page's `evals:` list, as
+[`manni:evals:1.0.0`](/manni/meta/reference/schemas/manni-evals/) defines it.
+The loader validates it against that vocabulary's own definition.
+
+| Entry | Written | What it is |
+|---|---|---|
+| Bare assertion | a string | An `ai`-judged assertion, as on a page. |
+| Reference | `use: <id>` | An eval this template inherits through `extends`, or one `docevals.evals` defines. It takes `skip`, `severity`, `weight`, `type` and `options`. |
+| Inline | `id:` plus the eval's fields | An eval defined here. Its `id` is unique within the template. |
+
+`evals` sits on a template, never on a section. An assertion about one section
+names that section in its text.
+
+lint never grades an eval, and the key changes no `manni lint` finding.
+`manni docevals` reads lint's routing from the same `manni.config.yaml`, so a
+page reached by `$template`, an override, its `type` or `lint.template` gets the
+evals of the template it reaches. A page lint routes nowhere gets none. The
+[resolution order](/manni/docevals/reference/frontmatter/#resolution-order)
+says how they combine with a suite and with the page's own entries.
+
+### Inheritance
+
+A template inherits its `extends` parent's evals, and the merge goes by id.
+
+| The child writes | Effect |
+|---|---|
+| An inline entry with an inherited id | Replaces the inherited eval in place. |
+| `use:` naming an inherited id | Narrows it. `skip`, `severity`, `weight` and `type` replace the inherited value, and `options` merge over it. |
+| `use:` naming no inherited id | Refers to an eval in `docevals.evals`, and is appended. |
+| Any other entry | Is appended, in the child's order. |
+
+### What a template cannot carry
+
+An inline eval with `grader: command` is refused. A template can be fetched
+from a URL, so it may not bring a program along. Define the command under
+`docevals.evals` in `manni.config.yaml` and reference it with `use:`, which
+keeps the program in the operator's config. Both `manni lint` and
+`manni docevals` refuse it at load, with exit `2`:
+
+```
+manni: ./templates.yaml: "templates.how-to.evals[1]" uses grader command, which a template cannot carry. Define it under docevals.evals in manni.config.yaml and reference it with use: has-steps.
+```
+
+Two inline entries with one id would leave the merge guessing which one
+`extends` meant, so that is exit `2` too:
+
+```
+manni: ./templates.yaml: "templates.how-to.evals" defines "has-goal" twice
+```
+
+An entry that is not a valid eval names the failing pointer:
+
+```
+manni: ./templates.yaml is not a valid template file: /templates/how-to/evals/0 must have required property 'assertion'.
+```
+
+`manni docevals` also refuses a `use:` that neither an `extends` parent nor
+`docevals.evals` defines, with exit `2` before any page is graded:
+
+```
+manni: templates.yaml#how-to: evals use "no-such-eval", which no template it extends and no docevals.evals entry in manni.config.yaml defines
+```
+
 ## Routing a page
 
 Two keys on a page take part, and both are ordinary frontmatter.
@@ -677,18 +862,19 @@ refusals exist for a working copy on someone's disk.
 ### `instructions`
 
 `doc-structure-lint` templates could carry an `instructions:` key, evaluated by
-a language model. Structure checking here is deterministic, so the key is
-refused outright rather than silently ignored. The message quotes your own
-instruction back, in the shape the eval takes:
+a language model. lint does not evaluate it, so the key is refused outright
+rather than silently ignored, with exit `2`. Its home is the template's own
+[`evals`](#evals), which `manni docevals` grades on every page the template
+routes. The message quotes your first instruction back as that entry:
 
 ```
-manni: ./templates.yaml: "templates.how-to.sections.title" uses `instructions`, which manni lint no longer evaluates — structure checking is deterministic. Move it to a manni docevals assertion eval in manni.config.yaml:
-
-  docevals:
-    evals:
-      how-to-title:
-        assertion: Must mention the intent of the document
-        grader: ai
+manni: ./templates.yaml: "templates.how-to.sections.title" uses `instructions`, which manni lint does not evaluate. Move it to the template's evals, which manni docevals grades on every page this template routes:
+manni:
+manni:   templates:
+manni:     how-to:
+manni:       evals:
+manni:         - id: how-to-title
+manni:           assertion: Must mention the intent of the document
 ```
 
 ## Related
@@ -700,3 +886,5 @@ manni: ./templates.yaml: "templates.how-to.sections.title" uses `instructions`, 
 - [CLI reference](/manni/lint/reference/cli/). `--templates`, `-t`, `--explain`,
   `manni lint templates` and `manni lint templates infer`.
 - [Fix a failing check](/manni/lint/fix/). Each rule, and what to change.
+- [Attach evals by doctype](/manni/docevals/evals/named-evals-and-suites/#attach-evals-by-doctype).
+  When a template's evals fit better than a suite.

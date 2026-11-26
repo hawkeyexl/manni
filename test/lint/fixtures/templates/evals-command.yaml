@@ -1,0 +1,8 @@
+# A template may not carry an executable command eval.
+templates:
+  how-to:
+    evals:
+      - Opens with the goal.
+      - id: has-steps
+        grader: command
+        command: [grep, -q, Steps, "{file}"]

@@ -1,11 +1,11 @@
 ---
 title: Frontmatter reference
-description: Every field an eval can carry, and how page evals resolve against config evals and suites.
+description: Every field an eval can carry, and how page evals resolve against config evals, suites and templates.
 type: reference
 audiences:
   - docs-engineers
   - schema-authors
-last-updated: 2026-11-06
+last-updated: 2026-11-24
 ---
 
 Reach for this page when a page error names an eval field. It also settles which declaration wins
@@ -311,14 +311,23 @@ from position, because a position-derived name orphans every cached verdict as s
 For each page, the plan is built in this order:
 
 1. **Suite evals** from the config, via the page's `eval-suite` or `defaults.suite`.
-2. **Page entries**, in document order. A reference merges onto the suite's version of that eval; an
-   inline definition replaces it.
+2. **Template evals**, from the `evals` of the
+   [lint template](/manni/lint/reference/templates/#evals) the page is routed to, after its
+   `extends` chain is merged. Routing is lint's own: `$template`, then `lint.overrides`, then the
+   page's `type` (the built-in templates included), then `lint.template`. It reads the same
+   `manni.config.yaml`, and works with no `lint:` section at all. A template's inline entry
+   replaces a suite eval with the same id.
+3. **Page entries**, in document order. A reference merges onto the version of that eval resolved so
+   far; an inline definition replaces it.
 
 **Page entries win on id collision.** Local override beats global default, which is the right
 behavior and invisible until it bites. Check the resolved plan with `manni docevals list` rather than
 by running.
 
-Every resolved eval records its `source` as `config` or `page`, which `list` prints.
+A page lint routes to no template gets no template evals and no problem. That covers a page with
+no `type` and a `type` no template serves.
+
+Every resolved eval records its `source` as `config`, `template` or `page`, which `list` prints.
 
 ## Page problems
 
@@ -334,6 +343,11 @@ These are reported per page rather than thrown, so one bad page does not stop th
 | A page key an owning manifest also holds | error |
 | String shorthand matching a config eval id | warning |
 | Inline ai eval with no `examples` | notice |
+
+A template's evals are not a page problem. A template that carries a `command` eval, defines one id
+twice, or names a `use:` nothing defines stops the run with exit `2` before any page is graded. The
+[templates reference](/manni/lint/reference/templates/#what-a-template-cannot-carry) quotes each
+message. A template eval gets no notice for missing `examples`, as a config eval gets none.
 
 An inline eval may carry `severity-map`, because the shared vocabulary allows it. No registered
 grader reads it, so manni docevals warns on stderr once per eval and grades as if it were absent:

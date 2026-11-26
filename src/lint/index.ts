@@ -84,8 +84,12 @@ export type {
   Rule,
   TablesRule,
   Template,
+  TemplateEvalEntry,
   TemplateFile,
 } from "./core/template.js";
+// Routing, so `manni docevals` sends each page to the template lint does.
+export { buildTemplateRouting, routePage, templateSources } from "./core/routing.js";
+export type { RoutedPage, TemplateRouting } from "./core/routing.js";
 export {
   listBuiltins,
   loadTemplate,

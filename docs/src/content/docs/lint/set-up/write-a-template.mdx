@@ -1,6 +1,6 @@
 ---
 title: Write a template
-description: "Turn a page that already has the shape you want into a doctype template: infer it, loosen what one page cannot show, assert the content that defines the doctype, then route it."
+description: "Turn a page that already has the shape you want into a doctype template: infer it, loosen what one page cannot show, assert the content that defines the doctype, route it, and say what its content must do."
 type: how-to
 id: lint-set-up-write-a-template
 language: en
@@ -8,7 +8,7 @@ audiences:
   - schema-authors
 lifecycle: published
 action: develop
-last-updated: 2026-10-20
+last-updated: 2026-11-24
 ---
 
 import { Steps, Aside, CardGrid, LinkCard } from '@astrojs/starlight/components';
@@ -398,6 +398,96 @@ templates:
       - id: see-also
         min: 0
 ```
+
+## Say what the content must do
+
+A template holds a how-to to its headings, but half of what makes a good how-to
+is in the prose. One action per step and an overview that names the task are
+two examples. No heading rule can check them, and a suite that does has to
+repeat the routing this template already does. Put them in the template as
+`evals`, and `manni docevals` grades every page the template routes, with no
+suite and no per-page key.
+
+A template that extends a built-in starts with The Good Docs Project's guidance
+for that doctype, as `tgdp-*` evals the `ai` judge grades. The
+[templates reference](/manni/lint/reference/templates/#the-built-in-evals)
+lists them.
+
+### Adapt the inherited evals to your house
+
+Say your how-tos often show a config-file route beside the CLI one, so the
+built-in's "one method" rule does not fit. You also want every how-to to show
+the command it is about. Both go under the template's `evals`:
+
+```yaml title="templates.yaml"
+templates:
+  how-to:
+    types: [how-to]
+    extends: tgdp:how-to:1.6
+    evals:
+      # Inherited from the built-in, and turned off here.
+      - use: tgdp-one-method
+        skip: true
+      - id: shows-the-command
+        assertion: The page shows the manni command it is about.
+        grader: tool:regex
+        options: { pattern: "manni [a-z]+", match: contains }
+```
+
+The merge goes by id. `use:` naming an inherited eval narrows it, here with
+`skip: true`, and keeps the rest of it. An inline entry with an inherited id
+replaces the inherited eval. Anything else is added. Each entry takes the same
+form as one item of a page's `evals:` list.
+
+A template cannot carry a `command` eval. A page can name its own template,
+and a command inside it would run with the operator's permissions. Define the
+command under `docevals.evals` in `manni.config.yaml`, and write `use: <id>`
+here.
+
+### Check what a page is graded on
+
+<Steps>
+
+1. **Read the evals back from the template.**
+
+   ```sh
+   manni lint templates show ./templates.yaml#how-to
+   ```
+
+   After the sections, an `Evals` block lists every eval the template carries
+   once `extends` is merged. The six inherited `tgdp-*` evals come first, with
+   `tgdp-one-method` marked `(skip)`, then `shows-the-command`.
+
+2. **See what one page resolves to.**
+
+   ```sh
+   manni docevals list docs/rotate-key.md
+   ```
+
+   The page's header names the template that routed it, as
+   `(template: templates.yaml#how-to)`. Each eval from the template carries
+   the source tag `template`, and `tgdp-one-method` also carries `skip`.
+
+3. **Run the deterministic one.**
+
+   ```sh
+   manni docevals run --deterministic-only
+   ```
+
+   `shows-the-command` grades every page routed to the template, and a page
+   without a command exits `1`. The finding points at the page's `type:` line,
+   because that is what attached the eval. A judged run, without
+   `--deterministic-only`, also grades the `tgdp-*` evals.
+
+</Steps>
+
+{/* Verified by Doc Detective in docs-as-tests (.github/workflows/docs-as-tests.yml). Config: .doc-detective.json. */}
+
+{/* step {"description":"`templates show` lists a template's evals after extends, with a narrowed inherited eval marked skip.","runShell":{"command":"manni lint templates show templates/how-to.yaml#how-to","workingDirectory":"test/docevals/fixtures/template-evals","exitCodes":[0],"stdio":"/tgdp-one-method \\[ai\\] \\(skip\\)/"}} */}
+
+{/* step {"description":"`docevals list` names the template a typed page is routed to.","runShell":{"command":"manni docevals list docs/typed.md","workingDirectory":"test/docevals/fixtures/template-evals","exitCodes":[0],"stdio":"template: templates/how-to.yaml#how-to"}} */}
+
+{/* step {"description":"A page that fails a template's regex eval exits 1.","runShell":{"command":"manni docevals run docs/typed-fails.md --deterministic-only --no-generate","workingDirectory":"test/docevals/fixtures/template-evals","exitCodes":[1],"stdio":"shows-the-command"}} */}
 
 ## Check the whole corpus
 

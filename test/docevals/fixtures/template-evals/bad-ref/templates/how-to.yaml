@@ -1,0 +1,6 @@
+templates:
+  how-to:
+    extends: tgdp:how-to:1.6
+    types: [how-to]
+    evals:
+      - use: no-such-eval

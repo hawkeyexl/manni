@@ -82,6 +82,22 @@ try {
     upstream.stderr || upstream.stdout,
   );
 
+  // A template's evals are validated against the evals vocabulary, which the
+  // bundle imports from `src/meta/schemas/`. If that import or the 2020-12
+  // validator went missing from dist, the template would not load here.
+  const evalsShow = await cli([
+    "templates",
+    "show",
+    "test/lint/fixtures/templates/evals.yaml#child",
+  ]);
+  check(
+    "templates show lists a template's evals, merged through extends (exit 0)",
+    evalsShow.code === 0 &&
+      evalsShow.stdout.includes("  Evals\n") &&
+      evalsShow.stdout.includes("  - names-prerequisites [ai] (skip)"),
+    evalsShow.stderr || evalsShow.stdout,
+  );
+
   const typed = join(dir, "typed.md");
   await writeFile(
     typed,

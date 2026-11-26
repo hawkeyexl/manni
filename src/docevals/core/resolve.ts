@@ -29,10 +29,13 @@ import {
   type RawEvalDef,
 } from "./config.js";
 import type { PageFile } from "./discover.js";
+import type { PageTemplate } from "./templates.js";
 import type { EvalTarget } from "./target.js";
 import { warn } from "../../shared/warn.js";
 import { declaredAt } from "../../meta/internal.js";
 import { isRegisteredGrader } from "../graders/registry.js";
+
+export type EvalSource = "config" | "page" | "template";
 
 export interface ResolvedEval {
   /** Kebab-case id, unique per page. */
@@ -64,8 +67,12 @@ export interface ResolvedEval {
   model?: string;
   /** Ensemble runs for this eval; a CLI --runs still wins. */
   runs?: number;
-  /** Where the eval definition came from. */
-  source: "config" | "page";
+  /**
+   * Where the eval definition came from. `template` is the routed lint
+   * template's own inline or bare entry; a template `use:` resolves to the
+   * config's definition and stays `config`.
+   */
+  source: EvalSource;
   skip: boolean;
   /**
    * Where the page declares the eval: the item of its `evals` key that names
@@ -118,6 +125,8 @@ export interface ResolvedPagePlan {
   /** Page-level skip (`eval-skip: true`). */
   skip: boolean;
   suite: string | null;
+  /** The lint template the page routes to, as routed; null when unrouted. */
+  template: string | null;
   evals: ResolvedEval[];
   problems: PageProblem[];
 }
@@ -171,7 +180,7 @@ function fromDef(
   name: string,
   suite: string,
   def: EvalDef,
-  source: "config" | "page",
+  source: EvalSource,
   location: EvalLocation,
 ): ResolvedEval {
   return {
@@ -211,8 +220,12 @@ function fromDef(
  * write silently drops one of two evals the author declared — a page checking
  * less than it says while the run stays green.
  */
-function shorthandName(index: number, taken: ReadonlySet<string>): string {
-  const base = `assertion-${index + 1}`;
+function shorthandName(
+  index: number,
+  taken: ReadonlySet<string>,
+  prefix = "assertion",
+): string {
+  const base = `${prefix}-${index + 1}`;
   if (!taken.has(base)) return base;
   for (let n = 2; ; n++) {
     const candidate = `${base}-${n}`;
@@ -279,6 +292,41 @@ function declaredLocation(page: PageFile, pointer: string, key: string): EvalLoc
   return declaredAt(page.file, pointer, metadataOf(page));
 }
 
+/**
+ * Where a template eval is declared for this page: the key that routed the
+ * page to the template, or the page alone when config routed it.
+ */
+function templateLocation(page: PageFile, template: PageTemplate): EvalLocation {
+  if (template.stage === "type") return declaredLocation(page, "/type", "type");
+  if (template.stage === "frontmatter-template") {
+    return declaredLocation(page, "/$template", "$template");
+  }
+  return { file: page.file };
+}
+
+/** A `use:` entry's overrides, laid over the eval it names. */
+function narrow(
+  base: ResolvedEval,
+  ref: FrontmatterEvalRef,
+  location: EvalLocation,
+): ResolvedEval {
+  return {
+    ...base,
+    location,
+    type: ref.type ?? base.type,
+    severity: ref.severity ?? base.severity,
+    weight: ref.weight ?? base.weight,
+    options: { ...base.options, ...(ref.options ?? {}) },
+    skip: ref.skip ?? base.skip,
+  };
+}
+
+/** The key an entry claims, or undefined for a bare assertion. */
+function entryKey(entry: FrontmatterEvalEntry): string | undefined {
+  if (typeof entry === "string") return undefined;
+  return "use" in entry ? entry.use : entry.id;
+}
+
 /** Resolve one page's plan. Never throws; problems are collected per page. */
 export function resolvePage(
   page: PageFile,
@@ -289,6 +337,7 @@ export function resolvePage(
     page,
     skip: false,
     suite: null,
+    template: page.template?.ref ?? null,
     evals: [],
     problems,
   };
@@ -352,16 +401,58 @@ export function resolvePage(
     }
   }
 
-  // 2. Page entries: references (with overrides) and inline evals.
   const reportSuite = suiteName ?? "default";
-  // Every name an author wrote, collected before any shorthand is numbered.
-  // Order matters: a shorthand at index 0 must yield to an explicit
-  // `assertion-1` further down the list, not overwrite it.
+  // lint validated these against the same vocabulary's entry shape.
+  const templateEntries = (page.template?.entries ?? []) as readonly FrontmatterEvalEntry[];
+  // Every name an author wrote, in the template or the page, collected before
+  // any shorthand is numbered. Order matters: a shorthand at index 0 must
+  // yield to an explicit `assertion-1` further down the list, not overwrite it.
   const claimed = new Set<string>(resolved.keys());
-  for (const entry of evalEntries(fm.evals)) {
-    if (typeof entry === "string") continue;
-    claimed.add("use" in entry ? entry.use : entry.id);
+  for (const entry of [...templateEntries, ...evalEntries(fm.evals)]) {
+    const key = entryKey(entry);
+    if (key !== undefined) claimed.add(key);
   }
+
+  // 2. The routed template's evals. Its inline entries replace a suite eval
+  // of the same id; its `use:` entries narrow a suite eval or attach a config
+  // one. The run refused a `use:` naming no config eval before resolution.
+  if (page.template?.refusal !== undefined) {
+    problems.push({
+      message: page.template.refusal,
+      level: "error",
+      ...locationOf(page, "/$template"),
+    });
+  }
+  if (page.template !== undefined) {
+    const templateAt = templateLocation(page, page.template);
+    for (const [i, entry] of templateEntries.entries()) {
+      if (typeof entry === "string") {
+        // A prefix of its own, so the page's shorthands keep their names.
+        const name = shorthandName(i, claimed, "template-assertion");
+        claimed.add(name);
+        resolved.set(
+          name,
+          fromDef(name, reportSuite, { assertion: entry }, "template", templateAt),
+        );
+        continue;
+      }
+      if ("use" in entry) {
+        const def = config.evals[entry.use];
+        const base =
+          resolved.get(entry.use) ??
+          (def === undefined
+            ? undefined
+            : fromDef(entry.use, reportSuite, def, "config", templateAt));
+        if (base !== undefined) resolved.set(entry.use, narrow(base, entry, templateAt));
+        continue;
+      }
+      const ev = fromDef(entry.id, reportSuite, normalizeEvalDef(entry), "template", templateAt);
+      ev.skip = entry.skip ?? false;
+      resolved.set(entry.id, ev);
+    }
+  }
+
+  // 3. Page entries: references (with overrides) and inline evals.
   for (const [i, entry] of evalEntries(fm.evals).entries()) {
     const linePtr = `/evals/${String(i)}`;
     // A string block is one entry at index 0, and the pointer walks up to the
@@ -396,8 +487,13 @@ export function resolvePage(
     }
     if ("use" in entry) {
       const ref = entry;
+      // A suite or template eval already on the page narrows in place, so a
+      // page can tune or skip what its template attached.
       const def = config.evals[ref.use];
-      if (!def) {
+      const base =
+        resolved.get(ref.use) ??
+        (def === undefined ? undefined : fromDef(ref.use, reportSuite, def, "config", entryAt));
+      if (base === undefined) {
         problems.push({
           message: `Unknown eval "${ref.use}" (not defined in ${config.configPath})`,
           level: "error",
@@ -405,17 +501,7 @@ export function resolvePage(
         });
         continue;
       }
-      const base =
-        resolved.get(ref.use) ?? fromDef(ref.use, reportSuite, def, "config", entryAt);
-      resolved.set(ref.use, {
-        ...base,
-        location: entryAt,
-        type: ref.type ?? base.type,
-        severity: ref.severity ?? base.severity,
-        weight: ref.weight ?? base.weight,
-        options: { ...base.options, ...(ref.options ?? {}) },
-        skip: ref.skip ?? base.skip,
-      });
+      resolved.set(ref.use, narrow(base, ref, entryAt));
       continue;
     }
 
@@ -460,6 +546,7 @@ export function resolvePage(
     page,
     skip: pageSkip,
     suite: suiteName,
+    template: page.template?.ref ?? null,
     evals: [...resolved.values()],
     problems,
   };

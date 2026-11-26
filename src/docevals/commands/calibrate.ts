@@ -22,6 +22,7 @@ import { DocevalsError } from "../types.js";
 import { loadConfig } from "../core/config.js";
 import { readPage } from "../core/discover.js";
 import { loadExternalReader } from "../core/external.js";
+import { lintRouter, withTemplateEvals } from "../core/templates.js";
 import { resolvePage } from "../core/resolve.js";
 import { resolveReaders } from "../core/readers.js";
 import { contentHash, loadReviews } from "../core/reviews.js";
@@ -341,6 +342,9 @@ export async function runCalibrate(
     cases.map((c) => resolve(cwd, c.file)).filter((p) => existsSync(p)),
   );
 
+  // The template evals a case may name; routing is built once for the set.
+  const router = await lintRouter(config);
+
   for (const goldenCase of cases) {
     const absPath = resolve(cwd, goldenCase.file);
     if (!existsSync(absPath)) {
@@ -348,7 +352,10 @@ export async function runCalibrate(
       continue;
     }
     const read = readPage(absPath, cwd);
-    const page = external === null ? read : await external.forPage(read);
+    const merged = external === null ? read : await external.forPage(read);
+    const [page = merged] = await withTemplateEvals([merged], config, cwd, () =>
+      Promise.resolve(router),
+    );
     const plan = resolvePage(page, config);
     const ev = plan.evals.find(
       (e) => e.name === goldenCase.eval && e.grader === "ai",
