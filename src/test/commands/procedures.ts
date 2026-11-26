@@ -214,8 +214,10 @@ export async function runProcedures(opts: RunProceduresOptions = {}): Promise<Pr
       ...(ddConfig === undefined ? [] : ["-c", ddConfig]),
       "-r",
       "json",
+      // A file, not the folder: Doc Detective 5.6.3 refuses a folder for -o,
+      // and earlier releases write a named file there too.
       "-o",
-      outDir,
+      join(outDir, "testResults-manni.json"),
     ];
     const run = await (opts.spawn ?? realSpawn)(args, { cwd, progress: opts.progress ?? false });
     if (run.spawnError !== undefined) throw new TestError(NOT_ON_PATH);

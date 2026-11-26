@@ -38,7 +38,8 @@ function fakeSpawn(
         "__CWD__",
         opts.cwd.replace(/\\/g, "/"),
       );
-      writeFileSync(join(out, "testResults-2026-10-05-000000.json"), text);
+      // Doc Detective 5.6.3 reads -o as the results file itself.
+      writeFileSync(out, text);
     }
     return Promise.resolve({ code: 0, stdout: "", stderr: "", timedOut: false, ...result });
   };
@@ -81,7 +82,7 @@ describe("runProcedures: what Doc Detective is given", () => {
     await runProcedures({ paths: ["docs/fail.md"], cwd, spawn: fakeSpawn("results-fail.json", calls) });
     const out = calls[0]?.args[calls[0].args.indexOf("-o") + 1];
     expect(out).toBeDefined();
-    expect(existsSync(out ?? "")).toBe(false);
+    expect(existsSync(dirname(out ?? ""))).toBe(false);
   });
 
   it("removes it when the run fails too", async () => {
@@ -89,7 +90,7 @@ describe("runProcedures: what Doc Detective is given", () => {
       runProcedures({ paths: ["docs/fail.md"], cwd, spawn: fakeSpawn(null, calls, { code: 3 }) }),
     ).rejects.toThrow(TestError);
     const out = calls[0]?.args[calls[0].args.indexOf("-o") + 1];
-    expect(existsSync(out ?? "")).toBe(false);
+    expect(existsSync(dirname(out ?? ""))).toBe(false);
   });
 
   it("expands a glob itself and passes plain paths as typed", async () => {
@@ -325,7 +326,7 @@ describe("runProcedures: refusals", () => {
   ])("refuses %s", async (_label, text) => {
     const writeGarbage: DocDetectiveSpawn = (args, opts) => {
       const out = args[args.indexOf("-o") + 1];
-      if (text !== null && out !== undefined) writeFileSync(join(out, "testResults-1.json"), text);
+      if (text !== null && out !== undefined) writeFileSync(out, text);
       return fakeSpawn(null, calls)(args, opts);
     };
     await expect(runProcedures({ paths: ["docs"], cwd, spawn: writeGarbage })).rejects.toThrow(
