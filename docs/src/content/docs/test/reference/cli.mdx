@@ -12,7 +12,7 @@ applies-to: ["domain:test"]
 risks: ["open-world"]
 sample-questions: ["What flags does manni test procedures accept?", "Which inputs does manni test procedures test when I give it no paths?", "Why did manni test procedures exit 2?", "What does manni test tasks pass Claude Code?", "Which evals does a manni test tasks run get?"]
 graph: { label: "CLI reference", type: reference }
-last-updated: 2026-11-06
+last-updated: 2026-11-26
 tags:
   - cli
   - testing
@@ -122,7 +122,7 @@ supplies the inputs. That covers `fileTypes`, `beforeAny` and
 ### What manni passes Doc Detective
 
 ```sh
-doc-detective -i <a>,<b>,<c> [-c <config>] -r json -o <temp dir>
+doc-detective -i <a>,<b>,<c> [-c <config>] -r json --output-dir <temp dir>
 ```
 
 `-i` is one comma-joined list, and appears only when manni names the inputs.

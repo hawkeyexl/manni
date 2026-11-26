@@ -28,7 +28,7 @@ docs/src/content/docs/test/reference/cli.mdx:
       integrity: sha256-e78d7078ed5e961e744bdbee9bb0062a0e5c1f9cf95b6f7b980604f6b63d3e25
     - generated-by: Claude Opus 5.5
       lines: 10-989
-      integrity: sha256-1607eda001629b35a0cfb149ac453a6bed10875b61a0f12a9aaef8797f444aa7
+      integrity: sha256-7f3077cc7d9bc2ef08cf07a97a4e4052089dcddffaa19d82e81189590691b595
   owner:
     - "@hawkeyexl"
   created: 2026-10-05

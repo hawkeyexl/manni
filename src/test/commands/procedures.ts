@@ -214,7 +214,11 @@ export async function runProcedures(opts: RunProceduresOptions = {}): Promise<Pr
       ...(ddConfig === undefined ? [] : ["-c", ddConfig]),
       "-r",
       "json",
-      "-o",
+      // Doc Detective 5.6 reads `-o` as a results file and refuses a folder.
+      // `--output-dir` takes the folder: the json reporter writes its
+      // testResults-*.json there, and the run folder lands beside it, so
+      // removing outDir removes everything the run wrote.
+      "--output-dir",
       outDir,
     ];
     const run = await (opts.spawn ?? realSpawn)(args, { cwd, progress: opts.progress ?? false });

@@ -32,7 +32,7 @@ function fakeSpawn(
 ): DocDetectiveSpawn {
   return (args, opts) => {
     calls.push({ args, ...opts });
-    const out = args[args.indexOf("-o") + 1];
+    const out = args[args.indexOf("--output-dir") + 1];
     if (fixture !== null && out !== undefined) {
       const text = readFileSync(join(FIXTURES, fixture), "utf8").replaceAll(
         "__CWD__",
@@ -74,12 +74,14 @@ describe("runProcedures: what Doc Detective is given", () => {
     expect(call?.args).not.toContain("run");
     expect(call?.args).not.toContain("--exit-on-fail");
     expect(call?.args).not.toContain("-c");
+    // Doc Detective 5.6 reads -o as a results file and refuses a folder.
+    expect(call?.args).not.toContain("-o");
     expect(call?.cwd).toBe(cwd);
   });
 
   it("removes its output directory afterwards, whatever the verdict", async () => {
     await runProcedures({ paths: ["docs/fail.md"], cwd, spawn: fakeSpawn("results-fail.json", calls) });
-    const out = calls[0]?.args[calls[0].args.indexOf("-o") + 1];
+    const out = calls[0]?.args[calls[0].args.indexOf("--output-dir") + 1];
     expect(out).toBeDefined();
     expect(existsSync(out ?? "")).toBe(false);
   });
@@ -88,7 +90,7 @@ describe("runProcedures: what Doc Detective is given", () => {
     await expect(
       runProcedures({ paths: ["docs/fail.md"], cwd, spawn: fakeSpawn(null, calls, { code: 3 }) }),
     ).rejects.toThrow(TestError);
-    const out = calls[0]?.args[calls[0].args.indexOf("-o") + 1];
+    const out = calls[0]?.args[calls[0].args.indexOf("--output-dir") + 1];
     expect(existsSync(out ?? "")).toBe(false);
   });
 
@@ -324,7 +326,7 @@ describe("runProcedures: refusals", () => {
     ["a results file that does not parse", "garbage"],
   ])("refuses %s", async (_label, text) => {
     const writeGarbage: DocDetectiveSpawn = (args, opts) => {
-      const out = args[args.indexOf("-o") + 1];
+      const out = args[args.indexOf("--output-dir") + 1];
       if (text !== null && out !== undefined) writeFileSync(join(out, "testResults-1.json"), text);
       return fakeSpawn(null, calls)(args, opts);
     };
