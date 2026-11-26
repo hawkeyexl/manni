@@ -29,8 +29,6 @@ import { DEFAULT_CHUNK_CHARS } from "../../meta/commands/fill-prompt.js";
 import type { Severity } from "../../shared/severity.js";
 import { GraphError } from "../types.js";
 import { UNIFORM_COVERAGE_FIELD_NAMES } from "./coverage.js";
-// Pure data module (no transformers import), so config stays Node-light.
-import { DEFAULT_MODEL as DEFAULT_EMBED_MODEL } from "../embed/types.js";
 
 export type DeriveSource =
   | "frontmatter"
@@ -119,7 +117,7 @@ export interface GraphConfig {
   /**
    * The model within the provider, or `null` for the provider's own default.
    * manni pins no model: the inference library chooses, and the model it
-   * resolves to is what every cache key names. Not `embed.model`, which is a
+   * resolves to is what every cache key names. Not `vector.model`, which is a
    * local embedding model id and has nothing to do with a provider.
    */
   model: string | null;
@@ -233,33 +231,6 @@ export interface GraphConfig {
      */
     coverageThreshold: Record<string, number>;
   };
-  embed: {
-    /**
-     * Embedding model id (ADR 01020). An open string, not an enum: the
-     * documented table is the *tested* set, not the permitted set, so a newer
-     * model works without a manni release.
-     */
-    model: string;
-    /** Weight quantization. `q8` keeps int32 accumulation, which is associative. */
-    dtype: string;
-    /**
-     * Directory the sidecars are written into (ADR 01038). One file per
-     * language, named by `vectorIndexFilename`, so this is a directory rather
-     * than the single path it was before the fan-out. Resolved from the
-     * working directory, as `out` is. Undefined means the index directory,
-     * which is why it has no default here.
-     */
-    out: string | undefined;
-    /**
-     * Per-language model overrides, keyed by BCP-47 tag (ADR 01038). A German
-     * corpus embedded with an English-only model returns confident, meaningless
-     * vectors and fails nothing, so this is the knob that makes the fan-out
-     * worth having. Unset languages use `model`/`dtype`.
-     */
-    byLanguage: Record<string, { model?: string; dtype?: string }>;
-    /** Per-text vector cache, keyed on text+model+dtype. */
-    cacheDir: string;
-  };
   export: {
     /** iiRDS package export metadata (ADR 01017); all fields optional. */
     iirds: {
@@ -287,11 +258,11 @@ export interface GraphConfig {
     llms: { title?: string; summary?: string; origin?: string } | null;
   };
   /**
-   * The optional sections `graph publish` runs a step for only when the
-   * config declares them: `embed` and `export.iirds`. Their keys all have
-   * defaults, so the resolved values cannot say whether a section was written.
+   * The optional section `graph publish` runs a step for only when the config
+   * declares it: `export.iirds`. Its keys all have defaults, so the resolved
+   * values cannot say whether the section was written.
    */
-  declared: { embed: boolean; iirds: boolean };
+  declared: { iirds: boolean };
   /**
    * The retrieval defaults the chunk manifest hands every host (proposal
    * 0090). `withhold` is applied at export too: a passage it names is left
@@ -346,6 +317,10 @@ const MOVED_KEYS = ["inputs", "exclude"] as const;
 
 /** The anchor of `baseIri:` on that configuration reference page. */
 const BASE_IRI_ANCHOR = "base-iri";
+
+/** Where the vector domain's configuration reference documents its section (proposal 0128). */
+const VECTOR_CONFIG_REF =
+  "https://hawkeyexl.github.io/manni/vector/reference/configuration/";
 
 export const ALL_DERIVE_SOURCES: DeriveSource[] = [
   "frontmatter",
@@ -445,13 +420,6 @@ interface RawGraphConfig {
     chunkChars?: number;
     offline?: boolean;
     questions?: { perPage?: number };
-  };
-  embed?: {
-    model?: string;
-    dtype?: string;
-    out?: string;
-    cacheDir?: string;
-    byLanguage?: Record<string, { model?: string; dtype?: string }>;
   };
   export?: {
     iirds?: { title?: string; creator?: string; version?: "1.2" | "1.3" };
@@ -607,6 +575,13 @@ export function parseConfigSection(
       `${file.source}: "${BASE_IRI_KEY}" is no longer a graph key. Node IRIs start from one top-level ${BASE_IRI_KEY}: key. See ${CONFIG_REF}#${BASE_IRI_ANCHOR}`,
     );
   }
+  // Moved to a top-level `vector:` section by proposal 0128, and refused
+  // rather than read, so the two domains cannot hold two model settings.
+  if (Object.hasOwn(raw as Record<string, unknown>, "embed")) {
+    throw new GraphError(
+      `${file.source}: "embed" is no longer a graph key. Embedding settings live under a top-level vector: section. See ${VECTOR_CONFIG_REF}`,
+    );
+  }
   if (!validateConfig(raw)) {
     const details = (validateConfig.errors ?? [])
       .map((e) => configErrorLine(e))
@@ -685,13 +660,6 @@ export function parseConfigSection(
       offline: r.fill?.offline ?? false,
       questions: { perPage: r.fill?.questions?.perPage ?? 3 },
     },
-    embed: {
-      model: r.embed?.model ?? DEFAULT_EMBED_MODEL,
-      dtype: r.embed?.dtype ?? "q8",
-      out: r.embed?.out,
-      cacheDir: r.embed?.cacheDir ?? ".manni/graph/embed-cache",
-      byLanguage: r.embed?.byLanguage ?? {},
-    },
     export: {
       iirds: {
         title: r.export?.iirds?.title,
@@ -701,7 +669,7 @@ export function parseConfigSection(
       chunks: { evals: r.export?.chunks?.evals ?? null },
       llms: r.export?.llms ?? null,
     },
-    declared: { embed: r.embed !== undefined, iirds: r.export?.iirds !== undefined },
+    declared: { iirds: r.export?.iirds !== undefined },
     retrieve: {
       seeds: r.retrieve?.seeds ?? 3,
       depth: r.retrieve?.depth ?? 1,

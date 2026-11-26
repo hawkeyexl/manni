@@ -16,6 +16,7 @@ import type { ParseContext } from "../../lint/types.js";
 import { emitJsonLd } from "../core/emit-jsonld.js";
 import { emitRdfXml } from "../core/emit-rdfxml.js";
 import { projectPackage } from "../core/iirds-package.js";
+import type { Store } from "n3";
 import { loadGraph, storeToQuads } from "../core/load.js";
 import {
   buildSearchIndex,
@@ -152,7 +153,7 @@ function runIirds(
 }
 
 /**
- * The same digest `manni graph embed` records as a sidecar's `source` and the runtime
+ * The same digest `manni vector build` records as a sidecar's `source` and the runtime
  * recomputes in a browser: SHA-256 over the index file's exact bytes. Computed
  * here from the string about to be written, so the manifest cannot disagree
  * with the file it describes.
@@ -177,20 +178,36 @@ async function runSearchIndex(
   out: string | undefined,
   context: (label: string) => ParseContext,
 ): Promise<ExportResult> {
-  const store = loadGraph(graphPath);
+  // Siblings of the graph, named for what they are: `graph.json` next to
+  // `graph.jsonld` would be a trap. `--out` names the directory here, not a
+  // file, because there is more than one.
+  const outDir = out ? resolve(cwd, out) : dirname(graphPath);
+  return writeSearchIndex(loadGraph(graphPath), sources, outDir, { context });
+}
+
+/**
+ * Write `search.<lang>.json` and `localizations.json` for a built graph into
+ * `outDir`. `graph export search` reads the graph from its file, and
+ * `manni vector build` hands it the one it built in memory, so the two write
+ * the same bytes. `readDoc` reads a page `graph build` read from stdin.
+ */
+export async function writeSearchIndex(
+  store: Store,
+  sources: string,
+  outDir: string,
+  options: {
+    context: (label: string) => ParseContext;
+    readDoc?: (path: string) => string | undefined;
+  },
+): Promise<ExportResult> {
   const graph = GraphIndex.fromQuads(
     storeToQuads(store),
     Object.fromEntries(PREFIXES),
   );
   const warnings: string[] = [];
-  const index = await buildSearchIndex(graph, sources, { warnings, context });
+  const index = await buildSearchIndex(graph, sources, { warnings, ...options });
   const byLanguage = partitionByLanguage(graph, index);
   const docCounts = documentsByLanguage(graph);
-
-  // Siblings of the graph, named for what they are: `graph.json` next to
-  // `graph.jsonld` would be a trap. `--out` names the directory here, not a
-  // file, because there is more than one.
-  const outDir = out ? resolve(cwd, out) : dirname(graphPath);
   mkdirSync(outDir, { recursive: true });
 
   const languages: LocalizationEntry[] = [];

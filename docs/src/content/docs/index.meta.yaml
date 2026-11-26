@@ -82,34 +82,37 @@ docs/src/content/docs/index.mdx:
       lines: 113-115
       integrity: sha256-93fa1276a6fe08604d756b8b94bf54fb68862c89946a2a3e5bfeba6281925b5d
     - generated-by: Claude Opus 5.5
-      lines: 117
-      integrity: sha256-0f7333e4f944f70f987c9da6147cc31bacf2e02bd5a2075e9c7e9e8edf5ee4d7
+      lines: 117-122
+      integrity: sha256-d6b5793ac9a596d1f410fa7ac93a3697296abd56f5447246c9c4edb4949845e6
     - generated-by: Claude Opus 4.8
-      lines: 118
+      lines: 123
       integrity: sha256-582ebf3ded795155d25105b5debae773505eca9fc278cf38d08fe470dff25f81
     - generated-by: Claude Opus 5.5
-      lines: 122-138
-      integrity: sha256-10daf86b50ce2e226011acf6d3f146fa9695ba2fcd34b2850877bcc7623f21da
+      lines: 127-139
+      integrity: sha256-6c9b30257a7cecd59c2298a5515ef2d9826b65fed876aadd46034ba6d08e1ebf
+    - generated-by: Claude Opus 5.5
+      lines: 144-146
+      integrity: sha256-d6520487cbe42efbe2eb3b3d54bfb3b0b712164e97861fd34c756b2dc36d96e0
     - generated-by: Claude Fable 5.1
-      lines: 145-148
+      lines: 153-156
       integrity: sha256-a9166709dd44ec5d41b9948e8332b63db9fe72d42223db6164029daa37e858b8
     - generated-by: Claude Opus 4.8
-      lines: 150
+      lines: 158
       integrity: sha256-8af8182ab1e8f509cf81961103ae39b0aa62a55a70dfd31bb9437408df4b7c20
     - generated-by: Claude Fable 5.1
-      lines: 151-153
+      lines: 159-161
       integrity: sha256-561c832b50642eac058ead4c88fdb35ca951b3bca4a0f4c95f22e5bca6fe5ff4
     - generated-by: Claude Opus 4.8
-      lines: 154
+      lines: 162
       integrity: sha256-f1b901847390b0ed7e374e7c1e464ec17b46a427c487a5ad6cbd2906405083d5
     - generated-by: Claude Fable 5.1
-      lines: 186-196
+      lines: 194-204
       integrity: sha256-eb894ad7d475c33df77cc37fa0d2679ad1b8973e6992ffdf6eab06cb1abac655
     - generated-by: Claude Fable 5.1
-      lines: 202-203
+      lines: 210-211
       integrity: sha256-22ce86ce09a39ce17edb6a75a512ad70e2f70411dfedde4daff639fb7391d7b7
     - generated-by: Claude Opus 5.5
-      lines: 204
+      lines: 212
       integrity: sha256-4155a00325cda3ba9494efe1e67fab63f5905b52ba9057000f576a9520f6ffb6
   owner:
     - "@hawkeyexl"

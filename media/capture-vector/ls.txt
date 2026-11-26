@@ -1,0 +1,3 @@
+localizations.json
+search.en.json
+vectors.en.bin

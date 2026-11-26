@@ -14,7 +14,6 @@ const cli = join(root, "dist", "cli.js");
 // and a corpus built inside this checkout would carry HEAD's committer
 // date. See test/graph/helpers/corpus.ts.
 const corpus = detachedCorpus();
-const goldenDir = join(root, "test", "graph", "fixtures", "golden");
 
 /**
  * `spawnSync`, not `execFileSync`, so **stderr is captured on success too**.
@@ -41,32 +40,28 @@ function run(
   return { stdout, stderr, output: stdout + stderr, status: r.status ?? -1 };
 }
 
-/** Build the corpus, its search index, and (optionally) its vectors. */
+/**
+ * Build the corpus graph, then its search index with (optionally) its vectors
+ * beside it: `vector build` writes both, `graph export search` the index alone.
+ */
 function prepare(withVectors = true): {
   dir: string;
   graph: string;
   vectors: string;
 } {
-  const dir = mkdtempSync(join(tmpdir(), "manni-graph-embed-"));
+  const dir = mkdtempSync(join(tmpdir(), "manni-graph-search-vectors-"));
   const graph = join(dir, "graph.ttl");
   // The undetermined bucket: the corpus's English tree declares no language,
-  // so its 20 entries land in `und` (ADR 01038).
+  // so its entries land in `und` (ADR 01038).
   const vectors = join(dir, "vectors.und.bin");
   execFileSync(process.execPath, [cli, "graph", "build", "--out", graph], {
     encoding: "utf8",
     cwd: corpus,
   });
-  execFileSync(process.execPath, [cli, "graph", "export", "search", "-g", graph], {
-    encoding: "utf8",
-    cwd: corpus,
-  });
-  if (withVectors) {
-    execFileSync(
-      process.execPath,
-      [cli, "graph", "embed", "-g", graph, "--embedding-model", "mock", "--no-cache"],
-      { encoding: "utf8", cwd: corpus },
-    );
-  }
+  const index = withVectors
+    ? [cli, "vector", "build", "--embedding-model", "mock", "--no-cache", "-o", dir]
+    : [cli, "graph", "export", "search", "-g", graph];
+  execFileSync(process.execPath, index, { encoding: "utf8", cwd: corpus });
   return { dir, graph, vectors };
 }
 
@@ -107,175 +102,6 @@ interface SearchJson {
   trace: { entry: Array<{ iri: string }> };
 }
 
-describe("manni graph embed (integration)", () => {
-  it.each(["und", "de", "de-AT", "fr"])(
-    "matches the %s vectors golden byte-for-byte",
-    (language) => {
-      const { dir } = prepare();
-      const name = `vectors.${language}.bin`;
-      expect(
-        readFileSync(join(dir, name)).equals(
-          readFileSync(join(goldenDir, name)),
-        ),
-      ).toBe(true);
-    },
-  );
-
-  it("records the language each sidecar covers in its header", () => {
-    const { dir } = prepare();
-    // Bytes 12.. are the JSON header; reading it back through the public
-    // decoder would need the runtime bundle, and this only needs the tag.
-    const bytes = readFileSync(join(dir, "vectors.de.bin"));
-    const headerLength = bytes.readUInt32LE(8);
-    const header = JSON.parse(
-      bytes.subarray(12, 12 + headerLength).toString("utf8"),
-    ) as { language: string };
-    expect(header.language).toBe("de");
-  });
-
-  it("fills the manifest's vectors block for every language", () => {
-    const { dir } = prepare();
-    const doc = JSON.parse(
-      readFileSync(join(dir, "localizations.json"), "utf8"),
-    ) as {
-      languages: Array<{
-        language: string;
-        vectors?: { path: string; model: string; count: number };
-      }>;
-    };
-    expect(doc.languages.map((l) => l.language)).toEqual([
-      "de",
-      "de-AT",
-      "fr",
-      "und",
-    ]);
-    for (const l of doc.languages) {
-      expect(l.vectors?.path).toBe(`vectors.${l.language}.bin`);
-      expect(l.vectors?.model).toBe("mock");
-    }
-  });
-
-  it("is byte-identical across two runs (determinism gate)", () => {
-    const { dir, graph } = prepare(false);
-    const a = join(dir, "a");
-    const b = join(dir, "b");
-    const args = (out: string) => [
-      "embed",
-      "-g",
-      graph,
-      "--embedding-model",
-      "mock",
-      "--no-cache",
-      "-o",
-      out,
-    ];
-    run(args(a), corpus);
-    run(args(b), corpus);
-    for (const name of ["vectors.und.bin", "vectors.de.bin"]) {
-      expect(
-        readFileSync(join(a, name)).equals(readFileSync(join(b, name))),
-      ).toBe(true);
-    }
-  });
-
-  it("serves repeat runs from the cache", () => {
-    const { dir, graph } = prepare(false);
-    const cacheHome = mkdtempSync(join(tmpdir(), "manni-graph-embed-cache-"));
-    const cfg = join(cacheHome, "dockg.config.yaml");
-    writeFileSync(
-      cfg,
-      `baseIri: https://example.com/graph/\ngraph:\n  embed:\n    cacheDir: ${JSON.stringify(join(cacheHome, "cache"))}\n`,
-    );
-    const args = [
-      "embed",
-      "-g",
-      graph,
-      "-c",
-      cfg,
-      "--embedding-model",
-      "mock",
-      "-o",
-      join(dir, "c"),
-      "-f",
-      "json",
-    ];
-    const first = JSON.parse(run(args, corpus).stdout) as {
-      embedded: number;
-      cached: number;
-    };
-    expect(first.embedded).toBeGreaterThan(0);
-    // Not zero: concepts are shared vocabulary and appear in every language's
-    // index (ADR 01038), and the cache is keyed on text+model+dtype — so the
-    // first run already serves each concept's repeats from cache rather than
-    // embedding the same string once per locale. Replication is free.
-    const firstTotal = first.embedded + first.cached;
-
-    const second = JSON.parse(run(args, corpus).stdout) as {
-      embedded: number;
-      cached: number;
-    };
-    expect(second.embedded).toBe(0);
-    expect(second.cached).toBe(firstTotal);
-  });
-
-  it("reports the model and dimensions it used", () => {
-    const { dir, graph } = prepare(false);
-    const out = JSON.parse(
-      run(
-        [
-          "embed",
-          "-g",
-          graph,
-          "--embedding-model",
-          "mock",
-          "--no-cache",
-          "-o",
-          join(dir, "d"),
-          "-f",
-          "json",
-        ],
-        corpus,
-      ).stdout,
-    ) as {
-      total: number;
-      languages: Array<{ language: string; model: string; dims: number }>;
-    };
-    expect(out.total).toBeGreaterThan(0);
-    expect(out.languages).toHaveLength(4);
-    for (const l of out.languages) {
-      expect(l.model).toBe("mock");
-      expect(l.dims).toBeGreaterThan(0);
-    }
-  });
-
-  it("exits 2 when the search index is missing", () => {
-    const dir = mkdtempSync(join(tmpdir(), "manni-graph-embed-none-"));
-    const graph = join(dir, "graph.ttl");
-    execFileSync(process.execPath, [cli, "graph", "build", "--out", graph], {
-      encoding: "utf8",
-      cwd: corpus,
-    });
-    const { status, output } = run(
-      ["embed", "-g", graph, "--embedding-model", "mock"],
-      corpus,
-    );
-    expect(status).toBe(2);
-    expect(output).toContain("export search");
-  });
-
-  it("exits 2 with an install hint when the optional peer is absent", () => {
-    // The real model path needs @huggingface/transformers, which this repo
-    // deliberately does not install — the same position a user is in.
-    const { dir, graph } = prepare(false);
-    const { status, output } = run(
-      ["embed", "-g", graph, "-o", join(dir, "e.bin")],
-      corpus,
-    );
-    expect(status).toBe(2);
-    expect(output).toContain("npm install @huggingface/transformers");
-  });
-});
-
 describe("manni graph search with vectors (integration)", () => {
   const search = (args: string[]): SearchJson =>
     JSON.parse(run(args, corpus).stdout) as SearchJson;
@@ -301,27 +127,6 @@ describe("manni graph search with vectors (integration)", () => {
     expect(out.trace.entry.map((e) => e.iri)).toEqual(
       out.results.map((r) => r.iri),
     );
-  });
-
-  it("reports the vector leg alone under --mode vector", () => {
-    const { graph, vectors } = prepare();
-    const out = search([
-      "search",
-      "configuration",
-      "-g",
-      graph,
-      "--lang",
-      "und",
-      "--vectors",
-      vectors,
-      "--mode",
-      "vector",
-      "-f",
-      "json",
-    ]);
-    expect(out.mode).toBe("vector");
-    expect(out.results.map((r) => r.iri)).toEqual(out.vector.map((r) => r.iri));
-    expect(out.results.every((r) => r.via === "vector")).toBe(true);
   });
 
   it("stays lexical-only under --mode lexical even with a sidecar", () => {
@@ -361,7 +166,7 @@ describe("manni graph search with vectors (integration)", () => {
     expect(out.results.length).toBeGreaterThan(0);
   });
 
-  it("exits 2 when --mode vector is asked for without a sidecar", () => {
+  it("exits 2 when --mode hybrid is asked for without a sidecar", () => {
     const { graph } = prepare(false);
     const { status, output } = run(
       [
@@ -372,12 +177,12 @@ describe("manni graph search with vectors (integration)", () => {
         "--lang",
         "und",
         "--mode",
-        "vector",
+        "hybrid",
       ],
       corpus,
     );
     expect(status).toBe(2);
-    expect(output).toContain("manni graph embed");
+    expect(output).toContain("run `manni vector build` first, or use `--mode lexical`.");
   });
 
   it("refuses a sidecar built from a different search index", () => {
@@ -409,21 +214,12 @@ describe("manni graph search with vectors (integration)", () => {
     // `manni graph search` that merely *finds* a stale sidecar beside the graph must
     // not turn a working lexical search into exit 2 — the leg is additive
     // (ADR 01009). Warned on stderr, so the user learns why it went lexical.
-    const { graph, vectors } = prepare();
+    const { graph } = prepare();
     reexportWithNewPage(graph);
 
-    // The sidecar has to be at the *configured default* location for this to be
-    // the discovered case — passing `--vectors` would make it explicitly
-    // requested, which is the exit-2 branch above. `embed.out` is the sidecar
-    // directory since the per-locale fan-out (ADR 01038); search joins it with
-    // the filename the manifest records for this language.
-    const cfg = join(dirname(vectors), "dockg.config.yaml");
-    writeFileSync(
-      cfg,
-      `baseIri: https://example.com/graph/\ngraph:\n  embed:\n    out: ${JSON.stringify(dirname(vectors))}\n`,
-      "utf8",
-    );
-
+    // The sidecar sits where the manifest records it, so it is the
+    // discovered case: passing `--vectors` would make it explicitly
+    // requested, which is the exit-2 branch above.
     // No --vectors and no --mode: the sidecar is discovered, not requested.
     const { status, stdout, stderr } = run(
       [
@@ -433,12 +229,10 @@ describe("manni graph search with vectors (integration)", () => {
         graph,
         "--lang",
         "und",
-        "-c",
-        cfg,
         "-f",
         "json",
       ],
-      dirname(vectors),
+      corpus,
     );
     expect(status).toBe(0);
     const report = JSON.parse(stdout.slice(stdout.indexOf("{"))) as SearchJson;
@@ -492,76 +286,20 @@ describe("manni graph search with vectors (integration)", () => {
     expect(output).not.toContain("at decodeVectorIndex");
   });
 
-  it("reports the requested mode even when the vector leg matched nothing", () => {
-    // Reporting "lexical" for an explicit `--mode vector` would deny that the
-    // semantic leg ran at all.
-    const { graph, vectors } = prepare();
-    const out = search([
-      "search",
-      "   ",
-      "-g",
-      graph,
-      "--lang",
-      "und",
-      "--vectors",
-      vectors,
-      "--mode",
-      "vector",
-      "-f",
-      "json",
-    ]);
-    expect(out.mode).toBe("vector");
-    expect(out.results).toEqual([]);
-  });
-
-  it("keeps the trace consistent with the results under --mode vector", () => {
-    // The trace answers "why did these come back" (ADR 01018), so it must
-    // describe the ranking returned, not the fusion this mode discards.
-    const { graph, vectors } = prepare();
-    const out = search([
-      "search",
-      "configuration",
-      "-g",
-      graph,
-      "--lang",
-      "und",
-      "--vectors",
-      vectors,
-      "--mode",
-      "vector",
-      "-f",
-      "json",
-    ]);
-    expect(out.results.length).toBeGreaterThan(0);
-    expect(out.trace.entry.map((e) => e.iri)).toEqual(
-      out.results.map((r) => r.iri),
-    );
-  });
-
   it("refuses a sidecar built by a different model", () => {
     const { dir, graph } = prepare(false);
     const otherDir = join(dir, "other");
     const other = join(otherDir, "vectors.und.bin");
-    run(
-      [
-        "embed",
-        "-g",
-        graph,
-        "--embedding-model",
-        "mock",
-        "--no-cache",
-        "-o",
-        otherDir,
-        "--dtype",
-        "q8",
-      ],
-      corpus,
+    execFileSync(
+      process.execPath,
+      [cli, "vector", "build", "--embedding-model", "mock", "--no-cache", "-o", otherDir, "--dtype", "q8"],
+      { encoding: "utf8", cwd: corpus },
     );
     // Point the query side at a model the sidecar was not built with.
     const cfg = join(dir, "dockg.config.yaml");
     writeFileSync(
       cfg,
-      "baseIri: https://example.com/graph/\ngraph:\n  embed:\n    model: some/other-model\n",
+      "baseIri: https://example.com/graph/\nvector:\n  model: some/other-model\n",
     );
     const { status, stdout } = run(
       [

@@ -298,48 +298,6 @@
         }
       }
     },
-    "embed": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "model": {
-          "type": "string",
-          "minLength": 1
-        },
-        "dtype": {
-          "type": "string",
-          "minLength": 1
-        },
-        "out": {
-          "type": "string",
-          "minLength": 1
-        },
-        "cacheDir": {
-          "type": "string",
-          "minLength": 1
-        },
-        "byLanguage": {
-          "type": "object",
-          "additionalProperties": false,
-          "patternProperties": {
-            "^[A-Za-z]{2,3}(-[A-Za-z]{4})?(-([A-Za-z]{2}|[0-9]{3}))?(-([A-Za-z0-9]{5,8}|[0-9][A-Za-z0-9]{3}))*$": {
-              "type": "object",
-              "additionalProperties": false,
-              "properties": {
-                "model": {
-                  "type": "string",
-                  "minLength": 1
-                },
-                "dtype": {
-                  "type": "string",
-                  "minLength": 1
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "export": {
       "type": "object",
       "additionalProperties": false,

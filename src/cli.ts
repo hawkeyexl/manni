@@ -130,6 +130,15 @@ const DOMAINS: readonly Domain[] = [
     ],
   },
   {
+    names: ["vector"],
+    load: async () => [
+      (await import("./vector/cli.js"))
+        .buildProgram()
+        .name("vector")
+        .description("Build and search embeddings of a docset's pages, keyed by graph node IRIs"),
+    ],
+  },
+  {
     names: ["tracevals"],
     load: async () => [
       (await import("./tracevals/cli.js"))

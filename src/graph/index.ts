@@ -125,13 +125,6 @@ export {
   type SearchReport,
 } from "./commands/search.js";
 export {
-  runEmbed,
-  renderEmbed,
-  embedText,
-  type EmbedOptions,
-  type EmbedReport,
-} from "./commands/embed.js";
-export {
   createLocalEmbedder,
   createMockEmbedder,
   EmbedderUnavailableError,

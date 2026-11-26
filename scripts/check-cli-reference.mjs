@@ -48,6 +48,7 @@ const PAGES = new Map([
   ["term", "docs/src/content/docs/term/reference/cli.mdx"],
   ["test", "docs/src/content/docs/test/reference/cli.mdx"],
   ["tracevals", "docs/src/content/docs/tracevals/reference/cli.mdx"],
+  ["vector", "docs/src/content/docs/vector/reference/cli.mdx"],
   ["family", "docs/src/content/docs/family/reference/cli.mdx"],
 ]);
 

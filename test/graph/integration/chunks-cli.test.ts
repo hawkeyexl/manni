@@ -53,7 +53,7 @@ describe("graph export chunks, on the command line", () => {
     const lines = r.stderr.trimEnd().split("\n");
     expect(lines).toContain("manni: no docevals report is configured, so records carry no eval verdicts.");
     expect(lines).toContain(
-      "manni: no vector sidecar, so chunks carry no vectors and retrieval is lexical only; configure graph.embed to add them.",
+      "manni: no vector sidecar, so chunks carry no vectors and retrieval is lexical only; add a top-level vector: section to add them.",
     );
     expect(lines.filter((l) => l.startsWith("manni: git cannot read this directory ("))).toHaveLength(1);
   });

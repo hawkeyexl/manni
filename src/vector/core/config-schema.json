@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "manni:vector:config",
+  "title": "manni vector configuration",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "model": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The embedding model id. Default onnx-community/granite-embedding-small-english-r2-ONNX. mock embeds offline."
+    },
+    "dtype": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The weight quantization the model loads at. Default q8."
+    },
+    "cacheDir": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Where computed vectors are cached, relative to the working directory. Default .manni/vector/cache."
+    },
+    "byLanguage": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "The model and quantization for one language, keyed by BCP-47 tag and matched canonically.",
+      "patternProperties": {
+        "^[A-Za-z]{2,3}(-[A-Za-z]{4})?(-([A-Za-z]{2}|[0-9]{3}))?(-([A-Za-z0-9]{5,8}|[0-9][A-Za-z0-9]{3}))*$": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "model": {
+              "type": "string",
+              "minLength": 1
+            },
+            "dtype": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        }
+      }
+    }
+  }
+}

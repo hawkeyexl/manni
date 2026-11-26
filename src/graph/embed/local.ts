@@ -146,7 +146,7 @@ async function loadTransformers(
  * **Constructing it is the expensive step**: `pipeline()` fetches the model's
  * config and weights (tens of megabytes on a cold cache) and builds the ONNX
  * session before returning, so callers that may not need to embed anything —
- * `manni graph embed` on an all-cache-hit run — should construct it lazily.
+ * `manni vector build` on an all-cache-hit run — should construct it lazily.
  */
 export async function createLocalEmbedder(
   options: LocalEmbedderOptions = {},

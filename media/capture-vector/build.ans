@@ -1,0 +1,8 @@
+Indexed 268 pages: 3174 entries in 1 language
+Wrote 1 sidecar, recorded in media/scratch-vector/out/localizations.json
+  en: 3174 vectors (384-d, onnx-community/granite-embedding-small-english-r2-ONNX) -> media/scratch-vector/out/vectors.en.bin
+  3174 embedded, 0 from cache
+
+real	3m21.828s
+user	0m0.000s
+sys	0m0.015s

@@ -1,11 +1,11 @@
 ---
 title: "Vector sidecar"
-description: "What vector sidecar means in manni graph, and where the tool uses it."
+description: "What vector sidecar means in manni vector and manni graph, and where each tool uses it."
 type: term
 id: vector-sidecar
 label: "vector sidecar"
-abstract: "The embeddings graph embed computes."
-definition: "The embeddings `graph embed` computes, one file per language."
+abstract: "The embeddings vector build computes."
+definition: "The embeddings `manni vector build` computes, one file per language."
 keywords:
   - "vector sidecar"
   - "embed"
@@ -16,13 +16,14 @@ audiences:
   - "ci-engineers"
   - "schema-authors"
   - "contributors"
-intent: "Say what vector sidecar means in manni graph."
+intent: "Say what vector sidecar means in manni vector and manni graph."
 lifecycle: published
 applies-to:
+  - "domain:vector"
   - "domain:graph"
 sample-questions:
   - "What is a vector sidecar?"
-  - "What does graph embed add to search?"
+  - "What does a vector sidecar add to search?"
 graph:
   label: "vector sidecar"
   type: concept
@@ -31,7 +32,7 @@ risks: read-only
 related-terms:
   - "search-index"
   - "localization-manifest"
-last-updated: 2026-11-06
+last-updated: 2026-11-11
 ---
 
 <p>{frontmatter.definition}</p>
@@ -40,3 +41,4 @@ It lets search match a page by meaning, so a question worded differently
 from the page still finds it.
 
 They add a semantic leg to `graph search` and to the browser runtime.
+`vector search` ranks by them alone.

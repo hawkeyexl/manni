@@ -11,7 +11,7 @@
  * then the family's top-level `providers:` map, then `auto` (proposal
  * 0051 §3).
  *
- * `graph.embed.model` is a local embedding model id, not a provider, and nothing
+ * `vector.model` is a local embedding model id, not a provider, and nothing
  * here touches it.
  */
 import {

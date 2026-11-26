@@ -15,7 +15,7 @@ concepts:
   - hub
   - section
   - concept
-last-updated: 2026-11-06
+last-updated: 2026-11-11
 ---
 
 import GraphExplorer from "../../../../components/GraphExplorer.astro";
@@ -201,9 +201,10 @@ $ manni graph search "installation"
 1 result (lexical)
 ```
 
-The trailing `(lexical)` is the mode. Run `manni graph embed` and the same query
-gains a vector leg, so a page that never uses your words can still be found.
-`--mode` forces one leg or the other, and `--lang` picks a localization when
+The trailing `(lexical)` is the mode. Run [`manni vector build`](/manni/vector/)
+and the same query gains a vector leg, so a page that never uses your words
+can still be found. `--mode lexical` drops that leg again, and
+`manni vector search` ranks by it alone. `--lang` picks a localization when
 the corpus has more than one, which is required rather than guessed.
 
 ## What depends on this

@@ -55,10 +55,10 @@ import {
 import { renderQuery, runQuery } from "./commands/query.js";
 import { renderFill, runFill } from "./commands/fill.js";
 import { runInit } from "./commands/init.js";
-import { renderEmbed, runEmbed } from "./commands/embed.js";
 import {
   renderSearch,
   runSearch,
+  GRAPH_SEARCH_MODES,
   SEARCH_MODES,
   type SearchMode,
 } from "./commands/search.js";
@@ -110,25 +110,6 @@ function colorOwner(command: Command): Command {
   return command;
 }
 
-export function buildProgram(): Command {
-const program = new Command();
-
-program
-  .name("graph")
-  .description(
-    "Deterministic knowledge graphs derived from documentation frontmatter and formatting.",
-  )
-  .version(pkg.version)
-  .option("--no-color", "disable colored output")
-  // A pointer, not the whole help screen: the message that precedes it
-  // already names the offending flag.
-  .showHelpAfterError("(add --help for usage)")
-  // MUST come before the `.command()` calls below. `copyInheritedSettings`
-  // copies `_exitCallback` by value at subcommand-creation time, so an
-  // `exitOverride()` installed afterwards leaves every subcommand still
-  // calling `process.exit(1)` — which reports a usage error as a finding.
-  .exitOverride();
-
 /**
  * Parse a numeric CLI option, refusing what the config schema refuses.
  *
@@ -159,7 +140,7 @@ function numericOption(
 }
 
 /** A count: a whole number, at least `min` (1 unless the flag allows zero). */
-function countOption(flag: string, min = 1) {
+export function countOption(flag: string, min = 1) {
   return numericOption(flag, { min, integer: true });
 }
 
@@ -186,7 +167,7 @@ function enumOption<T extends string>(flag: string, allowed: readonly T[]) {
  * `Unknown --format "xml". Use pretty | json.` The check runs while the
  * options are parsed, so a typo costs a message rather than a graph load.
  */
-function choiceOption<T extends string>(flag: string, allowed: readonly T[]) {
+export function choiceOption<T extends string>(flag: string, allowed: readonly T[]) {
   return (raw: string): T => {
     if (!(allowed as readonly string[]).includes(raw)) {
       throw new GraphError(`Unknown ${flag} "${raw}". Use ${allowed.join(" | ")}.`);
@@ -195,8 +176,21 @@ function choiceOption<T extends string>(flag: string, allowed: readonly T[]) {
   };
 }
 
+/**
+ * `graph search --mode`. The vector leg alone moved to `manni vector search`
+ * (proposal 0128 §4), so that one value is refused with where it went.
+ */
+function searchModeOption(raw: string): SearchMode {
+  if (raw === "vector") {
+    throw new GraphError(
+      `Unknown --mode "vector". Use ${GRAPH_SEARCH_MODES.join(" | ")}. For vector-only ranking, run manni vector search.`,
+    );
+  }
+  return choiceOption("--mode", GRAPH_SEARCH_MODES)(raw);
+}
+
 /** `-f, --format`: every verb's list is `pretty | json` (0051 §2). */
-const formatOption = choiceOption("--format", GRAPH_FORMATS);
+export const formatOption = choiceOption("--format", GRAPH_FORMATS);
 
 /** `check`'s own, which adds the two CI formats, `github` and `sarif`. */
 const checkFormatOption = choiceOption("--format", CHECK_FORMATS);
@@ -239,14 +233,14 @@ const whereOption = (raw: string, prev: WhereCondition[]): WhereCondition[] => {
 };
 
 /** `--no-authoring` (proposal 0110), worded once for the four verbs that build from pages. */
-const NO_AUTHORING_HELP =
+export const NO_AUTHORING_HELP =
   "Leave out author-facing content: strategy records, and every field its schemas prefer in a sidecar (default: config authoring)";
 
 /**
  * `--no-authoring` as a core takes it. Commander supplies `true` when the
  * flag is absent, so only an explicit `false` overrides `graph.authoring`.
  */
-function authoringOption(value: boolean | undefined): { authoring?: false } {
+export function authoringOption(value: boolean | undefined): { authoring?: false } {
   return value === false ? { authoring: false } : {};
 }
 
@@ -276,7 +270,7 @@ function artifactInputs(command: Command): Command {
  * `-c`/`--no-config`. Declared once so the verbs cannot drift apart on a name
  * or a description, and worded as `meta` and `lint` word them.
  */
-function documentInputs(command: Command, verb: string): Command {
+export function documentInputs(command: Command, verb: string): Command {
   return command
     .argument(
       "[paths...]",
@@ -304,7 +298,7 @@ function documentInputs(command: Command, verb: string): Command {
 }
 
 /** The input flags as commander hands them over. */
-interface InputFlags {
+export interface InputFlags {
   as?: string;
   ext: string;
   allowEmpty?: boolean;
@@ -314,7 +308,7 @@ interface InputFlags {
  * The input flags for a core, and stdin when `paths` holds `-`. `--as` is
  * checked first, so `-` without it is refused before anything waits on stdin.
  */
-async function inputOptions(
+export async function inputOptions(
   paths: string[],
   opts: InputFlags,
 ): Promise<{
@@ -348,7 +342,7 @@ function configInputs(command: Command): Command {
  * restates it as the two fields a core reads, and spreading the raw value over
  * them would put commander's `false` back where a path belongs.
  */
-function rest<T extends { config?: string | boolean }>(
+export function rest<T extends { config?: string | boolean }>(
   opts: T,
 ): Omit<T, "config"> {
   const { config, ...others } = opts;
@@ -356,7 +350,7 @@ function rest<T extends { config?: string | boolean }>(
 }
 
 /** The shared options as the command cores take them. */
-function documentOptions(opts: {
+export function documentOptions(opts: {
   collection?: string[];
   exclude?: string[];
   config?: string | boolean;
@@ -374,6 +368,25 @@ function documentOptions(opts: {
     ...(opts.exclude === undefined ? {} : { exclude: opts.exclude }),
   };
 }
+
+export function buildProgram(): Command {
+const program = new Command();
+
+program
+  .name("graph")
+  .description(
+    "Deterministic knowledge graphs derived from documentation frontmatter and formatting.",
+  )
+  .version(pkg.version)
+  .option("--no-color", "disable colored output")
+  // A pointer, not the whole help screen: the message that precedes it
+  // already names the offending flag.
+  .showHelpAfterError("(add --help for usage)")
+  // MUST come before the `.command()` calls below. `copyInheritedSettings`
+  // copies `_exitCallback` by value at subcommand-creation time, so an
+  // `exitOverride()` installed afterwards leaves every subcommand still
+  // calling `process.exit(1)` — which reports a usage error as a finding.
+  .exitOverride();
 
 program
   .command("init")
@@ -775,8 +788,8 @@ program
   )
   .option(
     "--mode <mode>",
-    `Which legs to run: ${SEARCH_MODES.join(" | ")} (default: hybrid when vectors exist)`,
-    choiceOption("--mode", SEARCH_MODES),
+    `Which legs to run: ${GRAPH_SEARCH_MODES.join(" | ")} (default: hybrid when vectors exist)`,
+    searchModeOption,
   )
   .option(
     "-f, --format <format>",
@@ -1055,60 +1068,16 @@ program
     },
   );
 
+// Moved to the vector domain (proposal 0128). Hidden, so `graph --help` no
+// longer lists it, and it takes anything so every old spelling hears where
+// the verb went rather than a complaint about its flags.
 program
-  .command("embed")
-  .description(
-    "Compute local embeddings for the search index (needs @huggingface/transformers)",
-  )
-  .option("-c, --config <path>", "Path to manni.config.yaml")
-  .option("--no-config", "Ignore any discovered config file")
-  .option("-g, --graph <path>", "Graph .ttl path (default: config out)")
-  .option(
-    "-i, --index <dir>",
-    "Directory holding the indexes and manifest (default: beside the graph)",
-  )
-  .option(
-    "-o, --out <dir>",
-    "Directory for the sidecars (default: the index directory)",
-  )
-  // Not `--model`: on `fill` that is the inference model, a different thing.
-  .option(
-    "--embedding-model <id>",
-    "Embedding model id (any id; `mock` for offline runs)",
-  )
-  .option("--dtype <dtype>", "Weight quantization (default q8)")
-  .option("--no-cache", "Ignore the vector cache")
-  .option(
-    "-f, --format <format>",
-    `Output: ${GRAPH_FORMAT_LIST}`,
-    formatOption,
-    "pretty",
-  )
-  .action(
-    async (opts: {
-      config?: string | boolean;
-      graph?: string;
-      index?: string;
-      out?: string;
-      embeddingModel?: string;
-      dtype?: string;
-      cache?: boolean;
-      format: GraphFormat;
-    }) => {
-      try {
-        const { embeddingModel, ...others } = rest(opts);
-        const report = await runEmbed({
-          ...others,
-          ...documentOptions(opts),
-          ...(embeddingModel === undefined ? {} : { model: embeddingModel }),
-          noCache: opts.cache === false,
-        });
-        console.log(renderEmbed(report, opts.format));
-      } catch (e) {
-        fail(e);
-      }
-    },
-  );
+  .command("embed", { hidden: true })
+  .allowUnknownOption()
+  .allowExcessArguments()
+  .action(() => {
+    fail(new GraphError("graph embed moved to manni vector build."));
+  });
 
 program
   .command("export")
@@ -1168,7 +1137,7 @@ program
 program
   .command("publish")
   .description(
-    "Build, embed when configured, and export everything serving needs into one directory",
+    "Build, add vectors when a vector: section exists, and export everything serving needs into one directory",
   )
   .option("-c, --config <path>", "Path to manni.config.yaml")
   .option("--no-config", "Ignore any discovered config file")

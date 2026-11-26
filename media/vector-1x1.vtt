@@ -1,0 +1,24 @@
+WEBVTT
+
+NOTE Captions are burned into vector-1x1.mp4 (LinkedIn autoplays muted). This sidecar carries the same text for players and for hosts that accept a caption track. Silent video: there is no narration, and the terminal text is in the transcript.
+
+1
+00:00:00.000 --> 00:00:09.367
+Vectors used to need a graph
+It took three graph commands, build, export search and embed. The last one now says where it went.
+
+2
+00:00:09.367 --> 00:00:25.167
+Pages to vectors, one step
+The site's 268 pages become 3174 vectors, every one computed fresh. No graph.ttl is written.
+
+3
+00:00:25.167 --> 00:00:35.367
+Search by meaning
+The top hits are the concept of pinning a fact to a sentence and the page that teaches it.
+
+4
+00:00:35.367 --> 00:00:39.900
+Same ids as the graph
+Every hit is a graph node IRI, so the graph, its chunks and the vectors join on one id.
+

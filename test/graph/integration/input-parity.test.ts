@@ -3,7 +3,7 @@
  * reads stdin alongside named paths, `--as` picks the parser, `--ext` narrows
  * directory walks, and `--allow-empty` turns zero matches into success. Also
  * the flags renamed for what they mean: `query --subject/--predicate/--object`,
- * `traverse --software-subject` and `embed --embedding-model`.
+ * and `traverse --software-subject`.
  */
 import {
   copyFileSync,
@@ -259,11 +259,5 @@ describe("flags named for what they mean", () => {
     );
     expect(old.status).toBe(2);
     expect(old.stderr).toContain("unknown option '--subject'");
-  });
-
-  it("embed refuses --model, which is now --embedding-model", () => {
-    const r = graph(["embed", "-g", graphPath, "--model", "mock"], collections);
-    expect(r.status).toBe(2);
-    expect(r.stderr).toContain("unknown option '--model'");
   });
 });

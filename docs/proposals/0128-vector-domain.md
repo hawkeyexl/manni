@@ -1,6 +1,6 @@
 # 0128: the `vector` domain builds and queries embeddings without a graph
 
-- **Status:** Proposed
+- **Status:** Implemented (#291, #292)
 - **Serves:** Three journeys.
   - Devin · D13, "Publish the graph for retrieval". Vectors become one command
     he can run, gate and publish on their own.
@@ -315,7 +315,8 @@ $ manni vector search "pin a sentence" -i /tmp/vectors --lang en --limit 3 -c ma
 # exit 0: every option at once
 ```
 
-Usage and operational errors, each to stderr with exit 2:
+Usage and operational errors, each to stderr with exit 2. A path in an error
+is absolute, as graph's errors print it. The ladder shortens them:
 
 ```console
 $ manni vector search "x"            # nothing built yet
@@ -366,8 +367,8 @@ their words.
 
 ### Output shapes
 
-`vector build -f json` prints the report below. Paths are relative to the
-working directory.
+`vector build -f json` prints the report below. A path inside the working
+directory is relative to it. One outside, as `-o` can name, stays absolute.
 
 ```json
 {
@@ -423,6 +424,9 @@ The files on disk keep their names, formats and versions.
   deletes files by hand.
 - The first `vector build` or `vector search` downloads the model, as
   `graph embed` and `graph search` did.
+- A cold `vector build` is slow. Embedding this repository's site took 3m22s
+  with the default model and no cache. The cache makes later runs pay only for
+  changed text.
 
 ## Rejected
 

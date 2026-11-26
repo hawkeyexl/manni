@@ -159,6 +159,11 @@ about the other pages.
     href="/manni/test/"
     description="Find the procedure that stopped working before a reader follows it. Run the Doc Detective tests embedded in the docs, and have a synthetic user attempt a task."
   />
+  <LinkCard
+    title="vector"
+    href="/manni/vector/"
+    description="Find a page by meaning, not only by its words. Build a vector index of the docs in one step, and search it, keyed by the ids the graph uses."
+  />
 </CardGrid>
 
 ## How the tools fit together
@@ -176,6 +181,9 @@ trunk:        │                                            │   join:
 install → meta┼─ Vocabulary:      term → strategy → graph ─┼─→ check in CI → agent
               └─ Published site:  site → a11y → test ──────┘
 ```
+
+`vector` hangs off `graph`. It builds a semantic index of the pages, keyed by
+the same ids as the graph, so search and retrieval rank by meaning.
 
 [Start here](/manni/start-here/) walks it step by step, over a sample docset,
 with the real output of each command. `manni --help` lists exactly the tools

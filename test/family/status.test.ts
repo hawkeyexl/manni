@@ -54,8 +54,18 @@ describe.skipIf(!gitAvailable())("runStatus", () => {
       { name: "graph", status: "in-play", reason: "graph: section" },
       { name: "a11y", status: "not-checked", reason: "needs a running site and a browser", next: "Run manni site preview, then manni a11y check." },
       { name: "test", status: "not-checked", reason: "runs the pages' shell steps and synthetic users", next: "Run manni test procedures or manni test tasks." },
+      { name: "vector", status: "not-checked", reason: "downloads and runs an embedding model", next: "Run manni vector build, or add a vector: section so manni graph publish builds it." },
       { name: "tracevals", status: "not-checked", reason: "judges recorded sessions with a model", next: "Run manni tracevals run over sessions, or add tracevals.runtime to judge each turn." },
     ]);
+  });
+
+  it("never runs vector, with a vector: section or without one, and says what to run instead", async () => {
+    dir = fixtureRepo("only-graph");
+    const row = { name: "vector", status: "not-checked", reason: "downloads and runs an embedding model", next: "Run manni vector build, or add a vector: section so manni graph publish builds it." };
+    expect((await runStatus({ cwd: dir })).domains.find((d) => d.name === "vector")).toEqual(row);
+    const config = join(dir, "manni.config.yaml");
+    writeFileSync(config, `${readFileSync(config, "utf8")}\nvector: {}\n`);
+    expect((await runStatus({ cwd: dir })).domains.find((d) => d.name === "vector")).toEqual(row);
   });
 
   it("never runs test: Doc Detective executes the pages' steps, so it says what to run instead", async () => {

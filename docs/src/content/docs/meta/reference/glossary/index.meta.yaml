@@ -21,7 +21,7 @@ docs/src/content/docs/meta/reference/glossary/index.mdx:
       integrity: sha256-17be007a54295bd2f09c4e975e5d94b78cf4c37773d653ab31a6dde625c5df8c
     - generated-by: Claude Opus 5.5
       lines: 28-66
-      integrity: sha256-e897584644adc0878a8f9edca571d6a7f798961f1d216e4d0adca165d0298f06
+      integrity: sha256-da99b3f293b829899d75b82050ae341512aa7b8a7f2efb5b08444faed422a3e8
   owner:
     - "@hawkeyexl"
   created: 2026-09-17

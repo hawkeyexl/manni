@@ -8,7 +8,7 @@ audiences:
   - docs-engineers
 lifecycle: published
 action: develop
-last-updated: 2026-11-06
+last-updated: 2026-11-11
 ---
 
 import RetrievePrototype from "../../../../components/RetrievePrototype.astro";
@@ -222,7 +222,7 @@ both seams.
 `chunks.json` names a model per language, under `languages.<tag>.model`. A
 question is embedded with its language's model, so the vectors compare. The
 first query in a language with a model downloads that model's weights. The
-small models the [configuration reference](/manni/graph/reference/configuration/#embed)
+small models the [configuration reference](/manni/vector/reference/configuration/#tested-models)
 lists run from about 23 MB.
 
 Two ways to skip the download:
@@ -232,8 +232,8 @@ Two ways to skip the download:
 
 When the model cannot load, entry falls back to lexical, and
 `trace.entry.fallback` reads `"lexical"`. A language with no model is lexical
-from the start. That is this site's case, since it configures no
-`graph.embed`.
+from the start. That is this site's case, since it configures no top-level
+`vector:` section.
 
 ## Raise the floor for one call
 

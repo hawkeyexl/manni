@@ -123,7 +123,6 @@ describe("graph -f is the output format, and it is checked", () => {
     ["search", ["search", "q"]],
     ["traverse", ["traverse", "x"]],
     ["fill", ["fill"]],
-    ["embed", ["embed"]],
   ];
   for (const [name, args] of verbs) {
     it(`refuses an unknown --format on ${name}`, () => {
@@ -232,12 +231,23 @@ describe("graph lists carry one separator each", () => {
 });
 
 describe("graph search --mode is checked", () => {
-  it("refuses an unknown mode, naming the three", () => {
+  it("refuses an unknown mode, naming the two", () => {
     const { status, stderr } = run(["search", "q", "--mode", "x"]);
-    expect(stderr).toContain(
-      'Unknown --mode "x". Use lexical | hybrid | vector.',
+    expect(stderr).toContain('Unknown --mode "x". Use lexical | hybrid.');
+    expect(status).toBe(2);
+  });
+
+  it("refuses vector, which is manni vector search (proposal 0128)", () => {
+    const { status, stderr } = run(["search", "q", "--mode", "vector"]);
+    expect(stderr).toBe(
+      'manni: Unknown --mode "vector". Use lexical | hybrid. For vector-only ranking, run manni vector search.\n',
     );
     expect(status).toBe(2);
+  });
+
+  it("leaves graph retrieve --mode all three", () => {
+    const { stderr } = run(["retrieve", "q", "--mode", "x"]);
+    expect(stderr).toContain('Unknown --mode "x". Use lexical | hybrid | vector.');
   });
 });
 

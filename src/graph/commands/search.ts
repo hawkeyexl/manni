@@ -46,6 +46,12 @@ import type { QueryTrace } from "../runtime/trace.js";
 export const SEARCH_MODES = ["lexical", "hybrid", "vector"] as const;
 export type SearchMode = (typeof SEARCH_MODES)[number];
 
+/**
+ * What `graph search --mode` takes (proposal 0128 §4). The vector leg alone is
+ * `manni vector search`, which runs this core with `mode: "vector"`.
+ */
+export const GRAPH_SEARCH_MODES = ["lexical", "hybrid"] as const;
+
 export interface SearchOptions {
   config?: string;
   /** `--no-config`: skip discovery and run on the built-in defaults. */
@@ -105,7 +111,7 @@ export interface SearchReport {
  * as its `source`, and comparing them is how a stale sidecar is refused rather
  * than ranked against (ADR 01020).
  */
-function loadSearchIndex(indexPath: string): {
+function loadSearchIndex(indexPath: string, rebuild: string): {
   doc: SearchIndexDoc;
   source: string;
 } {
@@ -115,18 +121,18 @@ function loadSearchIndex(indexPath: string): {
     parsed = JSON.parse(raw);
   } catch (e) {
     throw new GraphError(
-      `Failed to parse ${indexPath}: ${errorMessage(e)} — re-run \`manni graph export search\`.`,
+      `Failed to parse ${indexPath}: ${errorMessage(e)} — re-run \`${rebuild}\`.`,
     );
   }
   const entries = (parsed as SearchIndexDoc | null)?.entries;
   if (!Array.isArray(entries)) {
     throw new GraphError(
-      `Not a manni graph search index: ${indexPath} — expected an \`entries\` array; re-run \`manni graph export search\`.`,
+      `Not a manni graph search index: ${indexPath} — expected an \`entries\` array; re-run \`${rebuild}\`.`,
     );
   }
   return {
     doc: parsed as SearchIndexDoc,
-    // Same recipe `manni graph embed` uses, so the two digests are comparable.
+    // Same recipe `manni vector build` uses, so the two digests are comparable.
     source: `sha256:${createHash("sha256").update(raw, "utf8").digest("hex")}`,
   };
 }
@@ -152,17 +158,18 @@ export function langRequired(available: readonly string[]): string {
 function resolveLocalization(
   indexDir: string,
   lang: string | undefined,
+  rebuild: string,
 ): LocalizationEntry {
   const manifestPath = join(indexDir, LOCALIZATIONS_FILENAME);
   if (!existsSync(manifestPath)) {
     throw new GraphError(
-      `Localization manifest not found: ${manifestPath} — run \`manni graph export search\` first.`,
+      `Localization manifest not found: ${manifestPath} — run \`${rebuild}\` first.`,
     );
   }
   const manifest = parseLocalizations(readFileSync(manifestPath, "utf8"));
   if (!manifest) {
     throw new GraphError(
-      `Not a manni graph localization manifest: ${manifestPath} — re-run \`manni graph export search\`.`,
+      `Not a manni graph localization manifest: ${manifestPath} — re-run \`${rebuild}\`.`,
     );
   }
   const available = manifest.languages.map((l) => l.language);
@@ -180,7 +187,7 @@ function resolveLocalization(
   const only = manifest.languages[0];
   if (!only) {
     throw new GraphError(
-      `The localization manifest lists no languages: ${manifestPath} — re-run \`manni graph export search\`.`,
+      `The localization manifest lists no languages: ${manifestPath} — re-run \`${rebuild}\`.`,
     );
   }
   if (manifest.languages.length > 1) {
@@ -200,22 +207,28 @@ export async function runSearch(opts: SearchOptions): Promise<SearchReport> {
   );
   const graphPath = resolve(cwd, opts.graph ?? config.out);
   const indexDir = opts.index ? resolve(cwd, opts.index) : dirname(graphPath);
-  const localization = resolveLocalization(indexDir, opts.lang);
+  // `manni vector search` runs this core with `mode: "vector"`, and its user
+  // builds with `vector build`; graph's own modes start from `export search`.
+  const vectorOnly = opts.mode === "vector";
+  const rebuild = vectorOnly ? "manni vector build" : "manni graph export search";
+  // Only graph search can fall back to its lexical leg.
+  const orLexical = vectorOnly ? "" : ", or use `--mode lexical`";
+  const localization = resolveLocalization(indexDir, opts.lang, rebuild);
   const indexPath = join(indexDir, localization.search.path);
 
   if (!existsSync(indexPath)) {
     throw new GraphError(
-      `Search index not found: ${indexPath} — the manifest names it; re-run \`manni graph export search\`.`,
+      `Search index not found: ${indexPath} — the manifest names it; re-run \`${rebuild}\`.`,
     );
   }
 
-  const { doc, source } = loadSearchIndex(indexPath);
-  // The manifest records the digest of the index it wrote, and embed refuses a
+  const { doc, source } = loadSearchIndex(indexPath, rebuild);
+  // The manifest records the digest of the index it wrote, and vector build refuses a
   // pair that has drifted. Searching one anyway answers from bytes the
   // manifest does not describe, with a confident ranking.
   if (localization.search.digest !== source) {
     throw new GraphError(
-      `Stale manifest: ${localization.search.path} does not match the digest recorded for "${localization.language}". Re-run \`manni graph export search\`.`,
+      `Stale manifest: ${localization.search.path} does not match the digest recorded for "${localization.language}". Re-run \`${rebuild}\`.`,
     );
   }
   const lexical = createLexicalIndex(doc);
@@ -245,7 +258,7 @@ export async function runSearch(opts: SearchOptions): Promise<SearchReport> {
   // sidecar yet, and the leg stays unavailable.
   //
   // Resolved against the manifest's own directory, because that is what
-  // `vectors.path` is relative to. Resolving it against `config.embed.out`
+  // `vectors.path` is relative to. Resolving it against a separate sidecar directory
   // instead made the vector leg silently vanish for any layout where the two
   // differ — a lexical answer to a question that asked for both.
   const vectorsPath = explicitVectors
@@ -267,7 +280,7 @@ export async function runSearch(opts: SearchOptions): Promise<SearchReport> {
       // not a raw VectorIndexError stack trace out of an async action.
       if (e instanceof VectorIndexError) {
         throw new GraphError(
-          `${e.message} (${vectorsPath}) — re-run \`manni graph embed\`, or use \`--mode lexical\`.`,
+          `${e.message} (${vectorsPath}) — re-run \`manni vector build\`${orLexical}.`,
         );
       }
       throw e;
@@ -294,7 +307,7 @@ export async function runSearch(opts: SearchOptions): Promise<SearchReport> {
     const named =
       vectorsPath ?? `no sidecar recorded for "${localization.language}"`;
     throw new GraphError(
-      `Vector index not found: ${named} — run \`manni graph embed\` first, or use \`--mode lexical\`.`,
+      `Vector index not found: ${named} — run \`manni vector build\` first${orLexical}.`,
     );
   }
 
@@ -320,7 +333,7 @@ export async function runSearch(opts: SearchOptions): Promise<SearchReport> {
     // means a dimension disagreement the header did not predict — a real
     // operational error (exit 2), not a stack trace out of an async action.
     if (e instanceof VectorMismatchError) {
-      throw new GraphError(`${e.message} Re-run \`manni graph embed\`.`);
+      throw new GraphError(`${e.message} Re-run \`manni vector build\`.`);
     }
     throw e;
   });
@@ -361,7 +374,8 @@ export async function runSearch(opts: SearchOptions): Promise<SearchReport> {
     query: opts.query,
     mode,
     results: results.map(decorate),
-    lexical: entry.lexical.map(decorate),
+    // `manni vector search` is the vector leg alone, so it reports no other.
+    lexical: opts.mode === "vector" ? [] : entry.lexical.map(decorate),
     vector: entry.vector.map(decorate),
     trace: entry.trace,
   };
@@ -373,7 +387,7 @@ export async function runSearch(opts: SearchOptions): Promise<SearchReport> {
  * models compares outputs of two different functions (ADR 01020).
  *
  * Both the model *and* the dtype come from the sidecar header rather than from
- * config: `embed.*` is a build-time knob, and q8 weights are a different
+ * config: `vector.*` is a build-time knob, and q8 weights are a different
  * function from fp32 ones, so following config here would silently compare
  * query vectors against corpus vectors produced by different weights.
  *

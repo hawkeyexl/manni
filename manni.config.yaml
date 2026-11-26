@@ -279,6 +279,7 @@ docevals:
     term: { target-pass-rate: 1.0, evals: [no-todo-markers] }
     test: { target-pass-rate: 1.0, evals: [no-todo-markers] }
     tracevals: { target-pass-rate: 1.0, evals: [no-todo-markers] }
+    vector: { target-pass-rate: 1.0, evals: [no-todo-markers] }
 
 # The strategy tool reads the `strategy` collection's records and every
 # page's references into them, so it needs no paths. Every journey here has a

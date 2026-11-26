@@ -9,7 +9,7 @@
  * — a browser fetches this one small file, learns which localizations exist and
  * what each costs, and downloads only the pair it needs.
  *
- * Written by `manni graph export search`; `manni graph embed` fills in the
+ * Written by `manni graph export search`; `manni vector build` fills in the
  * `vectors` block as it produces each sidecar, so a manifest entry without one
  * means exactly "this language has no vectors yet".
  *
@@ -91,7 +91,7 @@ export interface LocalizationEntry {
   /** Documents in this language (sections excluded). */
   documents: number;
   search: SearchArtifact;
-  /** Absent until `manni graph embed` has run for this language. */
+  /** Absent until `manni vector build` has run for this language. */
   vectors?: VectorArtifact;
 }
 

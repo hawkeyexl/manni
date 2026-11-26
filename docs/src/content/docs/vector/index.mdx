@@ -1,0 +1,175 @@
+---
+title: manni vector
+description: "Find a page by meaning, not only by its words. Build a vector index of the docs in one step, and search it, keyed by the ids the graph uses."
+tableOfContents: false
+hero:
+  tagline: A semantic index of the docs, one command from the pages.
+  actions:
+    - text: CLI reference
+      link: /manni/vector/reference/cli/
+      icon: right-arrow
+      variant: primary
+    - text: Configuration reference
+      link: /manni/vector/reference/configuration/
+      icon: setting
+      variant: minimal
+id: "vector"
+type: "overview"
+keywords: ["vector build", "vector search", "embeddings", "semantic search", "RAG"]
+language: en
+audiences: ["ci-engineers", "docs-engineers"]
+intent: "Understand what manni vector build and search do, where they write, and how the vectors stay joined to the graph."
+lifecycle: published
+applies-to: ["domain:vector"]
+next-steps: ["vector-reference-cli", "graph-publish"]
+related-pages: ["graph", "vector-reference-configuration"]
+risks: ["idempotent"]
+sample-questions: ["How do I build a semantic index of my docs without building the graph first?", "Where does manni vector build write its files?", "Why do the vectors use graph node IRIs?"]
+graph: { label: "manni vector", type: concept }
+tags:
+  - vector
+  - search
+  - cli
+  - tool
+action: understand
+concepts:
+  - vector sidecar
+  - search index
+  - localization manifest
+  - base IRI
+last-updated: 2026-11-11
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+A reader rarely types the words a page uses. They ask "pin a sentence to its
+source", and the page says "citation". Lexical search misses that page.
+`manni vector` builds an index that ranks pages by meaning, from the pages
+themselves, in one command.
+
+<Aside type="note" title="Beta">
+`manni vector` is in beta. Its commands, config keys and output can change in
+any release, without notice.
+</Aside>
+
+The index serves a site's search box, a script, or a retrieval ingester. You
+can run it, cache it and publish it on its own, without learning the graph.
+
+## Two commands
+
+| Command | Does |
+| --- | --- |
+| `manni vector build [paths...]` | Reads the pages and writes the search index, the localization manifest and one vector sidecar per language. |
+| `manni vector search <query>` | Ranks one language's nodes by meaning alone, from what `build` wrote. |
+
+`build` takes the pages the way [`graph build`](/manni/graph/reference/cli/#graph-build)
+does. Name paths, globs or `-` for stdin, or let it read every collection
+`manni.config.yaml` declares.
+
+## The 60-second version
+
+Build the index over the three-page fixture, with the offline `mock` model:
+
+```console
+$ manni vector build -c test/graph/fixtures/dd/docs.config.yaml --embedding-model mock --no-cache
+Indexed 3 pages: 14 entries in 1 language
+Wrote 1 sidecar, recorded in .tmp/dd/localizations.json
+  und: 14 vectors (8-d, mock) -> .tmp/dd/vectors.und.bin
+  14 embedded, 0 from cache
+```
+
+Ask it a question:
+
+```console
+$ manni vector search "install the sdk" -c test/graph/fixtures/dd/docs.config.yaml --limit 3
+0.6653  https://example.com/dd/doc/docs/getting-started.md#getting-started [graph:Section] — Getting started
+0.4490  https://example.com/dd/doc/docs/configuration.md#advanced [graph:Section] — Advanced
+0.3089  https://example.com/dd/doc/docs/getting-started.md#install-the-sdk [graph:Section] — Install the SDK
+
+3 results (vector)
+```
+
+`mock` derives each vector from a hash of the text, so it runs offline and
+ranks without meaning. It is for tests and fixtures. Leave the flag off and
+the default model ranks by what the text says.
+
+## Joined to the graph by its ids
+
+Each row of a sidecar is a graph node IRI. A page is
+`<baseIri>doc/<path>`, and a section adds its heading's anchor. Those are the ids
+`graph search`, `graph retrieve`, `chunks.json` and the browser runtime already
+join on.
+
+`vector build` runs graph's own build in memory to get them, then graph's
+search index over that build. The same pages, the same `graph:` settings and the
+same top-level [`baseIri`](/manni/meta/reference/configuration/#base-iri) give
+the same ids and the same indexed text. A config with no `graph:` section
+builds on graph's defaults.
+
+`build` writes no `graph.ttl`. A repository that only wants vectors never
+builds the graph as a file.
+
+## One directory, beside the graph
+
+Both commands use the directory that holds `graph.out`. That is where
+`graph export search`, `graph search` and `graph publish` already read and
+write, so each finds what the other wrote.
+
+| File | What it holds |
+| --- | --- |
+| `search.<lang>.json` | The lexical index for one language, which also gives each hit its title and type. |
+| `localizations.json` | The manifest that names each language's index and sidecar, with the digest of each. |
+| `vectors.<lang>.bin` | One vector per indexed node, for one language. |
+
+`vector build -o <dir>` and `vector search -i <dir>` move that directory for
+one run. No config key moves it, so the two domains cannot drift apart.
+
+A sidecar records the digest of the index it embedded. Rebuild the index from
+changed pages without the vectors, and `vector search` refuses the pair. It
+will not rank nodes that may be gone.
+
+## The model downloads once
+
+The default model is
+`onnx-community/granite-embedding-small-english-r2-ONNX`. It runs on your
+machine through the optional `@huggingface/transformers` package, so no text
+leaves it. The first `build` or `search` downloads the weights, and later runs
+reuse them.
+
+Computed vectors are cached per text in `.manni/vector/cache`. A second build
+embeds only the text that changed. `--no-cache` ignores the cache for one run.
+
+A corpus in several languages can give each one its own model. The
+[configuration reference](/manni/vector/reference/configuration/) has the keys
+and the tested models.
+
+## With the other domains
+
+`manni graph publish` runs a `vector` step when `manni.config.yaml` has a
+top-level `vector:` section. Its chunks then carry each row's vector, so a
+site's Ask AI ranks by meaning. [Publish the graph](/manni/graph/publish/)
+walks through it.
+
+`manni graph search` ranks with both legs, lexical and vector, once the
+sidecars exist. `manni vector search` ranks with the vector leg alone.
+
+`manni status` lists `vector` as not checked, and `manni check` never runs it.
+A build downloads and runs a model, so it belongs in its own CI step.
+
+## Requirements
+
+Node.js 24 or newer, and the optional `@huggingface/transformers` package for
+any model but `mock`:
+
+```sh
+npm install -D @hawkeyexl/manni @huggingface/transformers
+npx @hawkeyexl/manni vector build
+```
+
+{/* Verified by Doc Detective in docs-as-tests, against test/graph/fixtures/dd/
+    with the offline mock model. The steps write to .tmp/dd-vector so they
+    never add sidecars beside the graph pages' own fixture output. */}
+
+{/* step {"description":"build writes the index and one sidecar per language, without a graph.","runShell":{"command":"manni vector build -c test/graph/fixtures/dd/docs.config.yaml --embedding-model mock --no-cache -o .tmp/dd-vector","exitCodes":[0],"stdio":"/Indexed 3 pages: \\d+ entries in 1 language/"}} */}
+
+{/* step {"description":"search ranks by the vector leg alone.","runShell":{"command":"manni vector search \"install the sdk\" -c test/graph/fixtures/dd/docs.config.yaml -i .tmp/dd-vector --limit 3","exitCodes":[0],"stdio":"3 results (vector)"}} */}

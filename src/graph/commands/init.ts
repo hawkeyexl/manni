@@ -117,14 +117,6 @@ fill:
   # Send nothing off this machine: only a local model already downloaded.
   offline: false
 
-# Local embeddings for semantic search (\`manni graph embed\`). Needs the optional
-# peer: npm install @huggingface/transformers
-# embed:
-#   model: onnx-community/granite-embedding-small-english-r2-ONNX
-#   dtype: q8            # q8 keeps embedding reproducible across platforms
-#   out: graph              # directory for the per-language vector sidecars
-#   cacheDir: .manni/graph/embed-cache
-
 # Optional enrichment for \`manni graph export iirds\` (the iiRDS package).
 # Absent, a minimal valid package is still produced.
 # export:

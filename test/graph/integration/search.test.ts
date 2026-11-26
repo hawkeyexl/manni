@@ -84,7 +84,7 @@ describe("manni graph export search (integration)", () => {
 
   it("matches the localization manifest golden byte-for-byte", () => {
     const { manifest } = buildIndexed();
-    // The golden manifest carries the `vectors` blocks `manni graph embed` wrote, so
+    // The golden manifest carries the `vectors` blocks `manni vector build` wrote, so
     // compare only what `export` is responsible for: version, languages,
     // document counts, and each index's path/entries/digest.
     const strip = (raw: string) => {
@@ -356,13 +356,13 @@ describe("manni graph search (integration)", () => {
 describe("manni graph search — artifact resolution (review fixes)", () => {
   it("finds the sidecar the manifest names, wherever the indexes live", () => {
     // The manifest's `vectors.path` is relative to the manifest. Resolving it
-    // against `config.embed.out` instead made the vector leg vanish silently
+    // against a separate sidecar directory instead made the vector leg vanish silently
     // for any layout where the two differ — a lexical answer to a hybrid
     // question, with exit 0.
     const { graph, dir } = buildIndexed();
     execFileSync(
       process.execPath,
-      [cli, "graph", "embed", "-g", graph, "--embedding-model", "mock", "--no-cache"],
+      [cli, "vector", "build", "--embedding-model", "mock", "--no-cache", "-o", dirname(graph)],
       { encoding: "utf8", cwd: corpus },
     );
     const out = search([

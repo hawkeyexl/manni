@@ -14,7 +14,7 @@ applies-to: ["domain:family"]
 next-steps: ["family-check", "family-claude-code"]
 sample-questions: ["What does manni check run when I name files?", "What exit code does manni check use under a Claude Code hook?", "What does the manni check JSON report look like?"]
 graph: { label: "CLI reference", type: reference }
-last-updated: 2026-11-06
+last-updated: 2026-11-11
 tags:
   - cli
   - exit-codes
@@ -125,6 +125,7 @@ in play. `status` prints the next step under the reason.
 | `graph` | `graph:` exists. | `graph build` in memory, writing no file, then `graph check` | `no graph: section` | `Run manni graph init to add a starter graph: section.` |
 | `a11y` | Never. `check` does not run it, since it needs a built site and a browser. | none | `needs a running site and a browser` | `Run manni site preview, then manni a11y check.` |
 | `test` | Never. `check` does not run it, since it runs the pages' shell steps and synthetic users. | none | `runs the pages' shell steps and synthetic users` | `Run manni test procedures or manni test tasks.` |
+| `vector` | Never. `check` does not run it, since it downloads and runs an embedding model. | none | `downloads and runs an embedding model` | `Run manni vector build, or add a vector: section so manni graph publish builds it.` |
 | `tracevals` | Only under a Claude Code hook, only when `tracevals:` holds a `runtime:` section, and only when [`MANNI_TRACEVALS_HOOKS`](#manni_tracevals_hooks) is `1`. A bare `check` never runs it, since it needs recorded sessions and a model. | none on the command line | `judges recorded sessions with a model`. With `runtime:` present and the variable not `1`: `runtime evals are set up, and turned off here`. | `Run manni tracevals run over sessions, or add tracevals.runtime to judge each turn.` With `runtime:` present and the variable not `1`: `Turn on the manni plugin's tracevals option, or set MANNI_TRACEVALS_HOOKS=1.` |
 
 `check` reads only the files that belong to a collection declared under
@@ -367,6 +368,8 @@ a11y       not checked   needs a running site and a browser
                          Run manni site preview, then manni a11y check.
 test       not checked   runs the pages' shell steps and synthetic users
                          Run manni test procedures or manni test tasks.
+vector     not checked   downloads and runs an embedding model
+                         Run manni vector build, or add a vector: section so manni graph publish builds it.
 tracevals  not checked   judges recorded sessions with a model
                          Run manni tracevals run over sessions, or add tracevals.runtime to judge each turn.
 # exit 0
@@ -574,6 +577,8 @@ a11y       not checked   needs a running site and a browser
                          Run manni site preview, then manni a11y check.
 test       not checked   runs the pages' shell steps and synthetic users
                          Run manni test procedures or manni test tasks.
+vector     not checked   downloads and runs an embedding model
+                         Run manni vector build, or add a vector: section so manni graph publish builds it.
 tracevals  not checked   judges recorded sessions with a model
                          Run manni tracevals run over sessions, or add tracevals.runtime to judge each turn.
 # exit 0

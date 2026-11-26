@@ -62,14 +62,6 @@ describe("parseConfig", () => {
     expect(c.fill.chunkChars).toBe(12000);
     expect(c.fill.offline).toBe(false);
     expect(c.fill.questions).toEqual({ perPage: 3 });
-    // Local embeddings default to granite, configurable (ADR 01020).
-    expect(c.embed.model).toContain("granite-embedding-small-english-r2");
-    expect(c.embed.dtype).toBe("q8");
-    // A directory since the per-locale fan-out (ADR 01038): one sidecar per
-    // language lands in it, named by its tag. Unset means the index directory.
-    expect(c.embed.out).toBeUndefined();
-    expect(c.embed.byLanguage).toEqual({});
-    expect(c.embed.cacheDir).toBe(".manni/graph/embed-cache");
     // iiRDS export defaults: version 1.3, no title/creator (ADR 01017).
     expect(c.export.iirds).toEqual({
       title: undefined,
@@ -104,52 +96,12 @@ describe("parseConfig", () => {
     expect(parse).toThrow('/graph: unknown key "validate"');
   });
 
-  it("parses embed overrides and accepts any model id", () => {
-    // `model` is an open string, not an enum: the documented table is the
-    // tested set, not the permitted set, so a newer model needs no release.
-    const c = parseConfig(
-      "embed:\n  model: some/brand-new-model\n  dtype: fp32\n  out: v\n  cacheDir: .c\n  byLanguage:\n    de:\n      model: some/german-model\n",
-      "/tmp/manni.config.yaml",
+  it("refuses embed, which moved to a top-level vector: section (proposal 0128)", () => {
+    const parse = (): unknown => parseConfig("embed:\n  model: mock\n", "/tmp/manni.config.yaml");
+    expect(parse).toThrow(GraphError);
+    expect(parse).toThrow(
+      '/tmp/manni.config.yaml: "embed" is no longer a graph key. Embedding settings live under a top-level vector: section. See https://hawkeyexl.github.io/manni/vector/reference/configuration/',
     );
-    expect(c.embed).toEqual({
-      model: "some/brand-new-model",
-      dtype: "fp32",
-      out: "v",
-      cacheDir: ".c",
-      byLanguage: { de: { model: "some/german-model" } },
-    });
-  });
-
-  it("rejects a byLanguage key that is not a language tag", () => {
-    // patternProperties plus additionalProperties: false — a language-keyed map
-    // still fails loudly on a key nobody meant, like every other config object.
-    expect(() =>
-      parseConfig(
-        "embed:\n  byLanguage:\n    German:\n      model: x\n",
-        "/tmp/manni.config.yaml",
-      ),
-    ).toThrow(/byLanguage/);
-  });
-
-  it("rejects an unknown key inside a byLanguage entry", () => {
-    expect(
-      () =>
-        parseConfig(
-          "embed:\n  byLanguage:\n    de:\n      bogus: 1\n",
-          "/tmp/manni.config.yaml",
-        ),
-      // The path, which is what Ajv names here — and the part that locates the
-      // mistake: `de` is a legal key, `bogus` inside it is not.
-    ).toThrow(/\/embed\/byLanguage\/de/);
-  });
-
-  it("rejects unknown embed keys", () => {
-    expect(() =>
-      parseConfig(
-        "embed:\n  bogus: true\n",
-        "/tmp/manni.config.yaml",
-      ),
-    ).toThrow(GraphError);
   });
 
   it("parses export.iirds overrides", () => {
@@ -203,17 +155,17 @@ describe("parseConfig", () => {
     const c = parseConfig("", "/tmp/manni.config.yaml");
     expect(c.export.llms).toBeNull();
     expect(c.check.questions.citedThreshold).toBeNull();
-    expect(c.declared).toEqual({ embed: false, iirds: false });
+    expect(c.declared).toEqual({ iirds: false });
   });
 
-  it("parses export.llms, citedThreshold, and the embed and iirds sections as declared", () => {
+  it("parses export.llms, citedThreshold, and the iirds section as declared", () => {
     const c = parseConfig(
-      "export:\n  iirds: {}\n  llms:\n    title: manni\n    summary: One CLI.\n    origin: https://hawkeyexl.github.io\nembed: {}\ncheck:\n  questions:\n    citedThreshold: 90\n",
+      "export:\n  iirds: {}\n  llms:\n    title: manni\n    summary: One CLI.\n    origin: https://hawkeyexl.github.io\ncheck:\n  questions:\n    citedThreshold: 90\n",
       "/tmp/manni.config.yaml",
     );
     expect(c.export.llms).toEqual({ title: "manni", summary: "One CLI.", origin: "https://hawkeyexl.github.io" });
     expect(c.check.questions.citedThreshold).toBe(90);
-    expect(c.declared).toEqual({ embed: true, iirds: true });
+    expect(c.declared).toEqual({ iirds: true });
     expect(parseConfig("export:\n  llms: {}\n", "/tmp/manni.config.yaml").export.llms).toEqual({});
   });
 

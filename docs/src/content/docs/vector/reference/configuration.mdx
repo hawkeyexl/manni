@@ -1,0 +1,159 @@
+---
+title: Configuration reference
+description: Every vector key of manni.config.yaml, with its type, default, and what it does, and the tested embedding models.
+id: "vector-reference-configuration"
+type: "reference"
+keywords: ["vector:", "embedding model", "byLanguage", "cacheDir", "dtype"]
+language: en
+audiences: ["ci-engineers", "docs-engineers"]
+intent: "Look up every key of the vector section, the tested models, and where the old graph.embed settings went."
+lifecycle: published
+applies-to: ["domain:vector"]
+risks: ["idempotent"]
+sample-questions: ["Which embedding model does manni vector use by default?", "How do I give one language its own embedding model?", "Where did graph.embed go?"]
+graph: { label: "Configuration reference", type: reference }
+tags:
+  - configuration
+  - reference
+  - vector
+action: remember
+concepts:
+  - vector sidecar
+  - base IRI
+related-pages:
+  - vector
+  - vector-reference-cli
+  - graph-reference-configuration
+last-updated: 2026-11-11
+---
+
+Write the model once, and a build on your laptop and a build in CI embed the
+same text with the same weights.
+
+manni vector reads one file, `manni.config.yaml`, and one key in it,
+`vector:`. Its pages and node ids come from keys it shares with graph.
+`collections:` says which pages to read, and the top-level
+[`baseIri`](/manni/meta/reference/configuration/#base-iri) starts every id.
+The `graph:` section says how those pages become nodes, and
+[`graph.out`](/manni/graph/reference/configuration/) says where the files go.
+
+Discovery walks from the working directory up to the repository root. `-c`
+names a file instead, `--no-config` ignores whatever discovery found, and with
+no file at all every value below is its built-in default.
+
+## The section
+
+```yaml
+baseIri: https://docs.example.com/id/
+
+graph:
+  out: docs/public/graph/graph.ttl
+
+vector:
+  model: onnx-community/granite-embedding-small-english-r2-ONNX
+  dtype: q8
+  cacheDir: .manni/vector/cache
+  byLanguage:
+    de:
+      model: Xenova/multilingual-e5-small
+```
+
+An empty section, `vector: {}`, takes every default. A section that exists,
+even empty, makes `manni graph publish` run its `vector` step.
+
+| Key | Type | Default | Required | What it does |
+|---|---|---|---|---|
+| `vector` | object | absent | No | Makes `manni graph publish` build vectors. `vector build` and `vector search` run with or without it. |
+| `vector.model` | string | `onnx-community/granite-embedding-small-english-r2-ONNX` | No | The embedding model id. Any id is accepted, so a newer model works without a manni release. `mock` embeds offline. |
+| `vector.dtype` | string | `q8` | No | The weight quantization the model loads at. `q8` keeps the sidecars reproducible from run to run. |
+| `vector.cacheDir` | string | `.manni/vector/cache` | No | Where computed vectors are cached, relative to the working directory. Each entry is keyed on the text, the model and the quantization. |
+| `vector.byLanguage.<tag>.model` | string | `vector.model` | No | The model for one language, matched by canonical BCP-47 tag. |
+| `vector.byLanguage.<tag>.dtype` | string | `vector.dtype` | No | The quantization for that language's model. |
+
+`--embedding-model` and `--dtype` on `vector build` override the first two for
+one run. `--no-cache` ignores the cache. The directory has no key. It is the
+one holding `graph.out`, and `-o` moves it for one run.
+
+## One model per language
+
+An English-only model over a German corpus returns confident, meaningless
+vectors and fails nothing. `byLanguage` exists to prevent that. A language it
+does not list uses `vector.model` and `vector.dtype`:
+
+```yaml
+vector:
+  model: onnx-community/granite-embedding-small-english-r2-ONNX
+  byLanguage:
+    de:
+      model: Xenova/multilingual-e5-small
+```
+
+A key that is not a BCP-47 tag is refused.
+
+## Tested models
+
+| Model | Note |
+|---|---|
+| `onnx-community/granite-embedding-small-english-r2-ONNX` | Default. 384 dimensions, an 8192-token context, so a section is never truncated. No prefixes. |
+| `Xenova/gte-small` | Lighter, about 34 MB. 384 dimensions, 512-token context. |
+| `Xenova/bge-small-en-v1.5` | 384 dimensions. Needs a query prefix, applied automatically here, because omitting it degrades retrieval silently. |
+| `Xenova/all-MiniLM-L6-v2` | Smallest, about 23 MB, but truncates at 256 wordpieces, so a long section loses its tail. |
+
+The table is the tested set, not the permitted one.
+
+## Validation
+
+Inside `vector:` unknown keys are refused, so a typo is caught rather than
+silently ignored. Each is **exit 2**:
+
+```console
+$ manni vector build
+manni: Invalid config in manni.config.yaml:
+manni:   /vector: unknown key "modle"
+```
+
+A type error names the key the same way, as `/vector/model: must be string`.
+
+## Moved from `graph.embed`
+
+The embedding settings sit in a top-level `vector:` section. A `graph:` section
+that still holds `embed` is refused with **exit 2**, on every command that
+reads the graph config:
+
+```text
+manni: manni.config.yaml: "embed" is no longer a graph key. Embedding settings live under a top-level vector: section. See https://hawkeyexl.github.io/manni/vector/reference/configuration/
+```
+
+Before:
+
+```yaml
+graph:
+  out: docs/public/graph/graph.ttl
+  embed:
+    model: onnx-community/granite-embedding-small-english-r2-ONNX
+    dtype: q8
+    out: docs/public/graph
+    cacheDir: .manni/graph/embed-cache
+    byLanguage:
+      de:
+        model: Xenova/multilingual-e5-small
+```
+
+After:
+
+```yaml
+graph:
+  out: docs/public/graph/graph.ttl
+
+vector:
+  model: onnx-community/granite-embedding-small-english-r2-ONNX
+  dtype: q8
+  cacheDir: .manni/vector/cache
+  byLanguage:
+    de:
+      model: Xenova/multilingual-e5-small
+```
+
+`model`, `dtype` and `byLanguage` move as they are. `out` has no successor.
+The files sit beside `graph.out`, unless `-o` names another directory for one run. The cache moved to a new
+directory, so the first build after the move embeds every text once.
