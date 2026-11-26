@@ -44,6 +44,7 @@ describe("CHECK_DEFAULTS", () => {
       severity: "notice",
       timeout: 30000,
       exclude: [],
+      disableRules: [],
     });
   });
 
@@ -314,16 +315,48 @@ describe("runCheck severity filtering and score", () => {
 });
 
 describe("runCheck options through to the analyzer", () => {
-  it("passes tags and timeout to every analyze call", async () => {
+  it("passes tags, timeout and disabled rules to every analyze call", async () => {
     const analyzer = fakeAnalyzer({ [`${S}/`]: { links: [`${S}/a`] }, [`${S}/a`]: {} });
-    await runCheck(opts({ tags: ["wcag2a", "wcag2aa"], timeout: 5000 }), {
-      analyzer,
-      fetcher: noSitemap(),
-    });
+    await runCheck(
+      opts({ tags: ["wcag2a", "wcag2aa"], timeout: 5000, disableRules: ["region"] }),
+      { analyzer, fetcher: noSitemap() },
+    );
     expect(analyzer.calls).toHaveLength(2);
     for (const call of analyzer.calls) {
-      expect(call.opts).toEqual({ tags: ["wcag2a", "wcag2aa"], timeout: 5000 });
+      expect(call.opts).toEqual({
+        tags: ["wcag2a", "wcag2aa"],
+        timeout: 5000,
+        disableRules: ["region"],
+      });
     }
+  });
+
+  it("reports the disabled rules on the run, and none by default", async () => {
+    const off = await runCheck(opts({ disableRules: ["region", "color-contrast"] }), {
+      analyzer: fakeAnalyzer({ [`${S}/`]: {} }),
+      fetcher: noSitemap(),
+    });
+    expect(off.disabledRules).toEqual(["region", "color-contrast"]);
+    const on = await runCheck(opts({}), {
+      analyzer: fakeAnalyzer({ [`${S}/`]: {} }),
+      fetcher: noSitemap(),
+    });
+    expect(on.disabledRules).toEqual([]);
+  });
+
+  it("refuses a rule id axe does not have, naming each, before any page loads", async () => {
+    const analyzer = fakeAnalyzer({ [`${S}/`]: {} });
+    const fetcher = noSitemap();
+    const err = await runCheck(opts({ disableRules: ["regoin", "region", "colour-contrast"] }), {
+      analyzer,
+      fetcher,
+    }).catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(A11yError);
+    expect((err as A11yError).message).toMatch(
+      /^unknown axe rule "regoin" in disableRules\. axe-core \d+\.\d+\.\d+ has no rule with that id\.\nunknown axe rule "colour-contrast" in disableRules\. axe-core \d+\.\d+\.\d+ has no rule with that id\.$/,
+    );
+    expect(analyzer.calls).toEqual([]);
+    expect(fetcher.calls).toEqual([]);
   });
 
   it("normalizes the seeds before crawling", async () => {
@@ -687,7 +720,7 @@ describe("runCheck and pages that redirect in the browser", () => {
       analyzer: fakeAnalyzer({ [`${S}/`]: {} }),
       fetcher: noSitemap(),
     });
-    expect(Object.keys(run)).toEqual(["results", "redirects", "summary"]);
+    expect(Object.keys(run)).toEqual(["results", "redirects", "summary", "disabledRules"]);
     expect(run.redirects).toEqual([]);
     const keys = Object.keys(run.summary);
     expect(keys.slice(0, 6)).toEqual([

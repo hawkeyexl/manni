@@ -73,7 +73,12 @@ function checkRun(
   over: Partial<CheckSummary> = {},
   redirects: Redirect[] = [],
 ): CheckRun {
-  return { results, redirects, summary: summarize(results, { redirects: redirects.length, ...over }) };
+  return {
+    results,
+    redirects,
+    summary: summarize(results, { redirects: redirects.length, ...over }),
+    disabledRules: [],
+  };
 }
 
 const imageAlt: Violation = {
@@ -596,7 +601,7 @@ describe("render and pages that redirect in the browser", () => {
     const parsed = JSON.parse(text) as Record<string, unknown> & {
       summary: { discovered: number; checked: number; skipped: number; duplicates: number; redirects: number };
     };
-    expect(Object.keys(parsed)).toEqual(["results", "redirects", "summary"]);
+    expect(Object.keys(parsed)).toEqual(["results", "redirects", "summary", "disabledRules"]);
     expect(parsed.redirects).toEqual(redirects);
     expect(parsed.summary.redirects).toBe(2);
     const { checked, skipped, duplicates, discovered } = parsed.summary;

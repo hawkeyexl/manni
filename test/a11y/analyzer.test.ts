@@ -115,7 +115,7 @@ describe.skipIf(browser === null)("one page's navigation and the next page (real
       "/elsewhere.html": page(),
     });
     const analyzer = createPlaywrightAnalyzer();
-    const opts = { timeout: 15_000, tags: [] };
+    const opts = { timeout: 15_000, tags: [], disableRules: [] };
     try {
       const first = await analyzer.analyze(`${server.url}/late.html`, opts);
       expect("result" in first).toBe(true);
@@ -140,7 +140,7 @@ describe.skipIf(browser === null)("one page's navigation and the next page (real
       "/pong.html": hop("/ping.html"),
     });
     const analyzer = createPlaywrightAnalyzer();
-    const opts = { timeout: 15_000, tags: [] };
+    const opts = { timeout: 15_000, tags: [], disableRules: [] };
     try {
       for (let i = 0; i < 20; i++) {
         let timer: NodeJS.Timeout | undefined;

@@ -1,0 +1,4 @@
+# Turns color-contrast off for every run that reads it. A typed
+# `--disable-rules` replaces this list for one run.
+a11y:
+  disableRules: [color-contrast]
