@@ -229,7 +229,11 @@ export async function runProcedures(opts: RunProceduresOptions = {}): Promise<Pr
     };
     if (run.code !== 0 && run.code !== 1) throw failed();
     const results =
-      run.code === 0 ? await readResults(outDir) : await readResults(outDir).catch(() => { throw failed(); });
+      run.code === 0
+        ? await readResults(outDir)
+        : await readResults(outDir).catch(() => {
+            throw failed();
+          });
     const tests = testCounts(results);
     const total = tests.pass + tests.fail + tests.warning + tests.skipped;
     // A `null` results file counts as zero tests, so `total` covers it.

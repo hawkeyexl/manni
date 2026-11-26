@@ -1,0 +1,12 @@
+docs/src/content/docs/start-here/provenance/key.mdx:
+  personas:
+    - maya
+  journeys:
+    - m35
+  provenance:
+    - generated-by: Claude Opus 5.5
+      lines: 2-126
+      integrity: sha256-ae7067b7dcb178c76707b75e872d5237de7a1c5ef28d89c5cb65b396bf06d810
+  owner:
+    - "@hawkeyexl"
+  created: 2026-11-26
