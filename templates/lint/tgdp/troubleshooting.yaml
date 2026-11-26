@@ -110,3 +110,38 @@ templates:
         heading: For more information
         min: 0
         max: 1
+    # Judged by `manni docevals` on every page routed to this template. Each
+    # assertion is one a reader of the finished page can check. Upstream's
+    # guide, vendored as test/lint/fixtures/tgdp/guide_troubleshooting.md,
+    # says little about causes and resolution, so those evals cite the
+    # template's own inline guidance instead.
+    evals:
+      # guide_troubleshooting.md:42; template_troubleshooting.md:7
+      - id: tgdp-scope-in-the-opening
+        assertion: The opening says which product, feature or task the page helps troubleshoot.
+        examples:
+          pass: "This page helps you fix sync errors in the Acme desktop app on macOS."
+          fail: "Things sometimes go wrong. This page may help."
+      # guide_troubleshooting.md:48; template_troubleshooting.md:11
+      - id: tgdp-observable-symptoms
+        assertion: Each symptom is described as something the reader can see, such as an error message or a specific behavior.
+        examples:
+          pass: "The app shows `Error 403: token expired` when you open a project."
+          fail: "Authentication is misconfigured."
+      # template_troubleshooting.md:13, 15, 23
+      - id: tgdp-cause-per-symptom
+        assertion: Each symptom is followed by at least one explanation of what causes it.
+        examples:
+          pass: |-
+            ### Cause
+            Your access token expired. Tokens last 24 hours.
+          fail: |-
+            ## Error 403 when you open a project
+            ### Solution
+            Sign out and sign back in.
+      # template_troubleshooting.md:25, 30
+      - id: tgdp-solutions-say-what-success-looks-like
+        assertion: Each solution or workaround says what the reader sees once the problem is resolved.
+        examples:
+          pass: "Sign out and sign back in. The project opens and the sync icon turns solid."
+          fail: "Sign out and sign back in."

@@ -297,16 +297,18 @@ describe("`instructions` migration", () => {
     const source = join(fixtures, "instructions.yaml");
     const message = await rejectionMessage(loadTemplateFile(source));
 
-    expect(message).toContain(source);
-    expect(message).toContain('"templates.how-to.sections.title" uses `instructions`');
-    expect(message).toContain("manni lint no longer evaluates");
-    expect(message).toContain("manni docevals assertion eval in manni.config.yaml");
-    // The eval snippet, with the author's own instruction in it.
-    expect(message).toContain("  docevals:");
-    expect(message).toContain("    evals:");
-    expect(message).toContain("      how-to-title:");
-    expect(message).toContain("        assertion: Must mention the intent of the document");
-    expect(message).toContain("        grader: ai");
+    // The template's own evals, with the author's own instruction in it.
+    expect(message).toBe(
+      [
+        `${source}: "templates.how-to.sections.title" uses \`instructions\`, which manni lint does not evaluate. Move it to the template's evals, which manni docevals grades on every page this template routes:`,
+        "",
+        "  templates:",
+        "    how-to:",
+        "      evals:",
+        "        - id: how-to-title",
+        "          assertion: Must mention the intent of the document",
+      ].join("\n"),
+    );
     // And none of Ajv's useless "must NOT be valid" for the `not` keyword.
     expect(message).not.toContain("must NOT be valid");
   });
@@ -338,7 +340,8 @@ describe("`instructions` migration", () => {
       ),
     );
     expect(message).toContain('"templates.Sample.sections.0.sections.0"');
-    expect(message).toContain("        assertion: Explain it");
+    expect(message).toContain("    Sample:\n      evals:\n");
+    expect(message).toContain("          assertion: Explain it");
   });
 
   // A rule may legitimately be called `instructions`: TGDP's README doctype
@@ -373,7 +376,7 @@ describe("`instructions` migration", () => {
       ),
     );
     expect(message).toContain('"templates.readme.sections.0"');
-    expect(message).toContain("        assertion: Explain how to install it");
+    expect(message).toContain("          assertion: Explain how to install it");
   });
 });
 
@@ -1273,5 +1276,145 @@ describe("what a template ref does on a real filesystem", () => {
     expect(at(steps, 0, "first step")).toBe(`${a}#a`);
     expect(at(steps, 2, "last step")).toBe(`${a}#a`);
     expect(at(steps, 1, "second step")).toBe(`${b}#b`);
+  });
+});
+
+describe("template evals", () => {
+  const EVALS = join(fixtures, "evals.yaml");
+
+  it("accepts bare, use: and inline entries, in the authored form", async () => {
+    const template = await loadResolvedTemplate(`${EVALS}#base`);
+    expect(template.evals).toEqual([
+      "Opens by saying what the reader will accomplish.",
+      { use: "house-voice", options: { tone: "plain" } },
+      {
+        id: "names-prerequisites",
+        assertion: "Names every prerequisite before the first step.",
+      },
+      {
+        id: "steps-numbered",
+        assertion: "Every step is a numbered list item.",
+        severity: "warning",
+      },
+    ]);
+  });
+
+  it("merges a child's evals onto its parent's by key", async () => {
+    const template = await loadResolvedTemplate(`${EVALS}#child`);
+    expect(template.evals).toEqual([
+      // A bare string never matches, so the child's copy is appended below.
+      "Opens by saying what the reader will accomplish.",
+      // `use:` narrows: skip, severity, weight, type and a shallow options merge.
+      {
+        use: "house-voice",
+        severity: "warning",
+        options: { tone: "plain", length: "short" },
+      },
+      // `use:` on an inherited inline id narrows it and keeps the inline form.
+      {
+        id: "names-prerequisites",
+        assertion: "Names every prerequisite before the first step.",
+        skip: true,
+      },
+      // An inline id replaces the inherited entry where the parent had it.
+      { id: "steps-numbered", assertion: "Every step starts with a verb." },
+      // Entries that match nothing are appended in the child's order.
+      {
+        id: "ends-with-next-steps",
+        assertion: "Ends by pointing at a next step.",
+        grader: "human",
+      },
+      "Opens by saying what the reader will accomplish.",
+    ]);
+  });
+
+  it("does not let narrowing change the parent template", async () => {
+    await loadResolvedTemplate(`${EVALS}#child`);
+    const base = await loadResolvedTemplate(`${EVALS}#base`);
+    expect(base.evals?.[1]).toEqual({ use: "house-voice", options: { tone: "plain" } });
+  });
+
+  it("replaces an inherited use: entry with an inline entry of that id", async () => {
+    const merged = await resolveExtends(
+      { extends: "parent", evals: [{ id: "house-voice", assertion: "Reads plainly." }] },
+      () => Promise.resolve({ evals: [{ use: "house-voice" }, "Short."] }),
+    );
+    expect(merged.evals).toEqual([
+      { id: "house-voice", assertion: "Reads plainly." },
+      "Short.",
+    ]);
+  });
+
+  it("appends a use: entry that matches nothing inherited", async () => {
+    const merged = await resolveExtends(
+      { extends: "parent", evals: [{ use: "other", weight: 2 }] },
+      () => Promise.resolve({ evals: [{ use: "house-voice" }] }),
+    );
+    expect(merged.evals).toEqual([{ use: "house-voice" }, { use: "other", weight: 2 }]);
+  });
+
+  it("keeps no evals key on a template with none in its chain", async () => {
+    const plain = await loadResolvedTemplate(`${EVALS}#plain`);
+    expect(plain).not.toHaveProperty("evals");
+    const merged = await resolveExtends({ extends: "parent" }, () =>
+      Promise.resolve({ sections: [] }),
+    );
+    expect(merged).not.toHaveProperty("evals");
+  });
+
+  it("refuses a command-graded eval, naming where it goes instead", async () => {
+    const source = join(fixtures, "evals-command.yaml");
+    const message = await rejectionMessage(loadTemplateFile(source));
+    expect(message).toBe(
+      `${source}: "templates.how-to.evals[1]" uses grader command, which a template cannot carry. Define it under docevals.evals in manni.config.yaml and reference it with use: has-steps.`,
+    );
+  });
+
+  it("refuses two inline evals with one id", async () => {
+    const source = join(fixtures, "evals-dup.yaml");
+    const message = await rejectionMessage(loadTemplateFile(source));
+    expect(message).toBe(`${source}: "templates.how-to.evals" defines "has-goal" twice`);
+  });
+
+  it("refuses an invalid entry with the schema's own message", async () => {
+    const source = join(fixtures, "evals-invalid.yaml");
+    const message = await rejectionMessage(loadTemplateFile(source));
+    expect(message).toBe(
+      `${source} is not a valid template file: /templates/how-to/evals/0 must have required property 'assertion'.`,
+    );
+  });
+
+  it("validates entries against the evals vocabulary itself", () => {
+    // `dependentRequired` is a 2019-09 keyword: a draft-07 validator ignores it.
+    const message = thrownMessage(() =>
+      validateTemplateFile(
+        {
+          templates: {
+            t: {
+              evals: [{ id: "a", assertion: "b", "generated-assertion-hash": "x" }],
+            },
+          },
+        },
+        "hash.yaml",
+      ),
+    );
+    expect(message).toContain("/templates/t/evals/0");
+    expect(message).toContain("generated-assertion-hash");
+  });
+
+  it("refuses an empty evals list and evals on a section", () => {
+    expect(
+      thrownMessage(() =>
+        validateTemplateFile({ templates: { t: { evals: [] } } }, "empty.yaml"),
+      ),
+    ).toContain("/templates/t/evals must NOT have fewer than 1 items");
+    expect(
+      thrownMessage(() =>
+        validateTemplateFile(
+          { templates: { t: { sections: [{ id: "s", evals: ["x"] }] } } },
+          "section.yaml",
+        ),
+      ),
+    ).toContain('("evals")');
   });
 });

@@ -1,0 +1,19 @@
+# A template that uses an eval no docevals.evals entry defines.
+collections:
+  - name: site
+    paths:
+      - "docs/**/*.md"
+
+lint:
+  templates:
+    - templates/how-to.yaml
+
+docevals:
+  evals:
+    no-todo-markers:
+      assertion: The page carries no TODO, TBD or FIXME markers.
+      grader: tool:regex
+      options:
+        pattern: '\b(TODO|TBD|FIXME)\b'
+        match: not-contains
+      severity: error

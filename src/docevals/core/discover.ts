@@ -15,6 +15,7 @@ import { errorMessage } from "../../shared/errors.js";
 import { RECORD_TYPES } from "../../strategy/types.js";
 import { DocevalsError } from "../types.js";
 import type { PageExternal } from "./external.js";
+import type { PageTemplate } from "./templates.js";
 import {
   assertCollectionWithoutPaths,
   DEFAULT_CONFIG_FILENAME,
@@ -47,6 +48,11 @@ export interface PageFile {
    * the page itself carries.
    */
   external?: PageExternal;
+  /**
+   * The template `manni lint` routes the page to, and the evals it carries
+   * (`core/templates.ts`). Absent when the page is unrouted.
+   */
+  template?: PageTemplate;
   /** Set when frontmatter extraction failed; the page is reported as errored. */
   extractError?: string;
 }

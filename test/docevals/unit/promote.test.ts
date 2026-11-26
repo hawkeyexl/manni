@@ -272,3 +272,49 @@ describe("runPromote: the promoted eval must be able to go stale", () => {
     expect(after).not.toContain("assertionHash");
   });
 });
+
+// A template eval is declared once for every page lint routes to the
+// template, in a file promote does not own. It is assessed like any ai eval,
+// and `--write` proposes rather than edits.
+describe("runPromote: a template-sourced eval", () => {
+  function typedScaffold(): string {
+    const root = mkdtempSync(join(tmpdir(), "manni-docevals-promote-template-"));
+    mkdirSync(join(root, "docs"), { recursive: true });
+    writeFileSync(
+      join(root, "docs", "install.md"),
+      ["---", "title: Install", "type: concept", "---", ...BODY.split("\n")].join("\n"),
+    );
+    writeFileSync(
+      join(root, "manni.config.yaml"),
+      ["collections:", "  - name: pages", '    paths: ["docs/**/*.md"]', "docevals: {}", ""].join("\n"),
+    );
+    return root;
+  }
+
+  it("is proposed with source template, and --write edits nothing", async () => {
+    const root = typedScaffold();
+    const before = readFileSync(pagePath(root), "utf8");
+
+    const proposals = await runPromote([], {
+      cwd: root,
+      write: true,
+      providerInstance: promoter({
+        promotable: true,
+        rationale: "A regex is enough.",
+        code: "process.exit(0);\n",
+      }),
+    });
+
+    const first = proposals.find((p) => p.evalName === "tgdp-opens-with-a-definition");
+    expect(first).toMatchObject({ source: "template", promotable: true, applied: false });
+    expect(first?.scriptPath).toBeUndefined();
+    expect(first?.error).toBe(
+      'eval "tgdp-opens-with-a-definition" is declared in tgdp:concept:1.6; ' +
+        "promote --write does not edit templates. " +
+        "Apply the proposal in the template or in one that extends it.",
+    );
+    expect(proposals.every((p) => p.source === "template" && !p.applied)).toBe(true);
+    expect(readFileSync(pagePath(root), "utf8")).toBe(before);
+    expect(existsSync(join(root, "docs", "manni-docevals"))).toBe(false);
+  });
+});

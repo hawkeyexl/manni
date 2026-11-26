@@ -76,3 +76,51 @@ templates:
           to finish this task.
         heading: See also
         max: 1
+    # Judged by `manni docevals` on every page routed to this template. Each
+    # assertion is one a reader of the finished page can check, drawn from
+    # upstream's guide at the same pin, vendored as
+    # test/lint/fixtures/tgdp/guide_how-to.md.
+    evals:
+      # guide_how-to.md:62-63
+      - id: tgdp-overview-names-the-task
+        assertion: The overview says which task the guide covers and when or why a reader would want to do it.
+        examples:
+          pass: "This guide explains how to rotate an API key. Rotate a key when a teammate leaves or a key may have leaked."
+          fail: "This page is about API keys."
+      # guide_how-to.md:49, 114
+      - id: tgdp-steps-start-with-a-verb
+        assertion: 'Each numbered step tells the reader what to do with an imperative verb, optionally after a short lead-in such as "To do X,".'
+        examples:
+          pass: "1. To change the port, open `config.yaml`."
+          fail: "1. The `config.yaml` file contains the port setting."
+      # guide_how-to.md:157
+      - id: tgdp-one-action-per-step
+        assertion: Each numbered step asks the reader to do one thing, with any further actions given as separate steps or substeps.
+        examples:
+          pass: "1. Run `npm install`."
+          fail: "1. Open the settings file, set the port to 8080, and restart the server."
+      # guide_how-to.md:155
+      - id: tgdp-shows-the-result
+        assertion: Where the page has the reader run commands, it shows what successful output or a successful result looks like.
+        examples:
+          pass: "2. Start the server with `npm start`. The terminal prints `Listening on port 8080`."
+          fail: |-
+            2. Start the server with `npm start`.
+            3. Open the dashboard.
+      # guide_how-to.md:13, 50-51
+      - id: tgdp-no-concept-teaching
+        assertion: The page does not stop to teach concepts; background longer than a sentence or two is linked to another page instead.
+        examples:
+          pass: "Webhooks send events to your server as they happen. For how delivery and retries work, see [Webhooks](../concepts/webhooks.md)."
+          fail: |-
+            Before you begin, you need to understand webhooks. A webhook is an HTTP callback.
+            Webhooks were first described in 2007, and they differ from polling in three ways.
+            First, ...
+      # guide_how-to.md:42, 52
+      - id: tgdp-one-method
+        assertion: The page documents one recommended way to complete the task and mentions other methods only briefly or by link.
+        examples:
+          pass: "1. Run `acme keys rotate`. You can also rotate keys in the dashboard; see [Manage keys](keys.md)."
+          fail: |-
+            Option A: rotate the key with the CLI. Option B: rotate it in the dashboard.
+            Option C: call the REST API. The steps for each option follow.

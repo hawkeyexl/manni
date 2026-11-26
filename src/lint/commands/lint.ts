@@ -24,23 +24,19 @@ import {
   parserForExtension,
   unsupportedFormatMessage,
 } from "../parsers/index.js";
-import type { Template, TemplateFile } from "../core/template.js";
+import type { Template } from "../core/template.js";
 import {
-  classifyRef,
-  refRelativeTo,
-  listBuiltins,
-  loadResolvedTemplate,
-  loadTemplateFile,
-} from "../core/template-registry.js";
-import {
-  buildTypeIndex,
   knownTypes,
-  resolveTemplateRef,
-  FILE_TEMPLATE_KEY,
   type Resolution,
   type TemplateOverride,
   type TypeIndexEntry,
 } from "../core/resolve-template.js";
+import {
+  buildTemplateRouting,
+  routePage,
+  templateFiles,
+  type TemplateRouting,
+} from "../core/routing.js";
 import { validateDocument } from "../core/validator.js";
 import {
   resolveStructureTool,
@@ -129,9 +125,6 @@ export interface LintOptions {
   runDitaOt?: typeof runDitaOtValidate;
 }
 
-/** Extensions that make a bare `--template` value a filename, not a name. */
-const TEMPLATE_FILE_EXTENSIONS = [".yaml", ".yml", ".json"];
-
 /**
  * Run a family helper, rethrowing the error it raises as this tool's.
  *
@@ -153,12 +146,6 @@ async function asLintError<T>(run: () => T | Promise<T>): Promise<T> {
     if (err instanceof ToolError) throw new LintError(err.message);
     throw err;
   }
-}
-
-/** `--templates` accepts one path or several; normalize to a list. */
-function templateFiles(value: string | string[] | undefined): string[] {
-  if (value == null) return [];
-  return Array.isArray(value) ? value : [value];
 }
 
 /**
@@ -321,58 +308,6 @@ function parseFinding(message: string): Finding {
 }
 
 /**
- * A template ref, loaded once per run however many pages route to it.
- *
- * The registry deliberately leaves `extends` unresolved, so the merge happens
- * here. Skipping it would make inheritance silently inert: a template that
- * inherits every one of its sections would check nothing and report a clean
- * pass. `resolveExtends` is a no-op on a template without `extends`.
- */
-function templateLoader(): (ref: string) => Promise<Template> {
-  const cache = new Map<string, Promise<Template>>();
-  return (ref) => {
-    let pending = cache.get(ref);
-    if (!pending) {
-      pending = loadResolvedTemplate(ref);
-      cache.set(ref, pending);
-    }
-    return pending;
-  };
-}
-
-/**
- * Normalize `--template` into a ref the registry understands.
- *
- * `--templates t.yaml --template how-to` is the pairing the manni docevals
- * adapter invokes, and it means "the template named how-to inside t.yaml".
- * A ref that already names a file, a URL, or a built-in is passed through.
- */
-function cliTemplateRef(
-  template: string | undefined,
-  templatePaths: string[],
-): string | undefined {
-  if (!template) return undefined;
-  // A ref that names itself is passed through. Sniffing for `#`, `/` and `\`
-  // missed built-in ids, which contain none of them, so `-t tgdp:how-to:1.6`
-  // silently became a lookup for a template of that name inside the first
-  // `--templates` file the moment one was given.
-  if (template.includes("#")) return template;
-  if (classifyRef(template).kind !== "file") return template;
-  if (template.includes("/") || template.includes("\\")) return template;
-  // A bare filename names a file even without a separator: `--template
-  // custom.yaml` means that file, not a template called "custom.yaml" inside
-  // some other one.
-  if (TEMPLATE_FILE_EXTENSIONS.some((e) => template.toLowerCase().endsWith(e))) {
-    return template;
-  }
-  if (templatePaths.length === 0) return template;
-
-  // A bare name is a name inside a `--templates` file. Search them last-first,
-  // matching `buildTypeIndex`, so the file that wins routing also wins here.
-  return `${templatePaths[templatePaths.length - 1] ?? ""}#${template}`;
-}
-
-/**
  * Which file a template came from and what it is called there.
  *
  * The validator and the matcher both name the template in messages - the
@@ -416,13 +351,10 @@ function unknownTypeFinding(
 }
 
 interface LintContext {
-  getTemplate: (ref: string) => Promise<Template>;
+  /** The run's routing, shared with `manni docevals` through `routePage`. */
+  routing: TemplateRouting;
   /** Absolute, forward-slashed form of a display path, for override globs. */
-  absoluteOf?: (file: string) => string;
-  typeIndex: Map<string, TypeIndexEntry>;
-  cliTemplate?: string;
-  overrides?: TemplateOverride[];
-  defaultTemplate?: string;
+  absoluteOf: (file: string) => string;
   explain: boolean;
   /** The run's one Flare reader: each project read once, each notice said once. */
   flare: FlareRun;
@@ -437,7 +369,7 @@ async function lintOne(
   let tree: DocumentTree;
   try {
     tree = await parser.parse(content, label, {
-      absPath: ctx.absoluteOf?.(label) ?? label,
+      absPath: ctx.absoluteOf(label),
       flare: ctx.flare,
     });
   } catch (err) {
@@ -458,15 +390,12 @@ async function lintOne(
   // Routing needs the frontmatter, so it happens after the parse rather than
   // before the read - which is also what makes `--explain` able to say what the
   // page actually declared.
-  const resolution = resolveTemplateRef({
+  const routed = routePage(ctx.routing, {
     filePath: label,
-    absolutePath: ctx.absoluteOf?.(label),
+    absolutePath: ctx.absoluteOf(label),
     frontmatter: tree.frontmatter,
-    cliTemplate: ctx.cliTemplate,
-    overrides: ctx.overrides,
-    typeIndex: ctx.typeIndex,
-    defaultTemplate: ctx.defaultTemplate,
   });
+  const resolution = routed.resolution;
   const withResolution = <T extends LintFileResult>(result: T): T =>
     ctx.explain
       ? { ...result, resolution, ...(tree.flare === undefined ? {} : { flare: tree.flare }) }
@@ -493,7 +422,7 @@ async function lintOne(
       return withResolution({
         file: label,
         success: false,
-        findings: [unknownTypeFinding(resolution, ctx.typeIndex, metaPosition)],
+        findings: [unknownTypeFinding(resolution, ctx.routing.typeIndex, metaPosition)],
         template: null,
       });
     }
@@ -527,50 +456,16 @@ async function lintOne(
       template: resolution.ref,
     });
 
-  // A page may not send the linter to a URL of its own choosing.
-  //
-  // `type` comes out of the document too, but it only *selects* from the
-  // routing table the operator assembled - a page can ask for a template on
-  // offer, not introduce one. `$template` names a reference directly, which
-  // makes it the one stage where a document says where a template comes from,
-  // and documents are exactly what this tool is pointed at untrusted: a docset
-  // from a fork, a contributor's branch, a vendored copy.
-  // Left open, one line of frontmatter makes the linting host issue an
-  // arbitrary request, which on CI means from inside the build network. The
-  // `$ref` hole this mirrors was closed in the template loader; this is the
-  // same hole one level up, where the ref itself is attacker-chosen.
-  //
-  // Refused rather than ignored, because silently falling through to `type`
-  // would lint the page against something other than what it asked for and say
-  // nothing. An operator who does want a remote template still has every other
-  // stage: name it in `templates:`, map it under `types:`, or pass --template.
-  if (
-    resolution.stage === "frontmatter-template" &&
-    classifyRef(resolution.ref).kind === "url"
-  ) {
-    return brokenTemplate(
-      new LintError(
-        `${FILE_TEMPLATE_KEY} may not name a URL ("${resolution.ref}"): a document ` +
-          `must not choose what the linter fetches. Declare it in manni.config.yaml ` +
-          `under "templates:" or "types:", or pass it with --template.`,
-      ),
-    );
+  // A `$template` naming a URL is refused by the routing, and a relative one
+  // is re-based beside the page there; both are explained in `routePage`.
+  const ref = routed.ref;
+  if (ref === null) {
+    return brokenTemplate(new LintError(routed.refusal ?? "No template ref resolved."));
   }
-
-  // A relative `$template` means "beside this page", not "beside wherever the
-  // tool happened to be invoked from". `extends` already follows that rule, and
-  // for the same reason: resolved against the process cwd, `$template:
-  // ./house.yaml` in `docs/guide.md` found the file only when the run started
-  // in `docs/` - so the page routed correctly from one directory and reported
-  // "Template file not found" from every other, including from CI.
-  const ref =
-    resolution.stage === "frontmatter-template"
-      ? refRelativeTo(ctx.absoluteOf?.(label) ?? label, resolution.ref)
-      : resolution.ref;
 
   let template: Template;
   try {
-    template = await ctx.getTemplate(ref);
+    template = await ctx.routing.getTemplate(ref);
   } catch (err) {
     // One unloadable template must not abort a run over a whole tree; it is
     // reported against the pages that route to it.
@@ -659,42 +554,18 @@ interface ManniRun {
 async function lintWithManni(run: ManniRun): Promise<LintFileResult[]> {
   const { opts, config, cwd, files, forcedParser, usingStdin, tools } = run;
 
-  // The doctype -> template map. Built-ins go in first and user templates
-  // overwrite them, so overriding `how-to` for a repo is one file with
-  // `types: [how-to]` in it - no config entry, no flag.
-  const templatePaths = templateFiles(opts.templates ?? config.templates);
-  const getTemplate = templateLoader();
-
-  const userFiles: { ref: string; file: TemplateFile }[] = [];
-  for (const ref of templatePaths) {
-    const file = await loadTemplateFile(ref);
-    // `extends` is resolved before `types` is read. A template that inherits
-    // its doctypes declares none of its own, so reading the raw file routes
-    // nothing to it - the override loads, merges, and is silently inert while
-    // the page goes to the built-in it meant to replace. The loader is cached,
-    // so this costs nothing the lint would not already pay.
-    const templates: Record<string, Template> = {};
-    for (const name of Object.keys(file.templates ?? {})) {
-      templates[name] = await getTemplate(`${ref}#${name}`);
-    }
-    userFiles.push({ ref, file: { ...file, templates } });
-  }
-
-  const typeIndex = buildTypeIndex({
-    builtins: listBuiltins(),
-    userFiles,
-    explicitTypes: opts.types ?? config.types,
+  const routing = await buildTemplateRouting({
+    config,
+    templates: opts.templates === undefined ? undefined : templateFiles(opts.templates),
+    types: opts.types,
+    overrides: opts.overrides,
+    defaultTemplate: opts.defaultTemplate,
+    cliTemplate: opts.template,
   });
 
   const ctx: LintContext = {
-    getTemplate,
+    routing,
     absoluteOf: (file) => resolve(cwd, file).replace(/\\/g, "/"),
-    typeIndex,
-    cliTemplate: cliTemplateRef(opts.template, templatePaths),
-    overrides: opts.overrides ?? config.overrides,
-    // `template:` in config is the default for a page that declares no type -
-    // the bottom of the chain, not the top. `--template` is the top.
-    defaultTemplate: opts.defaultTemplate ?? config.template,
     explain: opts.explain === true,
     flare: flareRun(tools),
   };
@@ -704,7 +575,7 @@ async function lintWithManni(run: ManniRun): Promise<LintFileResult[]> {
   // so it exits 2 with one message, rather than becoming an identical
   // `template_error` finding on all 200 pages and exiting 1 - which reads to
   // CI as "the docs are wrong".
-  if (ctx.cliTemplate != null) await getTemplate(ctx.cliTemplate);
+  if (routing.cliTemplate != null) await routing.getTemplate(routing.cliTemplate);
 
   const results: LintFileResult[] = [];
 

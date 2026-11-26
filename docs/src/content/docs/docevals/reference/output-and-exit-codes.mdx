@@ -5,7 +5,7 @@ type: reference
 audiences:
   - docs-engineers
   - ci-engineers
-last-updated: 2026-11-06
+last-updated: 2026-11-24
 ---
 
 Reach for this page when you wire a run into CI, a dashboard or a bot. The exit code says whose
@@ -35,8 +35,9 @@ actually ran, or from an `error`-level resolution problem.
 ### A run that would check nothing is exit 2
 
 If **no page the run would check resolves a single eval**, `run` stops with exit `2` instead of
-reporting success over an empty report. Nothing is wired up: no `defaults.suite` in the config, and
-no `eval-suite` or `evals` key on any page. The message names how many pages were affected, the
+reporting success over an empty report. Nothing is wired up: no `defaults.suite` in the config, no
+`eval-suite` or `evals` key on any page, and no page routed to a lint template that carries evals.
+The message names how many pages were affected, the
 keys that would attach an eval, and `manni docevals list`, which prints the resolved plan.
 
 This is the same answer `--eval no-such-eval` already gave. Reaching "nothing would have been
@@ -155,6 +156,14 @@ manni: wrote evals to 3 pages; the schema prefers external metadata. Run manni m
 ```
 
 Under `--dry-run` the same line reads `would write` and nothing is offered.
+
+`promote --write` edits no lint template. A promotable eval that a template declares keeps its
+proposal, with `source: "template"`, `applied: false` and an `error` naming the template. The exit
+code is the one the run would have had without it:
+
+```text
+eval "tgdp-one-method" is declared in tgdp:how-to:1.6; promote --write does not edit templates. Apply the proposal in the template or in one that extends it.
+```
 
 ## `--format pretty`
 
@@ -317,6 +326,13 @@ The entry that declares the eval, so a fix starts on the right line:
   line. With the suite set by `defaults.suite`, it names the page alone, with no `line`.
 - When a [manifest](/manni/docevals/reference/frontmatter/#where-evals-live) supplies the key, `file`
   is the manifest and `line` is the entry's line in it.
+- A [template eval](/manni/docevals/reference/frontmatter/#resolution-order) the page never names
+  is declared by whatever routed the page to the template. That is its `type:` line, or its
+  `$template` line. When `lint.overrides` or `lint.template` routed it, `location` is the page
+  alone, with no `line`.
+
+`guidance.id`, and the SARIF, JUnit and GitHub output, follow `location`. A template eval adds no key
+to the JSON.
 
 `file` is spelled the way `file` is, relative to the run's directory. In the sample above,
 `no-todo-markers` is declared by the `use:` item on line 7 of the page, and the finding it raised is
@@ -464,6 +480,39 @@ An eval, criterion, or suite entry is kebab-case in every file, config and front
 report is not a file you write; it is the runtime shape, so `targetPassRate` here corresponds to
 `target-pass-rate` in the config.
 :::
+
+## `list --format json`
+
+`manni docevals list -f json` prints the resolved plan as an array, one object per page. A script
+reads which template routed a page and where each eval came from:
+
+```json
+[
+  {
+    "file": "docs/rotate-key.md",
+    "skip": false,
+    "suite": null,
+    "template": "tgdp:how-to:1.6",
+    "evals": [
+      {
+        "name": "tgdp-one-method",
+        "suite": "default",
+        "type": "regression",
+        "grader": "ai",
+        "source": "template",
+        "skip": false,
+        "hasCommand": false,
+        "assertion": "The page documents one recommended way to complete the task and mentions other methods only briefly or by link."
+      }
+    ],
+    "problems": []
+  }
+]
+```
+
+The sample shows one of the page's six evals. `template` is the ref of the lint template the page
+is routed to, or `null` when lint routes it nowhere. Each eval's `source` is `config`, `template` or `page`, the same tag the pretty report
+prints.
 
 ## `--format markdown`
 

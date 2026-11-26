@@ -1,0 +1,16 @@
+# The house how-to: the built-in, minus tgdp-one-method, plus a regex eval of
+# its own and the config's no-todo-markers.
+templates:
+  how-to:
+    extends: tgdp:how-to:1.6
+    types: [how-to]
+    evals:
+      - use: tgdp-one-method
+        skip: true
+      - id: shows-the-command
+        assertion: The page shows the manni command it is about.
+        grader: tool:regex
+        options:
+          pattern: "manni [a-z]+"
+          match: contains
+      - use: no-todo-markers

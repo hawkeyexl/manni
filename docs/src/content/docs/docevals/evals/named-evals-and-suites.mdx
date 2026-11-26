@@ -1,10 +1,10 @@
 ---
 title: Named evals and suites
-description: Turn per-page assertions into a shared library, and measure page types against a target pass rate.
+description: Turn per-page assertions into a shared library, attach evals by doctype, and measure page types against a target pass rate.
 type: how-to
 audiences:
   - docs-engineers
-last-updated: 2026-11-07
+last-updated: 2026-11-24
 ---
 
 The gate worked on one page, so it got copied. Now the same assertion exists in twelve pages with
@@ -166,6 +166,84 @@ Naming a suite the config does not define is exit 2, with the defined names in t
 behavior, including the per-eval `--eval` filter, in
 [Selecting evals suspends suite enforcement](/manni/docevals/reference/cli/#selecting-evals-suspends-suite-enforcement).
 
+## Attach evals by doctype
+
+A suite per page type repeats a routing that already exists. `manni lint` sends
+every `type: how-to` page to a how-to template, and an `eval-suite: how-to` on
+each page says the same thing again. Nothing checks that the two agree. A page
+that changes to `type: reference` keeps its how-to suite in silence.
+
+A lint template can carry the evals itself, under its own `evals` key.
+`manni docevals` grades them on every page lint routes to that template, and
+the page carries no key for it:
+
+```yaml title="templates.yaml"
+templates:
+  how-to:
+    types: [how-to]
+    extends: tgdp:how-to:1.6
+    evals:
+      - use: no-future-promises
+      - id: shows-the-command
+        assertion: The page shows the command it is about.
+        grader: tool:regex
+        options: { pattern: "manni [a-z]+", match: contains }
+```
+
+Register the file under `lint.templates` in `manni.config.yaml`, and every
+how-to is graded on both. A `use:` entry names an eval from your
+`docevals.evals` library, so the assertion still lives once. The
+[templates reference](/manni/lint/reference/templates/#evals) has the entry
+forms, the `extends` merge and what a template cannot carry.
+
+### Typed pages already get the built-in evals
+
+The built-in templates carry The Good Docs Project's guidance for each doctype
+as `tgdp-*` evals. A page whose `type:` is a built-in doctype gets them with no
+config at all:
+
+```console
+$ manni docevals list docs/rotate-key.md
+docs/rotate-key.md (template: tgdp:how-to:1.6)
+  - tgdp-overview-names-the-task [ai, regression, template]
+      The overview says which task the guide covers and when or why a reader would want to do it.
+  - tgdp-steps-start-with-a-verb [ai, regression, template]
+      Each numbered step tells the reader what to do with an imperative verb, optionally after a short lead-in such as "To do X,".
+  - tgdp-one-action-per-step [ai, regression, template]
+      Each numbered step asks the reader to do one thing, with any further actions given as separate steps or substeps.
+  - tgdp-shows-the-result [ai, regression, template]
+      Where the page has the reader run commands, it shows what successful output or a successful result looks like.
+  - tgdp-no-concept-teaching [ai, regression, template]
+      The page does not stop to teach concepts; background longer than a sentence or two is linked to another page instead.
+  - tgdp-one-method [ai, regression, template]
+      The page documents one recommended way to complete the task and mentions other methods only briefly or by link.
+
+1 pages, 6 evals resolved
+```
+
+Each one is an `ai` regression at `error` severity, so a judged run fails on
+it. `--deterministic-only` skips them, as it skips every `ai` eval, so a CI
+gate that runs deterministic evals alone is unchanged. To turn one off for the
+repository, extend the built-in and narrow it with `use: <id>` and
+`skip: true`. For one page, put that same entry in the page's `evals`. The
+[templates reference](/manni/lint/reference/templates/#the-built-in-evals)
+lists every built-in eval.
+
+### Which to reach for
+
+| You want | Use |
+|---|---|
+| A check that follows the doctype, wherever lint routes the page | Template `evals` |
+| The doctype's built-in guidance, adapted to your house | A template that `extends` the built-in |
+| A target pass rate, criteria or weights over a group of evals | A suite |
+| A group that cuts across doctypes, or one `--suite` can select | A suite |
+
+The two compose. A page's suite evals come first, then its template's, then its
+own entries. A template's inline entry replaces a suite eval with the same id,
+and a page entry wins over both. The
+[resolution order](/manni/docevals/reference/frontmatter/#resolution-order)
+spells it out.
+
 ## Referential integrity is checked at load
 
 Two mistakes fail immediately with exit 2 rather than surfacing later as a confusing per-page
@@ -173,6 +251,7 @@ problem:
 
 - A suite referencing an eval that is not defined.
 - `defaults.suite` naming a suite that does not exist.
+- A template `use:` entry that neither a template it extends nor `docevals.evals` defines.
 
 ## Narrow without forking
 
@@ -189,8 +268,8 @@ evals:
 
 ## Check what resolved
 
-Suites, references, and inline definitions can all contribute the same name, and **page entries win
-on collision**. Do not guess:
+Suites, templates, references, and inline definitions can all contribute the same name, and **page
+entries win on collision**. Do not guess:
 
 ```bash
 npx @hawkeyexl/manni docevals list docs/actions/find.mdx
@@ -210,14 +289,19 @@ docs/actions/find.mdx (suite: reference)
 1 pages, 4 evals resolved
 ```
 
-`source`, the third item, is `config` or `page`, which is exactly what you need when one page
-behaves unlike its neighbours.
+`source`, the third item, is `config`, `template` or `page`, which is exactly what you need when one
+page behaves unlike its neighbours. A page lint routes to a template names it in its header, as
+`(template: tgdp:how-to:1.6)`.
 
 {/* Verified by Doc Detective in docs-as-tests (.github/workflows/docs-as-tests.yml). Config: .doc-detective.json. */}
 
 {/* step {"description":"`list` reports the suite a page resolved to and the source of each eval.","runShell":{"command":"manni docevals list docs/actions/find.mdx","workingDirectory":"test/docevals/fixtures/pages","exitCodes":[0],"stdio":"/suite: reference/"}} */}
 
 {/* step {"description":"A suite below its target pass rate fails the run.","runShell":{"command":"manni docevals run docs/actions/goTo.mdx --deterministic-only --no-generate","workingDirectory":"test/docevals/fixtures/pages","exitCodes":[1],"stdio":"below target"}} */}
+
+{/* step {"description":"A page whose type is a built-in doctype gets that template's evals with nothing configured for it.","runShell":{"command":"manni docevals list docs/builtin.md","workingDirectory":"test/docevals/fixtures/template-evals","exitCodes":[0],"stdio":"template: tgdp:concept:1.6"}} */}
+
+{/* step {"description":"A typed page gets the evals of the local template lint routes it to.","runShell":{"command":"manni docevals list docs/typed.md","workingDirectory":"test/docevals/fixtures/template-evals","exitCodes":[0],"stdio":"/shows-the-command \\[tool:regex, regression, template\\]/"}} */}
 
 {/* step {"description":"--suite narrows `list` to the evals that suite is composed of.","runShell":{"command":"manni docevals list --suite reference","workingDirectory":"test/docevals/fixtures/pages","exitCodes":[0],"stdio":"evals resolved"}} */}
 

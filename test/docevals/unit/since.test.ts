@@ -678,3 +678,74 @@ describe("--since: the run command threads the flag to the engine", () => {
     expect(report.since).toBeUndefined();
   });
 });
+
+// A template's evals are part of what a page is graded on, so editing the
+// template, or a local file it extends, selects exactly the pages lint routes
+// to it. A built-in contributes nothing: it changes only with a release.
+describe("--since: a page whose routed template changed", () => {
+  function templateScaffold(): string {
+    const cwd = mkdtempSync(join(tmpdir(), "manni-docevals-since-template-"));
+    mkdirSync(join(cwd, "docs"), { recursive: true });
+    mkdirSync(join(cwd, "templates"), { recursive: true });
+    writeFileSync(
+      join(cwd, "templates", "base.yaml"),
+      [
+        "templates:",
+        "  base:",
+        "    evals:",
+        "      - id: has-body",
+        "        assertion: The page has body text.",
+        "        grader: tool:regex",
+        "        options: { pattern: Body text }",
+        "",
+      ].join("\n"),
+    );
+    writeFileSync(
+      join(cwd, "templates", "house.yaml"),
+      ["templates:", "  house:", "    extends: base.yaml#base", "    types: [house]", ""].join("\n"),
+    );
+    const doc = (type: string): string =>
+      ["---", "title: A page", `type: ${type}`, "---", "", "Body text.", ""].join("\n");
+    writeFileSync(join(cwd, "docs", "house.md"), doc("house"));
+    writeFileSync(join(cwd, "docs", "concept.md"), doc("concept"));
+    writeFileSync(
+      join(cwd, "manni.config.yaml"),
+      [
+        "collections:",
+        "  - name: pages",
+        '    paths: ["docs/**/*.md"]',
+        "lint:",
+        "  templates: [templates/house.yaml]",
+        "docevals:",
+        "  defaults:",
+        "    suite: reference",
+        ...CONFIG_EVALS.slice(0, 7),
+        "  suites:",
+        "    reference:",
+        "      target-pass-rate: 1.0",
+        "      evals: [always-passes]",
+        "",
+      ].join("\n"),
+    );
+    return cwd;
+  }
+
+  const filesOf = (report: EngineReport): string[] =>
+    [...new Set(report.evalResults.map((r) => r.file))].sort();
+
+  it("selects the pages routed to a changed template", async () => {
+    const cwd = templateScaffold();
+    const report = await run(cwd, ["templates/house.yaml"]).report;
+    expect(filesOf(report)).toEqual(["docs/house.md"]);
+  });
+
+  it("selects them when only a local template it extends changed", async () => {
+    const cwd = templateScaffold();
+    const report = await run(cwd, ["templates/base.yaml"]).report;
+    expect(filesOf(report)).toEqual(["docs/house.md"]);
+    expect(report.evalResults.map((r) => r.evalName).sort()).toEqual([
+      "always-passes",
+      "has-body",
+    ]);
+  });
+});

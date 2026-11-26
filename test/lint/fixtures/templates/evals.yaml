@@ -1,0 +1,38 @@
+# Template-level evals and how `extends` merges them. `base` carries all three
+# entry forms. `child` narrows two inherited entries with `use:`, replaces one
+# inline entry by id, and appends one of its own and one bare assertion.
+templates:
+  base:
+    types: [evals-demo]
+    evals:
+      - Opens by saying what the reader will accomplish.
+      - use: house-voice
+        options:
+          tone: plain
+      - id: names-prerequisites
+        assertion: Names every prerequisite before the first step.
+      - id: steps-numbered
+        assertion: Every step is a numbered list item.
+        severity: warning
+    sections:
+      - id: overview
+        heading: Overview
+  child:
+    extends: evals.yaml#base
+    evals:
+      - use: names-prerequisites
+        skip: true
+      - use: house-voice
+        severity: warning
+        options:
+          length: short
+      - id: steps-numbered
+        assertion: Every step starts with a verb.
+      - id: ends-with-next-steps
+        assertion: Ends by pointing at a next step.
+        grader: human
+      - Opens by saying what the reader will accomplish.
+  plain:
+    sections:
+      - id: overview
+        heading: Overview

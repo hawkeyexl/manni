@@ -17,6 +17,7 @@ import {
   type HeadingRule,
   type Occurrences,
   type Rule,
+  type TemplateEvalEntry,
 } from "../core/template.js";
 import type { TemplateShow } from "../commands/templates.js";
 import type { ReportOptions } from "./index.js";
@@ -178,7 +179,28 @@ function renderPrettyShow(show: TemplateShow, c: Colors): string {
   const sections = show.sections ?? [];
   if (sections.length > 0) lines.push("");
   for (const section of sections) prettyRule(c, section, 2, 2, lines);
+  const evals = show.evals ?? [];
+  if (evals.length > 0) lines.push("", "  Evals");
+  for (const entry of evals) prettyEval(c, entry, lines);
   return lines.join("\n");
+}
+
+/**
+ * One eval: its id, `use` value or bare assertion, the grader of an inline
+ * entry (`ai` when unstated, as docevals reads it), and its assertion beneath.
+ */
+function prettyEval(c: Colors, entry: TemplateEvalEntry, out: string[]): void {
+  if (typeof entry === "string") {
+    out.push(`  - ${entry}`);
+    return;
+  }
+  const inline = !("use" in entry);
+  const key = inline ? entry.id : entry.use;
+  const label = typeof key === "string" ? key : "";
+  const grader = inline ? ` [${typeof entry.grader === "string" ? entry.grader : "ai"}]` : "";
+  const skip = entry.skip === true ? " (skip)" : "";
+  out.push(`  - ${label}${grader}${skip}`);
+  if (typeof entry.assertion === "string") out.push(`      ${c.dim(entry.assertion)}`);
 }
 
 /* -------------------------------------------------------------------------- *

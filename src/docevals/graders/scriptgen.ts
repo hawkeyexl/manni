@@ -158,6 +158,9 @@ export function makeGenerateScripts(deps: ScriptgenDeps): GenerateFn {
     for (const target of targets) {
       const ev = target.eval;
       if (!ev.assertion) continue; // Nothing to generate from.
+      // Never a template's: lint refuses a command eval in one, and the
+      // config write path below must not receive an eval the config lacks.
+      if (ev.source === "template") continue;
       if (ev.source === "config" && doneConfigEvals.has(ev.name)) continue;
 
       // Where the reference will be persisted, decided before the model is

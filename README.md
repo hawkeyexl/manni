@@ -27,24 +27,25 @@ metadata. When a field goes missing or malformed, the page drops out of them,
 and nothing fails. `manni meta` makes it fail. It was published as `docmeta`
 up to 4.13.1; see [Coming from docmeta](#coming-from-docmeta).
 
-`manni meta` checks the metadata in your documents (Markdown frontmatter and more)
-against one or more JSON Schemas. It verifies that required fields are present
-and correctly formatted: a `type`, an ISO 8601 `timestamp`, a URI `resource`. It
-does not judge prose quality. It ships with [built-in
-schemas](https://hawkeyexl.github.io/manni/meta/reference/schemas/). They
-cover content vocabularies such as the [Open Knowledge Format
+`manni meta` checks the metadata in your documents (Markdown frontmatter and
+more) against one or more JSON Schemas. It verifies that required fields are
+present and correctly formatted: a `type`, an ISO 8601 `timestamp`, a URI
+`resource`. It does not judge prose quality. It ships with [built-in
+schemas](https://hawkeyexl.github.io/manni/meta/reference/schemas/). They cover
+content vocabularies such as the [Open Knowledge Format
 (OKF)](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md),
 [Diátaxis](https://diataxis.fr/), [The Good Docs
 Project](https://www.thegooddocsproject.dev/template), and the [Seven-Action
 model](https://passo.uno/seven-action-model/). They also cover the front matter
 contracts of site generators such as
 [Docusaurus](https://docusaurus.io/docs/api/plugins/@docusaurus/plugin-content-docs#markdown-front-matter)
-3.10, Hugo, Jekyll, and MkDocs Material. manni's own metadata vocabularies
-and their strict overlays are built in too. Run `manni meta schemas` for the full
+3.10, Hugo, Jekyll, and MkDocs Material. manni's own metadata vocabularies and
+their strict overlays are built in too. Run `manni meta schemas` for the full
 list. It follows [clig.dev](https://clig.dev) conventions and returns a nonzero
 exit code (plus optional GitHub annotations) when validation fails.
 
-It can also **fill in** the metadata that is missing, so adopting a standard on an existing docset is not a data-entry project.
+It can also **fill in** the metadata that is missing, so adopting a standard on
+an existing docset is not a data-entry project.
 
 ## Install
 
