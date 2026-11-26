@@ -5,15 +5,9 @@
  */
 import { slug as githubSlug } from "github-slugger";
 
-/** Default base when the config sets none: valid, deterministic, obviously placeholder. */
-export const DEFAULT_BASE_IRI = "urn:manni:graph:";
-
-/** Normalize a config base IRI; http(s) bases get a trailing slash. */
-export function resolveBaseIri(base: string | undefined): string {
-  if (!base) return DEFAULT_BASE_IRI;
-  if (base.endsWith("/") || base.endsWith(":")) return base;
-  return `${base}/`;
-}
+// The base is the family's top-level `baseIri:` (proposal 0128 §1), so its
+// default and normalization live with it in src/shared.
+export { resolveBaseIri } from "../../shared/base-iri.js";
 
 /** Repo-relative path with forward slashes and no leading `./`. */
 export function normalizeDocPath(p: string): string {

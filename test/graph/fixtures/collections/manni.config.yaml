@@ -9,6 +9,7 @@ collections:
     paths:
       - "blog/**/*.md"
 
+baseIri: https://example.com/collections/
+
 graph:
-  baseIri: https://example.com/collections/
   out: graph/graph.ttl

@@ -319,7 +319,7 @@ describe("manni graph build (integration)", () => {
     const dir = mkdtempSync(join(tmpdir(), "manni-graph-harvest-"));
     writeFileSync(
       join(dir, "manni.config.yaml"),
-      'collections:\n  - name: c\n    paths: ["*.md"]\ngraph:\n  baseIri: https://example.com/graph/\n',
+      'baseIri: https://example.com/graph/\ncollections:\n  - name: c\n    paths: ["*.md"]\ngraph:\n',
     );
     writeFileSync(
       join(dir, "a.md"),
@@ -358,7 +358,7 @@ describe("manni graph build (integration)", () => {
     const dir = mkdtempSync(join(tmpdir(), "manni-graph-harvest-ok-"));
     writeFileSync(
       join(dir, "manni.config.yaml"),
-      'collections:\n  - name: c\n    paths: ["*.md"]\ngraph:\n  baseIri: https://example.com/graph/\n',
+      'baseIri: https://example.com/graph/\ncollections:\n  - name: c\n    paths: ["*.md"]\ngraph:\n',
     );
     writeFileSync(
       join(dir, "a.md"),
@@ -372,6 +372,46 @@ describe("manni graph build (integration)", () => {
     );
     expect(r.status).toBe(0);
     expect(r.stderr).toMatch(GIT_ABSENT);
+  });
+
+  // baseIri is the family's (proposal 0128 §1): the top-level key mints the
+  // IRIs, and the old graph-level spelling is refused rather than ignored.
+  it("mints node IRIs from the top-level baseIri", () => {
+    const dir = mkdtempSync(join(tmpdir(), "manni-graph-base-iri-"));
+    writeFileSync(
+      join(dir, "manni.config.yaml"),
+      'baseIri: https://example.com/family\ncollections:\n  - name: c\n    paths: ["*.md"]\ngraph:\n  out: g.ttl\n',
+    );
+    writeFileSync(join(dir, "a.md"), "# A\n");
+
+    const r = spawnSync(process.execPath, [cli, "graph", "build"], {
+      encoding: "utf8",
+      cwd: dir,
+      env: hermeticEnv(),
+    });
+    expect(r.status).toBe(0);
+    expect(readFileSync(join(dir, "g.ttl"), "utf8")).toContain(
+      "<https://example.com/family/doc/a.md>",
+    );
+  });
+
+  it("exits 2 on a graph.baseIri, naming the top-level key", () => {
+    const dir = mkdtempSync(join(tmpdir(), "manni-graph-base-iri-moved-"));
+    writeFileSync(
+      join(dir, "manni.config.yaml"),
+      'collections:\n  - name: c\n    paths: ["*.md"]\ngraph:\n  baseIri: https://example.com/graph/\n',
+    );
+    writeFileSync(join(dir, "a.md"), "# A\n");
+
+    const r = spawnSync(process.execPath, [cli, "graph", "build"], {
+      encoding: "utf8",
+      cwd: dir,
+      env: hermeticEnv(),
+    });
+    expect(r.status).toBe(2);
+    expect(r.stderr).toBe(
+      'manni: manni.config.yaml: "baseIri" is no longer a graph key. Node IRIs start from one top-level baseIri: key. See https://hawkeyexl.github.io/manni/meta/reference/configuration/#base-iri\n',
+    );
   });
 
   it("exits 2 when no inputs match", () => {

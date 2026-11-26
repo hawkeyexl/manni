@@ -27,10 +27,11 @@ import { parse } from "yaml";
 const run = promisify(execFile);
 const CLI = "dist/cli.js";
 const SECTION = "docs/src/content/docs/graph";
-// From the config, not a copy of it: document nodes hang off `graph.baseIri`,
-// normalized as the graph config does (a trailing `/` unless it ends `/` or `:`).
-const { graph } = parse(await readFile("manni.config.yaml", "utf8"));
-const base = /[/:]$/.test(graph.baseIri) ? graph.baseIri : `${graph.baseIri}/`;
+// From the config, not a copy of it: document nodes hang off the top-level
+// `baseIri` (proposal 0128), normalized as resolveBaseIri does (a trailing `/`
+// unless it ends `/` or `:`).
+const { baseIri } = parse(await readFile("manni.config.yaml", "utf8"));
+const base = /[/:]$/.test(baseIri) ? baseIri : `${baseIri}/`;
 const DOC_PREFIX = `${base}doc/`;
 
 /** Run the built CLI, echo its output, and return it. Exits on failure. */

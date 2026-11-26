@@ -5,8 +5,9 @@ collections:
     paths:
       - "docs/**/*.*"
 
+baseIri: https://example.com/graph/
+
 graph:
-  baseIri: https://example.com/graph/
   out: graph.ttl
   questionFiles: [questions.yaml]
   build:

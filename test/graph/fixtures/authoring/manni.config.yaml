@@ -18,6 +18,7 @@ collections:
 meta:
   schemas: ["./house.schema.json"]
 
+baseIri: https://example.com/graph/
+
 graph:
-  baseIri: https://example.com/graph/
   out: graph.ttl

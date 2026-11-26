@@ -272,6 +272,34 @@ describe("parseConfig", () => {
     expect(c.baseIri).toBe("https://example.com/graph/");
   });
 
+  // baseIri is the family's (proposal 0128 §1): read from the top level, and
+  // refused under graph:, where a second value would mint a second set of ids.
+  it("reads baseIri from the top level beside a graph: section", () => {
+    const c = parseConfig(
+      "baseIri: https://example.com/id\ngraph:\n  out: graph.ttl\n",
+      "/tmp/manni.config.yaml",
+    );
+    expect(c.baseIri).toBe("https://example.com/id/");
+    expect(c.out).toBe("graph.ttl");
+  });
+
+  it("refuses baseIri under graph:", () => {
+    expect(() =>
+      parseConfig(
+        "graph:\n  baseIri: https://example.com/id/\n",
+        "/tmp/manni.config.yaml",
+      ),
+    ).toThrow(
+      '/tmp/manni.config.yaml: "baseIri" is no longer a graph key. Node IRIs start from one top-level baseIri: key. See https://hawkeyexl.github.io/manni/meta/reference/configuration/#base-iri',
+    );
+  });
+
+  it("refuses a top-level baseIri that is not a non-empty string", () => {
+    expect(() =>
+      parseConfig('baseIri: ""\ngraph:\n  out: graph.ttl\n', "/tmp/manni.config.yaml"),
+    ).toThrow('/tmp/manni.config.yaml: "baseIri" must be a non-empty string.');
+  });
+
   // The hard break to docmeta:kg renamed the config vocabulary too (ADR
   // 01023). Failing loudly on the old spellings is the whole point, so pin it
   // here rather than trusting the enum to stay narrow.
@@ -727,6 +755,26 @@ describe("loadConfig", () => {
     );
     const c = loadConfig(undefined, dir);
     expect(c.collections.map((x) => x.name)).toEqual(["site"]);
+  });
+
+  it("reads the family baseIri: from a discovered file", () => {
+    const dir = mkdtempSync(join(tmpdir(), "manni-graph-config-"));
+    writeFileSync(
+      join(dir, "manni.config.yaml"),
+      "baseIri: https://example.com/id\ngraph:\n  out: graph.ttl\n",
+    );
+    expect(loadConfig(undefined, dir).baseIri).toBe("https://example.com/id/");
+  });
+
+  it("refuses graph.baseIri in a discovered file, naming the file", () => {
+    const dir = mkdtempSync(join(tmpdir(), "manni-graph-config-"));
+    writeFileSync(
+      join(dir, "manni.config.yaml"),
+      "graph:\n  baseIri: https://example.com/id/\n",
+    );
+    expect(() => loadConfig(undefined, dir)).toThrow(
+      'manni.config.yaml: "baseIri" is no longer a graph key. Node IRIs start from one top-level baseIri: key. See https://hawkeyexl.github.io/manni/meta/reference/configuration/#base-iri',
+    );
   });
 
   it("treats an empty graph: section as the defaults", () => {

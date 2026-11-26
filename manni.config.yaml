@@ -81,6 +81,14 @@ tools:
   vale:
     config: .vale.ini
 
+# The prefix of every node IRI, a family key because every domain that mints
+# node ids starts from it (proposal 0128). It is the site's own host, under id/
+# so no node IRI is ever a page's URL. The graph is published with the site
+# (graph.jsonld, chunks.json, and every data-manni-node annotate writes), so
+# its nodes must name a host this project controls. They do not dereference:
+# the IRIs identify, and the pages and chunk rows carry the content.
+baseIri: https://hawkeyexl.github.io/manni/id/
+
 meta:
   # No `fields` (proposal 0069): derive manages the merge-safe fields each
   # page's schemas claim. Here that is owner, created and last-updated from
@@ -293,13 +301,6 @@ strategy:
 # manni.config.yaml, with a deliberately broken link and section reference, so
 # it is never this section's business.
 graph:
-  # The site's own host, under id/ so no node IRI is ever a page's URL. The
-  # graph is published with the site (graph.jsonld, chunks.json, and every
-  # data-manni-node annotate writes), so its nodes must name a host this
-  # project controls. They do not dereference: the IRIs identify, and the
-  # pages and chunk rows carry the content.
-  baseIri: https://hawkeyexl.github.io/manni/id/
-
   # The graph carries author-facing content by default: the strategy records,
   # typed, and every field a schema prefers in a sidecar. The Docs workflow
   # publishes `--collection site`, which holds no record. `--no-authoring`

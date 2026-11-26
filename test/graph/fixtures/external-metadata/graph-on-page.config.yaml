@@ -10,8 +10,9 @@ collections:
       - file: "{page}.meta.yaml"
         keys: [description, authors, created, owner, meta-provenance]
 
+baseIri: https://example.com/graph/
+
 graph:
-  baseIri: https://example.com/graph/
   out: graph.ttl
   fill:
     fields: [label, alt-labels, related-concepts, concepts]

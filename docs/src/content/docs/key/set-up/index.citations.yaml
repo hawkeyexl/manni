@@ -31,9 +31,9 @@ docs/src/content/docs/key/set-up/index.mdx:
         integrity: sha256-04a663e577dd53ff62ef1a2ed01cbec77a7a81194c4501639ba457f88cafb11d
       source:
         file: src/shared/config-file.ts
-        lines: 253-260
+        lines: 261-268
         integrity: sha256-638ee344aaa62fb7b43eeb937589be88dac17f49d213a48e5eb37fe46fee679a
-        commit-sha: a589e08250dee7efaee7ed0f58df01986fad8d1d
+        commit-sha: 1ba62bd39356e1c1505ad32b4db43b534ba894bc
     - id: same-shape-env
       claim:
         integrity: sha256-04a663e577dd53ff62ef1a2ed01cbec77a7a81194c4501639ba457f88cafb11d

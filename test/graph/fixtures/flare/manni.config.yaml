@@ -5,6 +5,7 @@ collections:
     paths:
       - "."
 
+baseIri: https://example.com/flare/
+
 graph:
-  baseIri: https://example.com/flare/
   out: graph.ttl

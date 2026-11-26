@@ -9,8 +9,9 @@ collections:
     paths:
       - "strategy/**/*.md"
 
+baseIri: https://example.com/graph/
+
 graph:
-  baseIri: https://example.com/graph/
   out: graph.ttl
   build:
     derive: [frontmatter, sections, links]

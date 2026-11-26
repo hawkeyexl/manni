@@ -15,6 +15,7 @@ collections:
     paths:
       - "docs/**/*.md"
 
+baseIri: https://example.com/dd/
+
 graph:
-  baseIri: https://example.com/dd/
   out: .tmp/dd/graph.ttl

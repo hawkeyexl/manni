@@ -21,13 +21,13 @@ import {
   parseProviders,
   type ProvidersConfig,
 } from "../../shared/providers.js";
+import { BASE_IRI_KEY, parseBaseIri, resolveBaseIri } from "../../shared/base-iri.js";
 import { errorMessage } from "../../shared/errors.js";
 import { parseTools, type ToolsConfig } from "../../shared/tools.js";
 // meta's budget, shared rather than copied, as `term fill` shares it.
 import { DEFAULT_CHUNK_CHARS } from "../../meta/commands/fill-prompt.js";
 import type { Severity } from "../../shared/severity.js";
 import { GraphError } from "../types.js";
-import { resolveBaseIri } from "./iri.js";
 import { UNIFORM_COVERAGE_FIELD_NAMES } from "./coverage.js";
 // Pure data module (no transformers import), so config stays Node-light.
 import { DEFAULT_MODEL as DEFAULT_EMBED_MODEL } from "../embed/types.js";
@@ -134,7 +134,10 @@ export interface GraphConfig {
    * file declares none, or no file governs the run.
    */
   tools: ToolsConfig;
-  /** Normalized base IRI (trailing slash for http(s); `urn:manni:graph:` default). */
+  /**
+   * The family's top-level `baseIri:` (proposal 0128), normalized: a trailing
+   * slash unless it ends in `/` or `:`, and `urn:manni:graph:` when unset.
+   */
   baseIri: string;
   /** Output path of the built Turtle file, relative to configDir. */
   out: string;
@@ -341,6 +344,9 @@ const CONFIG_REF =
  */
 const MOVED_KEYS = ["inputs", "exclude"] as const;
 
+/** The anchor of `baseIri:` on that configuration reference page. */
+const BASE_IRI_ANCHOR = "base-iri";
+
 export const ALL_DERIVE_SOURCES: DeriveSource[] = [
   "frontmatter",
   "sections",
@@ -411,7 +417,6 @@ interface RawRouteMapping {
 interface RawGraphConfig {
   provider?: string;
   model?: string;
-  baseIri?: string;
   out?: string;
   authoring?: boolean;
   routes?: RawRouteMapping[];
@@ -513,6 +518,8 @@ export interface ConfigFileContext {
   providers?: ProvidersConfig;
   /** The file's top-level `tools:`; `{}` when it declares none. */
   tools?: ToolsConfig;
+  /** The file's top-level `baseIri:`, as written; absent when unset. */
+  baseIri?: string;
 }
 
 /**
@@ -534,7 +541,9 @@ export function parseConfig(text: string, configPath: string): GraphConfig {
     throw new GraphError(`Invalid config in ${configPath}: root must be an object`);
   }
   const doc = raw as Record<string, unknown>;
-  const wrapped = Object.hasOwn(doc, CONFIG_SECTION);
+  // A top-level `baseIri:` marks a family file, as the shared loader reads it.
+  const wrapped =
+    Object.hasOwn(doc, CONFIG_SECTION) || Object.hasOwn(doc, BASE_IRI_KEY);
   const toError = (message: string): Error => new GraphError(message);
   // The family keys, parsed as the shared loader parses them, so a config
   // built from text selects from the same collections, and the same
@@ -551,11 +560,15 @@ export function parseConfig(text: string, configPath: string): GraphConfig {
       )
     : {};
   const tools = wrapped ? parseTools(doc.tools, configPath, toError) : {};
+  const baseIri = Object.hasOwn(doc, BASE_IRI_KEY)
+    ? { baseIri: parseBaseIri(doc[BASE_IRI_KEY], configPath, toError) }
+    : {};
   return parseConfigSection(wrapped ? doc[CONFIG_SECTION] : doc, configPath, {
     source: configPath,
     collections,
     providers,
     tools,
+    ...baseIri,
   });
 }
 
@@ -586,6 +599,13 @@ export function parseConfigSection(
         `${file.source}: "${key}" is no longer a graph key. Document sets are declared once for every tool, under a top-level collections: list. See ${CONFIG_REF}#${COLLECTIONS_KEY}`,
       );
     }
+  }
+  // Moved to the top level by proposal 0128, and refused rather than read: a
+  // second value would mint a second set of ids for the same pages.
+  if (Object.hasOwn(raw as Record<string, unknown>, BASE_IRI_KEY)) {
+    throw new GraphError(
+      `${file.source}: "${BASE_IRI_KEY}" is no longer a graph key. Node IRIs start from one top-level ${BASE_IRI_KEY}: key. See ${CONFIG_REF}#${BASE_IRI_ANCHOR}`,
+    );
   }
   if (!validateConfig(raw)) {
     const details = (validateConfig.errors ?? [])
@@ -619,7 +639,7 @@ export function parseConfigSection(
     model: r.model ?? null,
     providers: file.providers ?? {},
     tools: file.tools ?? {},
-    baseIri: resolveBaseIri(r.baseIri),
+    baseIri: resolveBaseIri(file.baseIri),
     out: r.out ?? "graph/graph.ttl",
     authoring: r.authoring ?? true,
     routes: (r.routes ?? []).map((m) => ({
@@ -719,6 +739,7 @@ export function loadConfig(path?: string, cwd = process.cwd()): GraphConfig {
     collections: file.collections,
     ...(file.providers === undefined ? {} : { providers: file.providers }),
     tools: file.tools,
+    ...(file.baseIri === undefined ? {} : { baseIri: file.baseIri }),
   });
 }
 

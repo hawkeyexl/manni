@@ -47,17 +47,17 @@ docs/src/content/docs/graph/publish/index.mdx:
       lines: 67-72
       integrity: sha256-2fc462c8ffdee3accfa7a6bcb7a5e83d68dc011cbb55831c786467899404b0ee
     - generated-by: Claude Opus 5
-      lines: 80-86
-      integrity: sha256-d4c31694efdd91329b16df2865d0db718da6353a8decaa57944f6aacda3179e3
+      lines: 80-84
+      integrity: sha256-5c162eb3b4a8173b9123cf3ff90f8b988adc6495f92e642e1e1d0fcab319d3f6
     - generated-by: Claude Opus 5.5
-      lines: 87
-      integrity: sha256-db6b9c5fb33eda12021f65f56f4deafd5f5a82bb6ef8a8da8afdea25bf8585ba
+      lines: 86-88
+      integrity: sha256-693cb0f923f00a0acf1f3e2fcbe41bfdba984bb80a80aa3d4fc817045d2ae8ec
     - generated-by: Claude Opus 5
-      lines: 88-90
+      lines: 89-91
       integrity: sha256-fef3a027b0e5a16beff44eff8a9ed61d78a1f96fa2b1b9da316ccffd9974e3e7
     - generated-by: Claude Opus 5.5
-      lines: 91-92
-      integrity: sha256-46665917170d49c3cc8238a6e732545d185502a1d85fd626ece7478157e8539c
+      lines: 92
+      integrity: sha256-039754e9a37ef72528d61a418073b709e4baa75f6997ff55ee07ad3c2edd01ee
     - generated-by: Claude Opus 5
       lines: 93
       integrity: sha256-f1b901847390b0ed7e374e7c1e464ec17b46a427c487a5ad6cbd2906405083d5

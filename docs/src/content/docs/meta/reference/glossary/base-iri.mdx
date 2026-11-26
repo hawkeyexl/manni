@@ -5,7 +5,7 @@ type: term
 id: base-iri
 label: "base IRI"
 abstract: "The prefix every minted IRI hangs off."
-definition: "The prefix every IRI that manni graph mints hangs off, set by `graph.baseIri`."
+definition: "The prefix every IRI that manni graph mints hangs off, set by the top-level `baseIri` key."
 keywords:
   - "base IRI"
   - "baseIri"
@@ -22,7 +22,7 @@ applies-to:
   - "domain:graph"
 sample-questions:
   - "What is the base IRI in manni graph?"
-  - "What does graph.baseIri default to?"
+  - "What does baseIri default to?"
 graph:
   label: "base IRI"
   type: concept
@@ -30,7 +30,7 @@ action: understand
 risks: read-only
 related-terms:
   - "iri"
-last-updated: 2026-11-06
+last-updated: 2026-11-11
 ---
 
 <p>{frontmatter.definition}</p>
@@ -40,5 +40,5 @@ addresses that a linked-data client can open.
 
 It defaults to `urn:manni:graph:`, which identifies a node without promising
 to resolve it. Set it to an HTTP base when you publish the graph and its nodes
-should dereference. The [configuration reference](/manni/graph/reference/configuration/)
+should dereference. The [configuration reference](/manni/meta/reference/configuration/#base-iri)
 lists the key.

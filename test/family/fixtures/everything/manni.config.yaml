@@ -34,5 +34,6 @@ docevals:
   suites:
     site: { target-pass-rate: 1.0, evals: [no-todo-markers] }
 
+baseIri: https://example.com/everything/
+
 graph:
-  baseIri: https://example.com/everything/

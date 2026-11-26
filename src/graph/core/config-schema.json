@@ -15,10 +15,6 @@
       "minLength": 1,
       "description": "The model, within the provider named beside it. A model is carried only to the provider its own level names: a differing --provider or providers.provider takes its own default instead. With no provider here, it goes to whichever provider is in force, which must not be auto, because a model name does not say which provider owns it. Unset (the default) takes the provider's default model from the inference library; manni pins none. --model wins over it. This is not `embed.model`, which is a local embedding model id."
     },
-    "baseIri": {
-      "type": "string",
-      "minLength": 1
-    },
     "out": {
       "type": "string",
       "minLength": 1

@@ -27,8 +27,10 @@ describe("manni graph init", () => {
     const first = run(["init"], dir);
     expect(first.status).toBe(0);
     expect(existsSync(join(dir, "manni.config.yaml"))).toBe(true);
+    // baseIri is the family's (proposal 0128): a commented top-level line,
+    // before the section rather than inside it.
     expect(readFileSync(join(dir, "manni.config.yaml"), "utf8")).toMatch(
-      /^graph:\n  # Base IRI/m,
+      /^# baseIri: https:\/\/example\.com\/graph\/\n\ngraph:\n/m,
     );
     // The comment names the shapes file `check` falls back to.
     expect(readFileSync(join(dir, "manni.config.yaml"), "utf8")).toContain(
@@ -59,7 +61,7 @@ describe("manni graph init", () => {
     expect(r.status).toBe(0);
     const text = readFileSync(join(dir, "manni.config.yaml"), "utf8");
     expect(text.startsWith(sibling)).toBe(true);
-    expect(text).toMatch(/\ngraph:\n  # Base IRI/);
+    expect(text).toMatch(/\n# baseIri: https:\/\/example\.com\/graph\/\n\ngraph:\n/);
 
     // And the appended section is what the tool then reads.
     writeFileSync(join(dir, "docs.md"), "# Hi\n");

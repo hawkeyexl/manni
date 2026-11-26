@@ -6,8 +6,9 @@ collections:
     paths:
       - "l10n/**/*.md"
 
+baseIri: https://example.com/dd/
+
 graph:
-  baseIri: https://example.com/dd/
   out: .tmp/dd/l10n.ttl
   # Routes map published paths back to source files, so they stay
   # repo-root-relative: they are matched against the document paths the run

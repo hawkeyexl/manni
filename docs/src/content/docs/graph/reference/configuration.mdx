@@ -10,7 +10,7 @@ concepts:
   - base IRI
   - turn
   - confidence
-last-updated: 2026-11-06
+last-updated: 2026-11-11
 ---
 
 Write a setting here once, and a run on your laptop and a run in CI build the
@@ -49,8 +49,10 @@ collections:
 providers:
   provider: anthropic
 
+# The prefix of every node IRI. A family key too.
+baseIri: https://example.com/graph/
+
 graph:
-  baseIri: https://example.com/graph/
   out: graph/graph.ttl
   authoring: true
 
@@ -123,7 +125,7 @@ graph:
     maxChars: 40000
 ```
 
-Section keys are camelCase (`baseIri`, `maxTurns`, `confidenceThreshold`). The
+Section keys are camelCase (`maxTurns`, `confidenceThreshold`). The
 page vocabulary a document writes is kebab-case (`alt-labels`, `applies-to`).
 The two are different surfaces and spell things differently on purpose.
 
@@ -169,6 +171,14 @@ detects. A model is carried only to the provider its own level names, because a
 model name does not say which provider owns it. Under `auto` a model is a usage
 error.
 
+## Where node IRIs start
+
+Every node IRI starts from `baseIri:`. It is a family key too, set once at the
+top level, and it defaults to `urn:manni:graph:`. See
+[the metadata tool's configuration reference](/manni/meta/reference/configuration/#base-iri)
+for the key and its refusals. A `graph:` section that still sets `baseIri` stops
+every verb with exit 2.
+
 ## `graph` keys
 
 ### Top level
@@ -177,7 +187,6 @@ error.
 |---|---|---|---|
 | `provider` | string | unset | Which provider `graph fill` sends pages to: `auto`, `anthropic`, `openai`, `claude-cli`, `llama-cpp`. An unknown name is refused when the config is read, by every verb, not only the one that reaches a model. |
 | `model` | string | unset | The model within the provider named beside it. Unset, the inference library's default for that provider is used; manni pins none, and every cache key names the model it resolved to. This is not `embed.model`. |
-| `baseIri` | string | `urn:manni:graph:` | The base every minted node IRI hangs off. A value not ending in `/` or `:` gets a trailing slash. Use an HTTP base when the graph is published, so its nodes dereference. |
 | `out` | string | `graph/graph.ttl` | Where `graph build` writes the Turtle, and where every graph reader looks for it. Resolved from the working directory. `-o` overrides it for one build, `-g` for one read. |
 | `authoring` | boolean | `true` | Whether a build carries author-facing content: the [strategy records](/manni/strategy/), typed, and every value a page's schemas mark `x-manni-location: external`, at any depth. `false` leaves both out of every build, export and publish. `--no-authoring` sets it `false` for one run. See [a graph for readers](/manni/graph/publish/#a-graph-for-readers). |
 | `questionFiles` | list of paths | `[]` | Golden-set files, relative to the config file. They hold questions that span pages or that the docs don't answer. `graph check` asks them beside each page's `sample-questions`. A missing file, or one that fails its schema, stops `check` with exit 2. |

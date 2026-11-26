@@ -185,7 +185,7 @@ describe("manni graph export (integration)", () => {
     const cfg = join(dir, "dockg.config.yaml");
     writeFileSync(
       cfg,
-      "baseIri: https://example.com/graph/\nexport:\n  iirds:\n    creator: Acme Docs\n",
+      "baseIri: https://example.com/graph/\ngraph:\n  export:\n    iirds:\n      creator: Acme Docs\n",
     );
     const out = join(dir, "pkg.iirds");
     run(["export", "iirds", "-g", graph, "-c", cfg, "-o", out], corpus);
@@ -205,7 +205,7 @@ describe("manni graph export (integration)", () => {
     const cfg = join(dir, "dockg.config.yaml");
     writeFileSync(
       cfg,
-      "baseIri: https://example.com/graph/\nexport:\n  iirds:\n    title: My Corpus\n",
+      "baseIri: https://example.com/graph/\ngraph:\n  export:\n    iirds:\n      title: My Corpus\n",
     );
     const out = join(dir, "pkg.iirds");
     run(["export", "iirds", "-g", graph, "-c", cfg, "-o", out], corpus);

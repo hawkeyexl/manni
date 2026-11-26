@@ -42,9 +42,9 @@ docs/src/content/docs/meta/set-up/index.mdx:
         integrity: sha256-00f81a6a2b4ce622955974fa78f2dd744215b21320bc02ab12844c889ed48a27
       source:
         file: src/shared/config-file.ts
-        lines: 51-55
+        lines: 52-56
         integrity: sha256-6667b3b66a8f9f4789df5eb19546fa2f212465ab532996ae90ec45f8ed02eb71
-        commit-sha: a589e08250dee7efaee7ed0f58df01986fad8d1d
+        commit-sha: 1ba62bd39356e1c1505ad32b4db43b534ba894bc
     - id: meta-schemas-applied-from-config
       claim:
         lines: 65
@@ -122,9 +122,9 @@ docs/src/content/docs/meta/set-up/index.mdx:
         integrity: sha256-4819bfc7c24097c4d09d550b354d408dbb2ba9558251e4d34e3308d5b8004982
       source:
         file: src/shared/config-file.ts
-        lines: 182-183
+        lines: 189-190
         integrity: sha256-af94ed52dbb272ac789ea321e4aa9fb971f14cff43bbeceb14f2b9e2c597c806
-        commit-sha: a589e08250dee7efaee7ed0f58df01986fad8d1d
+        commit-sha: 1ba62bd39356e1c1505ad32b4db43b534ba894bc
     - id: six-registered-extractors
       claim:
         lines: 15
