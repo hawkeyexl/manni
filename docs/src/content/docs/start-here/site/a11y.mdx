@@ -1,0 +1,112 @@
+---
+title: Check the built site's accessibility
+description: A page can pass every source check and still shut out a reader who uses a screen reader. Crawl the built site and check every page it serves.
+type: tutorial
+id: start-here-site-a11y
+language: en
+audiences:
+  - docs-engineers
+lifecycle: published
+action: practice
+next-steps:
+  - start-here-site-test
+  - start-here-ci
+verified-by:
+  - tool: doc-detective
+    check: start-here-site-a11y
+last-updated: 2026-11-26
+---
+
+Accessibility lives in the HTML your framework writes, not in the Markdown you
+wrote. A missing language attribute or an unlabeled control passes every
+source check, and a screen-reader user is the one who finds it. `manni a11y`
+crawls the built site in a real browser and runs axe-core on each page. This
+step builds on the site config from the step before.
+
+## Serve the site, then check it
+
+`preview` builds the site and keeps serving it, so run it in its own terminal:
+
+```sh
+manni site preview
+```
+
+```text
+manni: Running site.commands.build in ./: node build.mjs
+manni: Running site.commands.preview in ./: node build.mjs serve
+Serving dist/ on http://127.0.0.1:4322/
+```
+
+In a second terminal, check it. With no URL, `a11y check` starts from the
+collection's `url:` and follows the links it finds:
+
+```sh
+manni a11y check
+```
+
+```text
+Checked 4 of 4 pages (no sitemap; followed links)
+✓ http://127.0.0.1:4322/  score 100
+✓ http://127.0.0.1:4322/run-a-job/  score 100
+✓ http://127.0.0.1:4322/timeouts/  score 100
+✓ http://127.0.0.1:4322/reference/cli/  score 100
+
+0 violations on 0 of 4 pages
+```
+
+Each page scores 100. A violation names the rule and the element, and the run
+exits `1`. `a11y check` drives Google Chrome, Microsoft Edge or Playwright's
+Chromium. The [a11y section](/manni/a11y/get-started/) covers installing one,
+and reading a finding.
+
+## See what is in play
+
+```sh
+manni status
+```
+
+```text
+manni 4.28.0   config manni.config.yaml   collection guides (4 files)
+
+meta       in play       meta: section
+cite       not set up    no page carries citations
+                         Pin a sentence to its source with manni cite add.
+lint       not set up    no lint: section
+                         Add a lint: section. manni lint templates lists the templates it can apply.
+docevals   in play       4 pages declare evals
+term       not set up    no terms in any collection
+                         Add a page with type: term to a collection.
+strategy   not set up    no strategy records in any collection
+                         Add a page with type: journey to a collection.
+graph      not set up    no graph: section
+                         Run manni graph init to add a starter graph: section.
+a11y       not checked   needs a running site and a browser
+                         Run manni site preview, then manni a11y check.
+test       not checked   runs the pages' shell steps and synthetic users
+                         Run manni test procedures or manni test tasks.
+tracevals  not checked   judges recorded sessions with a model
+                         Run manni tracevals run over sessions, or add tracevals.runtime to judge each turn.
+```
+
+The `a11y` row does not change. `manni check` never starts a browser, so you
+run this check by hand, or as its own CI step.
+
+## Next in this track
+
+[Test the procedures](/manni/start-here/site/test/).
+
+## Other tracks
+
+[Structure](/manni/start-here/structure/templates/),
+[Provenance](/manni/start-here/provenance/citations/),
+[Vocabulary](/manni/start-here/vocabulary/terms/), or the join,
+[Gate everything with one command](/manni/start-here/ci/).
+
+{/* The preview and the crawl are not run here: `site preview` serves until it
+    is stopped, so no test step can wait on it and then go on. The
+    transcripts above were captured by hand over a copy of examples/start-here/.
+    This test checks what status says about the step. */}
+{/* test {"testId":"start-here-site-a11y","description":"status says a11y needs a running site, and names the two commands this page runs."} */}
+{/* step {"description":"Copy the sample repository into a Git repository of its own.","runShell":{"command":"node -e \"const fs=require('fs'),d='.doc-detective/start-here/a11y';fs.rmSync(d,{recursive:true,force:true});fs.cpSync('examples/start-here',d,{recursive:true});require('child_process').execSync('git init -q && git add -A && git -c user.name=maya -c user.email=maya@example.com commit -qm trunk',{cwd:d})\"","exitCodes":[0]}} */}
+{/* step {"description":"status names site preview and a11y check as the way to run this check.","runShell":{"command":"manni status","workingDirectory":".doc-detective/start-here/a11y","exitCodes":[0],"stdio":"/a11y\\s+not checked\\s+needs a running site and a browser\\s+Run manni site preview, then manni a11y check\\./"}} */}
+{/* test end */}

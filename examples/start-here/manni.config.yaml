@@ -1,0 +1,22 @@
+# The sample repository the Start here pages build on, at the trunk's end
+# state: one collection of four pages, held to a schema by meta. Each track
+# starts from a copy of it and adds its own domain, so no track depends on
+# another. https://hawkeyexl.github.io/manni/start-here/
+collections:
+  - name: guides
+    paths:
+      - "docs/**/*.md"
+    # Bookkeeping lives beside each page rather than in it: citations in
+    # <page>.citations.yaml, and every other field a schema prefers kept off
+    # the page, such as personas:, in <page>.meta.yaml.
+    externalMetadata:
+      - file: "{page}.citations.yaml"
+        keys: [citations]
+      - file: "{page}.meta.yaml"
+
+meta:
+  overrides:
+    - collection: guides
+      defaults: true
+      schemas:
+        - ./schemas/page.schema.json

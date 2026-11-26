@@ -1,0 +1,138 @@
+---
+title: Start here
+description: Twelve tools each look like a first step, and they are not. Walk one trunk every tool needs, then take any of four short tracks in any order.
+type: overview
+id: start-here
+language: en
+audiences:
+  - docs-engineers
+lifecycle: published
+action: explore
+next-steps:
+  - start-here-install
+  - start-here-ci
+verified-by:
+  - tool: doc-detective
+    check: start-here
+last-updated: 2026-11-26
+---
+
+manni has twelve domains, and each one's *Get started* page reads like the
+first thing to do. They are not equal first steps. Every domain reads the
+documents you declare once, and most of their records are metadata that `meta`
+checks. A few domains build on another one. Start in the wrong place and a
+step asks for something you have not set up yet.
+
+These pages put the domains in the order they depend on each other. Everyone
+walks the **trunk**. Then you pick a **track**, in any order, and each track
+ends at the same **join**.
+
+```text
+              ┌─ Structure:       lint → docevals ─────────┐
+              ├─ Provenance:      cite → key ──────────────┤
+trunk:        │                                            │   join:
+install → meta┼─ Vocabulary:      term → strategy → graph ─┼─→ check in CI → agent
+              └─ Published site:  site → a11y → test ──────┘
+```
+
+## The trunk
+
+| Step | What it adds |
+| --- | --- |
+| [Install and declare a collection](/manni/start-here/install/) | The package, and a `collections:` entry every tool reads. |
+| [Hold every page to a schema](/manni/start-here/metadata/) | A `meta:` section, so a page missing a field fails. |
+
+## The tracks
+
+Each track is short, and each step builds on the one before it in that track
+only. No track needs another.
+
+| Track | What it catches | Steps |
+| --- | --- | --- |
+| Structure | A page that lost the sections, or the content, its doctype promises. | [templates](/manni/start-here/structure/templates/), then [template evals](/manni/start-here/structure/evals/) |
+| Provenance | A sentence about code that has since changed. | [citations](/manni/start-here/provenance/citations/), then [the key](/manni/start-here/provenance/key/) |
+| Vocabulary | Two names for one thing, and a page that claims a reader nobody keeps a record of. | [terms](/manni/start-here/vocabulary/terms/), then [strategy](/manni/start-here/vocabulary/strategy/), then [the graph](/manni/start-here/vocabulary/graph/) |
+| Published site | A built page a reader cannot use, and a procedure that stopped working. | [build](/manni/start-here/site/build/), then [accessibility](/manni/start-here/site/a11y/), then [procedure tests](/manni/start-here/site/test/) |
+
+The join, [Gate everything with one command](/manni/start-here/ci/), runs
+whatever tracks you took in CI. [Let an agent keep it green](/manni/start-here/agent/)
+puts the same checks inside a Claude Code session.
+
+## Why this order
+
+- **The trunk comes first** because every domain reads `collections:`, and
+  every track's records are metadata that `meta` validates.
+- **lint, then docevals.** A lint template can carry evals, and docevals grades
+  them on the pages the template routes. The evals step reuses the template
+  from the step before it.
+- **cite, then key.** The key encrypts a citation's source path. Nobody needs a
+  key before they have something to encrypt.
+- **term, then strategy, then graph.** The graph reads the terms and the
+  strategy records, so it comes last.
+- **site, then a11y and test.** Both check the site that `site` builds.
+
+## The sample repository
+
+Every command on these pages runs against
+[`examples/start-here/`](https://github.com/hawkeyexl/manni/tree/main/examples/start-here),
+a docs set of four Markdown pages about a small command-line tool. It is
+committed at the trunk's end state, so each track starts from the same place.
+To follow along, copy it out of a clone of this repository into a Git
+repository of its own:
+
+```sh
+cp -r examples/start-here ~/widget-docs
+cd ~/widget-docs
+git init -q && git add -A && git commit -qm trunk
+```
+
+Every transcript on these pages is real output from the built tool over a
+fresh copy. At the trunk's end, `manni status` reads:
+
+```sh
+manni status
+```
+
+```text
+manni 4.28.0   config manni.config.yaml   collection guides (4 files)
+
+meta       in play       meta: section
+cite       not set up    no page carries citations
+                         Pin a sentence to its source with manni cite add.
+lint       not set up    no lint: section
+                         Add a lint: section. manni lint templates lists the templates it can apply.
+docevals   in play       4 pages declare evals
+term       not set up    no terms in any collection
+                         Add a page with type: term to a collection.
+strategy   not set up    no strategy records in any collection
+                         Add a page with type: journey to a collection.
+graph      not set up    no graph: section
+                         Run manni graph init to add a starter graph: section.
+a11y       not checked   needs a running site and a browser
+                         Run manni site preview, then manni a11y check.
+test       not checked   runs the pages' shell steps and synthetic users
+                         Run manni test procedures or manni test tasks.
+tracevals  not checked   judges recorded sessions with a model
+                         Run manni tracevals run over sessions, or add tracevals.runtime to judge each turn.
+```
+
+## Next in this track
+
+[Install and declare a collection](/manni/start-here/install/).
+
+## Other tracks
+
+Already past the trunk? Go straight to
+[Structure](/manni/start-here/structure/templates/),
+[Provenance](/manni/start-here/provenance/citations/),
+[Vocabulary](/manni/start-here/vocabulary/terms/) or
+[Published site](/manni/start-here/site/build/).
+
+{/* Doc Detective inline tests. Each Start here page copies examples/start-here/
+    into .doc-detective/start-here/<page>/ as a Git repository of its own, then
+    runs the page's commands there with the `manni` the docs-as-tests workflow
+    links onto PATH. */}
+{/* test {"testId":"start-here","description":"The sample repository at the trunk's end state: meta is in play and nothing else is set up."} */}
+{/* step {"description":"Copy the sample repository into a Git repository of its own.","runShell":{"command":"node -e \"const fs=require('fs'),d='.doc-detective/start-here/overview';fs.rmSync(d,{recursive:true,force:true});fs.cpSync('examples/start-here',d,{recursive:true});require('child_process').execSync('git init -q && git add -A && git -c user.name=maya -c user.email=maya@example.com commit -qm trunk',{cwd:d})\"","exitCodes":[0]}} */}
+{/* step {"description":"status reports meta in play and lint not set up.","runShell":{"command":"manni status","workingDirectory":".doc-detective/start-here/overview","exitCodes":[0],"stdio":"/meta\\s+in play\\s+meta: section[\\s\\S]*lint\\s+not set up\\s+no lint: section/"}} */}
+{/* test end */}

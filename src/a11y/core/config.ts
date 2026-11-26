@@ -27,6 +27,8 @@ export interface A11yConfig {
   timeout?: number;
   /** Globs matched against a URL's path; a match keeps the page out of the crawl. */
   exclude?: string[];
+  /** axe rule ids not run on any page. */
+  disableRules?: string[];
 }
 
 export interface LoadedA11yConfig {
@@ -49,7 +51,16 @@ const SECTION = "a11y";
  * The keys the section may carry. Adding a key to `A11yConfig` means adding
  * it here too, or a config using it is rejected; that coupling is the point.
  */
-const CONFIG_KEYS = ["urls", "crawl", "maxPages", "tags", "severity", "timeout", "exclude"] as const;
+const CONFIG_KEYS = [
+  "urls",
+  "crawl",
+  "maxPages",
+  "tags",
+  "severity",
+  "timeout",
+  "exclude",
+  "disableRules",
+] as const;
 
 const CONFIG_FILE: ConfigFileOptions = {
   section: SECTION,
@@ -109,6 +120,9 @@ export function parseA11yConfig(value: unknown, source: string): A11yConfig {
     config.timeout = asPositiveInteger(obj.timeout, "timeout", source);
   }
   if (obj.exclude !== undefined) config.exclude = asExcludes(obj.exclude, source);
+  if (obj.disableRules !== undefined) {
+    config.disableRules = asStringList(obj.disableRules, "disableRules", source);
+  }
   return config;
 }
 

@@ -1,0 +1,123 @@
+---
+title: Test the procedures
+description: A procedure keeps reading fine after the command it documents changes, until a reader follows it. Put the procedure's own commands in a test, and run them on every change.
+type: tutorial
+id: start-here-site-test
+language: en
+audiences:
+  - docs-engineers
+lifecycle: published
+action: practice
+next-steps:
+  - start-here-ci
+verified-by:
+  - tool: doc-detective
+    check: start-here-site-test
+last-updated: 2026-11-26
+---
+
+A procedure reads fine long after the command it documents has changed. The
+first person to find out is a reader who followed it and got something else.
+A **procedure test** runs the procedure's own commands and checks what they
+print. `manni test procedures` runs the tests with
+[Doc Detective](https://doc-detective.com/), and reports a failure at the page
+and line that broke. This step closes the Published site track. Its test runs
+commands rather than the built pages, so it needs no preview running.
+
+## Write the test into the page
+
+The sample's `docs/run-a-job.md` tells the reader to run a job and expect
+`Job hello: done`. Say the same thing as a test, in comments at the end of the
+page:
+
+{/* test ignore start */}
+
+```md title="docs/run-a-job.md"
+<!-- test {"testId":"run-a-job"} -->
+<!-- step {"runShell":{"command":"node src/widget.mjs run hello","stdio":"Job hello: done"}} -->
+<!-- test end -->
+```
+
+{/* test ignore end */}
+
+The comments do not render, so readers never see them.
+
+## Run it
+
+Doc Detective has to be on your `PATH`. Install it with
+`npm install -g doc-detective`.
+
+```sh
+manni test procedures docs/run-a-job.md
+```
+
+```text
+1 test: 1 passed, 0 failed, 0 warnings, 0 skipped
+```
+
+Now change the CLI so it prints `Job hello: queued`, and run it again. The
+procedure on the page is wrong now, and the test says where:
+
+```text
+docs/run-a-job.md
+  32  FAIL     Returned exit code 0. Couldn't find expected output (Job hello: done) in stdio (stdout or stderr). Fix the step, fix the procedure it documents, or report a product regression.
+               Doc Detective runShell
+               Guide: https://docs.doc-detective.com/docs/actions/runshell
+
+1 test: 0 passed, 1 failed, 0 warnings, 0 skipped
+```
+
+The exit code is `1`. The [test section](/manni/test/) covers the CI step,
+and having a synthetic user attempt a task with `manni test tasks`.
+
+## See what is in play
+
+```sh
+manni status
+```
+
+```text
+manni 4.28.0   config manni.config.yaml   collection guides (4 files)
+
+meta       in play       meta: section
+cite       not set up    no page carries citations
+                         Pin a sentence to its source with manni cite add.
+lint       not set up    no lint: section
+                         Add a lint: section. manni lint templates lists the templates it can apply.
+docevals   in play       4 pages declare evals
+term       not set up    no terms in any collection
+                         Add a page with type: term to a collection.
+strategy   not set up    no strategy records in any collection
+                         Add a page with type: journey to a collection.
+graph      not set up    no graph: section
+                         Run manni graph init to add a starter graph: section.
+a11y       not checked   needs a running site and a browser
+                         Run manni site preview, then manni a11y check.
+test       not checked   runs the pages' shell steps and synthetic users
+                         Run manni test procedures or manni test tasks.
+tracevals  not checked   judges recorded sessions with a model
+                         Run manni tracevals run over sessions, or add tracevals.runtime to judge each turn.
+```
+
+Like `a11y`, `test` stays *not checked*. A hook never runs a page's shell
+steps, so `manni check` leaves them alone. Run `manni test procedures` as its
+own CI step.
+
+## Next in this track
+
+The Published site track ends here. Go on to the join,
+[Gate everything with one command](/manni/start-here/ci/).
+
+## Other tracks
+
+[Structure](/manni/start-here/structure/templates/),
+[Provenance](/manni/start-here/provenance/citations/) or
+[Vocabulary](/manni/start-here/vocabulary/terms/).
+
+{/* test {"testId":"start-here-site-test","description":"A procedure test in the sample page passes, and fails once the CLI's output no longer matches the page."} */}
+{/* step {"description":"Copy the sample repository into a Git repository of its own.","runShell":{"command":"node -e \"const fs=require('fs'),d='.doc-detective/start-here/test';fs.rmSync(d,{recursive:true,force:true});fs.cpSync('examples/start-here',d,{recursive:true});require('child_process').execSync('git init -q && git add -A && git -c user.name=maya -c user.email=maya@example.com commit -qm trunk',{cwd:d})\"","exitCodes":[0]}} */}
+{/* step {"description":"Append the procedure test to docs/run-a-job.md.","runShell":{"command":"node -e \"require('fs').appendFileSync('docs/run-a-job.md','\\n\\x3c!-- test {\\x22testId\\x22:\\x22run-a-job\\x22} --\\x3e\\n\\x3c!-- step {\\x22runShell\\x22:{\\x22command\\x22:\\x22node src/widget.mjs run hello\\x22,\\x22stdio\\x22:\\x22Job hello: done\\x22}} --\\x3e\\n\\x3c!-- test end --\\x3e\\n')\"","workingDirectory":".doc-detective/start-here/test","exitCodes":[0]}} */}
+{/* step {"description":"The procedure test passes.","runShell":{"command":"manni test procedures docs/run-a-job.md --no-progress","workingDirectory":".doc-detective/start-here/test","exitCodes":[0],"stdio":"1 test: 1 passed, 0 failed, 0 warnings, 0 skipped","timeout":120000}} */}
+{/* step {"description":"Change what the CLI prints.","runShell":{"command":"node -e \"const fs=require('fs'),f='src/widget.mjs';fs.writeFileSync(f,fs.readFileSync(f,'utf8').replace(': done',': queued'))\"","workingDirectory":".doc-detective/start-here/test","exitCodes":[0]}} */}
+{/* step {"description":"The test fails at the step's line.","runShell":{"command":"manni test procedures docs/run-a-job.md --no-progress","workingDirectory":".doc-detective/start-here/test","exitCodes":[1],"stdio":"/FAIL[\\s\\S]*1 test: 0 passed, 1 failed/","timeout":120000}} */}
+{/* test end */}

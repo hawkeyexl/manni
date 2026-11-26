@@ -54,6 +54,12 @@ describe("parseA11yConfig", () => {
     expect(parseA11yConfig({}, FILE)).toEqual({});
   });
 
+  it("reads disableRules as a list of axe rule ids", () => {
+    expect(parseA11yConfig({ disableRules: ["region", "color-contrast"] }, FILE)).toEqual({
+      disableRules: ["region", "color-contrast"],
+    });
+  });
+
   it("allows an empty urls list", () => {
     expect(parseA11yConfig({ urls: [] }, FILE)).toEqual({ urls: [] });
   });
@@ -65,7 +71,7 @@ describe("parseA11yConfig", () => {
 
   it("rejects an unknown key, naming the file, the key and the supported ones", () => {
     expect(() => parseA11yConfig({ url: ["https://x.example/"] }, FILE)).toThrow(
-      /^manni\.config\.yaml: `a11y:` has unknown key "url"\. Supported keys: urls, crawl, maxPages, tags, severity, timeout, exclude\.$/,
+      /^manni\.config\.yaml: `a11y:` has unknown key "url"\. Supported keys: urls, crawl, maxPages, tags, severity, timeout, exclude, disableRules\.$/,
     );
   });
 
@@ -80,6 +86,8 @@ describe("parseA11yConfig", () => {
     [{ maxPages: 1.5 }, /"a11y\.maxPages" must be an integer >= 1/],
     [{ maxPages: "10" }, /"a11y\.maxPages" must be an integer >= 1/],
     [{ tags: "wcag2a" }, /"a11y\.tags" must be a list of strings/],
+    [{ disableRules: "region" }, /"a11y\.disableRules" must be a list of strings/],
+    [{ disableRules: ["region", 3] }, /"a11y\.disableRules" must be a list of strings/],
     [{ severity: "high" }, /"a11y\.severity" must be one of notice, warning, error/],
     // axe's own word is not a family value; the floor is set on the family scale.
     [{ severity: "serious" }, /"a11y\.severity" must be one of notice, warning, error/],

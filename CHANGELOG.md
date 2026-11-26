@@ -4,6 +4,20 @@
 4.13.1. Entries below that version are docmeta releases; the repository
 history is the same one.
 
+# [4.30.0](https://github.com/hawkeyexl/manni/compare/v4.29.0...v4.30.0) (2026-11-26)
+
+
+### Features
+
+* **a11y:** disable axe rules from config or --disable-rules ([#301](https://github.com/hawkeyexl/manni/issues/301)) ([00f0945](https://github.com/hawkeyexl/manni/commit/00f09450e60c3ce8f7f857c6bd604bd080e195f2))
+
+# [4.29.0](https://github.com/hawkeyexl/manni/compare/v4.28.0...v4.29.0) (2026-11-26)
+
+
+### Features
+
+* **docevals:** grade lint templates' evals on the pages they route ([#299](https://github.com/hawkeyexl/manni/issues/299)) ([5dcd8bd](https://github.com/hawkeyexl/manni/commit/5dcd8bd3af795a01356ac6ccd1d6575ae327f43f))
+
 # [4.28.0](https://github.com/hawkeyexl/manni/compare/v4.27.2...v4.28.0) (2026-11-02)
 
 

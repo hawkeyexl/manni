@@ -1,0 +1,143 @@
+---
+title: Encrypt the fields you pin
+description: A citation publishes the path of the file it pins, and some paths name things you would rather not publish. Set the family key and encrypt the path.
+type: tutorial
+id: start-here-provenance-key
+language: en
+audiences:
+  - docs-engineers
+lifecycle: published
+action: practice
+next-steps:
+  - start-here-ci
+verified-by:
+  - tool: doc-detective
+    check: start-here-provenance-key
+last-updated: 2026-11-26
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+A citation's sidecar names its source file in plain text, and the sidecar ships
+with the docs. A path into a private repository, or one that names an
+unreleased product, says more than the page should. manni can encrypt that
+field and still check the pin. Encrypting needs a key, and nobody needs one
+before they have a citation to protect, which is why this step follows the
+last.
+
+## Set the key
+
+```sh
+manni key set
+```
+
+```text
+manni: manni.config.yaml is not ignored by git: once committed, anyone who can read the repository can decrypt every encrypted value. Prefer MANNI_ENCRYPTION_KEY for a shared repository.
+Encryption key written to manni.config.yaml.
+```
+
+`key set` generates 256 random bits and writes them to `encryptionKey:` in
+`manni.config.yaml`. Read the warning. In a shared repository, keep the key in
+the `MANNI_ENCRYPTION_KEY` environment variable and out of the file.
+[Where the key lives](/manni/key/#where-the-key-lives) covers both.
+
+## Pin with an encrypted path
+
+Pin the retry claim on line 13 with `--encrypt`:
+
+```sh
+manni cite add docs/timeouts.md:13 src/widget.mjs:3 --id retries-3 --marker --encrypt
+```
+
+```text
+Using manni.config.yaml (.)
+docs/timeouts.md: added retries-3 to docs/timeouts.citations.yaml:3; marker at line 13, claim pinned at line 14 (sha256-c2df5c05…; source ~AWr0…:3, hmac-sha256-112bea72…, 7b98544)
+```
+
+The sidecar now names the source by its ciphertext, and pins its lines with a
+keyed hash:
+
+```yaml title="docs/timeouts.citations.yaml"
+docs/timeouts.md:
+  citations:
+    - id: retries-3
+      claim:
+        integrity: sha256-c2df5c05ebc86371268f99105b3bebd32523888b0f39cce8170d05e801154450
+      source:
+        file: ~AWr0z_sMtzhbMW2dPqr51oOQIQyO-H0KT0YZfsmgf3Lk3j-TPeZ1kjimWbXXWbtGIXYa2yTlwvY67Y1iUQ
+        lines: 3
+        integrity: hmac-sha256-112bea7276d442fec508b46eda955f22b1a55ea3cdcee0ca7b3f2c9a6d8679a6
+        commit-sha: 7b98544136920ee8c13780253176220cd5f6a308
+```
+
+With the key, `manni cite check` decrypts the path and checks the pin as
+before:
+
+```text
+Using manni.config.yaml (.)
+✓ docs/index.md
+✓ docs/reference/cli.md
+✓ docs/run-a-job.md
+✓ docs/timeouts.md   docs/timeouts.citations.yaml
+    ✓ retries-3   marker :13 current   ~AWr0…:3 current
+
+4 files checked, 4 passed, 0 failed, 0 findings
+```
+
+Your key is random, so your ciphertext and hashes differ from these.
+
+<Aside type="caution" title="Losing the key">
+  A value encrypted under a key decrypts under that key and no other. Rotate
+  it with `manni key rotate`, which re-encrypts every value, rather than
+  setting a new one over it.
+</Aside>
+
+## See what is in play
+
+```sh
+manni status
+```
+
+```text
+manni 4.28.0   config manni.config.yaml   collection guides (4 files)
+
+meta       in play       meta: section
+cite       in play       1 page carries citations
+lint       not set up    no lint: section
+                         Add a lint: section. manni lint templates lists the templates it can apply.
+docevals   in play       4 pages declare evals
+term       not set up    no terms in any collection
+                         Add a page with type: term to a collection.
+strategy   not set up    no strategy records in any collection
+                         Add a page with type: journey to a collection.
+graph      not set up    no graph: section
+                         Run manni graph init to add a starter graph: section.
+a11y       not checked   needs a running site and a browser
+                         Run manni site preview, then manni a11y check.
+test       not checked   runs the pages' shell steps and synthetic users
+                         Run manni test procedures or manni test tasks.
+tracevals  not checked   judges recorded sessions with a model
+                         Run manni tracevals run over sessions, or add tracevals.runtime to judge each turn.
+```
+
+The key has no row. It is a resource meta and cite share, not a check, so the
+passing `cite check` above is the proof it works.
+
+## Next in this track
+
+The Provenance track ends here. Go on to the join,
+[Gate everything with one command](/manni/start-here/ci/).
+
+## Other tracks
+
+[Structure](/manni/start-here/structure/templates/),
+[Vocabulary](/manni/start-here/vocabulary/terms/) or
+[Published site](/manni/start-here/site/build/).
+
+{/* test {"testId":"start-here-provenance-key","description":"Set the family key, pin a claim with an encrypted source path, and check the pin."} */}
+{/* step {"description":"Copy the sample repository into a Git repository of its own.","runShell":{"command":"node -e \"const fs=require('fs'),d='.doc-detective/start-here/key';fs.rmSync(d,{recursive:true,force:true});fs.cpSync('examples/start-here',d,{recursive:true});require('child_process').execSync('git init -q && git add -A && git -c user.name=maya -c user.email=maya@example.com commit -qm trunk',{cwd:d})\"","exitCodes":[0]}} */}
+{/* step {"description":"Write a generated key to the config.","runShell":{"command":"manni key set","workingDirectory":".doc-detective/start-here/key","exitCodes":[0],"stdio":"Encryption key written to manni.config.yaml."}} */}
+{/* step {"description":"Pin the retry claim with an encrypted source path.","runShell":{"command":"manni cite add docs/timeouts.md:13 src/widget.mjs:3 --id retries-3 --marker --encrypt","workingDirectory":".doc-detective/start-here/key","exitCodes":[0],"stdio":"/added retries-3 to docs\\/timeouts.citations.yaml:3; marker at line 13, claim pinned at line 14 \\(sha256-[0-9a-f]+.; source ~/"}} */}
+{/* step {"description":"The encrypted pin holds.","runShell":{"command":"manni cite check","workingDirectory":".doc-detective/start-here/key","exitCodes":[0],"stdio":"/retries-3\\s+marker :13 current\\s+~\\S+:3 current/"}} */}
+{/* step {"description":"status reports cite in play.","runShell":{"command":"manni status","workingDirectory":".doc-detective/start-here/key","exitCodes":[0],"stdio":"/cite\\s+in play\\s+1 page carries citations/"}} */}
+{/* test end */}

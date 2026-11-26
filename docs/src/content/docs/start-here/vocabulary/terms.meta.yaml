@@ -1,0 +1,12 @@
+docs/src/content/docs/start-here/vocabulary/terms.mdx:
+  personas:
+    - maya
+  journeys:
+    - m35
+  provenance:
+    - generated-by: Claude Opus 5.5
+      lines: 2-114
+      integrity: sha256-25468a6384d8b7d7a7439214b0be65877f784dd4d11f26ae07b63ea71c0b9550
+  owner:
+    - "@hawkeyexl"
+  created: 2026-11-26
