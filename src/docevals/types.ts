@@ -69,6 +69,17 @@ export interface Finding {
   diagnostic?: boolean;
   line?: number;
   col?: number;
+  /**
+   * The file and line the matched text came from, when the page includes it
+   * from another file (proposal 0130). `line` is then the include directive's.
+   */
+  includedFrom?: { file: string; line: number };
+}
+
+/** `(included from <file>:<line>)` for a finding in included text, or "". */
+export function includedSuffix(finding: Pick<Finding, "includedFrom">): string {
+  const from = finding.includedFrom;
+  return from === undefined ? "" : ` (included from ${from.file}:${String(from.line)})`;
 }
 
 /** Result of one eval applied to one page. */

@@ -1,7 +1,7 @@
 /** Pretty (terminal) reporter: `--format pretty`, the default. */
 import { scopeLine } from "./scope.js";
 import { palette, type Colors } from "../../shared/color.js";
-import type { EvalResult } from "../types.js";
+import { includedSuffix, type EvalResult } from "../types.js";
 import type { EngineReport } from "../core/engine.js";
 import { declaringEntry, locationLabel } from "./location.js";
 import { judgedLines, resultGuidance } from "./judged.js";
@@ -62,7 +62,7 @@ export function renderPretty(
             : f.severity === "warning"
               ? pc.yellow(f.severity)
               : pc.dim(f.severity);
-        lines.push(`       ${sev}${loc}${rule} ${f.message}`);
+        lines.push(`       ${sev}${loc}${rule} ${f.message}${includedSuffix(f)}`);
       }
       for (const line of judgedLines(r)) lines.push(`       ${line}`);
       if (r.consensus && r.outcome !== "pass") {

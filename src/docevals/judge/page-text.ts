@@ -24,7 +24,10 @@ export async function pageText(page: PageFile, flare: FlareRun): Promise<string>
   // A guard, not a path taken today: every markup format meta reads has a
   // lint parser too. A format without one would be judged as its source.
   if (parser === undefined) return page.body;
-  const tree = await parser.parse(page.content, page.absPath, { absPath: page.absPath, flare });
+  const tree = await parser.parse(page.expansion?.text ?? page.content, page.absPath, {
+    absPath: page.absPath,
+    flare,
+  });
   return sectionsText(tree.sections).join("\n\n");
 }
 

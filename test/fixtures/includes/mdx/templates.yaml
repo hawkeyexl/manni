@@ -1,0 +1,10 @@
+info:
+  title: Include fixture template
+templates:
+  how-to:
+    types: [how-to]
+    sections:
+      - id: before-you-begin
+        heading: Before you begin
+      - id: steps
+        heading: Steps

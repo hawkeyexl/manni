@@ -356,6 +356,12 @@ export interface Finding {
    * unknown doctype, a broken template, or a tool other than manni.
    */
   template?: FindingTemplate | null;
+  /**
+   * Where the text this finding is about lives, when the page includes it
+   * from another file (proposal 0130). `position` is the include directive's
+   * place in the page; this names the file to edit. Absent otherwise.
+   */
+  includedFrom?: { file: string; line: number };
 }
 
 /**
@@ -382,8 +388,16 @@ export type FindingTemplate = Guidance;
  *
  * `excluded` is a MadCap Flare topic whose root carries conditions the run's
  * target excludes (proposal 0125): the target does not build it.
+ *
+ * `partial` is a file another page in the run includes (proposal 0130). It is
+ * assessed as part of that page, where a reader meets it, and never alone.
  */
-export type SkipReason = "no-template" | "unsupported-format" | "unreadable" | "excluded";
+export type SkipReason =
+  | "no-template"
+  | "unsupported-format"
+  | "unreadable"
+  | "excluded"
+  | "partial";
 
 /** Result of linting one file. */
 export interface FileResult {
