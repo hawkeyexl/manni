@@ -27,7 +27,7 @@ import { dirname, isAbsolute, join, resolve as resolvePath } from "node:path";
 import { packageRoot } from "../../shared/package-root.js";
 import { parse as parseYaml } from "yaml";
 import { dereference } from "@apidevtools/json-schema-ref-parser";
-import * as AjvNs from "ajv";
+import * as Ajv2020Ns from "ajv/dist/2020.js";
 import type { ErrorObject, SchemaObject, ValidateFunction } from "ajv";
 import { LintError } from "../types.js";
 import { errorMessage } from "../../shared/errors.js";
@@ -39,16 +39,19 @@ import type {
   Occurrences,
   Rule,
   Template,
+  TemplateEvalEntry,
   TemplateFile,
 } from "./template.js";
 import templateFileSchema from "../../../schemas/lint/template.json" with { type: "json" };
+import evalsSchema from "../../meta/schemas/evals/1.0.0.json" with { type: "json" };
+import draft07MetaSchema from "ajv/dist/refs/json-schema-draft-07.json" with { type: "json" };
 import tgdpManifest from "../../../templates/lint/tgdp/manifest.json" with { type: "json" };
 
 // ajv is CommonJS with a default export; under NodeNext the constructable
 // value lives on `.default`. Cast through the named default type so tsc sees a
 // constructor.
-type AjvCtor = typeof import("ajv").default;
-const Ajv = AjvNs.default as unknown as AjvCtor;
+type AjvCtor = typeof import("ajv/dist/2020.js").default;
+const Ajv2020 = Ajv2020Ns.default as unknown as AjvCtor;
 
 /**
  * Options for both `dereference` calls, named so the two cannot drift apart.
@@ -241,7 +244,18 @@ export interface LoadTemplateOptions {
 // value the author typed, so it beats the parent's real value in an `extends`
 // merge. Every default in this format lives in the code that reads it
 // (`occurrenceRange`), where an absent key stays absent.
-const ajv = new Ajv();
+//
+// The validator is Ajv's 2020-12 build, with draft-07's meta-schema added for
+// the template schema itself. A template's `evals` entries are validated
+// against `manni:evals:1.0.0`'s own `evalEntry`, the bytes docevals reads, and
+// that vocabulary is 2020-12: `dependentRequired` is a keyword a draft-07
+// validator skips. The template schema uses no keyword the two drafts read
+// differently (no `$ref` siblings, no tuple `items`). `x-manni-location` is
+// declared as a keyword rather than turning strict mode off, so a typo'd
+// keyword in either schema still fails to compile.
+const ajv = new Ajv2020({ allowUnionTypes: true, keywords: ["x-manni-location"] });
+ajv.addMetaSchema(draft07MetaSchema);
+ajv.addSchema(evalsSchema);
 
 let compiled: ValidateFunction | null = null;
 
@@ -258,6 +272,8 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 interface InstructionsHit {
   /** Dotted path to the rule carrying it, e.g. `templates.how-to.sections.title`. */
   path: string;
+  /** The template it sits in, or a placeholder when it sits under `components`. */
+  template: string;
   /** Suggested eval name, kebab-cased from the path. */
   name: string;
   /** The instruction strings, verbatim. */
@@ -320,6 +336,8 @@ function findInstructions(
   if (!insideSectionsMap && "instructions" in record) {
     return {
       path: segments.join("."),
+      template:
+        segments[0] === "templates" ? (segments[1] ?? "<template>") : "<template>",
       name: suggestEvalName(segments),
       values: stringsOf(record.instructions),
     };
@@ -338,13 +356,13 @@ function findInstructions(
 function instructionsMessage(source: string, hit: InstructionsHit): string {
   const assertion = hit.values[0] ?? "";
   return [
-    `${source}: "${hit.path}" uses \`instructions\`, which manni lint no longer evaluates — structure checking is deterministic. Move it to a manni docevals assertion eval in manni.config.yaml:`,
+    `${source}: "${hit.path}" uses \`instructions\`, which manni lint does not evaluate. Move it to the template's evals, which manni docevals grades on every page this template routes:`,
     "",
-    "  docevals:",
-    "    evals:",
-    `      ${hit.name}:`,
-    `        assertion: ${assertion}`,
-    "        grader: ai",
+    "  templates:",
+    `    ${hit.template}:`,
+    "      evals:",
+    `        - id: ${hit.name}`,
+    `          assertion: ${assertion}`,
   ].join("\n");
 }
 
@@ -421,6 +439,42 @@ function findV1Key(node: unknown, seen = new WeakSet()): string | null {
 function findV1File(data: unknown): string | null {
   if (!isRecord(data)) return null;
   return findV1Key(data.templates) ?? findV1Key(data.components);
+}
+
+/* -------------------------------------------------------------------------- *
+ * Refusing what a template's evals may not carry
+ *
+ * Before Ajv, for the same reason as the scans above: the schema has no way to
+ * say where a command eval belongs, or to compare two entries' ids.
+ * -------------------------------------------------------------------------- */
+
+/**
+ * A command eval runs a program, and a template is something a page can name
+ * or the operator can fetch, so it may not bring one along. Two inline entries
+ * claiming one id would make the `extends` merge, which matches by id, guess.
+ */
+function findEvalsRefusal(data: unknown, source: string): string | null {
+  if (!isRecord(data) || !isRecord(data.templates)) return null;
+  for (const [name, template] of Object.entries(data.templates)) {
+    if (!isRecord(template) || !Array.isArray(template.evals)) continue;
+    const ids = new Set<string>();
+    for (const [index, entry] of template.evals.entries()) {
+      if (!isRecord(entry) || "use" in entry) continue;
+      const id = typeof entry.id === "string" ? entry.id : "<id>";
+      if (entry.grader === "command") {
+        return (
+          `${source}: "templates.${name}.evals[${index}]" uses grader command, which a template cannot carry. ` +
+          `Define it under docevals.evals in manni.config.yaml and reference it with use: ${id}.`
+        );
+      }
+      if (typeof entry.id !== "string") continue;
+      if (ids.has(entry.id)) {
+        return `${source}: "templates.${name}.evals" defines "${entry.id}" twice`;
+      }
+      ids.add(entry.id);
+    }
+  }
+  return null;
 }
 
 /* -------------------------------------------------------------------------- *
@@ -630,9 +684,16 @@ export function validateTemplateFile(data: unknown, source: string): TemplateFil
   const v1 = findV1File(data);
   if (v1) throw new LintError(`${source}: ${v1}`);
 
+  const evalsRefusal = findEvalsRefusal(data, source);
+  if (evalsRefusal) throw new LintError(evalsRefusal);
+
   const validate = fileValidator();
   if (!validate(data)) {
-    const errors = validate.errors ?? [];
+    // An `if` error only says which branch the entry took ("must match "else"
+    // schema"); the error inside that branch already says what is wrong.
+    const all = validate.errors ?? [];
+    const specific = all.filter((error) => error.keyword !== "if");
+    const errors = specific.length > 0 ? specific : all;
     const detail = errors.map(describeError).join("; ") || "does not match the template schema";
     throw new LintError(`${source} is not a valid template file: ${detail}.`);
   }
@@ -930,15 +991,80 @@ function mergeRules(parent: Rule, child: Rule): Rule {
   return merged;
 }
 
+/** The fields a child's `use:` entry narrows on the entry it names. */
+const NARROWED_EVAL_FIELDS = ["skip", "severity", "weight", "type"] as const;
+
+/** What an eval entry is matched by: an inline `id`, a `use` value, or nothing. */
+function evalKey(entry: TemplateEvalEntry): string | undefined {
+  if (typeof entry === "string") return undefined;
+  const key = "use" in entry ? entry.use : entry.id;
+  return typeof key === "string" ? key : undefined;
+}
+
+/**
+ * Merge a child template's evals onto its parent's.
+ *
+ * Each child entry is matched to an inherited one by key: an inline entry by
+ * its `id`, a `use:` entry by its `use` value, either against an inherited
+ * entry's `id` or `use`. A bare assertion has no key and never matches. An
+ * inline child entry replaces the one it matches, in the parent's place. A
+ * `use:` child entry narrows it instead: `skip`, `severity`, `weight` and
+ * `type` are laid over it and `options` merge one level deep, and it keeps the
+ * parent's form otherwise. Whatever matches nothing is appended in the child's
+ * order.
+ */
+function mergeEvals(
+  parent: TemplateEvalEntry[] | undefined,
+  child: TemplateEvalEntry[] | undefined,
+): TemplateEvalEntry[] | undefined {
+  if (!parent) return child;
+  if (!child) return parent;
+
+  const merged: TemplateEvalEntry[] = [...parent];
+  for (const entry of child) {
+    const key = evalKey(entry);
+    const index =
+      key === undefined ? -1 : merged.findIndex((inherited) => evalKey(inherited) === key);
+    const target = index === -1 ? undefined : merged[index];
+    if (target === undefined || typeof entry === "string" || typeof target === "string") {
+      merged.push(entry);
+    } else if ("use" in entry) {
+      merged[index] = narrowEval(target, entry);
+    } else {
+      merged[index] = entry;
+    }
+  }
+  return merged;
+}
+
+function narrowEval(
+  target: Record<string, unknown>,
+  narrowing: Record<string, unknown>,
+): Record<string, unknown> {
+  const narrowed: Record<string, unknown> = { ...target };
+  for (const field of NARROWED_EVAL_FIELDS) {
+    if (narrowing[field] !== undefined) narrowed[field] = narrowing[field];
+  }
+  if (isRecord(narrowing.options)) {
+    narrowed.options = {
+      ...(isRecord(target.options) ? target.options : {}),
+      ...narrowing.options,
+    };
+  }
+  return narrowed;
+}
+
 function mergeTemplates(parent: Template, child: Template): Template {
   // Shaped like `mergeRules` above, and for the same reasons: merge first,
   // drop `sections` from both spreads, and test for `undefined` rather than
-  // truthiness.
+  // truthiness. `evals` merges by key the same way, so it is set aside too.
   const sections = mergeRuleLists(parent.sections, child.sections);
-  const { sections: _parentSections, ...parentRest } = parent;
-  const { sections: _childSections, ...childRest } = child;
+  const evals = mergeEvals(parent.evals, child.evals);
+  const { sections: _parentSections, evals: _parentEvals, ...parentRest } = parent;
+  const { sections: _childSections, evals: _childEvals, ...childRest } = child;
   const merged: Template = { ...parentRest, ...childRest };
   if (sections !== undefined) merged.sections = sections;
+  if (evals !== undefined) merged.evals = evals;
   // The chain is resolved; leaving `extends` on would invite resolving twice.
   delete merged.extends;
   return merged;

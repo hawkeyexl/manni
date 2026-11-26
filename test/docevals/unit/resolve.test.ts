@@ -5,6 +5,7 @@ import { parseDocevalsConfig } from "../helpers/config.js";
 import { resolvePage } from "../../../src/docevals/core/resolve.js";
 import { extractFrontmatter } from "../../../src/meta/index.js";
 import type { PageFile } from "../../../src/docevals/core/discover.js";
+import type { PageTemplate } from "../../../src/docevals/core/templates.js";
 import { stripFrontmatterBlock } from "../../../src/docevals/core/discover.js";
 
 const CONFIG = parseDocevalsConfig(
@@ -508,5 +509,144 @@ describe("resolvePage: shorthand naming", () => {
       plan.problems.filter((p) => p.message.includes("Duplicate eval id")),
     ).toHaveLength(0);
     expect(plan.evals.find((e) => e.name === "central-ai")?.source).toBe("page");
+  });
+});
+
+// The template lint routes a page to carries evals too (`core/templates.ts`
+// attaches them as `page.template`). They resolve between the suite and the
+// page: a template inline entry replaces a suite eval of its id, and the page
+// replaces or narrows a template eval in turn.
+describe("resolvePage: template evals", () => {
+  const ENTRIES: PageTemplate["entries"] = [
+    { id: "central-tool", grader: "tool:regex", options: { pattern: "Body" } },
+    { id: "tpl-ai", assertion: "The template claim holds." },
+    { use: "central-ai", severity: "warning" },
+    "A bare template claim.",
+  ];
+
+  function routed(
+    frontmatterYaml: string,
+    template: Partial<PageTemplate> = {},
+  ): PageFile {
+    return {
+      ...page(frontmatterYaml),
+      template: {
+        ref: "tgdp:how-to:1.6",
+        stage: "type",
+        entries: ENTRIES,
+        sources: [],
+        ...template,
+      },
+    };
+  }
+
+  const byName = (plan: ReturnType<typeof resolvePage>, name: string) =>
+    plan.evals.find((e) => e.name === name);
+
+  it("names the template on the plan, and null when the page is unrouted", () => {
+    expect(resolvePage(routed("type: how-to"), CONFIG).template).toBe("tgdp:how-to:1.6");
+    expect(resolvePage(page("title: x"), CONFIG).template).toBeNull();
+  });
+
+  it("gives an unrouted page no template evals", () => {
+    const plan = resolvePage(page("eval-suite: ref"), CONFIG);
+    expect(plan.evals.map((e) => e.source)).toEqual(["config", "config"]);
+  });
+
+  it("lets a template inline entry replace a suite eval of its id", () => {
+    const plan = resolvePage(routed("type: how-to\neval-suite: ref"), CONFIG);
+    expect(byName(plan, "central-tool")?.source).toBe("template");
+    expect(byName(plan, "central-tool")?.options).toEqual({ pattern: "Body" });
+  });
+
+  it("marks inline and bare template entries template, and a use: entry config", () => {
+    const plan = resolvePage(routed("type: how-to"), CONFIG);
+    expect(byName(plan, "tpl-ai")?.source).toBe("template");
+    expect(byName(plan, "template-assertion-4")?.source).toBe("template");
+    expect(byName(plan, "template-assertion-4")?.assertion).toBe("A bare template claim.");
+    // The config's definition, narrowed by the template.
+    expect(byName(plan, "central-ai")?.source).toBe("config");
+    expect(byName(plan, "central-ai")?.severity).toBe("warning");
+  });
+
+  it("gives no examples notice for a template ai eval", () => {
+    const plan = resolvePage(routed("type: how-to"), CONFIG);
+    expect(plan.problems).toEqual([]);
+  });
+
+  it("lets a page inline entry replace a template eval silently", () => {
+    const plan = resolvePage(
+      routed(
+        [
+          "type: how-to",
+          "evals:",
+          "  - id: tpl-ai",
+          "    assertion: The page's own claim.",
+          "    examples: { pass: yes, fail: no }",
+        ].join("\n"),
+      ),
+      CONFIG,
+    );
+    expect(byName(plan, "tpl-ai")?.source).toBe("page");
+    expect(byName(plan, "tpl-ai")?.assertion).toBe("The page's own claim.");
+    expect(plan.problems).toEqual([]);
+  });
+
+  it("lets a page use: narrow a template eval, which no config defines", () => {
+    const plan = resolvePage(
+      routed("type: how-to\nevals:\n  - use: tpl-ai\n    skip: true"),
+      CONFIG,
+    );
+    expect(plan.problems).toEqual([]);
+    expect(byName(plan, "tpl-ai")?.skip).toBe(true);
+    expect(byName(plan, "tpl-ai")?.source).toBe("template");
+    expect(byName(plan, "tpl-ai")?.location).toEqual({ file: "docs/page.md", line: 4 });
+  });
+
+  it("still reports a page use: that neither the template nor the config defines", () => {
+    const plan = resolvePage(routed("type: how-to\nevals:\n  - use: nowhere"), CONFIG);
+    expect(plan.problems[0]?.message).toContain('Unknown eval "nowhere"');
+  });
+
+  it("keeps template shorthand names clear of the page's", () => {
+    const plan = resolvePage(
+      routed("type: how-to\nevals:\n  - A page claim.", {
+        entries: ["A template claim.", { id: "template-assertion-2", assertion: "Taken." }],
+      }),
+      CONFIG,
+    );
+    expect(plan.evals.map((e) => e.name).sort()).toEqual([
+      "assertion-1",
+      "template-assertion-1",
+      "template-assertion-2",
+    ]);
+  });
+
+  it("locates a template eval at the key that routed the page", () => {
+    const typed = resolvePage(routed("title: x\ntype: how-to"), CONFIG);
+    expect(byName(typed, "tpl-ai")?.location).toEqual({ file: "docs/page.md", line: 3 });
+
+    const explicit = resolvePage(
+      routed("title: x\n$template: ./house.yaml#how-to", { stage: "frontmatter-template" }),
+      CONFIG,
+    );
+    expect(byName(explicit, "tpl-ai")?.location).toEqual({ file: "docs/page.md", line: 3 });
+
+    const overridden = resolvePage(routed("title: x", { stage: "config-override" }), CONFIG);
+    expect(byName(overridden, "tpl-ai")?.location).toEqual({ file: "docs/page.md" });
+  });
+
+  it("reports a $template refusal at the $template line", () => {
+    const plan = resolvePage(
+      routed("title: x\n$template: https://example.com/t.yaml", {
+        ref: null,
+        stage: "frontmatter-template",
+        entries: [],
+        refusal: "no URL",
+      }),
+      CONFIG,
+    );
+    expect(plan.template).toBeNull();
+    expect(plan.problems).toEqual([{ message: "no URL", level: "error", line: 3 }]);
   });
 });

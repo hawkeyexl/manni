@@ -88,3 +88,41 @@ templates:
         description: >-
           Link to related tutorials, articles, or videos the reader can try
           next.
+    # Judged by `manni docevals` on every page routed to this template. Each
+    # assertion is one a reader of the finished page can check, drawn from
+    # upstream's guide at the same pin, vendored as
+    # test/lint/fixtures/tgdp/guide_tutorial.md.
+    evals:
+      # guide_tutorial.md:50, 54
+      - id: tgdp-objectives-stated
+        assertion: The opening says what the reader will be able to do or know by the end of the tutorial.
+        examples:
+          pass: "By the end of this tutorial, you'll be able to deploy a static site and add a custom domain."
+          fail: "This tutorial covers static sites."
+      # guide_tutorial.md:68
+      - id: tgdp-audience-and-prior-knowledge
+        assertion: The opening says who the tutorial is for and what the reader should already know before starting.
+        examples:
+          pass: "This tutorial is for frontend developers new to Acme. You should be comfortable with Git and the command line."
+          fail: "In this tutorial, we deploy a site."
+      # guide_tutorial.md:93, 105-106
+      - id: tgdp-steps-start-with-a-verb
+        assertion: Each numbered step starts with an imperative verb and states a complete action.
+        examples:
+          pass: "1. Create a file named `app.js` in the project root."
+          fail: "1. Creating the app file."
+      # guide_tutorial.md:31-33, 112
+      - id: tgdp-code-is-self-contained
+        assertion: Where the tutorial gives source code to copy, other than one-line shell commands, it includes needed imports and comments explaining what it does.
+        examples:
+          pass: |-
+            import express from "express";
+            // Serve the files in ./public on port 3000.
+            express().use(express.static("public")).listen(3000);
+          fail: 'express().use(express.static("public")).listen(3000);'
+      # guide_tutorial.md:160-162
+      - id: tgdp-summary-says-what-was-learned
+        assertion: The summary names specific skills or knowledge the reader gained, rather than repeating the opening objectives word for word.
+        examples:
+          pass: "You built a two-page site, deployed it with `acme deploy`, and pointed a custom domain at it with a CNAME record."
+          fail: "By the end of this tutorial, you'll be able to deploy a static site and add a custom domain."

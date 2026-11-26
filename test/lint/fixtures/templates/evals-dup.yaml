@@ -1,0 +1,8 @@
+# Two inline evals claim one id in one template.
+templates:
+  how-to:
+    evals:
+      - id: has-goal
+        assertion: Opens with the goal.
+      - id: has-goal
+        assertion: States the goal in the title.

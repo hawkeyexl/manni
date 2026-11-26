@@ -4,7 +4,7 @@ description: The eval, the grader hierarchy, and how a verdict is reached.
 type: concept
 audiences:
   - docs-engineers
-last-updated: 2026-11-07
+last-updated: 2026-11-24
 ---
 
 When an eval fails, you need to know what decided it before you can tell whether to fix the page or
@@ -28,6 +28,10 @@ fail.
 
 Matching a pattern, running a generated Node script, asking a model whether a page over-promises,
 and routing something to a human are all *evals*. What differs is the grader.
+
+An eval reaches a page from a suite in `manni.config.yaml`, from the lint template the page is
+routed to, or from the page's own `evals:` key. A page with `type: how-to` already gets The Good Docs
+Project's how-to guidance as judged evals, from the built-in template `manni lint` routes it to.
 
 That matters practically. One config, one report, one exit code, and one place to look when
 something goes red.
@@ -102,7 +106,7 @@ to `regression`, because most evals guard something. See
 
 ```text
 discover pages
-  → resolve frontmatter against config (suites, named evals, inline evals)
+  → resolve frontmatter against config (suites, template evals, named evals, inline evals)
   → generation pass (write scripts for command evals that lack one)
   → deterministic graders (cheap first)
   → AI judge

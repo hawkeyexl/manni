@@ -11,6 +11,7 @@ import {
   type DocumentInputOptions,
 } from "../core/discover.js";
 import { withExternalMetadata } from "../core/external.js";
+import { withTemplateEvals } from "../core/templates.js";
 import { resolvePages } from "../core/resolve.js";
 import { assertRegisteredGraders } from "../core/feasibility.js";
 import { makeGenerateScripts } from "../graders/scriptgen.js";
@@ -56,8 +57,12 @@ export async function runGenerate(
   // Checked before discovery, and even when nothing needs generating: a typo
   // is a usage error on every run, not only on the runs that reach a model.
   assertProviderSelection(selectProvider(config, flags));
-  const pages = await withExternalMetadata(
-    discoverPages(config, documentSet(paths, options, "read"), cwd),
+  const pages = await withTemplateEvals(
+    await withExternalMetadata(
+      discoverPages(config, documentSet(paths, options, "read"), cwd),
+      config,
+      cwd,
+    ),
     config,
     cwd,
   );
@@ -75,7 +80,9 @@ export async function runGenerate(
   for (const plan of plans) {
     if (plan.skip || plan.problems.some((p) => p.level === "error")) continue;
     for (const ev of plan.evals) {
-      if (ev.skip || ev.grader !== "command") continue;
+      // A template cannot carry a command eval (lint refuses one), and the
+      // command reference has no home in a template, so none is a target.
+      if (ev.skip || ev.grader !== "command" || ev.source === "template") continue;
       const missing = !ev.command;
       const stale =
         ev.command != null &&

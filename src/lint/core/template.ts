@@ -181,7 +181,19 @@ export interface Template extends Rule {
   guide?: string;
   /** Built-in id, path, or URL to inherit from. */
   extends?: string;
+  /**
+   * Evals `manni docevals` grades on every page this template routes. lint
+   * never grades them. Merged through `extends` by key (see `mergeEvals`).
+   */
+  evals?: TemplateEvalEntry[];
 }
+
+/**
+ * One template eval, in the `manni:evals:1.0.0` entry form: a bare assertion,
+ * a `use:` reference, or an inline `{ id, ... }`. Validated against that
+ * vocabulary's own `evalEntry`, so its shape lives there, not here.
+ */
+export type TemplateEvalEntry = string | Record<string, unknown>;
 
 /** A template file: named templates plus reusable `$ref` targets. */
 export interface TemplateFile {

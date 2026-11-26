@@ -93,3 +93,52 @@ templates:
       # it, so it is not a finding.
       - min: 0
         description: Add any other sections here, after the ones above.
+    # Judged by `manni docevals` on every page routed to this template. Each
+    # assertion is one a reader of the finished page can check, drawn from
+    # upstream's guide at the same pin, vendored as
+    # test/lint/fixtures/tgdp/guide_reference.md.
+    evals:
+      # guide_reference.md:47-50
+      - id: tgdp-description-states-purpose
+        assertion: The opening briefly says what the page covers and what a reader uses it for.
+        examples:
+          pass: "This page lists every key in `app.config.yaml`, with its type, default and effect."
+          fail: |-
+            | Key | Type | Default |
+            |---|---|---|
+      # guide_reference.md:7, 36
+      - id: tgdp-no-procedures
+        assertion: The page describes parts of the product and does not walk the reader through a numbered procedure for a task.
+        examples:
+          pass: "`timeout` (integer, default 30): seconds to wait for a response before the request fails."
+          fail: |-
+            1. Open `app.config.yaml`.
+            2. Set `timeout` to 60.
+            3. Restart the service.
+      # guide_reference.md:56-57, 61
+      - id: tgdp-entries-in-tables-or-lists
+        assertion: The entries are presented in tables, lists or another structured format rather than in running paragraphs.
+        examples:
+          pass: |-
+            | Key | Type | Default |
+            |---|---|---|
+            | `timeout` | integer | 30 |
+          fail: "The timeout key is an integer that defaults to 30, while the retries key, also an integer, defaults to 3, and the host key is a string."
+      # guide_reference.md:35, 58
+      - id: tgdp-entries-are-parallel
+        assertion: Entries of the same kind follow one consistent structure, giving the same kinds of details for each entry.
+        examples:
+          pass: |-
+            - `timeout` (integer, default 30): seconds before a request fails.
+            - `retries` (integer, default 3): attempts before the client gives up.
+          fail: |-
+            - `timeout` (integer, default 30): seconds before a request fails.
+            - `retries`: see the source code.
+      # guide_reference.md:67-69
+      - id: tgdp-commands-show-arguments-and-example
+        assertion: Where the page documents a command, it shows an example invocation and says which of its arguments or options are required.
+        examples:
+          pass: |-
+            `acme deploy <env> [--dry-run]`. `<env>` is required.
+            Example: `acme deploy staging --dry-run`
+          fail: "`acme deploy` deploys the application."

@@ -205,3 +205,38 @@ templates:
       # beyond the ones named above.
       - min: 0
         description: Add any other sections here, after the ones above.
+    # Judged by `manni docevals` on every page routed to this template. Each
+    # assertion is one a reader of the finished page can check, drawn from
+    # upstream's guide at the same pin, vendored as
+    # test/lint/fixtures/tgdp/guide_readme.md. Upstream lets a README drop
+    # any section that does not apply (guide_readme.md:26), so an eval about
+    # an optional section holds only where that section is present.
+    evals:
+      # guide_readme.md:19, 51
+      - id: tgdp-says-what-and-why
+        assertion: The README says what the project does and why a reader would want to use it.
+        examples:
+          pass: "Acme Lint checks your Markdown for broken links before you merge, so readers never land on a 404."
+          fail: "Acme Lint is written in Rust and uses tokio and serde."
+      # guide_readme.md:71
+      - id: tgdp-names-the-audience
+        assertion: The README says who the project is for.
+        examples:
+          pass: "Acme Lint is for docs teams who publish from a Git repository."
+          fail: "Acme Lint is a fast, modern tool."
+      # guide_readme.md:91
+      - id: tgdp-steps-start-with-a-verb
+        assertion: Where the README gives numbered instructions, each step starts with a verb telling the reader what to do.
+        examples:
+          pass: "1. Install the CLI with `npm install -g acme-lint`."
+          fail: "1. The CLI is installed with npm."
+      # guide_readme.md:26, 133, 143
+      - id: tgdp-names-license-and-help
+        assertion: Where the README covers licensing it names the license, and where it covers support it names a place to get help.
+        examples:
+          pass: |-
+            Acme Lint is released under the MIT license.
+            For help, ask in the #acme-lint channel on our Discord.
+          fail: |-
+            See the license.
+            For help, contact us.

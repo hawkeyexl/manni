@@ -1,0 +1,5 @@
+# An inline eval with no assertion, which an ai-graded eval requires.
+templates:
+  how-to:
+    evals:
+      - id: has-goal

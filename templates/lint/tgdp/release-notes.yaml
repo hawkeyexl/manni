@@ -135,3 +135,50 @@ templates:
         sections:
           - min: 0
             description: Add any subsections this section needs here.
+    # Judged by `manni docevals` on every page routed to this template. Each
+    # assertion is one a reader of the finished page can check, drawn from
+    # upstream's guide at the same pin, vendored as
+    # test/lint/fixtures/tgdp/guide_release-notes.md.
+    evals:
+      # guide_release-notes.md:54
+      - id: tgdp-addresses-the-reader
+        assertion: 'The notes address the reader in the second person, as "you", rather than as "the user" or "customers".'
+        examples:
+          pass: "You can now export reports as CSV."
+          fail: "Users can now export reports as CSV."
+      # guide_release-notes.md:57
+      - id: tgdp-present-tense
+        assertion: 'New features and improvements are described in the present tense, such as "You can now export", rather than "We added" or "will let you".'
+        examples:
+          pass: "You can now export reports as CSV."
+          fail: "We added CSV export, which will let you share reports."
+      # guide_release-notes.md:10, 90, 188
+      - id: tgdp-says-why-it-matters
+        assertion: Each new feature and improvement says how it benefits the reader, not only what changed.
+        examples:
+          pass: "You can now export reports as CSV, so you can analyze them in a spreadsheet."
+          fail: "Added CSV export."
+      # guide_release-notes.md:92, 190
+      - id: tgdp-links-to-docs
+        assertion: Each new feature and improvement links to documentation where the reader can learn more.
+        examples:
+          pass: "You can now export reports as CSV. See [Export reports](../reports/export.md)."
+          fail: "You can now export reports as CSV."
+      # guide_release-notes.md:221-222, 224
+      - id: tgdp-fixes-say-what-changed
+        assertion: Where the notes list bug fixes, each says what the software does now, not how the bug was fixed.
+        examples:
+          pass: "The Orders page now sorts orders from newest to oldest."
+          fail: "Fixed the bug by changing the ORDER BY clause in OrderRepository."
+      # guide_release-notes.md:260, 262
+      - id: tgdp-known-issues-have-workarounds
+        assertion: Where the notes list known issues, each describes when the problem occurs and gives a workaround where one exists.
+        examples:
+          pass: "If you upgrade from 5.x with `refreshToken` enabled, scheduled jobs stop. To restore them, sign out and sign back in."
+          fail: "Some scheduled jobs may have problems."
+      # guide_release-notes.md:282-285
+      - id: tgdp-deprecations-are-complete
+        assertion: Where the notes deprecate a feature, each names the feature, what replaces it, when it is removed, and any action the reader must take.
+        examples:
+          pass: "The Classic editor is deprecated and is removed on 2027-03-01. Switch to the Block editor; your drafts move over automatically."
+          fail: "The Classic editor is deprecated."

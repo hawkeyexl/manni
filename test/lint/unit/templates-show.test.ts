@@ -225,3 +225,70 @@ describe("renderTemplateShow markdown", () => {
     }
   });
 });
+
+describe("renderTemplateShow evals", () => {
+  const EVALS = "test/lint/fixtures/templates/evals.yaml";
+
+  it("prints the resolved evals after the sections", async () => {
+    const out = renderTemplateShow(await runTemplateShow({ ref: `${EVALS}#child` }), "pretty");
+    expect(out).toBe(
+      [
+        "child",
+        "  types: evals-demo",
+        "",
+        "  ## Overview  overview · required, repeats",
+        "",
+        "  Evals",
+        "  - Opens by saying what the reader will accomplish.",
+        "  - house-voice",
+        "  - names-prerequisites [ai] (skip)",
+        "      Names every prerequisite before the first step.",
+        "  - steps-numbered [ai]",
+        "      Every step starts with a verb.",
+        "  - ends-with-next-steps [human]",
+        "      Ends by pointing at a next step.",
+        "  - Opens by saying what the reader will accomplish.",
+      ].join("\n"),
+    );
+  });
+
+  it("dims the assertion line when colour is on", async () => {
+    const out = renderTemplateShow(await runTemplateShow({ ref: `${EVALS}#child` }), "pretty", {
+      color: true,
+    });
+    const esc = String.fromCharCode(27);
+    expect(out).toContain(`\n      ${esc}[2mEvery step starts with a verb.`);
+  });
+
+  it("adds the authored evals to the JSON only when there are some", async () => {
+    const child = JSON.parse(
+      renderTemplateShow(await runTemplateShow({ ref: `${EVALS}#child` }), "json"),
+    ) as Record<string, unknown>;
+    expect(child["evals"]).toEqual([
+      "Opens by saying what the reader will accomplish.",
+      { use: "house-voice", severity: "warning", options: { tone: "plain", length: "short" } },
+      {
+        id: "names-prerequisites",
+        assertion: "Names every prerequisite before the first step.",
+        skip: true,
+      },
+      { id: "steps-numbered", assertion: "Every step starts with a verb." },
+      {
+        id: "ends-with-next-steps",
+        assertion: "Ends by pointing at a next step.",
+        grader: "human",
+      },
+      "Opens by saying what the reader will accomplish.",
+    ]);
+    const plain = JSON.parse(
+      renderTemplateShow(await runTemplateShow({ ref: `${EVALS}#plain` }), "json"),
+    ) as Record<string, unknown>;
+    expect(plain).not.toHaveProperty("evals");
+  });
+
+  it("leaves the markdown skeleton without evals", async () => {
+    const out = renderTemplateShow(await runTemplateShow({ ref: `${EVALS}#child` }), "markdown");
+    expect(out).not.toContain("Evals");
+    expect(out).not.toContain("names-prerequisites");
+  });
+});
