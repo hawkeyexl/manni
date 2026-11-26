@@ -260,9 +260,9 @@ docs/src/content/docs/a11y/index.mdx:
         integrity: sha256-9d7d43f30ee6a24abd038874a24b15b60a9284b7e1444758cb603901ad1c744e
       source:
         file: src/a11y/commands/check.ts
-        lines: 127-132
-        integrity: sha256-b78bb97f749a320daacbd4e31b6a6d36575191ceec7f8d9da5adc27d4ed098a0
-        commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
+        lines: 136-142
+        integrity: sha256-3d71920d5be6b92c099cf092668179fabde749fa2b6473163792eecaf76f43b6
+        commit-sha: 5a23a1ea9fd4191815a50c61f880144c13def59c
     - id: sitemap-header-line
       claim:
         integrity: sha256-9d7d43f30ee6a24abd038874a24b15b60a9284b7e1444758cb603901ad1c744e
