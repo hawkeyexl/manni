@@ -107,6 +107,7 @@ manni a11y check [urls...] [options]
 | `--no-max-pages` | n/a | off | Check every page found, ignoring a `maxPages:` in config. No cap is the default, so this is how a configured one is lifted for one run. `--max-pages` and `--no-max-pages` set the same option, so the one written later on the command line wins. |
 | `--exclude` | `<glob>` | | Glob matched against a URL's path; a match keeps that page out of the crawl. Repeatable, one glob per occurrence, never comma-separated. A pattern must start with `/`. A pattern that excludes a seed is an error, and it names every excluded seed under the source that pattern came from. Both exit 2. See [what a pattern matches](#what-a-pattern-matches). Replaces config `exclude:` rather than adding to it. |
 | `--tags` | `<list>` | | Comma-separated axe tags, given once; restrict axe to rules carrying any of them, for example `wcag2a,wcag2aa,wcag21aa,best-practice`. Whitespace around commas is trimmed and empty items are dropped. A second `--tags` replaces the first. Without it axe runs its default rule set. Overrides config `tags:`. |
+| `--disable-rules` | `<list>` | | Comma-separated axe rule ids, given once, that are not run on any page, for example `region,color-contrast`. Applied after `--tags`, so a rule both selects is still off. An id axe-core does not have is an error, named before any page loads (exit 2). Every run that disables a rule says so on stderr, unless `-q` is set. Replaces config `disableRules:` rather than adding to it. |
 | `--severity` | `<level>` | `notice` | Minimum severity reported and counted, on the family scale: `notice`, `warning`, or `error`. Violations below it are dropped before the [score](#the-score) and the exit code are decided. The floor is also the gate: whatever it keeps fails the run, so a page whose worst finding is a `warning` still exits `1`. See [exit codes](#exit-codes). An unknown level is an error (exit 2). axe's four impact levels are folded onto these three when a page is read. Every finding keeps axe's own value as `impact`, and the [github format](#output-formats) has the table. Overrides config `severity:`. |
 | `--timeout` | `<ms>` | `30000` | Per-page navigation timeout in milliseconds. Overrides config `timeout:`. |
 | `-q, --quiet` | n/a | off | In `pretty` output, hide pages with no remaining violations. Has no effect on `json` or `github`. |
@@ -117,8 +118,8 @@ manni a11y check [urls...] [options]
 | `--no-config` | n/a | off | Ignore any discovered config file. `-c` and `--no-config` set the same option, so the one written later on the command line wins. |
 
 <Aside type="note">
-`--tags` is a `<list>` option: one comma-separated value, given once. It does
-not accumulate across repeats, the way `--exclude <glob>` does.
+`--tags` and `--disable-rules` are `<list>` options: one comma-separated value,
+given once. Neither accumulates across repeats, the way `--exclude <glob>` does.
 Positional seeds are space-separated, because that is what argv is.
 </Aside>
 
@@ -439,7 +440,8 @@ adds `; N redirects` after the duplicates clause.
     "sitemap": "http://127.0.0.1:4173/sitemap.xml",
     "sitemapPages": 3,
     "crawl": true
-  }
+  },
+  "disabledRules": []
 }
 ```
 
@@ -488,6 +490,9 @@ And `summary`:
 | `sitemap` | string \| `null` | The sitemap URL that was found, or `null` when none was. Finding one is not the same as using one, which `sitemapPages` reports. |
 | `sitemapPages` | integer | In-scope page URLs that sitemap contributed to the frontier. `0` when no sitemap was found, and `0` when one was found whose entries were all out of scope. |
 | `crawl` | boolean | Whether crawling was on for the run, with a sitemap lookup and link following. `false` under `--no-crawl`. |
+
+Last, `disabledRules` is the list of axe rule ids the run did not run, from
+`--disable-rules` or `disableRules:`. It is `[]` when every rule ran.
 
 {/* cite github-one-per-finding */}
 **`github`** prints one workflow command per finding, and nothing when the run
@@ -631,13 +636,14 @@ manni a11y check https://docs.example.com/ --crawl --no-max-pages
 
 # Every option at once. Two seeds (space-separated); sitemap and links; cap
 # 250 pages; two exclusion globs, one per occurrence; one comma-separated
-# --tags list; warning floor; 60 s per page; quiet; ignore any discovered
-# config; json; no color.
+# --tags list; one rule off; warning floor; 60 s per page; quiet; ignore any
+# discovered config; json; no color.
 manni a11y check https://docs.example.com/ https://www.example.com/ \
   --max-pages 250 \
   --exclude "/proposals/**" \
   --exclude "/reference/api/**" \
   --tags wcag2a,wcag2aa,wcag21aa,best-practice \
+  --disable-rules region \
   --severity warning \
   --timeout 60000 \
   --quiet \
@@ -707,6 +713,7 @@ a11y:
   severity: error
   timeout: 30000
   exclude: ["/proposals/**"]
+  disableRules: ["region"]
 ```
 
 | Key | Type | Default | Description |
@@ -718,6 +725,7 @@ a11y:
 | `severity` | `notice` \| `warning` \| `error` | `notice` | Minimum severity reported and counted, on the family scale. Mirrors `--severity`. |
 | `timeout` | integer ≥ 1 | `30000` | Per-page navigation timeout in milliseconds. Mirrors `--timeout`. |
 | `exclude` | `string[]` | `[]` | Globs matched against a URL's path; a match keeps that page out of the crawl. One glob per entry. An explicit `[]` means the same as the key being absent. Each entry must start with `/`, and the error names the entry by its position. A typed `--exclude` replaces this list rather than adding to it. See [what a pattern matches](#what-a-pattern-matches). |
+| `disableRules` | `string[]` | `[]` | axe rule ids not run on any page. Mirrors `--disable-rules`, one id per entry. A typed `--disable-rules` replaces this list. An id axe-core does not have is an error (exit 2). |
 
 {/* cite config-unknown-key */}
 An unknown key, a wrong type, an empty `urls` entry, or a `urls` entry that is

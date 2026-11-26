@@ -185,6 +185,25 @@ worse than a red build.
 What the check does deterministically is name the element and the condition that
 failed. That is the node line, and it is where the machine's contribution ends.
 
+## A rule you have decided against
+
+Sometimes the fix is not yours to make. A theme you do not own can fail
+`region` on every page, or the team can decide a rule does not apply to its
+site. Lowering the severity floor would hide real failures along with it.
+Turn that one rule off instead:
+
+```yaml title="manni.config.yaml"
+a11y:
+  disableRules: [region]
+```
+
+Every other rule still runs. Each run then prints
+`manni: axe rules disabled: region` on stderr, so the choice stays visible in
+every CI log, and `-f json` lists it under `disabledRules`. A misspelled rule
+id fails the run before any page loads (exit 2). To try a rule list for one
+run, pass `--disable-rules region,color-contrast`; it replaces the configured
+list. The [reference](/manni/a11y/reference/cli/#configuration) has the details.
+
 ## What axe cannot decide from a rendered page
 
 A green run means no rule fired, not that the page is accessible. Four classes

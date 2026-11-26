@@ -170,6 +170,8 @@ export interface CheckRun {
   /** Pages that redirected in the browser, in visit order. Never in `results`. */
   redirects: Redirect[];
   summary: CheckSummary;
+  /** axe rule ids the run did not run, as given. `[]` when none. */
+  disabledRules: string[];
 }
 
 /**
