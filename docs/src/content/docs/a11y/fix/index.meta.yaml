@@ -90,13 +90,16 @@ docs/src/content/docs/a11y/fix/index.mdx:
       lines: 157
       integrity: sha256-91000e48b37abefff8788469ebc747fabe40192c8c7bf7da487b450f59de521e
     - generated-by: Claude Fable 5.1
-      lines: 158-169
-      integrity: sha256-01f47cc6f877c93491762c7a074b4256f1c08753bef21601496faeac68c69ef3
+      lines: 158-159
+      integrity: sha256-9fa37a622381377d21dfe603f4421f9e391ead2874eb9284266514ae2d050f7e
+    - generated-by: Claude Fable 5.1
+      lines: 180-188
+      integrity: sha256-25792c34a98f782c295f8dd6b470d72bc65ba67fbf01706b05218e1d48b74da9
     - generated-by: Claude Opus 5
-      lines: 170-171
+      lines: 189-190
       integrity: sha256-16f15359d5517460fc15f0401c9b72c0635432817ff119b56e57c7a9ed369266
     - generated-by: Claude Fable 5.1
-      lines: 172-213
+      lines: 191-232
       integrity: sha256-68300d1e5c0f9d8cb0ec2752859c1a37f5ec86d94d75dfe5316bdccca926c9d5
   owner:
     - "@hawkeyexl"

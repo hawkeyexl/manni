@@ -44,6 +44,8 @@ export interface CheckOptions {
    * the flag or the config key the pattern actually came from.
    */
   exclude: ExcludeGlob[];
+  /** axe rule ids not run on any page. Default `[]`. An id axe does not have is an error. */
+  disableRules: string[];
 }
 
 export interface CheckDeps {
@@ -69,6 +71,7 @@ export const CHECK_DEFAULTS: Readonly<Omit<CheckOptions, "urls">> = Object.freez
   severity: "notice",
   timeout: 30000,
   exclude: [],
+  disableRules: [],
 });
 
 /**
@@ -80,6 +83,9 @@ export const CHECK_DEFAULTS: Readonly<Omit<CheckOptions, "urls">> = Object.freez
  *    seed, one per line, each under the pattern's own `source`. A user who
  *    typed two wrong patterns should not need one run per fix, and nothing is
  *    checked either way.
+ * 3b. Any `disableRules` id axe-core does not have → A11yError naming **every**
+ *    such id, one per line. Checked before the sitemap or any page, so a typo
+ *    costs a message and not a crawl.
  * 4. When `crawl`: `discoverSitemap(firstSeed)` (one sitemap per run, the first seed's origin).
  * 5. `crawl(...)`, then per page: drop violations below `severity`, compute `score`.
  * 6. Build `CheckSummary`. Always awaits `analyzer.close()` in `finally`.
@@ -104,6 +110,9 @@ export async function runCheck(opts: CheckOptions, deps: CheckDeps): Promise<Che
       .filter((line): line is string => line !== null);
     if (contradictions.length > 0) throw new A11yError(contradictions.join("\n"));
 
+    const unknown = await unknownAxeRules(opts.disableRules);
+    if (unknown.length > 0) throw new A11yError(unknown.join("\n"));
+
     let sitemap: SitemapDiscovery = { source: null, urls: [] };
     const first = seeds[0];
     if (opts.crawl && first !== undefined) {
@@ -118,7 +127,7 @@ export async function runCheck(opts: CheckOptions, deps: CheckDeps): Promise<Che
         maxPages: opts.maxPages,
         extra: sitemap.urls,
         exclude,
-        analyze: { tags: opts.tags, timeout: opts.timeout },
+        analyze: { tags: opts.tags, timeout: opts.timeout, disableRules: opts.disableRules },
         onProgress: deps.onProgress,
       },
       analyzer,
@@ -129,10 +138,28 @@ export async function runCheck(opts: CheckOptions, deps: CheckDeps): Promise<Che
       results,
       redirects: outcome.redirects,
       summary: summarize(results, outcome, sitemap, opts.crawl),
+      disabledRules: opts.disableRules,
     };
   } finally {
     await analyzer.close();
   }
+}
+
+/**
+ * One line per id axe-core has no rule for. axe throws on an unknown id only
+ * once a page is loaded, so asking its rule list first turns a typo into a
+ * usage error before the browser starts. Loaded only when rules are disabled.
+ */
+async function unknownAxeRules(ids: string[]): Promise<string[]> {
+  if (ids.length === 0) return [];
+  const { default: axe } = await import("axe-core");
+  const known = new Set(axe.getRules().map((r) => r.ruleId));
+  return ids
+    .filter((id) => !known.has(id))
+    .map(
+      (id) =>
+        `unknown axe rule "${id}" in disableRules. axe-core ${axe.version} has no rule with that id.`,
+    );
 }
 
 /** Apply the severity floor, then score what is left. */

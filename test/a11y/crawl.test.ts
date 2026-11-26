@@ -12,7 +12,7 @@ import { A11yError, type ProgressEvent } from "../../src/a11y/types.js";
 import { fakeAnalyzer, violation, type FakeSite } from "../helpers/fake-analyzer.js";
 
 const S = "https://site.example";
-const ANALYZE = { tags: [], timeout: 1000 };
+const ANALYZE = { tags: [], timeout: 1000, disableRules: [] };
 
 /** No `maxPages`: the built-in behaviour is to check everything discovered. */
 function options(over: Partial<CrawlOptions>): CrawlOptions {
@@ -225,7 +225,7 @@ describe("crawl", () => {
 
   it("hands the analyze options through unchanged", async () => {
     const analyzer = fakeAnalyzer({ [`${S}/`]: {} });
-    const analyze = { tags: ["wcag2a", "wcag2aa"], timeout: 12345 };
+    const analyze = { tags: ["wcag2a", "wcag2aa"], timeout: 12345, disableRules: [] };
     await crawl(options({ analyze }), analyzer);
     expect(analyzer.calls[0]?.opts).toEqual(analyze);
   });
