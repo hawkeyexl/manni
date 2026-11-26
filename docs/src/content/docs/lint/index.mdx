@@ -23,7 +23,7 @@ lifecycle: published
 applies-to: ["domain:lint"]
 sample-questions: ["What is manni lint?", "How does manni lint differ from manni meta?"]
 graph: { label: "manni lint", type: concept }
-last-updated: 2026-11-06
+last-updated: 2026-11-26
 action: understand
 prerequisites:
   - meta
@@ -111,6 +111,45 @@ Your own templates are one config entry away, and they outrank the built-ins
 for the doctypes they claim. `manni lint templates infer` writes the first one
 from a page you already have, and
 [Write a template](/manni/lint/set-up/write-a-template/) takes it from there.
+
+## Includes and partials
+
+A page that keeps its "Before you begin" section in a shared partial is
+complete to a reader. Read file by file, it is missing a section, and the
+partial is a fragment no template fits. So lint reads a page the way a reader
+sees it.
+
+Before it checks a page, lint replaces each include with the text it names.
+
+- Markdown includes are mdBook's `{{#include path}}`, MkDocs'
+  `--8<-- "path"` and `<Markdown src="path" />`.
+- An MDX page also includes through a relative `import X from "./x.mdx"`,
+  rendered where `<X />` appears. A package import, such as a Starlight
+  component, is a component and stays as written.
+- AsciiDoc includes are `include::path[]`, with `tag=` and `lines=`.
+- reStructuredText includes are `.. include:: path`, with its line options.
+
+A MadCap Flare topic already reads its snippets this way. DITA's conrefs are
+DITA-OT's to resolve.
+
+A file another page in the same run includes is a partial. It is checked as
+part of that page, and the summary counts it:
+`1 partial assessed through its includer`. Name a partial alone and it is
+linted alone.
+
+A finding in included text reports at the include's line in the page, and
+names the file to edit:
+
+```
+✗ docs/install.mdx
+    7:1  manni:lint/structure/missing-section  Before you start: Missing section "Before you begin"
+         (included from docs/_partials/prereqs.mdx:1)
+```
+
+An include lint cannot follow is left as written, with one warning on stderr.
+That covers a missing file, a URL, a file outside the config file's directory,
+and a cycle. A component shown in a code fence or a comment is an example, so
+it is not expanded.
 
 ## Deterministic, by design
 

@@ -6,7 +6,7 @@ id: lint-reference-cli
 language: en
 lifecycle: published
 action: remember
-last-updated: 2026-11-24
+last-updated: 2026-11-26
 ---
 
 import { Aside } from '@astrojs/starlight/components';
@@ -527,6 +527,19 @@ level is printed before the message, and the summary gains a warning count:
 1 file checked, 1 passed, 0 failed, 0 skipped, 1 warning
 ```
 
+A finding in text a page includes from another file reports at the include's
+line in the page. The line under it names the file and line the text came
+from. A file another page in the run includes is a partial. It is assessed as
+part of that page, and the summary counts it:
+
+```
+✗ docs/install.mdx
+    7:1  manni:lint/structure/missing-section  Before you start: Missing section "Before you begin"
+         (included from docs/_partials/prereqs.mdx:1)
+
+1 file checked, 0 passed, 1 failed, 0 skipped, 1 partial assessed through its includer
+```
+
 In `pretty`, the config that governed the run is named on stderr, so a report
 cannot be read against the wrong settings: `Using manni.config.yaml (.)`.
 Discovery walks up to the project boundary, so an unexpected ancestor config is
@@ -580,7 +593,8 @@ worth one line.
 | `errors[].template.rule` | string \| `null` | The `id` of the template rule the finding is about. That is the missing rule, the rule the section matched, or the rule that accepts a misplaced section. `null` for `unexpected-section`, for the page's own content, and for a rule with no `id`. |
 | `errors[].template.description` | string \| `null` | That rule's `description`, or the template's own for the page's content. `null` for `unexpected-section` and for a rule without one. |
 | `errors[].template.guide` | string \| `null` | The template's `guide`. |
-| `skipped` | string \| `null` | Why the file was not linted. One of `no-template`, `unsupported-format` or `unreadable`. It is `null` when the file was linted, so a skip and an older version of this reporter are never the same reading. |
+| `errors[].includedFrom` | object | Present only for a finding in text the page includes from another file. `file` and `line` name where that text lives. `position` is then the include's place in the page. |
+| `skipped` | string \| `null` | Why the file was not linted. One of `no-template`, `unsupported-format`, `unreadable`, `excluded` or `partial`. A `partial` is a file another page in the run includes, assessed as part of that page. It is `null` when the file was linted, so a skip and an older version of this reporter are never the same reading. |
 
 The envelope is a top-level array and `type` keeps its value, whatever else is
 added beside it.
@@ -595,7 +609,8 @@ line, and nothing at all when the run is clean:
 The colon in the rule id is percent-encoded, because a workflow command's
 properties are comma-and-colon delimited. The message carries the same context
 lines as `pretty`, each after an encoded newline, so the annotation says what
-the section is for.
+the section is for. A finding in included text ends its first line with
+`(included from <file>:<line>)`.
 
 **`sarif`** prints a SARIF 2.1.0 log for GitHub code scanning and any other
 SARIF consumer. The driver is named `manni-lint`. Each rule the run produced is
@@ -608,10 +623,12 @@ A result's `message.text` carries the same context lines as `pretty`, and
 `properties.template` carries the object `json` gives as `errors[].template`.
 A rule descriptor is one per finding type, and one type spans many template
 rules. So the description lives on the result rather than the descriptor.
+A finding in included text adds one `relatedLocations` entry for the file and
+line the text came from.
 
 A skipped file is not a result. It is a `toolExecutionNotification` at level
 `note`, declared under `tool.driver.notifications` as `no-template`,
-`unsupported-format` or `unreadable`. Code scanning therefore does not read
+`unsupported-format`, `unreadable`, `excluded` or `partial`. Code scanning therefore does not read
 "not linted" as "clean".
 `invocations[0].executionSuccessful` is always `true`: findings are the tool
 working, not the tool failing.
@@ -636,7 +653,8 @@ whose `type` attribute is the rule id:
 offers a pass or a failure and nothing else, so a file nothing looked at would
 arrive as a green test. The skip is reported where there is somewhere to put
 it. `pretty` says so in words, and `sarif` files a `toolExecutionNotification`.
-A finding below `error` severity is not a `<failure>`, because a failure that
+A finding in included text ends its message with
+`(included from <file>:<line>)`. A finding below `error` severity is not a `<failure>`, because a failure that
 did not fail the run would make the tab disagree with the exit code.
 
 Only `github` may print nothing on a clean run, because an empty annotation

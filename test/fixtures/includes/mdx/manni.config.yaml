@@ -1,0 +1,10 @@
+# A how-to whose "Before you begin" section lives in a shared partial.
+collections:
+  - name: guides
+    paths:
+      - "docs/**/*.mdx"
+
+lint:
+  templates:
+    - "./templates.yaml"
+  template: "./templates.yaml#how-to"

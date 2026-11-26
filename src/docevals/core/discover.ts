@@ -6,6 +6,8 @@
  * is a page here (proposal 0125, decision 21).
  */
 import { readFileSync, statSync } from "node:fs";
+import { expandIncludes, realpath, type Expansion } from "../../shared/includes.js";
+import { warn } from "../../shared/warn.js";
 import { resolve, relative, extname } from "node:path";
 import fg from "fast-glob";
 import { extractFrontmatter, type ExtractedMetadata } from "../../meta/index.js";
@@ -55,6 +57,12 @@ export interface PageFile {
   template?: PageTemplate;
   /** Set when frontmatter extraction failed; the page is reported as errored. */
   extractError?: string;
+  /**
+   * The page with its includes expanded (proposal 0130), present only when it
+   * includes something. `body` is then cut from this text, and `content`
+   * stays the file as written.
+   */
+  expansion?: Expansion;
 }
 
 export type FrontmatterFormat = "yaml" | "toml" | "json";
@@ -116,11 +124,22 @@ export function markupFormat(absPath: string): "HTML" | "XML" | undefined {
  * Discovery reads only extensions an extractor claims. A caller naming any
  * other file reads it as Markdown, as every page read before decision 21.
  */
-export function readPage(absPath: string, root: string): PageFile {
+export function readPage(absPath: string, root: string, includeRoot = root): PageFile {
   const content = readFileSync(absPath, "utf8");
   const file = relative(root, absPath).replace(/\\/g, "/");
   const extractor = extractorForExtension(extname(absPath));
   const format = extractor?.name ?? "markdown";
+  // Graders read what a reader sees: the page with its includes expanded.
+  const rootReal = realpath(root);
+  const expanded = expandIncludes({
+    content,
+    filePath: absPath,
+    root: includeRoot,
+    display: (abs) => relative(rootReal, abs).replace(/\\/g, "/"),
+    report: warn,
+  });
+  const expansion = expanded.included.size > 0 ? { expansion: expanded } : {};
+  const text = expanded.text;
   try {
     const frontmatter = extractor
       ? extractor.extract(content, absPath)
@@ -130,8 +149,9 @@ export function readPage(absPath: string, root: string): PageFile {
       file,
       absPath,
       content,
-      body: offset === undefined ? stripFrontmatterBlock(content) : content.slice(offset),
+      body: offset === undefined ? stripFrontmatterBlock(text) : text.slice(offset),
       frontmatter,
+      ...expansion,
     };
   } catch (e) {
     return {
@@ -303,10 +323,11 @@ export function discoverPages(
   ];
   // A strategy record (0102) is not a page. Its `evals:` are a journey's
   // golden evals for `manni test tasks` (0104), in tracevals' vocabulary.
-  const pages = files
+  const read = files
     .sort()
-    .map((p) => readPage(resolve(p), root))
+    .map((p) => readPage(resolve(p), root, config.configDir))
     .filter((page) => !isStrategyRecord(page));
+  const pages = (options.verb ?? "evaluate") === "evaluate" ? withoutPartials(read) : read;
   // No page read means none resolves an eval. A collection of files no
   // extractor reads is that, so the family reads the code as docevals not
   // being set up.
@@ -317,6 +338,21 @@ export function discoverPages(
     );
   }
   return pages;
+}
+
+/**
+ * A page another page in the set includes is evaluated there, where a reader
+ * meets it, and not alone (proposal 0130). Pages are taken in order, so one
+ * page of an include cycle is still evaluated.
+ */
+function withoutPartials(pages: PageFile[]): PageFile[] {
+  const kept = new Set(pages);
+  for (const page of pages) {
+    const real = realpath(page.absPath);
+    const includer = [...kept].find((other) => other !== page && other.expansion?.included.has(real) === true);
+    if (includer !== undefined) kept.delete(page);
+  }
+  return pages.filter((page) => kept.has(page));
 }
 
 const RECORD_TYPE_SET: ReadonlySet<unknown> = new Set(RECORD_TYPES);

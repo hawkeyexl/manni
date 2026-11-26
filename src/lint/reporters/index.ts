@@ -69,6 +69,15 @@ function describeFinding(finding: Finding): string {
 }
 
 /**
+ * Where included text came from (proposal 0130), or "" for the page's own.
+ * The finding sits at the directive, and this names the file to edit.
+ */
+function includedSuffix(finding: Finding): string {
+  const from = finding.includedFrom;
+  return from === undefined ? "" : `(included from ${from.file}:${String(from.line)})`;
+}
+
+/**
  * A finding's level prefix, meta's shape: nothing for an error, since the
  * `✗`/`✓` mark already says that; the word itself, coloured, for anything
  * milder. Keeps a passing file's warning from reading as just another
@@ -88,6 +97,8 @@ export function renderPretty(run: LintRun, opts: ReportOptions = {}): string {
   for (const result of run.results) {
     // A skip is reported, never silently dropped: an unreadable format that
     // leaves no trace is indistinguishable from a file that passed.
+    // A partial is assessed through its includer, and the summary counts it.
+    if (result.skipped === "partial") continue;
     if (result.skipped != null) {
       const why = result.reason ?? result.skipped;
       lines.push(`${c.yellow("-")} ${result.file}  ${c.dim(`skipped: ${why}`)}`);
@@ -122,16 +133,22 @@ export function renderPretty(run: LintRun, opts: ReportOptions = {}): string {
       );
       // What the template asks for, under the rule id it explains.
       const indent = " ".repeat(6 + locate(finding).length);
+      const included = includedSuffix(finding);
+      if (included !== "") lines.push(`${indent}${c.dim(included)}`);
       for (const line of guidanceLines(finding.template)) lines.push(`${indent}${c.dim(line)}`);
     }
   }
 
-  const { checked, passed, failed, skipped } = run.summary;
+  const { checked, passed, failed, skipped, partials = 0 } = run.summary;
   // Named only when there are any, as meta and cite do: every run against a
   // format that reports every content kind has none.
   const warningsText = warnings > 0 ? `, ${plural(warnings, "warning")}` : "";
   const noticesText = notices > 0 ? `, ${plural(notices, "notice")}` : "";
-  const summary = `${plural(checked, "file")} checked, ${passed} passed, ${failed} failed, ${skipped} skipped${warningsText}${noticesText}`;
+  const partialsText =
+    partials > 0
+      ? `, ${partials === 1 ? "1 partial assessed through its includer" : `${String(partials)} partials assessed through their includers`}`
+      : "";
+  const summary = `${plural(checked, "file")} checked, ${passed} passed, ${failed} failed, ${skipped} skipped${partialsText}${warningsText}${noticesText}`;
   if (lines.length > 0) lines.push("");
   lines.push(failed > 0 ? c.red(summary) : c.green(summary));
   return lines.join("\n");
@@ -171,6 +188,9 @@ export function renderJson(run: LintRun): string {
       // Additive: the template that judged the page and the rule this finding
       // is about, or null when no template stands behind it.
       template: finding.template ?? null,
+      // Additive: the file and line included text came from (proposal 0130).
+      // Absent for the page's own text, where `position` already says it.
+      ...(finding.includedFrom === undefined ? {} : { includedFrom: finding.includedFrom }),
     })),
     // Additive, and the one thing this shape could not say. A skipped file is
     // `{success: false, errors: []}`, which is also what a failure whose
@@ -222,8 +242,12 @@ export function renderGithub(run: LintRun): string {
         `col=${finding.position.start.column}`,
         `title=${escapeWorkflowCommandProperty(ruleId(finding.type))}`,
       ];
+      const included = includedSuffix(finding);
       const message = escapeWorkflowCommandMessage(
-        [describeFinding(finding), ...guidanceLines(finding.template)].join("\n"),
+        [
+          included === "" ? describeFinding(finding) : `${describeFinding(finding)} ${included}`,
+          ...guidanceLines(finding.template),
+        ].join("\n"),
       );
       lines.push(`::${finding.severity} ${params.join(",")}::${message}`);
     }

@@ -77,6 +77,8 @@ interface SarifResult {
   level: SarifLevel;
   message: SarifMessage;
   locations: SarifLocation[];
+  /** The file and line included text came from (proposal 0130). */
+  relatedLocations?: (SarifLocation & { id: number; message: SarifMessage })[];
   properties?: { heading?: string; template?: FindingTemplate };
 }
 
@@ -147,6 +149,7 @@ const SKIP_DESCRIPTIONS: Record<SkipReason, string> = {
   "unsupported-format": "File was not linted: no parser handles its format.",
   unreadable: "File was not linted: it could not be read.",
   excluded: "File was not linted: the Flare target excludes it by its conditions.",
+  partial: "File was not linted alone: a page in the run includes it, and it was assessed there.",
 };
 
 /**
@@ -311,6 +314,20 @@ function toResult(
     level: LEVELS[finding.severity],
     message: { text: messageText(finding) },
     locations: [location(file, root, finding.position)],
+    ...(finding.includedFrom === undefined
+      ? {}
+      : {
+          relatedLocations: [
+            {
+              id: 0,
+              ...location(finding.includedFrom.file, root, {
+                start: { line: finding.includedFrom.line, column: 1, offset: 0 },
+                end: { line: finding.includedFrom.line, column: 1, offset: 0 },
+              }),
+              message: { text: "included from here" },
+            },
+          ],
+        }),
     properties: propertiesOf(finding),
   };
 }

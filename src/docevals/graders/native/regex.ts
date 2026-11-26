@@ -59,6 +59,25 @@ function linesAbove(target: EvalTarget | undefined, page: PageFile): number {
   return lineAt(page.content, page.content.length - page.body.length) - 1;
 }
 
+/**
+ * Where a match at `index` of the selected text sits in the file. In a page's
+ * expanded body (proposal 0130), included text reports at the include
+ * directive and names the file it came from.
+ */
+function place(
+  target: EvalTarget | undefined,
+  page: PageFile,
+  text: string,
+  index: number,
+): Pick<Finding, "line" | "includedFrom"> {
+  const expansion = page.expansion;
+  if (expansion !== undefined && (target === undefined || target === "body") && expansion.text.endsWith(page.body)) {
+    const at = expansion.locate(expansion.text.length - page.body.length + index);
+    return { line: at.line, ...(at.includedFrom === undefined ? {} : { includedFrom: at.includedFrom }) };
+  }
+  return { line: linesAbove(target, page) + lineAt(text, index) };
+}
+
 export const regexGrader: Grader = {
   kind: "tool:regex",
   // It calls `readTarget` directly, so it serves the whole vocabulary — the
@@ -116,7 +135,6 @@ export const regexGrader: Grader = {
         }
 
         const text = selected.text;
-        const offset = linesAbove(ev.target, plan.page);
         // Always count with /g so `count:N` is a count and not a boolean, then
         // read the first match's offset for the line number.
         const all = [...text.matchAll(new RegExp(pattern, flags.includes("g") ? flags : `${flags}g`))];
@@ -138,7 +156,7 @@ export const regexGrader: Grader = {
             ruleId: "regex/found",
             message: `Pattern /${pattern}/${flags} found in ${selected.label}, expected absent. Remove or reword the matching text.`,
             severity: ev.severity,
-            line: offset + lineAt(text, first.index),
+            ...place(ev.target, plan.page, text, first.index),
           });
         } else if (match.startsWith("count:")) {
           const want = Number(match.slice("count:".length));
@@ -149,7 +167,7 @@ export const regexGrader: Grader = {
               ruleId: "regex/count",
               message: `Pattern /${pattern}/${flags} matched ${String(all.length)} time(s) in ${selected.label}, expected ${String(want)}. Edit the page so it matches ${String(want)} time(s).`,
               severity: ev.severity,
-              line: first === undefined ? 1 : offset + lineAt(text, first.index),
+              ...(first === undefined ? { line: 1 } : place(ev.target, plan.page, text, first.index)),
             });
           }
         }

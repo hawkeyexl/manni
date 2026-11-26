@@ -51,9 +51,12 @@ function toFieldError(
     schema: RULE_ID_PREFIX,
     instancePath: "",
     message:
-      finding.heading != null
+      (finding.heading != null
         ? `${finding.heading}: ${finding.message}`
-        : finding.message,
+        : finding.message) +
+      (finding.includedFrom === undefined
+        ? ""
+        : ` (included from ${finding.includedFrom.file}:${String(finding.includedFrom.line)})`),
     keyword: `${STRUCTURE_JOB}/${ruleName(finding.type)}`,
     severity: finding.severity,
     line: finding.position.start.line,

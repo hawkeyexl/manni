@@ -16,7 +16,7 @@
  *     difference between a finding someone acts on and one they dismiss.
  */
 import type { EngineReport } from "../core/engine.js";
-import { FIX_GUIDE, type EvalResult, type Finding, type Severity } from "../types.js";
+import { FIX_GUIDE, includedSuffix, type EvalResult, type Finding, type Severity } from "../types.js";
 import { declaringEntry } from "./location.js";
 import { judgedLines, resultGuidance } from "./judged.js";
 
@@ -137,7 +137,7 @@ export function renderSarif(report: EngineReport): string {
       results.push({
         ruleId: id,
         level,
-        message: message([finding.message]),
+        message: message([finding.message + includedSuffix(finding)]),
         locations: [
           {
             // A finding with a content line keeps it. One without lands on

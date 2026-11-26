@@ -5,7 +5,7 @@ type: reference
 audiences:
   - docs-engineers
   - ci-engineers
-last-updated: 2026-11-24
+last-updated: 2026-11-26
 ---
 
 Reach for this page when you wire a run into CI, a dashboard or a bot. The exit code says whose
@@ -305,7 +305,7 @@ passing `names-an-action`.
 | `outcome` | `pass`, `fail`, `needs-review`, `skipped`, or `error`. |
 | `consensus` | Present for ai-graded evals only. |
 | `personas` | The persona record ids the judge read the page as, in the page's order. Present only on a judged result of an eval with `readers: personas` whose page names a persona record. Absent otherwise. |
-| `findings` | Present for command/tool evals that produced findings. |
+| `findings` | Present for command/tool evals that produced findings. A finding in text the page includes from another file carries `includedFrom: { file, line }`, where that text lives, and its `line` is the include's line in the page. Every other format ends its message with `(included from <file>:<line>)`. |
 | `generated` | True when this run generated the eval's check script. |
 | `via` | `"human-review"` when a persisted review resolved the outcome. |
 | `selfPreference` | `{axis, model}` when the model that judged the eval also produced what it graded (`axis: "content"`) or proposed the eval (`axis: "criterion"`). Absent otherwise. See [Self-preference](/manni/docevals/judge/#self-preference). |

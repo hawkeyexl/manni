@@ -3,6 +3,7 @@
  * followed by the markdown summary (suitable for $GITHUB_STEP_SUMMARY).
  */
 import { scopeLine } from "./scope.js";
+import { includedSuffix } from "../types.js";
 import type { EngineReport } from "../core/engine.js";
 import {
   escapeWorkflowCommandMessage as escapeData,
@@ -35,7 +36,7 @@ export function renderGithub(report: EngineReport): string {
       ]
         .filter(Boolean)
         .join(",");
-      lines.push(`::${level} ${props}::${escapeData([f.message, ...guidance].join("\n"))}`);
+      lines.push(`::${level} ${props}::${escapeData([f.message + includedSuffix(f), ...guidance].join("\n"))}`);
     }
     const entryAnnotation = (level: string, text: string[]): void => {
       const props = [...entryProps, `title=${escapeProperty(`manni docevals: ${r.evalName}`)}`]

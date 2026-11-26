@@ -58,6 +58,8 @@ import {
 } from "../../meta/internal.js";
 import { isErrorSeverity } from "../../meta/index.js";
 import { resolveLintRun, type LintConfig } from "../core/config.js";
+import { expandIncludes, realpath, type Expansion } from "../../shared/includes.js";
+import { warn } from "../../shared/warn.js";
 
 /** File label used for a document read from stdin. */
 export const STDIN_LABEL = "<stdin>";
@@ -233,6 +235,8 @@ export interface LintSummary {
   passed: number;
   failed: number;
   skipped: number;
+  /** Files another page in the run includes, assessed there (proposal 0130). */
+  partials?: number;
 }
 
 /**
@@ -360,15 +364,41 @@ interface LintContext {
   flare: FlareRun;
 }
 
+/**
+ * Move each finding from the expanded page back to the page's own lines. One
+ * about included text reports at the include directive and names its source.
+ */
+function remapFindings(findings: Finding[], expansion: Expansion): Finding[] {
+  const starts = [0];
+  for (let i = expansion.text.indexOf("\n"); i !== -1; i = expansion.text.indexOf("\n", i + 1)) {
+    starts.push(i + 1);
+  }
+  // From line and column, which every parser reports, rather than offset.
+  const at = (p: Position["start"]) =>
+    expansion.locate((starts[p.line - 1] ?? expansion.text.length) + p.column - 1);
+  return findings.map((finding) => {
+    const start = at(finding.position.start);
+    const point = { line: start.line, column: start.column, offset: start.offset };
+    if (start.includedFrom !== undefined) {
+      return { ...finding, position: { start: point, end: point }, includedFrom: start.includedFrom };
+    }
+    const end = at(finding.position.end);
+    const endPoint =
+      end.includedFrom === undefined ? { line: end.line, column: end.column, offset: end.offset } : point;
+    return { ...finding, position: { start: point, end: endPoint } };
+  });
+}
+
 async function lintOne(
   label: string,
   content: string,
   parser: DocumentParser,
   ctx: LintContext,
+  expansion?: Expansion,
 ): Promise<LintFileResult> {
   let tree: DocumentTree;
   try {
-    tree = await parser.parse(content, label, {
+    tree = await parser.parse(expansion?.text ?? content, label, {
       absPath: ctx.absoluteOf(label),
       flare: ctx.flare,
     });
@@ -511,6 +541,8 @@ async function lintOne(
     throw err;
   }
 
+  if (expansion !== undefined) findings = remapFindings(findings, expansion);
+
   return withResolution({
     file: label,
     // "Linted and found nothing wrong", which is not the same as "produced no
@@ -539,6 +571,8 @@ interface ManniRun {
   usingStdin: boolean;
   /** The family's top-level `tools:`, for `tools.flare`. */
   tools: ToolsConfig;
+  /** No include reaches outside it: the config file's directory, or the cwd. */
+  root: string;
 }
 
 /**
@@ -552,7 +586,7 @@ interface ManniRun {
  * error under manni and nothing at all under anybody else.
  */
 async function lintWithManni(run: ManniRun): Promise<LintFileResult[]> {
-  const { opts, config, cwd, files, forcedParser, usingStdin, tools } = run;
+  const { opts, config, cwd, files, forcedParser, usingStdin, tools, root } = run;
 
   const routing = await buildTemplateRouting({
     config,
@@ -588,6 +622,9 @@ async function lintWithManni(run: ManniRun): Promise<LintFileResult[]> {
     );
   }
 
+  // Read every page first, because a page another page includes is assessed
+  // there and not alone (proposal 0130), and only the whole run can say which.
+  const read: { file: string; parser?: DocumentParser; content?: string; skip?: LintFileResult }[] = [];
   for (const file of files) {
     const ext = extname(file);
     const parser = forcedParser ?? parserForExtension(ext);
@@ -599,7 +636,7 @@ async function lintWithManni(run: ManniRun): Promise<LintFileResult[]> {
     // whole run down with it: exit 2 and no verdict for any of the pages after
     // it, instead of one skip line and a report.
     if (!parser) {
-      results.push(skip(file, unsupportedFormatMessage(ext || file)));
+      read.push({ file, skip: skip(file, unsupportedFormatMessage(ext || file)) });
       continue;
     }
     let content: string;
@@ -616,12 +653,56 @@ async function lintWithManni(run: ManniRun): Promise<LintFileResult[]> {
       // The OS message travels verbatim: "permission denied" and "no such
       // file" send the reader to different places, and this code cannot tell
       // which it was.
-      results.push(
-        skip(file, `could not be read: ${errorMessage(err)}`, "unreadable"),
-      );
+      read.push({
+        file,
+        skip: skip(file, `could not be read: ${errorMessage(err)}`, "unreadable"),
+      });
       continue;
     }
-    results.push(await lintOne(file, content, parser, ctx));
+    read.push({ file, parser, content });
+  }
+
+  // Each page as a reader sees it, its includes expanded.
+  const cwdReal = realpath(cwd);
+  const display = (abs: string): string => relative(cwdReal, abs).replace(/\\/g, "/");
+  const expansions = new Map<string, Expansion>();
+  for (const entry of read) {
+    if (entry.parser === undefined || entry.content === undefined) continue;
+    expansions.set(
+      entry.file,
+      expandIncludes({
+        content: entry.content,
+        filePath: resolve(cwd, entry.file),
+        format: entry.parser.name,
+        root,
+        display,
+        report: warn,
+      }),
+    );
+  }
+
+  // A page another kept page includes is assessed there. Pages are taken in
+  // order, so one page of an include cycle is still assessed.
+  const kept = new Set(expansions.keys());
+  const includer = new Map<string, string>();
+  for (const file of expansions.keys()) {
+    const real = realpath(resolve(cwd, file));
+    const by = [...kept].find(
+      (other) => other !== file && expansions.get(other)?.included.has(real) === true,
+    );
+    if (by !== undefined) {
+      kept.delete(file);
+      includer.set(file, by);
+    }
+  }
+
+  for (const entry of read) {
+    const by = includer.get(entry.file);
+    if (entry.skip) results.push(entry.skip);
+    else if (by !== undefined) results.push(skip(entry.file, `assessed through ${by}`, "partial"));
+    else if (entry.parser && entry.content !== undefined) {
+      results.push(await lintOne(entry.file, entry.content, entry.parser, ctx, expansions.get(entry.file)));
+    }
   }
 
   return results;
@@ -980,6 +1061,7 @@ export async function runLint(opts: LintOptions): Promise<LintRun> {
       forcedParser,
       usingStdin,
       tools: run.tools,
+      root: run.configDir ?? cwd,
     });
   } else if (name === "dita-ot") {
     // `tools:` is the family's key, not the `lint:` section's, so the home is
@@ -1004,12 +1086,13 @@ export async function runLint(opts: LintOptions): Promise<LintRun> {
   // exited 0. One call here is one the next tool cannot forget to make.
   assertSomethingWasChecked(results, opts.explain === true, tool);
 
-  const skipped = results.filter((r) => r.skipped != null).length;
+  const partials = results.filter((r) => r.skipped === "partial").length;
+  const skipped = results.filter((r) => r.skipped != null).length - partials;
   const failed = results.filter((r) => r.skipped == null && !r.success).length;
-  const checked = results.length - skipped;
+  const checked = results.length - skipped - partials;
 
   return {
     results,
-    summary: { checked, passed: checked - failed, failed, skipped },
+    summary: { checked, passed: checked - failed, failed, skipped, partials },
   };
 }

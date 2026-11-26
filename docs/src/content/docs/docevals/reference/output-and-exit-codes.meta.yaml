@@ -134,8 +134,8 @@ docs/src/content/docs/docevals/reference/output-and-exit-codes.mdx:
       lines: 292-297
       integrity: sha256-eca46b3ae6f83f041fc5f059d7e6cb0bd136efa46984ab20df0821524c323a35
     - generated-by: Claude Fable 5.1
-      lines: 299-301
-      integrity: sha256-c420cf17f2ce89454750fb7726b9c2da2707701e8ad10305a95487944a5ba2d7
+      lines: 300-301
+      integrity: sha256-ea5ef1a76fd401be6b9cfabb5b906b4da9d25f9bef28540dc8694fa0711b35da
     - generated-by: Claude Opus 5
       lines: 302-303
       integrity: sha256-b9cdd25b8447b4f24a0f9dd4272798c2b7dec1ca13f75998ddb51cf68c2c3fab

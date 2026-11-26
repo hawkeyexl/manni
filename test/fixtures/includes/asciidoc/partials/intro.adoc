@@ -1,0 +1,4 @@
+Intro first line.
+// tag::core[]
+Core of the intro.
+// end::core[]

@@ -1,0 +1,8 @@
+= Page
+:partials: partials
+
+include::{partials}/intro.adoc[]
+
+include::partials/intro.adoc[tag=core]
+
+include::partials/intro.adoc[lines=1]
