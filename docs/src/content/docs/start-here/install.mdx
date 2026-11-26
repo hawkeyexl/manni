@@ -1,0 +1,112 @@
+---
+title: Install and declare a collection
+description: Every manni tool reads the same list of your pages. Install the package once and declare that list once, and every later step has something to check.
+type: tutorial
+id: start-here-install
+language: en
+audiences:
+  - docs-engineers
+lifecycle: published
+action: practice
+next-steps:
+  - start-here-metadata
+  - start-here-ci
+verified-by:
+  - tool: doc-detective
+    check: start-here-install
+last-updated: 2026-11-26
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+Each manni tool needs to know which files are your docs. Name them in every
+tool's own settings, and the lists drift apart, so one tool checks a page
+another never sees. A **collection** names them once, for every tool.
+
+## Install the package
+
+manni runs on Node.js 24 or newer. Install it as a development dependency, so
+CI and every contributor run the same version:
+
+```sh
+npm install --save-dev @hawkeyexl/manni
+```
+
+<Aside type="tip" title="Running manni">
+  These pages write commands as `manni …`. With a development install, run
+  them as `npx manni …`.
+</Aside>
+
+## Declare a collection
+
+Write `manni.config.yaml` at the repository root. A collection has a name and
+the globs that match its pages. The name `docs` is refused, so pick another.
+
+```yaml title="manni.config.yaml"
+collections:
+  - name: guides
+    paths:
+      - "docs/**/*.md"
+    externalMetadata:
+      - file: "{page}.citations.yaml"
+        keys: [citations]
+      - file: "{page}.meta.yaml"
+```
+
+`externalMetadata` keeps bookkeeping beside each page rather than in it. Later
+steps write citations and reader records there, so the pages stay short.
+
+## See what is in play
+
+```sh
+manni status
+```
+
+```text
+manni 4.28.0   config manni.config.yaml   collection guides (4 files)
+
+meta       not set up    no meta: section
+                         Add a meta: section that names your schemas. manni meta schemas lists the built-in ones.
+cite       not set up    no page carries citations
+                         Pin a sentence to its source with manni cite add.
+lint       not set up    no lint: section
+                         Add a lint: section. manni lint templates lists the templates it can apply.
+docevals   in play       4 pages declare evals
+term       not set up    no terms in any collection
+                         Add a page with type: term to a collection.
+strategy   not set up    no strategy records in any collection
+                         Add a page with type: journey to a collection.
+graph      not set up    no graph: section
+                         Run manni graph init to add a starter graph: section.
+a11y       not checked   needs a running site and a browser
+                         Run manni site preview, then manni a11y check.
+test       not checked   runs the pages' shell steps and synthetic users
+                         Run manni test procedures or manni test tasks.
+tracevals  not checked   judges recorded sessions with a model
+                         Run manni tracevals run over sessions, or add tracevals.runtime to judge each turn.
+```
+
+The collection found four pages. Each domain says whether it is set up, and
+what would set it up. `docevals` is already in play. Each page declares a
+doctype in `type:`, and the built-in template for that doctype carries evals.
+The [Structure track](/manni/start-here/structure/templates/) comes back to
+those.
+
+## Next in this track
+
+[Hold every page to a schema](/manni/start-here/metadata/).
+
+## Other tracks
+
+The tracks start after the trunk's next step:
+[Structure](/manni/start-here/structure/templates/),
+[Provenance](/manni/start-here/provenance/citations/),
+[Vocabulary](/manni/start-here/vocabulary/terms/) and
+[Published site](/manni/start-here/site/build/).
+
+{/* test {"testId":"start-here-install","description":"A config with only a collection: status finds the pages, and meta is not set up."} */}
+{/* step {"description":"Copy the sample repository into a Git repository of its own.","runShell":{"command":"node -e \"const fs=require('fs'),d='.doc-detective/start-here/install';fs.rmSync(d,{recursive:true,force:true});fs.cpSync('examples/start-here',d,{recursive:true});require('child_process').execSync('git init -q && git add -A && git -c user.name=maya -c user.email=maya@example.com commit -qm trunk',{cwd:d})\"","exitCodes":[0]}} */}
+{/* step {"description":"Keep only the collections: entry, as this page writes it.","runShell":{"command":"node -e \"const fs=require('fs'),c=fs.readFileSync('manni.config.yaml','utf8');fs.writeFileSync('manni.config.yaml',c.slice(0,c.indexOf('\\nmeta:')+1))\"","workingDirectory":".doc-detective/start-here/install","exitCodes":[0]}} */}
+{/* step {"description":"The installed CLI prints its version.","runShell":{"command":"manni --version","exitCodes":[0],"stdio":"/\\d+\\.\\d+\\.\\d+/"}} */}
+{/* step {"description":"status finds the collection's four pages, and reports meta not set up.","runShell":{"command":"manni status","workingDirectory":".doc-detective/start-here/install","exitCodes":[0],"stdio":"/collection guides \\(4 files\\)[\\s\\S]*meta\\s+not set up\\s+no meta: section/"}} */}
+{/* test end */}

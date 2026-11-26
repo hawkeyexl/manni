@@ -1,0 +1,150 @@
+---
+title: Hold every page to a schema
+description: A page without the fields your site reads drops out of search and navigation without a sound. Add a schema, and that page fails a check instead.
+type: tutorial
+id: start-here-metadata
+language: en
+audiences:
+  - docs-engineers
+lifecycle: published
+action: practice
+next-steps:
+  - start-here-structure-templates
+  - start-here-provenance-citations
+  - start-here-vocabulary-terms
+  - start-here-site-build
+  - start-here-ci
+verified-by:
+  - tool: doc-detective
+    check: start-here-metadata
+last-updated: 2026-11-26
+---
+
+Search, the site's navigation and a docs bot all read a page's frontmatter. A
+page that lacks the field one of them needs drops out of it, and nobody hears
+about it until a reader looks. A schema turns that into a failing check. It is
+also the step every track builds on, because each track's records are metadata
+too.
+
+## Name the fields every page needs
+
+Write a JSON Schema for the fields your pages must carry:
+
+```json title="schemas/page.schema.json"
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Widget docs page",
+  "type": "object",
+  "properties": {
+    "title": { "type": "string", "minLength": 1 },
+    "description": { "type": "string", "minLength": 1 },
+    "type": { "enum": ["concept", "how-to", "reference"] }
+  },
+  "required": ["title", "description", "type"]
+}
+```
+
+Then point the collection at it, under a `meta:` section:
+
+```yaml title="manni.config.yaml"
+meta:
+  overrides:
+    - collection: guides
+      defaults: true
+      schemas:
+        - ./schemas/page.schema.json
+```
+
+`defaults: true` keeps the built-in schemas beside yours, so a field a
+built-in vocabulary defines is checked too.
+
+## Validate the pages
+
+```sh
+manni meta validate
+```
+
+```text
+Using manni.config.yaml (.)
+✓ docs/index.md
+✓ docs/reference/cli.md
+✓ docs/run-a-job.md
+✓ docs/timeouts.md
+
+4 files checked, 4 passed, 0 failed, 0 errors
+```
+
+With no paths, `validate` checks the collection. Delete the `description:`
+line from `docs/timeouts.md`, and the page fails:
+
+```sh
+manni meta validate docs/timeouts.md
+```
+
+```text
+Using manni.config.yaml (.)
+✗ docs/timeouts.md
+    (root)  must have required property 'description'  (line 1)  [manni:core:1.0.0]
+      manni:core:1.0.0 description: One full non-empty sentence saying what the page is for.
+      Guide: https://hawkeyexl.github.io/manni/meta/reference/schemas/manni-core/
+    (root)  must have required property 'description'  (line 1)  [./schemas/page.schema.json]
+      ./schemas/page.schema.json description
+
+1 file checked, 0 passed, 1 failed, 2 errors
+```
+
+The exit code is `1`. Put the line back before you go on. The
+[meta section](/manni/meta/set-up/) covers choosing and writing schemas.
+
+## See what is in play
+
+```sh
+manni status
+```
+
+```text
+manni 4.28.0   config manni.config.yaml   collection guides (4 files)
+
+meta       in play       meta: section
+cite       not set up    no page carries citations
+                         Pin a sentence to its source with manni cite add.
+lint       not set up    no lint: section
+                         Add a lint: section. manni lint templates lists the templates it can apply.
+docevals   in play       4 pages declare evals
+term       not set up    no terms in any collection
+                         Add a page with type: term to a collection.
+strategy   not set up    no strategy records in any collection
+                         Add a page with type: journey to a collection.
+graph      not set up    no graph: section
+                         Run manni graph init to add a starter graph: section.
+a11y       not checked   needs a running site and a browser
+                         Run manni site preview, then manni a11y check.
+test       not checked   runs the pages' shell steps and synthetic users
+                         Run manni test procedures or manni test tasks.
+tracevals  not checked   judges recorded sessions with a model
+                         Run manni tracevals run over sessions, or add tracevals.runtime to judge each turn.
+```
+
+This is the trunk's end, and the state `examples/start-here/` is committed in.
+
+## Next in this track
+
+The trunk ends here. Pick any track:
+
+- [Structure](/manni/start-here/structure/templates/) holds each page to the shape its doctype promises.
+- [Provenance](/manni/start-here/provenance/citations/) pins sentences to the code they describe.
+- [Vocabulary](/manni/start-here/vocabulary/terms/) names each thing once, and says who each page serves.
+- [Published site](/manni/start-here/site/build/) builds the site, then checks it and its procedures.
+
+## Other tracks
+
+Ready to gate it already? [Gate everything with one command](/manni/start-here/ci/)
+runs `meta` in CI on its own, and picks up each track you add later.
+
+{/* test {"testId":"start-here-metadata","description":"The trunk's end state validates, a page without a description fails, and meta is in play."} */}
+{/* step {"description":"Copy the sample repository into a Git repository of its own.","runShell":{"command":"node -e \"const fs=require('fs'),d='.doc-detective/start-here/metadata';fs.rmSync(d,{recursive:true,force:true});fs.cpSync('examples/start-here',d,{recursive:true});require('child_process').execSync('git init -q && git add -A && git -c user.name=maya -c user.email=maya@example.com commit -qm trunk',{cwd:d})\"","exitCodes":[0]}} */}
+{/* step {"description":"Every page in the collection passes.","runShell":{"command":"manni meta validate","workingDirectory":".doc-detective/start-here/metadata","exitCodes":[0],"stdio":"4 files checked, 4 passed, 0 failed, 0 errors"}} */}
+{/* step {"description":"status reports meta in play.","runShell":{"command":"manni status","workingDirectory":".doc-detective/start-here/metadata","exitCodes":[0],"stdio":"/meta\\s+in play\\s+meta: section/"}} */}
+{/* step {"description":"Delete the description line from docs/timeouts.md.","runShell":{"command":"node -e \"const fs=require('fs'),f='docs/timeouts.md';fs.writeFileSync(f,fs.readFileSync(f,'utf8').replace(/^description: .*\\n/m,''))\"","workingDirectory":".doc-detective/start-here/metadata","exitCodes":[0]}} */}
+{/* step {"description":"The page fails, naming the missing field and both schemas that require it.","runShell":{"command":"manni meta validate docs/timeouts.md","workingDirectory":".doc-detective/start-here/metadata","exitCodes":[1],"stdio":"/must have required property 'description'[\\s\\S]*1 file checked, 0 passed, 1 failed, 2 errors/"}} */}
+{/* test end */}

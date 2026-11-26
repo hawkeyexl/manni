@@ -1,0 +1,112 @@
+---
+title: Let an agent keep it green
+description: An agent says it is done, and the pull request goes red an hour later. Give the agent the same checks at each edit, so it finds out before it hands back.
+type: tutorial
+id: start-here-agent
+language: en
+audiences:
+  - docs-engineers
+lifecycle: published
+action: practice
+next-steps:
+  - family-claude-code
+verified-by:
+  - tool: doc-detective
+    check: start-here-agent
+last-updated: 2026-11-26
+---
+
+An agent that writes docs finishes, says it is done, and the pull request goes
+red in CI an hour later. By then the session that could have fixed it is gone.
+The manni plugin for Claude Code runs the same `manni check` inside the
+session. The agent hears about a broken page at the edit that broke it, and
+cannot stop with an error outstanding. It checks only what the repository set
+up, the same set CI gates.
+
+## Install the plugin
+
+In a terminal with Claude Code installed:
+
+```sh
+claude plugin marketplace add hawkeyexl/manni
+claude plugin install manni@manni
+```
+
+From then on, each session opens with the `manni status` table, each edit is
+checked, and the session's end runs the whole gate once more. The
+[Claude Code plugin](/manni/family/claude-code/) page covers what runs when,
+the four skills, and offering the plugin to every contributor.
+
+## Judge the turns, too
+
+The checks above hold the pages. `tracevals` holds the agent to the
+instructions it ran under, such as your `CLAUDE.md`, by judging each turn.
+A `tracevals.runtime` section says turns may be judged in this repository:
+
+```yaml title="manni.config.yaml"
+tracevals:
+  runtime: {}
+```
+
+Each person turns it on for their own sessions, with the plugin's option:
+
+```sh
+claude plugin install manni@manni --config tracevals=true
+```
+
+## See what is in play
+
+```sh
+manni status
+```
+
+```text
+manni 4.28.0   config manni.config.yaml   collection guides (4 files)
+
+meta       in play       meta: section
+cite       not set up    no page carries citations
+                         Pin a sentence to its source with manni cite add.
+lint       not set up    no lint: section
+                         Add a lint: section. manni lint templates lists the templates it can apply.
+docevals   in play       4 pages declare evals
+term       not set up    no terms in any collection
+                         Add a page with type: term to a collection.
+strategy   not set up    no strategy records in any collection
+                         Add a page with type: journey to a collection.
+graph      not set up    no graph: section
+                         Run manni graph init to add a starter graph: section.
+a11y       not checked   needs a running site and a browser
+                         Run manni site preview, then manni a11y check.
+test       not checked   runs the pages' shell steps and synthetic users
+                         Run manni test procedures or manni test tasks.
+tracevals  not checked   runtime evals are set up, and turned off here
+                         Turn on the manni plugin's tracevals option, or set MANNI_TRACEVALS_HOOKS=1.
+```
+
+Your terminal does not have the plugin's option, so it reports tracevals
+*turned off here*. Inside a session with the option on, the row says the
+turns are judged, and names the model that judges them.
+[Catch a broken rule before the agent hands back](/manni/tracevals/runtime/)
+covers choosing that model.
+
+## Next in this track
+
+This is the end of Start here. Each domain's own section goes deeper, from its
+overview on the [home page](/manni/).
+
+## Other tracks
+
+Any track you have not taken yet:
+[Structure](/manni/start-here/structure/templates/),
+[Provenance](/manni/start-here/provenance/citations/),
+[Vocabulary](/manni/start-here/vocabulary/terms/) or
+[Published site](/manni/start-here/site/build/).
+
+{/* The plugin commands are not run here: they need Claude Code, and they
+    change the user's own settings. This test checks the status row a
+    tracevals.runtime section produces in a shell with the hooks off. */}
+{/* test {"testId":"start-here-agent","description":"A tracevals.runtime section shows tracevals set up and turned off in a plain shell."} */}
+{/* step {"description":"Copy the sample repository into a Git repository of its own.","runShell":{"command":"node -e \"const fs=require('fs'),d='.doc-detective/start-here/agent';fs.rmSync(d,{recursive:true,force:true});fs.cpSync('examples/start-here',d,{recursive:true});require('child_process').execSync('git init -q && git add -A && git -c user.name=maya -c user.email=maya@example.com commit -qm trunk',{cwd:d})\"","exitCodes":[0]}} */}
+{/* step {"description":"Add the tracevals.runtime section.","runShell":{"command":"node -e \"require('fs').appendFileSync('manni.config.yaml','\\ntracevals:\\n  runtime: {}\\n')\"","workingDirectory":".doc-detective/start-here/agent","exitCodes":[0]}} */}
+{/* step {"description":"status reports runtime evals set up and turned off in this shell.","runShell":{"command":"manni status","workingDirectory":".doc-detective/start-here/agent","exitCodes":[0],"stdio":"/tracevals\\s+not checked\\s+runtime evals are set up, and turned off here/"}} */}
+{/* test end */}

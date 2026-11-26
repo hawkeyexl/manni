@@ -1,0 +1,12 @@
+docs/src/content/docs/start-here/structure/templates.mdx:
+  personas:
+    - maya
+  journeys:
+    - m35
+  provenance:
+    - generated-by: Claude Opus 5.5
+      lines: 2-106
+      integrity: sha256-165ed441310d1a8939e00bcd091ebcfb995aaddde765662491b7821d5556f842
+  owner:
+    - "@hawkeyexl"
+  created: 2026-11-26

@@ -1,0 +1,132 @@
+---
+title: Name your terms once
+description: One page says job, the next says task, and search and translation split one idea in two. Define each term once, and check that every page names a defined one.
+type: tutorial
+id: start-here-vocabulary-terms
+language: en
+audiences:
+  - docs-engineers
+lifecycle: published
+action: practice
+next-steps:
+  - start-here-vocabulary-strategy
+  - start-here-ci
+verified-by:
+  - tool: doc-detective
+    check: start-here-vocabulary-terms
+last-updated: 2026-11-26
+---
+
+One page calls a thing a *job*, and the next calls it a *task*. Search
+splits the idea in two, and a translator renders it twice. A **term** is a page
+that defines one name. Pages name the terms they use in `concepts:`, and
+`manni term check` holds both sides to each other. This track starts from the
+trunk's end state.
+
+## Define a term
+
+A term page says `type: term`, and gives a `label` and a `definition`:
+
+```md title="glossary/job.md"
+---
+title: Job
+description: The glossary entry for a job.
+type: term
+id: job
+label: job
+definition: A unit of work the widget CLI sends to the widget service.
+---
+```
+
+The guides' schema allows only three doctypes, so the glossary gets a
+collection of its own:
+
+```yaml title="manni.config.yaml"
+collections:
+  # …the guides collection, unchanged…
+  - name: glossary
+    paths:
+      - "glossary/*.md"
+```
+
+## Check the terms
+
+```sh
+manni term check
+```
+
+```text
+glossary/job.md:1
+  notice manni:term/unused-term          no page's concepts: names this term.
+                                         Name it in the concepts: of a page that uses it.
+                                         manni:term unused-term: No page's concepts: names the entry, or an entry in another language with its id.
+                                         Guide: https://hawkeyexl.github.io/manni/term/reference/rules/#unused-term
+
+1 notice in 1 term
+```
+
+A notice never fails the check, and it says what to do. Name the term on the
+page that introduces it, in the frontmatter of `docs/index.md`:
+
+```yaml title="docs/index.md"
+concepts: [job]
+```
+
+Run `manni term check` again:
+
+```text
+✓ 1 term, 1 reference, no findings
+```
+
+A `concepts:` value that no term defines is an error, so a misspelled or
+retired name fails the check. The [term section](/manni/term/get-started/) covers
+broader and narrower terms, and writing the glossary out for Vale.
+
+## See what is in play
+
+```sh
+manni status
+```
+
+```text
+manni 4.28.0   config manni.config.yaml   collection guides (4 files)   collection glossary (1 file)
+
+meta       in play       meta: section
+cite       not set up    no page carries citations
+                         Pin a sentence to its source with manni cite add.
+lint       not set up    no lint: section
+                         Add a lint: section. manni lint templates lists the templates it can apply.
+docevals   in play       4 pages declare evals
+term       in play       1 term
+strategy   not set up    no strategy records in any collection
+                         Add a page with type: journey to a collection.
+graph      not set up    no graph: section
+                         Run manni graph init to add a starter graph: section.
+a11y       not checked   needs a running site and a browser
+                         Run manni site preview, then manni a11y check.
+test       not checked   runs the pages' shell steps and synthetic users
+                         Run manni test procedures or manni test tasks.
+tracevals  not checked   judges recorded sessions with a model
+                         Run manni tracevals run over sessions, or add tracevals.runtime to judge each turn.
+```
+
+## Next in this track
+
+[Say who each page serves](/manni/start-here/vocabulary/strategy/).
+
+## Other tracks
+
+[Structure](/manni/start-here/structure/templates/),
+[Provenance](/manni/start-here/provenance/citations/),
+[Published site](/manni/start-here/site/build/), or the join,
+[Gate everything with one command](/manni/start-here/ci/).
+
+{/* test {"testId":"start-here-vocabulary-terms","description":"A term page in a glossary collection: unused until a page names it in concepts:, then clean."} */}
+{/* step {"description":"Copy the sample repository into a Git repository of its own.","runShell":{"command":"node -e \"const fs=require('fs'),d='.doc-detective/start-here/terms';fs.rmSync(d,{recursive:true,force:true});fs.cpSync('examples/start-here',d,{recursive:true});require('child_process').execSync('git init -q && git add -A && git -c user.name=maya -c user.email=maya@example.com commit -qm trunk',{cwd:d})\"","exitCodes":[0]}} */}
+{/* step {"description":"Write the term page.","runShell":{"command":"node -e \"const fs=require('fs');fs.mkdirSync('glossary');fs.writeFileSync('glossary/job.md','---\\ntitle: Job\\ndescription: The glossary entry for a job.\\ntype: term\\nid: job\\nlabel: job\\ndefinition: A unit of work the widget CLI sends to the widget service.\\n---\\n')\"","workingDirectory":".doc-detective/start-here/terms","exitCodes":[0]}} */}
+{/* step {"description":"Add the glossary collection.","runShell":{"command":"node -e \"const fs=require('fs');fs.writeFileSync('manni.config.yaml',fs.readFileSync('manni.config.yaml','utf8').replace('\\nmeta:','  - name: glossary\\n    paths:\\n      - \\x22glossary/*.md\\x22\\n\\nmeta:'))\"","workingDirectory":".doc-detective/start-here/terms","exitCodes":[0]}} */}
+{/* step {"description":"No page names the term yet, which is a notice.","runShell":{"command":"manni term check","workingDirectory":".doc-detective/start-here/terms","exitCodes":[0],"stdio":"/notice manni:term\\/unused-term[\\s\\S]*1 notice in 1 term/"}} */}
+{/* step {"description":"Name the term in docs/index.md.","runShell":{"command":"node -e \"const fs=require('fs'),f='docs/index.md';fs.writeFileSync(f,fs.readFileSync(f,'utf8').replace('type: concept\\n','type: concept\\nconcepts: [job]\\n'))\"","workingDirectory":".doc-detective/start-here/terms","exitCodes":[0]}} */}
+{/* step {"description":"The check is clean.","runShell":{"command":"manni term check","workingDirectory":".doc-detective/start-here/terms","exitCodes":[0],"stdio":"1 term, 1 reference, no findings"}} */}
+{/* step {"description":"status reports term in play, and the glossary collection.","runShell":{"command":"manni status","workingDirectory":".doc-detective/start-here/terms","exitCodes":[0],"stdio":"/collection glossary \\(1 file\\)[\\s\\S]*term\\s+in play\\s+1 term/"}} */}
+{/* test end */}

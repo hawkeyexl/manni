@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Widget docs page",
+  "type": "object",
+  "properties": {
+    "title": { "type": "string", "minLength": 1 },
+    "description": { "type": "string", "minLength": 1 },
+    "type": { "enum": ["concept", "how-to", "reference"] }
+  },
+  "required": ["title", "description", "type"]
+}
