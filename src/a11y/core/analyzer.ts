@@ -32,6 +32,8 @@ export interface AnalyzeOptions {
   tags: string[];
   /** Navigation timeout in ms. */
   timeout: number;
+  /** axe rule ids not run; empty = none disabled. */
+  disableRules: string[];
 }
 
 export interface AnalyzedPage {
@@ -134,7 +136,8 @@ interface Session {
  *   redirect, returned before axe runs
  * - a read or axe that rejects because the page navigated: wait up to
  *   `timeout` for the URL to change and return the redirect, else rethrow
- * - `new AxeBuilder({ page })`, `.withTags(tags)` only when `tags.length > 0`, `.analyze()`
+ * - `new AxeBuilder({ page })`, `.withTags(tags)` only when `tags.length > 0`,
+ *   `.disableRules(disableRules)` only when `disableRules.length > 0`, `.analyze()`
  * - map axe `Result` → `Violation` (`severity` from `severityOf(impact)`, `impact` kept as
  *   axe's word with `null`/`undefined` → "minor"; node `target` joined with " ";
  *   `failureSummary ?? ""`), `passes.length`, `incomplete.length`
@@ -282,6 +285,7 @@ async function analyzePage(
 
   let builder = new AxeBuilder({ page });
   if (opts.tags.length > 0) builder = builder.withTags(opts.tags);
+  if (opts.disableRules.length > 0) builder = builder.disableRules(opts.disableRules);
   let results: AxeResults;
   try {
     results = await builder.analyze();

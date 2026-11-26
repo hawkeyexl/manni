@@ -30,6 +30,8 @@ The `test/` section is the twelfth, and the eleventh domain. It serves Devin (D1
 
 The `strategy/` section is the thirteenth, and the twelfth domain. It serves Sara (S17), who holds the pages to the audiences, personas and journeys she keeps as records. It serves her again in S18, when she measures those records against reader traffic. In S20, she rests each record on evidence that still holds. In S21, other docsets borrow her records from a checkout beside theirs. It also serves Theo (T1), who fixes the check that names his page. Proposal 0102 added the domain. Its records are this folder's `audiences/`, `personas/` and `journeys/`. Its content set is last, after `test/`.
 
+The `start-here/` section comes first in the sidebar, ahead of every domain. It replaces the universal on-ramp router this file once planned for Get started. It serves Maya (M35), who sets up manni in the order its domains depend on each other. Its content set is below, before the `meta/` content set.
+
 The `vector/` section is the fourteenth, and the thirteenth domain. Proposal 0128 split it out of `graph/`, so a semantic index no longer starts with learning the graph's artifact chain. It serves Devin (D13), who builds, gates and publishes the index on its own. It also serves Maya, who finds a page by meaning (M18) and grounds a site's Ask AI in rows that carry vectors (M29). Two verbs, so an overview and a reference shelf. Its content set is after `strategy/`.
 
 ---
@@ -39,7 +41,7 @@ The `vector/` section is the fourteenth, and the thirteenth domain. Proposal 012
 ```
 Home — "What do you want to do?" router + 30-second proof
 │
-├─ Get started                     (universal on-ramp)
+├─ Get started                     (meta's first validation)
 │
 ├─ Set up validation  (Maya)
 │
@@ -80,11 +82,43 @@ The tree above is the `meta` group. The nav gains a `cite` group beside it, a si
 
 ★ = launch priority (Phase 1). Pages without a ★ are Phase 2 or Phase 3. Every page names the audiences, personas and journeys it serves in its own `audiences:`, `personas:` and `journeys:` fields. `manni strategy get <id>` lists the pages that serve a journey, and `manni strategy check` holds those fields to the records.
 
+### `start-here/` (a trunk, four tracks and a join)
+
+The family's on-ramp, under `docs/src/content/docs/start-here/`, and the first sidebar group. It replaces the universal router planned for Get started below. The domains depend on each other in a few chains, not one line. So the section is a map of those chains rather than a list.
+
+```text
+              ┌─ Structure:       lint → docevals ─────────┐
+              ├─ Provenance:      cite → key ──────────────┤
+trunk:        │                                            │   join:
+install → meta┼─ Vocabulary:      term → strategy → graph ─┼─→ check in CI → agent
+              └─ Published site:  site → a11y → test ──────┘
+```
+
+Everyone walks the trunk. Each track starts from the trunk's end state and needs no other track, so a reader takes them in any order. Every track ends at the join. The sidebar holds the overview, the two trunk pages, one collapsed subgroup per track, then the two join pages. Every page serves M35. Each opens with why, gives its commands, ends with `manni status` output, then links to the next page in its track and to the other tracks. Every transcript is captured from the built binary over a copy of `examples/start-here/`, a four-page docset committed at the trunk's end state. Each page carries Doc Detective steps that copy that sample into `.doc-detective/start-here/<page>/` as a Git repository and run the page's commands there. The a11y and agent pages run only `manni status`, because `site preview` serves until it is stopped and the plugin needs Claude Code. Each per-tool Get started page names its place on the map in one line.
+
+| Page | ★ | Notes |
+|---|---|---|
+| Start here (`start-here/index.mdx`) | ★ | The map, the trunk and track tables, why each edge runs the way it does, and how to copy the sample. |
+| Install and declare a collection (`start-here/install.mdx`) | ★ | `npm install --save-dev`, `collections:` with `externalMetadata`, and the first `status`. |
+| Hold every page to a schema (`start-here/metadata.mdx`) | ★ | A page schema and `meta.overrides`, a pass and a failing page. The trunk's end. |
+| Hold pages to templates (`start-here/structure/templates.mdx`) | ★ | An empty `lint:` section, the missing *Use cases* finding, and the fix. |
+| Grade what a template's pages must say (`start-here/structure/evals.mdx`) | ★ | A local template extending the built-in how-to with a `tool:regex` eval (proposal 0129), graded with `--deterministic-only`. |
+| Pin claims to source (`start-here/provenance/citations.mdx`) | ★ | `cite add --marker`, `cite check` holding, then failing after the source changes. |
+| Encrypt the fields you pin (`start-here/provenance/key.mdx`) | ★ | `key set` and its warning, `cite add --encrypt`, the encrypted sidecar. |
+| Name your terms once (`start-here/vocabulary/terms.mdx`) | ★ | One `type: term` page in a glossary collection, `unused-term`, then `concepts:`. |
+| Say who each page serves (`start-here/vocabulary/strategy.mdx`) | ★ | Three records in a strategy collection, `unserved-journey`, the page fields and sidecar. |
+| Build the graph from all of it (`start-here/vocabulary/graph.mdx`) | ★ | `graph init`, `build` and `check` over the guides, the term and the records. |
+| Build and preview the site (`start-here/site/build.mdx`) | ★ | `site.commands` for the sample's stand-in framework, the collection `url:`, `site build`. |
+| Check the built site's accessibility (`start-here/site/a11y.mdx`) | ★ | `site preview` in one terminal and `a11y check` in another. Captured by hand. |
+| Test the procedures (`start-here/site/test.mdx`) | ★ | An inline Doc Detective test in the sample page, `test procedures` passing and failing. |
+| Gate everything with one command (`start-here/ci.mdx`) | ★ | `manni check` on the trunk and after a track, the exit codes, the Action step. |
+| Let an agent keep it green (`start-here/agent.mdx`) | ★ | The plugin's two install commands, `tracevals.runtime`, and the status row it adds. |
+
 ### Get started (on-ramp)
 
 | Page | ★ | Notes |
 |---|---|---|
-| Landing / router page | ★ | Value prop, who it's for, 30-second quickstart. Links to each persona track. Serves every journey. |
+| Landing / router page | ★ | Value prop, who it's for, 30-second quickstart. Links to each persona track. Serves every journey. The family-wide router is now `start-here/` above. |
 | Install & first validation | ★ | `npx @hawkeyexl/manni meta validate <file>`, read pass/fail output, Node 24+ requirement. |
 
 ### Set up validation (Maya)

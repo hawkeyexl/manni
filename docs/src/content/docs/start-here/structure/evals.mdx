@@ -1,0 +1,131 @@
+---
+title: Grade what a template's pages must say
+description: A how-to can have every section and still never show the command it is about. Put the rule on the template, and docevals grades it on every page the template routes.
+type: tutorial
+id: start-here-structure-evals
+language: en
+audiences:
+  - docs-engineers
+lifecycle: published
+action: practice
+next-steps:
+  - start-here-ci
+verified-by:
+  - tool: doc-detective
+    check: start-here-structure-evals
+last-updated: 2026-11-26
+---
+
+A template checks a page's shape: its sections, and what kind of block each
+one holds. Whether the page says what it must is a different question. A
+how-to can have every section and still never show the command it is about.
+An **eval** on the template asks that question of every page the template
+routes. You write the rule once per doctype, not once per page.
+
+`manni status` has listed docevals in play since the trunk. Every built-in
+template carries evals of its own, and a model judges those. This step adds one
+a regular expression grades, so it needs no model.
+
+## Extend the built-in template
+
+Write a template that extends the built-in how-to and adds one eval:
+
+````yaml title="templates/how-to.yaml"
+templates:
+  how-to:
+    extends: tgdp:how-to:1.6
+    types: [how-to]
+    evals:
+      - id: shows-a-command
+        assertion: The page shows the command the reader runs.
+        grader: tool:regex
+        options:
+          pattern: "```sh"
+          match: contains
+````
+
+Route the how-to pages to it, in place of the `lint: {}` from the step before:
+
+```yaml title="manni.config.yaml"
+lint:
+  templates:
+    - templates/how-to.yaml
+```
+
+## Grade the page
+
+```sh
+manni docevals run docs/run-a-job.md --deterministic-only
+```
+
+```text
+docs/run-a-job.md
+  skip tgdp-overview-names-the-task  docs/run-a-job.md:4
+       judge skipped (--deterministic-only)
+  skip tgdp-steps-start-with-a-verb  docs/run-a-job.md:4
+       judge skipped (--deterministic-only)
+  skip tgdp-one-action-per-step  docs/run-a-job.md:4
+       judge skipped (--deterministic-only)
+  skip tgdp-shows-the-result  docs/run-a-job.md:4
+       judge skipped (--deterministic-only)
+  skip tgdp-no-concept-teaching  docs/run-a-job.md:4
+       judge skipped (--deterministic-only)
+  skip tgdp-one-method  docs/run-a-job.md:4
+       judge skipped (--deterministic-only)
+  pass shows-a-command  docs/run-a-job.md:4
+
+Suites
+  default: 1/1 passed — 100% vs target 100% ok (6 skipped)
+```
+
+The page inherits the built-in how-to's six judged evals, and
+`--deterministic-only` skips them. `shows-a-command` came from your template,
+and the page passes it. [Evals on lint templates](/manni/docevals/evals/named-evals-and-suites/)
+covers skipping an inherited eval and naming a shared one.
+
+## See what is in play
+
+```sh
+manni status
+```
+
+```text
+manni 4.28.0   config manni.config.yaml   collection guides (4 files)
+
+meta       in play       meta: section
+cite       not set up    no page carries citations
+                         Pin a sentence to its source with manni cite add.
+lint       in play       lint: section
+docevals   in play       4 pages declare evals
+term       not set up    no terms in any collection
+                         Add a page with type: term to a collection.
+strategy   not set up    no strategy records in any collection
+                         Add a page with type: journey to a collection.
+graph      not set up    no graph: section
+                         Run manni graph init to add a starter graph: section.
+a11y       not checked   needs a running site and a browser
+                         Run manni site preview, then manni a11y check.
+test       not checked   runs the pages' shell steps and synthetic users
+                         Run manni test procedures or manni test tasks.
+tracevals  not checked   judges recorded sessions with a model
+                         Run manni tracevals run over sessions, or add tracevals.runtime to judge each turn.
+```
+
+## Next in this track
+
+The Structure track ends here. Go on to the join,
+[Gate everything with one command](/manni/start-here/ci/).
+
+## Other tracks
+
+[Provenance](/manni/start-here/provenance/citations/),
+[Vocabulary](/manni/start-here/vocabulary/terms/) or
+[Published site](/manni/start-here/site/build/).
+
+{/* test {"testId":"start-here-structure-evals","description":"A local template that extends the built-in how-to adds a regex eval, and docevals grades it on the how-to page with no model."} */}
+{/* step {"description":"Copy the sample repository into a Git repository of its own.","runShell":{"command":"node -e \"const fs=require('fs'),d='.doc-detective/start-here/evals';fs.rmSync(d,{recursive:true,force:true});fs.cpSync('examples/start-here',d,{recursive:true});require('child_process').execSync('git init -q && git add -A && git -c user.name=maya -c user.email=maya@example.com commit -qm trunk',{cwd:d})\"","exitCodes":[0]}} */}
+{/* step {"description":"Write the template that extends the built-in how-to.","runShell":{"command":"node -e \"const fs=require('fs');fs.mkdirSync('templates');fs.writeFileSync('templates/how-to.yaml','templates:\\n  how-to:\\n    extends: tgdp:how-to:1.6\\n    types: [how-to]\\n    evals:\\n      - id: shows-a-command\\n        assertion: The page shows the command the reader runs.\\n        grader: tool:regex\\n        options:\\n          pattern: \\x22\\x60\\x60\\x60sh\\x22\\n          match: contains\\n')\"","workingDirectory":".doc-detective/start-here/evals","exitCodes":[0]}} */}
+{/* step {"description":"Route the how-to pages to it.","runShell":{"command":"node -e \"require('fs').appendFileSync('manni.config.yaml','\\nlint:\\n  templates:\\n    - templates/how-to.yaml\\n')\"","workingDirectory":".doc-detective/start-here/evals","exitCodes":[0]}} */}
+{/* step {"description":"The template's eval passes on the how-to page, and the inherited judged evals are skipped.","runShell":{"command":"manni docevals run docs/run-a-job.md --deterministic-only","workingDirectory":".doc-detective/start-here/evals","exitCodes":[0],"stdio":"/pass shows-a-command[\\s\\S]*default: 1\\/1 passed/"}} */}
+{/* step {"description":"status reports lint and docevals in play.","runShell":{"command":"manni status","workingDirectory":".doc-detective/start-here/evals","exitCodes":[0],"stdio":"/lint\\s+in play\\s+lint: section\\s+docevals\\s+in play/"}} */}
+{/* test end */}

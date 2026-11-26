@@ -5,10 +5,14 @@ tableOfContents: false
 hero:
   tagline: A toolkit for managing and checking documentation.
   actions:
+    - text: Start here
+      link: /manni/start-here/
+      icon: right-arrow
+      variant: primary
     - text: Validate metadata
       link: /manni/meta/
       icon: right-arrow
-      variant: primary
+      variant: secondary
     - text: Fix a failing check
       link: /manni/meta/fix/
       icon: error
@@ -24,7 +28,7 @@ applies-to: ["domain:manni"]
 next-steps: ["meta", "a11y", "cite", "key", "term"]
 sample-questions: ["What problem does manni solve?", "What tools does manni include?", "How do I install manni and run my first command?", "What changed when docmeta became manni meta?"]
 graph: { label: "manni", type: concept }
-last-updated: 2026-11-11
+last-updated: 2026-11-26
 tags:
   - overview
   - installation
@@ -79,7 +83,8 @@ about the other pages.
 ## Who it's for
 
 - **You own a docs repository** and review is the only thing enforcing your
-  standard. Start with [meta](/manni/meta/).
+  standard. Start with [Start here](/manni/start-here/), which begins with
+  [meta](/manni/meta/).
 - **You run CI for many repositories** and want one gate that reads the same
   in each. Start with [manni check](/manni/family/check/).
 - **You define what pages must carry** and need the standard to change
@@ -163,20 +168,26 @@ about the other pages.
 
 ## How the tools fit together
 
-`meta` checks what a page says about itself. `lint` checks whether it is shaped
-like what it says it is. `cite` checks that what a page says about the code is
-still true. `docevals` checks that a page still meets the quality bar its team
-wrote down. `tracevals` checks that an agent session followed the instructions
-it ran on. `term` checks that the terms a page names are defined, and carries
-those terms into Vale and translation. `strategy` checks that the audiences,
-personas and journeys a page names are ones the docset keeps records of. `graph` checks what the pages say about
-each other, which is the only question no single file can answer. `key` sets and
-rotates the one encryption key that `meta` and `cite` encrypt values with.
-`test` checks that a procedure still works when someone follows it.
-`site` runs the docs site itself, the one `a11y` crawls, through its
-framework's own commands. `vector` builds a semantic index of the pages, keyed
-by the same ids as the graph, so search and retrieval rank by meaning.
-`manni --help` lists exactly the tools the package carries.
+The tools depend on each other in a few short chains, not one line. Every tool
+reads the pages you declare once, and `meta` checks the metadata the others
+keep their records in. So everyone starts on the same **trunk**. After it, each
+**track** is short and needs no other, and every track joins at one
+`manni check` in CI.
+
+```text
+              ┌─ Structure:       lint → docevals ─────────┐
+              ├─ Provenance:      cite → key ──────────────┤
+trunk:        │                                            │   join:
+install → meta┼─ Vocabulary:      term → strategy → graph ─┼─→ check in CI → agent
+              └─ Published site:  site → a11y → test ──────┘
+```
+
+`vector` hangs off `graph`. It builds a semantic index of the pages, keyed by
+the same ids as the graph, so search and retrieval rank by meaning.
+
+[Start here](/manni/start-here/) walks it step by step, over a sample docset,
+with the real output of each command. `manni --help` lists exactly the tools
+the package carries.
 
 ## Install and run
 

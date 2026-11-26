@@ -12,6 +12,7 @@ import pkg from "../../package.json" with { type: "json" };
 import { shouldColor } from "../shared/color.js";
 import { FAMILY_CONFIG_NAMES } from "../shared/config-file.js";
 import { fail } from "../shared/run.js";
+import { notice } from "../shared/warn.js";
 import { CHECK_DEFAULTS, runCheck } from "./commands/check.js";
 import { createPlaywrightAnalyzer } from "./core/analyzer.js";
 import { excludeEntryLabel, loadA11yConfig, type LoadedA11yConfig } from "./core/config.js";
@@ -200,6 +201,8 @@ interface CheckCliOptions {
   maxPages?: string | false;
   /** `--tags <list>`, split on "," here (same helper shape as meta's --ext). */
   tags?: string;
+  /** `--disable-rules <list>`, split on "," here, like `--tags`. */
+  disableRules?: string;
   /** `--severity <level>`. */
   severity: string;
   /** `--timeout <ms>`, parsed to int here. */
@@ -260,6 +263,7 @@ export function buildProgram(): Command {
       [],
     )
     .option("--tags <list>", "comma-separated axe tags to restrict the rules to")
+    .option("--disable-rules <list>", "comma-separated axe rule ids not to run")
     .option(
       "--severity <level>",
       `minimum severity reported: ${SEVERITY_LIST}`,
@@ -345,9 +349,19 @@ export function buildProgram(): Command {
               : configExcludeGlobs(cfg.exclude ?? [], loaded.source),
             severity: typed("severity") ? severity : (cfg.severity ?? CHECK_DEFAULTS.severity),
             timeout: typed("timeout") ? timeout : (cfg.timeout ?? CHECK_DEFAULTS.timeout),
+            disableRules:
+              options.disableRules !== undefined
+                ? splitList(options.disableRules)
+                : (cfg.disableRules ?? CHECK_DEFAULTS.disableRules),
           },
           { analyzer: createPlaywrightAnalyzer(), onProgress: progress.listener },
         );
+
+        // Every run that turned a rule off says so, so the opt-out stays
+        // visible in each CI log and not only in a config file.
+        if (run.disabledRules.length > 0 && options.quiet !== true) {
+          notice(`axe rules disabled: ${run.disabledRules.join(", ")}`);
+        }
 
         const color = resolveColor(parent, process.stdout);
         const text = render(format, run, { color, quiet: Boolean(options.quiet) });

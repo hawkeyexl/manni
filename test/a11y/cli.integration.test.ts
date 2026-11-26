@@ -33,6 +33,8 @@ const crawlFalse = resolve(a11yConfig, "crawl-false.yaml");
 const maxPagesOne = resolve(a11yConfig, "max-pages-1.yaml");
 /** `a11y.exclude: ["/about.html"]`, so a typed `--exclude` has a list to replace. */
 const excludeAbout = resolve(a11yConfig, "exclude-about.yaml");
+/** `a11y.disableRules: [color-contrast]`, so a typed `--disable-rules` has a list to replace. */
+const disableRules = resolve(a11yConfig, "disable-rules.yaml");
 
 const browser = await findBrowser();
 
@@ -173,6 +175,7 @@ function serveRedirectSite(): Promise<SchemaServer> {
 }
 
 interface JsonRun {
+  disabledRules: string[];
   redirects: { url: string; to: string; source: string }[];
   results: {
     url: string;
@@ -448,6 +451,20 @@ describe("manni a11y check (usage errors, no browser needed)", () => {
     expect(r.stdout).toMatch(
       /--exclude <glob>\s+URL path glob to keep out of the crawl; repeatable/,
     );
+  });
+
+  it("refuses an axe rule id that does not exist, before any browser starts", async () => {
+    const r = await run(["check", "https://x.example/", "--disable-rules", "region,regoin"]);
+    expect(r.status).toBe(2);
+    expect(r.stdout).toBe("");
+    expect(r.stderr).toMatch(
+      /^manni: unknown axe rule "regoin" in disableRules\. axe-core \d+\.\d+\.\d+ has no rule with that id\./,
+    );
+  });
+
+  it("documents --disable-rules as a comma-separated list", async () => {
+    const r = await run(["check", "--help"]);
+    expect(r.stdout).toMatch(/--disable-rules <list>\s+comma-separated axe rule ids not to run/);
   });
 
   it("a11y alone is a usage error with no default subcommand", async () => {
@@ -778,6 +795,68 @@ describe.skipIf(browser === null)("manni a11y check (built bin, real browser)", 
     });
     expect(json.summary.bySeverity).toEqual({ notice: 0, warning: 0, error: 4 });
   }, 120_000);
+
+  it("--disable-rules keeps those rules off the page and names them on the run", async () => {
+    const r = await run([
+      "check",
+      `${server.url}/about.html`,
+      "--no-crawl",
+      "--disable-rules",
+      "color-contrast,image-alt",
+      "-f",
+      "json",
+    ]);
+    const json = parseJsonRun(r);
+    const ids = (json.results[0]?.violations ?? []).map((v) => v.id);
+    expect(ids).toContain("button-name");
+    expect(ids).not.toContain("color-contrast");
+    expect(ids).not.toContain("image-alt");
+    expect(json.disabledRules).toEqual(["color-contrast", "image-alt"]);
+    expect(r.stderr).toMatch(/^manni: axe rules disabled: color-contrast, image-alt$/m);
+  }, 120_000);
+
+  it("a typed --disable-rules replaces a11y.disableRules rather than adding to it", async () => {
+    const fromConfig = parseJsonRun(
+      await run(["check", `${server.url}/about.html`, "--no-crawl", "-c", disableRules, "-f", "json"]),
+    );
+    const configIds = (fromConfig.results[0]?.violations ?? []).map((v) => v.id);
+    expect(configIds).not.toContain("color-contrast");
+    expect(configIds).toContain("image-alt");
+    expect(fromConfig.disabledRules).toEqual(["color-contrast"]);
+
+    const overridden = parseJsonRun(
+      await run([
+        "check",
+        `${server.url}/about.html`,
+        "--no-crawl",
+        "-c",
+        disableRules,
+        "--disable-rules",
+        "image-alt",
+        "-f",
+        "json",
+      ]),
+    );
+    const overriddenIds = (overridden.results[0]?.violations ?? []).map((v) => v.id);
+    expect(overriddenIds).toContain("color-contrast");
+    expect(overriddenIds).not.toContain("image-alt");
+    expect(overridden.disabledRules).toEqual(["image-alt"]);
+  }, 180_000);
+
+  it("a run with no disabled rules says nothing about them, and -q hides the line", async () => {
+    const plain = await run(["check", `${server.url}/about.html`, "--no-crawl", "-f", "json"]);
+    expect(parseJsonRun(plain).disabledRules).toEqual([]);
+    expect(plain.stderr).not.toMatch(/axe rules disabled/);
+    const quiet = await run([
+      "check",
+      `${server.url}/about.html`,
+      "--no-crawl",
+      "--disable-rules",
+      "region",
+      "-q",
+    ]);
+    expect(quiet.stderr).not.toMatch(/axe rules disabled/);
+  }, 180_000);
 
   it("-f json gives each violation axe's guidance: engine, rule, description and guide", async () => {
     const r = await run(["check", `${server.url}/about.html`, "--no-crawl", "-f", "json"]);

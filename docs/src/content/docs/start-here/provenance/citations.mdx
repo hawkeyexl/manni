@@ -1,0 +1,125 @@
+---
+title: Pin claims to source
+description: A sentence about the code stays green after the code changes under it. Pin the sentence to its source lines, and the change fails a check.
+type: tutorial
+id: start-here-provenance-citations
+language: en
+audiences:
+  - docs-engineers
+lifecycle: published
+action: practice
+next-steps:
+  - start-here-provenance-key
+  - start-here-ci
+verified-by:
+  - tool: doc-detective
+    check: start-here-provenance-citations
+last-updated: 2026-11-26
+---
+
+The sample says the CLI waits 30 seconds for a job. That is true today,
+because `src/widget.mjs` says so. When someone changes the timeout, the page
+still says 30, and no check in the trunk can tell. A **citation** pins the
+sentence to the lines it rests on, by a hash of each, and fails when either
+side changes. This track starts from the trunk's end state, committed to Git.
+
+## Pin the sentence
+
+Line 11 of `docs/timeouts.md` makes the claim, and line 2 of
+`src/widget.mjs` is its source:
+
+```sh
+manni cite add docs/timeouts.md:11 src/widget.mjs:2 --id timeout-30s --marker
+```
+
+```text
+Using manni.config.yaml (.)
+docs/timeouts.md: added timeout-30s to docs/timeouts.citations.yaml:3; marker at line 11, claim pinned at line 12 (sha256-53a72cab…; source src/widget.mjs:2 "export const DEFAULT_TIMEOUT_MS = 30000;", sha256-eb291138…, 3e1ccfb)
+```
+
+The pin goes into `docs/timeouts.citations.yaml`, beside the page, and a
+`cite timeout-30s` marker goes above the sentence. `manni cite check` holds
+the pin:
+
+```text
+Using manni.config.yaml (.)
+✓ docs/index.md
+✓ docs/reference/cli.md
+✓ docs/run-a-job.md
+✓ docs/timeouts.md   docs/timeouts.citations.yaml
+    ✓ timeout-30s   marker :11 current   src/widget.mjs:2 current
+
+4 files checked, 4 passed, 0 failed, 0 findings
+```
+
+Now change `30000` to `60000` in `src/widget.mjs`, and run `manni cite check`
+again:
+
+```text
+Using manni.config.yaml (.)
+✓ docs/index.md
+✓ docs/reference/cli.md
+✓ docs/run-a-job.md
+✗ docs/timeouts.md   docs/timeouts.citations.yaml
+    ✗ timeout-30s   marker :11 current   src/widget.mjs:2 changed since 3e1ccfb, 0 commits
+      Check the sentence against the source, then run manni cite update --accept --only timeout-30s.
+      manni:cite source-changed: The cited lines are not what they were.
+      Guide: https://hawkeyexl.github.io/manni/cite/fix/#source-changed
+
+4 files checked, 3 passed, 1 failed, 1 finding
+```
+
+The exit code is `1`, and the finding names the sentence to reread. Put the
+value back before you go on. The commit in each transcript is your own, so
+yours differs. The [cite section](/manni/cite/get-started/) covers the drift
+kinds and their repairs.
+
+## See what is in play
+
+```sh
+manni status
+```
+
+```text
+manni 4.28.0   config manni.config.yaml   collection guides (4 files)
+
+meta       in play       meta: section
+cite       in play       1 page carries citations
+lint       not set up    no lint: section
+                         Add a lint: section. manni lint templates lists the templates it can apply.
+docevals   in play       4 pages declare evals
+term       not set up    no terms in any collection
+                         Add a page with type: term to a collection.
+strategy   not set up    no strategy records in any collection
+                         Add a page with type: journey to a collection.
+graph      not set up    no graph: section
+                         Run manni graph init to add a starter graph: section.
+a11y       not checked   needs a running site and a browser
+                         Run manni site preview, then manni a11y check.
+test       not checked   runs the pages' shell steps and synthetic users
+                         Run manni test procedures or manni test tasks.
+tracevals  not checked   judges recorded sessions with a model
+                         Run manni tracevals run over sessions, or add tracevals.runtime to judge each turn.
+```
+
+cite needs no config section. It is in play because a page carries a citation.
+
+## Next in this track
+
+[Encrypt the fields you pin](/manni/start-here/provenance/key/).
+
+## Other tracks
+
+[Structure](/manni/start-here/structure/templates/),
+[Vocabulary](/manni/start-here/vocabulary/terms/),
+[Published site](/manni/start-here/site/build/), or the join,
+[Gate everything with one command](/manni/start-here/ci/).
+
+{/* test {"testId":"start-here-provenance-citations","description":"Pin a sentence to its source line, see the pin hold, then change the source and see it fail."} */}
+{/* step {"description":"Copy the sample repository into a Git repository of its own.","runShell":{"command":"node -e \"const fs=require('fs'),d='.doc-detective/start-here/citations';fs.rmSync(d,{recursive:true,force:true});fs.cpSync('examples/start-here',d,{recursive:true});require('child_process').execSync('git init -q && git add -A && git -c user.name=maya -c user.email=maya@example.com commit -qm trunk',{cwd:d})\"","exitCodes":[0]}} */}
+{/* step {"description":"Pin the sentence on line 11 to line 2 of the source.","runShell":{"command":"manni cite add docs/timeouts.md:11 src/widget.mjs:2 --id timeout-30s --marker","workingDirectory":".doc-detective/start-here/citations","exitCodes":[0],"stdio":"/added timeout-30s to docs\\/timeouts.citations.yaml:3; marker at line 11, claim pinned at line 12/"}} */}
+{/* step {"description":"The pin holds.","runShell":{"command":"manni cite check","workingDirectory":".doc-detective/start-here/citations","exitCodes":[0],"stdio":"/timeout-30s\\s+marker :11 current\\s+src\\/widget.mjs:2 current/"}} */}
+{/* step {"description":"status reports cite in play.","runShell":{"command":"manni status","workingDirectory":".doc-detective/start-here/citations","exitCodes":[0],"stdio":"/cite\\s+in play\\s+1 page carries citations/"}} */}
+{/* step {"description":"Change the timeout in the source.","runShell":{"command":"node -e \"const fs=require('fs'),f='src/widget.mjs';fs.writeFileSync(f,fs.readFileSync(f,'utf8').replace('30000','60000'))\"","workingDirectory":".doc-detective/start-here/citations","exitCodes":[0]}} */}
+{/* step {"description":"The pin fails, naming the changed source.","runShell":{"command":"manni cite check","workingDirectory":".doc-detective/start-here/citations","exitCodes":[1],"stdio":"/src\\/widget.mjs:2 changed since[\\s\\S]*source-changed/"}} */}
+{/* test end */}

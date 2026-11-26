@@ -1,0 +1,169 @@
+---
+title: Say who each page serves
+description: A page claims to serve a reader nobody keeps a record of, and a journey has no page at all. Keep audiences, personas and journeys as records, and check every page against them.
+type: tutorial
+id: start-here-vocabulary-strategy
+language: en
+audiences:
+  - docs-engineers
+lifecycle: published
+action: practice
+next-steps:
+  - start-here-vocabulary-graph
+  - start-here-ci
+verified-by:
+  - tool: doc-detective
+    check: start-here-vocabulary-strategy
+last-updated: 2026-11-26
+---
+
+A docs plan names its readers and the jobs they come to do. Then the plan sits
+in a slide deck, and the pages drift away from it. A page claims a persona
+nobody keeps, and a journey ends up with no page at all. **Strategy records**
+keep the plan as pages beside the docs, and `manni strategy check` holds every
+page to them. This step builds on the term you defined in the step before.
+
+## Write the records
+
+One record per audience, persona and journey. Each is a page whose `type:`
+says which it is:
+
+```md title="strategy/integrators.md"
+---
+type: audience
+id: integrators
+title: Integrators
+description: Developers who call the widget service from their own code.
+---
+```
+
+```md title="strategy/sam.md"
+---
+type: persona
+id: sam
+title: Sam, script author
+description: Sam automates a nightly report and sends jobs from a script.
+audience: integrators
+---
+```
+
+```md title="strategy/first-job.md"
+---
+type: journey
+id: first-job
+title: Send a first job
+description: Sam runs a first job and reads its result.
+personas: [sam]
+---
+```
+
+Give them a collection, and hold them to the core schema alone. They are
+records, not guides, so the guides' doctypes do not apply:
+
+```yaml title="manni.config.yaml"
+collections:
+  # …guides and glossary, unchanged…
+  - name: strategy
+    paths:
+      - "strategy/*.md"
+
+meta:
+  overrides:
+    # …the guides override, unchanged…
+    - collection: strategy
+      schemas:
+        - manni:core:1.0.0
+```
+
+## Check the pages against them
+
+```sh
+manni strategy check
+```
+
+```text
+strategy/first-job.md:3
+  warning manni:strategy/unserved-journey     no page names this journey in journeys:.
+                                              Name it on the pages that serve it.
+                                              manni:strategy unserved-journey: No page names the journey in journeys:. Records do not count, and a draft or archived journey is exempt.
+                                              Guide: https://hawkeyexl.github.io/manni/strategy/reference/rules/#unserved-journey
+
+1 warning in 3 records
+```
+
+The journey exists, and no page serves it. `docs/run-a-job.md` does. Name the
+audience in its frontmatter:
+
+```yaml title="docs/run-a-job.md"
+audiences: [integrators]
+```
+
+The persona and the journey go in the page's sidecar, because the built-in
+audience vocabulary keeps them off the published page:
+
+```yaml title="docs/run-a-job.meta.yaml"
+docs/run-a-job.md:
+  personas: [sam]
+  journeys: [first-job]
+```
+
+Run `manni strategy check` again:
+
+```text
+✓ 3 records, 5 references, no findings
+```
+
+The [strategy section](/manni/strategy/) covers journey steps, and sharing one
+set of records across repositories.
+
+## See what is in play
+
+```sh
+manni status
+```
+
+```text
+manni 4.28.0   config manni.config.yaml   collection guides (4 files)   collection glossary (1 file)   collection strategy (3 files)
+
+meta       in play       meta: section
+cite       not set up    no page carries citations
+                         Pin a sentence to its source with manni cite add.
+lint       not set up    no lint: section
+                         Add a lint: section. manni lint templates lists the templates it can apply.
+docevals   in play       4 pages declare evals
+term       in play       1 term
+strategy   in play       1 audience, 1 persona, 1 journey
+graph      not set up    no graph: section
+                         Run manni graph init to add a starter graph: section.
+a11y       not checked   needs a running site and a browser
+                         Run manni site preview, then manni a11y check.
+test       not checked   runs the pages' shell steps and synthetic users
+                         Run manni test procedures or manni test tasks.
+tracevals  not checked   judges recorded sessions with a model
+                         Run manni tracevals run over sessions, or add tracevals.runtime to judge each turn.
+```
+
+## Next in this track
+
+[Build the graph from all of it](/manni/start-here/vocabulary/graph/).
+
+## Other tracks
+
+[Structure](/manni/start-here/structure/templates/),
+[Provenance](/manni/start-here/provenance/citations/),
+[Published site](/manni/start-here/site/build/), or the join,
+[Gate everything with one command](/manni/start-here/ci/).
+
+{/* test {"testId":"start-here-vocabulary-strategy","description":"From the terms step, add audience, persona and journey records; the journey is unserved until a page names it."} */}
+{/* step {"description":"Copy the sample repository into a Git repository of its own.","runShell":{"command":"node -e \"const fs=require('fs'),d='.doc-detective/start-here/strategy';fs.rmSync(d,{recursive:true,force:true});fs.cpSync('examples/start-here',d,{recursive:true});require('child_process').execSync('git init -q && git add -A && git -c user.name=maya -c user.email=maya@example.com commit -qm trunk',{cwd:d})\"","exitCodes":[0]}} */}
+{/* step {"description":"Replay the terms step: the term page.","runShell":{"command":"node -e \"const fs=require('fs');fs.mkdirSync('glossary');fs.writeFileSync('glossary/job.md','---\\ntitle: Job\\ndescription: The glossary entry for a job.\\ntype: term\\nid: job\\nlabel: job\\ndefinition: A unit of work the widget CLI sends to the widget service.\\n---\\n')\"","workingDirectory":".doc-detective/start-here/strategy","exitCodes":[0]}} */}
+{/* step {"description":"Replay the terms step: the glossary collection.","runShell":{"command":"node -e \"const fs=require('fs');fs.writeFileSync('manni.config.yaml',fs.readFileSync('manni.config.yaml','utf8').replace('\\nmeta:','  - name: glossary\\n    paths:\\n      - \\x22glossary/*.md\\x22\\n\\nmeta:'))\"","workingDirectory":".doc-detective/start-here/strategy","exitCodes":[0]}} */}
+{/* step {"description":"Replay the terms step: the concepts: field.","runShell":{"command":"node -e \"const fs=require('fs'),f='docs/index.md';fs.writeFileSync(f,fs.readFileSync(f,'utf8').replace('type: concept\\n','type: concept\\nconcepts: [job]\\n'))\"","workingDirectory":".doc-detective/start-here/strategy","exitCodes":[0]}} */}
+{/* step {"description":"Write the three records.","runShell":{"command":"node -e \"const fs=require('fs');fs.mkdirSync('strategy');fs.writeFileSync('strategy/integrators.md','---\\ntype: audience\\nid: integrators\\ntitle: Integrators\\ndescription: Developers who call the widget service from their own code.\\n---\\n');fs.writeFileSync('strategy/sam.md','---\\ntype: persona\\nid: sam\\ntitle: Sam, script author\\ndescription: Sam automates a nightly report and sends jobs from a script.\\naudience: integrators\\n---\\n');fs.writeFileSync('strategy/first-job.md','---\\ntype: journey\\nid: first-job\\ntitle: Send a first job\\ndescription: Sam runs a first job and reads its result.\\npersonas: [sam]\\n---\\n')\"","workingDirectory":".doc-detective/start-here/strategy","exitCodes":[0]}} */}
+{/* step {"description":"Add the strategy collection and its meta override.","runShell":{"command":"node -e \"const fs=require('fs');fs.writeFileSync('manni.config.yaml',fs.readFileSync('manni.config.yaml','utf8').replace('\\nmeta:','  - name: strategy\\n    paths:\\n      - \\x22strategy/*.md\\x22\\n\\nmeta:')+'    - collection: strategy\\n      schemas:\\n        - manni:core:1.0.0\\n')\"","workingDirectory":".doc-detective/start-here/strategy","exitCodes":[0]}} */}
+{/* step {"description":"The journey is unserved, which is a warning.","runShell":{"command":"manni strategy check","workingDirectory":".doc-detective/start-here/strategy","exitCodes":[0],"stdio":"/warning manni:strategy\\/unserved-journey[\\s\\S]*1 warning in 3 records/"}} */}
+{/* step {"description":"Name the audience on docs/run-a-job.md, and the persona and journey in its sidecar.","runShell":{"command":"node -e \"const fs=require('fs'),f='docs/run-a-job.md';fs.writeFileSync(f,fs.readFileSync(f,'utf8').replace('type: how-to\\n','type: how-to\\naudiences: [integrators]\\n'));fs.writeFileSync('docs/run-a-job.meta.yaml','docs/run-a-job.md:\\n  personas: [sam]\\n  journeys: [first-job]\\n')\"","workingDirectory":".doc-detective/start-here/strategy","exitCodes":[0]}} */}
+{/* step {"description":"The check is clean.","runShell":{"command":"manni strategy check","workingDirectory":".doc-detective/start-here/strategy","exitCodes":[0],"stdio":"3 records, 5 references, no findings"}} */}
+{/* step {"description":"The records and the page still validate.","runShell":{"command":"manni meta validate","workingDirectory":".doc-detective/start-here/strategy","exitCodes":[0],"stdio":"8 files checked, 8 passed, 0 failed, 0 errors"}} */}
+{/* step {"description":"status reports strategy in play.","runShell":{"command":"manni status","workingDirectory":".doc-detective/start-here/strategy","exitCodes":[0],"stdio":"/strategy\\s+in play\\s+1 audience, 1 persona, 1 journey/"}} */}
+{/* test end */}

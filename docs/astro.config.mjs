@@ -149,11 +149,59 @@ export default defineConfig({
       // One top-level group per tool. `meta` is the metadata tool and `a11y`
       // the accessibility tool; the others arrive with their subcommands, each
       // as a sibling group over its own directory under src/content/docs/.
-      // Groups are in alphabetical order by label.
+      // The tool groups are in alphabetical order by label, after Start here.
       //
       // Every group starts collapsed, so the landing page shows one line per
       // tool. Starlight still opens whichever groups contain the current page.
       sidebar: [
+        // Start here comes first and is not alphabetical: it walks the domains
+        // in the order they depend on each other. A trunk, one collapsed
+        // subgroup per independent track, then the join. Links are explicit,
+        // because the order within a track is the point.
+        {
+          label: "Start here",
+          items: [
+            { label: "Overview", link: "/start-here/" },
+            { label: "Install and declare a collection", link: "/start-here/install/" },
+            { label: "Hold every page to a schema", link: "/start-here/metadata/" },
+            {
+              label: "Structure",
+              collapsed: true,
+              items: [
+                { label: "Hold pages to templates", link: "/start-here/structure/templates/" },
+                { label: "Grade what a template's pages must say", link: "/start-here/structure/evals/" },
+              ],
+            },
+            {
+              label: "Provenance",
+              collapsed: true,
+              items: [
+                { label: "Pin claims to source", link: "/start-here/provenance/citations/" },
+                { label: "Encrypt the fields you pin", link: "/start-here/provenance/key/" },
+              ],
+            },
+            {
+              label: "Vocabulary",
+              collapsed: true,
+              items: [
+                { label: "Name your terms once", link: "/start-here/vocabulary/terms/" },
+                { label: "Say who each page serves", link: "/start-here/vocabulary/strategy/" },
+                { label: "Build the graph from all of it", link: "/start-here/vocabulary/graph/" },
+              ],
+            },
+            {
+              label: "Published site",
+              collapsed: true,
+              items: [
+                { label: "Build and preview the site", link: "/start-here/site/build/" },
+                { label: "Check the built site's accessibility", link: "/start-here/site/a11y/" },
+                { label: "Test the procedures", link: "/start-here/site/test/" },
+              ],
+            },
+            { label: "Gate everything with one command", link: "/start-here/ci/" },
+            { label: "Let an agent keep it green", link: "/start-here/agent/" },
+          ],
+        },
         {
           label: "a11y",
           collapsed: true,
