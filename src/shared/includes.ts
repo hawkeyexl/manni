@@ -6,7 +6,8 @@
  * every expanded offset back to the file and offset it came from, so a finding
  * reports at the directive's line in the page and names the line it came from.
  *
- * Ported from doc-detective 5.6.3, `dist/core/includes.js` (its ADR 01212).
+ * Ported from doc-detective 5.6.3's `core/includes.js` (its ADR 01212), read
+ * from the published `dist/` build, since the npm package ships no source.
  * The syntaxes, selectors and guards are its own. Two things differ. Each
  * piece also carries the page offset of the top-level directive that brought
  * it in, which is where manni reports. And the warnings are manni's.
@@ -327,18 +328,18 @@ const indentOf = (line: string): number => /^[ \t]*/.exec(line)?.[0].length ?? 0
  * or a `..` that names no directive, target or substitution.
  */
 function inRstLiteral(text: string, at: number): boolean {
-  const before = text.slice(0, at).split("\n");
-  const own = before.pop() ?? "";
-  const indent = indentOf(own);
-  if (indent === 0) return false;
-  for (let i = before.length - 1; i >= 0; i--) {
-    const line = (before[i] ?? "").replace(/\r$/, "");
+  const lines = text.slice(0, at).split("\n");
+  let indent = indentOf(lines.pop() ?? "");
+  // Walk up through each less-indented parent until one opens a literal
+  // block or the top level is reached.
+  for (let i = lines.length - 1; i >= 0 && indent > 0; i--) {
+    const line = (lines[i] ?? "").replace(/\r$/, "");
     if (line.trim() === "" || indentOf(line) >= indent) continue;
     const t = line.trim();
     if (/::$/.test(t) && !/^\.\.\s+\S+::/.test(t)) return true;
     if (/^\.\.\s+(code-block|code|sourcecode|literalinclude)::/.test(t)) return true;
     if (/^\.\.(\s|$)/.test(t) && !/^\.\.\s+(\S+::|_|\[|\|)/.test(t)) return true;
-    return inRstLiteral(text, text.lastIndexOf(line, at));
+    indent = indentOf(line);
   }
   return false;
 }
@@ -520,7 +521,17 @@ export function expandIncludes(opts: ExpandOptions): Expansion {
     if (d.skip) return null;
     if (isUrl(d.target)) return leftAs("is a URL");
     const candidates = candidatesFor(d.target, d.base, file, rootReal);
-    if (!candidates.length) return null;
+    if (!candidates.length) {
+      // A package import is a component and stays silent; a rooted import
+      // whose root marker is missing is a page the reader would see.
+      if (d.base === "mdx" && d.target.startsWith("@site/")) {
+        return leftAs("needs a docusaurus.config file above the page");
+      }
+      if (d.base === "mdx" && d.target.startsWith("/")) {
+        return leftAs("needs a docs.json or mint.json above the page");
+      }
+      return null;
+    }
     const found = candidates.find(isFile);
     if (found === undefined) return d.optional ? null : leftAs("not found");
     const real = realpath(found);

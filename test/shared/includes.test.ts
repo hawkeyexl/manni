@@ -35,6 +35,26 @@ describe("expandIncludes", () => {
     expect(steps.includedFrom).toBeUndefined();
   });
 
+  it("resolves an @site/ import from the Docusaurus site root", () => {
+    const { text, warnings } = expand("mdx-site", "docs/page.mdx");
+    expect(warnings).toEqual([]);
+    expect(text).toContain("## From the site root");
+  });
+
+  it("resolves a / import from the Mintlify docs root", () => {
+    const { text, warnings } = expand("mdx-mint", "page.mdx");
+    expect(warnings).toEqual([]);
+    expect(text).toContain("## From the docs root");
+  });
+
+  it("warns when an @site/ import has no Docusaurus config above it", () => {
+    const { text, warnings } = expand("mdx-unrooted", "docs/page.mdx");
+    expect(text).toContain("<Note />");
+    expect(warnings).toEqual([
+      'docs/page.mdx:5: include "@site/src/partials/note.mdx" needs a docusaurus.config file above the page; left unexpanded.',
+    ]);
+  });
+
   it("leaves a component inside a code fence alone", () => {
     const content = 'import P from "./_partials/prereqs.mdx";\n\n```mdx\n<P />\n```\n';
     const { text, warnings } = expand("mdx", "docs/example.mdx", content);
