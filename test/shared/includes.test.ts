@@ -55,6 +55,15 @@ describe("expandIncludes", () => {
     ]);
   });
 
+  it("warns when a / import has no Mintlify root above it", () => {
+    const content = 'import Note from "/snippets/note.mdx";\n\n# Page\n\n<Note />\n';
+    const { text, warnings } = expand("mdx-unrooted", "docs/page.mdx", content);
+    expect(text).toContain("<Note />");
+    expect(warnings).toEqual([
+      'docs/page.mdx:5: include "/snippets/note.mdx" needs a docs.json or mint.json above the page; left unexpanded.',
+    ]);
+  });
+
   it("leaves a component inside a code fence alone", () => {
     const content = 'import P from "./_partials/prereqs.mdx";\n\n```mdx\n<P />\n```\n';
     const { text, warnings } = expand("mdx", "docs/example.mdx", content);
