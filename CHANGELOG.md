@@ -4,6 +4,13 @@
 4.13.1. Entries below that version are docmeta releases; the repository
 history is the same one.
 
+# [4.31.0](https://github.com/hawkeyexl/manni/compare/v4.30.0...v4.31.0) (2026-11-26)
+
+
+### Features
+
+* **lint:** resolve includes before assessing prose ([#302](https://github.com/hawkeyexl/manni/issues/302)) ([8e78f71](https://github.com/hawkeyexl/manni/commit/8e78f71d526391c0e653180d9fcf2dfb64b91379))
+
 # [4.30.0](https://github.com/hawkeyexl/manni/compare/v4.29.0...v4.30.0) (2026-11-26)
 
 
